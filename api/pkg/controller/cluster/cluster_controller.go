@@ -11,7 +11,6 @@ import (
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -56,8 +55,7 @@ type Reconciler struct {
 	workerName              string
 
 	externalURL string
-	dcs         map[string]provider.DatacenterMeta
-	dc          string
+	seed        *kubermaticv1.Seed
 
 	recorder record.EventRecorder
 
@@ -87,8 +85,7 @@ func Add(
 	numWorkers int,
 	workerName string,
 	externalURL string,
-	dc string,
-	dcs map[string]provider.DatacenterMeta,
+	seed *kubermaticv1.Seed,
 	userClusterConnProvider userClusterConnectionProvider,
 	overwriteRegistry string,
 	nodePortRange string,
@@ -133,8 +130,7 @@ func Add(
 		kubermaticImage:                                  kubermaticImage,
 
 		externalURL: externalURL,
-		dc:          dc,
-		dcs:         dcs,
+		seed:        seed,
 
 		oidcCAFile:         oidcCAFile,
 		oidcIssuerURL:      oidcIssuerURL,

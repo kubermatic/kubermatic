@@ -57,7 +57,7 @@ type Opts struct {
 	clusterClientProvider        clusterclient.UserClusterConnectionProvider
 	dcFile                       string
 	repoRoot                     string
-	dcs                          map[string]provider.DatacenterMeta
+	seed                         *kubermaticv1.Seed
 	cleanupOnStart               bool
 	clusterParallelCount         int
 	workerName                   string
@@ -248,6 +248,14 @@ func main() {
 	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{"http"}), nil)
 	opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
 
+	// We use environment variables instead of flags for compatibility reasons, because during upgrade tests we
+	// run two versions of the conformance tester with the same set of flags, which breaks if the older version
+	// doesn't have all flags
+	seedName := os.Getenv("SEED_NAME")
+	if seedName == "" {
+		log.Fatalf("The name of the seed dc must be configured via the SEED_NAME env var")
+	}
+
 	if opts.existingClusterLabel != "" && opts.clusterParallelCount != 1 {
 		log.Fatalf("-cluster-parallel-count must be 1 when testing an existing cluster")
 	}
@@ -285,11 +293,10 @@ func main() {
 		}
 	}()
 
-	dcs, err := provider.LoadDatacentersMeta(opts.dcFile)
+	opts.seed, err = provider.LoadSeed(opts.dcFile, seedName)
 	if err != nil {
-		log.Fatalf("failed to load datacenter yaml %q: %v", opts.dcFile, err)
+		log.Fatalf("failed to get seed %q: %v", seedName, err)
 	}
-	opts.dcs = dcs
 
 	config, err := clientcmd.BuildConfigFromFlags("", opts.kubeconfigPath)
 	if err != nil {

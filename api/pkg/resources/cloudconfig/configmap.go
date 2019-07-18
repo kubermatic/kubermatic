@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
@@ -25,7 +24,7 @@ const (
 )
 
 type configMapCreatorData interface {
-	DC() *provider.DatacenterMeta
+	DC() *kubermaticv1.Datacenter
 	Cluster() *kubermaticv1.Cluster
 }
 
@@ -52,7 +51,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 }
 
 // CloudConfig returns the cloud-config for the supplied data
-func CloudConfig(cluster *kubermaticv1.Cluster, dc *provider.DatacenterMeta) (cloudConfig string, err error) {
+func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter) (cloudConfig string, err error) {
 	cloud := cluster.Spec.Cloud
 	if cloud.AWS != nil {
 		awsCloudConfig := &aws.CloudConfig{

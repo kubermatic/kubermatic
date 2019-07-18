@@ -15,7 +15,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
 	openshiftcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/openshift"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
@@ -50,11 +50,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 }
 
 func createCloudController(ctrlCtx *controllerContext) error {
-	dcs, err := provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
-	if err != nil {
-		return err
-	}
-	cloudProvider := cloud.Providers(dcs)
+	cloudProvider := cloud.Providers(map[string]*kubermaticv1.Seed{ctrlCtx.seed.Name: ctrlCtx.seed})
 	predicates := workerlabel.Predicates(ctrlCtx.runOptions.workerName)
 	if err := cloudcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, cloudProvider, predicates); err != nil {
 		return fmt.Errorf("failed to add cloud controller to mgr: %v", err)
@@ -67,8 +63,7 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		ctrlCtx.runOptions.dc,
-		ctrlCtx.dcs,
+		ctrlCtx.seed,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.runOptions.etcdDiskSize,
@@ -96,8 +91,7 @@ func createClusterController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.externalURL,
-		ctrlCtx.runOptions.dc,
-		ctrlCtx.dcs,
+		ctrlCtx.seed,
 		ctrlCtx.clientProvider,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
@@ -147,11 +141,6 @@ func createBackupController(ctrlCtx *controllerContext) error {
 }
 
 func createMonitoringController(ctrlCtx *controllerContext) error {
-	dcs, err := provider.LoadDatacentersMeta(ctrlCtx.runOptions.dcFile)
-	if err != nil {
-		return err
-	}
-
 	dockerPullConfigJSON, err := ioutil.ReadFile(ctrlCtx.runOptions.dockerPullConfigJSONFile)
 	if err != nil {
 		return fmt.Errorf("failed to load ImagePullSecret from %s: %v", ctrlCtx.runOptions.dockerPullConfigJSONFile, err)
@@ -164,8 +153,7 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.clientProvider,
 
-		ctrlCtx.runOptions.dc,
-		dcs,
+		ctrlCtx.seed,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
 		ctrlCtx.runOptions.nodeAccessNetwork,

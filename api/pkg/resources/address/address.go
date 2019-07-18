@@ -8,7 +8,6 @@ import (
 	"github.com/golang/glog"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -20,16 +19,13 @@ import (
 func SyncClusterAddress(ctx context.Context,
 	cluster *kubermaticv1.Cluster,
 	client ctrlruntimeclient.Client,
-	externalURL, seedDCName string,
-	nodeDCs map[string]provider.DatacenterMeta) ([]func(*kubermaticv1.Cluster), error) {
+	externalURL string,
+	seed *kubermaticv1.Seed) ([]func(*kubermaticv1.Cluster), error) {
 	var modifiers []func(*kubermaticv1.Cluster)
 
-	nodeDc, found := nodeDCs[cluster.Spec.Cloud.DatacenterName]
-	if !found {
-		return nil, fmt.Errorf("unknown node dataceter set '%s'", cluster.Spec.Cloud.DatacenterName)
-	}
-	if nodeDc.SeedDNSOverwrite != nil && *nodeDc.SeedDNSOverwrite != "" {
-		seedDCName = *nodeDc.SeedDNSOverwrite
+	subdomain := seed.Name
+	if seed.Spec.SeedDNSOverwrite != nil && *seed.Spec.SeedDNSOverwrite != "" {
+		subdomain = *seed.Spec.SeedDNSOverwrite
 	}
 
 	frontProxyLoadBalancerServiceIP := ""
@@ -54,7 +50,7 @@ func SyncClusterAddress(ctx context.Context,
 	if cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
 		externalName = frontProxyLoadBalancerServiceIP
 	} else {
-		externalName = fmt.Sprintf("%s.%s.%s", cluster.Name, seedDCName, externalURL)
+		externalName = fmt.Sprintf("%s.%s.%s", cluster.Name, subdomain, externalURL)
 	}
 
 	if cluster.Address.ExternalName != externalName {

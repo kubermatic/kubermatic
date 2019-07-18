@@ -37,7 +37,7 @@ func (r Routing) getClusterMetrics() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.SetClusterProvider(r.clusterProviders, r.datacenters),
+			middleware.SetClusterProvider(r.clusterProviders, r.seeds),
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.GetMetricsEndpoint(r.projectProvider, r.prometheusClient)),
 		common.DecodeGetClusterReq,

@@ -11,7 +11,6 @@ import (
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/address"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
@@ -73,8 +72,7 @@ type Reconciler struct {
 	client.Client
 	scheme               *runtime.Scheme
 	recorder             record.EventRecorder
-	dcs                  map[string]provider.DatacenterMeta
-	dc                   string
+	seed                 *kubermaticv1.Seed
 	overwriteRegistry    string
 	nodeAccessNetwork    string
 	etcdDiskSize         resource.Quantity
@@ -90,8 +88,7 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
-	dc string,
-	dcs map[string]provider.DatacenterMeta,
+	seed *kubermaticv1.Seed,
 	overwriteRegistry,
 	nodeAccessNetwork string,
 	etcdDiskSize resource.Quantity,
@@ -105,8 +102,7 @@ func Add(
 		Client:               mgr.GetClient(),
 		scheme:               mgr.GetScheme(),
 		recorder:             mgr.GetRecorder(ControllerName),
-		dc:                   dc,
-		dcs:                  dcs,
+		seed:                 seed,
 		overwriteRegistry:    overwriteRegistry,
 		nodeAccessNetwork:    nodeAccessNetwork,
 		etcdDiskSize:         etcdDiskSize,
@@ -172,9 +168,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	// Add a wrapping here so we can emit an event on error
 	result, err := r.reconcile(ctx, cluster)
+	recorderCluster := cluster.DeepCopy()
 	if err != nil {
 		glog.Errorf("failed reconciling cluster %s: %v", cluster.Name, err)
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+		r.recorder.Eventf(recorderCluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
 	if result == nil {
 		result = &reconcile.Result{}
@@ -198,14 +195,14 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to ensure Namespace: %v", err)
 	}
 
-	dc, found := r.dcs[cluster.Spec.Cloud.DatacenterName]
+	datacenter, found := r.seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
 	osData := &openshiftData{
 		cluster:           cluster,
 		client:            r.Client,
-		dc:                &dc,
+		dc:                &datacenter,
 		overwriteRegistry: r.overwriteRegistry,
 		nodeAccessNetwork: r.nodeAccessNetwork,
 		oidc:              r.oidc,
@@ -645,7 +642,7 @@ func (r *Reconciler) ensureNamespace(ctx context.Context, c *kubermaticv1.Cluste
 }
 
 func (r *Reconciler) address(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, r.dc, r.dcs)
+	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, r.seed)
 	if err != nil {
 		return err
 	}

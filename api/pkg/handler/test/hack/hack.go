@@ -7,6 +7,7 @@ import (
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"github.com/prometheus/client_golang/prometheus"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
@@ -22,7 +23,7 @@ import (
 // NewTestRouting is a hack that helps us avoid circular imports
 // for example handler package uses v1/dc and v1/dc needs handler for testing
 func NewTestRouting(
-	datacenters map[string]provider.DatacenterMeta,
+	seeds map[string]*kubermaticv1.Seed,
 	clusterProviders map[string]provider.ClusterProvider,
 	cloudProviders map[string]provider.CloudProvider,
 	sshKeyProvider provider.SSHKeyProvider,
@@ -45,7 +46,7 @@ func NewTestRouting(
 
 	updateManager := version.New(versions, updates)
 	r := handler.NewRouting(
-		datacenters,
+		seeds,
 		clusterProviders,
 		cloudProviders,
 		sshKeyProvider,

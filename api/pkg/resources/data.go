@@ -25,7 +25,7 @@ type TemplateData struct {
 	ctx                                              context.Context
 	client                                           ctrlruntimeclient.Client
 	cluster                                          *kubermaticv1.Cluster
-	dc                                               *provider.DatacenterMeta
+	dc                                               *kubermaticv1.Datacenter
 	SeedDC                                           string
 	OverwriteRegistry                                string
 	nodePortRange                                    string
@@ -48,7 +48,7 @@ func NewTemplateData(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
 	cluster *kubermaticv1.Cluster,
-	dc *provider.DatacenterMeta,
+	dc *kubermaticv1.Datacenter,
 	seedDatacenter string,
 	overwriteRegistry string,
 	nodePortRange string,
@@ -118,7 +118,7 @@ func (d *TemplateData) ClusterVersion() string {
 }
 
 // DC returns the dc
-func (d *TemplateData) DC() *provider.DatacenterMeta {
+func (d *TemplateData) DC() *kubermaticv1.Datacenter {
 	return d.dc
 }
 

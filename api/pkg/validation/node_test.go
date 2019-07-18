@@ -7,7 +7,6 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
 // EqualError reports whether errors a and b are considered equal.
@@ -23,14 +22,14 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 		Name       string
 		Cluster    *kubermaticv1.Cluster
 		Spec       *apiv1.NodeSpec
-		Datacenter *provider.DatacenterMeta
+		Datacenter *kubermaticv1.Datacenter
 		Expected   error
 	}{
 		{
 			"should pass validation when openstack provider not used",
 			&kubermaticv1.Cluster{},
 			&apiv1.NodeSpec{},
-			&provider.DatacenterMeta{},
+			&kubermaticv1.Datacenter{},
 			nil,
 		},
 		{
@@ -49,7 +48,7 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 					Openstack: &apiv1.OpenstackNodeSpec{UseFloatingIP: false},
 				},
 			},
-			&provider.DatacenterMeta{
+			&kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
 					Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: false},
 				},
@@ -72,7 +71,7 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 					Openstack: &apiv1.OpenstackNodeSpec{UseFloatingIP: false},
 				},
 			},
-			&provider.DatacenterMeta{
+			&kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
 					Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: true},
 				},
@@ -95,7 +94,7 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 					Openstack: &apiv1.OpenstackNodeSpec{UseFloatingIP: true},
 				},
 			},
-			&provider.DatacenterMeta{
+			&kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
 					Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: false},
 				},
@@ -118,7 +117,7 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 					Openstack: &apiv1.OpenstackNodeSpec{UseFloatingIP: true},
 				},
 			},
-			&provider.DatacenterMeta{
+			&kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
 					Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: false},
 				},

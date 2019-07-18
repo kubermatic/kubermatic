@@ -13,9 +13,9 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -182,13 +182,6 @@ func (o controllerRunOptions) validate() error {
 	// Validate node-port range
 	net.ParsePortRangeOrDie(o.nodePortRange)
 
-	// dcFile, versionFile, updatesFile are required by cluster controller
-	// the following code ensures that the files are available and fails fast if not.
-	_, err := provider.LoadDatacentersMeta(o.dcFile)
-	if err != nil {
-		return fmt.Errorf("failed to load datacenter yaml %q: %v", o.dcFile, err)
-	}
-
 	// Validate the metrics-server addon is disabled, otherwise it creates conflicts with the resources
 	// we create for the metrics-server running in the seed and will render the latter unusable
 	if strings.Contains(o.kubernetesAddonsList, "metrics-server") {
@@ -223,7 +216,7 @@ type controllerContext struct {
 	runOptions           controllerRunOptions
 	mgr                  manager.Manager
 	clientProvider       client.UserClusterConnectionProvider
-	dcs                  map[string]provider.DatacenterMeta
+	seed                 *kubermaticv1.Seed
 	dockerPullConfigJSON []byte
 	log                  *zap.SugaredLogger
 }

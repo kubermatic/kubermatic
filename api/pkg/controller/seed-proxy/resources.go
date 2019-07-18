@@ -6,7 +6,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -272,7 +272,7 @@ func masterServiceCreator(contextName string, secret *corev1.Secret) reconciling
 	}
 }
 
-func masterGrafanaConfigmapCreator(datacenters map[string]provider.DatacenterMeta, kubeconfig *clientcmdapi.Config) reconciling.NamedConfigMapCreatorGetter {
+func masterGrafanaConfigmapCreator(seeds map[string]*kubermaticv1.Seed, kubeconfig *clientcmdapi.Config) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return MasterGrafanaConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			labels := func() map[string]string {
@@ -288,17 +288,15 @@ func masterGrafanaConfigmapCreator(datacenters map[string]provider.DatacenterMet
 			c.Labels = labels()
 			c.Labels[ManagedByLabel] = ControllerName
 
-			for dcName, dc := range datacenters {
-				if dc.IsSeed {
-					filename := fmt.Sprintf("prometheus-%s.yaml", dcName)
+			for seedName := range seeds {
+				filename := fmt.Sprintf("prometheus-%s.yaml", seedName)
 
-					config, err := buildGrafanaDatasource(dcName, kubeconfig)
-					if err != nil {
-						return nil, fmt.Errorf("failed to build Grafana config for seed %s: %v", dcName, err)
-					}
-
-					c.Data[filename] = config
+				config, err := buildGrafanaDatasource(seedName, kubeconfig)
+				if err != nil {
+					return nil, fmt.Errorf("failed to build Grafana config for seed %s: %v", seedName, err)
 				}
+
+				c.Data[filename] = config
 			}
 
 			return c, nil
