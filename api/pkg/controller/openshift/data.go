@@ -25,7 +25,7 @@ import (
 type openshiftData struct {
 	cluster           *kubermaticv1.Cluster
 	client            client.Client
-	dc                *kubermaticv1.NodeLocation
+	nodeLocation      *kubermaticv1.NodeLocation
 	overwriteRegistry string
 	nodeAccessNetwork string
 	oidc              OIDCConfig
@@ -33,7 +33,7 @@ type openshiftData struct {
 	kubermaticImage   string
 }
 
-func (od *openshiftData) DC() *kubermaticv1.NodeLocation {
+func (od *openshiftData) NodeLocation() *kubermaticv1.NodeLocation {
 	return od.dc
 }
 

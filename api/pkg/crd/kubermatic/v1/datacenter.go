@@ -10,28 +10,28 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // SeedDatacenter is the type representing a SeedDatacenter
-type SeedDatacenter struct {
+type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec SeedDatacenterSpec `json:"spec"`
+	Spec SeedSpec `json:"spec"`
 }
 
 // The spec for a seed data
-type SeedDatacenterSpec struct {
+type SeedSpec struct {
 	// Country of the seed. For informational purposes only
 	Country string `json:"country,omitempty"`
 	// Detailed location of the cluster. For informational purposes only
 	Location string `json:"location,omitempty"`
 	// A reference to the Kubeconfig of this cluster
 	Kubeconfig corev1.ObjectReference `json:"kubeconfig"`
-	// The possible locations for the nodes
-	NodeLocations map[string]NodeLocation `json:"node_location,omitempty"`
+	// The possible datacenters for the nodes
+	Datacenter map[string]Datacenter `json:"node_location,omitempty"`
 	// Optional: Overwrite the DNS domain for this seed
 	SeedDNSOverwrite *string `json:"seed_dns_overwrite,omitempty"`
 }
 
-type NodeLocation struct {
+type Datacenter struct {
 	// Country of the seed. For informational purposes only
 	Country string `json:"country,omitempty"`
 	// Detailed location of the cluster. For informational purposes only

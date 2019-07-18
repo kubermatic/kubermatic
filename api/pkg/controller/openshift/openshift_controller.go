@@ -72,7 +72,7 @@ type Reconciler struct {
 	client.Client
 	scheme               *runtime.Scheme
 	recorder             record.EventRecorder
-	dc                   *kubermaticv1.SeedDatacenter
+	nodeLocations        map[string]kubermaticv1.NodeLocation
 	overwriteRegistry    string
 	nodeAccessNetwork    string
 	etcdDiskSize         resource.Quantity
@@ -88,7 +88,7 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
-	dc *kubermaticv1.SeedDatacenter,
+	nodeLocations map[string]kubermaticv1.NodeLocation,
 	overwriteRegistry,
 	nodeAccessNetwork string,
 	etcdDiskSize resource.Quantity,
@@ -102,7 +102,7 @@ func Add(
 		Client:               mgr.GetClient(),
 		scheme:               mgr.GetScheme(),
 		recorder:             mgr.GetRecorder(ControllerName),
-		dc:                   dc,
+		nodeLocations:        nodeLocations,
 		overwriteRegistry:    overwriteRegistry,
 		nodeAccessNetwork:    nodeAccessNetwork,
 		etcdDiskSize:         etcdDiskSize,
@@ -195,14 +195,14 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to ensure Namespace: %v", err)
 	}
 
-	nodeDC, found := r.dc.Spec.NodeLocations[cluster.Spec.Cloud.DatacenterName]
+	nodeLocation, found := r.nodeLocations[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
 	osData := &openshiftData{
 		cluster:           cluster,
 		client:            r.Client,
-		dc:                &nodeDC,
+		dc:                &nodeLocation,
 		overwriteRegistry: r.overwriteRegistry,
 		nodeAccessNetwork: r.nodeAccessNetwork,
 		oidc:              r.oidc,
