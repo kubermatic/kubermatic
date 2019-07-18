@@ -23,8 +23,9 @@ linters:
 
 issues:
   exclude:
-  - cyclomatic complexity 43 of func `main` is high
   - cyclomatic complexity 32 of func `main` is high
+  - cyclomatic complexity 33 of func `main` is high
+  - cyclomatic complexity 43 of func `main` is high
   - cyclomatic complexity 37 of func `migrateToProject` is high
   - cyclomatic complexity 33 of func `ValidateCloudSpec` is high
   - cyclomatic complexity [0-9]+ of func `TestDatacenterMetasToSeedDatacenterSpecs` is high
