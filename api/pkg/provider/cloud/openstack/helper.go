@@ -147,13 +147,9 @@ func deleteSecurityGroup(netClient *gophercloud.ServiceClient, sgName string) er
 
 func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, clusterName string) (string, error) {
 	secGroupName := resourceNamePrefix + clusterName
-	page, err := ossecuritygroups.List(netClient, ossecuritygroups.ListOpts{Name: secGroupName}).AllPages()
+	secGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: secGroupName})
 	if err != nil {
-		return "", fmt.Errorf("failed to check if security group %q already exists: %v", secGroupName)
-	}
-	secGroups, err := ossecuritygroups.ExtractGroups(page)
-	if err != nil {
-		return "", fmt.Errorf("failed to extract security groups from page: %v", err)
+		return "", fmt.Errorf("failed to get securiy groups: %v", err)
 	}
 
 	var securityGroupID string
