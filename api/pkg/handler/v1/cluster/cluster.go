@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -54,7 +54,7 @@ var clusterTypes = []string{
 }
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
-	dcs map[string]provider.DatacenterMeta, initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager common.PresetsManager, exposeStrategy corev1.ServiceType) endpoint.Endpoint {
+	seeds map[string]*kubermaticv1.Seed, initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager common.PresetsManager, exposeStrategy corev1.ServiceType) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
 		err := req.Validate()
@@ -70,12 +70,13 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		dc, err := provider.DatacenterFromSeedMap(seeds, req.Body.Cluster.Spec.Cloud.DatacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("error getting dc: %v", err)
+		}
+
 		credentialName := req.Body.Cluster.Credential
 		if len(credentialName) > 0 {
-			dc, found := dcs[req.Body.Cluster.Spec.Cloud.DatacenterName]
-			if !found {
-				return nil, errors.NewBadRequest("unknown cluster datacenter %s", req.Body.Cluster.Spec.Cloud.DatacenterName)
-			}
 			cloudSpec, err := credentialManager.SetCloudCredentials(credentialName, req.Body.Cluster.Spec.Cloud, dc)
 			if err != nil {
 				return nil, errors.NewBadRequest("invalid credentials: %v", err)
@@ -84,7 +85,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 		}
 
 		// Create the cluster.
-		spec, err := cluster.Spec(req.Body.Cluster, cloudProviders, dcs)
+		spec, err := cluster.Spec(req.Body.Cluster, cloudProviders, dc)
 		if err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
@@ -99,7 +100,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 			return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
 		}
 
-		partialCluster := &kubermaticapiv1.Cluster{}
+		partialCluster := &kubermaticv1.Cluster{}
 		partialCluster.Spec = *spec
 		if req.Body.Cluster.Type == "openshift" {
 			partialCluster.Annotations = map[string]string{
@@ -128,11 +129,11 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 				defer utilruntime.HandleCrash()
 				ndName := getNodeDeploymentDisplayName(req.Body.NodeDeployment)
 				eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationStart), "started creation of initial node deployment%s", ndName)
-				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, dcs, clusterProvider, userInfo, eventRecorderProvider.ClusterRecorderFor(k8sClient))
+				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, seeds, clusterProvider, userInfo, eventRecorderProvider.ClusterRecorderFor(k8sClient))
 				if err != nil {
 					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(nodeDeploymentCreationFail), "failed to create initial node deployment%s: %v", ndName, err)
 					glog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
-					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "seed_dc": req.DC}).Add(1)
+					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "node_dc": req.Body.Cluster.Spec.Cloud.DatacenterName}).Add(1)
 				} else {
 					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationSuccess), "created initial node deployment%s", ndName)
 					glog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)
@@ -144,11 +145,11 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 	}
 }
 
-func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticapiv1.Cluster,
-	project *kubermaticapiv1.Project, sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta,
+func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
+	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider, seeds map[string]*kubermaticv1.Seed,
 	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, eventRecorder record.EventRecorder) error {
 	return wait.Poll(5*time.Second, 30*time.Minute, func() (bool, error) {
-		err := createInitialNodeDeployment(nodeDeployment, cluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
+		err := createInitialNodeDeployment(nodeDeployment, cluster, project, sshKeyProvider, seeds, clusterProvider, userInfo)
 		switch {
 		case err == nil:
 			return true, nil
@@ -170,8 +171,8 @@ func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment
 	})
 }
 
-func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticapiv1.Cluster,
-	project *kubermaticapiv1.Project, sshKeyProvider provider.SSHKeyProvider, dcs map[string]provider.DatacenterMeta,
+func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
+	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider, seeds map[string]*kubermaticv1.Seed,
 	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
@@ -196,9 +197,9 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 		return err
 	}
 
-	dc, found := dcs[cluster.Spec.Cloud.DatacenterName]
-	if !found {
-		return fmt.Errorf("failed to find cluster datacenter: %v", cluster.Spec.Cloud.DatacenterName)
+	dc, err := provider.DatacenterFromSeedMap(seeds, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return fmt.Errorf("error getting dc: %v", err)
 	}
 
 	md, err := machineresource.Deployment(cluster, nd, dc, keys)
@@ -252,7 +253,7 @@ func isStatus(err error, status int32) bool {
 	return ok && status == kubernetesError.Status().Code
 }
 
-func PatchEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func PatchEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -277,7 +278,7 @@ func PatchEndpoint(cloudProviders map[string]provider.CloudProvider, projectProv
 			return nil, errors.NewBadRequest("cannot patch cluster: %v", err)
 		}
 
-		var patchedCluster *kubermaticapiv1.Cluster
+		var patchedCluster *kubermaticv1.Cluster
 		err = json.Unmarshal(patchedClusterJSON, &patchedCluster)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
@@ -291,9 +292,9 @@ func PatchEndpoint(cloudProviders map[string]provider.CloudProvider, projectProv
 			return nil, errors.NewBadRequest("Cluster contains nodes running the following incompatible kubelet versions: %v. Upgrade your nodes before you upgrade the cluster.", incompatibleKubelets)
 		}
 
-		dc, found := dcs[patchedCluster.Spec.Cloud.DatacenterName]
-		if !found {
-			return nil, fmt.Errorf("unknown cluster datacenter %s", patchedCluster.Spec.Cloud.DatacenterName)
+		dc, err := provider.DatacenterFromSeedMap(seeds, patchedCluster.Spec.Cloud.DatacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
 
 		if err = validation.ValidateUpdateCluster(patchedCluster, existingCluster, cloudProviders, dc); err != nil {
@@ -526,7 +527,7 @@ func ListSSHKeysEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider
 	}
 }
 
-func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) *apiv1.Cluster {
+func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *apiv1.Cluster {
 	cluster := &apiv1.Cluster{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalCluster.Name,
@@ -563,7 +564,7 @@ func convertInternalClusterToExternal(internalCluster *kubermaticapiv1.Cluster) 
 	return cluster
 }
 
-func convertInternalClustersToExternal(internalClusters []*kubermaticapiv1.Cluster) []*apiv1.Cluster {
+func convertInternalClustersToExternal(internalClusters []*kubermaticv1.Cluster) []*apiv1.Cluster {
 	apiClusters := make([]*apiv1.Cluster, len(internalClusters))
 	for index, cluster := range internalClusters {
 		apiClusters[index] = convertInternalClusterToExternal(cluster)

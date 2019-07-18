@@ -9,14 +9,11 @@ import (
 )
 
 type hetzner struct {
-	dcs map[string]provider.DatacenterMeta
 }
 
 // NewCloudProvider creates a new hetzner provider.
-func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProvider {
-	return &hetzner{
-		dcs: dcs,
-	}
+func NewCloudProvider() provider.CloudProvider {
+	return &hetzner{}
 }
 
 // DefaultCloudSpec

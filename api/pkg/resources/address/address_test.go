@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -170,14 +169,17 @@ func TestSyncClusterAddress(t *testing.T) {
 			lbService.Namespace = fakeClusterNamespaceName
 			client := fakectrlruntimeclient.NewFakeClient(apiserverService, lbService)
 
-			nodeDCs := map[string]provider.DatacenterMeta{
-				fakeDCName: {
+			seed := &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: fakeDCName,
+				},
+				Spec: kubermaticv1.SeedSpec{
 					SeedDNSOverwrite: &tc.seedDNSOverwrite,
 				},
 			}
 
 			modifiers, err := SyncClusterAddress(context.Background(),
-				cluster, client, fakeExternalURL, fakeDCName, nodeDCs)
+				cluster, client, fakeExternalURL, seed)
 			if err != nil {
 				if tc.errExpected {
 					return

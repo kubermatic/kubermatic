@@ -11,6 +11,7 @@ import (
 	"google.golang.org/api/compute/v1"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
@@ -249,7 +250,7 @@ func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachine
 	return sizes, err
 }
 
-func GCPZoneEndpoint(credentialManager common.PresetsManager, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func GCPZoneEndpoint(credentialManager common.PresetsManager, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPZoneReq)
 
@@ -264,11 +265,11 @@ func GCPZoneEndpoint(credentialManager common.PresetsManager, dcs map[string]pro
 			}
 		}
 
-		return listGCPZones(ctx, sa, req.DC, dcs)
+		return listGCPZones(ctx, sa, req.DC, seeds)
 	}
 }
 
-func GCPZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dcs map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func GCPZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -286,14 +287,14 @@ func GCPZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, dcs 
 		}
 
 		sa := cluster.Spec.Cloud.GCP.ServiceAccount
-		return listGCPZones(ctx, sa, cluster.Spec.Cloud.DatacenterName, dcs)
+		return listGCPZones(ctx, sa, cluster.Spec.Cloud.DatacenterName, seeds)
 	}
 }
 
-func listGCPZones(ctx context.Context, sa, datacenterName string, dcs map[string]provider.DatacenterMeta) (apiv1.GCPZoneList, error) {
+func listGCPZones(ctx context.Context, sa, datacenterName string, seeds map[string]*kubermaticv1.Seed) (apiv1.GCPZoneList, error) {
 	zones := apiv1.GCPZoneList{}
 
-	datacenter, err := dc.GetDatacenter(dcs, datacenterName)
+	datacenter, err := dc.GetDatacenter(seeds, datacenterName)
 	if err != nil {
 		return nil, errors.NewBadRequest("%v", err)
 	}

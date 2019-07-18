@@ -34,19 +34,42 @@ type datacentersMeta struct {
 	Datacenters map[string]DatacenterMeta `json:"datacenters"`
 }
 
-// LoadDatacentersMeta loads datacenter metadata from the given path.
-func LoadDatacentersMeta(path string) (map[string]DatacenterMeta, error) {
+// LoadDatacenters loads all Datacenters from the given path.
+func LoadSeeds(path string) (map[string]*kubermaticv1.Seed, error) {
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	dcs := datacentersMeta{}
-	if err := yaml.UnmarshalStrict(bytes, &dcs); err != nil {
+	dcMetas := datacentersMeta{}
+	if err := yaml.UnmarshalStrict(bytes, &dcMetas); err != nil {
 		return nil, err
 	}
 
-	return dcs.Datacenters, validateDatacenters(dcs.Datacenters)
+	if err := validateDatacenters(dcMetas.Datacenters); err != nil {
+		return nil, err
+	}
+
+	dcs, err := DatacenterMetasToSeeds(dcMetas.Datacenters)
+	if err != nil {
+		return nil, err
+	}
+
+	return dcs, nil
+}
+
+func LoadSeed(path, datacenterName string) (*kubermaticv1.Seed, error) {
+	seeds, err := LoadSeeds(path)
+	if err != nil {
+		return nil, err
+	}
+
+	datacenter, exists := seeds[datacenterName]
+	if !exists {
+		return nil, fmt.Errorf("Datacenter %q is not in datacenters.yaml", datacenterName)
+	}
+
+	return datacenter, nil
 }
 
 func validateImageList(images kubermaticv1.ImageList) error {
