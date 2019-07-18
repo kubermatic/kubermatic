@@ -48,6 +48,5 @@ groups:
     annotations:
       message: Cluster {{ $labels.name }} has been paused and will not be reconciled until the pause flag is reset.
     expr: label_replace(kubermatic_cluster_info{pause="true"}, "cluster", "$0", "name", ".+")
-    for: 5m
     labels:
       severity: none
