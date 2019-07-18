@@ -104,15 +104,6 @@ func getExternalNetwork(netClient *gophercloud.ServiceClient) (*NetworkWithExter
 	return nil, errNotFound
 }
 
-func securityGroupExistInList(name string, list []ossecuritygroups.SecGroup) bool {
-	for _, gs := range list {
-		if gs.Name == name {
-			return true
-		}
-	}
-	return false
-}
-
 func validateSecurityGroupsExist(netClient *gophercloud.ServiceClient, securityGroups []string) error {
 	for _, sg := range securityGroups {
 		results, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: sg})
