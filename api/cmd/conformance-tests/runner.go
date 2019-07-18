@@ -113,7 +113,6 @@ type testRunner struct {
 	seedClusterClient     ctrlruntimeclient.Client
 	clusterClientProvider clusterclient.UserClusterConnectionProvider
 	seed                  *kubermaticv1.Seed
-	seedDCName            string
 
 	// The label to use to select an existing cluster to test against instead of
 	// creating a new one
@@ -683,7 +682,7 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 
 	params := &projectclient.CreateClusterParams{
 		ProjectID: r.kubermatcProjectID,
-		Dc:        r.seedDCName,
+		Dc:        r.seed.Name,
 		Body:      cluster,
 	}
 	params.SetTimeout(15 * time.Second)
