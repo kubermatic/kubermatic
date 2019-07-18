@@ -19,7 +19,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	providerv1 "github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -133,16 +134,24 @@ func TeardownOpenstackServer() {
 	openstackServer.Close()
 }
 
-func buildOpenstackDatacenterMeta() map[string]provider.DatacenterMeta {
-	return map[string]provider.DatacenterMeta{
-		datacenterName: {
-			Location: "ap-northeast",
-			Country:  "JP",
-			IsSeed:   true,
-			Spec: kubermaticv1.DatacenterSpec{
-				Openstack: &kubermaticv1.DatacenterSpecOpenstack{
-					Region:  region,
-					AuthURL: openstackServer.URL + "/v3/",
+func buildOpenstackDatacenter() map[string]*kubermaticv1.Seed {
+	return map[string]*kubermaticv1.Seed{
+		"my-seed": {
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "my-seed",
+			},
+			Spec: kubermaticv1.SeedSpec{
+				Datacenters: map[string]kubermaticv1.Datacenter{
+					datacenterName: {
+						Location: "ap-northeast",
+						Country:  "JP",
+						Spec: kubermaticv1.DatacenterSpec{
+							Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+								Region:  region,
+								AuthURL: openstackServer.URL + "/v3/",
+							},
+						},
+					},
 				},
 			},
 		},
@@ -278,7 +287,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 			apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
 
 			res := httptest.NewRecorder()
-			router, _, err := test.CreateTestEndpointAndGetClients(apiUser, buildOpenstackDatacenterMeta(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
+			router, _, err := test.CreateTestEndpointAndGetClients(apiUser, buildOpenstackDatacenter(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v\n", err)
 			}

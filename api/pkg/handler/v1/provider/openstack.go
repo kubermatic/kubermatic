@@ -16,7 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func OpenstackSizeEndpoint(providers provider.CloudRegistry, datacenters map[string]provider.DatacenterMeta, credentialManager common.PresetsManager) endpoint.Endpoint {
+func OpenstackSizeEndpoint(providers provider.CloudRegistry, seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -24,9 +24,9 @@ func OpenstackSizeEndpoint(providers provider.CloudRegistry, datacenters map[str
 		}
 
 		datacenterName := req.DatacenterName
-		datacenter, found := datacenters[datacenterName]
-		if !found {
-			return nil, fmt.Errorf("incorrect datacenter name %s", datacenterName)
+		datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
 
 		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
@@ -35,7 +35,7 @@ func OpenstackSizeEndpoint(providers provider.CloudRegistry, datacenters map[str
 	}
 }
 
-func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry, datacenters map[string]provider.DatacenterMeta) endpoint.Endpoint {
+func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -46,16 +46,16 @@ func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider
 		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
 
-		datacenter, found := datacenters[datacenterName]
-		if !found {
-			return nil, fmt.Errorf("incorrect datacenter name %s", datacenterName)
+		datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
 
 		return getOpenstackSizes(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName, datacenter)
 	}
 }
 
-func getOpenstackSizes(providers provider.CloudRegistry, username, passowrd, tenant, tenantID, domain, datacenterName string, datacenter provider.DatacenterMeta) ([]apiv1.OpenstackSize, error) {
+func getOpenstackSizes(providers provider.CloudRegistry, username, passowrd, tenant, tenantID, domain, datacenterName string, datacenter *kubermaticv1.Datacenter) ([]apiv1.OpenstackSize, error) {
 	osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
 	if !ok {
 		return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)

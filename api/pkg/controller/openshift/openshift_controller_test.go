@@ -10,7 +10,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
 
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -93,6 +93,7 @@ func TestResources(t *testing.T) {
 				t.Fatalf("failed to add the autoscaling.k8s.io scheme to mgr: %v", err)
 			}
 
+			tc.reconciler.recorder = &record.FakeRecorder{}
 			tc.reconciler.Client = fake.NewFakeClient(
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
@@ -125,11 +126,17 @@ func TestResources(t *testing.T) {
 					},
 				},
 			)
-			tc.reconciler.dcs = map[string]provider.DatacenterMeta{
-				"alias-europe-west3-c": {},
+			tc.reconciler.seed = &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "alias-europe-west3-c",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					Datacenters: map[string]kubermaticv1.Datacenter{
+						"alias-europe-west3-c": {},
+					},
+				},
 			}
 			tc.reconciler.externalURL = "dev.kubermatic.io"
-			tc.reconciler.dc = "alias-europe-west3-c"
 			tc.reconciler.oidc.CAFile = certLocation
 
 			if _, err := tc.reconciler.Reconcile(reconcile.Request{

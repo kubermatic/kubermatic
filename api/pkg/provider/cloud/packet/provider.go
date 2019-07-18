@@ -12,14 +12,11 @@ const (
 )
 
 type packet struct {
-	dcs map[string]provider.DatacenterMeta
 }
 
 // NewCloudProvider creates a new packet provider.
-func NewCloudProvider(dcs map[string]provider.DatacenterMeta) provider.CloudProvider {
-	return &packet{
-		dcs: dcs,
-	}
+func NewCloudProvider() provider.CloudProvider {
+	return &packet{}
 }
 
 // DefaultCloudSpec adds defaults to the CloudSpec.
@@ -42,15 +39,6 @@ func (p *packet) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 // updates BillingCycle to the defaultBillingCycle, if it is not set.
 func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
-	dc, ok := p.dcs[cluster.Spec.Cloud.DatacenterName]
-	if !ok {
-		return nil, fmt.Errorf("could not find datacenter %s", cluster.Spec.Cloud.DatacenterName)
-	}
-
-	if dc.Spec.Packet == nil {
-		return nil, fmt.Errorf("datacenter %q is not a valid Packet datacenter", cluster.Spec.Cloud.DatacenterName)
-	}
-
 	if cluster.Spec.Cloud.Packet.BillingCycle == "" {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Packet.BillingCycle = defaultBillingCycle

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -43,7 +42,7 @@ type machinecontrollerData interface {
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
 	ClusterIPByServiceName(string) (string, error)
-	DC() *provider.DatacenterMeta
+	DC() *kubermaticv1.Datacenter
 	NodeLocalDNSCacheEnabled() bool
 }
 
