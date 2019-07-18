@@ -151,12 +151,12 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
-		g, err := createKubermaticSecurityGroup(netClient, cluster.Name)
+		secGroupName, err := createKubermaticSecurityGroup(netClient, cluster.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic security group: %v", err)
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.Openstack.SecurityGroups = g.Name
+			cluster.Spec.Cloud.Openstack.SecurityGroups = secGroupName
 			kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
 		})
 		if err != nil {
