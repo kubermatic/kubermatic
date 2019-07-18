@@ -55,15 +55,15 @@ datacenters:
           centos: ""
           coreos: ""
         enforce_floating_ip: true`
-	expectedDatacenters := map[string]*kubermaticv1.SeedDatacenter{
+	expectedSeeds := map[string]*kubermaticv1.Seed{
 		"europe-west3-c": {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "europe-west3-c",
 			},
-			Spec: kubermaticv1.SeedDatacenterSpec{
+			Spec: kubermaticv1.SeedSpec{
 				Location: "Frankfurt",
 				Country:  "DE",
-				NodeLocations: map[string]kubermaticv1.NodeLocation{
+				Datacenters: map[string]kubermaticv1.Datacenter{
 					"do-ams3": {
 						Location: "Amsterdam",
 						Country:  "NL",
@@ -108,12 +108,12 @@ datacenters:
 	err = file.Sync()
 	assert.NoError(t, err)
 
-	resultDatacenters, err := LoadDatacenters(file.Name())
+	resultDatacenters, err := LoadSeeds(file.Name())
 	if err != nil {
 		t.Fatalf("failed to load datacenters: %v", err)
 	}
 
-	assert.Equal(t, expectedDatacenters, resultDatacenters)
+	assert.Equal(t, expectedSeeds, resultDatacenters)
 }
 
 func TestValidateDataCenters(t *testing.T) {

@@ -112,7 +112,7 @@ func GetUser(email, id, name string, admin bool) apiv1.User {
 // this function is temporal until all types end up in their own packages.
 // it is meant to be used by legacy handler.createTestEndpointAndGetClients function
 type newRoutingFunc func(
-	dcs map[string]*kubermaticv1.SeedDatacenter,
+	seeds map[string]*kubermaticv1.Seed,
 	newClusterProviders map[string]provider.ClusterProvider,
 	cloudProviders map[string]provider.CloudProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
@@ -133,11 +133,11 @@ type newRoutingFunc func(
 	eventRecorderProvider provider.EventRecorderProvider,
 	credentialManager common.PresetsManager) http.Handler
 
-func initTestEndpoint(user apiv1.User, dcs map[string]*kubermaticv1.SeedDatacenter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, credentialsManager common.PresetsManager, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
-	if dcs == nil {
-		dcs = buildDatacenters()
+func initTestEndpoint(user apiv1.User, seeds map[string]*kubermaticv1.Seed, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, credentialsManager common.PresetsManager, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+	if seeds == nil {
+		seeds = buildSeeds()
 	}
-	cloudProviders := cloud.Providers(dcs)
+	cloudProviders := cloud.Providers(seeds)
 
 	fakeClient := fakectrlruntimeclient.NewFakeClient(append(kubeObjects, machineObjects...)...)
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
@@ -225,7 +225,7 @@ func initTestEndpoint(user apiv1.User, dcs map[string]*kubermaticv1.SeedDatacent
 	var prometheusClient prometheusapi.Client
 
 	mainRouter := routingFunc(
-		dcs,
+		seeds,
 		clusterProviders,
 		cloudProviders,
 		sshKeyProvider,
@@ -251,7 +251,7 @@ func initTestEndpoint(user apiv1.User, dcs map[string]*kubermaticv1.SeedDatacent
 }
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
-func CreateTestEndpointAndGetClients(user apiv1.User, dcs map[string]*kubermaticv1.SeedDatacenter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+func CreateTestEndpointAndGetClients(user apiv1.User, seeds map[string]*kubermaticv1.Seed, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	credentialManager := presets.New()
 	credentialManager.GetPresets().Fake = presets.Fake{Credentials: []presets.FakeCredentials{
 		{Name: TestFakeCredential, Token: "dummy_pluton_token"},
@@ -259,7 +259,7 @@ func CreateTestEndpointAndGetClients(user apiv1.User, dcs map[string]*kubermatic
 	credentialManager.GetPresets().Openstack = presets.Openstack{Credentials: []presets.OpenstackCredentials{
 		{Name: TestOSCredential, Username: TestOSuserName, Password: TestOSuserPass, Domain: TestOSdomain},
 	}}
-	return initTestEndpoint(user, dcs, kubeObjects, machineObjects, kubermaticObjects, versions, updates, credentialManager, routingFunc)
+	return initTestEndpoint(user, seeds, kubeObjects, machineObjects, kubermaticObjects, versions, updates, credentialManager, routingFunc)
 }
 
 func CreateCredentialTestEndpoint(credentialsManager common.PresetsManager, routingFunc newRoutingFunc) (http.Handler, error) {
@@ -274,16 +274,16 @@ func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 	return router, err
 }
 
-func buildDatacenters() map[string]*kubermaticv1.SeedDatacenter {
-	return map[string]*kubermaticv1.SeedDatacenter{
+func buildSeeds() map[string]*kubermaticv1.Seed {
+	return map[string]*kubermaticv1.Seed{
 		"us-central1": {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "us-central1",
 			},
-			Spec: kubermaticv1.SeedDatacenterSpec{
+			Spec: kubermaticv1.SeedSpec{
 				Location: "us-central",
 				Country:  "US",
-				NodeLocations: map[string]kubermaticv1.NodeLocation{
+				Datacenters: map[string]kubermaticv1.Datacenter{
 					"private-do1": {
 						Country:  "NL",
 						Location: "US ",

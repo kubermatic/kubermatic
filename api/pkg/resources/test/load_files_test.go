@@ -161,7 +161,7 @@ func TestLoadFiles(t *testing.T) {
 		},
 	}
 
-	dc := &kubermaticv1.NodeLocation{
+	dc := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
 			Azure: &kubermaticv1.DatacenterSpecAzure{
 				Location: "az-location",
@@ -663,7 +663,7 @@ func verifyContainerResources(owner string, podTemplateSpec corev1.PodTemplateSp
 type Data struct {
 	Cluster    *kubermaticv1.Cluster
 	Node       *apiv1.Node
-	Datacenter *kubermaticv1.NodeLocation
+	Datacenter *kubermaticv1.Datacenter
 	Name       string
 	Keys       []*kubermaticv1.UserSSHKey
 }
@@ -720,7 +720,7 @@ func TestExecute(t *testing.T) {
 					},
 					Status: apiv1.NodeStatus{},
 				},
-				Datacenter: &kubermaticv1.NodeLocation{
+				Datacenter: &kubermaticv1.Datacenter{
 					Location: "Frankfurt",
 					Country:  "DE",
 					Spec: kubermaticv1.DatacenterSpec{
@@ -799,7 +799,7 @@ func TestExecute(t *testing.T) {
 					},
 					Status: apiv1.NodeStatus{},
 				},
-				Datacenter: &kubermaticv1.NodeLocation{
+				Datacenter: &kubermaticv1.Datacenter{
 					Location: "Frankfurt",
 					Country:  "DE",
 					Spec: kubermaticv1.DatacenterSpec{
@@ -893,7 +893,7 @@ func TestExecute(t *testing.T) {
 					},
 					Status: apiv1.NodeStatus{},
 				},
-				Datacenter: &kubermaticv1.NodeLocation{
+				Datacenter: &kubermaticv1.Datacenter{
 					Location: "Frankfurt",
 					Country:  "DE",
 					Spec: kubermaticv1.DatacenterSpec{
@@ -972,7 +972,7 @@ func TestExecute(t *testing.T) {
 					},
 					Status: apiv1.NodeStatus{},
 				},
-				Datacenter: &kubermaticv1.NodeLocation{
+				Datacenter: &kubermaticv1.Datacenter{
 					Location: "westeurope",
 					Country:  "NL",
 					Spec: kubermaticv1.DatacenterSpec{
@@ -1036,7 +1036,7 @@ func TestExecute(t *testing.T) {
 					},
 					Status: apiv1.NodeStatus{},
 				},
-				Datacenter: &kubermaticv1.NodeLocation{
+				Datacenter: &kubermaticv1.Datacenter{
 					Location: "Frankfurt",
 					Country:  "DE",
 					Spec: kubermaticv1.DatacenterSpec{
@@ -1103,7 +1103,7 @@ func TestExecute(t *testing.T) {
 					},
 					Status: apiv1.NodeStatus{},
 				},
-				Datacenter: &kubermaticv1.NodeLocation{
+				Datacenter: &kubermaticv1.Datacenter{
 					Location: "Frankfurt",
 					Country:  "DE",
 					Spec: kubermaticv1.DatacenterSpec{

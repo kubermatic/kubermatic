@@ -169,11 +169,11 @@ func TestSyncClusterAddress(t *testing.T) {
 			lbService.Namespace = fakeClusterNamespaceName
 			client := fakectrlruntimeclient.NewFakeClient(apiserverService, lbService)
 
-			seed := &kubermaticv1.SeedDatacenter{
+			seed := &kubermaticv1.Seed{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: fakeDCName,
 				},
-				Spec: kubermaticv1.SeedDatacenterSpec{
+				Spec: kubermaticv1.SeedSpec{
 					SeedDNSOverwrite: &tc.seedDNSOverwrite,
 				},
 			}

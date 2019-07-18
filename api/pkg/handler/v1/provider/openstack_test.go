@@ -134,14 +134,14 @@ func TeardownOpenstackServer() {
 	openstackServer.Close()
 }
 
-func buildOpenstackDatacenter() map[string]*kubermaticv1.SeedDatacenter {
-	return map[string]*kubermaticv1.SeedDatacenter{
+func buildOpenstackDatacenter() map[string]*kubermaticv1.Seed {
+	return map[string]*kubermaticv1.Seed{
 		"my-seed": {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-seed",
 			},
-			Spec: kubermaticv1.SeedDatacenterSpec{
-				NodeLocations: map[string]kubermaticv1.NodeLocation{
+			Spec: kubermaticv1.SeedSpec{
+				Datacenters: map[string]kubermaticv1.Datacenter{
 					datacenterName: {
 						Location: "ap-northeast",
 						Country:  "JP",

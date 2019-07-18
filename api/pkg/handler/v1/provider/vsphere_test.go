@@ -73,14 +73,14 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 	test.CompareWithResult(t, res, `[{"name":"VM Network"}]`)
 }
 
-func (v *vSphereMock) buildVSphereDatacenter() map[string]*kubermaticv1.SeedDatacenter {
-	return map[string]*kubermaticv1.SeedDatacenter{
+func (v *vSphereMock) buildVSphereDatacenter() map[string]*kubermaticv1.Seed {
+	return map[string]*kubermaticv1.Seed{
 		"my-seed": {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "my-seed",
 			},
-			Spec: kubermaticv1.SeedDatacenterSpec{
-				NodeLocations: map[string]kubermaticv1.NodeLocation{
+			Spec: kubermaticv1.SeedSpec{
+				Datacenters: map[string]kubermaticv1.Datacenter{
 					vSphereDatacenterName: {
 						Location: "Dark Side",
 						Country:  "Moon States",
