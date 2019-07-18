@@ -1624,6 +1624,61 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig": {
+      "get": {
+        "produces": [
+          "application/yaml"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Gets the kubeconfig for the specified cluster with oidc authentication.",
+        "operationId": "getOidcClusterKubeconfig",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kubeconfig",
+            "schema": {
+              "$ref": "#/definitions/Kubeconfig"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/azure/sizes": {
       "get": {
         "description": "Lists available VM sizes in an Azure region",
@@ -4432,6 +4487,9 @@
           },
           "x-go-name": "MachineNetworks"
         },
+        "oidc": {
+          "$ref": "#/definitions/OIDCSettings"
+        },
         "version": {
           "$ref": "#/definitions/Semver"
         }
@@ -5611,6 +5669,40 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "OIDCSettings": {
+      "type": "object",
+      "properties": {
+        "clientId": {
+          "type": "string",
+          "x-go-name": "ClientID"
+        },
+        "clientSecret": {
+          "type": "string",
+          "x-go-name": "ClientSecret"
+        },
+        "extraScopes": {
+          "type": "string",
+          "x-go-name": "ExtraScopes"
+        },
+        "groupsClaim": {
+          "type": "string",
+          "x-go-name": "GroupsClaim"
+        },
+        "issuerUrl": {
+          "type": "string",
+          "x-go-name": "IssuerURL"
+        },
+        "requiredClaim": {
+          "type": "string",
+          "x-go-name": "RequiredClaim"
+        },
+        "usernameClaim": {
+          "type": "string",
+          "x-go-name": "UsernameClaim"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "ObjectMeta": {
       "description": "ObjectMeta defines the set of fields that objects returned from the API have",

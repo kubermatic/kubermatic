@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nodeport-proxy
+data:
+  envoy.yaml: |
+    dynamic_resources:
+      lds_config:
+        api_config_source:
+          api_type: GRPC
+          grpc_services:
+          - envoy_grpc:
+              cluster_name: xds_cluster
+      cds_config:
+        api_config_source:
+          api_type: GRPC
+          grpc_services:
+          - envoy_grpc:
+              cluster_name: xds_cluster
+    static_resources:
+      clusters:
+      - name: xds_cluster
+        connect_timeout: { seconds: 5 }
+        type: STRICT_DNS
+        load_assignment:
+          cluster_name: xds_cluster
+          endpoints:
+          - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: 127.0.0.1
+                    port_value: 8001
+        lb_policy: ROUND_ROBIN
+        http2_protocol_options: {}
+        circuit_breakers:
+          thresholds:
+          - priority: high
+            max_connections: 100000
+            max_pending_requests: 100000
+            max_requests: 60000000
+            max_retries: 50
+          - priority: default
+            max_connections: 100000
+            max_pending_requests: 100000
+            max_requests: 60000000
+            max_retries: 50
+      - name: statsd
+        connect_timeout: "0.25s"
+        type: STRICT_DNS
+        lb_policy: ROUND_ROBIN
+        load_assignment:
+          cluster_name: statsd
+          endpoints:
+          - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: 127.0.0.1
+                    port_value: 9125
+      listeners:
+    admin:
+      access_log_path: /dev/null
+      address:
+        socket_address:
+          address: 127.0.0.1
+          port_value: 9001
+    stats_sinks:
+    - name: envoy.statsd
+      config:
+        tcp_cluster_name: statsd
+        prefix: front-envoy

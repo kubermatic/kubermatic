@@ -14,6 +14,7 @@ func Spec(apiCluster apiv1.Cluster, cloudProviders map[string]provider.CloudProv
 		HumanReadableName: apiCluster.Name,
 		Cloud:             apiCluster.Spec.Cloud,
 		MachineNetworks:   apiCluster.Spec.MachineNetworks,
+		OIDC:              apiCluster.Spec.OIDC,
 		Version:           apiCluster.Spec.Version,
 	}
 

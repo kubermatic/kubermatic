@@ -53,6 +53,7 @@ func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlrun
 				"datacenter",
 				"user_name",
 				"user_email",
+				"pause",
 			},
 			nil,
 		),
@@ -117,6 +118,11 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		return nil, err
 	}
 
+	pause := "false"
+	if cluster.Spec.Pause {
+		pause = "true"
+	}
+
 	return []string{
 		cluster.Name,
 		cluster.Spec.HumanReadableName,
@@ -126,5 +132,6 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		cluster.Spec.Cloud.DatacenterName,
 		cluster.Status.UserName,
 		cluster.Status.UserEmail,
+		pause,
 	}, nil
 }
