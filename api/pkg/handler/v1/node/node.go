@@ -822,6 +822,11 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 	nodeStatus.ErrorReason = strings.TrimSuffix(nodeStatus.ErrorReason, errGlue)
 	nodeStatus.ErrorMessage = strings.TrimSuffix(nodeStatus.ErrorMessage, errGlue)
 
+	sshUserName, err := machineconversions.GetSSHUserName(operatingSystemSpec, cloudSpec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ssh login name: %v", err)
+	}
+
 	return &apiv1.Node{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                machine.Name,
@@ -835,6 +840,7 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 			},
 			OperatingSystem: *operatingSystemSpec,
 			Cloud:           *cloudSpec,
+			SSHUserName:     sshUserName,
 		},
 		Status: nodeStatus,
 	}, nil

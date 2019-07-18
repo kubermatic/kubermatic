@@ -5575,6 +5575,10 @@
         "operatingSystem": {
           "$ref": "#/definitions/OperatingSystemSpec"
         },
+        "sshUserName": {
+          "type": "string",
+          "x-go-name": "SSHUserName"
+        },
         "taints": {
           "description": "List of taints to set on new nodes",
           "type": "array",
