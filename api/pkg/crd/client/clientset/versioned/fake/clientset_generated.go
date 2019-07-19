@@ -6,6 +6,8 @@ import (
 	clientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	fakekubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1/fake"
+	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/operator/v1alpha1"
+	fakeoperatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/operator/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -63,4 +65,14 @@ func (c *Clientset) KubermaticV1() kubermaticv1.KubermaticV1Interface {
 // Kubermatic retrieves the KubermaticV1Client
 func (c *Clientset) Kubermatic() kubermaticv1.KubermaticV1Interface {
 	return &fakekubermaticv1.FakeKubermaticV1{Fake: &c.Fake}
+}
+
+// OperatorV1alpha1 retrieves the OperatorV1alpha1Client
+func (c *Clientset) OperatorV1alpha1() operatorv1alpha1.OperatorV1alpha1Interface {
+	return &fakeoperatorv1alpha1.FakeOperatorV1alpha1{Fake: &c.Fake}
+}
+
+// Operator retrieves the OperatorV1alpha1Client
+func (c *Clientset) Operator() operatorv1alpha1.OperatorV1alpha1Interface {
+	return &fakeoperatorv1alpha1.FakeOperatorV1alpha1{Fake: &c.Fake}
 }

@@ -76,7 +76,7 @@ spec:
     tokenIssuer: "https://<domain>/dex"
     clientID: kubermatic
     issuerRedirectURL: "https://<domain>/api/v1/kubeconfig"
-    issuerClientID: "kubermaticIssuer"
+    issuerClientID: "<clientID>Issuer"
 
   # Feature gates are structs instead of simple booleans to make
   # extending individual features with additional fields easier.
