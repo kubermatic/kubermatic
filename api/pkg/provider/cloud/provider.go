@@ -58,3 +58,10 @@ func OpenstackProvider(datacenter *kubermaticv1.Datacenter) (*openstack.Provider
 	}
 	return openstack.NewCloudProvider(datacenter), nil
 }
+
+func VSphereProvider(datacenter *kubermaticv1.Datacenter) (*vsphere.Provider, error) {
+	if datacenter.Spec.VSphere == nil {
+		return nil, errors.New("datacenter is not a vSphere datacenter")
+	}
+	return vsphere.NewCloudProvider(datacenter), nil
+}
