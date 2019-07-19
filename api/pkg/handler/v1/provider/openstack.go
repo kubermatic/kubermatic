@@ -17,7 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func OpenstackSizeEndpoint(dcGetter provider.DatacenterGetter, credentialManager common.PresetsManager) endpoint.Endpoint {
+func OpenstackSizeEndpoint(seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -25,7 +25,7 @@ func OpenstackSizeEndpoint(dcGetter provider.DatacenterGetter, credentialManager
 		}
 
 		datacenterName := req.DatacenterName
-		datacenter, err := dcGetter(datacenterName)
+		datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
@@ -117,7 +117,7 @@ func OpenstackTenantEndpoint(seeds map[string]*kubermaticv1.Seed, credentialMana
 	}
 }
 
-func OpenstackTenantNoCredentialsEndpoint(seeds map[string]*kubermaticv1.Seed, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func OpenstackTenantNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -175,7 +175,7 @@ func OpenstackNetworkEndpoint(seeds map[string]*kubermaticv1.Seed, credentialMan
 	}
 }
 
-func OpenstackNetworkNoCredentialsEndpoint(seeds map[string]*kubermaticv1.Seed, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func OpenstackNetworkNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -236,7 +236,7 @@ func OpenstackSecurityGroupEndpoint(seeds map[string]*kubermaticv1.Seed, credent
 	}
 }
 
-func OpenstackSecurityGroupNoCredentialsEndpoint(seeds map[string]*kubermaticv1.Seed, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func OpenstackSecurityGroupNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -296,7 +296,7 @@ func OpenstackSubnetsEndpoint(seeds map[string]*kubermaticv1.Seed, credentialMan
 	}
 }
 
-func OpenstackSubnetsNoCredentialsEndpoint(seeds map[string]*kubermaticv1.Seed, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func OpenstackSubnetsNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackSubnetNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)

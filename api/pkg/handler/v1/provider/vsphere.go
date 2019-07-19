@@ -40,7 +40,7 @@ func VsphereNetworksEndpoint(seeds map[string]*kubermaticv1.Seed, credentialMana
 	}
 }
 
-func VsphereNetworksNoCredentialsEndpoint(seeds map[string]*kubermaticv1.Seed, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func VsphereNetworksNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(VSphereNetworksNoCredentialsReq)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)

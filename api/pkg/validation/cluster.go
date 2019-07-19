@@ -8,6 +8,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 )
@@ -29,7 +30,7 @@ func ValidateKubernetesToken(token string) error {
 }
 
 // ValidateCreateClusterSpec validates the given cluster spec
-func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders map[string]provider.CloudProvider, dc *kubermaticv1.Datacenter) error {
+func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider) error {
 	if spec.HumanReadableName == "" {
 		return errors.New("no name specified")
 	}
@@ -38,25 +39,15 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders ma
 		return fmt.Errorf("invalid cloud spec: %v", err)
 	}
 
-	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
-	if err != nil {
-		return fmt.Errorf("invalid cloud spec: %v", err)
-	}
-
-	cloudProvider, exists := cloudProviders[providerName]
-	if !exists {
-		return fmt.Errorf("invalid cloud provider '%s' specified: %v", err, providerName)
-	}
-
 	if spec.Version.Semver() == nil || spec.Version.String() == "" {
 		return errors.New(`invalid cloud spec "Version" is required but was not specified`)
 	}
 
-	if err = cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
+	if err := cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
 		return fmt.Errorf("invalid cloud spec: %v", err)
 	}
 
-	if err = validateMachineNetworksFromClusterSpec(spec); err != nil {
+	if err := validateMachineNetworksFromClusterSpec(spec); err != nil {
 		return fmt.Errorf("machine network validation failed, see: %v", err)
 	}
 
@@ -140,7 +131,7 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 }
 
 // ValidateUpdateCluster validates if the cluster update is allowed
-func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudProviders map[string]provider.CloudProvider, dc *kubermaticv1.Datacenter) error {
+func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter) error {
 	if err := ValidateCloudChange(newCluster.Spec.Cloud, oldCluster.Spec.Cloud); err != nil {
 		return err
 	}
@@ -189,9 +180,9 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 		return fmt.Errorf("changing to a different provider is not allowed")
 	}
 
-	cloudProvider, exists := cloudProviders[providerName]
-	if !exists {
-		return fmt.Errorf("invalid cloud provider '%s' specified: %v", err, providerName)
+	cloudProvider := cloud.Provider(dc)
+	if cloudProvider == nil {
+		return fmt.Errorf("invalid cloud provider %q specified", providerName)
 	}
 
 	if err := cloudProvider.ValidateCloudSpec(newCluster.Spec.Cloud); err != nil {

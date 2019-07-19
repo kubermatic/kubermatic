@@ -131,7 +131,6 @@ type providers struct {
 	privilegedProject                     provider.PrivilegedProjectProvider
 	projectMember                         provider.ProjectMemberProvider
 	memberMapper                          provider.ProjectMemberMapper
-	cloud                                 provider.CloudRegistry
 	eventRecorderProvider                 provider.EventRecorderProvider
 	clusters                              map[string]provider.ClusterProvider
 	seeds                                 map[string]*kubermaticv1.Seed

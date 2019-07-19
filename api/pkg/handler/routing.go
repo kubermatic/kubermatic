@@ -30,7 +30,6 @@ type UpdateManager interface {
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
 	seeds                       map[string]*kubermaticv1.Seed
-	cloudProviders              provider.CloudRegistry
 	sshKeyProvider              provider.SSHKeyProvider
 	userProvider                provider.UserProvider
 	serviceAccountProvider      provider.ServiceAccountProvider
@@ -57,7 +56,6 @@ type Routing struct {
 func NewRouting(
 	seeds map[string]*kubermaticv1.Seed,
 	newClusterProviders map[string]provider.ClusterProvider,
-	cloudProviders map[string]provider.CloudProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
@@ -86,7 +84,6 @@ func NewRouting(
 		serviceAccountTokenProvider: serviceAccountTokenProvider,
 		projectProvider:             projectProvider,
 		privilegedProjectProvider:   privilegedProject,
-		cloudProviders:              cloudProviders,
 		logger:                      log.NewLogfmtLogger(os.Stderr),
 		oidcIssuerVerifier:          oidcIssuerVerifier,
 		tokenVerifiers:              tokenVerifiers,

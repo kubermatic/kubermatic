@@ -10,18 +10,7 @@ import (
 // DefaultCreateClusterSpec defalts the cluster spec when creating a new cluster
 func DefaultCreateClusterSpec(
 	spec *kubermaticv1.ClusterSpec,
-	cloudProviders map[string]provider.CloudProvider) error {
-
-	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
-	if err != nil {
-		return fmt.Errorf("invalid cloud spec: %v", err)
-	}
-	cloudProvider, exists := cloudProviders[providerName]
-	if !exists {
-		// Validation happens further down the chain so we just
-		// return here
-		return nil
-	}
+	cloudProvider provider.CloudProvider) error {
 
 	if err := cloudProvider.DefaultCloudSpec(&spec.Cloud); err != nil {
 		return fmt.Errorf("failed to default cloud spec: %v", err)
