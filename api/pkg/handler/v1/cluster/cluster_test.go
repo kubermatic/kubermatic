@@ -659,7 +659,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 1
 		{
 			Name:                   "scenario 1: a cluster with invalid spec is rejected",
-			Body:                   `{"cluster":{"name":"keen-snyder","spec":{"cloud":{"digitalocean":{"token":"dummy_token"},"dc":"us-central1"}, "version":""}}}`,
+			Body:                   `{"cluster":{"name":"keen-snyder","spec":{"cloud":{"fake":{"token":"dummy_token"},"dc":"us-central1"}, "version":""}}}`,
 			ExpectedResponse:       `{"error":{"code":400,"message":"invalid cluster: invalid cloud spec \"Version\" is required but was not specified"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),

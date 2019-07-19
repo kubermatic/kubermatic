@@ -66,7 +66,7 @@ func VsphereNetworksNoCredentialsEndpoint(projectProvider provider.ProjectProvid
 func getVsphereNetworks(seeds map[string]*kubermaticv1.Seed, username, password, datacenterName string) ([]apiv1.VSphereNetwork, error) {
 	datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find Datacenter %q: %v", err)
+		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
 	vsProvider, err := cloud.VSphereProvider(datacenter)
 	if err != nil {

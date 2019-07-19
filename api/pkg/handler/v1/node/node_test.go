@@ -63,8 +63,8 @@ func TestDeleteNodeForCluster(t *testing.T) {
 				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
 			},
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				genTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
-				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("mars", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 			},
 			//
 			// even though the machine object was deleted the associated node object was not. When the client GETs the previously deleted "node" it will get a valid response.
@@ -150,8 +150,8 @@ func TestListNodesForCluster(t *testing.T) {
 				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
 			},
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				genTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
-				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus", `{"cloudProvider":"fake","cloudProviderSpec":{},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("mars", `{"cloudProvider":"fake","cloudProviderSpec":{}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 			},
 			ExpectedResponse: []apiv1.Node{
 				{
@@ -161,9 +161,7 @@ func TestListNodesForCluster(t *testing.T) {
 					},
 					Spec: apiv1.NodeSpec{
 						Cloud: apiv1.NodeCloudSpec{
-							Digitalocean: &apiv1.DigitaloceanNodeSpec{
-								Size: "2GB",
-							},
+							Fake: &apiv1.FakeNodeSpec{},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
 							Ubuntu: &apiv1.UbuntuSpec{
@@ -193,12 +191,7 @@ func TestListNodesForCluster(t *testing.T) {
 					},
 					Spec: apiv1.NodeSpec{
 						Cloud: apiv1.NodeCloudSpec{
-							AWS: &apiv1.AWSNodeSpec{
-								InstanceType:     "t2.micro",
-								VolumeSize:       50,
-								AvailabilityZone: "eu-central-1a",
-								SubnetID:         "subnet-2bff4f43",
-							},
+							Fake: &apiv1.FakeNodeSpec{},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
 							Ubuntu: &apiv1.UbuntuSpec{
@@ -236,8 +229,8 @@ func TestListNodesForCluster(t *testing.T) {
 				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
 			},
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				genTestMachine("venus", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, []metav1.OwnerReference{{APIVersion: "", Kind: "", Name: "", UID: ""}}),
-				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, []metav1.OwnerReference{{APIVersion: "", Kind: "", Name: "", UID: ""}}),
+				genTestMachine("mars", `{"cloudProvider":"fake","cloudProviderSpec":{}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 			},
 			ExpectedResponse: []apiv1.Node{
 				{
@@ -247,12 +240,7 @@ func TestListNodesForCluster(t *testing.T) {
 					},
 					Spec: apiv1.NodeSpec{
 						Cloud: apiv1.NodeCloudSpec{
-							AWS: &apiv1.AWSNodeSpec{
-								InstanceType:     "t2.micro",
-								VolumeSize:       50,
-								AvailabilityZone: "eu-central-1a",
-								SubnetID:         "subnet-2bff4f43",
-							},
+							Fake: &apiv1.FakeNodeSpec{},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
 							Ubuntu: &apiv1.UbuntuSpec{
@@ -332,7 +320,7 @@ func TestGetNodeForCluster(t *testing.T) {
 		// scenario 1
 		{
 			Name:                   "scenario 1: get a node that belongs to the given cluster",
-			ExpectedResponse:       `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":null}},"operatingSystem":{},"versions":{"kubelet":"v9.9.9"}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
+			ExpectedResponse:       `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"fake":{"exists":false}},"operatingSystem":{},"versions":{"kubelet":"v9.9.9"}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
 			HTTPStatus:             http.StatusOK,
 			NodeIDToSync:           "venus",
 			ClusterIDToSync:        test.GenDefaultCluster().Name,
@@ -340,7 +328,7 @@ func TestGetNodeForCluster(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExistingNodes:          []*corev1.Node{{ObjectMeta: metav1.ObjectMeta{Name: "venus"}}},
-			ExistingMachines:       []*clusterv1alpha1.Machine{genTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil)},
+			ExistingMachines:       []*clusterv1alpha1.Machine{genTestMachine("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil)},
 		},
 	}
 
@@ -392,7 +380,7 @@ func TestCreateNodeForClusterIsDeprecated(t *testing.T) {
 		// scenario 1
 		{
 			Name:                               "scenario 1: create a node that match the given spec",
-			Body:                               `{"spec":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}`,
+			Body:                               `{"spec":{"cloud":{"fake":{}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}`,
 			ExpectedResponse:                   `{"error":{"code":400,"message":"Creating Nodes is deprecated. Please create a Node Deployment instead","details":["If you are calling this API endpoint directly then use POST \"v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments\" instead"]}}`,
 			HTTPStatus:                         http.StatusBadRequest,
 			RewriteClusterNameAndNamespaceName: true,
@@ -405,7 +393,7 @@ func TestCreateNodeForClusterIsDeprecated(t *testing.T) {
 		// scenario 2
 		{
 			Name:                               "scenario 2: cluster components are not ready",
-			Body:                               `{"spec":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}`,
+			Body:                               `{"spec":{"cloud":{"fake":{}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}`,
 			ExpectedResponse:                   `{"error":{"code":400,"message":"Creating Nodes is deprecated. Please create a Node Deployment instead","details":["If you are calling this API endpoint directly then use POST \"v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments\" instead"]}}`,
 			HTTPStatus:                         http.StatusBadRequest,
 			RewriteClusterNameAndNamespaceName: true,
@@ -470,8 +458,8 @@ func TestCreateNodeDeployment(t *testing.T) {
 		// scenario 1
 		{
 			Name:                   "scenario 1: create a node deployment that match the given spec",
-			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}}`,
-			ExpectedResponse:       `{"name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"}},"paused":false},"status":{}}`,
+			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"fake":{}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}}`,
+			ExpectedResponse:       `{"name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"fake":{"exists":false}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"}},"paused":false},"status":{}}`,
 			HTTPStatus:             http.StatusCreated,
 			ProjectID:              test.GenDefaultProject().Name,
 			ClusterID:              test.GenDefaultCluster().Name,
@@ -482,7 +470,7 @@ func TestCreateNodeDeployment(t *testing.T) {
 		// scenario 2
 		{
 			Name:                   "scenario 2: cluster components are not ready",
-			Body:                   `{"spec":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}`,
+			Body:                   `{"spec":{"cloud":{"fake":{}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}`,
 			ExpectedResponse:       `{"error":{"code":503,"message":"Cluster components are not ready yet"}}`,
 			HTTPStatus:             http.StatusServiceUnavailable,
 			ProjectID:              test.GenDefaultProject().Name,
@@ -494,7 +482,7 @@ func TestCreateNodeDeployment(t *testing.T) {
 		// scenario 3
 		{
 			Name:                   "scenario 3: kubelet version is too old",
-			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.6.0"}}}}`,
+			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"fake":{}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.6.0"}}}}`,
 			ExpectedResponse:       `{"error":{"code":400,"message":"node deployment validation failed: kubelet version 9.6.0 is not compatible with control plane version 9.9.9"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ProjectID:              test.GenDefaultProject().Name,
@@ -506,7 +494,7 @@ func TestCreateNodeDeployment(t *testing.T) {
 		// scenario 4
 		{
 			Name:                   "scenario 4: kubelet version is too new",
-			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.10.0"}}}}`,
+			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"fake":{}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.10.0"}}}}`,
 			ExpectedResponse:       `{"error":{"code":400,"message":"node deployment validation failed: kubelet version 9.10.0 is not compatible with control plane version 9.9.9"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ProjectID:              test.GenDefaultProject().Name,
@@ -518,8 +506,8 @@ func TestCreateNodeDeployment(t *testing.T) {
 		// scenario 5
 		{
 			Name:                   "scenario 5: set taints",
-			Body:                   `{"spec":{"replicas":1,"template":{"taints": [{"key":"foo","value":"bar","effect":"NoExecute"}],"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"}}}}`,
-			ExpectedResponse:       `{"name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"},"taints":[{"key":"foo","value":"bar","effect":"NoExecute"}]},"paused":false},"status":{}}`,
+			Body:                   `{"spec":{"replicas":1,"template":{"taints": [{"key":"foo","value":"bar","effect":"NoExecute"}],"cloud":{"fake":{}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"}}}}`,
+			ExpectedResponse:       `{"name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"fake":{"exists":false}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"},"taints":[{"key":"foo","value":"bar","effect":"NoExecute"}]},"paused":false},"status":{}}`,
 			HTTPStatus:             http.StatusCreated,
 			ProjectID:              test.GenDefaultProject().Name,
 			ClusterID:              test.GenDefaultCluster().Name,
@@ -530,7 +518,7 @@ func TestCreateNodeDeployment(t *testing.T) {
 		// scenario 6
 		{
 			Name:                   "scenario 6: invalid taint",
-			Body:                   `{"spec":{"replicas":1,"template":{"taints": [{"key":"foo","value":"bar","effect":"BAD_EFFECT"}],"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"}}}}`,
+			Body:                   `{"spec":{"replicas":1,"template":{"taints": [{"key":"foo","value":"bar","effect":"BAD_EFFECT"}],"cloud":{"fake":{}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"}}}}`,
 			ExpectedResponse:       `{"error":{"code":400,"message":"node deployment validation failed: taint effect 'BAD_EFFECT' not allowed. Allowed: NoExecute, NoSchedule, PreferNoSchedule"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ProjectID:              test.GenDefaultProject().Name,
@@ -601,8 +589,8 @@ func TestListNodeDeployments(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
-				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
-				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil),
+				genTestMachineDeployment("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
+				genTestMachineDeployment("mars", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil),
 			},
 			ExpectedResponse: []apiv1.NodeDeployment{
 				{
@@ -613,9 +601,7 @@ func TestListNodeDeployments(t *testing.T) {
 					Spec: apiv1.NodeDeploymentSpec{
 						Template: apiv1.NodeSpec{
 							Cloud: apiv1.NodeCloudSpec{
-								Digitalocean: &apiv1.DigitaloceanNodeSpec{
-									Size: "2GB",
-								},
+								Fake: &apiv1.FakeNodeSpec{},
 							},
 							OperatingSystem: apiv1.OperatingSystemSpec{
 								Ubuntu: &apiv1.UbuntuSpec{
@@ -639,12 +625,7 @@ func TestListNodeDeployments(t *testing.T) {
 					Spec: apiv1.NodeDeploymentSpec{
 						Template: apiv1.NodeSpec{
 							Cloud: apiv1.NodeCloudSpec{
-								AWS: &apiv1.AWSNodeSpec{
-									InstanceType:     "t2.micro",
-									VolumeSize:       50,
-									AvailabilityZone: "eu-central-1a",
-									SubnetID:         "subnet-2bff4f43",
-								},
+								Fake: &apiv1.FakeNodeSpec{},
 							},
 							OperatingSystem: apiv1.OperatingSystemSpec{
 								Ubuntu: &apiv1.UbuntuSpec{
@@ -724,7 +705,7 @@ func TestGetNodeDeployment(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
-				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
+				genTestMachineDeployment("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
 			},
 			ExpectedResponse: apiv1.NodeDeployment{
 				ObjectMeta: apiv1.ObjectMeta{
@@ -734,9 +715,7 @@ func TestGetNodeDeployment(t *testing.T) {
 				Spec: apiv1.NodeDeploymentSpec{
 					Template: apiv1.NodeSpec{
 						Cloud: apiv1.NodeCloudSpec{
-							Digitalocean: &apiv1.DigitaloceanNodeSpec{
-								Size: "2GB",
-							},
+							Fake: &apiv1.FakeNodeSpec{},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
 							Ubuntu: &apiv1.UbuntuSpec{
@@ -815,13 +794,13 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
-				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}),
-				genTestMachineDeployment("mars", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
+				genTestMachineDeployment("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}),
+				genTestMachineDeployment("mars", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
 			},
 			NodeDeploymentID: "venus",
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
-				genTestMachine("venus-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil),
+				genTestMachine("venus-1", `{"cloudProvider":"fake","cloudProviderSpec":{},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus-2", `{"cloudProvider":"fake","cloudProviderSpec":{},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil),
 				// TODO @alvaroaleman: Have to deactivate these because the ctrlruntimefakeclient doesn't have a release where a LabelSelector is supported yet
 				// This is already done in https://github.com/kubernetes-sigs/controller-runtime/pull/311 but we have to wait for that release
 				//				genTestMachine("mars-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "345", "xyz": "abc"}, nil),
@@ -835,9 +814,7 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 					},
 					Spec: apiv1.NodeSpec{
 						Cloud: apiv1.NodeCloudSpec{
-							Digitalocean: &apiv1.DigitaloceanNodeSpec{
-								Size: "2GB",
-							},
+							Fake: &apiv1.FakeNodeSpec{},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
 							Ubuntu: &apiv1.UbuntuSpec{
@@ -861,9 +838,7 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 					},
 					Spec: apiv1.NodeSpec{
 						Cloud: apiv1.NodeCloudSpec{
-							Digitalocean: &apiv1.DigitaloceanNodeSpec{
-								Size: "2GB",
-							},
+							Fake: &apiv1.FakeNodeSpec{},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
 							Ubuntu: &apiv1.UbuntuSpec{
@@ -1070,39 +1045,39 @@ func TestPatchNodeDeployment(t *testing.T) {
 		{
 			Name:                       "Scenario 1: Update replicas count",
 			Body:                       fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
-			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"}},"paused":false},"status":{}}`, replicasUpdated),
+			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%d,"template":{"cloud":{"fake":{"exists":false}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"}},"paused":false},"status":{}}`, replicasUpdated),
 			cluster:                    "keen-snyder",
 			HTTPStatus:                 http.StatusOK,
 			project:                    test.GenDefaultProject().Name,
 			ExistingAPIUser:            test.GenDefaultAPIUser(),
 			NodeDeploymentID:           "venus",
-			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)},
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)},
 			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
 		},
 		// Scenario 2: Update kubelet version.
 		{
 			Name:                       "Scenario 2: Update kubelet version",
 			Body:                       fmt.Sprintf(`{"spec":{"template":{"versions":{"kubelet":"%v"}}}}`, kubeletVerUpdated),
-			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"%v"}},"paused":false},"status":{}}`, replicas, kubeletVerUpdated),
+			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"fake":{"exists":false}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"%v"}},"paused":false},"status":{}}`, replicas, kubeletVerUpdated),
 			cluster:                    "keen-snyder",
 			HTTPStatus:                 http.StatusOK,
 			project:                    test.GenDefaultProject().Name,
 			ExistingAPIUser:            test.GenDefaultAPIUser(),
 			NodeDeploymentID:           "venus",
-			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)},
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)},
 			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
 		},
 		// Scenario 3: Change to paused.
 		{
 			Name:                       "Scenario 3: Change to paused",
 			Body:                       `{"spec":{"paused":true}}`,
-			ExpectedResponse:           `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"}},"paused":true},"status":{}}`,
+			ExpectedResponse:           `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"fake":{"exists":false}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"}},"paused":true},"status":{}}`,
 			cluster:                    "keen-snyder",
 			HTTPStatus:                 http.StatusOK,
 			project:                    test.GenDefaultProject().Name,
 			ExistingAPIUser:            test.GenDefaultAPIUser(),
 			NodeDeploymentID:           "venus",
-			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)},
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)},
 			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
 		},
 		// Scenario 4: Downgrade to too old kubelet version
@@ -1115,7 +1090,7 @@ func TestPatchNodeDeployment(t *testing.T) {
 			project:                    test.GenDefaultProject().Name,
 			ExistingAPIUser:            test.GenDefaultAPIUser(),
 			NodeDeploymentID:           "venus",
-			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)},
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)},
 			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
 		},
 		// Scenario 5: Upgrade kubelet to a too new version
@@ -1128,7 +1103,7 @@ func TestPatchNodeDeployment(t *testing.T) {
 			project:                    test.GenDefaultProject().Name,
 			ExistingAPIUser:            test.GenDefaultAPIUser(),
 			NodeDeploymentID:           "venus",
-			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)},
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil)},
 			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
 		},
 	}

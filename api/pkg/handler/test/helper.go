@@ -33,7 +33,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
@@ -114,7 +113,6 @@ func GetUser(email, id, name string, admin bool) apiv1.User {
 type newRoutingFunc func(
 	seeds map[string]*kubermaticv1.Seed,
 	newClusterProviders map[string]provider.ClusterProvider,
-	cloudProviders map[string]provider.CloudProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
@@ -137,8 +135,6 @@ func initTestEndpoint(user apiv1.User, seeds map[string]*kubermaticv1.Seed, kube
 	if seeds == nil {
 		seeds = buildSeeds()
 	}
-	cloudProviders := cloud.Providers(seeds)
-
 	fakeClient := fakectrlruntimeclient.NewFakeClient(append(kubeObjects, machineObjects...)...)
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
@@ -227,7 +223,6 @@ func initTestEndpoint(user apiv1.User, seeds map[string]*kubermaticv1.Seed, kube
 	mainRouter := routingFunc(
 		seeds,
 		clusterProviders,
-		cloudProviders,
 		sshKeyProvider,
 		userProvider,
 		serviceAccountProvider,
@@ -284,21 +279,21 @@ func buildSeeds() map[string]*kubermaticv1.Seed {
 				Location: "us-central",
 				Country:  "US",
 				Datacenters: map[string]kubermaticv1.Datacenter{
-					"private-do1": {
+					"private-fake": {
 						Country:  "NL",
 						Location: "US ",
 						Spec: kubermaticv1.DatacenterSpec{
-							Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-								Region: "ams2",
+							Fake: &kubermaticapiv1.DatacenterSpecFake{
+								FakeProperty: "ams2",
 							},
 						},
 					},
-					"regular-do1": {
+					"regular-fake": {
 						Country:  "NL",
 						Location: "Amsterdam",
 						Spec: kubermaticv1.DatacenterSpec{
-							Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-								Region: "ams2",
+							Fake: &kubermaticapiv1.DatacenterSpecFake{
+								FakeProperty: "ams2",
 							},
 						},
 					},
@@ -306,8 +301,8 @@ func buildSeeds() map[string]*kubermaticv1.Seed {
 						Location: "us-central",
 						Country:  "US",
 						Spec: kubermaticv1.DatacenterSpec{
-							Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-								Region: "ams2",
+							Fake: &kubermaticv1.DatacenterSpecFake{
+								FakeProperty: "my-val",
 							},
 						},
 					},

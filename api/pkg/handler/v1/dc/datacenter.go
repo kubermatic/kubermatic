@@ -154,6 +154,10 @@ func apiSpec(dc *kubermaticv1.Datacenter) (*apiv1.DatacenterSpec, error) {
 			ZoneSuffixes: dc.Spec.GCP.ZoneSuffixes,
 			Regional:     dc.Spec.GCP.Regional,
 		}
+	case dc.Spec.Fake != nil:
+		spec.Fake = &apiv1.FakeDatacenterSpec{
+			FakeProperty: dc.Spec.Fake.FakeProperty,
+		}
 	}
 
 	return spec, nil
