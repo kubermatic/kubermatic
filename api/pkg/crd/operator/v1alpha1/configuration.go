@@ -67,3 +67,13 @@ type KubermaticUIConfiguration struct {
 	// Config sets flags for various dashboard features.
 	Config string `json:"config,omitempty"`
 }
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// KubermaticConfigurationList is a collection of KubermaticConfigurations.
+type KubermaticConfigurationList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []KubermaticConfiguration `json:"items"`
+}
