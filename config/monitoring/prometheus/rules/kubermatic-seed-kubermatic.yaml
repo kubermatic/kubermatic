@@ -29,3 +29,11 @@ groups:
     for: 15m
     labels:
       severity: critical
+  - alert: KubermaticClusterPaused
+    annotations:
+      message: Cluster {{ $labels.name }} has been paused and will not be reconciled
+        until the pause flag is reset.
+    expr: label_replace(kubermatic_cluster_info{pause="true"}, "cluster", "$0", "name",
+      ".+")
+    labels:
+      severity: none
