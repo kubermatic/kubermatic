@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -44,7 +45,8 @@ func NewClusterProvider(
 	workerName string,
 	extractGroupPrefix extractGroupPrefixFunc,
 	client ctrlruntimeclient.Client,
-	k8sClient kubernetes.Interface) *ClusterProvider {
+	k8sClient kubernetes.Interface,
+	oidcKubeConfEndpoint bool) *ClusterProvider {
 	return &ClusterProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		userClusterConnProvider:      userClusterConnProvider,
@@ -53,6 +55,7 @@ func NewClusterProvider(
 		extractGroupPrefix:           extractGroupPrefix,
 		client:                       client,
 		k8sClient:                    k8sClient,
+		oidcKubeConfEndpoint:         oidcKubeConfEndpoint,
 	}
 }
 
@@ -69,10 +72,11 @@ type ClusterProvider struct {
 	// clusterLister provide access to local cache that stores cluster objects
 	clusterLister kubermaticv1lister.ClusterLister
 
-	workerName         string
-	extractGroupPrefix extractGroupPrefixFunc
-	client             ctrlruntimeclient.Client
-	k8sClient          kubernetes.Interface
+	oidcKubeConfEndpoint bool
+	workerName           string
+	extractGroupPrefix   extractGroupPrefixFunc
+	client               ctrlruntimeclient.Client
+	k8sClient            kubernetes.Interface
 }
 
 // New creates a brand new cluster that is bound to the given project
@@ -80,6 +84,11 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 	if project == nil || userInfo == nil || cluster == nil {
 		return nil, errors.New("project and/or userInfo and/or cluster is missing but required")
 	}
+	// share kubeconfig feature is contrary to cluster OIDC setting
+	if p.oidcKubeConfEndpoint && !reflect.DeepEqual(cluster.Spec.OIDC, kubermaticv1.OIDCSettings{}) {
+		return nil, errors.New("can not set OIDC for the cluster when share config feature is enabled")
+	}
+
 	cluster.Spec.HumanReadableName = strings.TrimSpace(cluster.Spec.HumanReadableName)
 
 	labels := map[string]string{

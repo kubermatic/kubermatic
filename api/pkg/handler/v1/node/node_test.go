@@ -171,6 +171,7 @@ func TestListNodesForCluster(t *testing.T) {
 						Versions: apiv1.NodeVersionInfo{
 							Kubelet: "v9.9.9",
 						},
+						SSHUserName: "fakeUbuntu",
 					},
 					Status: apiv1.NodeStatus{
 						MachineName: "venus",
@@ -201,6 +202,7 @@ func TestListNodesForCluster(t *testing.T) {
 						Versions: apiv1.NodeVersionInfo{
 							Kubelet: "v9.9.9",
 						},
+						SSHUserName: "fakeUbuntu",
 					},
 					Status: apiv1.NodeStatus{
 						MachineName: "mars",
@@ -250,6 +252,7 @@ func TestListNodesForCluster(t *testing.T) {
 						Versions: apiv1.NodeVersionInfo{
 							Kubelet: "v9.9.9",
 						},
+						SSHUserName: "fakeUbuntu",
 					},
 					Status: apiv1.NodeStatus{
 						MachineName: "mars",
@@ -320,7 +323,7 @@ func TestGetNodeForCluster(t *testing.T) {
 		// scenario 1
 		{
 			Name:                   "scenario 1: get a node that belongs to the given cluster",
-			ExpectedResponse:       `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"fake":{"exists":false}},"operatingSystem":{},"versions":{"kubelet":"v9.9.9"}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
+			ExpectedResponse:       `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{"fake":{"exists":false}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"sshUserName":"fakeUbuntu","versions":{"kubelet":"v9.9.9"}},"status":{"machineName":"venus","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"0","memory":"0"},"nodeInfo":{"kernelVersion":"","containerRuntime":"","containerRuntimeVersion":"","kubeletVersion":"","operatingSystem":"","architecture":""}}}`,
 			HTTPStatus:             http.StatusOK,
 			NodeIDToSync:           "venus",
 			ClusterIDToSync:        test.GenDefaultCluster().Name,
@@ -328,7 +331,7 @@ func TestGetNodeForCluster(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExistingNodes:          []*corev1.Node{{ObjectMeta: metav1.ObjectMeta{Name: "venus"}}},
-			ExistingMachines:       []*clusterv1alpha1.Machine{genTestMachine("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil)},
+			ExistingMachines:       []*clusterv1alpha1.Machine{genTestMachine("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot": false}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil)},
 		},
 	}
 
@@ -824,6 +827,7 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 						Versions: apiv1.NodeVersionInfo{
 							Kubelet: "v9.9.9",
 						},
+						SSHUserName: "fakeUbuntu",
 					},
 					Status: apiv1.NodeStatus{
 						MachineName: "venus-1",
@@ -848,6 +852,7 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 						Versions: apiv1.NodeVersionInfo{
 							Kubelet: "v9.9.9",
 						},
+						SSHUserName: "fakeUbuntu",
 					},
 					Status: apiv1.NodeStatus{
 						MachineName: "venus-2",

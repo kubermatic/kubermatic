@@ -207,6 +207,7 @@ func initTestEndpoint(user apiv1.User, seeds map[string]*kubermaticv1.Seed, kube
 		rbac.ExtractGroupPrefix,
 		fakeClient,
 		kubernetesClient,
+		false,
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 

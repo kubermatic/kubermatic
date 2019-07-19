@@ -669,6 +669,8 @@ type NodeSpec struct {
 	Cloud NodeCloudSpec `json:"cloud"`
 	// required: true
 	OperatingSystem OperatingSystemSpec `json:"operatingSystem"`
+	// required: false
+	SSHUserName string `json:"sshUserName,omitempty"`
 	// required: true
 	Versions NodeVersionInfo `json:"versions,omitempty"`
 	// Map of string keys and values that can be used to organize and categorize (scope and select) objects.
