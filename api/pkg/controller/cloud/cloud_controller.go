@@ -8,6 +8,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/azure"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
@@ -16,7 +17,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
@@ -49,16 +49,16 @@ var _ reconcile.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client.Client
-	scheme        *runtime.Scheme
-	recorder      record.EventRecorder
-	cloudProvider map[string]provider.CloudProvider
+	recorder record.EventRecorder
+	seed     *kubermaticv1.Seed
 }
 
-func Add(mgr manager.Manager, numWorkers int, cloudProvider map[string]provider.CloudProvider, clusterPredicates predicate.Predicate) error {
-	reconciler := &Reconciler{Client: mgr.GetClient(),
-		scheme:        mgr.GetScheme(),
-		recorder:      mgr.GetRecorder(ControllerName),
-		cloudProvider: cloudProvider}
+func Add(mgr manager.Manager, numWorkers int, seed *kubermaticv1.Seed, clusterPredicates predicate.Predicate) error {
+	reconciler := &Reconciler{
+		Client:   mgr.GetClient(),
+		recorder: mgr.GetRecorder(ControllerName),
+		seed:     seed,
+	}
 
 	c, err := controller.New(ControllerName, mgr,
 		controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -103,10 +103,11 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	glog.V(4).Infof("syncing cluster %s", cluster.Name)
-	_, prov, err := provider.ClusterCloudProvider(r.cloudProvider, cluster)
-	if err != nil {
-		return nil, err
+	datacenter, found := r.seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
+	if !found {
+		return nil, fmt.Errorf("couldn't find datacentrer %q for cluster %q", cluster.Spec.Cloud.DatacenterName, cluster.Name)
 	}
+	prov := cloud.Provider(datacenter.DeepCopy())
 	if prov == nil {
 		return nil, fmt.Errorf("no valid provider specified")
 	}
@@ -118,7 +119,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			finalizers.Has(kubermaticapiv1.NodeDeletionFinalizer) {
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
-		_, err = prov.CleanUpCloudProvider(cluster, r.updateCluster)
+		_, err := prov.CleanUpCloudProvider(cluster, r.updateCluster)
 		return nil, err
 	}
 
@@ -137,7 +138,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 	}
 
-	_, err = prov.InitializeCloudProvider(cluster, r.updateCluster)
+	_, err := prov.InitializeCloudProvider(cluster, r.updateCluster)
 	return nil, err
 }
 

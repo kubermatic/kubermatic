@@ -45,6 +45,10 @@ func Provider(datacenter *kubermaticv1.Datacenter) provider.CloudProvider {
 	if datacenter.Spec.GCP != nil {
 		return gcp.NewCloudProvider()
 	}
+	return nil
+}
+
+func FakeProvider(datacenter *kubermaticv1.Datacenter) provider.CloudProvider {
 	return fake.NewCloudProvider()
 }
 
