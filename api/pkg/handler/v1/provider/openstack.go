@@ -30,18 +30,12 @@ func OpenstackSizeEndpoint(dcGetter provider.DatacenterGetter, credentialManager
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
 
-		openstackProvider, err := cloud.OpenstackProvider(datacenter)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get openstack provider: %v", err)
-		}
-
 		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
-
-		return getOpenstackSizes(openstackProvider, username, password, tenant, tenantID, domain, datacenterName, datacenter)
+		return getOpenstackSizes(username, password, tenant, tenantID, domain, datacenterName, datacenter)
 	}
 }
 
-func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -57,13 +51,17 @@ func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
 
-		return getOpenstackSizes(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName, datacenter)
+		return getOpenstackSizes(openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName, datacenter)
 	}
 }
 
-func getOpenstackSizes(osProvider *openstack.Provider, username, passowrd, tenant, tenantID, domain, datacenterName string, datacenter *kubermaticv1.Datacenter) ([]apiv1.OpenstackSize, error) {
+func getOpenstackSizes(username, passowrd, tenant, tenantID, domain, datacenterName string, datacenter *kubermaticv1.Datacenter) ([]apiv1.OpenstackSize, error) {
 
-	flavors, dc, err := osProvider.GetFlavors(kubermaticv1.CloudSpec{
+	provider, err := cloud.OpenstackProvider(datacenter)
+	if err != nil {
+		return nil, err
+	}
+	flavors, err := provider.GetFlavors(kubermaticv1.CloudSpec{
 		DatacenterName: datacenterName,
 		Openstack: &kubermaticv1.OpenstackCloudSpec{
 			Username: username,
@@ -85,7 +83,7 @@ func getOpenstackSizes(osProvider *openstack.Provider, username, passowrd, tenan
 			VCPUs:    flavor.VCPUs,
 			Disk:     flavor.Disk,
 			Swap:     flavor.Swap,
-			Region:   dc.Spec.Openstack.Region,
+			Region:   datacenter.Spec.Openstack.Region,
 			IsPublic: flavor.IsPublic,
 		}
 		if MeetsOpenstackNodeSizeRequirement(apiSize, datacenter.Spec.Openstack.NodeSizeRequirements) {
@@ -106,7 +104,7 @@ func MeetsOpenstackNodeSizeRequirement(apiSize apiv1.OpenstackSize, requirements
 	return true
 }
 
-func OpenstackTenantEndpoint(providers provider.CloudRegistry, credentialManager common.PresetsManager) endpoint.Endpoint {
+func OpenstackTenantEndpoint(seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackTenantReq)
 		if !ok {
@@ -115,11 +113,11 @@ func OpenstackTenantEndpoint(providers provider.CloudRegistry, credentialManager
 
 		username, password, domain, _, _ := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, "", "", credentialManager)
 
-		return getOpenstackTenants(providers, username, password, domain, req.DatacenterName)
+		return getOpenstackTenants(seeds, username, password, domain, req.DatacenterName)
 	}
 }
 
-func OpenstackTenantNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackTenantNoCredentialsEndpoint(seeds map[string]*kubermaticv1.Seed, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -129,19 +127,14 @@ func OpenstackTenantNoCredentialsEndpoint(projectProvider provider.ProjectProvid
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		return getOpenstackTenants(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, datacenterName)
+		return getOpenstackTenants(seeds, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, datacenterName)
 	}
 }
 
-func getOpenstackTenants(providers provider.CloudRegistry, username, password, domain, datacenterName string) ([]apiv1.OpenstackTenant, error) {
-	osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
-	if !ok {
-		return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
-	}
-
-	osProvider, ok := osProviderInterface.(*openstack.Provider)
-	if !ok {
-		return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
+func getOpenstackTenants(seeds map[string]*kubermaticv1.Seed, username, password, domain, datacenterName string) ([]apiv1.OpenstackTenant, error) {
+	osProvider, err := getOpenstackCloudProvider(seeds, datacenterName)
+	if err != nil {
+		return nil, err
 	}
 
 	tenants, err := osProvider.GetTenants(kubermaticv1.CloudSpec{
@@ -169,7 +162,7 @@ func getOpenstackTenants(providers provider.CloudRegistry, username, password, d
 	return apiTenants, nil
 }
 
-func OpenstackNetworkEndpoint(providers provider.CloudRegistry, credentialManager common.PresetsManager) endpoint.Endpoint {
+func OpenstackNetworkEndpoint(seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -178,11 +171,11 @@ func OpenstackNetworkEndpoint(providers provider.CloudRegistry, credentialManage
 
 		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
 
-		return getOpenstackNetworks(providers, username, password, tenant, tenantID, domain, req.DatacenterName)
+		return getOpenstackNetworks(seeds, username, password, tenant, tenantID, domain, req.DatacenterName)
 	}
 }
 
-func OpenstackNetworkNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackNetworkNoCredentialsEndpoint(seeds map[string]*kubermaticv1.Seed, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -192,19 +185,14 @@ func OpenstackNetworkNoCredentialsEndpoint(projectProvider provider.ProjectProvi
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		return getOpenstackNetworks(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName)
+		return getOpenstackNetworks(seeds, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName)
 	}
 }
 
-func getOpenstackNetworks(providers provider.CloudRegistry, username, password, tenant, tenantID, domain, datacenterName string) ([]apiv1.OpenstackNetwork, error) {
-	osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
-	if !ok {
-		return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
-	}
-
-	osProvider, ok := osProviderInterface.(*openstack.Provider)
-	if !ok {
-		return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
+func getOpenstackNetworks(seeds map[string]*kubermaticv1.Seed, username, password, tenant, tenantID, domain, datacenterName string) ([]apiv1.OpenstackNetwork, error) {
+	osProvider, err := getOpenstackCloudProvider(seeds, datacenterName)
+	if err != nil {
+		return nil, err
 	}
 
 	networks, err := osProvider.GetNetworks(kubermaticv1.CloudSpec{
@@ -235,7 +223,7 @@ func getOpenstackNetworks(providers provider.CloudRegistry, username, password, 
 	return apiNetworks, nil
 }
 
-func OpenstackSecurityGroupEndpoint(providers provider.CloudRegistry, credentialManager common.PresetsManager) endpoint.Endpoint {
+func OpenstackSecurityGroupEndpoint(seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -244,11 +232,11 @@ func OpenstackSecurityGroupEndpoint(providers provider.CloudRegistry, credential
 
 		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
 
-		return getOpenstackSecurityGroups(providers, username, password, tenant, tenantID, domain, req.DatacenterName)
+		return getOpenstackSecurityGroups(seeds, username, password, tenant, tenantID, domain, req.DatacenterName)
 	}
 }
 
-func OpenstackSecurityGroupNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackSecurityGroupNoCredentialsEndpoint(seeds map[string]*kubermaticv1.Seed, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -258,19 +246,14 @@ func OpenstackSecurityGroupNoCredentialsEndpoint(projectProvider provider.Projec
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		return getOpenstackSecurityGroups(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName)
+		return getOpenstackSecurityGroups(seeds, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName)
 	}
 }
 
-func getOpenstackSecurityGroups(providers provider.CloudRegistry, username, password, tenant, tenantID, domain, datacenterName string) ([]apiv1.OpenstackSecurityGroup, error) {
-	osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
-	if !ok {
-		return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
-	}
-
-	osProvider, ok := osProviderInterface.(*openstack.Provider)
-	if !ok {
-		return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
+func getOpenstackSecurityGroups(seeds map[string]*kubermaticv1.Seed, username, password, tenant, tenantID, domain, datacenterName string) ([]apiv1.OpenstackSecurityGroup, error) {
+	osProvider, err := getOpenstackCloudProvider(seeds, datacenterName)
+	if err != nil {
+		return nil, err
 	}
 
 	securityGroups, err := osProvider.GetSecurityGroups(kubermaticv1.CloudSpec{
@@ -300,7 +283,7 @@ func getOpenstackSecurityGroups(providers provider.CloudRegistry, username, pass
 	return apiSecurityGroups, nil
 }
 
-func OpenstackSubnetsEndpoint(providers provider.CloudRegistry, credentialManager common.PresetsManager) endpoint.Endpoint {
+func OpenstackSubnetsEndpoint(seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackSubnetReq)
 		if !ok {
@@ -309,11 +292,11 @@ func OpenstackSubnetsEndpoint(providers provider.CloudRegistry, credentialManage
 
 		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
 
-		return getOpenstackSubnets(providers, username, password, domain, tenant, tenantID, req.NetworkID, req.DatacenterName)
+		return getOpenstackSubnets(seeds, username, password, domain, tenant, tenantID, req.NetworkID, req.DatacenterName)
 	}
 }
 
-func OpenstackSubnetsNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+func OpenstackSubnetsNoCredentialsEndpoint(seeds map[string]*kubermaticv1.Seed, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackSubnetNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -323,19 +306,14 @@ func OpenstackSubnetsNoCredentialsEndpoint(projectProvider provider.ProjectProvi
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		return getOpenstackSubnets(providers, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, openstackSpec.Tenant, openstackSpec.TenantID, req.NetworkID, datacenterName)
+		return getOpenstackSubnets(seeds, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, openstackSpec.Tenant, openstackSpec.TenantID, req.NetworkID, datacenterName)
 	}
 }
 
-func getOpenstackSubnets(providers provider.CloudRegistry, username, password, domain, tenant, tenantID, networkID, datacenterName string) ([]apiv1.OpenstackSubnet, error) {
-	osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
-	if !ok {
-		return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
-	}
-
-	osProvider, ok := osProviderInterface.(*openstack.Provider)
-	if !ok {
-		return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
+func getOpenstackSubnets(seeds map[string]*kubermaticv1.Seed, username, password, domain, tenant, tenantID, networkID, datacenterName string) ([]apiv1.OpenstackSubnet, error) {
+	osProvider, err := getOpenstackCloudProvider(seeds, datacenterName)
+	if err != nil {
+		return nil, err
 	}
 
 	subnets, err := osProvider.GetSubnets(kubermaticv1.CloudSpec{
@@ -505,4 +483,17 @@ func getOpenstackCredentials(credentialName, username, password, domain, tenant,
 	}
 
 	return username, password, domain, tenant, tenantID
+}
+
+func getOpenstackCloudProvider(seeds map[string]*kubermaticv1.Seed, datacenterName string) (*openstack.Provider, error) {
+	dc, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find datacenter %q: %v", datacenterName, err)
+	}
+	osProvider, err := cloud.OpenstackProvider(dc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Openstack provider: %v", err)
+	}
+
+	return osProvider, nil
 }
