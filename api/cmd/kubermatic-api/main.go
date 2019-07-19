@@ -147,6 +147,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 				rbac.ExtractGroupPrefix,
 				seedCtrlruntimeClient,
 				kubeClient,
+				options.featureGates.Enabled(OIDCKubeCfgEndpoint),
 			)
 
 			kubeInformerFactory.Start(wait.NeverStop)
