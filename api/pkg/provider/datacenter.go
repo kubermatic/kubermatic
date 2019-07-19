@@ -114,3 +114,6 @@ func validateDatacenters(datacenters map[string]DatacenterMeta) error {
 
 	return nil
 }
+
+// DatacenterGetter is used to get a Datacenter
+type DatacenterGetter = func(datacenterName string) (*kubermaticv1.Datacenter, error)

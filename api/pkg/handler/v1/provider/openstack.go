@@ -12,11 +12,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func OpenstackSizeEndpoint(providers provider.CloudRegistry, seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
+func OpenstackSizeEndpoint(dcGetter provider.DatacenterGetter, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -24,14 +25,19 @@ func OpenstackSizeEndpoint(providers provider.CloudRegistry, seeds map[string]*k
 		}
 
 		datacenterName := req.DatacenterName
-		datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+		datacenter, err := dcGetter(datacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
 
+		openstackProvider, err := cloud.OpenstackProvider(datacenter)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get openstack provider: %v", err)
+		}
+
 		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
 
-		return getOpenstackSizes(providers, username, password, tenant, tenantID, domain, datacenterName, datacenter)
+		return getOpenstackSizes(openstackProvider, username, password, tenant, tenantID, domain, datacenterName, datacenter)
 	}
 }
 
@@ -55,16 +61,7 @@ func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider
 	}
 }
 
-func getOpenstackSizes(providers provider.CloudRegistry, username, passowrd, tenant, tenantID, domain, datacenterName string, datacenter *kubermaticv1.Datacenter) ([]apiv1.OpenstackSize, error) {
-	osProviderInterface, ok := providers[provider.OpenstackCloudProvider]
-	if !ok {
-		return nil, fmt.Errorf("unable to get %s provider", provider.OpenstackCloudProvider)
-	}
-
-	osProvider, ok := osProviderInterface.(*openstack.Provider)
-	if !ok {
-		return nil, fmt.Errorf("unable to cast osProviderInterface to *openstack.Provider")
-	}
+func getOpenstackSizes(osProvider *openstack.Provider, username, passowrd, tenant, tenantID, domain, datacenterName string, datacenter *kubermaticv1.Datacenter) ([]apiv1.OpenstackSize, error) {
 
 	flavors, dc, err := osProvider.GetFlavors(kubermaticv1.CloudSpec{
 		DatacenterName: datacenterName,
