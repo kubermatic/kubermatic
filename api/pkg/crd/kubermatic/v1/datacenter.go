@@ -143,7 +143,7 @@ type DatacenterSpecGCP struct {
 
 // DatacenterSpecFake describes a fake datacenter
 type DatacenterSpecFake struct {
-	FakeProperty string `json:fake_property,omitempty`
+	FakeProperty string `json:"fake_property,omitempty"`
 }
 
 // NodeSettings are node specific which can be configured on datacenter level

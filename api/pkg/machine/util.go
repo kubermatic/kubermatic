@@ -68,7 +68,7 @@ func getDistributionName(distribution *apiv1.OperatingSystemSpec) (string, error
 		}
 	}
 
-	return "", fmt.Errorf("no operating sytem set")
+	return "", fmt.Errorf("no operating system set")
 }
 
 func getProviderName(cloudProvider *apiv1.NodeCloudSpec) (string, error) {

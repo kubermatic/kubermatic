@@ -69,7 +69,7 @@ type BringYourOwnDatacenterSpec struct{}
 
 // FakeDatacenterSpec describes a fake datacenter
 type FakeDatacenterSpec struct {
-	FakeProperty string `json:fake_property,omitempty`
+	FakeProperty string `json:"fake_property,omitempty"`
 }
 
 // AWSDatacenterSpec specifies a data center of Amazon Web Services.
