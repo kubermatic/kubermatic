@@ -14,8 +14,8 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
-	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -1292,7 +1292,7 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 				t.Error("updateAction doesn't contain *kubermaticv1.Cluster")
 			}
 			updatedToken := updatedCluster.Address.AdminToken
-			if err := validation.ValidateKubernetesToken(updatedToken); err != nil {
+			if err := kuberneteshelper.ValidateKubernetesToken(updatedToken); err != nil {
 				t.Errorf("generated token '%s' is malformed: %v", updatedToken, err)
 			}
 			if updatedToken == cluster.Address.AdminToken {

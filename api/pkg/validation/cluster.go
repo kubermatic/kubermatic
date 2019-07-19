@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"regexp"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 
@@ -16,18 +16,7 @@ import (
 var (
 	// ErrCloudChangeNotAllowed describes that it is not allowed to change the cloud provider
 	ErrCloudChangeNotAllowed = errors.New("not allowed to change the cloud provider")
-
-	tokenValidator = regexp.MustCompile(`[bcdfghjklmnpqrstvwxz2456789]{6}\.[bcdfghjklmnpqrstvwxz2456789]{16}`)
 )
-
-// ValidateKubernetesToken checks if a given token is syntactically correct.
-func ValidateKubernetesToken(token string) error {
-	if !tokenValidator.MatchString(token) {
-		return fmt.Errorf("token is malformed, must match %s", tokenValidator.String())
-	}
-
-	return nil
-}
 
 // ValidateCreateClusterSpec validates the given cluster spec
 func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider) error {
@@ -152,7 +141,7 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, dc *kub
 		return errors.New("changing the url is not allowed")
 	}
 
-	if err := ValidateKubernetesToken(newCluster.Address.AdminToken); err != nil {
+	if err := kuberneteshelper.ValidateKubernetesToken(newCluster.Address.AdminToken); err != nil {
 		return fmt.Errorf("invalid admin token: %v", err)
 	}
 
