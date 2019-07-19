@@ -11,17 +11,38 @@ alertmanager:
   replicas: 3
   storageSize: 100Mi
   storageClass: kubermatic-fast
+
   config:
     global:
       slack_api_url: https://hooks.slack.com/services/YOUR_KEYS_HERE
     route:
       receiver: default
       repeat_interval: 1h
+      routes:
+      - receiver: blackhole
+        match:
+          severity: none
     receivers:
+    - name: blackhole
     - name: default
       slack_configs:
       - channel: '#alerting'
         send_resolved: true
+    inhibit_rules:
+    # do not alert about anything going wrong inside paused clusters
+    - source_match: { alertname: KubermaticClusterPaused }
+      equal: [seed_cluster, cluster]
+    # if etcd is down, it brings down everything else as well
+    - source_match_re: { alertname: EtcdDown, cluster: .+ }
+      equal: [seed_cluster, cluster]
+    # if a user-cluster apiserver is down, ignore other components failing
+    - source_match_re: { alertname: KubernetesApiserverDown, cluster: .+ }
+      equal: [seed_cluster, cluster]
+    # if a user-cluster OpenVPN server is dead, we cannot connect to the nodes anymore
+    - source_match_re: { alertname: OpenVPNServerDown, cluster: .+ }
+      target_match_re: { alertname: (CAdvisorDown|KubernetesNodeDown) }
+      equal: [seed_cluster, cluster]
+
   resources:
     alertmanager:
       requests:
