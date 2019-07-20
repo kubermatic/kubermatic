@@ -27,7 +27,7 @@ func TestDatacentersEndpoint(t *testing.T) {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	test.CompareWithResult(t, res, `[{"metadata":{"name":"private-fake","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"fake","fake":{"FakeProperty":"ams2"}}},{"metadata":{"name":"regular-fake","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{"FakeProperty":"ams2"}}},{"metadata":{"name":"us-central1","resourceVersion":"1"},"spec":{"seed":""},"seed":true},{"metadata":{"name":"us-central1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"US","location":"us-central","provider":"fake","fake":{"FakeProperty":"my-val"}}}]`)
+	test.CompareWithResult(t, res, `[{"metadata":{"name":"private-fake","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"fake","fake":{"fake_property":"ams2"}}},{"metadata":{"name":"regular-fake","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{"fake_property":"ams2"}}},{"metadata":{"name":"us-central1","resourceVersion":"1"},"spec":{"seed":""},"seed":true},{"metadata":{"name":"us-central1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"US","location":"us-central","provider":"fake","fake":{"fake_property":"my-val"}}}]`)
 }
 
 func TestDatacenterEndpointNotFound(t *testing.T) {
@@ -80,7 +80,7 @@ func TestDatacenterEndpointAdmin(t *testing.T) {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	test.CompareWithResult(t, res, `{"metadata":{"name":"private-fake","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"fake","fake":{"FakeProperty":"ams2"}}}`)
+	test.CompareWithResult(t, res, `{"metadata":{"name":"private-fake","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"fake","fake":{"fake_property":"ams2"}}}`)
 
 }
 
@@ -100,5 +100,5 @@ func TestDatacenterEndpointFound(t *testing.T) {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	test.CompareWithResult(t, res, `{"metadata":{"name":"regular-fake","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{"FakeProperty":"ams2"}}}`)
+	test.CompareWithResult(t, res, `{"metadata":{"name":"regular-fake","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{"fake_property":"ams2"}}}`)
 }
