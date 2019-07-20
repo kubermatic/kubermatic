@@ -28,13 +28,13 @@ func Provider(datacenter *kubermaticv1.Datacenter) provider.CloudProvider {
 		return bringyourown.NewCloudProvider()
 	}
 	if datacenter.Spec.AWS != nil {
-		return aws.NewCloudProvider(datacenter)
+		return aws.NewCloudProvider(datacenter.Spec.AWS)
 	}
 	if datacenter.Spec.Azure != nil {
-		return azure.New(datacenter)
+		return azure.New(datacenter.Spec.Azure)
 	}
 	if datacenter.Spec.Openstack != nil {
-		return openstack.NewCloudProvider(datacenter)
+		return openstack.NewCloudProvider(datacenter.Spec.Openstack)
 	}
 	if datacenter.Spec.Packet != nil {
 		return packet.NewCloudProvider()
@@ -43,7 +43,7 @@ func Provider(datacenter *kubermaticv1.Datacenter) provider.CloudProvider {
 		return hetzner.NewCloudProvider()
 	}
 	if datacenter.Spec.VSphere != nil {
-		return vsphere.NewCloudProvider(datacenter)
+		return vsphere.NewCloudProvider(datacenter.Spec.VSphere)
 	}
 	if datacenter.Spec.GCP != nil {
 		return gcp.NewCloudProvider()
@@ -62,12 +62,12 @@ func OpenstackProvider(datacenter *kubermaticv1.Datacenter) (*openstack.Provider
 	if datacenter.Spec.Openstack == nil {
 		return nil, errors.New("datacenter is not an Openstack datacenter")
 	}
-	return openstack.NewCloudProvider(datacenter), nil
+	return openstack.NewCloudProvider(datacenter.Spec.Openstack), nil
 }
 
 func VSphereProvider(datacenter *kubermaticv1.Datacenter) (*vsphere.Provider, error) {
 	if datacenter.Spec.VSphere == nil {
 		return nil, errors.New("datacenter is not a vSphere datacenter")
 	}
-	return vsphere.NewCloudProvider(datacenter), nil
+	return vsphere.NewCloudProvider(datacenter.Spec.VSphere), nil
 }

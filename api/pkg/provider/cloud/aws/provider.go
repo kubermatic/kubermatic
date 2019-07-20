@@ -34,7 +34,7 @@ const (
 var roleARNS = []string{policyRoute53FullAccess, policyEC2FullAccess}
 
 type AmazonEC2 struct {
-	dc *kubermaticv1.Datacenter
+	dc *kubermaticv1.DatacenterSpecAWS
 }
 
 func (a *AmazonEC2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
@@ -86,7 +86,7 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 			return fmt.Errorf("failed to get default vpc: %v", err)
 		}
 
-		_, err = getDefaultSubnet(client, *vpc.VpcId, a.dc.Spec.AWS.Region+a.dc.Spec.AWS.ZoneCharacter)
+		_, err = getDefaultSubnet(client, *vpc.VpcId, a.dc.Region+a.dc.ZoneCharacter)
 		if err != nil {
 			return fmt.Errorf("failed to get default subnet: %v", err)
 		}
@@ -208,7 +208,7 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 }
 
 // NewCloudProvider returns a new AmazonEC2 provider.
-func NewCloudProvider(dc *kubermaticv1.Datacenter) *AmazonEC2 {
+func NewCloudProvider(dc *kubermaticv1.DatacenterSpecAWS) *AmazonEC2 {
 	return &AmazonEC2{
 		dc: dc,
 	}
@@ -579,7 +579,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 	if cluster.Spec.Cloud.AWS.SubnetID == "" {
 		glog.V(4).Infof("No Subnet specified on cluster %s", cluster.Name)
-		subnet, err := getDefaultSubnet(client, cluster.Spec.Cloud.AWS.VPCID, a.dc.Spec.AWS.Region+a.dc.Spec.AWS.ZoneCharacter)
+		subnet, err := getDefaultSubnet(client, cluster.Spec.Cloud.AWS.VPCID, a.dc.Region+a.dc.ZoneCharacter)
 		if err != nil {
 
 			return nil, fmt.Errorf("failed to get default subnet for vpc %s: %v", cluster.Spec.Cloud.AWS.VPCID, err)
@@ -673,7 +673,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 func (a *AmazonEC2) getSession(cloud kubermaticv1.CloudSpec) (*session.Session, error) {
 	config := aws.NewConfig()
-	config = config.WithRegion(a.dc.Spec.AWS.Region)
+	config = config.WithRegion(a.dc.Region)
 	config = config.WithCredentials(credentials.NewStaticCredentials(cloud.AWS.AccessKeyID, cloud.AWS.SecretAccessKey, ""))
 	config = config.WithMaxRetries(3)
 	return session.NewSession(config)

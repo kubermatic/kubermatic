@@ -44,13 +44,13 @@ const (
 )
 
 type Azure struct {
-	dc  *kubermaticv1.Datacenter
+	dc  *kubermaticv1.DatacenterSpecAzure
 	log *zap.SugaredLogger
 	ctx context.Context
 }
 
 // New returns a new Azure provider.
-func New(dc *kubermaticv1.Datacenter) *Azure {
+func New(dc *kubermaticv1.DatacenterSpecAzure) *Azure {
 	return &Azure{
 		dc:  dc,
 		log: log.Logger,
@@ -511,7 +511,7 @@ func ensureRouteTable(ctx context.Context, cloud kubermaticv1.CloudSpec, locatio
 func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
 	logger := a.log.With("cluster", cluster.Name)
-	location := a.dc.Spec.Azure.Location
+	location := a.dc.Location
 
 	if cluster.Spec.Cloud.Azure.ResourceGroup == "" {
 		cluster.Spec.Cloud.Azure.ResourceGroup = resourceNamePrefix + cluster.Name
