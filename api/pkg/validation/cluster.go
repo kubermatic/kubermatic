@@ -125,10 +125,6 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, dc *kub
 		return err
 	}
 
-	if dc == nil {
-		return errors.New("dc is nil")
-	}
-
 	if newCluster.Address.ExternalName != oldCluster.Address.ExternalName {
 		return errors.New("changing the external name is not allowed")
 	}
