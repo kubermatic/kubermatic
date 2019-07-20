@@ -197,24 +197,54 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter)
 
 	switch true {
 	case spec.Fake != nil:
+		if dc.Spec.Fake == nil {
+			return fmt.Errorf("datacenter %q is not a fake datacenter", spec.DatacenterName)
+		}
 		return validateFakeCloudSpec(spec.Fake)
 	case spec.AWS != nil:
+		if dc.Spec.AWS == nil {
+			return fmt.Errorf("datacenter %q is not a AWS datacenter", spec.DatacenterName)
+		}
 		return validateAWSCloudSpec(spec.AWS)
 	case spec.Digitalocean != nil:
+		if dc.Spec.Digitalocean == nil {
+			return fmt.Errorf("datacenter %q is not a Digitalocean datacenter", spec.DatacenterName)
+		}
 		return validateDigitaloceanCloudSpec(spec.Digitalocean)
 	case spec.Openstack != nil:
+		if dc.Spec.Openstack == nil {
+			return fmt.Errorf("datacenter %q is not an Openstack datacenter", spec.DatacenterName)
+		}
 		return validateOpenStackCloudSpec(spec.Openstack, dc)
 	case spec.Azure != nil:
+		if dc.Spec.Azure == nil {
+			return fmt.Errorf("datacenter %q is not an Azure datacenter", spec.DatacenterName)
+		}
 		return validateAzureCloudSpec(spec.Azure)
 	case spec.VSphere != nil:
+		if dc.Spec.VSphere == nil {
+			return fmt.Errorf("datacenter %q is not a vSphere datacenter", spec.DatacenterName)
+		}
 		return validateVSphereCloudSpec(spec.VSphere)
 	case spec.GCP != nil:
+		if dc.Spec.GCP == nil {
+			return fmt.Errorf("datacenter %q is not a GCP datacenter", spec.DatacenterName)
+		}
 		return validateGCPCloudSpec(spec.GCP)
 	case spec.Packet != nil:
+		if dc.Spec.Packet == nil {
+			return fmt.Errorf("datacenter %q is not a Packet datacenter", spec.DatacenterName)
+		}
 		return validatePacketCloudSpec(spec.Packet)
 	case spec.Hetzner != nil:
+		if dc.Spec.Hetzner == nil {
+			return fmt.Errorf("datacenter %q is not a Hetzner datacenter", spec.DatacenterName)
+		}
 		return validateHetznerCloudSpec(spec.Hetzner)
 	case spec.BringYourOwn != nil:
+		if dc.Spec.BringYourOwn == nil {
+			return fmt.Errorf("datacenter %q is not a bringyourown datacenter", spec.DatacenterName)
+		}
 		return nil
 	default:
 		return errors.New("no cloud provider specified")
