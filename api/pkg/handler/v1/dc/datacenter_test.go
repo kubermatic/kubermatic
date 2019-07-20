@@ -66,7 +66,7 @@ func TestDatacenterEndpointPrivate(t *testing.T) {
 
 func TestDatacenterEndpointAdmin(t *testing.T) {
 	t.Parallel()
-	req := httptest.NewRequest("GET", "/api/v1/dc/private-fake", nil)
+	req := httptest.NewRequest("GET", "/api/v1/dc/private-do1", nil)
 	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, true)
 
 	res := httptest.NewRecorder()
@@ -80,7 +80,7 @@ func TestDatacenterEndpointAdmin(t *testing.T) {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	test.CompareWithResult(t, res, `{"metadata":{"name":"private-fake","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"fake","fake":{"fake_property":"ams2"}}}`)
+	test.CompareWithResult(t, res, `{"metadata":{"name":"private-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"}}}`)
 
 }
 
