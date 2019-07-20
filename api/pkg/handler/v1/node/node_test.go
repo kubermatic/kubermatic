@@ -724,7 +724,7 @@ func TestGetNodeDeployment(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
-				genTestMachineDeployment("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
 			},
 			ExpectedResponse: apiv1.NodeDeployment{
 				ObjectMeta: apiv1.ObjectMeta{
@@ -734,7 +734,9 @@ func TestGetNodeDeployment(t *testing.T) {
 				Spec: apiv1.NodeDeploymentSpec{
 					Template: apiv1.NodeSpec{
 						Cloud: apiv1.NodeCloudSpec{
-							Fake: &apiv1.FakeNodeSpec{},
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
 							Ubuntu: &apiv1.UbuntuSpec{
