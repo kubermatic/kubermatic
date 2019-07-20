@@ -470,8 +470,8 @@ func TestCreateNodeDeployment(t *testing.T) {
 		// scenario 1
 		{
 			Name:                   "scenario 1: create a node deployment that match the given spec",
-			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"fake":{}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}}`,
-			ExpectedResponse:       `{"name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"fake":{"exists":false}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"}},"paused":false},"status":{}}`,
+			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}}`,
+			ExpectedResponse:       `{"name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"}},"paused":false},"status":{}}`,
 			HTTPStatus:             http.StatusCreated,
 			ProjectID:              test.GenDefaultProject().Name,
 			ClusterID:              test.GenDefaultCluster().Name,
@@ -1295,7 +1295,7 @@ func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 		},
 	}
 	cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-		DatacenterName: "us-central1",
+		DatacenterName: "regular-do1",
 	}
 	return cluster
 }
