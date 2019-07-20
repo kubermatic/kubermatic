@@ -18,9 +18,6 @@ import (
 )
 
 func Provider(datacenter *kubermaticv1.Datacenter) provider.CloudProvider {
-	if datacenter == nil {
-		return nil
-	}
 	if datacenter.Spec.Digitalocean != nil {
 		return digitalocean.NewCloudProvider()
 	}

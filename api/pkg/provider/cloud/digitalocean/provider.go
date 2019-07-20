@@ -2,7 +2,6 @@ package digitalocean
 
 import (
 	"context"
-	"errors"
 
 	"github.com/digitalocean/godo"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -23,9 +22,6 @@ func (do *digitalocean) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 }
 
 func (do *digitalocean) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
-	if spec.Digitalocean == nil {
-		return errors.New("spec.digitalocean is nil")
-	}
 	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: spec.Digitalocean.Token})
 	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
 

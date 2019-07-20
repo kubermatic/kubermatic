@@ -302,9 +302,16 @@ func buildSeeds() map[string]*kubermaticv1.Seed {
 						Location: "us-central",
 						Country:  "US",
 						Spec: kubermaticv1.DatacenterSpec{
-							Fake: &kubermaticv1.DatacenterSpecFake{
-								FakeProperty: "my-val",
+							Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
+								Region: "ams2",
 							},
+						},
+					},
+					"fake-dc": {
+						Location: "Henriks basement",
+						Country:  "Germany",
+						Spec: kubermaticv1.DatacenterSpec{
+							Fake: &kubermaticv1.DatacenterSpecFake{},
 						},
 					},
 				},
