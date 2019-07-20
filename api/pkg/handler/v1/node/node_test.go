@@ -151,7 +151,7 @@ func TestListNodesForCluster(t *testing.T) {
 			},
 			ExistingMachines: []*clusterv1alpha1.Machine{
 				genTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
-				genTestMachine("mars", `{"cloudProvider":"fake","cloudProviderSpec":{}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 			},
 			ExpectedResponse: []apiv1.Node{
 				{
@@ -193,7 +193,12 @@ func TestListNodesForCluster(t *testing.T) {
 					},
 					Spec: apiv1.NodeSpec{
 						Cloud: apiv1.NodeCloudSpec{
-							Fake: &apiv1.FakeNodeSpec{},
+							AWS: &apiv1.AWSNodeSpec{
+								InstanceType:     "t2.micro",
+								VolumeSize:       50,
+								AvailabilityZone: "eu-central-1a",
+								SubnetID:         "subnet-2bff4f43",
+							},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
 							Ubuntu: &apiv1.UbuntuSpec{
@@ -203,7 +208,6 @@ func TestListNodesForCluster(t *testing.T) {
 						Versions: apiv1.NodeVersionInfo{
 							Kubelet: "v9.9.9",
 						},
-						SSHUserName: "fakeUbuntu",
 					},
 					Status: apiv1.NodeStatus{
 						MachineName: "mars",
