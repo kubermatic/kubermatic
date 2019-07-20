@@ -601,8 +601,8 @@ func TestListNodeDeployments(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
-				genTestMachineDeployment("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
-				genTestMachineDeployment("mars", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil),
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
+				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil),
 			},
 			ExpectedResponse: []apiv1.NodeDeployment{
 				{
@@ -613,7 +613,9 @@ func TestListNodeDeployments(t *testing.T) {
 					Spec: apiv1.NodeDeploymentSpec{
 						Template: apiv1.NodeSpec{
 							Cloud: apiv1.NodeCloudSpec{
-								Fake: &apiv1.FakeNodeSpec{},
+								Digitalocean: &apiv1.DigitaloceanNodeSpec{
+									Size: "2GB",
+								},
 							},
 							OperatingSystem: apiv1.OperatingSystemSpec{
 								Ubuntu: &apiv1.UbuntuSpec{
@@ -637,7 +639,12 @@ func TestListNodeDeployments(t *testing.T) {
 					Spec: apiv1.NodeDeploymentSpec{
 						Template: apiv1.NodeSpec{
 							Cloud: apiv1.NodeCloudSpec{
-								Fake: &apiv1.FakeNodeSpec{},
+								AWS: &apiv1.AWSNodeSpec{
+									InstanceType:     "t2.micro",
+									VolumeSize:       50,
+									AvailabilityZone: "eu-central-1a",
+									SubnetID:         "subnet-2bff4f43",
+								},
 							},
 							OperatingSystem: apiv1.OperatingSystemSpec{
 								Ubuntu: &apiv1.UbuntuSpec{
