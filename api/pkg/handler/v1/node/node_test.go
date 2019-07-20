@@ -392,7 +392,7 @@ func TestCreateNodeForClusterIsDeprecated(t *testing.T) {
 		// scenario 1
 		{
 			Name:                               "scenario 1: create a node that match the given spec",
-			Body:                               `{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}`,
+			Body:                               `{"spec":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}`,
 			ExpectedResponse:                   `{"error":{"code":400,"message":"Creating Nodes is deprecated. Please create a Node Deployment instead","details":["If you are calling this API endpoint directly then use POST \"v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments\" instead"]}}`,
 			HTTPStatus:                         http.StatusBadRequest,
 			RewriteClusterNameAndNamespaceName: true,
