@@ -289,6 +289,15 @@ func buildSeeds() map[string]*kubermaticv1.Seed {
 							},
 						},
 					},
+					"regular-do1": {
+						Country:  "NL",
+						Location: "Amsterdam",
+						Spec: kubermaticv1.DatacenterSpec{
+							Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
+								Region: "ams2",
+							},
+						},
+					},
 					"private-fake": {
 						Country:  "NL",
 						Location: "US ",

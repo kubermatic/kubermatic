@@ -86,7 +86,7 @@ func TestDatacenterEndpointAdmin(t *testing.T) {
 
 func TestDatacenterEndpointFound(t *testing.T) {
 	t.Parallel()
-	req := httptest.NewRequest("GET", "/api/v1/dc/regular-fake", nil)
+	req := httptest.NewRequest("GET", "/api/v1/dc/regular-do1", nil)
 	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
 
 	res := httptest.NewRecorder()
@@ -100,5 +100,5 @@ func TestDatacenterEndpointFound(t *testing.T) {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	test.CompareWithResult(t, res, `{"metadata":{"name":"regular-fake","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{"fake_property":"ams2"}}}`)
+	test.CompareWithResult(t, res, `{"metadata":{"name":"regular-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"}}}`)
 }
