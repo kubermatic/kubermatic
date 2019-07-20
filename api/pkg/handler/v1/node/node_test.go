@@ -236,8 +236,8 @@ func TestListNodesForCluster(t *testing.T) {
 				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
 			},
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				genTestMachine("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, []metav1.OwnerReference{{APIVersion: "", Kind: "", Name: "", UID: ""}}),
-				genTestMachine("mars", `{"cloudProvider":"fake","cloudProviderSpec":{}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, []metav1.OwnerReference{{APIVersion: "", Kind: "", Name: "", UID: ""}}),
+				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 			},
 			ExpectedResponse: []apiv1.Node{
 				{
@@ -247,7 +247,12 @@ func TestListNodesForCluster(t *testing.T) {
 					},
 					Spec: apiv1.NodeSpec{
 						Cloud: apiv1.NodeCloudSpec{
-							Fake: &apiv1.FakeNodeSpec{},
+							AWS: &apiv1.AWSNodeSpec{
+								InstanceType:     "t2.micro",
+								VolumeSize:       50,
+								AvailabilityZone: "eu-central-1a",
+								SubnetID:         "subnet-2bff4f43",
+							},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
 							Ubuntu: &apiv1.UbuntuSpec{
@@ -257,7 +262,6 @@ func TestListNodesForCluster(t *testing.T) {
 						Versions: apiv1.NodeVersionInfo{
 							Kubelet: "v9.9.9",
 						},
-						SSHUserName: "fakeUbuntu",
 					},
 					Status: apiv1.NodeStatus{
 						MachineName: "mars",
