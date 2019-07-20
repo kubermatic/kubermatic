@@ -815,13 +815,13 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
-				genTestMachineDeployment("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}),
-				genTestMachineDeployment("mars", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}),
+				genTestMachineDeployment("mars", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
 			},
 			NodeDeploymentID: "venus",
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				genTestMachine("venus-1", `{"cloudProvider":"fake","cloudProviderSpec":{},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
-				genTestMachine("venus-2", `{"cloudProvider":"fake","cloudProviderSpec":{},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil),
+				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil),
 				// TODO @alvaroaleman: Have to deactivate these because the ctrlruntimefakeclient doesn't have a release where a LabelSelector is supported yet
 				// This is already done in https://github.com/kubernetes-sigs/controller-runtime/pull/311 but we have to wait for that release
 				//				genTestMachine("mars-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "345", "xyz": "abc"}, nil),
@@ -835,7 +835,9 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 					},
 					Spec: apiv1.NodeSpec{
 						Cloud: apiv1.NodeCloudSpec{
-							Fake: &apiv1.FakeNodeSpec{},
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
 							Ubuntu: &apiv1.UbuntuSpec{
@@ -845,7 +847,6 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 						Versions: apiv1.NodeVersionInfo{
 							Kubelet: "v9.9.9",
 						},
-						SSHUserName: "fakeUbuntu",
 					},
 					Status: apiv1.NodeStatus{
 						MachineName: "venus-1",
@@ -860,7 +861,9 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 					},
 					Spec: apiv1.NodeSpec{
 						Cloud: apiv1.NodeCloudSpec{
-							Fake: &apiv1.FakeNodeSpec{},
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
 						},
 						OperatingSystem: apiv1.OperatingSystemSpec{
 							Ubuntu: &apiv1.UbuntuSpec{
@@ -870,7 +873,6 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 						Versions: apiv1.NodeVersionInfo{
 							Kubelet: "v9.9.9",
 						},
-						SSHUserName: "fakeUbuntu",
 					},
 					Status: apiv1.NodeStatus{
 						MachineName: "venus-2",
