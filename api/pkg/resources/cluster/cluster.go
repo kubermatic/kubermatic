@@ -21,9 +21,6 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter) (*kubermaticv1.
 		OIDC:              apiCluster.Spec.OIDC,
 		Version:           apiCluster.Spec.Version,
 	}
-	if dc == nil {
-		return nil, errors.New("datacenter is nil")
-	}
 
 	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
 	if err != nil {
