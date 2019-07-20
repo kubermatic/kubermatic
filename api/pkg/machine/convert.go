@@ -7,7 +7,6 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/fake"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
@@ -164,12 +163,6 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			Labels:      config.Labels,
 			Tags:        config.Tags,
 		}
-	case providerconfig.CloudProviderFake:
-		config := &fake.CloudProviderSpec{}
-		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, config); err != nil {
-			return nil, fmt.Errorf("failed to parse fake config: %v", err)
-		}
-		cloudSpec.Fake = &apiv1.FakeNodeSpec{}
 	default:
 		return nil, fmt.Errorf("unknown cloud provider %q", decodedProviderSpec.CloudProvider)
 	}

@@ -67,11 +67,6 @@ type VSphereDatacenterSpec struct {
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
 type BringYourOwnDatacenterSpec struct{}
 
-// FakeDatacenterSpec describes a fake datacenter
-type FakeDatacenterSpec struct {
-	FakeProperty string `json:"fake_property,omitempty"`
-}
-
 // AWSDatacenterSpec specifies a data center of Amazon Web Services.
 type AWSDatacenterSpec struct {
 	Region string `json:"region"`
@@ -118,7 +113,6 @@ type DatacenterSpec struct {
 	GCP          *GCPDatacenterSpec           `json:"gcp,omitempty"`
 	Hetzner      *HetznerDatacenterSpec       `json:"hetzner,omitempty"`
 	VSphere      *VSphereDatacenterSpec       `json:"vsphere,omitempty"`
-	Fake         *FakeDatacenterSpec          `json:"fake,omitempty"`
 }
 
 // DatacenterList represents a list of datacenters
@@ -618,7 +612,6 @@ type NodeCloudSpec struct {
 	Hetzner      *HetznerNodeSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
 	GCP          *GCPNodeSpec          `json:"gcp,omitempty"`
-	Fake         *FakeNodeSpec         `json:"fake,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -789,10 +782,6 @@ type GCPNodeSpec struct {
 	Preemptible bool              `json:"preemptible"`
 	Labels      map[string]string `json:"labels"`
 	Tags        []string          `json:"tags"`
-}
-
-type FakeNodeSpec struct {
-	Exists bool `json:"exists"`
 }
 
 // NodeResources cpu and memory of a node

@@ -32,9 +32,6 @@ var userNameMap = map[string]string{
 	"GCP:Ubuntu":                  "",
 	"GCP:ContainerLinux":          "",
 	"GCP:CentOS":                  "",
-	"Fake:Ubuntu":                 "fakeUbuntu",
-	"Fake:ContainerLinux":         "fakeContainerLinux",
-	"Fake:CentOS":                 "fakeCentOS",
 }
 
 // GetSSHUserName returns SSH login name for the provider and distribution

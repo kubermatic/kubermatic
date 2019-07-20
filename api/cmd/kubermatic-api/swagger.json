@@ -4625,9 +4625,6 @@
         "digitalocean": {
           "$ref": "#/definitions/DigitialoceanDatacenterSpec"
         },
-        "fake": {
-          "$ref": "#/definitions/FakeDatacenterSpec"
-        },
         "gcp": {
           "$ref": "#/definitions/GCPDatacenterSpec"
         },
@@ -4939,27 +4936,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "FakeDatacenterSpec": {
-      "description": "FakeDatacenterSpec describes a fake datacenter",
-      "type": "object",
-      "properties": {
-        "fake_property": {
-          "type": "string",
-          "x-go-name": "FakeProperty"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "FakeNodeSpec": {
-      "type": "object",
-      "properties": {
-        "exists": {
-          "type": "boolean",
-          "x-go-name": "Exists"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "GCPCloudSpec": {
       "type": "object",
@@ -5484,9 +5460,6 @@
         },
         "digitalocean": {
           "$ref": "#/definitions/DigitaloceanNodeSpec"
-        },
-        "fake": {
-          "$ref": "#/definitions/FakeNodeSpec"
         },
         "gcp": {
           "$ref": "#/definitions/GCPNodeSpec"

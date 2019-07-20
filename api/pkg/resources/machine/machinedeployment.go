@@ -158,9 +158,6 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.Fake != nil:
-		config.CloudProvider = providerconfig.CloudProviderFake
-		cloudExt = &runtime.RawExtension{Raw: []byte("{}")}
 	default:
 		return nil, errors.New("unknown cloud provider")
 	}
@@ -207,8 +204,7 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*a
 		nd.Spec.Template.Cloud.VSphere == nil &&
 		nd.Spec.Template.Cloud.Azure == nil &&
 		nd.Spec.Template.Cloud.Packet == nil &&
-		nd.Spec.Template.Cloud.GCP == nil &&
-		nd.Spec.Template.Cloud.Fake == nil {
+		nd.Spec.Template.Cloud.GCP == nil {
 		return nil, fmt.Errorf("node deployment needs to have cloud provider data")
 	}
 

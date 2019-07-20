@@ -298,24 +298,6 @@ func buildSeeds() map[string]*kubermaticv1.Seed {
 							},
 						},
 					},
-					"private-fake": {
-						Country:  "NL",
-						Location: "US ",
-						Spec: kubermaticv1.DatacenterSpec{
-							Fake: &kubermaticapiv1.DatacenterSpecFake{
-								FakeProperty: "ams2",
-							},
-						},
-					},
-					"regular-fake": {
-						Country:  "NL",
-						Location: "Amsterdam",
-						Spec: kubermaticv1.DatacenterSpec{
-							Fake: &kubermaticapiv1.DatacenterSpecFake{
-								FakeProperty: "ams2",
-							},
-						},
-					},
 					"us-central1": {
 						Location: "us-central",
 						Country:  "US",

@@ -824,7 +824,7 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:195154162e1ff7ac0053d3f2402cc07b34fcf19a4759de93b42edb6e95f578d7"
+  digest = "1:e6f1ef7da43b73786c0f909ad8e9d27bfcfbaadb4532fd38a638376838d14e81"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/plugin",
@@ -834,7 +834,6 @@
     "pkg/cloudprovider/provider/aws",
     "pkg/cloudprovider/provider/azure",
     "pkg/cloudprovider/provider/digitalocean",
-    "pkg/cloudprovider/provider/fake",
     "pkg/cloudprovider/provider/gce",
     "pkg/cloudprovider/provider/hetzner",
     "pkg/cloudprovider/provider/openstack",
@@ -2059,7 +2058,6 @@
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean",
-    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/fake",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack",
