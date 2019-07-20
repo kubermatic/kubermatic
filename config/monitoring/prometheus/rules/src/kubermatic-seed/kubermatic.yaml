@@ -41,3 +41,12 @@ groups:
       steps:
       - Check the Prometheus Service Discovery page to find out why the target is unreachable.
       - Ensure that the controller-manager pod's logs and that it is not crashlooping.
+
+  # This is a dummy alert that is triggered for paused clusters to inhibit all other alerts from such clusters.
+  # The label_replace() is used to create a new "cluster" label that will be used for the inhibitions as well.
+  - alert: KubermaticClusterPaused
+    annotations:
+      message: Cluster {{ $labels.name }} has been paused and will not be reconciled until the pause flag is reset.
+    expr: label_replace(kubermatic_cluster_info{pause="true"}, "cluster", "$0", "name", ".+")
+    labels:
+      severity: none
