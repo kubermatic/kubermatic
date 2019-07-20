@@ -63,7 +63,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
 			},
 			ExistingMachines: []*clusterv1alpha1.Machine{
-				genTestMachine("venus", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 				genTestMachine("mars", `{"cloudProvider":"fake","cloudProviderSpec":{}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 			},
 			//
