@@ -14,33 +14,15 @@ import (
 )
 
 const (
-	tag                = "v0.2-dev"
-	emptyDirVolumeName = "http-proper"
+	tag                = "v0.2-dev0"
+	emptyDirVolumeName = "http-prober-bin"
+	initContainerName  = "copy-http-prober"
 )
 
 // IsRunningInitContainer returns a init container which will wait until the apiserver is reachable via its ClusterIP
 type isRunningInitContainerData interface {
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
-}
-
-func IsRunningInitContainer(data isRunningInitContainerData) (*corev1.Container, error) {
-	// get clusterIP of apiserver
-	return &corev1.Container{
-		Name:            "apiserver-running",
-		Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/http-prober:v0.1",
-		ImagePullPolicy: corev1.PullIfNotPresent,
-		Command:         []string{"/usr/local/bin/http-prober"},
-		Args: []string{
-			"-endpoint", fmt.Sprintf("https://%s:%d/healthz", data.Cluster().Address.InternalName, data.Cluster().Address.Port),
-			"-insecure",
-			"-retries", "100",
-			"-retry-wait", "2",
-			"-timeout", "1",
-		},
-		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-		TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-	}, nil
 }
 
 // IsRunningWrapper wraps the named containers in the pod with a check if the API server is reachable.
@@ -59,24 +41,38 @@ func IsRunningWrapper(data isRunningInitContainerData, spec corev1.PodSpec, cont
 		}
 	}
 
-	spec.Volumes = append(spec.Volumes, corev1.Volume{
+	var newVoumes []corev1.Volume
+	for _, volume := range spec.Volumes {
+		if volume.Name == emptyDirVolumeName {
+			continue
+		}
+		newVoumes = append(newVoumes, volume)
+	}
+	spec.Volumes = append(newVoumes, corev1.Volume{
 		Name: emptyDirVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 	})
 
-	// We must come first in case an initContainer gets wrapped
+	var newInitContainers []corev1.Container
+	for _, container := range spec.InitContainers {
+		if container.Name == initContainerName {
+			continue
+		}
+		newInitContainers = append(newInitContainers, container)
+	}
 	copyContainer := corev1.Container{
-		Name:    "http-proper-copy",
+		Name:    initContainerName,
 		Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/http-prober:" + tag,
-		Command: []string{"/bin/cp", "/usr/local/bin/http-prober", "/empty-dir/http-proper"},
+		Command: []string{"/bin/cp", "/usr/local/bin/http-prober", "/http-prober-bin/http-prober"},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      emptyDirVolumeName,
-			MountPath: "/empty-dir",
+			MountPath: "/http-prober-bin",
 		}},
 	}
-	spec.InitContainers = append([]corev1.Container{copyContainer}, spec.InitContainers...)
+	// We must come first in case an initContainer gets wrapped
+	spec.InitContainers = append([]corev1.Container{copyContainer}, newInitContainers...)
 
 	for idx := range spec.InitContainers {
 		if !containersToWrap.Has(spec.InitContainers[idx].Name) {
@@ -129,9 +125,9 @@ func wrapContainer(data isRunningInitContainerData, container corev1.Container) 
 
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      emptyDirVolumeName,
-		MountPath: "/http-prober",
+		MountPath: "/http-prober-bin",
 	})
-	container.Command = []string{"/http-prober/http-prober"}
+	container.Command = []string{"/http-prober-bin/http-prober"}
 	container.Args = []string{
 		"-endpoint", fmt.Sprintf("https://%s:%d/healthz", data.Cluster().Address.InternalName, data.Cluster().Address.Port),
 		"-insecure",
