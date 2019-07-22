@@ -34,22 +34,16 @@ var (
 	errNotFound = errors.New("not found")
 )
 
-func getAllSecurityGroups(netClient *gophercloud.ServiceClient) ([]ossecuritygroups.SecGroup, error) {
-	var allGroups []ossecuritygroups.SecGroup
-
-	pager := ossecuritygroups.List(netClient, ossecuritygroups.ListOpts{})
-	err := pager.EachPage(func(page pagination.Page) (bool, error) {
-		securityGroups, err := ossecuritygroups.ExtractGroups(page)
-		if err != nil {
-			return false, err
-		}
-		allGroups = append(allGroups, securityGroups...)
-		return true, nil
-	})
+func getSecurityGroups(netClient *gophercloud.ServiceClient, opts ossecuritygroups.ListOpts) ([]ossecuritygroups.SecGroup, error) {
+	page, err := ossecuritygroups.List(netClient, opts).AllPages()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list security groups: %v", err)
 	}
-	return allGroups, nil
+	secGroups, err := ossecuritygroups.ExtractGroups(page)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract security groups: %v", err)
+	}
+	return secGroups, nil
 }
 
 // NetworkWithExternalExt is a struct that implements all networks
@@ -110,23 +104,13 @@ func getExternalNetwork(netClient *gophercloud.ServiceClient) (*NetworkWithExter
 	return nil, errNotFound
 }
 
-func securityGroupExistInList(name string, list []ossecuritygroups.SecGroup) bool {
-	for _, gs := range list {
-		if gs.Name == name {
-			return true
-		}
-	}
-	return false
-}
-
 func validateSecurityGroupsExist(netClient *gophercloud.ServiceClient, securityGroups []string) error {
-	existingGroups, err := getAllSecurityGroups(netClient)
-	if err != nil {
-		return err
-	}
-
 	for _, sg := range securityGroups {
-		if !securityGroupExistInList(sg, existingGroups) {
+		results, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: sg})
+		if err != nil {
+			return fmt.Errorf("failed to get security group: %v", err)
+		}
+		if len(results) == 0 {
 			return fmt.Errorf("specified security group %s not found", sg)
 		}
 	}
@@ -134,36 +118,51 @@ func validateSecurityGroupsExist(netClient *gophercloud.ServiceClient, securityG
 }
 
 func deleteSecurityGroup(netClient *gophercloud.ServiceClient, sgName string) error {
-	securityGroups, err := getAllSecurityGroups(netClient)
+	results, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: sgName})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get security group: %v", err)
 	}
 
-	for _, sg := range securityGroups {
-		if sg.Name == sgName {
-			res := ossecuritygroups.Delete(netClient, sg.ID)
-			if res.Err != nil {
-				return res.Err
-			}
-			if err := res.ExtractErr(); err != nil {
-				return err
-			}
+	for _, sg := range results {
+		res := ossecuritygroups.Delete(netClient, sg.ID)
+		if res.Err != nil {
+			return res.Err
+		}
+		if err := res.ExtractErr(); err != nil {
+			return err
 		}
 	}
+
 	return nil
 }
 
-func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, clusterName string) (*ossecuritygroups.SecGroup, error) {
-	gres := ossecuritygroups.Create(netClient, ossecuritygroups.CreateOpts{
-		Name:        resourceNamePrefix + clusterName,
-		Description: "Contains security rules for the kubermatic worker nodes",
-	})
-	if gres.Err != nil {
-		return nil, gres.Err
-	}
-	g, err := gres.Extract()
+func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, clusterName string) (string, error) {
+	secGroupName := resourceNamePrefix + clusterName
+	secGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: secGroupName})
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("failed to get securiy groups: %v", err)
+	}
+
+	var securityGroupID string
+	switch len(secGroups) {
+	case 0:
+		gres := ossecuritygroups.Create(netClient, ossecuritygroups.CreateOpts{
+			Name:        secGroupName,
+			Description: "Contains security rules for the Kubernetes worker nodes",
+		})
+		if gres.Err != nil {
+			return "", gres.Err
+		}
+		g, err := gres.Extract()
+		if err != nil {
+			return "", err
+		}
+		securityGroupID = g.ID
+	case 1:
+		securityGroupID = secGroups[0].ID
+	default:
+		return "", fmt.Errorf("there are already %d security groups with name %q, dont know which one to use",
+			len(secGroups), secGroupName)
 	}
 
 	rules := []osecuritygrouprules.CreateOpts{
@@ -171,21 +170,21 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, cluster
 			// Allows ipv4 traffic within this group
 			Direction:     osecuritygrouprules.DirIngress,
 			EtherType:     osecuritygrouprules.EtherType4,
-			SecGroupID:    g.ID,
-			RemoteGroupID: g.ID,
+			SecGroupID:    securityGroupID,
+			RemoteGroupID: securityGroupID,
 		},
 		{
 			// Allows ipv6 traffic within this group
 			Direction:     osecuritygrouprules.DirIngress,
 			EtherType:     osecuritygrouprules.EtherType6,
-			SecGroupID:    g.ID,
-			RemoteGroupID: g.ID,
+			SecGroupID:    securityGroupID,
+			RemoteGroupID: securityGroupID,
 		},
 		{
 			// Allows ssh from external
 			Direction:    osecuritygrouprules.DirIngress,
 			EtherType:    osecuritygrouprules.EtherType4,
-			SecGroupID:   g.ID,
+			SecGroupID:   securityGroupID,
 			PortRangeMin: provider.DefaultSSHPort,
 			PortRangeMax: provider.DefaultSSHPort,
 			Protocol:     osecuritygrouprules.ProtocolTCP,
@@ -194,7 +193,7 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, cluster
 			// Allows kubelet from external
 			Direction:    osecuritygrouprules.DirIngress,
 			EtherType:    osecuritygrouprules.EtherType4,
-			SecGroupID:   g.ID,
+			SecGroupID:   securityGroupID,
 			PortRangeMin: provider.DefaultKubeletPort,
 			PortRangeMax: provider.DefaultKubeletPort,
 			Protocol:     osecuritygrouprules.ProtocolTCP,
@@ -203,14 +202,14 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, cluster
 			// Allows ICMP traffic
 			Direction:  osecuritygrouprules.DirIngress,
 			EtherType:  osecuritygrouprules.EtherType4,
-			SecGroupID: g.ID,
+			SecGroupID: securityGroupID,
 			Protocol:   osecuritygrouprules.ProtocolICMP,
 		},
 		{
 			// Allows ICMPv6 traffic
 			Direction:  osecuritygrouprules.DirIngress,
 			EtherType:  osecuritygrouprules.EtherType6,
-			SecGroupID: g.ID,
+			SecGroupID: securityGroupID,
 			Protocol:   osecuritygrouprules.ProtocolIPv6ICMP,
 		},
 	}
@@ -218,15 +217,15 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, cluster
 	for _, opts := range rules {
 		rres := osecuritygrouprules.Create(netClient, opts)
 		if rres.Err != nil {
-			return nil, rres.Err
+			return "", rres.Err
 		}
 
 		if _, err := rres.Extract(); err != nil {
-			return nil, err
+			return "", err
 		}
 	}
 
-	return g, nil
+	return secGroupName, nil
 }
 
 func createKubermaticNetwork(netClient *gophercloud.ServiceClient, clusterName string) (*osnetworks.Network, error) {
