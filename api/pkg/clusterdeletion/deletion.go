@@ -12,6 +12,7 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/machine-controller/pkg/node/eviction"
 
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
@@ -23,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
+	utilpointer "k8s.io/utils/pointer"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -128,6 +130,18 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 	}
 
 	if shouldDeletePVs {
+		// Prevent re-creation of PVs, PVCs and PDBs by using an intentionally defunct admissionWebhook
+		admissionWebhookName, admissionWebhook := terminatingAdmissionWebhook()
+		err := d.userClusterClient.Get(ctx, types.NamespacedName{Name: admissionWebhookName}, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{})
+		if err != nil && !kerrors.IsNotFound(err) {
+			return fmt.Errorf("error checking if %q webhook configuration already exists: %v", admissionWebhookName, err)
+		}
+		if kerrors.IsNotFound(err) {
+			if err := d.userClusterClient.Create(ctx, admissionWebhook); err != nil {
+				return fmt.Errorf("failed to create %q webhook configuration: %v", admissionWebhookName, err)
+			}
+		}
+
 		pdbs := &policyv1beta1.PodDisruptionBudgetList{}
 		if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pdbs); err != nil {
 			return fmt.Errorf("failed to list pdbs: %v", err)
@@ -443,5 +457,46 @@ func getObjectForKind(kind string) (runtime.Object, error) {
 		return &corev1.Pod{}, nil
 	default:
 		return nil, fmt.Errorf("kind %q is unknown", kind)
+	}
+}
+
+func terminatingAdmissionWebhook() (string, *admissionregistrationv1beta1.ValidatingWebhookConfiguration) {
+	name := "kubernetes-cluster-cleanup"
+	failurePolicy := admissionregistrationv1beta1.Fail
+	return name, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			Annotations: map[string]string{
+				"description": "This webhok configuration exists to prevent creation of any new stateful resources in a cluster that is currently being terminated",
+			},
+		},
+		Webhooks: []admissionregistrationv1beta1.Webhook{
+			{
+				// Must be a domain with at least three segments separated by dots
+				Name: "kubernetes.cluster.cleanup",
+				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
+					URL: utilpointer.StringPtr("https://127.0.0.1:1"),
+				},
+				Rules: []admissionregistrationv1beta1.RuleWithOperations{
+					{
+						Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
+						Rule: admissionregistrationv1beta1.Rule{
+							APIGroups:   []string{""},
+							APIVersions: []string{"*"},
+							Resources:   []string{"persistentvolumes", "persistentvolumeclaims"},
+						},
+					},
+					{
+						Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
+						Rule: admissionregistrationv1beta1.Rule{
+							APIGroups:   []string{"policy"},
+							APIVersions: []string{"*"},
+							Resources:   []string{"poddisruptionbudgets"},
+						},
+					},
+				},
+				FailurePolicy: &failurePolicy,
+			},
+		},
 	}
 }
