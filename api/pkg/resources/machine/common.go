@@ -132,7 +132,6 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *
 }
 
 func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-
 	config := vsphere.RawConfig{
 		TemplateVMName:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VSphere.Template},
 		TemplateNetName: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VSphere.TemplateNetName},

@@ -52,6 +52,7 @@ type DatacenterSpec struct {
 	Hetzner      *DatacenterSpecHetzner      `json:"hetzner,omitempty"`
 	VSphere      *DatacenterSpecVSphere      `json:"vsphere,omitempty"`
 	GCP          *DatacenterSpecGCP          `json:"gcp,omitempty"`
+	Fake         *DatacenterSpecFake         `json:"fake,omitempty"`
 }
 
 // ImageList defines a map of operating system and the image to use
@@ -138,6 +139,11 @@ type DatacenterSpecGCP struct {
 	Region       string   `json:"region"`
 	ZoneSuffixes []string `json:"zone_suffixes"`
 	Regional     bool     `json:"regional,omitempty"`
+}
+
+// DatacenterSpecFake describes a fake datacenter
+type DatacenterSpecFake struct {
+	FakeProperty string `json:"fake_property,omitempty"`
 }
 
 // NodeSettings are node specific which can be configured on datacenter level

@@ -1,6 +1,8 @@
 package cloud
 
 import (
+	"errors"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
@@ -15,18 +17,36 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/vsphere"
 )
 
-// Providers returns a map from cloud provider id to the actual provider.
-func Providers(seeds map[string]*kubermaticv1.Seed) provider.CloudRegistry {
-	return map[string]provider.CloudProvider{
-		provider.DigitaloceanCloudProvider: digitalocean.NewCloudProvider(),
-		provider.BringYourOwnCloudProvider: bringyourown.NewCloudProvider(),
-		provider.AWSCloudProvider:          aws.NewCloudProvider(seeds),
-		provider.AzureCloudProvider:        azure.New(seeds),
-		provider.OpenstackCloudProvider:    openstack.NewCloudProvider(seeds),
-		provider.PacketCloudProvider:       packet.NewCloudProvider(),
-		provider.HetznerCloudProvider:      hetzner.NewCloudProvider(),
-		provider.VSphereCloudProvider:      vsphere.NewCloudProvider(seeds),
-		provider.FakeCloudProvider:         fake.NewCloudProvider(),
-		provider.GCPCloudProvider:          gcp.NewCloudProvider(seeds),
+func Provider(datacenter *kubermaticv1.Datacenter) (provider.CloudProvider, error) {
+	if datacenter.Spec.Digitalocean != nil {
+		return digitalocean.NewCloudProvider(), nil
 	}
+	if datacenter.Spec.BringYourOwn != nil {
+		return bringyourown.NewCloudProvider(), nil
+	}
+	if datacenter.Spec.AWS != nil {
+		return aws.NewCloudProvider(datacenter)
+	}
+	if datacenter.Spec.Azure != nil {
+		return azure.New(datacenter)
+	}
+	if datacenter.Spec.Openstack != nil {
+		return openstack.NewCloudProvider(datacenter)
+	}
+	if datacenter.Spec.Packet != nil {
+		return packet.NewCloudProvider(), nil
+	}
+	if datacenter.Spec.Hetzner != nil {
+		return hetzner.NewCloudProvider(), nil
+	}
+	if datacenter.Spec.VSphere != nil {
+		return vsphere.NewCloudProvider(datacenter)
+	}
+	if datacenter.Spec.GCP != nil {
+		return gcp.NewCloudProvider(), nil
+	}
+	if datacenter.Spec.Fake != nil {
+		return fake.NewCloudProvider(), nil
+	}
+	return nil, errors.New("no cloudprovider found")
 }

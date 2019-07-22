@@ -2,11 +2,14 @@ package kubernetes
 
 import (
 	"fmt"
+	"regexp"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
+
+var tokenValidator = regexp.MustCompile(`[bcdfghjklmnpqrstvwxz2456789]{6}\.[bcdfghjklmnpqrstvwxz2456789]{16}`)
 
 // HasFinalizer tells if a object has the given finalizer
 func HasFinalizer(o metav1.Object, name string) bool {
@@ -31,4 +34,13 @@ func AddFinalizer(obj metav1.Object, finalizer string) {
 // as an admin and kubelet token.
 func GenerateToken() string {
 	return fmt.Sprintf("%s.%s", rand.String(6), rand.String(16))
+}
+
+// ValidateKubernetesToken checks if a given token is syntactically correct.
+func ValidateKubernetesToken(token string) error {
+	if !tokenValidator.MatchString(token) {
+		return fmt.Errorf("token is malformed, must match %s", tokenValidator.String())
+	}
+
+	return nil
 }

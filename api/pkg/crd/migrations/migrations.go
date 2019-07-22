@@ -9,8 +9,6 @@ import (
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	kubermaticKubernetesProvider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
@@ -33,8 +31,6 @@ type cleanupContext struct {
 	kubeClient       kubernetes.Interface
 	kubermaticClient kubermaticclientset.Interface
 	config           *rest.Config
-	seed             *kubermaticv1.Seed
-	cloudProvider    map[string]provider.CloudProvider
 }
 
 // ClusterTask represents a cleanup action, taking the current cluster for which the cleanup should be executed and the current context.
@@ -42,7 +38,7 @@ type cleanupContext struct {
 type ClusterTask func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
 
 // RunAll runs all migrations
-func RunAll(config *rest.Config, workerName string, seed *kubermaticv1.Seed) error {
+func RunAll(config *rest.Config, workerName string) error {
 	// required when performing calls against manually crafted URL's
 	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
 
@@ -59,8 +55,6 @@ func RunAll(config *rest.Config, workerName string, seed *kubermaticv1.Seed) err
 		kubeClient:       kubeClient,
 		kubermaticClient: kubermatiClient,
 		config:           config,
-		seed:             seed,
-		cloudProvider:    cloud.Providers(map[string]*kubermaticv1.Seed{seed.Name: seed}),
 	}
 
 	if err := cleanupClusters(workerName, ctx); err != nil {

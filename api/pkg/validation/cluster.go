@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"regexp"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 )
@@ -15,21 +16,10 @@ import (
 var (
 	// ErrCloudChangeNotAllowed describes that it is not allowed to change the cloud provider
 	ErrCloudChangeNotAllowed = errors.New("not allowed to change the cloud provider")
-
-	tokenValidator = regexp.MustCompile(`[bcdfghjklmnpqrstvwxz2456789]{6}\.[bcdfghjklmnpqrstvwxz2456789]{16}`)
 )
 
-// ValidateKubernetesToken checks if a given token is syntactically correct.
-func ValidateKubernetesToken(token string) error {
-	if !tokenValidator.MatchString(token) {
-		return fmt.Errorf("token is malformed, must match %s", tokenValidator.String())
-	}
-
-	return nil
-}
-
 // ValidateCreateClusterSpec validates the given cluster spec
-func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders map[string]provider.CloudProvider, dc *kubermaticv1.Datacenter) error {
+func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider) error {
 	if spec.HumanReadableName == "" {
 		return errors.New("no name specified")
 	}
@@ -38,25 +28,15 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, cloudProviders ma
 		return fmt.Errorf("invalid cloud spec: %v", err)
 	}
 
-	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
-	if err != nil {
-		return fmt.Errorf("invalid cloud spec: %v", err)
-	}
-
-	cloudProvider, exists := cloudProviders[providerName]
-	if !exists {
-		return fmt.Errorf("invalid cloud provider '%s' specified: %v", err, providerName)
-	}
-
 	if spec.Version.Semver() == nil || spec.Version.String() == "" {
 		return errors.New(`invalid cloud spec "Version" is required but was not specified`)
 	}
 
-	if err = cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
+	if err := cloudProvider.ValidateCloudSpec(spec.Cloud); err != nil {
 		return fmt.Errorf("invalid cloud spec: %v", err)
 	}
 
-	if err = validateMachineNetworksFromClusterSpec(spec); err != nil {
+	if err := validateMachineNetworksFromClusterSpec(spec); err != nil {
 		return fmt.Errorf("machine network validation failed, see: %v", err)
 	}
 
@@ -140,7 +120,7 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 }
 
 // ValidateUpdateCluster validates if the cluster update is allowed
-func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudProviders map[string]provider.CloudProvider, dc *kubermaticv1.Datacenter) error {
+func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter) error {
 	if err := ValidateCloudChange(newCluster.Spec.Cloud, oldCluster.Spec.Cloud); err != nil {
 		return err
 	}
@@ -157,7 +137,7 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 		return errors.New("changing the url is not allowed")
 	}
 
-	if err := ValidateKubernetesToken(newCluster.Address.AdminToken); err != nil {
+	if err := kuberneteshelper.ValidateKubernetesToken(newCluster.Address.AdminToken); err != nil {
 		return fmt.Errorf("invalid admin token: %v", err)
 	}
 
@@ -189,9 +169,9 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, cloudPr
 		return fmt.Errorf("changing to a different provider is not allowed")
 	}
 
-	cloudProvider, exists := cloudProviders[providerName]
-	if !exists {
-		return fmt.Errorf("invalid cloud provider '%s' specified: %v", err, providerName)
+	cloudProvider, err := cloud.Provider(dc)
+	if err != nil {
+		return err
 	}
 
 	if err := cloudProvider.ValidateCloudSpec(newCluster.Spec.Cloud); err != nil {
@@ -213,24 +193,54 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter)
 
 	switch true {
 	case spec.Fake != nil:
+		if dc.Spec.Fake == nil {
+			return fmt.Errorf("datacenter %q is not a fake datacenter", spec.DatacenterName)
+		}
 		return validateFakeCloudSpec(spec.Fake)
 	case spec.AWS != nil:
+		if dc.Spec.AWS == nil {
+			return fmt.Errorf("datacenter %q is not a AWS datacenter", spec.DatacenterName)
+		}
 		return validateAWSCloudSpec(spec.AWS)
 	case spec.Digitalocean != nil:
+		if dc.Spec.Digitalocean == nil {
+			return fmt.Errorf("datacenter %q is not a Digitalocean datacenter", spec.DatacenterName)
+		}
 		return validateDigitaloceanCloudSpec(spec.Digitalocean)
 	case spec.Openstack != nil:
+		if dc.Spec.Openstack == nil {
+			return fmt.Errorf("datacenter %q is not an Openstack datacenter", spec.DatacenterName)
+		}
 		return validateOpenStackCloudSpec(spec.Openstack, dc)
 	case spec.Azure != nil:
+		if dc.Spec.Azure == nil {
+			return fmt.Errorf("datacenter %q is not an Azure datacenter", spec.DatacenterName)
+		}
 		return validateAzureCloudSpec(spec.Azure)
 	case spec.VSphere != nil:
+		if dc.Spec.VSphere == nil {
+			return fmt.Errorf("datacenter %q is not a vSphere datacenter", spec.DatacenterName)
+		}
 		return validateVSphereCloudSpec(spec.VSphere)
 	case spec.GCP != nil:
+		if dc.Spec.GCP == nil {
+			return fmt.Errorf("datacenter %q is not a GCP datacenter", spec.DatacenterName)
+		}
 		return validateGCPCloudSpec(spec.GCP)
 	case spec.Packet != nil:
+		if dc.Spec.Packet == nil {
+			return fmt.Errorf("datacenter %q is not a Packet datacenter", spec.DatacenterName)
+		}
 		return validatePacketCloudSpec(spec.Packet)
 	case spec.Hetzner != nil:
+		if dc.Spec.Hetzner == nil {
+			return fmt.Errorf("datacenter %q is not a Hetzner datacenter", spec.DatacenterName)
+		}
 		return validateHetznerCloudSpec(spec.Hetzner)
 	case spec.BringYourOwn != nil:
+		if dc.Spec.BringYourOwn == nil {
+			return fmt.Errorf("datacenter %q is not a bringyourown datacenter", spec.DatacenterName)
+		}
 		return nil
 	default:
 		return errors.New("no cloud provider specified")

@@ -2,6 +2,7 @@ package azure
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -44,18 +45,21 @@ const (
 )
 
 type Azure struct {
-	seeds map[string]*kubermaticv1.Seed
-	log   *zap.SugaredLogger
-	ctx   context.Context
+	dc  *kubermaticv1.DatacenterSpecAzure
+	log *zap.SugaredLogger
+	ctx context.Context
 }
 
 // New returns a new Azure provider.
-func New(seeds map[string]*kubermaticv1.Seed) *Azure {
-	return &Azure{
-		seeds: seeds,
-		log:   log.Logger,
-		ctx:   context.TODO(),
+func New(dc *kubermaticv1.Datacenter) (*Azure, error) {
+	if dc.Spec.Azure == nil {
+		return nil, errors.New("datacenter is not an Azure datacenter")
 	}
+	return &Azure{
+		dc:  dc.Spec.Azure,
+		log: log.Logger,
+		ctx: context.TODO(),
+	}, nil
 }
 
 // Azure API doesn't allow programmatically getting the number of available fault domains in a given region.
@@ -511,16 +515,7 @@ func ensureRouteTable(ctx context.Context, cloud kubermaticv1.CloudSpec, locatio
 func (a *Azure) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
 	logger := a.log.With("cluster", cluster.Name)
-	datacenter, err := provider.DatacenterFromSeedMap(a.seeds, cluster.Spec.Cloud.DatacenterName)
-	if err != nil {
-		return nil, err
-	}
-
-	if datacenter.Spec.Azure == nil {
-		return nil, fmt.Errorf("datacenter %q is not a valid Azure datacenter", cluster.Spec.Cloud.DatacenterName)
-	}
-
-	location := datacenter.Spec.Azure.Location
+	location := a.dc.Location
 
 	if cluster.Spec.Cloud.Azure.ResourceGroup == "" {
 		cluster.Spec.Cloud.Azure.ResourceGroup = resourceNamePrefix + cluster.Name

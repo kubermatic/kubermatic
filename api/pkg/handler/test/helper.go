@@ -33,7 +33,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
@@ -114,7 +113,6 @@ func GetUser(email, id, name string, admin bool) apiv1.User {
 type newRoutingFunc func(
 	seeds map[string]*kubermaticv1.Seed,
 	newClusterProviders map[string]provider.ClusterProvider,
-	cloudProviders map[string]provider.CloudProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
@@ -137,8 +135,6 @@ func initTestEndpoint(user apiv1.User, seeds map[string]*kubermaticv1.Seed, kube
 	if seeds == nil {
 		seeds = buildSeeds()
 	}
-	cloudProviders := cloud.Providers(seeds)
-
 	fakeClient := fakectrlruntimeclient.NewFakeClient(append(kubeObjects, machineObjects...)...)
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
@@ -228,7 +224,6 @@ func initTestEndpoint(user apiv1.User, seeds map[string]*kubermaticv1.Seed, kube
 	mainRouter := routingFunc(
 		seeds,
 		clusterProviders,
-		cloudProviders,
 		sshKeyProvider,
 		userProvider,
 		serviceAccountProvider,
@@ -303,13 +298,11 @@ func buildSeeds() map[string]*kubermaticv1.Seed {
 							},
 						},
 					},
-					"us-central1": {
-						Location: "us-central",
-						Country:  "US",
+					"fake-dc": {
+						Location: "Henriks basement",
+						Country:  "Germany",
 						Spec: kubermaticv1.DatacenterSpec{
-							Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-								Region: "ams2",
-							},
+							Fake: &kubermaticv1.DatacenterSpecFake{},
 						},
 					},
 				},

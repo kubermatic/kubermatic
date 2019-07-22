@@ -41,7 +41,6 @@ import (
 	metricspkg "github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
@@ -174,7 +173,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to load datacenter yaml %q: %v", options.dcFile, err)
 	}
-	cloudProviders := cloud.Providers(seeds)
 	userMasterLister := kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userMasterLister, kubernetesprovider.IsServiceAccount)
@@ -213,7 +211,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 			privilegedProject:                     privilegedProjectProvider,
 			projectMember:                         projectMemberProvider,
 			memberMapper:                          projectMemberProvider,
-			cloud:                                 cloudProviders,
 			eventRecorderProvider:                 eventRecorderProvider,
 			clusters:                              clusterProviders,
 			seeds:                                 seeds},
@@ -282,7 +279,6 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	r := handler.NewRouting(
 		prov.seeds,
 		prov.clusters,
-		prov.cloud,
 		prov.sshKey,
 		prov.user,
 		prov.serviceAccountProvider,

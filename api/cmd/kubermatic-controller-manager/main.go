@@ -161,7 +161,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 					log.Info("Acquired the leader lease")
 
 					log.Info("Executing migrations...")
-					if err := migrations.RunAll(ctrlCtx.mgr.GetConfig(), ctrlCtx.runOptions.workerName, ctrlCtx.seed); err != nil {
+					if err := migrations.RunAll(ctrlCtx.mgr.GetConfig(), ctrlCtx.runOptions.workerName); err != nil {
 						log.Errorf("failed to run migrations: %v", err)
 						stopLeaderElection()
 						return

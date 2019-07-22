@@ -53,7 +53,7 @@ var clusterTypes = []string{
 	apiv1.KubernetesClusterType,
 }
 
-func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider,
+func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider,
 	seeds map[string]*kubermaticv1.Seed, initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager common.PresetsManager, exposeStrategy corev1.ServiceType) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
@@ -85,7 +85,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 		}
 
 		// Create the cluster.
-		spec, err := cluster.Spec(req.Body.Cluster, cloudProviders, dc)
+		spec, err := cluster.Spec(req.Body.Cluster, dc)
 		if err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
@@ -253,7 +253,7 @@ func isStatus(err error, status int32) bool {
 	return ok && status == kubernetesError.Status().Code
 }
 
-func PatchEndpoint(cloudProviders map[string]provider.CloudProvider, projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func PatchEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -297,7 +297,7 @@ func PatchEndpoint(cloudProviders map[string]provider.CloudProvider, projectProv
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
 
-		if err = validation.ValidateUpdateCluster(patchedCluster, existingCluster, cloudProviders, dc); err != nil {
+		if err := validation.ValidateUpdateCluster(patchedCluster, existingCluster, dc); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 

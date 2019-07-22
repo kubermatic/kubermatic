@@ -343,6 +343,9 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	if spec.GCP != nil {
 		clouds = append(clouds, GCPCloudProvider)
 	}
+	if spec.Fake != nil {
+		clouds = append(clouds, FakeCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
