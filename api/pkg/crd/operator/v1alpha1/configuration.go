@@ -30,6 +30,8 @@ type KubermaticConfigurationSpec struct {
 	FeatureGates KubermaticFeatureGatesConfiguration `json:"featureGates,omitempty"`
 	// UI configures the dashboard.
 	UI KubermaticUIConfiguration `json:"ui,omitempty"`
+	// MasterFiles is a map of additional files to mount into each master component.
+	MasterFiles map[string]string `json:"masterFiles,omitempty"`
 }
 
 // KubermaticSecretsConfiguration is a list of predefined credentials, like Docker registry authentication.
@@ -40,14 +42,15 @@ type KubermaticSecretsConfiguration struct {
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
 type KubermaticAuthConfiguration struct {
-	ClientID           string `json:"clientID,omitempty"`
-	TokenIssuer        string `json:"tokenIssuer,omitempty"`
-	IssuerRedirectURL  string `json:"issuerRedirectURL,omitempty"`
-	IssuerClientID     string `json:"issuerClientID,omitempty"`
-	IssuerClientSecret string `json:"issuerClientSecret,omitempty"`
-	IssuerCookieKey    string `json:"issuerCookieKey,omitempty"`
-	CABundle           string `json:"cABundle,omitempty"`
-	ServiceAccountKey  string `json:"serviceAccountKey,omitempty"`
+	ClientID                 string `json:"clientID,omitempty"`
+	TokenIssuer              string `json:"tokenIssuer,omitempty"`
+	IssuerRedirectURL        string `json:"issuerRedirectURL,omitempty"`
+	IssuerClientID           string `json:"issuerClientID,omitempty"`
+	IssuerClientSecret       string `json:"issuerClientSecret,omitempty"`
+	IssuerCookieKey          string `json:"issuerCookieKey,omitempty"`
+	CABundle                 string `json:"cABundle,omitempty"`
+	ServiceAccountKey        string `json:"serviceAccountKey,omitempty"`
+	SkipTokenIssuerTLSVerify bool   `json:"skipTokenIssuerTLSVerify,omitempty"`
 }
 
 // KubermaticFeatureGatesConfiguration are used to optionally enable certain features.
@@ -67,6 +70,8 @@ type SimpleFeatureGate struct {
 type KubermaticUIConfiguration struct {
 	// Config sets flags for various dashboard features.
 	Config string `json:"config,omitempty"`
+	// Presets is a YAML string containing pre-defined credentials for cloud providers.
+	Presets string `json:"presets,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

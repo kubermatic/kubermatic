@@ -61,10 +61,7 @@ func (r *Reconciler) fetchKubermaticConfiguration(ctx context.Context, identifie
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
-	// logger.Debug("Garbage-collecting orphaned resources...")
-	// if err := r.garbageCollect(ctx); err != nil {
-	// 	return reconcile.Result{}, fmt.Errorf("failed to garbage collect: %v", err)
-	// }
+	// TODO: Implement garbage collection to remove orphaned resources.
 
 	cfgReconciler := configReconciler{
 		Reconciler: *r,
@@ -73,42 +70,8 @@ func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.Kub
 		log:        logger,
 	}
 
-	logger.Debug("Reconciling Kubermatic installation")
-	if err := cfgReconciler.reconcile(); err != nil {
-		return fmt.Errorf("failed to reconcile: %v", err)
-	}
-
-	return nil
+	return cfgReconciler.Reconcile()
 }
-
-/*
-func (r *Reconciler) garbageCollect(ctx context.Context) error {
-	list := &corev1.SecretList{}
-	options := &ctrlruntimeclient.ListOptions{
-		LabelSelector: labels.SelectorFromSet(labels.Set{
-			ManagedByLabel: ControllerName,
-		}),
-	}
-
-	if err := r.List(ctx, options, list); err != nil {
-		return fmt.Errorf("failed to list Secrets: %v", err)
-	}
-
-	for _, item := range list.Items {
-		meta := item.GetObjectMeta()
-		seed := meta.GetLabels()[InstanceLabel]
-
-		if r.unknownSeed(seed) {
-			logger.Debug("Deleting orphaned Secret %s/%s referencing non-existing seed '%s'...", item.Namespace, item.Name, seed)
-			if err := r.Delete(ctx, &item); err != nil {
-				return fmt.Errorf("failed to delete Secret: %v", err)
-			}
-		}
-	}
-
-	return nil
-}
-*/
 
 type configReconciler struct {
 	Reconciler
@@ -116,20 +79,17 @@ type configReconciler struct {
 	ctx    context.Context
 	config *operatorv1alpha1.KubermaticConfiguration
 	log    *zap.SugaredLogger
+	ns     string
 }
 
-func (r *configReconciler) reconcile() error {
+func (r *configReconciler) Reconcile() error {
 	r.applyDefaults()
+	r.ns = r.config.Spec.Namespace
 
 	r.log.Debug("Reconciling Kubermatic installation")
 	if err := r.reconcileResources(); err != nil {
 		return fmt.Errorf("failed to reconcile: %v", err)
 	}
-
-	// logger.Debug("Reconciling Grafana provisioning...")
-	// if err := r.reconcileMasterGrafanaProvisioning(ctx); err != nil {
-	// 	return reconcile.Result{}, fmt.Errorf("failed to reconcile Grafana: %v", err)
-	// }
 
 	return nil
 }
@@ -142,104 +102,122 @@ func (r *configReconciler) applyDefaults() {
 
 func (r *configReconciler) reconcileResources() error {
 	if err := r.reconcileNamespaces(); err != nil {
-		return fmt.Errorf("failed to reconcile namespaces: %v", err)
+		return err
 	}
 
-	// logger.Debug("Reconciling secrets...")
-	// secret, err := r.reconcileSecrets()
-	// if err != nil {
-	// 	return fmt.Errorf("failed to reconcile secrets: %v", err)
-	// }
+	if err := r.reconcileServiceAccounts(); err != nil {
+		return err
+	}
 
-	// logger.Debug("Reconciling deployments...")
-	// if err := r.reconcileMasterDeployments(ctx, contextName, secret); err != nil {
-	// 	return fmt.Errorf("failed to reconcile deployments: %v", err)
-	// }
+	if err := r.reconcileClusterRoleBindings(); err != nil {
+		return err
+	}
 
-	// logger.Debug("Reconciling services...")
-	// if err := r.reconcileMasterServices(ctx, contextName, secret); err != nil {
-	// 	return fmt.Errorf("failed to reconcile services: %v", err)
-	// }
+	if err := r.reconcileSecrets(); err != nil {
+		return err
+	}
+
+	if err := r.reconcileConfigMaps(); err != nil {
+		return err
+	}
+
+	if err := r.reconcileDeployments(); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (r *configReconciler) reconcileNamespaces() error {
-	r.log.Debug("Reconciling namespaces...")
+	r.log.Debug("Reconciling Namespaces")
 
 	creators := []reconciling.NamedNamespaceCreatorGetter{
-		namespaceCreator(r.config),
+		namespaceCreator(r.ns, r.config),
 	}
 
-	if err := reconciling.ReconcileNamespaces(r.ctx, creators, r.config.Spec.Namespace, r.Client); err != nil {
+	if err := reconciling.ReconcileNamespaces(r.ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Namespaces: %v", err)
 	}
 
 	return nil
 }
 
-/*
-func (r *configReconciler) reconcileSecrets() (*corev1.Secret, error) {
-	creators := []reconciling.NamedSecretCreatorGetter{
-		masterSecretCreator(contextName, credentials),
-	}
+func (r *configReconciler) reconcileConfigMaps() error {
+	r.log.Debug("Reconciling ConfigMaps")
 
-	if err := reconciling.ReconcileSecrets(ctx, creators, MasterTargetNamespace, r.Client); err != nil {
-		return nil, fmt.Errorf("failed to reconcile Secrets in the namespace %s: %v", MasterTargetNamespace, err)
-	}
-
-	secret := &corev1.Secret{}
-	name := types.NamespacedName{
-		Namespace: MasterTargetNamespace,
-		Name:      secretName(contextName),
-	}
-
-	if err := r.Get(ctx, name, secret); err != nil {
-		return nil, fmt.Errorf("could not find Secret '%s'", name)
-	}
-
-	return secret, nil
-}
-
-func (r *configReconciler) reconcileMasterDeployments(ctx context.Context, contextName string, secret *corev1.Secret) error {
-	creators := []reconciling.NamedDeploymentCreatorGetter{
-		masterDeploymentCreator(contextName, secret),
-	}
-
-	if err := reconciling.ReconcileDeployments(ctx, creators, MasterTargetNamespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Deployments in the namespace %s: %v", MasterTargetNamespace, err)
-	}
-
-	return nil
-}
-
-func (r *configReconciler) reconcileMasterServices(ctx context.Context, contextName string, secret *corev1.Secret) error {
-	creators := []reconciling.NamedServiceCreatorGetter{
-		masterServiceCreator(contextName, secret),
-	}
-
-	if err := reconciling.ReconcileServices(ctx, creators, MasterTargetNamespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Services in the namespace %s: %v", MasterTargetNamespace, err)
-	}
-
-	return nil
-}
-
-func (r *configReconciler) reconcileMasterGrafanaProvisioning(ctx context.Context) error {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		masterGrafanaConfigmapCreator(r.seeds, r.kubeconfig),
+		uiConfigConfigMapCreator(r.ns, r.config),
 	}
 
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, MasterGrafanaNamespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile ConfigMaps in the namespace %s: %v", MasterGrafanaNamespace, err)
+	if err := reconciling.ReconcileConfigMaps(r.ctx, creators, r.ns, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
 	}
 
 	return nil
 }
 
-func (r *configReconciler) unknownSeed(seed string) bool {
-	_, ok := r.kubeconfig.Contexts[seed]
+func (r *configReconciler) reconcileSecrets() error {
+	r.log.Debug("Reconciling Secrets")
 
-	return !ok
+	creators := []reconciling.NamedSecretCreatorGetter{
+		dockercfgSecretCreator(r.ns, r.config),
+		kubeconfigSecretCreator(r.ns, r.config),
+		dexCASecretCreator(r.ns, r.config),
+	}
+
+	if len(r.config.Spec.MasterFiles) > 0 {
+		creators = append(creators, masterFilesSecretCreator(r.ns, r.config))
+	}
+
+	if r.config.Spec.UI.Presets != "" {
+		creators = append(creators, presetsSecretCreator(r.ns, r.config))
+	}
+
+	if err := reconciling.ReconcileSecrets(r.ctx, creators, r.ns, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Secrets: %v", err)
+	}
+
+	return nil
 }
-*/
+
+func (r *configReconciler) reconcileServiceAccounts() error {
+	r.log.Debug("Reconciling ServiceAccounts")
+
+	creators := []reconciling.NamedServiceAccountCreatorGetter{
+		serviceAccountCreator(r.ns, r.config),
+	}
+
+	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, r.ns, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile ServiceAccounts: %v", err)
+	}
+
+	return nil
+}
+
+func (r *configReconciler) reconcileClusterRoleBindings() error {
+	r.log.Debug("Reconciling ClusterRoleBindings")
+
+	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
+		clusterRoleBindingCreator(r.ns, r.config),
+	}
+
+	if err := reconciling.ReconcileClusterRoleBindings(r.ctx, creators, "", r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %v", err)
+	}
+
+	return nil
+}
+
+func (r *configReconciler) reconcileDeployments() error {
+	r.log.Debug("Reconciling Deployments")
+
+	creators := []reconciling.NamedDeploymentCreatorGetter{
+		kubermaticAPIDeploymentCreator(r.ns, r.config),
+	}
+
+	if err := reconciling.ReconcileDeployments(r.ctx, creators, r.ns, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Deployments: %v", err)
+	}
+
+	return nil
+}

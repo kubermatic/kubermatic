@@ -1,15 +1,36 @@
 package operatormaster
 
 import (
+	"fmt"
+
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+const (
+	dockercfgSecretName         = "dockercfg"
+	kubeconfigSecretName        = "kubeconfig"
+	presetsSecretName           = "presets"
+	dexCASecretName             = "dex-ca"
+	masterFilesSecretName       = "extra-files"
+	serviceAccountName          = "kubermatic"
+	uiConfigConfigMapName       = "ui-config"
+	kubermaticAPIDeploymentName = "kubermatic-api-v1"
+)
+
+func clusterRoleBindingName(ns string) string {
+	return fmt.Sprintf("%s:kubermatic:cluster-admin", ns)
+}
 
 func defaultLabels(cfg *operatorv1alpha1.KubermaticConfiguration) map[string]string {
 	labels := map[string]string{
 		ManagedByLabel: ControllerName,
-		// ConfigurationOwnerLabel: joinNamespaceName(cfg.Namespace, cfg.Name),
 	}
 
 	return labels
@@ -17,15 +38,13 @@ func defaultLabels(cfg *operatorv1alpha1.KubermaticConfiguration) map[string]str
 
 func defaultAnnotations(cfg *operatorv1alpha1.KubermaticConfiguration) map[string]string {
 	annotations := map[string]string{
-		ConfigurationOwnerLabel: joinNamespaceName(cfg.Namespace, cfg.Name),
+		ConfigurationOwnerAnnotation: joinNamespaceName(cfg.Namespace, cfg.Name),
 	}
 
 	return annotations
 }
 
-func namespaceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
-	name := cfg.Spec.Namespace
-
+func namespaceCreator(name string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
 	return func() (string, reconciling.NamespaceCreator) {
 		return name, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 			ns.Name = name
@@ -37,101 +56,78 @@ func namespaceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling
 	}
 }
 
-/*
-func secretName(contextName string) string {
-	return fmt.Sprintf("seed-proxy-%s", contextName)
-}
-
-func deploymentName(contextName string) string {
-	return fmt.Sprintf("seed-proxy-%s", contextName)
-}
-
-func serviceName(contextName string) string {
-	return fmt.Sprintf("seed-proxy-%s", contextName)
-}
-
-func fullPrometheusService() string {
-	return fmt.Sprintf("%s:%s", SeedPrometheusServiceName, SeedPrometheusServicePort)
-}
-
-func ownerReferences(secret *corev1.Secret) []metav1.OwnerReference {
-	return []metav1.OwnerReference{
-		*metav1.NewControllerRef(secret, secret.GroupVersionKind()),
-	}
-}
-
-func seedServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
-	return func() (string, reconciling.ServiceAccountCreator) {
-		return SeedServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			sa.Labels = defaultLabels(SeedServiceAccountName, "")
-
-			return sa, nil
-		}
-	}
-}
-
-func seedPrometheusRoleCreator() reconciling.NamedRoleCreatorGetter {
-	return func() (string, reconciling.RoleCreator) {
-		return SeedPrometheusRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Name = SeedPrometheusRoleName
-			r.Namespace = SeedPrometheusNamespace
-			r.Labels = defaultLabels(SeedPrometheusRoleName, "")
-
-			r.Rules = []rbacv1.PolicyRule{
-				{
-					APIGroups:     []string{""},
-					Resources:     []string{"services/proxy"},
-					ResourceNames: []string{fullPrometheusService()},
-					Verbs:         []string{"get"},
-				},
-			}
-
-			return r, nil
-		}
-	}
-}
-
-func seedPrometheusRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
-	return func() (string, reconciling.RoleBindingCreator) {
-		return SeedPrometheusRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			rb.Name = SeedPrometheusRoleBindingName
-			rb.Namespace = SeedPrometheusNamespace
-			rb.Labels = defaultLabels(SeedPrometheusRoleBindingName, "")
-
-			rb.RoleRef = rbacv1.RoleRef{
-				APIGroup: rbacv1.GroupName,
-				Kind:     "Role",
-				Name:     SeedPrometheusRoleName,
-			}
-
-			rb.Subjects = []rbacv1.Subject{
-				{
-					Kind:      rbacv1.ServiceAccountKind,
-					Name:      SeedServiceAccountName,
-					Namespace: SeedServiceAccountNamespace,
-				},
-			}
-
-			return rb, nil
-		}
-	}
-}
-
-func masterSecretCreator(contextName string, credentials *corev1.Secret) reconciling.NamedSecretCreatorGetter {
-	name := secretName(contextName)
-
+func dockercfgSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
-		return name, func(s *corev1.Secret) (*corev1.Secret, error) {
-			s.Name = name
-			s.Namespace = MasterTargetNamespace
-			s.Labels = defaultLabels("seed-proxy", contextName)
+		return dockercfgSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+			s.Name = dockercfgSecretName
+			s.Namespace = ns
+			s.Labels = defaultLabels(cfg)
+			s.Annotations = defaultAnnotations(cfg)
+			s.Type = corev1.SecretTypeDockerConfigJson
 
 			if s.Data == nil {
 				s.Data = make(map[string][]byte)
 			}
 
-			for k, v := range credentials.Data {
-				s.Data[k] = v
+			s.Data[corev1.DockerConfigJsonKey] = []byte(cfg.Spec.Secrets.ImagePullSecret)
+
+			return s, nil
+		}
+	}
+}
+
+func kubeconfigSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return kubeconfigSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+			s.Name = kubeconfigSecretName
+			s.Namespace = ns
+			s.Labels = defaultLabels(cfg)
+			s.Annotations = defaultAnnotations(cfg)
+
+			if s.Data == nil {
+				s.Data = make(map[string][]byte)
+			}
+
+			s.Data["kubeconfig"] = []byte(cfg.Spec.Auth.CABundle)
+
+			return s, nil
+		}
+	}
+}
+
+func dexCASecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return dexCASecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+			s.Name = dexCASecretName
+			s.Namespace = ns
+			s.Labels = defaultLabels(cfg)
+			s.Annotations = defaultAnnotations(cfg)
+
+			if s.Data == nil {
+				s.Data = make(map[string][]byte)
+			}
+
+			s.Data["caBundle.pem"] = []byte(cfg.Spec.Auth.CABundle)
+
+			return s, nil
+		}
+	}
+}
+
+func masterFilesSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return masterFilesSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+			s.Name = masterFilesSecretName
+			s.Namespace = ns
+			s.Labels = defaultLabels(cfg)
+			s.Annotations = defaultAnnotations(cfg)
+
+			if s.Data == nil {
+				s.Data = make(map[string][]byte)
+			}
+
+			for name, content := range cfg.Spec.MasterFiles {
+				s.Data[name] = []byte(content)
 			}
 
 			return s, nil
@@ -139,18 +135,87 @@ func masterSecretCreator(contextName string, credentials *corev1.Secret) reconci
 	}
 }
 
-func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconciling.NamedDeploymentCreatorGetter {
-	name := deploymentName(contextName)
+func presetsSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return presetsSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+			s.Name = presetsSecretName
+			s.Namespace = ns
+			s.Labels = defaultLabels(cfg)
+			s.Annotations = defaultAnnotations(cfg)
 
-	return func() (string, reconciling.DeploymentCreator) {
-		return name, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			labels := func() map[string]string {
-				return map[string]string{
-					NameLabel:     MasterDeploymentName,
-					InstanceLabel: contextName,
-				}
+			if s.Data == nil {
+				s.Data = make(map[string][]byte)
 			}
 
+			s.Data["presets.yaml"] = []byte(cfg.Spec.Auth.CABundle)
+
+			return s, nil
+		}
+	}
+}
+
+func uiConfigConfigMapCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return uiConfigConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			c.Name = uiConfigConfigMapName
+			c.Namespace = ns
+			c.Labels = defaultLabels(cfg)
+			c.Annotations = defaultAnnotations(cfg)
+
+			if c.Data == nil {
+				c.Data = make(map[string]string)
+			}
+
+			c.Data["config.json"] = cfg.Spec.UI.Config
+
+			return c, nil
+		}
+	}
+}
+
+func serviceAccountCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedServiceAccountCreatorGetter {
+	return func() (string, reconciling.ServiceAccountCreator) {
+		return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+			sa.Name = serviceAccountName
+			sa.Labels = defaultLabels(cfg)
+			sa.Annotations = defaultAnnotations(cfg)
+
+			return sa, nil
+		}
+	}
+}
+
+func clusterRoleBindingCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingCreatorGetter {
+	name := clusterRoleBindingName(ns)
+
+	return func() (string, reconciling.ClusterRoleBindingCreator) {
+		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+			crb.Name = name
+			crb.Labels = defaultLabels(cfg)
+			crb.Annotations = defaultAnnotations(cfg)
+
+			crb.RoleRef = rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "ClusterRole",
+				Name:     "cluster-admin",
+			}
+
+			crb.Subjects = []rbacv1.Subject{
+				{
+					Kind:      rbacv1.ServiceAccountKind,
+					Name:      serviceAccountName,
+					Namespace: ns,
+				},
+			}
+
+			return crb, nil
+		}
+	}
+}
+
+func kubermaticAPIDeploymentCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
+	return func() (string, reconciling.DeploymentCreator) {
+		return kubermaticAPIDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			probe := corev1.Probe{
 				InitialDelaySeconds: 3,
 				TimeoutSeconds:      2,
@@ -158,66 +223,165 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 				SuccessThreshold:    1,
 				FailureThreshold:    3,
 				Handler: corev1.Handler{
-					TCPSocket: &corev1.TCPSocketAction{
-						Port: intstr.Parse("http"),
+					HTTPGet: &corev1.HTTPGetAction{
+						Path:   "/api/v1/healthz",
+						Scheme: corev1.URISchemeHTTP,
+						Port:   intstr.FromInt(8080),
 					},
 				},
 			}
 
-			d.Name = name
-			d.Namespace = MasterTargetNamespace
-			d.OwnerReferences = ownerReferences(secret)
-			d.Labels = labels()
-			d.Labels[ManagedByLabel] = ControllerName
+			d.Name = kubermaticAPIDeploymentName
+			d.Namespace = ns
+			d.Labels = defaultLabels(cfg)
+			d.Annotations = defaultAnnotations(cfg)
 
-			d.Spec.Replicas = i32ptr(1)
-			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: labels(),
+			specLabels := map[string]string{
+				NameLabel:    "kubermatic-api",
+				VersionLabel: "v1",
 			}
 
-			d.Spec.Template.Labels = labels()
-			d.Spec.Template.Labels["prometheus.io/scrape"] = "true"
-			d.Spec.Template.Labels["prometheus.io/port"] = fmt.Sprintf("%d", KubectlProxyPort)
+			d.Spec.Replicas = i32ptr(2)
+			d.Spec.Selector = &metav1.LabelSelector{
+				MatchLabels: specLabels,
+			}
 
-			d.Spec.Template.Spec.Containers = []corev1.Container{
+			d.Spec.Template.Labels = specLabels
+			d.Spec.Template.Annotations = map[string]string{
+				"prometheus.io/scrape": "true",
+				"prometheus.io/port":   "8085",
+				"fluentbit.io/parser":  "glog",
+
+				// TODO: add checksums for kubeconfig, datacenters etc. to trigger redeployments
+			}
+
+			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{
-					Name:            "proxy",
-					Image:           "quay.io/kubermatic/util:1.0.0-5",
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/bin/bash"},
-					Args:            []string{"-c", strings.TrimSpace(proxyScript)},
-					Env: []corev1.EnvVar{
-						{
-							Name:  "KUBERNETES_CONTEXT",
-							Value: contextName,
-						},
-						{
-							Name:  "PROXY_PORT",
-							Value: fmt.Sprintf("%d", KubectlProxyPort),
+					Name: dockercfgSecretName,
+				},
+			}
+
+			args := []string{
+				"-v=2",
+				"-logtostderr",
+				"-address=0.0.0.0:8080",
+				"-internal-address=0.0.0.0:8085",
+				// "-datacenters=/opt/datacenter/datacenters.yaml",
+				"-kubeconfig=/opt/.kube/kubeconfig",
+				fmt.Sprintf("-oidc-url=%s", cfg.Spec.Auth.TokenIssuer),
+				fmt.Sprintf("-oidc-authenticator-client-id=%s", cfg.Spec.Auth.ClientID),
+				fmt.Sprintf("-oidc-skip-tls-verify=%v", cfg.Spec.Auth.SkipTokenIssuerTLSVerify),
+				fmt.Sprintf("-domain=%s", cfg.Spec.Domain),
+				fmt.Sprintf("-service-account-signing-key=%s", cfg.Spec.Auth.ServiceAccountKey),
+				// fmt.Sprintf("-feature-gates=%s", cfg.Spec.FeatureGates),
+				//	-expose-strategy={{ .Values.kubermatic.exposeStrategy }}
+			}
+
+			if cfg.Spec.FeatureGates.OIDCKubeCfgEndpoint.Enabled {
+				args = append(
+					args,
+					fmt.Sprintf("-oidc-issuer-redirect-uri=%s", cfg.Spec.Auth.IssuerRedirectURL),
+					fmt.Sprintf("-oidc-issuer-client-id=%s", cfg.Spec.Auth.IssuerClientID),
+					fmt.Sprintf("-oidc-issuer-client-secret=%s", cfg.Spec.Auth.IssuerClientSecret),
+					fmt.Sprintf("-oidc-issuer-cookie-hash-key=%s", cfg.Spec.Auth.IssuerCookieKey),
+				)
+			}
+
+			volumes := []corev1.Volume{
+				{
+					Name: "kubeconfig",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							DefaultMode: i32ptr(420),
+							SecretName:  kubeconfigSecretName,
 						},
 					},
+				},
+			}
+
+			volumeMounts := []corev1.VolumeMount{
+				{
+					MountPath: "/opt/.kube/",
+					Name:      "kubeconfig",
+					ReadOnly:  true,
+				},
+			}
+
+			if len(cfg.Spec.MasterFiles) > 0 {
+				args = append(
+					args,
+					"-versions=/opt/master-files/versions.yaml",
+					"-updates=/opt/master-files/updates.yaml",
+					"-master-resources=/opt/master-files",
+				)
+
+				volumes = append(volumes, corev1.Volume{
+					Name: "master-files",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							DefaultMode: i32ptr(420),
+							SecretName:  masterFilesSecretName,
+						},
+					},
+				})
+
+				volumeMounts = append(volumeMounts, corev1.VolumeMount{
+					MountPath: "/opt/master-files/",
+					Name:      "master-files",
+					ReadOnly:  true,
+				})
+			}
+
+			if cfg.Spec.UI.Presets != "" {
+				args = append(args, "-presets=/opt/presets/presets.yaml")
+
+				volumes = append(volumes, corev1.Volume{
+					Name: "presets",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							DefaultMode: i32ptr(420),
+							SecretName:  presetsSecretName,
+						},
+					},
+				})
+
+				volumeMounts = append(volumeMounts, corev1.VolumeMount{
+					MountPath: "/opt/presets/",
+					Name:      "presets",
+					ReadOnly:  true,
+				})
+			}
+
+			d.Spec.Template.Spec.Volumes = volumes
+			d.Spec.Template.Spec.Containers = []corev1.Container{
+				{
+					Name:            "api",
+					Image:           "quay.io/kubermatic/api:865c75fef2128b1d7076f48f8f03c7b81f74ce5f",
+					ImagePullPolicy: corev1.PullIfNotPresent,
+					Command:         []string{"kubermatic-api"},
+					Args:            args,
 					Ports: []corev1.ContainerPort{
 						{
+							Name:          "metrics",
+							ContainerPort: 8085,
+							Protocol:      corev1.ProtocolTCP,
+						},
+						{
 							Name:          "http",
-							ContainerPort: KubectlProxyPort,
+							ContainerPort: 8080,
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							MountPath: "var/run/secrets/kubernetes.io/serviceaccount/",
-							Name:      "serviceaccount",
-							ReadOnly:  true,
-						},
-					},
+					VolumeMounts: volumeMounts,
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("10m"),
-							corev1.ResourceMemory: resource.MustParse("24Mi"),
+							corev1.ResourceCPU:    resource.MustParse("100m"),
+							corev1.ResourceMemory: resource.MustParse("64Mi"),
 						},
 						Limits: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("100m"),
-							corev1.ResourceMemory: resource.MustParse("32Mi"),
+							corev1.ResourceCPU:    resource.MustParse("250m"),
+							corev1.ResourceMemory: resource.MustParse("128Mi"),
 						},
 					},
 					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
@@ -226,134 +390,11 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 				},
 			}
 
-			d.Spec.Template.Spec.Volumes = []corev1.Volume{
-				{
-					Name: "serviceaccount",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: i32ptr(420),
-							SecretName:  secret.Name,
-						},
-					},
-				},
-			}
-
 			return d, nil
 		}
 	}
 }
 
-func masterServiceCreator(contextName string, secret *corev1.Secret) reconciling.NamedServiceCreatorGetter {
-	name := serviceName(contextName)
-
-	return func() (string, reconciling.ServiceCreator) {
-		return name, func(s *corev1.Service) (*corev1.Service, error) {
-			s.Name = name
-			s.Namespace = MasterTargetNamespace
-			s.OwnerReferences = ownerReferences(secret)
-			s.Labels = map[string]string{
-				NameLabel:      MasterServiceName,
-				InstanceLabel:  contextName,
-				ManagedByLabel: ControllerName,
-			}
-
-			s.Spec.Ports = []corev1.ServicePort{
-				{
-					Name: "http",
-					Port: KubectlProxyPort,
-					TargetPort: intstr.IntOrString{
-						IntVal: KubectlProxyPort,
-						// StrVal: "http",
-					},
-					Protocol: corev1.ProtocolTCP,
-				},
-			}
-
-			s.Spec.Selector = map[string]string{
-				NameLabel:     MasterServiceName,
-				InstanceLabel: contextName,
-			}
-
-			return s, nil
-		}
-	}
-}
-
-func masterGrafanaConfigmapCreator(seeds map[string]*kubermaticv1.Seed, kubeconfig *clientcmdapi.Config) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
-		return MasterGrafanaConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			labels := func() map[string]string {
-				return map[string]string{
-					NameLabel: MasterGrafanaConfigMapName,
-				}
-			}
-
-			c.Name = MasterGrafanaConfigMapName
-			c.Namespace = MasterGrafanaNamespace
-			c.Data = make(map[string]string)
-
-			c.Labels = labels()
-			c.Labels[ManagedByLabel] = ControllerName
-
-			for seedName := range seeds {
-				filename := fmt.Sprintf("prometheus-%s.yaml", seedName)
-
-				config, err := buildGrafanaDatasource(seedName, kubeconfig)
-				if err != nil {
-					return nil, fmt.Errorf("failed to build Grafana config for seed %s: %v", seedName, err)
-				}
-
-				c.Data[filename] = config
-			}
-
-			return c, nil
-		}
-	}
-}
-
-func buildGrafanaDatasource(contextName string, kubeconfig *clientcmdapi.Config) (string, error) {
-	data := map[string]interface{}{
-		"ContextName":             contextName,
-		"ServiceName":             serviceName(contextName),
-		"ServiceNamespace":        MasterTargetNamespace,
-		"ProxyPort":               KubectlProxyPort,
-		"SeedPrometheusNamespace": SeedPrometheusNamespace,
-		"SeedPrometheusService":   fullPrometheusService(),
-	}
-
-	var buffer bytes.Buffer
-
-	tpl := template.Must(template.New("base").Parse(grafanaDatasource))
-	err := tpl.Execute(&buffer, data)
-
-	return strings.TrimSpace(buffer.String()), err
-}
-
 func i32ptr(i int32) *int32 {
 	return &i
 }
-
-const proxyScript = `
-set -euo pipefail
-
-echo "Starting kubectl proxy for $KUBERNETES_CONTEXT on port $PROXY_PORT..."
-
-kubectl proxy \
-  --address=0.0.0.0 \
-  --port=$PROXY_PORT \
-  --accept-hosts=''
-`
-
-const grafanaDatasource = `
-# This file has been generated by the Kubermatic master-controller-manager.
-apiVersion: 1
-datasources:
-- version: 1
-  name: Seed {{ .ContextName }}
-  org_id: 1
-  type: prometheus
-  access: proxy
-  url: http://{{ .ServiceName }}.{{ .ServiceNamespace }}.svc.cluster.local:{{ .ProxyPort }}/api/v1/namespaces/{{ .SeedPrometheusNamespace }}/services/{{ .SeedPrometheusService }}/proxy/
-  editable: false
-`
-*/

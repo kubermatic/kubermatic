@@ -32,18 +32,16 @@ const (
 	// NameLabel is the recommended name for an identifying label.
 	NameLabel = "app.kubernetes.io/name"
 
-	// InstanceLabel is the recommended label for distinguishing
-	// multiple elements of the same name. The label is used to store
-	// the seed cluster name.
-	InstanceLabel = "app.kubernetes.io/instance"
+	// VersionLabel is the recommended name for a version label.
+	VersionLabel = "app.kubernetes.io/version"
 
 	// ManagedByLabel is the label used to identify the resources
 	// created by this controller.
 	ManagedByLabel = "app.kubernetes.io/managed-by"
 
-	// ConfigurationOwnerNameLabel is the label containing a resource's
+	// ConfigurationOwnerAnnotation is the annotation containing a resource's
 	// owning configuration name and namespace.
-	ConfigurationOwnerLabel = "operator.kubermatic.io/configuration"
+	ConfigurationOwnerAnnotation = "operator.kubermatic.io/configuration"
 
 	// WorkerNameLabel is the label containing the worker-name,
 	// restricting the operator that is willing to work on a given
@@ -108,8 +106,8 @@ func eventHandler(a handler.MapObject) []reconcile.Request {
 		name.Namespace = a.Meta.GetNamespace()
 	} else {
 		// put the object's supposed owning configuration on the queue
-		ownerLabel := a.Meta.GetLabels()[ConfigurationOwnerLabel]
-		parsed := splitNamespaceName(ownerLabel)
+		owner := a.Meta.GetAnnotations()[ConfigurationOwnerAnnotation]
+		parsed := splitNamespaceName(owner)
 		if parsed == nil {
 			return nil
 		}
