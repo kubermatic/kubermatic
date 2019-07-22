@@ -151,12 +151,12 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
-		g, err := createKubermaticSecurityGroup(netClient, cluster.Name)
+		secGroupName, err := createKubermaticSecurityGroup(netClient, cluster.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic security group: %v", err)
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.Openstack.SecurityGroups = g.Name
+			cluster.Spec.Cloud.Openstack.SecurityGroups = secGroupName
 			kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
 		})
 		if err != nil {
@@ -399,22 +399,20 @@ func (os *Provider) GetNetworks(cloud kubermaticv1.CloudSpec) ([]NetworkWithExte
 
 // GetSecurityGroups lists all available security groups for the given CloudSpec.DatacenterName
 func (os *Provider) GetSecurityGroups(cloud kubermaticv1.CloudSpec) ([]ossecuritygroups.SecGroup, error) {
-	authClient, err := os.getNetClient(cloud)
+	netClient, err := os.getNetClient(cloud)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
 	}
 
-	dc, found := os.dcs[cloud.DatacenterName]
-	if !found || dc.Spec.Openstack == nil {
-		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
-	}
-
-	securityGroups, err := getAllSecurityGroups(authClient)
+	page, err := ossecuritygroups.List(netClient, ossecuritygroups.ListOpts{}).AllPages()
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get securityGroups: %v", err)
+		return nil, fmt.Errorf("failed to list security groups: %v", err)
 	}
-
-	return securityGroups, nil
+	secGroups, err := ossecuritygroups.ExtractGroups(page)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract security groups: %v", err)
+	}
+	return secGroups, nil
 }
 
 func (os *Provider) getAuthClient(cloud kubermaticv1.CloudSpec) (*gophercloud.ProviderClient, error) {
@@ -471,7 +469,7 @@ func (os *Provider) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
 		return nil
 	}
-	sgNameOrID := cluster.Spec.Cloud.Openstack.SecurityGroups
+	sgName := cluster.Spec.Cloud.Openstack.SecurityGroups
 
 	netClient, err := os.getNetClient(cluster.Spec.Cloud)
 	if err != nil {
@@ -479,20 +477,16 @@ func (os *Provider) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 	}
 
 	// We can only get security groups by ID and can't be sure that whats on the cluster
-	securityGroups, err := getAllSecurityGroups(netClient)
+	securityGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: sgName})
 	if err != nil {
 		return fmt.Errorf("failed to list security groups: %v", err)
 	}
 
 	for _, sg := range securityGroups {
-		if sg.Name == sgNameOrID || sg.ID == sgNameOrID {
-			if err := addICMPRulesToSecurityGroupIfNecesary(cluster, sg, netClient); err != nil {
-				return fmt.Errorf("failed to add rules for ICMP to security group %q: %v", sg.ID, err)
-			}
-			break
+		if err := addICMPRulesToSecurityGroupIfNecesary(cluster, sg, netClient); err != nil {
+			return fmt.Errorf("failed to add rules for ICMP to security group %q: %v", sg.ID, err)
 		}
 	}
-
 	return nil
 }
 
