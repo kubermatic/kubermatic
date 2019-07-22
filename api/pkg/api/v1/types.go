@@ -127,6 +127,16 @@ type Datacenter struct {
 	Seed     bool             `json:"seed,omitempty"`
 }
 
+// AWSZone represents a object of AWS availability zone.
+// swagger:model AWSZone
+type AWSZone struct {
+	Name string `json:"name"`
+}
+
+// AWSZoneList represents an array of AWS availability zones.
+// swagger:model AWSZoneList
+type AWSZoneList []AWSZone
+
 // GCPDiskTypeList represents an array of GCP disk types.
 // swagger:model GCPDiskTypeList
 type GCPDiskTypeList []GCPDiskType
