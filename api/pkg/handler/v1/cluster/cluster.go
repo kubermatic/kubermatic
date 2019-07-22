@@ -70,6 +70,10 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		if req.Body.Cluster.ID != "" {
+			return nil, errors.New(int(http.StatusBadRequest), "cluster.ID is read-only")
+		}
+
 		dc, err := provider.DatacenterFromSeedMap(seeds, req.Body.Cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
