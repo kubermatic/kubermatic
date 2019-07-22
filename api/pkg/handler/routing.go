@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -36,7 +37,7 @@ type Routing struct {
 	serviceAccountTokenProvider provider.ServiceAccountTokenProvider
 	projectProvider             provider.ProjectProvider
 	privilegedProjectProvider   provider.PrivilegedProjectProvider
-	credentialsProvider         provider.CredentialsProvider
+	credentialsProvider         *kubernetesprovider.CredentialsProvider
 	logger                      log.Logger
 	oidcIssuerVerifier          auth.OIDCIssuerVerifier
 	tokenVerifiers              auth.TokenVerifier
@@ -63,7 +64,7 @@ func NewRouting(
 	serviceAccountTokenProvider provider.ServiceAccountTokenProvider,
 	projectProvider provider.ProjectProvider,
 	privilegedProject provider.PrivilegedProjectProvider,
-	credentialsProvider provider.CredentialsProvider,
+	credentialsProvider *kubernetesprovider.CredentialsProvider,
 	oidcIssuerVerifier auth.OIDCIssuerVerifier,
 	tokenVerifiers auth.TokenVerifier,
 	tokenExtractors auth.TokenExtractor,

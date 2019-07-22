@@ -410,8 +410,3 @@ type EventRecorderProvider interface {
 	// referred by provided cluster config.
 	ClusterRecorderFor(client kubernetes.Interface) record.EventRecorder
 }
-
-// CredentialsProvider declares the set of methods for interacting with kubermatic credential secrets
-type CredentialsProvider interface {
-	Create(cluster *kubermaticv1.Cluster, projectID string) (*apicorev1.Secret, error)
-}

@@ -2,6 +2,7 @@ package packet
 
 import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
@@ -25,13 +26,13 @@ func (p *packet) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 // ValidateCloudSpec validates the given CloudSpec.
 func (p *packet) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	if spec.Packet.APIKey == "" {
-		if err := provider.ValidateSecretKeySelector(spec.Packet.APIKeyReference, "apiKey"); err != nil {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.Packet.APIKeyReference, "apiKey"); err != nil {
 			return err
 		}
 	}
 
 	if spec.Packet.ProjectID == "" {
-		if err := provider.ValidateSecretKeySelector(spec.Packet.ProjectIDReference, "projectID"); err != nil {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.Packet.ProjectIDReference, "projectID"); err != nil {
 			return err
 		}
 	}

@@ -293,12 +293,12 @@ func validateHetznerCloudSpec(spec *kubermaticv1.HetznerCloudSpec) error {
 
 func validatePacketCloudSpec(spec *kubermaticv1.PacketCloudSpec) error {
 	if spec.APIKey == "" {
-		if err := provider.ValidateSecretKeySelector(spec.APIKeyReference, "apiKey"); err != nil {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.APIKeyReference, "apiKey"); err != nil {
 			return err
 		}
 	}
 	if spec.ProjectID == "" {
-		if err := provider.ValidateSecretKeySelector(spec.ProjectIDReference, "projectID"); err != nil {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.ProjectIDReference, "projectID"); err != nil {
 			return err
 		}
 	}
