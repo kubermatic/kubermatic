@@ -75,7 +75,7 @@ spec:
           while sleep 5; do
             # We require ip packet forwarding here as forward the logs,exec,proxy & port-forward traffic via this pod.
             # There is no guarantee that it is set by default(Calico 3.7+ disables it), thus we explicitly set it.
-            # sysctl -w net.ipv4.ip_forward=1
+            sysctl -w net.ipv4.ip_forward=1
             iptables -t nat -F host_dnat_inactive
             # query nodes and create DNAT rules in inactive chain
             kubectl get nodes -o json \
