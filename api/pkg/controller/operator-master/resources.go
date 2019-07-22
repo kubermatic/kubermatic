@@ -1,5 +1,42 @@
 package operatormaster
 
+import (
+	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	corev1 "k8s.io/api/core/v1"
+)
+
+func defaultLabels(cfg *operatorv1alpha1.KubermaticConfiguration) map[string]string {
+	labels := map[string]string{
+		ManagedByLabel: ControllerName,
+		// ConfigurationOwnerLabel: joinNamespaceName(cfg.Namespace, cfg.Name),
+	}
+
+	return labels
+}
+
+func defaultAnnotations(cfg *operatorv1alpha1.KubermaticConfiguration) map[string]string {
+	annotations := map[string]string{
+		ConfigurationOwnerLabel: joinNamespaceName(cfg.Namespace, cfg.Name),
+	}
+
+	return annotations
+}
+
+func namespaceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
+	name := cfg.Spec.Namespace
+
+	return func() (string, reconciling.NamespaceCreator) {
+		return name, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+			ns.Name = name
+			ns.Labels = defaultLabels(cfg)
+			ns.Annotations = defaultAnnotations(cfg)
+
+			return ns, nil
+		}
+	}
+}
+
 /*
 func secretName(contextName string) string {
 	return fmt.Sprintf("seed-proxy-%s", contextName)
@@ -15,19 +52,6 @@ func serviceName(contextName string) string {
 
 func fullPrometheusService() string {
 	return fmt.Sprintf("%s:%s", SeedPrometheusServiceName, SeedPrometheusServicePort)
-}
-
-func defaultLabels(name string, instance string) map[string]string {
-	labels := map[string]string{
-		NameLabel:      name,
-		ManagedByLabel: ControllerName,
-	}
-
-	if instance != "" {
-		labels[InstanceLabel] = instance
-	}
-
-	return labels
 }
 
 func ownerReferences(secret *corev1.Secret) []metav1.OwnerReference {

@@ -6,8 +6,7 @@ import (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// KubermaticConfiguration is the configuration required for running
-// a seed cluster with Kubermatic.
+// KubermaticConfiguration is the configuration required for running Kubermatic.
 type KubermaticConfiguration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -15,8 +14,10 @@ type KubermaticConfiguration struct {
 	Spec KubermaticConfigurationSpec `json:"spec"`
 }
 
-// KubermaticConfigurationSpec is the spec for a Kubermatic seed cluster.
+// KubermaticConfigurationSpec is the spec for a Kubermatic installation.
 type KubermaticConfigurationSpec struct {
+	// Namespace into which to install Kubermatic
+	Namespace string `json:"namespace,omitempty"`
 	// Domain is the base domain where the dashboard shall be available.
 	Domain string `json:"domain"`
 	// IsMaster controls whether the dashboard and API will be deployed.

@@ -2,6 +2,7 @@ package operatormaster
 
 import (
 	"fmt"
+	"regexp"
 
 	"go.uber.org/zap"
 
@@ -39,6 +40,15 @@ const (
 	// ManagedByLabel is the label used to identify the resources
 	// created by this controller.
 	ManagedByLabel = "app.kubernetes.io/managed-by"
+
+	// ConfigurationOwnerNameLabel is the label containing a resource's
+	// owning configuration name and namespace.
+	ConfigurationOwnerLabel = "operator.kubermatic.io/configuration"
+
+	// WorkerNameLabel is the label containing the worker-name,
+	// restricting the operator that is willing to work on a given
+	// resource.
+	WorkerNameLabel = "operator.kubermatic.io/worker"
 )
 
 func Add(
@@ -46,12 +56,14 @@ func Add(
 	numWorkers int,
 	clientConfig *clientcmdapi.Config,
 	log *zap.SugaredLogger,
+	workerName string,
 ) error {
 	reconciler := &Reconciler{
 		Client:       mgr.GetClient(),
 		recorder:     mgr.GetRecorder(ControllerName),
 		clientConfig: clientConfig,
 		log:          log,
+		workerName:   workerName,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
@@ -60,42 +72,9 @@ func Add(
 		return err
 	}
 
-	// use the object's namespace as the reconcile key
-	eventHandler := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
-		return []reconcile.Request{
-			{
-				NamespacedName: types.NamespacedName{
-					Namespace: a.Meta.GetNamespace(),
-				},
-			},
-		}
-	})}
-
-	ownedByPred := predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			return managedByController(e.Meta)
-		},
-
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			return managedByController(e.MetaOld) || managedByController(e.MetaNew)
-		},
-
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			return managedByController(e.Meta)
-		},
-
-		GenericFunc: func(e event.GenericEvent) bool {
-			return managedByController(e.Meta)
-		},
-	}
-
-	// watch all KubermaticConfigurations
-	t := &operatorv1alpha1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: t}, eventHandler); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %v", t, err)
-	}
-
-	// watch all other kinds that are owned by the operator
+	// configure watches for all related objects
+	pred := makeOwnerPredicate(workerName)
+	eventHandler := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(eventHandler)}
 	typesToWatch := []runtime.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
@@ -105,10 +84,11 @@ func Add(
 		&extensionsv1beta1.Ingress{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&operatorv1alpha1.KubermaticConfiguration{},
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, eventHandler, ownedByPred); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, eventHandler, pred); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}
@@ -116,7 +96,92 @@ func Add(
 	return nil
 }
 
-func managedByController(meta metav1.Object) bool {
-	labels := meta.GetLabels()
-	return labels[ManagedByLabel] == ControllerName
+// eventHandler translates an incoming event into queue items, depending
+// on the affected object's type. The controller always puts the name
+// and namespace of the related KubermaticConfiguration on the queue.
+func eventHandler(a handler.MapObject) []reconcile.Request {
+	name := types.NamespacedName{}
+
+	if _, ok := a.Object.(*operatorv1alpha1.KubermaticConfiguration); ok {
+		// put the configuration itself on the queue
+		name.Name = a.Meta.GetName()
+		name.Namespace = a.Meta.GetNamespace()
+	} else {
+		// put the object's supposed owning configuration on the queue
+		ownerLabel := a.Meta.GetLabels()[ConfigurationOwnerLabel]
+		parsed := splitNamespaceName(ownerLabel)
+		if parsed == nil {
+			return nil
+		}
+
+		name = *parsed
+	}
+
+	return []reconcile.Request{
+		{
+			NamespacedName: name,
+		},
+	}
+}
+
+var namespaceNameRegex = regexp.MustCompile(`^\s*([^/]+)\s*/\s*([^/]+)\s*$`)
+
+func splitNamespaceName(s string) *types.NamespacedName {
+	match := namespaceNameRegex.FindStringSubmatch(s)
+	if match == nil {
+		return nil
+	}
+
+	return &types.NamespacedName{
+		Namespace: match[1],
+		Name:      match[2],
+	}
+}
+
+func joinNamespaceName(namespace string, name string) string {
+	return fmt.Sprintf("%s/%s", namespace, name)
+}
+
+// predicateFunc is a function that decides for a given object and its metadata
+// whether or not the controller should trigger a reconcile loop for an incoming
+// event.
+type predicateFunc func(runtime.Object, metav1.Object) bool
+
+// makeOwnerPredicate builds a new predicate using the given worker name. The
+// predicate checks whether the affected object has the proper labels.
+func makeOwnerPredicate(workerName string) predicate.Predicate {
+	return makePredicateFuncs(func(obj runtime.Object, meta metav1.Object) bool {
+		labels := meta.GetLabels()
+
+		// only reconcile configurations with our given worker name label
+		if _, ok := obj.(*operatorv1alpha1.KubermaticConfiguration); ok {
+			return labels[WorkerNameLabel] == workerName
+		}
+
+		// only act on objects managed by this controller
+		return labels[ManagedByLabel] == ControllerName
+	})
+}
+
+// makePredicateFuncs takes a predicate and returns a struct appliying the
+// function for Create, Update, Delete and Generic events. For Update events,
+// only the new version is considered.
+func makePredicateFuncs(pred predicateFunc) predicate.Funcs {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return pred(e.Object, e.Meta)
+		},
+
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return pred(e.ObjectNew, e.MetaNew)
+		},
+
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return pred(e.Object, e.Meta)
+		},
+
+		GenericFunc: func(e event.GenericEvent) bool {
+			return pred(e.Object, e.Meta)
+		},
+	}
 }

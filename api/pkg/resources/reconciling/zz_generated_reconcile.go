@@ -20,6 +20,40 @@ import (
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
 
+// NamespaceCreator defines an interface to create/update Namespaces
+type NamespaceCreator = func(existing *corev1.Namespace) (*corev1.Namespace, error)
+
+// NamedNamespaceCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedNamespaceCreatorGetter = func() (name string, create NamespaceCreator)
+
+// NamespaceObjectWrapper adds a wrapper so the NamespaceCreator matches ObjectCreator
+// This is needed as golang does not support function interface matching
+func NamespaceObjectWrapper(create NamespaceCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*corev1.Namespace))
+		}
+		return create(&corev1.Namespace{})
+	}
+}
+
+// ReconcileNamespaces will create and update the Namespaces coming from the passed NamespaceCreator slice
+func ReconcileNamespaces(ctx context.Context, namedGetters []NamedNamespaceCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := NamespaceObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.Namespace{}, false); err != nil {
+			return fmt.Errorf("failed to ensure Namespace %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
 // ServiceCreator defines an interface to create/update Services
 type ServiceCreator = func(existing *corev1.Service) (*corev1.Service, error)
 

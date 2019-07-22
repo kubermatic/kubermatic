@@ -19,6 +19,11 @@ func main() {
 	}{
 		Resources: []reconcileFunctionData{
 			{
+				ResourceName:       "Namespace",
+				ImportAlias:        "corev1",
+				ResourceImportPath: "k8s.io/api/core/v1",
+			},
+			{
 				ResourceName:       "Service",
 				ImportAlias:        "corev1",
 				ResourceImportPath: "k8s.io/api/core/v1",

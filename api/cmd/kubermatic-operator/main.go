@@ -77,7 +77,7 @@ func main() {
 		sugarLog.Fatalw("failed to register types in Scheme", "error", err)
 	}
 
-	if err := operatormaster.Add(mgr, 1, clientConfig, sugarLog); err != nil {
+	if err := operatormaster.Add(mgr, 1, clientConfig, sugarLog, opt.workerName); err != nil {
 		sugarLog.Fatalw("Failed to add operator-master controller", "error", err)
 	}
 
