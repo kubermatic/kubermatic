@@ -305,7 +305,6 @@ type AWSCloudSpec struct {
 	AccessKeyID         string `json:"accessKeyId"`
 	SecretAccessKey     string `json:"secretAccessKey"`
 	VPCID               string `json:"vpcId"`
-	SubnetID            string `json:"subnetId"`
 	RoleName            string `json:"roleName"`
 	RoleARN             string `json:"roleARN"`
 	RouteTableID        string `json:"routeTableId"`

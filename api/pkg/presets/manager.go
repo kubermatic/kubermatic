@@ -100,7 +100,6 @@ type AWSCredentials struct {
 	SecretAccessKey string `json:"secretAccessKey"`
 
 	VPCID               string `json:"vpcId,omitempty"`
-	SubnetID            string `json:"subnetId,omitempty"`
 	RouteTableID        string `json:"routeTableId,omitempty"`
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 	SecurityGroupID     string `json:"securityGroupID,omitempty"`
@@ -296,7 +295,6 @@ func (m *Manager) setAWSCredentials(credentialName string, cloud kubermaticv1.Cl
 			cloud.AWS.InstanceProfileName = credential.InstanceProfileName
 			cloud.AWS.RouteTableID = credential.RouteTableID
 			cloud.AWS.SecurityGroupID = credential.SecurityGroupID
-			cloud.AWS.SubnetID = credential.SubnetID
 			cloud.AWS.VPCID = credential.VPCID
 			return &cloud, nil
 		}
