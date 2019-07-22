@@ -118,7 +118,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		}
 
 		// Create the initial node deployment in the background.
-		if req.Body.NodeDeployment != nil {
+		if req.Body.NodeDeployment != nil && req.Body.NodeDeployment.Spec.Replicas > 0 {
 			// for BringYourOwn provider we don't create ND
 			isBYO, err := common.IsBringYourOwnProvider(spec.Cloud)
 			if err != nil {
