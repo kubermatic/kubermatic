@@ -107,9 +107,9 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	if !found {
 		return nil, fmt.Errorf("couldn't find datacentrer %q for cluster %q", cluster.Spec.Cloud.DatacenterName, cluster.Name)
 	}
-	prov := cloud.Provider(datacenter.DeepCopy())
-	if prov == nil {
-		return nil, fmt.Errorf("no valid provider specified")
+	prov, err := cloud.Provider(datacenter.DeepCopy())
+	if err != nil {
+		return nil, err
 	}
 
 	if cluster.DeletionTimestamp != nil {
@@ -138,7 +138,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 	}
 
-	_, err := prov.InitializeCloudProvider(cluster, r.updateCluster)
+	_, err = prov.InitializeCloudProvider(cluster, r.updateCluster)
 	return nil, err
 }
 

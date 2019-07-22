@@ -208,10 +208,13 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 }
 
 // NewCloudProvider returns a new AmazonEC2 provider.
-func NewCloudProvider(dc *kubermaticv1.DatacenterSpecAWS) *AmazonEC2 {
-	return &AmazonEC2{
-		dc: dc,
+func NewCloudProvider(dc *kubermaticv1.Datacenter) (*AmazonEC2, error) {
+	if dc.Spec.AWS == nil {
+		return nil, errors.New("datacenter is not an AWS datacenter")
 	}
+	return &AmazonEC2{
+		dc: dc.Spec.AWS,
+	}, nil
 }
 
 func getDefaultVpc(client *ec2.EC2) (*ec2.Vpc, error) {

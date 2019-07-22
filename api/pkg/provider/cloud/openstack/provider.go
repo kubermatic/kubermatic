@@ -1,6 +1,7 @@
 package openstack
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -44,10 +45,13 @@ type Provider struct {
 }
 
 // NewCloudProvider creates a new openstack provider.
-func NewCloudProvider(dc *kubermaticv1.DatacenterSpecOpenstack) *Provider {
-	return &Provider{
-		dc: dc,
+func NewCloudProvider(dc *kubermaticv1.Datacenter) (*Provider, error) {
+	if dc.Spec.Openstack == nil {
+		return nil, errors.New("datacenter is not an Openstack datacenter")
 	}
+	return &Provider{
+		dc: dc.Spec.Openstack,
+	}, nil
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec

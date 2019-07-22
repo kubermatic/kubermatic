@@ -12,7 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/vsphere"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -68,7 +68,7 @@ func getVsphereNetworks(seeds map[string]*kubermaticv1.Seed, username, password,
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
-	vsProvider, err := cloud.VSphereProvider(datacenter)
+	vsProvider, err := vsphere.NewCloudProvider(datacenter)
 	if err != nil {
 		return nil, err
 	}

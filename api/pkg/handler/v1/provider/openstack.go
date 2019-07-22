@@ -12,7 +12,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
@@ -57,7 +56,7 @@ func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider
 
 func getOpenstackSizes(username, passowrd, tenant, tenantID, domain, datacenterName string, datacenter *kubermaticv1.Datacenter) ([]apiv1.OpenstackSize, error) {
 
-	provider, err := cloud.OpenstackProvider(datacenter)
+	provider, err := openstack.NewCloudProvider(datacenter)
 	if err != nil {
 		return nil, err
 	}
@@ -490,7 +489,7 @@ func getOpenstackCloudProvider(seeds map[string]*kubermaticv1.Seed, datacenterNa
 	if err != nil {
 		return nil, fmt.Errorf("failed to find datacenter %q: %v", datacenterName, err)
 	}
-	osProvider, err := cloud.OpenstackProvider(dc)
+	osProvider, err := openstack.NewCloudProvider(dc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Openstack provider: %v", err)
 	}

@@ -2,6 +2,7 @@ package vsphere
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 
@@ -32,10 +33,13 @@ type Network struct {
 }
 
 // NewCloudProvider creates a new vSphere provider.
-func NewCloudProvider(dc *kubermaticv1.DatacenterSpecVSphere) *Provider {
-	return &Provider{
-		dc: dc,
+func NewCloudProvider(dc *kubermaticv1.Datacenter) (*Provider, error) {
+	if dc.Spec.VSphere == nil {
+		return nil, errors.New("datacenter is not a vSphere datacenter")
 	}
+	return &Provider{
+		dc: dc.Spec.VSphere,
+	}, nil
 }
 
 func (v *Provider) getClient(cloud kubermaticv1.CloudSpec) (*govmomi.Client, error) {

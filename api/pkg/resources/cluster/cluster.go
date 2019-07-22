@@ -29,7 +29,10 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter) (*kubermaticv1.
 	if providerName == "" {
 		return nil, errors.New("cluster has no cloudprovider")
 	}
-	cloudProvider := cloud.Provider(dc)
+	cloudProvider, err := cloud.Provider(dc)
+	if err != nil {
+		return nil, err
+	}
 
 	if err := defaulting.DefaultCreateClusterSpec(spec, cloudProvider); err != nil {
 		return nil, err

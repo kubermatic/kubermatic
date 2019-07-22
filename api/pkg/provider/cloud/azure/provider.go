@@ -2,6 +2,7 @@ package azure
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -50,12 +51,15 @@ type Azure struct {
 }
 
 // New returns a new Azure provider.
-func New(dc *kubermaticv1.DatacenterSpecAzure) *Azure {
+func New(dc *kubermaticv1.Datacenter) (*Azure, error) {
+	if dc.Spec.Azure == nil {
+		return nil, errors.New("datacenter is not an Azure datacenter")
+	}
 	return &Azure{
-		dc:  dc,
+		dc:  dc.Spec.Azure,
 		log: log.Logger,
 		ctx: context.TODO(),
-	}
+	}, nil
 }
 
 // Azure API doesn't allow programmatically getting the number of available fault domains in a given region.

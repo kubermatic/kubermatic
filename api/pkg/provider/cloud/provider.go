@@ -17,54 +17,36 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/vsphere"
 )
 
-func Provider(datacenter *kubermaticv1.Datacenter) provider.CloudProvider {
+func Provider(datacenter *kubermaticv1.Datacenter) (provider.CloudProvider, error) {
 	if datacenter.Spec.Digitalocean != nil {
-		return digitalocean.NewCloudProvider()
+		return digitalocean.NewCloudProvider(), nil
 	}
 	if datacenter.Spec.BringYourOwn != nil {
-		return bringyourown.NewCloudProvider()
+		return bringyourown.NewCloudProvider(), nil
 	}
 	if datacenter.Spec.AWS != nil {
-		return aws.NewCloudProvider(datacenter.Spec.AWS)
+		return aws.NewCloudProvider(datacenter)
 	}
 	if datacenter.Spec.Azure != nil {
-		return azure.New(datacenter.Spec.Azure)
+		return azure.New(datacenter)
 	}
 	if datacenter.Spec.Openstack != nil {
-		return openstack.NewCloudProvider(datacenter.Spec.Openstack)
+		return openstack.NewCloudProvider(datacenter)
 	}
 	if datacenter.Spec.Packet != nil {
-		return packet.NewCloudProvider()
+		return packet.NewCloudProvider(), nil
 	}
 	if datacenter.Spec.Hetzner != nil {
-		return hetzner.NewCloudProvider()
+		return hetzner.NewCloudProvider(), nil
 	}
 	if datacenter.Spec.VSphere != nil {
-		return vsphere.NewCloudProvider(datacenter.Spec.VSphere)
+		return vsphere.NewCloudProvider(datacenter)
 	}
 	if datacenter.Spec.GCP != nil {
-		return gcp.NewCloudProvider()
+		return gcp.NewCloudProvider(), nil
 	}
 	if datacenter.Spec.Fake != nil {
-		return fake.NewCloudProvider()
+		return fake.NewCloudProvider(), nil
 	}
-	return nil
-}
-
-func FakeProvider(datacenter *kubermaticv1.Datacenter) provider.CloudProvider {
-	return fake.NewCloudProvider()
-}
-
-func OpenstackProvider(datacenter *kubermaticv1.Datacenter) (*openstack.Provider, error) {
-	if datacenter.Spec.Openstack == nil {
-		return nil, errors.New("datacenter is not an Openstack datacenter")
-	}
-	return openstack.NewCloudProvider(datacenter.Spec.Openstack), nil
-}
-
-func VSphereProvider(datacenter *kubermaticv1.Datacenter) (*vsphere.Provider, error) {
-	if datacenter.Spec.VSphere == nil {
-		return nil, errors.New("datacenter is not a vSphere datacenter")
-	}
-	return vsphere.NewCloudProvider(datacenter.Spec.VSphere), nil
+	return nil, errors.New("no cloudprovider found")
 }

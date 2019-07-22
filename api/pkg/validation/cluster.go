@@ -169,9 +169,9 @@ func ValidateUpdateCluster(newCluster, oldCluster *kubermaticv1.Cluster, dc *kub
 		return fmt.Errorf("changing to a different provider is not allowed")
 	}
 
-	cloudProvider := cloud.Provider(dc)
-	if cloudProvider == nil {
-		return fmt.Errorf("invalid cloud provider %q specified", providerName)
+	cloudProvider, err := cloud.Provider(dc)
+	if err != nil {
+		return err
 	}
 
 	if err := cloudProvider.ValidateCloudSpec(newCluster.Spec.Cloud); err != nil {
