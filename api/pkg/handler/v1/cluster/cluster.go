@@ -133,7 +133,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, cloudProviders map[s
 				if err != nil {
 					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(nodeDeploymentCreationFail), "failed to create initial node deployment%s: %v", ndName, err)
 					glog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
-					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "node_dc": req.Body.Cluster.Spec.Cloud.DatacenterName}).Add(1)
+					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "datacenter": req.Body.Cluster.Spec.Cloud.DatacenterName}).Add(1)
 				} else {
 					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationSuccess), "created initial node deployment%s", ndName)
 					glog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)

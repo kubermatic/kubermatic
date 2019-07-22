@@ -28,7 +28,7 @@ var metrics = common.ServerMetrics{
 			Name: "kubermatic_api_init_node_deployment_failures",
 			Help: "The number of times initial node deployment couldn't be created within the timeout",
 		},
-		[]string{"cluster", "seed_dc"},
+		[]string{"cluster", "datacenter"},
 	),
 }
 
