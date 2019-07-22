@@ -41,9 +41,6 @@ func getOsName(nodeSpec apiv1.NodeSpec) (providerconfig.OperatingSystem, error) 
 }
 
 func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	if dc.Spec.AWS == nil {
-		return nil, errors.New("datacenter is not an AWS datacenter")
-	}
 	osName, err := getOsName(nodeSpec)
 	if err != nil {
 		return nil, err
@@ -100,9 +97,6 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 }
 
 func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	if dc.Spec.Azure == nil {
-		return nil, errors.New("datacenter is not an Azure datacenter")
-	}
 	config := azure.RawConfig{
 		SubscriptionID: providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SubscriptionID},
 		TenantID:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.TenantID},
@@ -138,10 +132,6 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *
 }
 
 func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	if dc.Spec.VSphere == nil {
-		return nil, errors.New("datacenter is not a vSphere datecenter")
-	}
-
 	config := vsphere.RawConfig{
 		TemplateVMName:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VSphere.Template},
 		TemplateNetName: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VSphere.TemplateNetName},
@@ -167,9 +157,6 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 }
 
 func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	if dc.Spec.Openstack == nil {
-		return nil, errors.New("datacenter is not an Openstack datacenter")
-	}
 	config := openstack.RawConfig{
 		Image:            providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.Image},
 		Flavor:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.Flavor},
@@ -206,9 +193,6 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 }
 
 func getHetznerProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	if dc.Spec.Hetzner == nil {
-		return nil, errors.New("datacenter is not a Hetzner datacenter")
-	}
 	config := hetzner.RawConfig{
 		Datacenter: providerconfig.ConfigVarString{Value: dc.Spec.Hetzner.Datacenter},
 		Location:   providerconfig.ConfigVarString{Value: dc.Spec.Hetzner.Location},
@@ -226,9 +210,6 @@ func getHetznerProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 }
 
 func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	if dc.Spec.Digitalocean == nil {
-		return nil, errors.New("datacenter is not a digitalocean datacenter")
-	}
 	config := digitalocean.RawConfig{
 		Region:            providerconfig.ConfigVarString{Value: dc.Spec.Digitalocean.Region},
 		Backups:           providerconfig.ConfigVarBool{Value: nodeSpec.Cloud.Digitalocean.Backups},
@@ -256,9 +237,6 @@ func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpe
 }
 
 func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	if dc.Spec.Packet == nil {
-		return nil, errors.New("datacenter is not a packet datacenter")
-	}
 	config := packet.RawConfig{
 		InstanceType: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Packet.InstanceType},
 	}
@@ -287,9 +265,6 @@ func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc 
 }
 
 func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	if dc.Spec.GCP == nil {
-		return nil, errors.New("datacenter is not a GCP datacenter")
-	}
 	config := gce.CloudProviderSpec{
 		Zone:                  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.Zone},
 		MachineType:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.MachineType},
