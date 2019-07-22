@@ -25,7 +25,6 @@ import (
 func NewTestRouting(
 	seeds map[string]*kubermaticv1.Seed,
 	clusterProviders map[string]provider.ClusterProvider,
-	cloudProviders map[string]provider.CloudProvider,
 	sshKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
@@ -48,7 +47,6 @@ func NewTestRouting(
 	r := handler.NewRouting(
 		seeds,
 		clusterProviders,
-		cloudProviders,
 		sshKeyProvider,
 		userProvider,
 		serviceAccountProvider,

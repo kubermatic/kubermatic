@@ -24,27 +24,17 @@ const (
 )
 
 type gcp struct {
-	seeds map[string]*kubermaticv1.Seed
 }
 
 // NewCloudProvider creates a new gcp provider.
-func NewCloudProvider(seeds map[string]*kubermaticv1.Seed) provider.CloudProvider {
-	return &gcp{
-		seeds: seeds,
-	}
+func NewCloudProvider() provider.CloudProvider {
+	return &gcp{}
 }
 
 // TODO: update behaviour of all these methods
 // InitializeCloudProvider initializes a cluster.
 func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	datacenter, err := provider.DatacenterFromSeedMap(g.seeds, cluster.Spec.Cloud.DatacenterName)
-	if err != nil {
-		return nil, err
-	}
-	if datacenter.Spec.GCP == nil {
-		return nil, fmt.Errorf("datacenter %q is not a valid GCP datacenter", cluster.Spec.Cloud.DatacenterName)
-	}
-
+	var err error
 	if cluster.Spec.Cloud.GCP.Network == "" && cluster.Spec.Cloud.GCP.Subnetwork == "" {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.GCP.Network = defaultNetwork
@@ -54,8 +44,7 @@ func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update prov
 		}
 	}
 
-	err = ensureFirewallRules(cluster, update)
-	if err != nil {
+	if err := ensureFirewallRules(cluster, update); err != nil {
 		return nil, err
 	}
 

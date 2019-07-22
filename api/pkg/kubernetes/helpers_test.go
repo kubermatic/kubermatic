@@ -2,8 +2,6 @@ package kubernetes
 
 import (
 	"testing"
-
-	"github.com/kubermatic/kubermatic/api/pkg/validation"
 )
 
 func TestGenerateToken(t *testing.T) {
@@ -18,7 +16,7 @@ func TestGenerateToken(t *testing.T) {
 		t.Errorf("two new tokens should not be identical, but are: '%s'", tokenA)
 	}
 
-	if err := validation.ValidateKubernetesToken(tokenA); err != nil {
+	if err := ValidateKubernetesToken(tokenA); err != nil {
 		t.Errorf("generated token is malformed: %v", err)
 	}
 }

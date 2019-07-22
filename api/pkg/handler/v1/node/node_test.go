@@ -1306,7 +1306,7 @@ func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 		},
 	}
 	cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-		DatacenterName: "us-central1",
+		DatacenterName: "regular-do1",
 	}
 	return cluster
 }

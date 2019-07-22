@@ -16,7 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func VsphereNetworksEndpoint(providers provider.CloudRegistry, credentialManager common.PresetsManager) endpoint.Endpoint {
+func VsphereNetworksEndpoint(seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(VSphereNetworksReq)
 		if !ok {
@@ -36,11 +36,11 @@ func VsphereNetworksEndpoint(providers provider.CloudRegistry, credentialManager
 			}
 		}
 
-		return getVsphereNetworks(providers, username, password, req.DatacenterName)
+		return getVsphereNetworks(seeds, username, password, req.DatacenterName)
 	}
 }
 
-func VsphereNetworksNoCredentialsEndpoint(projectProvider provider.ProjectProvider, providers provider.CloudRegistry) endpoint.Endpoint {
+func VsphereNetworksNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(VSphereNetworksNoCredentialsReq)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
@@ -59,19 +59,18 @@ func VsphereNetworksNoCredentialsEndpoint(projectProvider provider.ProjectProvid
 
 		datacenterName := cluster.Spec.Cloud.DatacenterName
 		vSpec := cluster.Spec.Cloud.VSphere
-		return getVsphereNetworks(providers, vSpec.Username, vSpec.Password, datacenterName)
+		return getVsphereNetworks(seeds, vSpec.Username, vSpec.Password, datacenterName)
 	}
 }
 
-func getVsphereNetworks(providers provider.CloudRegistry, username, password, datacenterName string) ([]apiv1.VSphereNetwork, error) {
-	vsProviderInterface, ok := providers[provider.VSphereCloudProvider]
-	if !ok {
-		return nil, fmt.Errorf("unable to get %s provider", provider.VSphereCloudProvider)
+func getVsphereNetworks(seeds map[string]*kubermaticv1.Seed, username, password, datacenterName string) ([]apiv1.VSphereNetwork, error) {
+	datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
-
-	vsProvider, ok := vsProviderInterface.(*vsphere.Provider)
-	if !ok {
-		return nil, fmt.Errorf("unable to cast vsProviderInterface to *vsphere.Provider")
+	vsProvider, err := vsphere.NewCloudProvider(datacenter)
+	if err != nil {
+		return nil, err
 	}
 
 	networks, err := vsProvider.GetNetworks(kubermaticv1.CloudSpec{
