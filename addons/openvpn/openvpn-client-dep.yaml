@@ -95,6 +95,7 @@ spec:
           echo "Terminating."
 
         securityContext:
+          # privileged is required as we have to set a sysctl - NET_ADMIN is not enough
           privileged: true
         resources:
           requests:
