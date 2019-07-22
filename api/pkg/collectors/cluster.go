@@ -51,8 +51,6 @@ func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlrun
 				"master_version",
 				"cloud_provider",
 				"datacenter",
-				"user_name",
-				"user_email",
 				"pause",
 			},
 			nil,
@@ -130,8 +128,6 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		cluster.Spec.Version.String(),
 		provider,
 		cluster.Spec.Cloud.DatacenterName,
-		cluster.Status.UserName,
-		cluster.Status.UserEmail,
 		pause,
 	}, nil
 }
