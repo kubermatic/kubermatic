@@ -11,12 +11,13 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -267,4 +268,21 @@ func (d *TemplateData) KubermaticAPIImage() string {
 		imageWithoutRegistry = strings.Join(apiImageSplit[1:], "/")
 	}
 	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
+}
+
+func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar providerconfig.GlobalSecretKeySelector) (string, error) {
+	// We need all three of these to fetch and use a secret
+	if configVar.Name != "" && configVar.Namespace != "" && configVar.Key != "" {
+		secret := &corev1.Secret{}
+		key := types.NamespacedName{Namespace: configVar.Namespace, Name: configVar.Name}
+		if err := d.client.Get(d.ctx, key, secret); err != nil {
+			return "", fmt.Errorf("error retrieving secret %q from namespace %q: %v", configVar.Name, configVar.Namespace, err)
+		}
+
+		if val, ok := secret.Data[configVar.Key]; ok {
+			return string(val), nil
+		}
+		return "", fmt.Errorf("secret %q in namespace %q has no key %q", configVar.Name, configVar.Namespace, configVar.Key)
+	}
+	return "", nil
 }

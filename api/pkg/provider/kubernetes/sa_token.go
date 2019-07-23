@@ -6,6 +6,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,9 +18,8 @@ import (
 )
 
 const (
-	kubermaticNamespace = "kubermatic"
-	labelTokenName      = "token"
-	tokenPrefix         = "sa-token-"
+	labelTokenName = "token"
+	tokenPrefix    = "sa-token-"
 )
 
 // NewServiceAccountProvider returns a service account provider
@@ -79,7 +79,7 @@ func (p *ServiceAccountTokenProvider) Create(userInfo *provider.UserInfo, sa *ku
 		return nil, kerrors.NewInternalError(err)
 	}
 
-	createdToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Create(secret)
+	createdToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Create(secret)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 		}
 
 		tokenToGet := resultList[0]
-		_, err = kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Get(tokenToGet.Name, metav1.GetOptions{})
+		_, err = kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Get(tokenToGet.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -211,7 +211,7 @@ func (p *ServiceAccountTokenProvider) Get(userInfo *provider.UserInfo, name stri
 		return nil, kerrors.NewInternalError(err)
 	}
 
-	token, err := kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Get(name, metav1.GetOptions{})
+	token, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +235,7 @@ func (p *ServiceAccountTokenProvider) Update(userInfo *provider.UserInfo, secret
 		return nil, kerrors.NewInternalError(err)
 	}
 
-	updatedToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Update(&secretCpy)
+	updatedToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Update(&secretCpy)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +257,7 @@ func (p *ServiceAccountTokenProvider) Delete(userInfo *provider.UserInfo, name s
 	if err != nil {
 		return kerrors.NewInternalError(err)
 	}
-	return kubernetesImpersonatedClient.CoreV1().Secrets(kubermaticNamespace).Delete(name, &metav1.DeleteOptions{})
+	return kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Delete(name, &metav1.DeleteOptions{})
 }
 
 // removeTokenPrefix removes "sa-token-" from a token's ID

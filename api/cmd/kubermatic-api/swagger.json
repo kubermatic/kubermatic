@@ -5095,6 +5095,53 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "GlobaObjectKeySelector": {
+      "description": "GlobaObjectKeySelector is needed as we can not use v1.SecretKeySelector\nbecause it is not cross namespace",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "API version of the referent.\n+optional",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "fieldPath": {
+          "description": "If referring to a piece of an object instead of an entire object, this string\nshould contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].\nFor example, if the object reference is to a container within a pod, this would take on a value like:\n\"spec.containers{name}\" (where \"name\" refers to the name of the container that triggered\nthe event) or if no container name is specified \"spec.containers[2]\" (container with\nindex 2 in this pod). This syntax is chosen only to have some well-defined way of\nreferencing a part of an object.\nTODO: this design is not final and this field is subject to change in the future.\n+optional",
+          "type": "string",
+          "x-go-name": "FieldPath"
+        },
+        "key": {
+          "type": "string",
+          "x-go-name": "Key"
+        },
+        "kind": {
+          "description": "Kind of the referent.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional",
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "name": {
+          "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\n+optional",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Namespace of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
+        "resourceVersion": {
+          "description": "Specific resourceVersion to which this reference is made, if any.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency\n+optional",
+          "type": "string",
+          "x-go-name": "ResourceVersion"
+        },
+        "uid": {
+          "$ref": "#/definitions/UID"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/providerconfig"
+    },
+    "GlobalSecretKeySelector": {
+      "$ref": "#/definitions/GlobaObjectKeySelector"
+    },
     "HealthStatus": {
       "type": "integer",
       "format": "int64",
@@ -6008,16 +6055,24 @@
       "title": "PacketCloudSpec specifies access data to a Packet cloud.",
       "properties": {
         "apiKey": {
+          "description": "APIKey is deprecated. Please use APIKeyReference instead.",
           "type": "string",
           "x-go-name": "APIKey"
+        },
+        "apiKeyReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
         },
         "billingCycle": {
           "type": "string",
           "x-go-name": "BillingCycle"
         },
         "projectID": {
+          "description": "ProjectID is deprecated. Please use ProjectIDReference instead.",
           "type": "string",
           "x-go-name": "ProjectID"
+        },
+        "projectIDReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -6436,6 +6491,11 @@
       "description": "Time is a wrapper around time.Time which supports correct\nmarshaling JSON.  Wrappers are provided for many\nof the factory methods that the time package offers.",
       "type": "object",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "UID": {
+      "description": "UID is a type that holds unique ID values, including UUIDs.  Because we\ndon't ONLY use UUIDs, this is an alias to string.  Being a type captures\nintent and helps make sure that UIDs and names do not get conflated.",
+      "type": "string",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/types"
     },
     "UbuntuSpec": {
       "description": "UbuntuSpec ubuntu specific settings",

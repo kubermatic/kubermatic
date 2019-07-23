@@ -8,6 +8,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,6 +40,7 @@ const (
 
 type machinecontrollerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
+	GetGlobalSecretKeySelectorValue(configVar providerconfig.GlobalSecretKeySelector) (string, error)
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
 	ClusterIPByServiceName(string) (string, error)
@@ -101,13 +103,18 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 				}
 			}
 
+			envVars, err := getEnvVars(data)
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:      Name,
 					Image:     data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
 					Command:   []string{"/usr/local/bin/machine-controller"},
 					Args:      getFlags(clusterDNSIP, data.DC().Node),
-					Env:       getEnvVars(data),
+					Env:       envVars,
 					Resources: controllerResourceRequirements,
 					LivenessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
@@ -152,7 +159,12 @@ func getKubeconfigVolume() corev1.Volume {
 	}
 }
 
-func getEnvVars(data machinecontrollerData) []corev1.EnvVar {
+func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
+	credentials, err := GetCredentials(data)
+	if err != nil {
+		return nil, err
+	}
+
 	var vars []corev1.EnvVar
 	if data.Cluster().Spec.Cloud.AWS != nil {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: data.Cluster().Spec.Cloud.AWS.AccessKeyID})
@@ -178,13 +190,13 @@ func getEnvVars(data machinecontrollerData) []corev1.EnvVar {
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: data.Cluster().Spec.Cloud.VSphere.InfraManagementUser.Password})
 	}
 	if data.Cluster().Spec.Cloud.Packet != nil {
-		vars = append(vars, corev1.EnvVar{Name: "PACKET_API_KEY", Value: data.Cluster().Spec.Cloud.Packet.APIKey})
-		vars = append(vars, corev1.EnvVar{Name: "PACKET_PROJECT_ID", Value: data.Cluster().Spec.Cloud.Packet.ProjectID})
+		vars = append(vars, corev1.EnvVar{Name: "PACKET_API_KEY", Value: credentials.Packet.APIKey})
+		vars = append(vars, corev1.EnvVar{Name: "PACKET_PROJECT_ID", Value: credentials.Packet.ProjectID})
 	}
 	if data.Cluster().Spec.Cloud.GCP != nil {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", Value: data.Cluster().Spec.Cloud.GCP.ServiceAccount})
 	}
-	return vars
+	return vars, nil
 }
 
 func getFlags(clusterDNSIP string, nodeSettings kubermaticv1.NodeSettings) []string {

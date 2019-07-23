@@ -60,7 +60,7 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 			ExistingAPIUser:    test.GenDefaultAPIUser(),
 			HeaderParams:       map[string]string{"DeleteVolumes": "true", "DeleteLoadBalancers": "true"},
 			ExpectedUpdates:    1,
-			ExpectedFinalizers: []string{"kubermatic.io/cleanup-in-cluster-pv", "kubermatic.io/cleanup-in-cluster-lb"},
+			ExpectedFinalizers: []string{"kubermatic.io/cleanup-in-cluster-pv", "kubermatic.io/cleanup-in-cluster-lb", "kubermatic.io/cleanup-credentials-secrets"},
 		},
 		{
 			Name:             "scenario 2: tests deletion of a cluster with only volume finalizer",
@@ -76,7 +76,7 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 			ExistingAPIUser:    test.GenDefaultAPIUser(),
 			HeaderParams:       map[string]string{"DeleteVolumes": "true", "DeleteLoadBalancers": "false"},
 			ExpectedUpdates:    1,
-			ExpectedFinalizers: []string{"kubermatic.io/cleanup-in-cluster-pv"},
+			ExpectedFinalizers: []string{"kubermatic.io/cleanup-in-cluster-pv", "kubermatic.io/cleanup-credentials-secrets"},
 		},
 		{
 			Name:             "scenario 3: tests deletion of a cluster without finalizers",
@@ -88,10 +88,11 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 				// add a cluster
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 			),
-			ClusterToSync:   "clusterAbcID",
-			ExistingAPIUser: test.GenDefaultAPIUser(),
-			HeaderParams:    map[string]string{},
-			ExpectedUpdates: 0,
+			ClusterToSync:      "clusterAbcID",
+			ExistingAPIUser:    test.GenDefaultAPIUser(),
+			HeaderParams:       map[string]string{},
+			ExpectedUpdates:    1,
+			ExpectedFinalizers: []string{"kubermatic.io/cleanup-credentials-secrets"},
 		},
 	}
 	for _, tc := range testcases {
