@@ -70,11 +70,11 @@ func main() {
 
 	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: opt.internalAddr})
 	if err != nil {
-		log.Fatalw("failed to create Controller Manager instance: %v", err)
+		log.Fatalw("Failed to create Controller Manager instance: %v", err)
 	}
 
 	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("failed to register types in Scheme", "error", err)
+		log.Fatalw("Failed to register types in Scheme", "error", err)
 	}
 
 	if err := operatormaster.Add(mgr, 1, clientConfig, log, opt.workerName); err != nil {
