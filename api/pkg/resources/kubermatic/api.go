@@ -72,8 +72,8 @@ func APIDeploymentCreator(ns string, cfg *operatorv1alpha1.KubermaticConfigurati
 				fmt.Sprintf("-oidc-skip-tls-verify=%v", cfg.Spec.Auth.SkipTokenIssuerTLSVerify),
 				fmt.Sprintf("-domain=%s", cfg.Spec.Domain),
 				fmt.Sprintf("-service-account-signing-key=%s", cfg.Spec.Auth.ServiceAccountKey),
+				fmt.Sprintf("-expose-strategy=%s", cfg.Spec.ExposeStrategy),
 				// fmt.Sprintf("-feature-gates=%s", cfg.Spec.FeatureGates),
-				//	-expose-strategy={{ .Values.kubermatic.exposeStrategy }}
 			}
 
 			if cfg.Spec.FeatureGates.OIDCKubeCfgEndpoint.Enabled {

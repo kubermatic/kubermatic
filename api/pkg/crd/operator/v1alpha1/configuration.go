@@ -47,6 +47,12 @@ type KubermaticConfigurationSpec struct {
 	MasterController KubermaticMasterControllerConfiguration `json:"masterController,omitempty"`
 	// MasterFiles is a map of additional files to mount into each master component.
 	MasterFiles map[string]string `json:"masterFiles,omitempty"`
+	// ExposeStrategy is the strategy to expose the cluster with, either "NodePort" which creates a NodePort
+	// with a "nodeport-proxy.k8s.io/expose": "true" annotation to expose all clusters on one central Service
+	// of type LoadBalancer via the NodePort proxy or "LoadBalancer" to create a LoadBalancer service per cluster.
+	// Note: The `seed_dns_overwrite` setting of the `datacenters.yaml` doesn't have any effect if this is
+	// set to `LoadBalancer`.
+	ExposeStrategy string `json:"exposeStrategy,omitempty"`
 }
 
 // KubermaticSecretsConfiguration is a list of predefined credentials, like Docker registry authentication.
