@@ -189,7 +189,7 @@ func SeedControllerManagerDeploymentCreator(ns string, cfg *operatorv1alpha1.Kub
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							DefaultMode: i32ptr(420),
-							SecretName:  datacenterSecretName,
+							SecretName:  datacentersSecretName,
 						},
 					},
 				})

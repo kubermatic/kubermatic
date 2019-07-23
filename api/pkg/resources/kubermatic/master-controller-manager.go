@@ -79,7 +79,7 @@ func MasterControllerManagerDeploymentCreator(ns string, cfg *operatorv1alpha1.K
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							DefaultMode: i32ptr(420),
-							SecretName:  datacenterSecretName,
+							SecretName:  datacentersSecretName,
 						},
 					},
 				})

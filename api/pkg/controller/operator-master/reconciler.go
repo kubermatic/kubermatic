@@ -238,6 +238,10 @@ func (r *configReconciler) reconcileSecrets() error {
 		kubermatic.DexCASecretCreator(r.ns, r.config),
 	}
 
+	if r.config.Spec.Datacenters != "" {
+		creators = append(creators, kubermatic.DatacentersSecretCreator(r.ns, r.config))
+	}
+
 	if len(r.config.Spec.MasterFiles) > 0 {
 		creators = append(creators, kubermatic.MasterFilesSecretCreator(r.ns, r.config))
 	}

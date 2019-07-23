@@ -15,7 +15,7 @@ import (
 const (
 	dockercfgSecretName                   = "dockercfg"
 	kubeconfigSecretName                  = "kubeconfig"
-	datacenterSecretName                  = "datacenters"
+	datacentersSecretName                 = "datacenters"
 	presetsSecretName                     = "presets"
 	dexCASecretName                       = "dex-ca"
 	masterFilesSecretName                 = "extra-files"
@@ -69,6 +69,20 @@ func KubeconfigSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfigur
 			}
 
 			s.Data["kubeconfig"] = []byte(cfg.Spec.Auth.CABundle)
+
+			return s, nil
+		}
+	}
+}
+
+func DatacentersSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return datacentersSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+			if s.Data == nil {
+				s.Data = make(map[string][]byte)
+			}
+
+			s.Data["datacenters.yaml"] = []byte(cfg.Spec.Datacenters)
 
 			return s, nil
 		}
