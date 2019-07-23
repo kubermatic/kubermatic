@@ -5,6 +5,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -17,6 +18,7 @@ type openshiftData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	GetPodTemplateLabelsWithContext(context.Context, string, []corev1.Volume, map[string]string) (map[string]string, error)
+	GetGlobalSecretKeySelectorValue(configVar providerconfig.GlobalSecretKeySelector) (string, error)
 	GetApiserverExternalNodePort(context.Context) (int32, error)
 	NodePortRange(context.Context) string
 	ClusterIPByServiceName(name string) (string, error)

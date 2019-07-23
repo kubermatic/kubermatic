@@ -14,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -31,6 +32,7 @@ func NewTestRouting(
 	serviceAccountTokenProvider provider.ServiceAccountTokenProvider,
 	projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	credentialsProvider *kubernetesprovider.CredentialsProvider,
 	issuerVerifier auth.OIDCIssuerVerifier,
 	tokenVerifiers auth.TokenVerifier,
 	tokenExtractors auth.TokenExtractor,
@@ -53,6 +55,7 @@ func NewTestRouting(
 		serviceAccountTokenProvider,
 		projectProvider,
 		privilegedProjectProvider,
+		credentialsProvider,
 		issuerVerifier,
 		tokenVerifiers,
 		tokenExtractors,

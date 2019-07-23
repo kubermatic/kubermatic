@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -342,8 +343,12 @@ type OpenstackCloudSpec struct {
 
 // PacketCloudSpec specifies access data to a Packet cloud.
 type PacketCloudSpec struct {
-	APIKey       string `json:"apiKey"`
-	ProjectID    string `json:"projectID"`
+	APIKeyReference    *providerconfig.GlobalSecretKeySelector `json:"apiKeyReference,omitempty"`
+	ProjectIDReference *providerconfig.GlobalSecretKeySelector `json:"projectIDReference,omitempty"`
+	// APIKey is deprecated. Please use APIKeyReference instead.
+	APIKey string `json:"apiKey,omitempty"`
+	// ProjectID is deprecated. Please use ProjectIDReference instead.
+	ProjectID    string `json:"projectID,omitempty"`
 	BillingCycle string `json:"billingCycle"`
 }
 

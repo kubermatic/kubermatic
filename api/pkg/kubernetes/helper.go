@@ -7,6 +7,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
+
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 )
 
 var tokenValidator = regexp.MustCompile(`[bcdfghjklmnpqrstvwxz2456789]{6}\.[bcdfghjklmnpqrstvwxz2456789]{16}`)
@@ -42,5 +44,12 @@ func ValidateKubernetesToken(token string) error {
 		return fmt.Errorf("token is malformed, must match %s", tokenValidator.String())
 	}
 
+	return nil
+}
+
+func ValidateSecretKeySelector(selector *providerconfig.GlobalSecretKeySelector, key string) error {
+	if selector.Name == "" && selector.Namespace == "" && selector.Key == "" {
+		return fmt.Errorf("%q cannot be empty", key)
+	}
 	return nil
 }

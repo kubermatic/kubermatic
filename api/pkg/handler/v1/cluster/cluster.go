@@ -26,6 +26,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -33,6 +34,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/rand"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -53,7 +55,7 @@ var clusterTypes = []string{
 	apiv1.KubernetesClusterType,
 }
 
-func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider,
+func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, credentialsProvider *kubernetesprovider.CredentialsProvider,
 	seeds map[string]*kubermaticv1.Seed, initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager common.PresetsManager, exposeStrategy corev1.ServiceType) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
@@ -110,6 +112,12 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			partialCluster.Annotations = map[string]string{
 				"kubermatic.io/openshift": "true",
 			}
+		}
+		// generate the name here so that it can be used in the secretName below
+		partialCluster.Name = rand.String(10)
+
+		if _, err := credentialsProvider.Create(partialCluster, req.ProjectID); err != nil {
+			return nil, err
 		}
 
 		newCluster, err := clusterProvider.New(project, userInfo, partialCluster)
@@ -368,21 +376,24 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			}
 		}
 
+		existingCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		kuberneteshelper.AddFinalizer(existingCluster, apiv1.CredentialsSecretsCleanupFinalizer)
+
 		if req.DeleteVolumes || req.DeleteLoadBalancers {
-			existingCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
 			if req.DeleteLoadBalancers {
 				kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterLBCleanupFinalizer)
 			}
 			if req.DeleteVolumes {
 				kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterPVCleanupFinalizer)
 			}
+		}
 
-			if _, err = clusterProvider.Update(userInfo, existingCluster); err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
+		if _, err = clusterProvider.Update(userInfo, existingCluster); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		err = clusterProvider.Delete(userInfo, req.ClusterID)

@@ -18,6 +18,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -237,6 +238,9 @@ const (
 	ApiserverPodDisruptionBudgetName = "apiserver"
 	// MetricsServerPodDisruptionBudgetName is the name of the PDB for the metrics-server deployment
 	MetricsServerPodDisruptionBudgetName = "metrics-server"
+
+	// KubermaticNamespace is the main kubermatic namespace
+	KubermaticNamespace = "kubermatic"
 
 	// DefaultOwnerReadOnlyMode represents file mode with read permission for owner only
 	DefaultOwnerReadOnlyMode = 0400
@@ -733,4 +737,25 @@ func GetPodTemplateLabels(
 	}
 
 	return podLabels, nil
+}
+
+type GetGlobalSecretKeySelectorValue = func(configVar providerconfig.GlobalSecretKeySelector) (string, error)
+
+func GlobalSecretKeySelectorValueGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) GetGlobalSecretKeySelectorValue {
+	return func(configVar providerconfig.GlobalSecretKeySelector) (string, error) {
+		// We need all three of these to fetch and use a secret
+		if configVar.Name != "" && configVar.Namespace != "" && configVar.Key != "" {
+			secret := &corev1.Secret{}
+			key := types.NamespacedName{Namespace: configVar.Namespace, Name: configVar.Name}
+			if err := client.Get(ctx, key, secret); err != nil {
+				return "", fmt.Errorf("error retrieving secret %q from namespace %q: %v", configVar.Name, configVar.Namespace, err)
+			}
+
+			if val, ok := secret.Data[configVar.Key]; ok {
+				return string(val), nil
+			}
+			return "", fmt.Errorf("secret %q in namespace %q has no key %q", configVar.Name, configVar.Namespace, configVar.Key)
+		}
+		return "", nil
+	}
 }
