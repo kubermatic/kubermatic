@@ -3995,10 +3995,6 @@
           "type": "string",
           "x-go-name": "SecurityGroupID"
         },
-        "subnetId": {
-          "type": "string",
-          "x-go-name": "SubnetID"
-        },
         "vpcId": {
           "type": "string",
           "x-go-name": "VPCID"
