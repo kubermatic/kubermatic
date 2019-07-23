@@ -8,8 +8,10 @@ import (
 	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -22,8 +24,11 @@ var (
 	AllOperatingSystems = sets.NewString(string(providerconfig.OperatingSystemCoreos), string(providerconfig.OperatingSystemCentOS), string(providerconfig.OperatingSystemUbuntu))
 )
 
-// SeedGetter is a function to retrieve Seeds
+// SeedGetter is a function to retrieve a single seed
 type SeedGetter = func() (*kubermaticv1.Seed, error)
+
+// SeedsGetter is a function to retrieve a list of seeds
+type SeedsGetter = func() (kubermaticv1.SeedList, error)
 
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
@@ -128,25 +133,67 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 		return nil, errors.New("--datacenters must be empty when --dynamic-datacenters is enabled")
 	}
 
-	if !dynamicDatacenters {
-		if dcFile == "" {
-			return nil, errors.New("--datacenters is required")
-		}
-		// Make sure we fail early, an error here is nor recoverable
-		seed, err := LoadSeed(dcFile, seedName)
-		if err != nil {
-			return nil, err
-		}
+	if dynamicDatacenters {
 		return func() (*kubermaticv1.Seed, error) {
-			return seed.DeepCopy(), nil
+			seed := &kubermaticv1.Seed{}
+			if err := client.Get(ctx, types.NamespacedName{Name: seedName}, seed); err != nil {
+				return nil, fmt.Errorf("failed to get seed %q: %v", seedName, err)
+			}
+			return seed, nil
 		}, nil
 	}
 
+	if dcFile == "" {
+		return nil, errors.New("--datacenters is required")
+	}
+	// Make sure we fail early, an error here is nor recoverable
+	seed, err := LoadSeed(dcFile, seedName)
+	if err != nil {
+		return nil, err
+	}
 	return func() (*kubermaticv1.Seed, error) {
-		seed := &kubermaticv1.Seed{}
-		if err := client.Get(ctx, types.NamespacedName{Name: seedName}, seed); err != nil {
-			return nil, fmt.Errorf("failed to get seed %q: %v", seedName, err)
+		return seed.DeepCopy(), nil
+	}, nil
+
+}
+
+func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, workerName string, dynamicDatacenters bool) (SeedsGetter, error) {
+	if dcFile != "" && dynamicDatacenters {
+		return nil, errors.New("--datacenters must be empty when --dynamic-datacenters is enabled")
+	}
+
+	if dynamicDatacenters {
+		selectorOpts, err := workerlabel.LabelSelector(ctrlCtx.runOptions.workerName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to construct label selector for worker-name: %v", err)
 		}
-		return seed, nil
+		listOptsRaw := &metav1.ListOptions{}
+		selectorOpts(listOptsRaw)
+		listOpts := &ctrlruntimeclient.ListOptions{Raw: listOptsRaw}
+
+		return func() (*kubermaticv1.SeedList, error) {
+			seeds := &kubermaticv1.SeedList{}
+			if err := client.List(ctx, listOpts, seeds); err != nil {
+				return nil, fmt.Errorf("failed to list the seeds: %v", err)
+			}
+			return seeds, nil
+		}, nil
+	}
+
+	if dcFile == "" {
+		return nil, errors.New("--datacenters is required")
+	}
+	// Make sure we fail early, an error here is nor recoverable
+	seedMap, err := LoadSeeds(dcFile)
+	if err != nil {
+		return nil, err
+	}
+	seeds := &kubermaticv1.SeedList{}
+	for _, seed := range seedMap {
+		seeds.Items = append(seeds.Items, seed)
+	}
+
+	return func() (*kubermaticv1.SeedList, error) {
+		return seeds, nil
 	}, nil
 }
