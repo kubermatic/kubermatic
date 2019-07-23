@@ -25,13 +25,10 @@ func HealthyDeployment(ctx context.Context, client client.Client, nn types.Names
 		return kubermaticv1.HealthStatusDown, nil
 	}
 	// update scenario
-	if deployment.Status.UpdatedReplicas != *deployment.Spec.Replicas || deployment.Status.Replicas != *deployment.Spec.Replicas {
+	if deployment.Status.UpdatedReplicas != *deployment.Spec.Replicas || deployment.Status.ReadyReplicas != *deployment.Spec.Replicas || deployment.Status.Replicas != *deployment.Spec.Replicas {
 		return kubermaticv1.HealthStatusProvisioning, nil
 	}
-	if deployment.Status.UpdatedReplicas == *deployment.Spec.Replicas && deployment.Status.Replicas == *deployment.Spec.Replicas {
-		return kubermaticv1.HealthStatusUp, nil
-	}
-	return kubermaticv1.HealthStatusDown, nil
+	return kubermaticv1.HealthStatusUp, nil
 }
 
 // HealthyStatefulSe tells if the deployment has a minimum of minReady replicas in Ready status
@@ -41,17 +38,14 @@ func HealthyStatefulSet(ctx context.Context, client client.Client, nn types.Name
 		if kerrors.IsNotFound(err) {
 			return kubermaticv1.HealthStatusDown, nil
 		}
-		return kubermaticv1.HealthStatusDown, nil
+		return kubermaticv1.HealthStatusDown, err
 	}
 
 	if statefulSet.Status.ReadyReplicas < minReady {
 		return kubermaticv1.HealthStatusDown, nil
 	}
-	if statefulSet.Status.UpdatedReplicas != *statefulSet.Spec.Replicas || statefulSet.Status.Replicas != *statefulSet.Spec.Replicas {
+	if statefulSet.Status.UpdatedReplicas != *statefulSet.Spec.Replicas || statefulSet.Status.ReadyReplicas != *statefulSet.Spec.Replicas || statefulSet.Status.Replicas != *statefulSet.Spec.Replicas {
 		return kubermaticv1.HealthStatusProvisioning, nil
 	}
-	if statefulSet.Status.UpdatedReplicas == *statefulSet.Spec.Replicas && statefulSet.Status.Replicas == *statefulSet.Spec.Replicas {
-		return kubermaticv1.HealthStatusUp, nil
-	}
-	return kubermaticv1.HealthStatusDown, nil
+	return kubermaticv1.HealthStatusUp, nil
 }
