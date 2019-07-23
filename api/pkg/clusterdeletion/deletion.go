@@ -479,7 +479,7 @@ func terminatingAdmissionWebhook() (string, *admissionregistrationv1beta1.Valida
 				},
 				Rules: []admissionregistrationv1beta1.RuleWithOperations{
 					{
-						Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
+						Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create},
 						Rule: admissionregistrationv1beta1.Rule{
 							APIGroups:   []string{""},
 							APIVersions: []string{"*"},
@@ -487,7 +487,7 @@ func terminatingAdmissionWebhook() (string, *admissionregistrationv1beta1.Valida
 						},
 					},
 					{
-						Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
+						Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create},
 						Rule: admissionregistrationv1beta1.Rule{
 							APIGroups:   []string{"policy"},
 							APIVersions: []string{"*"},
