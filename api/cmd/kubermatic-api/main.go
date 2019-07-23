@@ -171,12 +171,17 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	defaultKubermaticImpersonationClient := kubernetesprovider.NewKubermaticImpersonationClient(masterCfg)
 	defaultKubernetesImpersonationClient := kubernetesprovider.NewKubernetesImpersonationClient(masterCfg)
 
-	mgr, err := manager.New()
-	seeds, err := provider.LoadSeeds(options.dcFile)
+	// We use the manager only to get a lister-backed ctrlruntimeclient.Client. We can not use it for most
+	// other actions, because it doesn't support impersonation (and cant be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
+	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0", LeaderElection: false})
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to load datacenter yaml %q: %v", options.dcFile, err)
+		return providers{}, fmt.Errorf("failed to construct manager: %v", err)
 	}
-	seedsGetter := provider.SeedsGetterFactory(context.Background())
+	seedsGetter, err := provider.SeedsGetterFactory(context.Background(), mgr.GetClient(), options.dcFile, options.workerName, options.dynamicDatacenters)
+	if err != nil {
+		return providers{}, err
+	}
+
 	userMasterLister := kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userMasterLister, kubernetesprovider.IsServiceAccount)
@@ -217,7 +222,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 			memberMapper:                          projectMemberProvider,
 			eventRecorderProvider:                 eventRecorderProvider,
 			clusters:                              clusterProviders,
-			seeds:                                 seeds},
+			seedsGetter:                           seedsGetter},
 		nil
 }
 
@@ -281,7 +286,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	serviceAccountTokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey))
 
 	r := handler.NewRouting(
-		prov.seeds,
+		prov.seedsGetter,
 		prov.clusters,
 		prov.sshKey,
 		prov.user,

@@ -16,7 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func VsphereNetworksEndpoint(seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
+func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(VSphereNetworksReq)
 		if !ok {
@@ -36,11 +36,11 @@ func VsphereNetworksEndpoint(seeds map[string]*kubermaticv1.Seed, credentialMana
 			}
 		}
 
-		return getVsphereNetworks(seeds, username, password, req.DatacenterName)
+		return getVsphereNetworks(seedsGetter, username, password, req.DatacenterName)
 	}
 }
 
-func VsphereNetworksNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func VsphereNetworksNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(VSphereNetworksNoCredentialsReq)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
@@ -59,11 +59,15 @@ func VsphereNetworksNoCredentialsEndpoint(projectProvider provider.ProjectProvid
 
 		datacenterName := cluster.Spec.Cloud.DatacenterName
 		vSpec := cluster.Spec.Cloud.VSphere
-		return getVsphereNetworks(seeds, vSpec.Username, vSpec.Password, datacenterName)
+		return getVsphereNetworks(seedsGetter, vSpec.Username, vSpec.Password, datacenterName)
 	}
 }
 
-func getVsphereNetworks(seeds map[string]*kubermaticv1.Seed, username, password, datacenterName string) ([]apiv1.VSphereNetwork, error) {
+func getVsphereNetworks(seedsGetter provider.SeedsGetter, username, password, datacenterName string) ([]apiv1.VSphereNetwork, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
 	datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)

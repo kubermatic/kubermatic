@@ -28,7 +28,7 @@ var (
 type SeedGetter = func() (*kubermaticv1.Seed, error)
 
 // SeedsGetter is a function to retrieve a list of seeds
-type SeedsGetter = func() (kubermaticv1.SeedList, error)
+type SeedsGetter = func() (map[string]*kubermaticv1.Seed, error)
 
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
@@ -46,8 +46,8 @@ type datacentersMeta struct {
 	Datacenters map[string]DatacenterMeta `json:"datacenters"`
 }
 
-// LoadDatacenters loads all Datacenters from the given path.
-func LoadSeeds(path string) (map[string]*kubermaticv1.Seed, error) {
+// loadDatacenters loads all Datacenters from the given path.
+func loadSeeds(path string) (map[string]*kubermaticv1.Seed, error) {
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func LoadSeeds(path string) (map[string]*kubermaticv1.Seed, error) {
 }
 
 func LoadSeed(path, datacenterName string) (*kubermaticv1.Seed, error) {
-	seeds, err := LoadSeeds(path)
+	seeds, err := loadSeeds(path)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 	}
 
 	if dynamicDatacenters {
-		selectorOpts, err := workerlabel.LabelSelector(ctrlCtx.runOptions.workerName)
+		selectorOpts, err := workerlabel.LabelSelector(workerName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to construct label selector for worker-name: %v", err)
 		}
@@ -171,12 +171,16 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 		selectorOpts(listOptsRaw)
 		listOpts := &ctrlruntimeclient.ListOptions{Raw: listOptsRaw}
 
-		return func() (*kubermaticv1.SeedList, error) {
+		return func() (map[string]*kubermaticv1.Seed, error) {
 			seeds := &kubermaticv1.SeedList{}
 			if err := client.List(ctx, listOpts, seeds); err != nil {
 				return nil, fmt.Errorf("failed to list the seeds: %v", err)
 			}
-			return seeds, nil
+			seedMap := map[string]*kubermaticv1.Seed{}
+			for _, seed := range seeds.Items {
+				seedMap[seed.Name] = &seed
+			}
+			return seedMap, nil
 		}, nil
 	}
 
@@ -184,16 +188,17 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 		return nil, errors.New("--datacenters is required")
 	}
 	// Make sure we fail early, an error here is nor recoverable
-	seedMap, err := LoadSeeds(dcFile)
+	seedMap, err := loadSeeds(dcFile)
 	if err != nil {
 		return nil, err
 	}
-	seeds := &kubermaticv1.SeedList{}
-	for _, seed := range seedMap {
-		seeds.Items = append(seeds.Items, seed)
-	}
 
-	return func() (*kubermaticv1.SeedList, error) {
-		return seeds, nil
+	return func() (map[string]*kubermaticv1.Seed, error) {
+		// copy it, just to be safe
+		mapToReturn := map[string]*kubermaticv1.Seed{}
+		for k, v := range seedMap {
+			mapToReturn[k] = v.DeepCopy()
+		}
+		return mapToReturn, nil
 	}, nil
 }

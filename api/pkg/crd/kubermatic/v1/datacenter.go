@@ -7,6 +7,9 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 )
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// SeedDatacenterList is the type representing a SeedDatacenterList
 type SeedList struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard list metadata.

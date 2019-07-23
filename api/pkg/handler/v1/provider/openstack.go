@@ -16,11 +16,16 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func OpenstackSizeEndpoint(seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
+func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
+		}
+
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 
 		datacenterName := req.DatacenterName
@@ -34,7 +39,7 @@ func OpenstackSizeEndpoint(seeds map[string]*kubermaticv1.Seed, credentialManage
 	}
 }
 
-func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -44,6 +49,11 @@ func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
+
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		}
 
 		datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
 		if err != nil {
@@ -103,7 +113,7 @@ func MeetsOpenstackNodeSizeRequirement(apiSize apiv1.OpenstackSize, requirements
 	return true
 }
 
-func OpenstackTenantEndpoint(seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
+func OpenstackTenantEndpoint(seedsGetter provider.SeedsGetter, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackTenantReq)
 		if !ok {
@@ -112,11 +122,11 @@ func OpenstackTenantEndpoint(seeds map[string]*kubermaticv1.Seed, credentialMana
 
 		username, password, domain, _, _ := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, "", "", credentialManager)
 
-		return getOpenstackTenants(seeds, username, password, domain, req.DatacenterName)
+		return getOpenstackTenants(seedsGetter, username, password, domain, req.DatacenterName)
 	}
 }
 
-func OpenstackTenantNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func OpenstackTenantNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -126,11 +136,16 @@ func OpenstackTenantNoCredentialsEndpoint(projectProvider provider.ProjectProvid
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		return getOpenstackTenants(seeds, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, datacenterName)
+		return getOpenstackTenants(seedsGetter, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, datacenterName)
 	}
 }
 
-func getOpenstackTenants(seeds map[string]*kubermaticv1.Seed, username, password, domain, datacenterName string) ([]apiv1.OpenstackTenant, error) {
+func getOpenstackTenants(seedsGetter provider.SeedsGetter, username, password, domain, datacenterName string) ([]apiv1.OpenstackTenant, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
+
 	osProvider, err := getOpenstackCloudProvider(seeds, datacenterName)
 	if err != nil {
 		return nil, err
@@ -161,7 +176,7 @@ func getOpenstackTenants(seeds map[string]*kubermaticv1.Seed, username, password
 	return apiTenants, nil
 }
 
-func OpenstackNetworkEndpoint(seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
+func OpenstackNetworkEndpoint(seedsGetter provider.SeedsGetter, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -170,11 +185,11 @@ func OpenstackNetworkEndpoint(seeds map[string]*kubermaticv1.Seed, credentialMan
 
 		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
 
-		return getOpenstackNetworks(seeds, username, password, tenant, tenantID, domain, req.DatacenterName)
+		return getOpenstackNetworks(seedsGetter, username, password, tenant, tenantID, domain, req.DatacenterName)
 	}
 }
 
-func OpenstackNetworkNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func OpenstackNetworkNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -184,11 +199,15 @@ func OpenstackNetworkNoCredentialsEndpoint(projectProvider provider.ProjectProvi
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		return getOpenstackNetworks(seeds, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName)
+		return getOpenstackNetworks(seedsGetter, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName)
 	}
 }
 
-func getOpenstackNetworks(seeds map[string]*kubermaticv1.Seed, username, password, tenant, tenantID, domain, datacenterName string) ([]apiv1.OpenstackNetwork, error) {
+func getOpenstackNetworks(seedsGetter provider.SeedsGetter, username, password, tenant, tenantID, domain, datacenterName string) ([]apiv1.OpenstackNetwork, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
 	osProvider, err := getOpenstackCloudProvider(seeds, datacenterName)
 	if err != nil {
 		return nil, err
@@ -222,7 +241,7 @@ func getOpenstackNetworks(seeds map[string]*kubermaticv1.Seed, username, passwor
 	return apiNetworks, nil
 }
 
-func OpenstackSecurityGroupEndpoint(seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
+func OpenstackSecurityGroupEndpoint(seedsGetter provider.SeedsGetter, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackReq)
 		if !ok {
@@ -231,11 +250,11 @@ func OpenstackSecurityGroupEndpoint(seeds map[string]*kubermaticv1.Seed, credent
 
 		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
 
-		return getOpenstackSecurityGroups(seeds, username, password, tenant, tenantID, domain, req.DatacenterName)
+		return getOpenstackSecurityGroups(seedsGetter, username, password, tenant, tenantID, domain, req.DatacenterName)
 	}
 }
 
-func OpenstackSecurityGroupNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func OpenstackSecurityGroupNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -245,11 +264,15 @@ func OpenstackSecurityGroupNoCredentialsEndpoint(projectProvider provider.Projec
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		return getOpenstackSecurityGroups(seeds, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName)
+		return getOpenstackSecurityGroups(seedsGetter, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName)
 	}
 }
 
-func getOpenstackSecurityGroups(seeds map[string]*kubermaticv1.Seed, username, password, tenant, tenantID, domain, datacenterName string) ([]apiv1.OpenstackSecurityGroup, error) {
+func getOpenstackSecurityGroups(seedsGetter provider.SeedsGetter, username, password, tenant, tenantID, domain, datacenterName string) ([]apiv1.OpenstackSecurityGroup, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
 	osProvider, err := getOpenstackCloudProvider(seeds, datacenterName)
 	if err != nil {
 		return nil, err
@@ -282,7 +305,7 @@ func getOpenstackSecurityGroups(seeds map[string]*kubermaticv1.Seed, username, p
 	return apiSecurityGroups, nil
 }
 
-func OpenstackSubnetsEndpoint(seeds map[string]*kubermaticv1.Seed, credentialManager common.PresetsManager) endpoint.Endpoint {
+func OpenstackSubnetsEndpoint(seedsGetter provider.SeedsGetter, credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(OpenstackSubnetReq)
 		if !ok {
@@ -291,11 +314,11 @@ func OpenstackSubnetsEndpoint(seeds map[string]*kubermaticv1.Seed, credentialMan
 
 		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
 
-		return getOpenstackSubnets(seeds, username, password, domain, tenant, tenantID, req.NetworkID, req.DatacenterName)
+		return getOpenstackSubnets(seedsGetter, username, password, domain, tenant, tenantID, req.NetworkID, req.DatacenterName)
 	}
 }
 
-func OpenstackSubnetsNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func OpenstackSubnetsNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackSubnetNoCredentialsReq)
 		cluster, err := getClusterForOpenstack(ctx, projectProvider, req.ProjectID, req.ClusterID)
@@ -305,11 +328,15 @@ func OpenstackSubnetsNoCredentialsEndpoint(projectProvider provider.ProjectProvi
 
 		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		return getOpenstackSubnets(seeds, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, openstackSpec.Tenant, openstackSpec.TenantID, req.NetworkID, datacenterName)
+		return getOpenstackSubnets(seedsGetter, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, openstackSpec.Tenant, openstackSpec.TenantID, req.NetworkID, datacenterName)
 	}
 }
 
-func getOpenstackSubnets(seeds map[string]*kubermaticv1.Seed, username, password, domain, tenant, tenantID, networkID, datacenterName string) ([]apiv1.OpenstackSubnet, error) {
+func getOpenstackSubnets(seedsGetter provider.SeedsGetter, username, password, domain, tenant, tenantID, networkID, datacenterName string) ([]apiv1.OpenstackSubnet, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
 	osProvider, err := getOpenstackCloudProvider(seeds, datacenterName)
 	if err != nil {
 		return nil, err
