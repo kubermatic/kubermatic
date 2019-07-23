@@ -14,7 +14,7 @@ import (
 
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	// Do not import "sigs.k8s.io/controller-runtime/pkg" to prevent
 	// duplicate kubeconfig flags being defined.
 )
@@ -38,22 +38,22 @@ func main() {
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(opt.log.Debug, kubermaticlog.Format(opt.log.Format)).Named(opt.workerName)
-	sugarLog := rawLog.Sugar()
+	log := rawLog.Sugar()
 	defer func() {
-		if err := sugarLog.Sync(); err != nil {
+		if err := log.Sync(); err != nil {
 			fmt.Println(err)
 		}
 	}()
 
 	// update global logger instance
-	kubermaticlog.Logger = sugarLog
+	kubermaticlog.Logger = log
 
 	// set the logger used by sigs.k8s.io/controller-runtime
-	log.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
+	ctrllog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	clientConfig, err := clientcmd.LoadFromFile(opt.kubeconfig)
 	if err != nil {
-		sugarLog.Fatalw("Failed to read the kubeconfig", "error", err)
+		log.Fatalw("Failed to read the kubeconfig", "error", err)
 	}
 
 	config := clientcmd.NewNonInteractiveClientConfig(
@@ -65,23 +65,23 @@ func main() {
 
 	cfg, err := config.ClientConfig()
 	if err != nil {
-		sugarLog.Fatalw("Failed to create client", "error", err)
+		log.Fatalw("Failed to create client", "error", err)
 	}
 
 	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: opt.internalAddr})
 	if err != nil {
-		sugarLog.Fatalw("failed to create Controller Manager instance: %v", err)
+		log.Fatalw("failed to create Controller Manager instance: %v", err)
 	}
 
 	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		sugarLog.Fatalw("failed to register types in Scheme", "error", err)
+		log.Fatalw("failed to register types in Scheme", "error", err)
 	}
 
-	if err := operatormaster.Add(mgr, 1, clientConfig, sugarLog, opt.workerName); err != nil {
-		sugarLog.Fatalw("Failed to add operator-master controller", "error", err)
+	if err := operatormaster.Add(mgr, 1, clientConfig, log, opt.workerName); err != nil {
+		log.Fatalw("Failed to add operator-master controller", "error", err)
 	}
 
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		sugarLog.Fatalw("Cannot start manager", "error", err)
+		log.Fatalw("Cannot start manager", "error", err)
 	}
 }
