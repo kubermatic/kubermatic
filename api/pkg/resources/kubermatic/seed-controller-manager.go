@@ -206,15 +206,15 @@ func SeedControllerManagerDeploymentCreator(ns string, cfg *operatorv1alpha1.Kub
 
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
-				seedControllerManagerCopyKubernetesAddonsContainer(),
-				seedControllerManagerCopyOpenshiftAddonsContainer(),
+				seedControllerManagerCopyKubernetesAddonsContainer(cfg.Spec.SeedController.Addons.Kubernetes),
+				seedControllerManagerCopyOpenshiftAddonsContainer(cfg.Spec.SeedController.Addons.Openshift),
 			}
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "controller-manager",
-					Image:           "quay.io/kubermatic/controller-manager:865c75fef2128b1d7076f48f8f03c7b81f74ce5f",
-					ImagePullPolicy: corev1.PullIfNotPresent,
+					Image:           dockerImage(cfg.Spec.SeedController.Image),
+					ImagePullPolicy: cfg.Spec.SeedController.Image.PullPolicy,
 					Command:         []string{"kubermatic-controller-manager"},
 					Args:            args,
 					Ports: []corev1.ContainerPort{
@@ -245,11 +245,11 @@ func SeedControllerManagerDeploymentCreator(ns string, cfg *operatorv1alpha1.Kub
 	}
 }
 
-func seedControllerManagerCopyKubernetesAddonsContainer() corev1.Container {
+func seedControllerManagerCopyKubernetesAddonsContainer(cfg operatorv1alpha1.KubermaticAddonConfiguration) corev1.Container {
 	return corev1.Container{
 		Name:            "copy-addons-kubernetes",
-		Image:           "quay.io/kubermatic/api:865c75fef2128b1d7076f48f8f03c7b81f74ce5f",
-		ImagePullPolicy: corev1.PullIfNotPresent,
+		Image:           dockerImage(cfg.Image),
+		ImagePullPolicy: cfg.Image.PullPolicy,
 		Command:         []string{"/bin/sh"},
 		Args:            []string{"-c", "mkdir -p /opt/addons/kubernetes && cp -r /addons/* /opt/addons/kubernetes"},
 		VolumeMounts: []corev1.VolumeMount{
@@ -261,11 +261,11 @@ func seedControllerManagerCopyKubernetesAddonsContainer() corev1.Container {
 	}
 }
 
-func seedControllerManagerCopyOpenshiftAddonsContainer() corev1.Container {
+func seedControllerManagerCopyOpenshiftAddonsContainer(cfg operatorv1alpha1.KubermaticAddonConfiguration) corev1.Container {
 	return corev1.Container{
 		Name:            "copy-addons-openshift",
-		Image:           "quay.io/kubermatic/api:865c75fef2128b1d7076f48f8f03c7b81f74ce5f",
-		ImagePullPolicy: corev1.PullIfNotPresent,
+		Image:           dockerImage(cfg.Image),
+		ImagePullPolicy: cfg.Image.PullPolicy,
 		Command:         []string{"/bin/sh"},
 		Args:            []string{"-c", "mkdir -p /opt/addons/openshift && cp -r /addons/* /opt/addons/openshift"},
 		VolumeMounts: []corev1.VolumeMount{

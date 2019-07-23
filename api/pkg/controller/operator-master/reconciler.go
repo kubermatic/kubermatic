@@ -8,6 +8,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/kubermatic"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -131,6 +132,30 @@ func (r *configReconciler) applyDefaults() {
 	}
 
 	r.config.Spec.Auth = auth
+
+	r.applyImageDefaults(&r.config.Spec.API.Image, "quay.io/kubermatic/api", "", corev1.PullIfNotPresent, "api.image")
+	r.applyImageDefaults(&r.config.Spec.UI.Image, "quay.io/kubermatic/ui-v2", "v1.3.0", corev1.PullIfNotPresent, "ui.image")
+	r.applyImageDefaults(&r.config.Spec.MasterController.Image, "quay.io/kubermatic/api", "", corev1.PullIfNotPresent, "masterController.image")
+	r.applyImageDefaults(&r.config.Spec.SeedController.Image, "quay.io/kubermatic/api", "", corev1.PullIfNotPresent, "seedController.image")
+	r.applyImageDefaults(&r.config.Spec.SeedController.Addons.Kubernetes.Image, "quay.io/kubermatic/addons", "v0.2.19", corev1.PullIfNotPresent, "seedController.addons.kubernetes.image")
+	r.applyImageDefaults(&r.config.Spec.SeedController.Addons.Openshift.Image, "quay.io/kubermatic/openshift-addons", "v0.9", corev1.PullIfNotPresent, "seedController.addons.openshift.image")
+}
+
+func (r *configReconciler) applyImageDefaults(img *operatorv1alpha1.DockerImage, repo string, tag string, pullPolicy corev1.PullPolicy, key string) {
+	if img.Repository == "" && repo != "" {
+		img.Repository = repo
+		r.log.Debugf("Defaulting Docker repository for %s.repository to %s", key, repo)
+	}
+
+	if img.Tag == "" && tag != "" {
+		img.Tag = tag
+		r.log.Debugf("Defaulting Docker repository for %s.tag to %s", key, tag)
+	}
+
+	if img.PullPolicy == "" && pullPolicy != "" {
+		img.PullPolicy = pullPolicy
+		r.log.Debugf("Defaulting Docker repository for %s.pullPolicy to %s", key, pullPolicy)
+	}
 }
 
 // applyDefaultFields is generating a new ObjectModifier that wraps an

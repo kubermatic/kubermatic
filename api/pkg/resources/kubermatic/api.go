@@ -175,8 +175,8 @@ func APIDeploymentCreator(ns string, cfg *operatorv1alpha1.KubermaticConfigurati
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "api",
-					Image:           "quay.io/kubermatic/api:865c75fef2128b1d7076f48f8f03c7b81f74ce5f",
-					ImagePullPolicy: corev1.PullIfNotPresent,
+					Image:           dockerImage(cfg.Spec.API.Image),
+					ImagePullPolicy: cfg.Spec.API.Image.PullPolicy,
 					Command:         []string{"kubermatic-api"},
 					Args:            args,
 					Ports: []corev1.ContainerPort{

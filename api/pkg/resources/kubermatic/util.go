@@ -50,3 +50,11 @@ func featureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string {
 
 	return strings.Join(features, ",")
 }
+
+func dockerImage(img operatorv1alpha1.DockerImage) string {
+	if img.Tag == "" {
+		return img.Repository
+	}
+
+	return fmt.Sprintf("%s:%s", img.Repository, img.Tag)
+}

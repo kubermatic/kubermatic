@@ -43,6 +43,8 @@ type KubermaticConfigurationSpec struct {
 	FeatureGates map[string]bool `json:"featureGates,omitempty"`
 	// UI configures the dashboard.
 	UI KubermaticUIConfiguration `json:"ui,omitempty"`
+	// API configures the frontend REST API used by the dashboard.
+	API KubermaticAPIConfiguration `json:"api,omitempty"`
 	// SeedController configures the controller-manager.
 	SeedController KubermaticSeedControllerConfiguration `json:"seedController,omitempty"`
 	// MasterController configures the controller-manager.
@@ -97,8 +99,16 @@ type SimpleFeatureGate struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
 
+// KubermaticAPIConfiguration configures the dashboard.
+type KubermaticAPIConfiguration struct {
+	// Image is the Docker image containing the Kubermatic REST API.
+	Image DockerImage `json:"image,omitempty"`
+}
+
 // KubermaticUIConfiguration configures the dashboard.
 type KubermaticUIConfiguration struct {
+	// Image is the Docker image containing the Kubermatic dashboard.
+	Image DockerImage `json:"image,omitempty"`
 	// Config sets flags for various dashboard features.
 	Config string `json:"config,omitempty"`
 	// Presets is a YAML string containing pre-defined credentials for cloud providers.
@@ -143,6 +153,8 @@ type KubermaticAddonConfiguration struct {
 
 // KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.
 type KubermaticMasterControllerConfiguration struct {
+	// Image is the Docker image containing the Kubermatic master controller-manager.
+	Image DockerImage `json:"image,omitempty"`
 	// ProjectsMigrator configures the migrator for user projects.
 	ProjectsMigrator KubermaticProjectsMigratorConfiguration `json:"projectsMigrator,omitempty"`
 }

@@ -96,8 +96,8 @@ func MasterControllerManagerDeploymentCreator(ns string, cfg *operatorv1alpha1.K
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "controller-manager",
-					Image:           "quay.io/kubermatic/controller-manager:865c75fef2128b1d7076f48f8f03c7b81f74ce5f",
-					ImagePullPolicy: corev1.PullIfNotPresent,
+					Image:           dockerImage(cfg.Spec.MasterController.Image),
+					ImagePullPolicy: cfg.Spec.MasterController.Image.PullPolicy,
 					Command:         []string{"master-controller-manager"},
 					Args:            args,
 					Ports: []corev1.ContainerPort{
@@ -131,8 +131,8 @@ func MasterControllerManagerDeploymentCreator(ns string, cfg *operatorv1alpha1.K
 func projectsMigratorContainer(cfg *operatorv1alpha1.KubermaticConfiguration) corev1.Container {
 	return corev1.Container{
 		Name:            "projects-migrator",
-		Image:           "quay.io/kubermatic/controller-manager:865c75fef2128b1d7076f48f8f03c7b81f74ce5f",
-		ImagePullPolicy: corev1.PullIfNotPresent,
+		Image:           dockerImage(cfg.Spec.MasterController.Image),
+		ImagePullPolicy: cfg.Spec.MasterController.Image.PullPolicy,
 		Command:         []string{"projects-migrator"},
 		Args: []string{
 			"-v=2",

@@ -38,8 +38,8 @@ func UIDeploymentCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguratio
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "webserver",
-					Image:           "quay.io/kubermatic/ui-v2:v1.3.0",
-					ImagePullPolicy: corev1.PullIfNotPresent,
+					Image:           dockerImage(cfg.Spec.UI.Image),
+					ImagePullPolicy: cfg.Spec.UI.Image.PullPolicy,
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "http",
