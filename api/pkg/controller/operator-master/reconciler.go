@@ -5,8 +5,11 @@ import (
 	"fmt"
 
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/kubermatic"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"go.uber.org/zap"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
@@ -100,6 +103,39 @@ func (r *configReconciler) applyDefaults() {
 	}
 }
 
+// applyDefaultFields is generating a new ObjectModifier that wraps an
+// ObjectCreator and takes care of applying the default labels and
+// annotations from this operator. These are then used to establish
+// a weak ownership.
+func (r *configReconciler) applyDefaultFields() reconciling.ObjectModifier {
+	return func(create reconciling.ObjectCreator) reconciling.ObjectCreator {
+		return func(existing runtime.Object) (runtime.Object, error) {
+			obj, err := create(existing)
+			if err != nil {
+				return obj, err
+			}
+
+			if o, ok := obj.(metav1.Object); ok {
+				annotations := o.GetAnnotations()
+				if annotations == nil {
+					annotations = make(map[string]string)
+				}
+				annotations[ConfigurationOwnerAnnotation] = joinNamespaceName(r.config.Namespace, r.config.Name)
+				o.SetAnnotations(annotations)
+
+				labels := o.GetLabels()
+				if labels == nil {
+					labels = make(map[string]string)
+				}
+				labels[ManagedByLabel] = ControllerName
+				o.SetLabels(labels)
+			}
+
+			return obj, nil
+		}
+	}
+}
+
 func (r *configReconciler) reconcileResources() error {
 	if err := r.reconcileNamespaces(); err != nil {
 		return err
@@ -125,6 +161,18 @@ func (r *configReconciler) reconcileResources() error {
 		return err
 	}
 
+	if err := r.reconcilePodDisruptionBudgets(); err != nil {
+		return err
+	}
+
+	if err := r.reconcileServices(); err != nil {
+		return err
+	}
+
+	if err := r.reconcileIngresses(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -132,10 +180,10 @@ func (r *configReconciler) reconcileNamespaces() error {
 	r.log.Debug("Reconciling Namespaces")
 
 	creators := []reconciling.NamedNamespaceCreatorGetter{
-		namespaceCreator(r.ns, r.config),
+		kubermatic.NamespaceCreator(r.ns, r.config),
 	}
 
-	if err := reconciling.ReconcileNamespaces(r.ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileNamespaces(r.ctx, creators, "", r.Client, r.applyDefaultFields()); err != nil {
 		return fmt.Errorf("failed to reconcile Namespaces: %v", err)
 	}
 
@@ -146,10 +194,11 @@ func (r *configReconciler) reconcileConfigMaps() error {
 	r.log.Debug("Reconciling ConfigMaps")
 
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		uiConfigConfigMapCreator(r.ns, r.config),
+		kubermatic.UIConfigConfigMapCreator(r.ns, r.config),
+		kubermatic.BackupContainersConfigMapCreator(r.ns, r.config),
 	}
 
-	if err := reconciling.ReconcileConfigMaps(r.ctx, creators, r.ns, r.Client); err != nil {
+	if err := reconciling.ReconcileConfigMaps(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
 	}
 
@@ -160,20 +209,20 @@ func (r *configReconciler) reconcileSecrets() error {
 	r.log.Debug("Reconciling Secrets")
 
 	creators := []reconciling.NamedSecretCreatorGetter{
-		dockercfgSecretCreator(r.ns, r.config),
-		kubeconfigSecretCreator(r.ns, r.config),
-		dexCASecretCreator(r.ns, r.config),
+		kubermatic.DockercfgSecretCreator(r.ns, r.config),
+		kubermatic.KubeconfigSecretCreator(r.ns, r.config),
+		kubermatic.DexCASecretCreator(r.ns, r.config),
 	}
 
 	if len(r.config.Spec.MasterFiles) > 0 {
-		creators = append(creators, masterFilesSecretCreator(r.ns, r.config))
+		creators = append(creators, kubermatic.MasterFilesSecretCreator(r.ns, r.config))
 	}
 
 	if r.config.Spec.UI.Presets != "" {
-		creators = append(creators, presetsSecretCreator(r.ns, r.config))
+		creators = append(creators, kubermatic.PresetsSecretCreator(r.ns, r.config))
 	}
 
-	if err := reconciling.ReconcileSecrets(r.ctx, creators, r.ns, r.Client); err != nil {
+	if err := reconciling.ReconcileSecrets(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets: %v", err)
 	}
 
@@ -184,10 +233,10 @@ func (r *configReconciler) reconcileServiceAccounts() error {
 	r.log.Debug("Reconciling ServiceAccounts")
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
-		serviceAccountCreator(r.ns, r.config),
+		kubermatic.ServiceAccountCreator(r.ns, r.config),
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, r.ns, r.Client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts: %v", err)
 	}
 
@@ -198,10 +247,10 @@ func (r *configReconciler) reconcileClusterRoleBindings() error {
 	r.log.Debug("Reconciling ClusterRoleBindings")
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
-		clusterRoleBindingCreator(r.ns, r.config),
+		kubermatic.ClusterRoleBindingCreator(r.ns, r.config),
 	}
 
-	if err := reconciling.ReconcileClusterRoleBindings(r.ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(r.ctx, creators, "", r.Client, r.applyDefaultFields()); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %v", err)
 	}
 
@@ -212,11 +261,59 @@ func (r *configReconciler) reconcileDeployments() error {
 	r.log.Debug("Reconciling Deployments")
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		kubermaticAPIDeploymentCreator(r.ns, r.config),
+		kubermatic.APIDeploymentCreator(r.ns, r.config),
+		kubermatic.UIDeploymentCreator(r.ns, r.config),
+		kubermatic.MasterControllerManagerDeploymentCreator(r.ns, r.config),
 	}
 
-	if err := reconciling.ReconcileDeployments(r.ctx, creators, r.ns, r.Client); err != nil {
+	if err := reconciling.ReconcileDeployments(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %v", err)
+	}
+
+	return nil
+}
+
+func (r *configReconciler) reconcilePodDisruptionBudgets() error {
+	r.log.Debug("Reconciling PodDisruptionBudgets")
+
+	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
+		kubermatic.APIPDBCreator(r.ns, r.config),
+		kubermatic.UIPDBCreator(r.ns, r.config),
+		kubermatic.MasterControllerManagerPDBCreator(r.ns, r.config),
+	}
+
+	if err := reconciling.ReconcilePodDisruptionBudgets(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
+		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
+	}
+
+	return nil
+}
+
+func (r *configReconciler) reconcileServices() error {
+	r.log.Debug("Reconciling Services")
+
+	creators := []reconciling.NamedServiceCreatorGetter{
+		kubermatic.APIServiceCreator(r.ns, r.config),
+		kubermatic.UIServiceCreator(r.ns, r.config),
+		kubermatic.MasterControllerManagerServiceCreator(r.ns, r.config),
+	}
+
+	if err := reconciling.ReconcileServices(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
+		return fmt.Errorf("failed to reconcile Services: %v", err)
+	}
+
+	return nil
+}
+
+func (r *configReconciler) reconcileIngresses() error {
+	r.log.Debug("Reconciling Ingresses")
+
+	creators := []reconciling.NamedIngressCreatorGetter{
+		kubermatic.IngressCreator(r.ns, r.config),
+	}
+
+	if err := reconciling.ReconcileIngresses(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
+		return fmt.Errorf("failed to reconcile Ingresses: %v", err)
 	}
 
 	return nil

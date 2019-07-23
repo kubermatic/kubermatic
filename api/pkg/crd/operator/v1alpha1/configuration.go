@@ -1,8 +1,16 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// DockerImage describes a Docker image.
+type DockerImage struct {
+	Repository string            `json:"repository"`
+	Tag        string            `json:"tag"`
+	PullPolicy corev1.PullPolicy `json:"pullPolicy"`
+}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -22,6 +30,9 @@ type KubermaticConfigurationSpec struct {
 	Domain string `json:"domain"`
 	// IsMaster controls whether the dashboard and API will be deployed.
 	IsMaster bool `json:"isMaster,omitempty"`
+	// Datacenters is a YAML string containing the available node datacenters. Note that
+	// this is deprecated and you should use explicit Datacenter CRDs instead.
+	Datacenters string `json:"datacenters,omitempty"`
 	// Secrets is a list of predefined credentials, like Docker registry authentication.
 	Secrets KubermaticSecretsConfiguration `json:"secrets,omitempty"`
 	// Auth defines keys and URLs for Dex.
@@ -30,6 +41,10 @@ type KubermaticConfigurationSpec struct {
 	FeatureGates KubermaticFeatureGatesConfiguration `json:"featureGates,omitempty"`
 	// UI configures the dashboard.
 	UI KubermaticUIConfiguration `json:"ui,omitempty"`
+	// SeedController configures the controller-manager.
+	SeedController KubermaticSeedControllerConfiguration `json:"seedController,omitempty"`
+	// MasterController configures the controller-manager.
+	MasterController KubermaticMasterControllerConfiguration `json:"masterController,omitempty"`
 	// MasterFiles is a map of additional files to mount into each master component.
 	MasterFiles map[string]string `json:"masterFiles,omitempty"`
 }
@@ -72,6 +87,52 @@ type KubermaticUIConfiguration struct {
 	Config string `json:"config,omitempty"`
 	// Presets is a YAML string containing pre-defined credentials for cloud providers.
 	Presets string `json:"presets,omitempty"`
+}
+
+// KubermaticSeedControllerConfiguration configures the Kubermatic seed controller-manager.
+type KubermaticSeedControllerConfiguration struct {
+	// Image is the Docker image containing the Kubermatic controller-manager.
+	Image DockerImage `json:"image,omitempty"`
+	// Addons controls the optional additions installed into each user cluster.
+	Addons KubermaticAddonsConfiguration `json:"addons,omitempty"`
+	// NodePortRange is the port range for customer clusters - this must match the NodePort
+	// range of the seed cluster.
+	NodePortRange string `json:"nodePortRange,omitempty"`
+	// OverwriteRegistry specifies a custom Docker registry which will be used for all images
+	// (user cluster control plane + addons)
+	OverwriteRegistry string `json:"overwriteRegistry,omitempty"`
+	// BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
+	BackupStoreContainer string `json:"backupStoreContainer,omitempty"`
+	// BackupCleanupContainer is the container used for removing expired backups from the storage location.
+	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
+}
+
+// KubermaticAddonsConfiguration controls the optional additions installed into each user cluster.
+type KubermaticAddonsConfiguration struct {
+	// Kubernetes controls the addons for Kubernetes-based clusters.
+	Kubernetes KubermaticAddonConfiguration `json:"kubernetes,omitempty"`
+	// Openshift controls the addons for Openshift-based clusters.
+	Openshift KubermaticAddonConfiguration `json:"openshift,omitempty"`
+}
+
+// KubermaticAddonConfiguration describes the addons for a given cluster runtime.
+type KubermaticAddonConfiguration struct {
+	// Default is the list of addons to be installed by default into each cluster.
+	Default []string `json:"default,omitempty"`
+	// Image is the Docker image containing the possible addon manifests.
+	Image DockerImage `json:"image,omitempty"`
+}
+
+// KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.
+type KubermaticMasterControllerConfiguration struct {
+	// ProjectsMigrator configures the migrator for user projects.
+	ProjectsMigrator KubermaticProjectsMigratorConfiguration `json:"projectsMigrator,omitempty"`
+}
+
+// KubermaticProjectsMigratorConfiguration configures the Kubermatic master controller-manager.
+type KubermaticProjectsMigratorConfiguration struct {
+	// DryRun makes the migrator only log the actions it would take.
+	DryRun bool `json:"dryRun,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
