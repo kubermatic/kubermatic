@@ -101,6 +101,30 @@ func (r *configReconciler) applyDefaults() {
 	if r.config.Spec.Namespace == "" {
 		r.config.Spec.Namespace = r.config.Namespace
 	}
+
+	auth := r.config.Spec.Auth
+
+	if auth.TokenIssuer == "" {
+		auth.TokenIssuer = fmt.Sprintf("https://%s/dex", r.config.Spec.Domain)
+		r.log.Debugf("Defaulting field spec.auth.tokenIssuer to %s", auth.TokenIssuer)
+	}
+
+	if auth.ClientID == "" {
+		auth.ClientID = "kubermatic"
+		r.log.Debugf("Defaulting field spec.auth.clientID to %s", auth.ClientID)
+	}
+
+	if auth.IssuerClientID == "" {
+		auth.IssuerClientID = fmt.Sprintf("%sIssuer", auth.ClientID)
+		r.log.Debugf("Defaulting field spec.auth.issuerClientID to %s", auth.IssuerClientID)
+	}
+
+	if auth.IssuerRedirectURL == "" {
+		auth.IssuerRedirectURL = fmt.Sprintf("https://%s/api/v1/kubeconfig", r.config.Spec.Domain)
+		r.log.Debugf("Defaulting field spec.auth.issuerRedirectURL to %s", auth.IssuerRedirectURL)
+	}
+
+	r.config.Spec.Auth = auth
 }
 
 // applyDefaultFields is generating a new ObjectModifier that wraps an
