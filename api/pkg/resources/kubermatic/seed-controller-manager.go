@@ -80,9 +80,10 @@ func SeedControllerManagerDeploymentCreator(ns string, cfg *operatorv1alpha1.Kub
 				// {{- if .Values.kubermatic.monitoringScrapeAnnotationPrefix }}
 				// - -monitoring-scrape-annotation-prefix={{ .Values.kubermatic.monitoringScrapeAnnotationPrefix }}
 				// {{- end }}
-				// {{- if .Values.kubermatic.kubermaticImage }}
-				// - -kubermatic-image={{ .Values.kubermatic.kubermaticImage }}
-				// {{- end }}
+			}
+
+			if cfg.Spec.SeedController.KubermaticImage != "" {
+				args = append(args, fmt.Sprintf("-kubermatic-image=%s", cfg.Spec.SeedController.KubermaticImage))
 			}
 
 			volumes := []corev1.Volume{

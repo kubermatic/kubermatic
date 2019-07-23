@@ -121,6 +121,8 @@ type KubermaticSeedControllerConfiguration struct {
 	BackupStoreContainer string `json:"backupStoreContainer,omitempty"`
 	// BackupCleanupContainer is the container used for removing expired backups from the storage location.
 	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
+	// KubermaticImage can be used to overwrite the Docker image that is deployed inside user clusters.
+	KubermaticImage string `json:"kubermaticImage,omitempty"`
 }
 
 // KubermaticAddonsConfiguration controls the optional additions installed into each user cluster.
