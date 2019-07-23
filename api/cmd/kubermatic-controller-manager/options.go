@@ -13,9 +13,9 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -57,6 +57,7 @@ type controllerRunOptions struct {
 	dockerPullConfigJSONFile                         string
 	log                                              kubermaticlog.Options
 	kubermaticImage                                  string
+	dynamicDatacenters                               bool
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -109,6 +110,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.BoolVar(&c.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&c.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.StringVar(&c.kubermaticImage, "kubermatic-image", resources.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
+	flag.BoolVar(&c.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)
@@ -216,7 +218,7 @@ type controllerContext struct {
 	runOptions           controllerRunOptions
 	mgr                  manager.Manager
 	clientProvider       client.UserClusterConnectionProvider
-	seed                 *kubermaticv1.Seed
+	seedGetter           provider.SeedGetter
 	dockerPullConfigJSON []byte
 	log                  *zap.SugaredLogger
 }

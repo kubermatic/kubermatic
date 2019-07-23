@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -8,8 +10,10 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -17,6 +21,9 @@ var (
 	// AllOperatingSystems defines all available operating systems
 	AllOperatingSystems = sets.NewString(string(providerconfig.OperatingSystemCoreos), string(providerconfig.OperatingSystemCentOS), string(providerconfig.OperatingSystemUbuntu))
 )
+
+// SeedGetter is a function to retrieve Seeds
+type SeedGetter = func() (*kubermaticv1.Seed, error)
 
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
@@ -113,4 +120,33 @@ func validateDatacenters(datacenters map[string]DatacenterMeta) error {
 	}
 
 	return nil
+}
+
+// SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
+func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName, dcFile string, dynamicDatacenters bool) (SeedGetter, error) {
+	if dcFile != "" && dynamicDatacenters {
+		return nil, errors.New("--datacenters must be empty when --dynamic-datacenters is enabled")
+	}
+
+	if !dynamicDatacenters {
+		if dcFile == "" {
+			return nil, errors.New("--datacenters is required")
+		}
+		// Make sure we fail early, an error here is nor recoverable
+		seed, err := LoadSeed(dcFile, seedName)
+		if err != nil {
+			return nil, err
+		}
+		return func() (*kubermaticv1.Seed, error) {
+			return seed.DeepCopy(), nil
+		}, nil
+	}
+
+	return func() (*kubermaticv1.Seed, error) {
+		seed := &kubermaticv1.Seed{}
+		if err := client.Get(ctx, types.NamespacedName{Name: seedName}, seed); err != nil {
+			return nil, fmt.Errorf("failed to get seed %q: %v", seedName, err)
+		}
+		return seed, nil
+	}, nil
 }

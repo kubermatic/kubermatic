@@ -16,7 +16,12 @@ import (
 )
 
 func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*resources.TemplateData, error) {
-	datacenter, found := r.seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
+	seed, err := r.seedGetter()
+	if err != nil {
+		return nil, err
+	}
+
+	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("failed to get datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
@@ -26,7 +31,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		client,
 		cluster,
 		&datacenter,
-		r.seed.Name,
+		seed.Name,
 		r.overwriteRegistry,
 		r.nodePortRange,
 		r.nodeAccessNetwork,
