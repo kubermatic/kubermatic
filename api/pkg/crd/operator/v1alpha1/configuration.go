@@ -1,6 +1,8 @@
 package v1alpha1
 
 import (
+	"sort"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -38,7 +40,7 @@ type KubermaticConfigurationSpec struct {
 	// Auth defines keys and URLs for Dex.
 	Auth KubermaticAuthConfiguration `json:"auth"`
 	// FeatureGates are used to optionally enable certain features.
-	FeatureGates KubermaticFeatureGatesConfiguration `json:"featureGates,omitempty"`
+	FeatureGates map[string]bool `json:"featureGates,omitempty"`
 	// UI configures the dashboard.
 	UI KubermaticUIConfiguration `json:"ui,omitempty"`
 	// SeedController configures the controller-manager.
@@ -53,6 +55,21 @@ type KubermaticConfigurationSpec struct {
 	// Note: The `seed_dns_overwrite` setting of the `datacenters.yaml` doesn't have any effect if this is
 	// set to `LoadBalancer`.
 	ExposeStrategy string `json:"exposeStrategy,omitempty"`
+}
+
+// EnabledFeatureGates returns a sorted list of feature names that are currently enabled.
+func (spec *KubermaticConfigurationSpec) EnabledFeatureGates() []string {
+	enabled := make([]string, 0)
+
+	for name, flag := range spec.FeatureGates {
+		if flag {
+			enabled = append(enabled, name)
+		}
+	}
+
+	sort.Strings(enabled)
+
+	return enabled
 }
 
 // KubermaticSecretsConfiguration is a list of predefined credentials, like Docker registry authentication.
@@ -72,13 +89,6 @@ type KubermaticAuthConfiguration struct {
 	CABundle                 string `json:"cABundle,omitempty"`
 	ServiceAccountKey        string `json:"serviceAccountKey,omitempty"`
 	SkipTokenIssuerTLSVerify bool   `json:"skipTokenIssuerTLSVerify,omitempty"`
-}
-
-// KubermaticFeatureGatesConfiguration are used to optionally enable certain features.
-type KubermaticFeatureGatesConfiguration struct {
-	OIDCKubeCfgEndpoint   SimpleFeatureGate `json:"OIDCKubeCfgEndpoint,omitempty"`
-	OpenIDAuthPlugin      SimpleFeatureGate `json:"OpenIDAuthPlugin,omitempty"`
-	VerticalPodAutoscaler SimpleFeatureGate `json:"verticalPodAutoscaler,omitempty"`
 }
 
 // SimpleFeatureGate is a helper for features with no additional options.

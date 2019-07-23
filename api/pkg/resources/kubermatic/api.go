@@ -73,10 +73,10 @@ func APIDeploymentCreator(ns string, cfg *operatorv1alpha1.KubermaticConfigurati
 				fmt.Sprintf("-domain=%s", cfg.Spec.Domain),
 				fmt.Sprintf("-service-account-signing-key=%s", cfg.Spec.Auth.ServiceAccountKey),
 				fmt.Sprintf("-expose-strategy=%s", cfg.Spec.ExposeStrategy),
-				// fmt.Sprintf("-feature-gates=%s", cfg.Spec.FeatureGates),
+				fmt.Sprintf("-feature-gates=%s", featureGates(cfg)),
 			}
 
-			if cfg.Spec.FeatureGates.OIDCKubeCfgEndpoint.Enabled {
+			if cfg.Spec.FeatureGates["OIDCKubeCfgEndpoint"] {
 				args = append(
 					args,
 					fmt.Sprintf("-oidc-issuer-redirect-uri=%s", cfg.Spec.Auth.IssuerRedirectURL),

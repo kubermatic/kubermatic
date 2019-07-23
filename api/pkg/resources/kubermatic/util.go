@@ -1,6 +1,12 @@
 package kubermatic
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	"fmt"
+	"strings"
+
+	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+)
 
 const (
 	// nameLabel is the recommended name for an identifying label.
@@ -34,4 +40,13 @@ func mergeServicePort(dst []corev1.ServicePort, src corev1.ServicePort) []corev1
 	}
 
 	return append(dst, src)
+}
+
+func featureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string {
+	features := make([]string, 0)
+	for _, feature := range cfg.Spec.EnabledFeatureGates() {
+		features = append(features, fmt.Sprintf("%s=true", feature))
+	}
+
+	return strings.Join(features, ",")
 }

@@ -58,13 +58,13 @@ func SeedControllerManagerDeploymentCreator(ns string, cfg *operatorv1alpha1.Kub
 				fmt.Sprintf("-openshift-addons-list=%s", strings.Join(cfg.Spec.SeedController.Addons.Openshift.Default, ",")),
 				fmt.Sprintf("-overwrite-registry=%s", cfg.Spec.SeedController.OverwriteRegistry),
 				fmt.Sprintf("-nodeport-range=%s", cfg.Spec.SeedController.NodePortRange),
+				fmt.Sprintf("-feature-gates=%s", featureGates(cfg)),
 				"-kubernetes-addons-path=/opt/addons/kubernetes",
 				"-openshift-addons-path=/opt/addons/openshift",
 				"-backup-container=/opt/backup/store-container.yaml",
 				"-cleanup-container=/opt/backup/cleanup-container.yaml",
 				"-docker-pull-config-json-file=/opt/docker/.dockerconfigjson",
 
-				// - -feature-gates={{ .Values.kubermatic.controller.featureGates }}
 				// {{- if .Values.kubermatic.clusterNamespacePrometheus.disableDefaultRules }}
 				// - -in-cluster-prometheus-disable-default-rules=true
 				// {{- end }}
@@ -155,7 +155,7 @@ func SeedControllerManagerDeploymentCreator(ns string, cfg *operatorv1alpha1.Kub
 				})
 			}
 
-			if cfg.Spec.FeatureGates.OpenIDAuthPlugin.Enabled {
+			if cfg.Spec.FeatureGates["OpenIDAuthPlugin"] {
 				args = append(
 					args,
 					"-oidc-ca-file=/opt/dex-ca/caBundle.pem",
