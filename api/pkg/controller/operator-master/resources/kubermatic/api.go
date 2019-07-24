@@ -201,9 +201,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 							corev1.ResourceMemory: resource.MustParse("128Mi"),
 						},
 					},
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					ReadinessProbe:           &probe,
+					ReadinessProbe: &probe,
 				},
 			}
 

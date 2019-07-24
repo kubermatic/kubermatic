@@ -63,8 +63,6 @@ func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcil
 							corev1.ResourceMemory: resource.MustParse("128Mi"),
 						},
 					},
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 				},
 			}
 

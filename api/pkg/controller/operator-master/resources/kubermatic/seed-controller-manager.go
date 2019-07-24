@@ -234,8 +234,6 @@ func SeedControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConf
 							corev1.ResourceMemory: resource.MustParse("1Gi"),
 						},
 					},
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 				},
 			}
 
