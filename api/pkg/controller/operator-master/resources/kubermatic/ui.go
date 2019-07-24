@@ -22,14 +22,12 @@ func uiPodLabels() map[string]string {
 func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return uiDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			specLabels := uiPodLabels()
-
 			d.Spec.Replicas = pointer.Int32Ptr(2)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: specLabels,
+				MatchLabels: uiPodLabels(),
 			}
 
-			d.Spec.Template.Labels = specLabels
+			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{
 					Name: dockercfgSecretName,

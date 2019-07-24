@@ -39,14 +39,12 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 				},
 			}
 
-			specLabels := apiPodLabels()
-
 			d.Spec.Replicas = pointer.Int32Ptr(2)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: specLabels,
+				MatchLabels: apiPodLabels(),
 			}
 
-			d.Spec.Template.Labels = specLabels
+			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 			d.Spec.Template.Annotations = map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   "8085",

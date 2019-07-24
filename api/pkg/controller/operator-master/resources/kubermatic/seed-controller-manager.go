@@ -25,14 +25,12 @@ func seedControllerManagerPodLabels() map[string]string {
 func SeedControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return seedControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			specLabels := seedControllerManagerPodLabels()
-
 			d.Spec.Replicas = pointer.Int32Ptr(2)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: specLabels,
+				MatchLabels: seedControllerManagerPodLabels(),
 			}
 
-			d.Spec.Template.Labels = specLabels
+			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 			d.Spec.Template.Annotations = map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   "8085",
