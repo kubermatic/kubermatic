@@ -7,6 +7,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ExposeStrategy is the strategy to expose the cluster with.
+type ExposeStrategy string
+
+const (
+	// NodePortStrategy creates a NodePort with a "nodeport-proxy.k8s.io/expose": "true" annotation to expose
+	// all clusters on one central Service of type LoadBalancer via the NodePort proxy.
+	NodePortStrategy ExposeStrategy = "NodePort"
+	// LoadBalancerStrategy creates a LoadBalancer service per cluster.
+	LoadBalancerStrategy ExposeStrategy = "LoadBalancer"
+)
+
 // DockerImage describes a Docker image.
 type DockerImage struct {
 	Repository string            `json:"repository"`
@@ -51,12 +62,9 @@ type KubermaticConfigurationSpec struct {
 	MasterController KubermaticMasterControllerConfiguration `json:"masterController,omitempty"`
 	// MasterFiles is a map of additional files to mount into each master component.
 	MasterFiles map[string]string `json:"masterFiles,omitempty"`
-	// ExposeStrategy is the strategy to expose the cluster with, either "NodePort" which creates a NodePort
-	// with a "nodeport-proxy.k8s.io/expose": "true" annotation to expose all clusters on one central Service
-	// of type LoadBalancer via the NodePort proxy or "LoadBalancer" to create a LoadBalancer service per cluster.
-	// Note: The `seed_dns_overwrite` setting of the `datacenters.yaml` doesn't have any effect if this is
-	// set to `LoadBalancer`.
-	ExposeStrategy string `json:"exposeStrategy,omitempty"`
+	// ExposeStrategy is the strategy to expose the cluster with.
+	// Note: The `seed_dns_overwrite` setting of the `datacenters.yaml` doesn't have any effect if this is set to LoadBalancerStrategy.
+	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
 }
 
 // EnabledFeatureGates returns a sorted list of feature names that are currently enabled.
