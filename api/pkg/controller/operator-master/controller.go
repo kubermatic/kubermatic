@@ -141,7 +141,7 @@ func Add(
 // handler.EnqueueRequestsFromMapFunc.
 func newEventHandler(rf handler.ToRequestsFunc) *handler.EnqueueRequestsFromMapFunc {
 	return &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: handler.ToRequestsFunc(rf),
+		ToRequests: rf,
 	}
 }
 

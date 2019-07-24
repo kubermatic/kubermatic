@@ -29,8 +29,6 @@ const (
 	masterControllerManagerDeploymentName = "kubermatic-master-controller-manager-v1"
 	apiServiceName                        = "kubermatic-api"
 	uiServiceName                         = "kubermatic-ui"
-	seedControllerManagerServiceName      = "kubermatic-seed-controller-manager"
-	masterControllerManagerServiceName    = "kubermatic-master-controller-manager"
 )
 
 func clusterRoleBindingName(ns string) string {
