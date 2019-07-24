@@ -229,6 +229,16 @@ func (d *Deletion) cleanUpCredentialsSecrets(ctx context.Context, cluster *kuber
 		return nil
 	}
 
+	if err := d.deleteSecret(ctx, cluster); err != nil {
+		return err
+	}
+
+	return d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
+	})
+}
+
+func (d *Deletion) deleteSecret(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	secretName := getSecretName(cluster)
 	if secretName == "" {
 		return nil
@@ -236,12 +246,7 @@ func (d *Deletion) cleanUpCredentialsSecrets(ctx context.Context, cluster *kuber
 
 	secret := &corev1.Secret{}
 	err := d.seedClient.Get(ctx, types.NamespacedName{Name: secretName, Namespace: resources.KubermaticNamespace}, secret)
-	if err != nil {
-		if kerrors.IsNotFound(err) {
-			return d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-				kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
-			})
-		}
+	if err != nil && !kerrors.IsNotFound(err) {
 		return fmt.Errorf("failed to get Secret %s/%s: %v", resources.KubermaticNamespace, secretName, err)
 	}
 
@@ -250,10 +255,7 @@ func (d *Deletion) cleanUpCredentialsSecrets(ctx context.Context, cluster *kuber
 			return fmt.Errorf("failed to delete Secret '%s/%s': %v", secret.Namespace, secret.Name, err)
 		}
 	}
-
-	return d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
-	})
+	return nil
 }
 
 func getSecretName(cluster *kubermaticv1.Cluster) string {
