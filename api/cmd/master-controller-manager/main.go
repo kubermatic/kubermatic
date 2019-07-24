@@ -29,11 +29,12 @@ import (
 )
 
 type controllerRunOptions struct {
-	kubeconfig   string
-	dcFile       string
-	masterURL    string
-	internalAddr string
-	log          kubermaticlog.Options
+	kubeconfig         string
+	dcFile             string
+	masterURL          string
+	internalAddr       string
+	dynamicDatacenters bool
+	log                kubermaticlog.Options
 
 	workerName  string
 	workerCount int
@@ -49,7 +50,7 @@ type controllerContext struct {
 
 	mgr               manager.Manager
 	kubeconfig        *clientcmdapi.Config
-	seeds             map[string]*kubermaticv1.Seed
+	seedsGetter       provider.SeedsGetter
 	labelSelectorFunc func(*metav1.ListOptions)
 }
 
@@ -62,6 +63,7 @@ func main() {
 	flag.StringVar(&ctrlCtx.runOptions.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&ctrlCtx.runOptions.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&ctrlCtx.runOptions.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served")
+	flag.BoolVar(&ctrlCtx.runOptions.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
 	flag.BoolVar(&ctrlCtx.runOptions.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&ctrlCtx.runOptions.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
@@ -102,11 +104,6 @@ func main() {
 	ctrlCtx.kubeMasterInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeMasterClient, informer.DefaultInformerResyncPeriod)
 	ctrlCtx.labelSelectorFunc = selector
 
-	ctrlCtx.seeds, err = provider.LoadSeeds(ctrlCtx.runOptions.dcFile)
-	if err != nil {
-		sugarLog.Fatalw("Failed to parse the datacenters definition", "error", err)
-	}
-
 	ctrlCtx.kubeconfig, err = clientcmd.LoadFromFile(ctrlCtx.runOptions.kubeconfig)
 	if err != nil {
 		sugarLog.Fatalw("Failed to read the kubeconfig", "error", err)
@@ -126,6 +123,10 @@ func main() {
 			sugarLog.Fatalw("failed to register types in Scheme", "error", err)
 		}
 		ctrlCtx.mgr = mgr
+	}
+	ctrlCtx.seedsGetter, err = provider.SeedsGetterFactory(ctx, ctrlCtx.mgr.GetClient(), ctrlCtx.runOptions.dcFile, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.dynamicDatacenters)
+	if err != nil {
+		sugarLog.Fatalw("failed to get construct seedsGetter", "error", err)
 	}
 
 	controllers, err := createAllControllers(ctrlCtx)
