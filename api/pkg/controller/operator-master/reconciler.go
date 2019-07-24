@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator-master/resources/kubermatic"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/kubermatic"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
