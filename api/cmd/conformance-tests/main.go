@@ -135,7 +135,7 @@ var (
 
 func main() {
 	mainLog := logrus.New()
-	mainLog.SetLevel(logrus.InfoLevel)
+	mainLog.SetLevel(logrus.DebugLevel)
 
 	opts := Opts{
 		providers:  sets.NewString(),
