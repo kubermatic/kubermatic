@@ -363,7 +363,6 @@ func (r *configData) reconcileServices() error {
 	creators := []reconciling.NamedServiceCreatorGetter{
 		kubermatic.APIServiceCreator(r.config),
 		kubermatic.UIServiceCreator(r.config),
-		kubermatic.MasterControllerManagerServiceCreator(r.config),
 	}
 
 	if err := reconciling.ReconcileServices(r.ctx, creators, r.config.Spec.Namespace, r.Client, r.applyDefaultFields()); err != nil {

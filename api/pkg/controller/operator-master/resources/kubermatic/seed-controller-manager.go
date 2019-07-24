@@ -290,21 +290,3 @@ func SeedControllerManagerPDBCreator(cfg *operatorv1alpha1.KubermaticConfigurati
 		}
 	}
 }
-
-func SeedControllerManagerServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
-		return seedControllerManagerServiceName, func(s *corev1.Service) (*corev1.Service, error) {
-			s.Spec.Type = corev1.ServiceTypeNodePort
-			s.Spec.Selector = seedControllerManagerPodLabels()
-
-			s.Spec.Ports = mergeServicePort(s.Spec.Ports, corev1.ServicePort{
-				Name:       "metrics",
-				Port:       8085,
-				TargetPort: intstr.FromInt(8085),
-				Protocol:   corev1.ProtocolTCP,
-			})
-
-			return s, nil
-		}
-	}
-}
