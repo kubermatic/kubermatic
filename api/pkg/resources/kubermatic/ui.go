@@ -18,7 +18,7 @@ func uiPodLabels() map[string]string {
 	}
 }
 
-func UIDeploymentCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
+func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return uiDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			specLabels := uiPodLabels()
@@ -86,7 +86,7 @@ func UIDeploymentCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguratio
 	}
 }
 
-func UIPDBCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func UIPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	name := "kubermatic-ui-v2"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
@@ -103,7 +103,7 @@ func UIPDBCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reco
 	}
 }
 
-func UIServiceCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedServiceCreatorGetter {
+func UIServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return uiServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeNodePort

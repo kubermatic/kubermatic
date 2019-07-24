@@ -37,15 +37,15 @@ func clusterRoleBindingName(ns string) string {
 	return fmt.Sprintf("%s:kubermatic:cluster-admin", ns)
 }
 
-func NamespaceCreator(name string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
+func NamespaceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
 	return func() (string, reconciling.NamespaceCreator) {
-		return name, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+		return cfg.Spec.Namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 			return ns, nil
 		}
 	}
 }
 
-func DockercfgSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+func DockercfgSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return dockercfgSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			s.Type = corev1.SecretTypeDockerConfigJson
@@ -61,7 +61,7 @@ func DockercfgSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfigura
 	}
 }
 
-func KubeconfigSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+func KubeconfigSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return kubeconfigSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			if s.Data == nil {
@@ -75,7 +75,7 @@ func KubeconfigSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfigur
 	}
 }
 
-func DatacentersSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+func DatacentersSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return datacentersSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			if s.Data == nil {
@@ -89,7 +89,7 @@ func DatacentersSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfigu
 	}
 }
 
-func DexCASecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+func DexCASecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return dexCASecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			if s.Data == nil {
@@ -103,7 +103,7 @@ func DexCASecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration
 	}
 }
 
-func MasterFilesSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+func MasterFilesSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return masterFilesSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			if s.Data == nil {
@@ -119,7 +119,7 @@ func MasterFilesSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfigu
 	}
 }
 
-func PresetsSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+func PresetsSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return presetsSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			if s.Data == nil {
@@ -133,7 +133,7 @@ func PresetsSecretCreator(ns string, cfg *operatorv1alpha1.KubermaticConfigurati
 	}
 }
 
-func UIConfigConfigMapCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {
+func UIConfigConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return uiConfigConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if c.Data == nil {
@@ -147,7 +147,7 @@ func UIConfigConfigMapCreator(ns string, cfg *operatorv1alpha1.KubermaticConfigu
 	}
 }
 
-func BackupContainersConfigMapCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {
+func BackupContainersConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return backupContainersConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if c.Data == nil {
@@ -162,7 +162,7 @@ func BackupContainersConfigMapCreator(ns string, cfg *operatorv1alpha1.Kubermati
 	}
 }
 
-func ServiceAccountCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedServiceAccountCreatorGetter {
+func ServiceAccountCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
@@ -170,8 +170,8 @@ func ServiceAccountCreator(ns string, cfg *operatorv1alpha1.KubermaticConfigurat
 	}
 }
 
-func ClusterRoleBindingCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingCreatorGetter {
-	name := clusterRoleBindingName(ns)
+func ClusterRoleBindingCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingCreatorGetter {
+	name := clusterRoleBindingName(cfg.Spec.Namespace)
 
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
@@ -185,7 +185,7 @@ func ClusterRoleBindingCreator(ns string, cfg *operatorv1alpha1.KubermaticConfig
 				{
 					Kind:      rbacv1.ServiceAccountKind,
 					Name:      serviceAccountName,
-					Namespace: ns,
+					Namespace: cfg.Spec.Namespace,
 				},
 			}
 
@@ -194,7 +194,7 @@ func ClusterRoleBindingCreator(ns string, cfg *operatorv1alpha1.KubermaticConfig
 	}
 }
 
-func IngressCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedIngressCreatorGetter {
+func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedIngressCreatorGetter {
 	return func() (string, reconciling.IngressCreator) {
 		return ingressName, func(i *extensionsv1beta1.Ingress) (*extensionsv1beta1.Ingress, error) {
 			if i.Annotations == nil {

@@ -21,7 +21,7 @@ func seedControllerManagerPodLabels() map[string]string {
 	}
 }
 
-func SeedControllerManagerDeploymentCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
+func SeedControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return seedControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			specLabels := seedControllerManagerPodLabels()
@@ -277,7 +277,7 @@ func seedControllerManagerCopyOpenshiftAddonsContainer(cfg operatorv1alpha1.Kube
 	}
 }
 
-func SeedControllerManagerPDBCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func SeedControllerManagerPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	name := "kubermatic-seed-controller-manager-v1"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
@@ -294,7 +294,7 @@ func SeedControllerManagerPDBCreator(ns string, cfg *operatorv1alpha1.Kubermatic
 	}
 }
 
-func SeedControllerManagerServiceCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedServiceCreatorGetter {
+func SeedControllerManagerServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return seedControllerManagerServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeNodePort

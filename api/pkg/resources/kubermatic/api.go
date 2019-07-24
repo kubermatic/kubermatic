@@ -20,7 +20,7 @@ func apiPodLabels() map[string]string {
 	}
 }
 
-func APIDeploymentCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
+func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return apiDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			probe := corev1.Probe{
@@ -213,7 +213,7 @@ func APIDeploymentCreator(ns string, cfg *operatorv1alpha1.KubermaticConfigurati
 	}
 }
 
-func APIPDBCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func APIPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	name := "kubermatic-api-v1"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
@@ -230,7 +230,7 @@ func APIPDBCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) rec
 	}
 }
 
-func APIServiceCreator(ns string, cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedServiceCreatorGetter {
+func APIServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return apiServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeNodePort

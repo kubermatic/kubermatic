@@ -88,12 +88,10 @@ type configData struct {
 	ctx    context.Context
 	config *operatorv1alpha1.KubermaticConfiguration
 	log    *zap.SugaredLogger
-	ns     string
 }
 
 func (r *configData) Reconcile() error {
 	r.applyDefaults()
-	r.ns = r.config.Spec.Namespace
 
 	r.log.Debug("Reconciling Kubermatic installation")
 	if err := r.reconcileResources(); err != nil {
@@ -246,7 +244,7 @@ func (r *configData) reconcileNamespaces() error {
 	r.log.Debug("Reconciling Namespaces")
 
 	creators := []reconciling.NamedNamespaceCreatorGetter{
-		kubermatic.NamespaceCreator(r.ns, r.config),
+		kubermatic.NamespaceCreator(r.config),
 	}
 
 	if err := reconciling.ReconcileNamespaces(r.ctx, creators, "", r.Client, r.applyDefaultFields()); err != nil {
@@ -260,11 +258,11 @@ func (r *configData) reconcileConfigMaps() error {
 	r.log.Debug("Reconciling ConfigMaps")
 
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		kubermatic.UIConfigConfigMapCreator(r.ns, r.config),
-		kubermatic.BackupContainersConfigMapCreator(r.ns, r.config),
+		kubermatic.UIConfigConfigMapCreator(r.config),
+		kubermatic.BackupContainersConfigMapCreator(r.config),
 	}
 
-	if err := reconciling.ReconcileConfigMaps(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
+	if err := reconciling.ReconcileConfigMaps(r.ctx, creators, r.config.Spec.Namespace, r.Client, r.applyDefaultFields()); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
 	}
 
@@ -275,24 +273,24 @@ func (r *configData) reconcileSecrets() error {
 	r.log.Debug("Reconciling Secrets")
 
 	creators := []reconciling.NamedSecretCreatorGetter{
-		kubermatic.DockercfgSecretCreator(r.ns, r.config),
-		kubermatic.KubeconfigSecretCreator(r.ns, r.config),
-		kubermatic.DexCASecretCreator(r.ns, r.config),
+		kubermatic.DockercfgSecretCreator(r.config),
+		kubermatic.KubeconfigSecretCreator(r.config),
+		kubermatic.DexCASecretCreator(r.config),
 	}
 
 	if r.config.Spec.Datacenters != "" {
-		creators = append(creators, kubermatic.DatacentersSecretCreator(r.ns, r.config))
+		creators = append(creators, kubermatic.DatacentersSecretCreator(r.config))
 	}
 
 	if len(r.config.Spec.MasterFiles) > 0 {
-		creators = append(creators, kubermatic.MasterFilesSecretCreator(r.ns, r.config))
+		creators = append(creators, kubermatic.MasterFilesSecretCreator(r.config))
 	}
 
 	if r.config.Spec.UI.Presets != "" {
-		creators = append(creators, kubermatic.PresetsSecretCreator(r.ns, r.config))
+		creators = append(creators, kubermatic.PresetsSecretCreator(r.config))
 	}
 
-	if err := reconciling.ReconcileSecrets(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
+	if err := reconciling.ReconcileSecrets(r.ctx, creators, r.config.Spec.Namespace, r.Client, r.applyDefaultFields()); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets: %v", err)
 	}
 
@@ -303,10 +301,10 @@ func (r *configData) reconcileServiceAccounts() error {
 	r.log.Debug("Reconciling ServiceAccounts")
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
-		kubermatic.ServiceAccountCreator(r.ns, r.config),
+		kubermatic.ServiceAccountCreator(r.config),
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, r.config.Spec.Namespace, r.Client, r.applyDefaultFields()); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts: %v", err)
 	}
 
@@ -317,7 +315,7 @@ func (r *configData) reconcileClusterRoleBindings() error {
 	r.log.Debug("Reconciling ClusterRoleBindings")
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
-		kubermatic.ClusterRoleBindingCreator(r.ns, r.config),
+		kubermatic.ClusterRoleBindingCreator(r.config),
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(r.ctx, creators, "", r.Client, r.applyDefaultFields()); err != nil {
@@ -331,12 +329,12 @@ func (r *configData) reconcileDeployments() error {
 	r.log.Debug("Reconciling Deployments")
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		kubermatic.APIDeploymentCreator(r.ns, r.config),
-		kubermatic.UIDeploymentCreator(r.ns, r.config),
-		kubermatic.MasterControllerManagerDeploymentCreator(r.ns, r.config),
+		kubermatic.APIDeploymentCreator(r.config),
+		kubermatic.UIDeploymentCreator(r.config),
+		kubermatic.MasterControllerManagerDeploymentCreator(r.config),
 	}
 
-	if err := reconciling.ReconcileDeployments(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
+	if err := reconciling.ReconcileDeployments(r.ctx, creators, r.config.Spec.Namespace, r.Client, r.applyDefaultFields()); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %v", err)
 	}
 
@@ -347,12 +345,12 @@ func (r *configData) reconcilePodDisruptionBudgets() error {
 	r.log.Debug("Reconciling PodDisruptionBudgets")
 
 	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
-		kubermatic.APIPDBCreator(r.ns, r.config),
-		kubermatic.UIPDBCreator(r.ns, r.config),
-		kubermatic.MasterControllerManagerPDBCreator(r.ns, r.config),
+		kubermatic.APIPDBCreator(r.config),
+		kubermatic.UIPDBCreator(r.config),
+		kubermatic.MasterControllerManagerPDBCreator(r.config),
 	}
 
-	if err := reconciling.ReconcilePodDisruptionBudgets(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
+	if err := reconciling.ReconcilePodDisruptionBudgets(r.ctx, creators, r.config.Spec.Namespace, r.Client, r.applyDefaultFields()); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
 	}
 
@@ -363,12 +361,12 @@ func (r *configData) reconcileServices() error {
 	r.log.Debug("Reconciling Services")
 
 	creators := []reconciling.NamedServiceCreatorGetter{
-		kubermatic.APIServiceCreator(r.ns, r.config),
-		kubermatic.UIServiceCreator(r.ns, r.config),
-		kubermatic.MasterControllerManagerServiceCreator(r.ns, r.config),
+		kubermatic.APIServiceCreator(r.config),
+		kubermatic.UIServiceCreator(r.config),
+		kubermatic.MasterControllerManagerServiceCreator(r.config),
 	}
 
-	if err := reconciling.ReconcileServices(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
+	if err := reconciling.ReconcileServices(r.ctx, creators, r.config.Spec.Namespace, r.Client, r.applyDefaultFields()); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %v", err)
 	}
 
@@ -379,10 +377,10 @@ func (r *configData) reconcileIngresses() error {
 	r.log.Debug("Reconciling Ingresses")
 
 	creators := []reconciling.NamedIngressCreatorGetter{
-		kubermatic.IngressCreator(r.ns, r.config),
+		kubermatic.IngressCreator(r.config),
 	}
 
-	if err := reconciling.ReconcileIngresses(r.ctx, creators, r.ns, r.Client, r.applyDefaultFields()); err != nil {
+	if err := reconciling.ReconcileIngresses(r.ctx, creators, r.config.Spec.Namespace, r.Client, r.applyDefaultFields()); err != nil {
 		return fmt.Errorf("failed to reconcile Ingresses: %v", err)
 	}
 
