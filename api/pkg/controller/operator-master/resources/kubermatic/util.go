@@ -16,10 +16,6 @@ const (
 	versionLabel = "app.kubernetes.io/version"
 )
 
-func i32ptr(i int32) *int32 {
-	return &i
-}
-
 // mergeServicePort searches the src port inside the dst slice and if it
 // finds it, updates its properties. If the src port is not found yet,
 // it will be appended verbatim to the dst list. If dst is nil, a new

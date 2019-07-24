@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
 func apiPodLabels() map[string]string {
@@ -40,7 +41,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 
 			specLabels := apiPodLabels()
 
-			d.Spec.Replicas = i32ptr(2)
+			d.Spec.Replicas = pointer.Int32Ptr(2)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: specLabels,
 			}
@@ -91,7 +92,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 					Name: "kubeconfig",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: i32ptr(420),
+							DefaultMode: pointer.Int32Ptr(420),
 							SecretName:  kubeconfigSecretName,
 						},
 					},
@@ -118,7 +119,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 					Name: "master-files",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: i32ptr(420),
+							DefaultMode: pointer.Int32Ptr(420),
 							SecretName:  masterFilesSecretName,
 						},
 					},
@@ -138,7 +139,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 					Name: "presets",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: i32ptr(420),
+							DefaultMode: pointer.Int32Ptr(420),
 							SecretName:  presetsSecretName,
 						},
 					},
@@ -158,7 +159,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 					Name: "datacenters",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: i32ptr(420),
+							DefaultMode: pointer.Int32Ptr(420),
 							SecretName:  datacentersSecretName,
 						},
 					},

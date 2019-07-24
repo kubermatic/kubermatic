@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
 func seedControllerManagerPodLabels() map[string]string {
@@ -26,7 +27,7 @@ func SeedControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConf
 		return seedControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			specLabels := seedControllerManagerPodLabels()
 
-			d.Spec.Replicas = i32ptr(2)
+			d.Spec.Replicas = pointer.Int32Ptr(2)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: specLabels,
 			}
@@ -97,7 +98,7 @@ func SeedControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConf
 					Name: "backup-containers",
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode:          i32ptr(420),
+							DefaultMode:          pointer.Int32Ptr(420),
 							LocalObjectReference: corev1.LocalObjectReference{Name: backupContainersConfigMapName},
 						},
 					},
@@ -106,7 +107,7 @@ func SeedControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConf
 					Name: "dockercfg",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: i32ptr(420),
+							DefaultMode: pointer.Int32Ptr(420),
 							SecretName:  dockercfgSecretName,
 						},
 					},
@@ -143,7 +144,7 @@ func SeedControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConf
 					Name: "master-files",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: i32ptr(420),
+							DefaultMode: pointer.Int32Ptr(420),
 							SecretName:  masterFilesSecretName,
 						},
 					},
@@ -169,7 +170,7 @@ func SeedControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConf
 					Name: "dex-ca",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: i32ptr(420),
+							DefaultMode: pointer.Int32Ptr(420),
 							SecretName:  dexCASecretName,
 						},
 					},
@@ -189,7 +190,7 @@ func SeedControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConf
 					Name: "datacenters",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: i32ptr(420),
+							DefaultMode: pointer.Int32Ptr(420),
 							SecretName:  datacentersSecretName,
 						},
 					},

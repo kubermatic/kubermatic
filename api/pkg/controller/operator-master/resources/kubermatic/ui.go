@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
 func uiPodLabels() map[string]string {
@@ -23,7 +24,7 @@ func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcil
 		return uiDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			specLabels := uiPodLabels()
 
-			d.Spec.Replicas = i32ptr(2)
+			d.Spec.Replicas = pointer.Int32Ptr(2)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: specLabels,
 			}
@@ -74,7 +75,7 @@ func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcil
 					Name: "config",
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode:          i32ptr(420),
+							DefaultMode:          pointer.Int32Ptr(420),
 							LocalObjectReference: corev1.LocalObjectReference{Name: uiConfigConfigMapName},
 						},
 					},
