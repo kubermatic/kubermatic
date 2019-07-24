@@ -12,7 +12,13 @@ echo "" > /tmp/headerfile
 GOPATH=$(go env GOPATH) ./vendor/k8s.io/code-generator/generate-groups.sh all \
     github.com/kubermatic/kubermatic/api/pkg/crd/client \
     github.com/kubermatic/kubermatic/api/pkg/crd \
-    "kubermatic:v1, operator:v1alpha1" \
+    "kubermatic:v1" \
+    --go-header-file /tmp/headerfile
+
+GOPATH=$(go env GOPATH) ./vendor/k8s.io/code-generator/generate-groups.sh deepcopy,lister,informer \
+    github.com/kubermatic/kubermatic/api/pkg/crd/client \
+    github.com/kubermatic/kubermatic/api/pkg/crd \
+    "operator:v1alpha1" \
     --go-header-file /tmp/headerfile
 
 # Temporary fixes due to: https://github.com/kubernetes/kubernetes/issues/71655

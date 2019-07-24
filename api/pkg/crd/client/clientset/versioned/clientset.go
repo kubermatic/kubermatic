@@ -4,7 +4,6 @@ package versioned
 
 import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
-	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/operator/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -15,17 +14,13 @@ type Interface interface {
 	KubermaticV1() kubermaticv1.KubermaticV1Interface
 	// Deprecated: please explicitly pick a version if possible.
 	Kubermatic() kubermaticv1.KubermaticV1Interface
-	OperatorV1alpha1() operatorv1alpha1.OperatorV1alpha1Interface
-	// Deprecated: please explicitly pick a version if possible.
-	Operator() operatorv1alpha1.OperatorV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	kubermaticV1     *kubermaticv1.KubermaticV1Client
-	operatorV1alpha1 *operatorv1alpha1.OperatorV1alpha1Client
+	kubermaticV1 *kubermaticv1.KubermaticV1Client
 }
 
 // KubermaticV1 retrieves the KubermaticV1Client
@@ -37,17 +32,6 @@ func (c *Clientset) KubermaticV1() kubermaticv1.KubermaticV1Interface {
 // Please explicitly pick a version.
 func (c *Clientset) Kubermatic() kubermaticv1.KubermaticV1Interface {
 	return c.kubermaticV1
-}
-
-// OperatorV1alpha1 retrieves the OperatorV1alpha1Client
-func (c *Clientset) OperatorV1alpha1() operatorv1alpha1.OperatorV1alpha1Interface {
-	return c.operatorV1alpha1
-}
-
-// Deprecated: Operator retrieves the default version of OperatorClient.
-// Please explicitly pick a version.
-func (c *Clientset) Operator() operatorv1alpha1.OperatorV1alpha1Interface {
-	return c.operatorV1alpha1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -70,10 +54,6 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
-	cs.operatorV1alpha1, err = operatorv1alpha1.NewForConfig(&configShallowCopy)
-	if err != nil {
-		return nil, err
-	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
@@ -87,7 +67,6 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
 	cs.kubermaticV1 = kubermaticv1.NewForConfigOrDie(c)
-	cs.operatorV1alpha1 = operatorv1alpha1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -97,7 +76,6 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.kubermaticV1 = kubermaticv1.New(c)
-	cs.operatorV1alpha1 = operatorv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs
