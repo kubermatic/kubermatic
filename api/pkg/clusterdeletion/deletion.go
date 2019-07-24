@@ -10,6 +10,8 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	provider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/machine-controller/pkg/node/eviction"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
@@ -46,7 +48,7 @@ type Deletion struct {
 	userClusterClient controllerruntimeclient.Client
 }
 
-// cleanupCluster is responsible for cleaning up a cluster
+// CleanupCluster is responsible for cleaning up a cluster
 func (d *Deletion) CleanupCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	err := d.cleanupCluster(ctx, cluster)
 	result := &reconcile.Result{}
@@ -69,6 +71,10 @@ func (d *Deletion) cleanupCluster(ctx context.Context, cluster *kubermaticv1.Clu
 	// If we still have nodes, we must not cleanup other infrastructure at the cloud provider
 	if kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
 		return nil
+	}
+
+	if err := d.cleanUpCredentialsSecrets(ctx, cluster); err != nil {
+		return err
 	}
 
 	return nil
@@ -215,6 +221,48 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.InClusterLBCleanupFinalizer)
 		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.InClusterPVCleanupFinalizer)
 	})
+}
+
+func (d *Deletion) cleanUpCredentialsSecrets(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	// If no relevant finalizer exists, directly return
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer) {
+		return nil
+	}
+
+	if err := d.deleteSecret(ctx, cluster); err != nil {
+		return err
+	}
+
+	return d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
+	})
+}
+
+func (d *Deletion) deleteSecret(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	secretName := getSecretName(cluster)
+	if secretName == "" {
+		return nil
+	}
+
+	secret := &corev1.Secret{}
+	err := d.seedClient.Get(ctx, types.NamespacedName{Name: secretName, Namespace: resources.KubermaticNamespace}, secret)
+	if err != nil && !kerrors.IsNotFound(err) {
+		return fmt.Errorf("failed to get Secret %s/%s: %v", resources.KubermaticNamespace, secretName, err)
+	}
+
+	if err == nil {
+		if err := d.seedClient.Delete(ctx, secret); err != nil {
+			return fmt.Errorf("failed to delete Secret '%s/%s': %v", secret.Namespace, secret.Name, err)
+		}
+	}
+	return nil
+}
+
+func getSecretName(cluster *kubermaticv1.Cluster) string {
+	if cluster.Spec.Cloud.Packet != nil {
+		return fmt.Sprintf("%s-packet-%s", provider.CredentialPrefix, cluster.Name)
+	}
+	return ""
 }
 
 func (d *Deletion) deletingNodeCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) error {

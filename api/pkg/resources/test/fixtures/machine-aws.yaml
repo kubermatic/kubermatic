@@ -20,7 +20,7 @@ spec:
         secretAccessKey: ""
         securityGroupIDs:
         - aws-security-group-id
-        subnetId: aws-subnet-id
+        subnetId: ""
         tags:
           AWSExampleTagKey1: AWSExampleTagValue1
           AWSExampleTagKey2: AWSExampleTagValue2

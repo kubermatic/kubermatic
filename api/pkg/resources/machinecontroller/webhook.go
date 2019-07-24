@@ -67,6 +67,11 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 			}
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
+			envVars, err := getEnvVars(data)
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
@@ -78,7 +83,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 						"-v", "4",
 						"-listen-address", "0.0.0.0:9876",
 					},
-					Env:       getEnvVars(data),
+					Env:       envVars,
 					Resources: webhookResourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{

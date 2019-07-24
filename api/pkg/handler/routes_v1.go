@@ -932,7 +932,7 @@ func (r Routing) createCluster(initNodeDeploymentFailures *prometheus.CounterVec
 			middleware.SetClusterProvider(r.clusterProviders, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviders, r.seedsGetter),
 			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.CreateEndpoint(r.sshKeyProvider, r.projectProvider, r.seedsGetter, initNodeDeploymentFailures, r.eventRecorderProvider, r.presetsManager, r.exposeStrategy)),
+		)(cluster.CreateEndpoint(r.sshKeyProvider, r.projectProvider, r.credentialsProvider, r.seedsGetter, initNodeDeploymentFailures, r.eventRecorderProvider, r.presetsManager, r.exposeStrategy)),
 		cluster.DecodeCreateReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,

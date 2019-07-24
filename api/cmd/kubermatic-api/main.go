@@ -192,6 +192,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	}
 	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, userMasterLister, options.domain)
 
+	credentialsProvider, err := kubernetesprovider.NewCredentialsProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, kubeMasterInformerFactory.Core().V1().Secrets().Lister())
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create credentials provider due to %v", err)
+	}
+
 	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userMasterLister, kubernetesprovider.IsServiceAccount)
 	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
@@ -211,19 +216,19 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	eventRecorderProvider := kubernetesprovider.NewEventRecorder()
 
 	return providers{
-			sshKey:                                sshKeyProvider,
-			user:                                  userProvider,
-			serviceAccountProvider:                serviceAccountProvider,
-			serviceAccountTokenProvider:           serviceAccountTokenProvider,
-			privilegedServiceAccountTokenProvider: serviceAccountTokenProvider,
-			project:                               projectProvider,
-			privilegedProject:                     privilegedProjectProvider,
-			projectMember:                         projectMemberProvider,
-			memberMapper:                          projectMemberProvider,
-			eventRecorderProvider:                 eventRecorderProvider,
-			clusters:                              clusterProviders,
-			seedsGetter:                           seedsGetter},
-		nil
+		sshKey:                                sshKeyProvider,
+		user:                                  userProvider,
+		serviceAccountProvider:                serviceAccountProvider,
+		serviceAccountTokenProvider:           serviceAccountTokenProvider,
+		privilegedServiceAccountTokenProvider: serviceAccountTokenProvider,
+		project:                               projectProvider,
+		privilegedProject:                     privilegedProjectProvider,
+		projectMember:                         projectMemberProvider,
+		memberMapper:                          projectMemberProvider,
+		eventRecorderProvider:                 eventRecorderProvider,
+		clusters:                              clusterProviders,
+		seedsGetter:                           seedsGetter,
+		credentialsProvider:                   credentialsProvider}, nil
 }
 
 func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error) {
@@ -294,6 +299,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.serviceAccountTokenProvider,
 		prov.project,
 		prov.privilegedProject,
+		prov.credentialsProvider,
 		oidcIssuerVerifier,
 		tokenVerifiers,
 		tokenExtractors,

@@ -12,10 +12,12 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubernetesresources "github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	certutil "k8s.io/client-go/util/cert"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -266,4 +268,21 @@ func (od *openshiftData) KubermaticAPIImage() string {
 		imageWithoutRegistry = strings.Join(apiImageSplit[1:], "/")
 	}
 	return od.ImageRegistry(registry) + "/" + imageWithoutRegistry
+}
+
+func (od *openshiftData) GetGlobalSecretKeySelectorValue(configVar providerconfig.GlobalSecretKeySelector) (string, error) {
+	// We need all three of these to fetch and use a secret
+	if configVar.Name != "" && configVar.Namespace != "" && configVar.Key != "" {
+		secret := &corev1.Secret{}
+		key := types.NamespacedName{Namespace: configVar.Namespace, Name: configVar.Name}
+		if err := od.client.Get(context.TODO(), key, secret); err != nil {
+			return "", fmt.Errorf("error retrieving secret '%s' from namespace '%s': '%v'", configVar.Name, configVar.Namespace, err)
+		}
+
+		if val, ok := secret.Data[configVar.Key]; ok {
+			return string(val), nil
+		}
+		return "", fmt.Errorf("secret '%s' in namespace '%s' has no key '%s'", configVar.Name, configVar.Namespace, configVar.Key)
+	}
+	return "", nil
 }

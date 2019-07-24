@@ -260,7 +260,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		if err := r.seedClusterClient.Get(context.Background(), types.NamespacedName{Name: clusterName}, cluster); err != nil {
 			return err
 		}
-		cluster.Finalizers = append(cluster.Finalizers, kubermaticapiv1.InClusterPVCleanupFinalizer, kubermaticapiv1.InClusterLBCleanupFinalizer)
+		cluster.Finalizers = append(cluster.Finalizers, kubermaticapiv1.InClusterPVCleanupFinalizer, kubermaticapiv1.InClusterLBCleanupFinalizer, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
 
 		return r.seedClusterClient.Update(context.Background(), cluster)
 
@@ -688,7 +688,7 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 	params.SetTimeout(15 * time.Second)
 
 	if _, err := r.kubermaticClient.Project.CreateCluster(params, r.kubermaticAuthenticator); err != nil {
-		return nil, fmt.Errorf("failed to create cluster via kubermatic api: %q", fmtSwaggerError(err))
+		return nil, fmt.Errorf("failed to create cluster via kubermatic api: %q, %v", fmtSwaggerError(err), err)
 	}
 
 	crCluster := &kubermaticv1.Cluster{}

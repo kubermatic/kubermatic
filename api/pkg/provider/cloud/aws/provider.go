@@ -56,9 +56,6 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 		if spec.AWS.SecurityGroupID != "" {
 			return fmt.Errorf("vpc must be set when specifying a security group")
 		}
-		if spec.AWS.SubnetID != "" {
-			return fmt.Errorf("vpc must be set when specifying a subnet")
-		}
 	}
 
 	if spec.AWS.VPCID != "" {
@@ -67,28 +64,10 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 			return err
 		}
 
-		if spec.AWS.SubnetID != "" {
-			if _, err = getSubnetByID(spec.AWS.SubnetID, client); err != nil {
-				return err
-			}
-		}
-
 		if spec.AWS.SecurityGroupID != "" {
 			if _, err = getSecurityGroupByID(client, vpc, spec.AWS.SecurityGroupID); err != nil {
 				return err
 			}
-		}
-	}
-
-	if spec.AWS.VPCID == "" && spec.AWS.SubnetID == "" {
-		vpc, err := getDefaultVpc(client)
-		if err != nil {
-			return fmt.Errorf("failed to get default vpc: %v", err)
-		}
-
-		_, err = getDefaultSubnet(client, *vpc.VpcId, a.dc.Region+a.dc.ZoneCharacter)
-		if err != nil {
-			return fmt.Errorf("failed to get default subnet: %v", err)
 		}
 	}
 
@@ -329,56 +308,6 @@ func removeTags(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
 	return err
 }
 
-func getDefaultSubnet(client *ec2.EC2, vpcID, zone string) (*ec2.Subnet, error) {
-	glog.V(4).Infof("Looking for the default subnet for VPC %s...", vpcID)
-	sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
-		Filters: []*ec2.Filter{
-			{
-				Name: aws.String("availability-zone"), Values: []*string{aws.String(zone)},
-			},
-			{
-				Name: aws.String("defaultForAz"), Values: []*string{aws.String("true")},
-			},
-			{
-				Name: aws.String("vpc-id"), Values: []*string{&vpcID},
-			},
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list subnets: %v", err)
-	}
-
-	if len(sOut.Subnets) == 0 {
-		return nil, errors.New("no default subnet exists in vpc")
-	}
-
-	if len(sOut.Subnets) > 1 {
-		return nil, errors.New("more than one default subnet exists in vpc")
-	}
-
-	return sOut.Subnets[0], nil
-}
-
-func getSubnetByID(subnetID string, client *ec2.EC2) (*ec2.Subnet, error) {
-	sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
-		Filters: []*ec2.Filter{
-			{
-				Name: aws.String("subnet-id"), Values: []*string{aws.String(subnetID)},
-			},
-		},
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to list subnets: %v", err)
-	}
-
-	if len(sOut.Subnets) != 1 {
-		return nil, fmt.Errorf("unable to find subnet with id %q", subnetID)
-	}
-
-	return sOut.Subnets[0], nil
-}
-
 // Get security group by aws generated id string (sg-xxxxx).
 // Error is returned in case no such group exists.
 func getSecurityGroupByID(client *ec2.EC2, vpc *ec2.Vpc, id string) (*ec2.SecurityGroup, error) {
@@ -580,28 +509,9 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	if cluster.Spec.Cloud.AWS.SubnetID == "" {
-		glog.V(4).Infof("No Subnet specified on cluster %s", cluster.Name)
-		subnet, err := getDefaultSubnet(client, cluster.Spec.Cloud.AWS.VPCID, a.dc.Region+a.dc.ZoneCharacter)
-		if err != nil {
-
-			return nil, fmt.Errorf("failed to get default subnet for vpc %s: %v", cluster.Spec.Cloud.AWS.VPCID, err)
-		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.AWS.SubnetID = *subnet.SubnetId
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if cluster.Spec.Cloud.AWS.AvailabilityZone == "" {
-		subnet, err := getSubnetByID(cluster.Spec.Cloud.AWS.SubnetID, client)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get subnet %s: %v", cluster.Spec.Cloud.AWS.SubnetID, err)
-		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.AWS.AvailabilityZone = *subnet.AvailabilityZone
+			cluster.Spec.Cloud.AWS.AvailabilityZone = a.dc.Region + a.dc.ZoneCharacter
 		})
 		if err != nil {
 			return nil, err
@@ -797,4 +707,23 @@ func isEntityAlreadyExists(err error) bool {
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
 func (a *AmazonEC2) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
+}
+
+// GetAvailabilityZonesInRegion returns the list of availability zones in the selected AWS region.
+func (a *AmazonEC2) GetAvailabilityZonesInRegion(spec kubermaticv1.CloudSpec, regionName string) ([]*ec2.AvailabilityZone, error) {
+	client, err := a.getEC2client(spec)
+	if err != nil {
+		return nil, err
+	}
+
+	filters := []*ec2.Filter{
+		{Name: aws.String("region-name"), Values: []*string{aws.String(regionName)}},
+	}
+	azinput := &ec2.DescribeAvailabilityZonesInput{Filters: filters}
+	out, err := client.DescribeAvailabilityZones(azinput)
+	if err != nil {
+		return nil, err
+	}
+
+	return out.AvailabilityZones, nil
 }
