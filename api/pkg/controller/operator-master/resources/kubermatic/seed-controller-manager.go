@@ -235,7 +235,7 @@ func SeedControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConf
 						},
 					},
 					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					TerminationMessagePath:   "/dev/termination-log",
+					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 				},
 			}
 

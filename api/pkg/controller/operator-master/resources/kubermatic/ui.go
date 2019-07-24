@@ -64,7 +64,7 @@ func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcil
 						},
 					},
 					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					TerminationMessagePath:   "/dev/termination-log",
+					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 				},
 			}
 

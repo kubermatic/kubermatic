@@ -118,7 +118,7 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 						},
 					},
 					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					TerminationMessagePath:   "/dev/termination-log",
+					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 				},
 			}
 

@@ -202,7 +202,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 						},
 					},
 					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					TerminationMessagePath:   "/dev/termination-log",
+					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 					ReadinessProbe:           &probe,
 				},
 			}
