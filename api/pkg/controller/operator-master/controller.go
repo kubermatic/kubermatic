@@ -60,7 +60,7 @@ func Add(
 		Client:       mgr.GetClient(),
 		recorder:     mgr.GetRecorder(ControllerName),
 		clientConfig: clientConfig,
-		log:          log,
+		log:          log.Named(ControllerName),
 		workerName:   workerName,
 	}
 
@@ -70,9 +70,53 @@ func Add(
 		return err
 	}
 
-	// configure watches for all related objects
-	pred := makeOwnerPredicate(workerName)
-	eventHandler := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(eventHandler)}
+	// reconcile for every KubermaticConfiguration labelled with the current worker name
+	predicate := newPredicateFuncs(func(meta metav1.Object) bool {
+		return meta.GetLabels()[WorkerNameLabel] == workerName
+	})
+
+	// put the config's identifier on the queue
+	eventHandler := newEventHandler(func(a handler.MapObject) []reconcile.Request {
+		return []reconcile.Request{
+			{
+				NamespacedName: types.NamespacedName{
+					Namespace: a.Meta.GetNamespace(),
+					Name:      a.Meta.GetName(),
+				},
+			},
+		}
+	})
+
+	t := &operatorv1alpha1.KubermaticConfiguration{}
+	if err := c.Watch(&source.Kind{Type: t}, eventHandler, predicate); err != nil {
+		return fmt.Errorf("failed to create watcher for %T: %v", t, err)
+	}
+
+	// configure watches for all possibly controlled objects (filtering to only include those for the
+	// current worker name is done by the reconciler later)
+	predicate = newPredicateFuncs(func(meta metav1.Object) bool {
+		return meta.GetLabels()[ManagedByLabel] == ControllerName
+	})
+
+	// put the owner onto the queue
+	eventHandler = newEventHandler(func(a handler.MapObject) []reconcile.Request {
+		owner := a.Meta.GetAnnotations()[ConfigurationOwnerAnnotation]
+
+		ns, n, err := cache.SplitMetaNamespaceKey(owner)
+		if err != nil {
+			return nil
+		}
+
+		return []reconcile.Request{
+			{
+				NamespacedName: types.NamespacedName{
+					Namespace: ns,
+					Name:      n,
+				},
+			},
+		}
+	})
+
 	typesToWatch := []runtime.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
@@ -82,11 +126,10 @@ func Add(
 		&extensionsv1beta1.Ingress{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
-		&operatorv1alpha1.KubermaticConfiguration{},
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, eventHandler, pred); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, eventHandler, predicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}
@@ -94,76 +137,33 @@ func Add(
 	return nil
 }
 
-// eventHandler translates an incoming event into queue items, depending
-// on the affected object's type. The controller always puts the name
-// and namespace of the related KubermaticConfiguration on the queue.
-func eventHandler(a handler.MapObject) []reconcile.Request {
-	name := types.NamespacedName{}
-
-	if _, ok := a.Object.(*operatorv1alpha1.KubermaticConfiguration); ok {
-		// put the configuration itself on the queue
-		name.Name = a.Meta.GetName()
-		name.Namespace = a.Meta.GetNamespace()
-	} else {
-		// put the object's supposed owning configuration on the queue
-		owner := a.Meta.GetAnnotations()[ConfigurationOwnerAnnotation]
-
-		ns, n, err := cache.SplitMetaNamespaceKey(owner)
-		if err != nil {
-			return nil
-		}
-
-		name.Name = n
-		name.Namespace = ns
-	}
-
-	return []reconcile.Request{
-		{
-			NamespacedName: name,
-		},
+// newEventHandler takes a obj->request mapper function and wraps it into an
+// handler.EnqueueRequestsFromMapFunc.
+func newEventHandler(rf handler.ToRequestsFunc) *handler.EnqueueRequestsFromMapFunc {
+	return &handler.EnqueueRequestsFromMapFunc{
+		ToRequests: handler.ToRequestsFunc(rf),
 	}
 }
 
-// predicateFunc is a function that decides for a given object and its metadata
-// whether or not the controller should trigger a reconcile loop for an incoming
-// event.
-type predicateFunc func(runtime.Object, metav1.Object) bool
-
-// makeOwnerPredicate builds a new predicate using the given worker name. The
-// predicate checks whether the affected object has the proper labels.
-func makeOwnerPredicate(workerName string) predicate.Predicate {
-	return makePredicateFuncs(func(obj runtime.Object, meta metav1.Object) bool {
-		labels := meta.GetLabels()
-
-		// only reconcile configurations with our given worker name label
-		if _, ok := obj.(*operatorv1alpha1.KubermaticConfiguration); ok {
-			return labels[WorkerNameLabel] == workerName
-		}
-
-		// only act on objects managed by this controller
-		return labels[ManagedByLabel] == ControllerName
-	})
-}
-
-// makePredicateFuncs takes a predicate and returns a struct appliying the
+// newPredicateFuncs takes a predicate and returns a struct appliying the
 // function for Create, Update, Delete and Generic events. For Update events,
 // only the new version is considered.
-func makePredicateFuncs(pred predicateFunc) predicate.Funcs {
+func newPredicateFuncs(pred func(metav1.Object) bool) predicate.Funcs {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			return pred(e.Object, e.Meta)
+			return pred(e.Meta)
 		},
 
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return pred(e.ObjectNew, e.MetaNew)
+			return pred(e.MetaNew)
 		},
 
 		DeleteFunc: func(e event.DeleteEvent) bool {
-			return pred(e.Object, e.Meta)
+			return pred(e.Meta)
 		},
 
 		GenericFunc: func(e event.GenericEvent) bool {
-			return pred(e.Object, e.Meta)
+			return pred(e.Meta)
 		},
 	}
 }
