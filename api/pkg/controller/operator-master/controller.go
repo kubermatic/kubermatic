@@ -2,7 +2,6 @@ package operatormaster
 
 import (
 	"fmt"
-	"regexp"
 
 	"go.uber.org/zap"
 
@@ -15,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/cache"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -107,12 +107,14 @@ func eventHandler(a handler.MapObject) []reconcile.Request {
 	} else {
 		// put the object's supposed owning configuration on the queue
 		owner := a.Meta.GetAnnotations()[ConfigurationOwnerAnnotation]
-		parsed := splitNamespaceName(owner)
-		if parsed == nil {
+
+		ns, n, err := cache.SplitMetaNamespaceKey(owner)
+		if err != nil {
 			return nil
 		}
 
-		name = *parsed
+		name.Name = n
+		name.Namespace = ns
 	}
 
 	return []reconcile.Request{
@@ -120,24 +122,6 @@ func eventHandler(a handler.MapObject) []reconcile.Request {
 			NamespacedName: name,
 		},
 	}
-}
-
-var namespaceNameRegex = regexp.MustCompile(`^\s*([^/]+)\s*/\s*([^/]+)\s*$`)
-
-func splitNamespaceName(s string) *types.NamespacedName {
-	match := namespaceNameRegex.FindStringSubmatch(s)
-	if match == nil {
-		return nil
-	}
-
-	return &types.NamespacedName{
-		Namespace: match[1],
-		Name:      match[2],
-	}
-}
-
-func joinNamespaceName(namespace string, name string) string {
-	return fmt.Sprintf("%s/%s", namespace, name)
 }
 
 // predicateFunc is a function that decides for a given object and its metadata

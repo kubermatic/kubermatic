@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/cache"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,7 +49,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, nil
 	}
 
-	identifier := joinNamespaceName(config.GetNamespace(), config.GetName())
+	identifier, err := cache.MetaNamespaceKeyFunc(config)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to determine string key for KubermaticConfiguration: %v", err)
+	}
+
 	logger := r.log.With("config", identifier)
 
 	return reconcile.Result{}, r.reconcile(ctx, config, logger)
@@ -175,7 +180,13 @@ func (r *configReconciler) applyDefaultFields() reconciling.ObjectModifier {
 				if annotations == nil {
 					annotations = make(map[string]string)
 				}
-				annotations[ConfigurationOwnerAnnotation] = joinNamespaceName(r.config.Namespace, r.config.Name)
+
+				identifier, err := cache.MetaNamespaceKeyFunc(r.config)
+				if err != nil {
+					return obj, fmt.Errorf("failed to determine KubermaticConfiguration string key: %v", err)
+				}
+
+				annotations[ConfigurationOwnerAnnotation] = identifier
 				o.SetAnnotations(annotations)
 
 				labels := o.GetLabels()
