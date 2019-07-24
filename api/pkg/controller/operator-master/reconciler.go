@@ -72,7 +72,7 @@ func (r *Reconciler) fetchKubermaticConfiguration(ctx context.Context, identifie
 func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	// TODO: Implement garbage collection to remove orphaned resources.
 
-	cfgReconciler := configReconciler{
+	cfgReconciler := configData{
 		Reconciler: *r,
 		ctx:        ctx,
 		config:     config,
@@ -82,7 +82,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.Kub
 	return cfgReconciler.Reconcile()
 }
 
-type configReconciler struct {
+type configData struct {
 	Reconciler
 
 	ctx    context.Context
@@ -91,7 +91,7 @@ type configReconciler struct {
 	ns     string
 }
 
-func (r *configReconciler) Reconcile() error {
+func (r *configData) Reconcile() error {
 	r.applyDefaults()
 	r.ns = r.config.Spec.Namespace
 
@@ -103,7 +103,7 @@ func (r *configReconciler) Reconcile() error {
 	return nil
 }
 
-func (r *configReconciler) applyDefaults() {
+func (r *configData) applyDefaults() {
 	if r.config.Spec.Namespace == "" {
 		r.config.Spec.Namespace = r.config.Namespace
 		r.log.Debugf("Defaulting field namespace to %s", r.config.Spec.Namespace)
@@ -146,7 +146,7 @@ func (r *configReconciler) applyDefaults() {
 	r.applyImageDefaults(&r.config.Spec.SeedController.Addons.Openshift.Image, "quay.io/kubermatic/openshift-addons", "v0.9", corev1.PullIfNotPresent, "seedController.addons.openshift.image")
 }
 
-func (r *configReconciler) applyImageDefaults(img *operatorv1alpha1.DockerImage, repo string, tag string, pullPolicy corev1.PullPolicy, key string) {
+func (r *configData) applyImageDefaults(img *operatorv1alpha1.DockerImage, repo string, tag string, pullPolicy corev1.PullPolicy, key string) {
 	if img.Repository == "" && repo != "" {
 		img.Repository = repo
 		r.log.Debugf("Defaulting Docker repository for %s.repository to %s", key, repo)
@@ -167,7 +167,7 @@ func (r *configReconciler) applyImageDefaults(img *operatorv1alpha1.DockerImage,
 // ObjectCreator and takes care of applying the default labels and
 // annotations from this operator. These are then used to establish
 // a weak ownership.
-func (r *configReconciler) applyDefaultFields() reconciling.ObjectModifier {
+func (r *configData) applyDefaultFields() reconciling.ObjectModifier {
 	return func(create reconciling.ObjectCreator) reconciling.ObjectCreator {
 		return func(existing runtime.Object) (runtime.Object, error) {
 			obj, err := create(existing)
@@ -202,7 +202,7 @@ func (r *configReconciler) applyDefaultFields() reconciling.ObjectModifier {
 	}
 }
 
-func (r *configReconciler) reconcileResources() error {
+func (r *configData) reconcileResources() error {
 	if err := r.reconcileNamespaces(); err != nil {
 		return err
 	}
@@ -242,7 +242,7 @@ func (r *configReconciler) reconcileResources() error {
 	return nil
 }
 
-func (r *configReconciler) reconcileNamespaces() error {
+func (r *configData) reconcileNamespaces() error {
 	r.log.Debug("Reconciling Namespaces")
 
 	creators := []reconciling.NamedNamespaceCreatorGetter{
@@ -256,7 +256,7 @@ func (r *configReconciler) reconcileNamespaces() error {
 	return nil
 }
 
-func (r *configReconciler) reconcileConfigMaps() error {
+func (r *configData) reconcileConfigMaps() error {
 	r.log.Debug("Reconciling ConfigMaps")
 
 	creators := []reconciling.NamedConfigMapCreatorGetter{
@@ -271,7 +271,7 @@ func (r *configReconciler) reconcileConfigMaps() error {
 	return nil
 }
 
-func (r *configReconciler) reconcileSecrets() error {
+func (r *configData) reconcileSecrets() error {
 	r.log.Debug("Reconciling Secrets")
 
 	creators := []reconciling.NamedSecretCreatorGetter{
@@ -299,7 +299,7 @@ func (r *configReconciler) reconcileSecrets() error {
 	return nil
 }
 
-func (r *configReconciler) reconcileServiceAccounts() error {
+func (r *configData) reconcileServiceAccounts() error {
 	r.log.Debug("Reconciling ServiceAccounts")
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
@@ -313,7 +313,7 @@ func (r *configReconciler) reconcileServiceAccounts() error {
 	return nil
 }
 
-func (r *configReconciler) reconcileClusterRoleBindings() error {
+func (r *configData) reconcileClusterRoleBindings() error {
 	r.log.Debug("Reconciling ClusterRoleBindings")
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
@@ -327,7 +327,7 @@ func (r *configReconciler) reconcileClusterRoleBindings() error {
 	return nil
 }
 
-func (r *configReconciler) reconcileDeployments() error {
+func (r *configData) reconcileDeployments() error {
 	r.log.Debug("Reconciling Deployments")
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
@@ -343,7 +343,7 @@ func (r *configReconciler) reconcileDeployments() error {
 	return nil
 }
 
-func (r *configReconciler) reconcilePodDisruptionBudgets() error {
+func (r *configData) reconcilePodDisruptionBudgets() error {
 	r.log.Debug("Reconciling PodDisruptionBudgets")
 
 	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
@@ -359,7 +359,7 @@ func (r *configReconciler) reconcilePodDisruptionBudgets() error {
 	return nil
 }
 
-func (r *configReconciler) reconcileServices() error {
+func (r *configData) reconcileServices() error {
 	r.log.Debug("Reconciling Services")
 
 	creators := []reconciling.NamedServiceCreatorGetter{
@@ -375,7 +375,7 @@ func (r *configReconciler) reconcileServices() error {
 	return nil
 }
 
-func (r *configReconciler) reconcileIngresses() error {
+func (r *configData) reconcileIngresses() error {
 	r.log.Debug("Reconciling Ingresses")
 
 	creators := []reconciling.NamedIngressCreatorGetter{
