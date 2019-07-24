@@ -21,13 +21,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 				{
 					APIGroups: []string{"apiextensions.k8s.io"},
 					Resources: []string{"customresourcedefinitions"},
-					Verbs:     []string{"get"},
-				},
-				{
-					APIGroups:     []string{"apiextensions.k8s.io"},
-					Resources:     []string{"customresourcedefinitions"},
-					ResourceNames: []string{"machines.machine.k8s.io"},
-					Verbs:         []string{"delete"},
+					Verbs:     []string{"get", "list", "watch"},
 				},
 				{
 					APIGroups:     []string{"apiextensions.k8s.io"},
@@ -52,7 +46,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 				},
 				{
 					APIGroups: []string{""},
-					Resources: []string{"persistentvolumes"},
+					Resources: []string{"persistentvolumes", "secrets", "configmaps"},
 					Verbs:     []string{"list", "get", "watch"},
 				},
 				{

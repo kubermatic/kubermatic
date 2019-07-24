@@ -42,7 +42,7 @@ spec:
           value: aws-access-key-id
         - name: AWS_SECRET_ACCESS_KEY
           value: aws-secret-access-key
-        image: docker.io/kubermatic/machine-controller:v1.4.2
+        image: docker.io/kubermatic/machine-controller:v1.5.1
         livenessProbe:
           failureThreshold: 8
           httpGet:

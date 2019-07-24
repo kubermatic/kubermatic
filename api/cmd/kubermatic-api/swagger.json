@@ -5209,8 +5209,8 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "GlobaObjectKeySelector": {
-      "description": "GlobaObjectKeySelector is needed as we can not use v1.SecretKeySelector\nbecause it is not cross namespace",
+    "GlobalObjectKeySelector": {
+      "description": "GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector\nbecause it is not cross namespace",
       "type": "object",
       "properties": {
         "apiVersion": {
@@ -5254,7 +5254,7 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/providerconfig"
     },
     "GlobalSecretKeySelector": {
-      "$ref": "#/definitions/GlobaObjectKeySelector"
+      "$ref": "#/definitions/GlobalObjectKeySelector"
     },
     "HealthStatus": {
       "type": "integer",
