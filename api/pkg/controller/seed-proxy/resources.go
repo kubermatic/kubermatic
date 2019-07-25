@@ -6,7 +6,7 @@ import (
 	"strings"
 	"text/template"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -272,7 +272,7 @@ func masterServiceCreator(contextName string, secret *corev1.Secret) reconciling
 	}
 }
 
-func masterGrafanaConfigmapCreator(seeds map[string]*kubermaticv1.Seed, kubeconfig *clientcmdapi.Config) reconciling.NamedConfigMapCreatorGetter {
+func masterGrafanaConfigmapCreator(seedsGetter provider.SeedsGetter, kubeconfig *clientcmdapi.Config) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return MasterGrafanaConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			labels := func() map[string]string {
@@ -287,6 +287,11 @@ func masterGrafanaConfigmapCreator(seeds map[string]*kubermaticv1.Seed, kubeconf
 
 			c.Labels = labels()
 			c.Labels[ManagedByLabel] = ControllerName
+
+			seeds, err := seedsGetter()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get seeds: %v", err)
+			}
 
 			for seedName := range seeds {
 				filename := fmt.Sprintf("prometheus-%s.yaml", seedName)

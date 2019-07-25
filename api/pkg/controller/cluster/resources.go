@@ -28,7 +28,11 @@ import (
 )
 
 func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	data, err := r.getClusterTemplateData(ctx, cluster)
+	seed, err := r.seedGetter()
+	if err != nil {
+		return err
+	}
+	data, err := r.getClusterTemplateData(ctx, cluster, seed)
 	if err != nil {
 		return err
 	}
@@ -39,7 +43,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	}
 
 	// Set the hostname & url
-	if err := r.syncAddress(ctx, cluster); err != nil {
+	if err := r.syncAddress(ctx, cluster, seed); err != nil {
 		return fmt.Errorf("failed to sync address: %v", err)
 	}
 
@@ -102,8 +106,8 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	return nil
 }
 
-func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kubermaticv1.Cluster) (*resources.TemplateData, error) {
-	datacenter, found := r.seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
+func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) (*resources.TemplateData, error) {
+	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("failed to get datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
@@ -113,7 +117,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		r,
 		cluster,
 		&datacenter,
-		r.seed.Name,
+		seed.Name,
 		r.overwriteRegistry,
 		r.nodePortRange,
 		r.nodeAccessNetwork,

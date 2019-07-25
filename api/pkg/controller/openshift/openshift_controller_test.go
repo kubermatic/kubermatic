@@ -126,15 +126,17 @@ func TestResources(t *testing.T) {
 					},
 				},
 			)
-			tc.reconciler.seed = &kubermaticv1.Seed{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "alias-europe-west3-c",
-				},
-				Spec: kubermaticv1.SeedSpec{
-					Datacenters: map[string]kubermaticv1.Datacenter{
-						"alias-europe-west3-c": {},
+			tc.reconciler.seedGetter = func() (*kubermaticv1.Seed, error) {
+				return &kubermaticv1.Seed{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "alias-europe-west3-c",
 					},
-				},
+					Spec: kubermaticv1.SeedSpec{
+						Datacenters: map[string]kubermaticv1.Datacenter{
+							"alias-europe-west3-c": {},
+						},
+					},
+				}, nil
 			}
 			tc.reconciler.externalURL = "dev.kubermatic.io"
 			tc.reconciler.oidc.CAFile = certLocation

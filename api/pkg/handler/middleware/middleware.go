@@ -11,7 +11,6 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -56,10 +55,10 @@ type dCGetter interface {
 }
 
 // SetClusterProvider is a middleware that injects the current ClusterProvider into the ctx
-func SetClusterProvider(clusterProviders map[string]provider.ClusterProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Middleware {
+func SetClusterProvider(clusterProviders map[string]provider.ClusterProvider, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			clusterProvider, ctx, err := getClusterProvider(ctx, request, seeds, clusterProviders)
+			clusterProvider, ctx, err := getClusterProvider(ctx, request, seedsGetter, clusterProviders)
 			if err != nil {
 				return nil, err
 			}
@@ -71,10 +70,10 @@ func SetClusterProvider(clusterProviders map[string]provider.ClusterProvider, se
 }
 
 // SetPrivilegedClusterProvider is a middleware that injects the current ClusterProvider into the ctx
-func SetPrivilegedClusterProvider(clusterProviders map[string]provider.ClusterProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Middleware {
+func SetPrivilegedClusterProvider(clusterProviders map[string]provider.ClusterProvider, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			clusterProvider, ctx, err := getClusterProvider(ctx, request, seeds, clusterProviders)
+			clusterProvider, ctx, err := getClusterProvider(ctx, request, seedsGetter, clusterProviders)
 			if err != nil {
 				return nil, err
 			}
@@ -248,8 +247,12 @@ func createUserInfo(user *kubermaticapiv1.User, projectID string, userProjectMap
 	return &provider.UserInfo{Email: user.Spec.Email, Group: group}, nil
 }
 
-func getClusterProvider(ctx context.Context, request interface{}, seeds map[string]*kubermaticv1.Seed, clusterProviders map[string]provider.ClusterProvider) (provider.ClusterProvider, context.Context, error) {
+func getClusterProvider(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, clusterProviders map[string]provider.ClusterProvider) (provider.ClusterProvider, context.Context, error) {
 	getter := request.(dCGetter)
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, ctx, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
 	seed, exists := seeds[getter.GetDC()]
 	if !exists {
 		return nil, ctx, errors.NewNotFound("datacenter", getter.GetDC())

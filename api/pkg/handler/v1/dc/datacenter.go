@@ -17,8 +17,12 @@ import (
 )
 
 // ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter
-func ListEndpoint(seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func ListEndpoint(seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		}
 		// Maintain a stable order. We do not check for duplicate names here
 		dcs := getAPIDCsFromSeedMap(seeds)
 		sort.SliceStable(dcs, func(i, j int) bool {
@@ -30,15 +34,19 @@ func ListEndpoint(seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
 }
 
 // GetEndpoint an HTTP endpoint that returns a single apiv1.Datacenter object
-func GetEndpoint(seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func GetEndpoint(seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LegacyDCReq)
-		return GetDatacenter(seeds, req.DC)
+		return GetDatacenter(seedsGetter, req.DC)
 	}
 }
 
 // GetDatacenter a function that gives you a single apiv1.Datacenter object
-func GetDatacenter(seeds map[string]*kubermaticv1.Seed, datacenterToGet string) (apiv1.Datacenter, error) {
+func GetDatacenter(seedsGetter provider.SeedsGetter, datacenterToGet string) (apiv1.Datacenter, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
 	// The datacenter endpoints return both node and seed dcs, so we have to iterate through
 	// everything
 	var foundDCs []apiv1.Datacenter
