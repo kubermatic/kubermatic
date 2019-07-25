@@ -9,7 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1"
+	v1 "github.com/kubermatic/kubermatic/api/pkg/handler/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
@@ -43,6 +43,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	//
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
+	mux.Methods(http.MethodGet).
+		Path("/providers/aws/{dc}/zones").
+		Handler(r.listAWSZones())
+
 	mux.Methods(http.MethodGet).
 		Path("/providers/gcp/disktypes").
 		Handler(r.listGCPDiskTypes())
@@ -232,6 +236,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	//
 	// Defines a set of HTTP endpoints for various cloud providers
 	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/zones").
+		Handler(r.listAWSZonesNoCredentials())
+
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/disktypes").
 		Handler(r.listGCPDiskTypesNoCredentials())
@@ -443,6 +451,28 @@ func (r Routing) listCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(presets.CredentialEndpoint(r.presetsManager)),
 		presets.DecodeProviderReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/aws/{dc}/zones aws listAWSZones
+//
+// Lists available AWS zones
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AWSZoneList
+func (r Routing) listAWSZones() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AWSZoneEndpoint(r.presetsManager, r.seedsGetter)),
+		provider.DecodeAWSZoneReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1739,6 +1769,30 @@ func (r Routing) deleteServiceAccountToken() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(serviceaccount.DeleteTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider)),
 		serviceaccount.DecodeDeleteTokenReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/zones aws listAWSZonesNoCredentials
+//
+// Lists available AWS zones
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AWSZoneList
+func (r Routing) listAWSZonesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviders, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(provider.AWSZoneNoCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

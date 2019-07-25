@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -15,13 +14,11 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/node/eviction"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -96,7 +93,6 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 	if shouldDeleteLBs {
 		serviceList := &corev1.ServiceList{}
 		if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, serviceList); err != nil {
-
 			return fmt.Errorf("failed to list Service's from user cluster: %v", err)
 		}
 
@@ -161,14 +157,10 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 		if len(pdbs.Items) > 0 {
 			return nil
 		}
-		// Delete all workloads that use PVs. We must do this before we clean up the node, otherwise
+		// Delete all Pods that use PVs. We must keep the remaining pods, otherwise
 		// we end up in a deadlock when CSI is used
-		cleanedSomethingUp, err := d.cleanupPVUsingWorkloads(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to clean up PV using workloads from user cluster: %v", err)
-		}
-		if cleanedSomethingUp {
-			return nil
+		if err := d.cleanupPVCUsingPods(ctx); err != nil {
+			return fmt.Errorf("failed to clean up PV using pod from user cluster: %v", err)
 		}
 
 		// Delete PVC's
@@ -388,14 +380,13 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 		}
 
 	}
-	err := d.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
+	if err := d.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
 		if deletedLoadBalancers.Len() > 0 {
 			cluster.Annotations[deletedLBAnnotationName] = strings.Join(deletedLoadBalancers.List(), ",")
 		} else {
 			delete(cluster.Annotations, deletedLBAnnotationName)
 		}
-	})
-	if err != nil {
+	}); err != nil {
 		return false, fmt.Errorf("failed to update cluster: %v", err)
 	}
 	if deletedLoadBalancers.Len() > 0 {
@@ -419,10 +410,10 @@ func (d *Deletion) updateCluster(ctx context.Context, cluster *kubermaticv1.Clus
 	})
 }
 
-func (d *Deletion) cleanupPVUsingWorkloads(ctx context.Context) (bool, error) {
+func (d *Deletion) cleanupPVCUsingPods(ctx context.Context) error {
 	podList := &corev1.PodList{}
 	if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, podList); err != nil {
-		return false, fmt.Errorf("failed to list Pods from user cluster: %v", err)
+		return fmt.Errorf("failed to list Pods from user cluster: %v", err)
 	}
 
 	pvUsingPods := []*corev1.Pod{}
@@ -432,54 +423,14 @@ func (d *Deletion) cleanupPVUsingWorkloads(ctx context.Context) (bool, error) {
 		}
 	}
 
-	hasPVUsingPods := len(pvUsingPods) > 0
-
-	wg := &sync.WaitGroup{}
-	wg.Add(len(pvUsingPods))
-	errs := []error{}
-	errLock := &sync.Mutex{}
 	for _, pod := range pvUsingPods {
-		go func(p *corev1.Pod) {
-			if err := d.resolveAndDeleteTopLevelUserClusterOwner(ctx, "Pod", p.Namespace, p.Name); err != nil {
-				errLock.Lock()
-				defer errLock.Unlock()
-				errs = append(errs, err)
-			}
-			wg.Done()
-		}(pod)
-	}
-	wg.Wait()
-
-	if len(errs) > 0 {
-		return hasPVUsingPods, fmt.Errorf("%v", errs)
-	}
-
-	return hasPVUsingPods, nil
-}
-
-func (d *Deletion) resolveAndDeleteTopLevelUserClusterOwner(ctx context.Context, kind, namespace, name string) error {
-	object, err := getObjectForKind(kind)
-	if err != nil {
-		return err
-	}
-	if err := d.userClusterClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, object); err != nil {
-		// With background deletion the owners will be gone before the dependants are gone
-		if kerrors.IsNotFound(err) {
-			return nil
-		}
-		return fmt.Errorf("failed to get object %q/%q of kind %q: %v", namespace, name, kind, err)
-	}
-	metav1Object, ok := object.(metav1.Object)
-	if !ok {
-		return fmt.Errorf("failed to assert object %q/%q of kind %q as metav1.Object", namespace, name, kind)
-	}
-	for _, ownerRef := range metav1Object.GetOwnerReferences() {
-		if err := d.resolveAndDeleteTopLevelUserClusterOwner(ctx, ownerRef.Kind, metav1Object.GetNamespace(), ownerRef.Name); err != nil {
-			return err
+		namespace, name := pod.Namespace, pod.Name
+		if err := d.userClusterClient.Delete(ctx, pod); err != nil {
+			return fmt.Errorf("failed to delete pod %s/%s: %v", namespace, name, err)
 		}
 	}
 
-	return d.userClusterClient.Delete(ctx, object)
+	return nil
 }
 
 func podUsesPV(p *corev1.Pod) bool {
@@ -489,23 +440,6 @@ func podUsesPV(p *corev1.Pod) bool {
 		}
 	}
 	return false
-}
-
-func getObjectForKind(kind string) (runtime.Object, error) {
-	switch kind {
-	case "DaemonSet":
-		return &appsv1.DaemonSet{}, nil
-	case "StatefulSet":
-		return &appsv1.StatefulSet{}, nil
-	case "ReplicaSet":
-		return &appsv1.ReplicaSet{}, nil
-	case "Deployment":
-		return &appsv1.Deployment{}, nil
-	case "Pod":
-		return &corev1.Pod{}, nil
-	default:
-		return nil, fmt.Errorf("kind %q is unknown", kind)
-	}
 }
 
 func terminatingAdmissionWebhook() (string, *admissionregistrationv1beta1.ValidatingWebhookConfiguration) {

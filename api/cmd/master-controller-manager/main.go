@@ -57,7 +57,7 @@ type controllerContext struct {
 func main() {
 	var g run.Group
 	ctrlCtx := &controllerContext{}
-	flag.StringVar(&ctrlCtx.runOptions.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&ctrlCtx.runOptions.kubeconfig, "kubeconfig", "", "Path to a kubeconfig.")
 	flag.StringVar(&ctrlCtx.runOptions.dcFile, "datacenters", "", "The datacenters.yaml file path")
 	flag.StringVar(&ctrlCtx.runOptions.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&ctrlCtx.runOptions.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
@@ -78,11 +78,6 @@ func main() {
 	}()
 	kubermaticlog.Logger = sugarLog
 
-	config, err := clientcmd.BuildConfigFromFlags(ctrlCtx.runOptions.masterURL, ctrlCtx.runOptions.kubeconfig)
-	if err != nil {
-		sugarLog.Fatalw("Failed to create the config for the kubernetes client", "error", err)
-	}
-
 	selector, err := workerlabel.LabelSelector(ctrlCtx.runOptions.workerName)
 	if err != nil {
 		sugarLog.Fatalw("Failed to create the label selector for the given worker", "workerName", ctrlCtx.runOptions.workerName, "error", err)
@@ -98,8 +93,25 @@ func main() {
 	done := ctx.Done()
 	ctrlCtx.stopCh = done
 
-	ctrlCtx.kubeMasterClient = kubernetes.NewForConfigOrDie(config)
-	ctrlCtx.kubermaticMasterClient = kubermaticclientset.NewForConfigOrDie(config)
+	ctrlCtx.kubeconfig, err = clientcmd.LoadFromFile(ctrlCtx.runOptions.kubeconfig)
+	if err != nil {
+		sugarLog.Fatalw("Failed to read the kubeconfig", "error", err)
+	}
+
+	config := clientcmd.NewNonInteractiveClientConfig(
+		*ctrlCtx.kubeconfig,
+		ctrlCtx.kubeconfig.CurrentContext,
+		&clientcmd.ConfigOverrides{CurrentContext: ctrlCtx.kubeconfig.CurrentContext},
+		nil,
+	)
+
+	cfg, err := config.ClientConfig()
+	if err != nil {
+		sugarLog.Fatalw("Failed to create client", "error", err)
+	}
+
+	ctrlCtx.kubeMasterClient = kubernetes.NewForConfigOrDie(cfg)
+	ctrlCtx.kubermaticMasterClient = kubermaticclientset.NewForConfigOrDie(cfg)
 	ctrlCtx.kubermaticMasterInformerFactory = externalversions.NewFilteredSharedInformerFactory(ctrlCtx.kubermaticMasterClient, informer.DefaultInformerResyncPeriod, metav1.NamespaceAll, selector)
 	ctrlCtx.kubeMasterInformerFactory = kuberinformers.NewSharedInformerFactory(ctrlCtx.kubeMasterClient, informer.DefaultInformerResyncPeriod)
 	ctrlCtx.labelSelectorFunc = selector
@@ -109,21 +121,14 @@ func main() {
 		sugarLog.Fatalw("Failed to read the kubeconfig", "error", err)
 	}
 
-	{
-		cfg, err := clientcmd.BuildConfigFromFlags(ctrlCtx.runOptions.masterURL, ctrlCtx.runOptions.kubeconfig)
-		if err != nil {
-			sugarLog.Fatalw("failed to build config", "error", err)
-		}
-
-		mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: ctrlCtx.runOptions.internalAddr})
-		if err != nil {
-			sugarLog.Fatalw("failed to create Controller Manager instance: %v", err)
-		}
-		if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
-			sugarLog.Fatalw("failed to register types in Scheme", "error", err)
-		}
-		ctrlCtx.mgr = mgr
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: ctrlCtx.runOptions.internalAddr})
+	if err != nil {
+		sugarLog.Fatalw("failed to create Controller Manager instance: %v", err)
 	}
+	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
+		sugarLog.Fatalw("failed to register types in Scheme", "error", err)
+	}
+	ctrlCtx.mgr = mgr
 	ctrlCtx.seedsGetter, err = provider.SeedsGetterFactory(ctx, ctrlCtx.mgr.GetClient(), ctrlCtx.runOptions.dcFile, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.dynamicDatacenters)
 	if err != nil {
 		sugarLog.Fatalw("failed to get construct seedsGetter", "error", err)
