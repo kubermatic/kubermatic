@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -12,28 +13,32 @@ import (
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
 	cloudcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/clustercomponentdefaulter"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
 	openshiftcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/openshift"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	utilpointer "k8s.io/utils/pointer"
 )
 
 // allControllers stores the list of all controllers that we want to run,
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
 var allControllers = map[string]controllerCreator{
-	cluster.ControllerName:             createClusterController,
-	"Update":                           createUpdateController,
-	"Addon":                            createAddonController,
-	"AddonInstaller":                   createAddonInstallerController,
-	"Backup":                           createBackupController,
-	"Monitoring":                       createMonitoringController,
-	cloudcontroller.ControllerName:     createCloudController,
-	openshiftcontroller.ControllerName: createOpenshiftController,
+	cluster.ControllerName:                   createClusterController,
+	"Update":                                 createUpdateController,
+	"Addon":                                  createAddonController,
+	"AddonInstaller":                         createAddonInstallerController,
+	"Backup":                                 createBackupController,
+	"Monitoring":                             createMonitoringController,
+	cloudcontroller.ControllerName:           createCloudController,
+	openshiftcontroller.ControllerName:       createOpenshiftController,
+	clustercomponentdefaulter.ControllerName: createClusterComponentDefaulter,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -45,6 +50,20 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		}
 	}
 	return nil
+}
+
+func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
+	predicates := workerlabel.Predicates(ctrlCtx.runOptions.workerName)
+	defaultCompontentsOverrides := kubermaticv1.ComponentSettings{
+		Apiserver: kubermaticv1.DeploymentSettings{
+			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.apiServerDefaultReplicas))},
+		ControllerManager: kubermaticv1.DeploymentSettings{
+			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.controllerManagerDefaultReplicas))},
+		Scheduler: kubermaticv1.DeploymentSettings{
+			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.schedulerDefaultReplicas))},
+	}
+	return clustercomponentdefaulter.Add(
+		context.Background(), ctrlCtx.log, ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, defaultCompontentsOverrides, predicates)
 }
 
 func createCloudController(ctrlCtx *controllerContext) error {

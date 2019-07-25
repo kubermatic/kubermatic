@@ -58,6 +58,9 @@ type controllerRunOptions struct {
 	log                                              kubermaticlog.Options
 	kubermaticImage                                  string
 	dynamicDatacenters                               bool
+	apiServerDefaultReplicas                         int
+	controllerManagerDefaultReplicas                 int
+	schedulerDefaultReplicas                         int
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -111,6 +114,9 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.StringVar(&c.kubermaticImage, "kubermatic-image", resources.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
 	flag.BoolVar(&c.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
+	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "The default number of replicas for usercluster api servers")
+	flag.IntVar(&c.controllerManagerDefaultReplicas, "controller-manager-default-replicas", 1, "The default number of replicas for usercluster controller managers")
+	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)
@@ -174,6 +180,16 @@ func (o controllerRunOptions) validate() error {
 
 	if o.monitoringScrapeAnnotationPrefix == "" {
 		return fmt.Errorf("moniotring-scrape-annotation-prefix is undefined")
+	}
+
+	if o.apiServerDefaultReplicas < 1 {
+		return fmt.Errorf("--apiserver-default-replicas must be > 0 (was %d)", o.apiServerDefaultReplicas)
+	}
+	if o.controllerManagerDefaultReplicas < 1 {
+		return fmt.Errorf("--controller-manager-default-replicas must be > 0 (was %d)", o.controllerManagerDefaultReplicas)
+	}
+	if o.schedulerDefaultReplicas < 1 {
+		return fmt.Errorf("--scheduler-default-replicas must be > 0 (was %d)", o.schedulerDefaultReplicas)
 	}
 
 	// Validate OIDC CA file
