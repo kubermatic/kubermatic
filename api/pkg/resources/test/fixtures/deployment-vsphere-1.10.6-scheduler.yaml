@@ -94,7 +94,6 @@ spec:
             memory: 5Mi
         securityContext:
           privileged: true
-          procMount: Default
         volumeMounts:
         - mountPath: /etc/openvpn/pki/client
           name: openvpn-client-certificates
