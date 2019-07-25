@@ -196,19 +196,13 @@ func (r *Reconciler) migrateAWSMultiAZ(ctx context.Context, cluster *kubermaticv
 	return nil
 }
 
-func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster)) (updatedCluster *kubermaticv1.Cluster, err error) {
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		cluster := &kubermaticv1.Cluster{}
+func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
+	cluster := &kubermaticv1.Cluster{}
+	return cluster, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		if err := r.Get(context.Background(), types.NamespacedName{Name: name}, cluster); err != nil {
 			return err
 		}
 		modify(cluster)
-		err := r.Update(context.Background(), cluster)
-		if err == nil {
-			updatedCluster = cluster
-		}
-		return err
+		return r.Update(context.Background(), cluster)
 	})
-
-	return updatedCluster, err
 }

@@ -30,6 +30,12 @@ kubermatic:
   # base64 encoded presets.yaml. Predefined presets for all supported providers.
   presets: ""
 
+  # The default number of replicas for controlplane components. Can be overriden on
+  # a per-cluster basis by setting .Spec.ComponentsOverride.$COMPONENT.Replicas
+  apiserverDefaultReplicas: "2"
+  controllerManagerDefaultReplicas: "1"
+  schedulerDefaultReplicas: "1"
+
   # helm hooks/checks
   checks:
     # Checks if the last release contains the kubermatic CRD's.
