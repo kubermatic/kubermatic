@@ -38,6 +38,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&AddonList{},
 		&UserProjectBinding{},
 		&UserProjectBindingList{},
+		&Seed{},
+		&SeedList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
