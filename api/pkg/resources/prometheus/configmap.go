@@ -285,6 +285,9 @@ scrape_configs:
 {{- end }}
 
   relabel_configs:
+  - source_labels: [__meta_kubernetes_pod_label_app, __meta_kubernetes_pod_container_init]
+    regex: "kube-state-metrics;true"
+    action: drop
   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
     action: keep
     regex: true
