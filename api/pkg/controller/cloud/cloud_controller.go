@@ -49,15 +49,15 @@ var _ reconcile.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client.Client
-	recorder record.EventRecorder
-	seed     *kubermaticv1.Seed
+	recorder   record.EventRecorder
+	seedGetter provider.SeedGetter
 }
 
-func Add(mgr manager.Manager, numWorkers int, seed *kubermaticv1.Seed, clusterPredicates predicate.Predicate) error {
+func Add(mgr manager.Manager, numWorkers int, seedGetter provider.SeedGetter, clusterPredicates predicate.Predicate) error {
 	reconciler := &Reconciler{
-		Client:   mgr.GetClient(),
-		recorder: mgr.GetRecorder(ControllerName),
-		seed:     seed,
+		Client:     mgr.GetClient(),
+		recorder:   mgr.GetRecorder(ControllerName),
+		seedGetter: seedGetter,
 	}
 
 	c, err := controller.New(ControllerName, mgr,
@@ -103,7 +103,11 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	glog.V(4).Infof("syncing cluster %s", cluster.Name)
-	datacenter, found := r.seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
+	seed, err := r.seedGetter()
+	if err != nil {
+		return nil, err
+	}
+	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("couldn't find datacentrer %q for cluster %q", cluster.Spec.Cloud.DatacenterName, cluster.Name)
 	}

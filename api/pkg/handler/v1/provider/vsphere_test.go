@@ -13,6 +13,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
 const vSphereDatacenterName = "moon-1"
@@ -73,30 +74,32 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 	test.CompareWithResult(t, res, `[{"name":"VM Network"}]`)
 }
 
-func (v *vSphereMock) buildVSphereDatacenter() map[string]*kubermaticv1.Seed {
-	return map[string]*kubermaticv1.Seed{
-		"my-seed": {
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "my-seed",
-			},
-			Spec: kubermaticv1.SeedSpec{
-				Datacenters: map[string]kubermaticv1.Datacenter{
-					vSphereDatacenterName: {
-						Location: "Dark Side",
-						Country:  "Moon States",
-						Spec: kubermaticv1.DatacenterSpec{
-							VSphere: &kubermaticv1.DatacenterSpecVSphere{
-								Endpoint:      v.server.Server.URL,
-								AllowInsecure: true,
-								Datastore:     "LocalDS_0",
-								Datacenter:    "ha-datacenter",
-								Cluster:       "localhost.localdomain",
-								RootPath:      "/ha-datacenter/vm/",
+func (v *vSphereMock) buildVSphereDatacenter() provider.SeedsGetter {
+	return func() (map[string]*kubermaticv1.Seed, error) {
+		return map[string]*kubermaticv1.Seed{
+			"my-seed": {
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					Datacenters: map[string]kubermaticv1.Datacenter{
+						vSphereDatacenterName: {
+							Location: "Dark Side",
+							Country:  "Moon States",
+							Spec: kubermaticv1.DatacenterSpec{
+								VSphere: &kubermaticv1.DatacenterSpecVSphere{
+									Endpoint:      v.server.Server.URL,
+									AllowInsecure: true,
+									Datastore:     "LocalDS_0",
+									Datacenter:    "ha-datacenter",
+									Cluster:       "localhost.localdomain",
+									RootPath:      "/ha-datacenter/vm/",
+								},
 							},
 						},
 					},
 				},
 			},
-		},
+		}, nil
 	}
 }

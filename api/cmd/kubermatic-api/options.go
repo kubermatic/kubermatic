@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -15,19 +14,20 @@ import (
 )
 
 type serverRunOptions struct {
-	listenAddress   string
-	kubeconfig      string
-	internalAddr    string
-	prometheusURL   string
-	masterResources string
-	dcFile          string
-	workerName      string
-	versionsFile    string
-	updatesFile     string
-	presetsFile     string
-	domain          string
-	exposeStrategy  corev1.ServiceType
-	log             kubermaticlog.Options
+	listenAddress      string
+	kubeconfig         string
+	internalAddr       string
+	prometheusURL      string
+	masterResources    string
+	dcFile             string
+	workerName         string
+	versionsFile       string
+	updatesFile        string
+	presetsFile        string
+	domain             string
+	exposeStrategy     corev1.ServiceType
+	dynamicDatacenters bool
+	log                kubermaticlog.Options
 
 	// OIDC configuration
 	oidcURL                        string
@@ -74,6 +74,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.domain, "domain", "localhost", "A domain name on which the server is deployed")
 	flag.StringVar(&s.serviceAccountSigningKey, "service-account-signing-key", "", "Signing key authenticates the service account's token value using HMAC. It is recommended to use a key with 32 bytes or longer.")
 	flag.StringVar(&rawExposeStrategy, "expose-strategy", "NodePort", "The strategy to expose the controlplane with, either \"NodePort\" which creates NodePorts with a \"nodeport-proxy.k8s.io/expose: true\" annotation or \"LoadBalancer\", which creates a LoadBalancer")
+	flag.BoolVar(&s.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
 	flag.BoolVar(&s.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&s.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
@@ -135,5 +136,5 @@ type providers struct {
 	memberMapper                          provider.ProjectMemberMapper
 	eventRecorderProvider                 provider.EventRecorderProvider
 	clusters                              map[string]provider.ClusterProvider
-	seeds                                 map[string]*kubermaticv1.Seed
+	seedsGetter                           provider.SeedsGetter
 }

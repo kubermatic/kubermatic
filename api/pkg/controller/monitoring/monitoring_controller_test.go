@@ -24,7 +24,7 @@ func newTestReconciler(t *testing.T, objects []runtime.Object) *Reconciler {
 	dynamicClient := ctrlruntimefakeclient.NewFakeClient(objects...)
 	reconciler := &Reconciler{
 		Client:               dynamicClient,
-		seed:                 seed(),
+		seedGetter:           seed,
 		nodeAccessNetwork:    "192.0.2.0/24",
 		dockerPullConfigJSON: []byte{},
 		features:             Features{},
@@ -33,7 +33,7 @@ func newTestReconciler(t *testing.T, objects []runtime.Object) *Reconciler {
 	return reconciler
 }
 
-func seed() *kubermaticv1.Seed {
+func seed() (*kubermaticv1.Seed, error) {
 	return &kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "us-central1",
@@ -67,5 +67,5 @@ func seed() *kubermaticv1.Seed {
 				},
 			},
 		},
-	}
+	}, nil
 }

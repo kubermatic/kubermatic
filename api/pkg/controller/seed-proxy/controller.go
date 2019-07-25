@@ -7,7 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -100,13 +100,13 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	kubeconfig *clientcmdapi.Config,
-	seeds map[string]*kubermaticv1.Seed,
+	seedsGetter provider.SeedsGetter,
 ) error {
 	reconciler := &Reconciler{
-		Client:     mgr.GetClient(),
-		recorder:   mgr.GetRecorder(ControllerName),
-		kubeconfig: kubeconfig,
-		seeds:      seeds,
+		Client:      mgr.GetClient(),
+		recorder:    mgr.GetRecorder(ControllerName),
+		kubeconfig:  kubeconfig,
+		seedsGetter: seedsGetter,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}

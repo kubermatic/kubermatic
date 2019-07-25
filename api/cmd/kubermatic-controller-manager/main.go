@@ -9,7 +9,6 @@ import (
 	"github.com/go-logr/zapr"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
@@ -97,11 +96,32 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalf("Failed to read dockerPullConfigJSON file %q: %v", options.dockerPullConfigJSONFile, err)
 	}
 
-	ctrlCtx, err := newControllerContext(options, mgr, log)
+	rootCtx, rootCancel := context.WithCancel(context.Background())
+	seedGetter, err := provider.SeedGetterFactory(rootCtx, mgr.GetClient(), options.dc, options.dcFile, options.dynamicDatacenters)
 	if err != nil {
 		log.Fatal(err)
 	}
-	ctrlCtx.dockerPullConfigJSON = dockerPullConfigJSON
+
+	var clientProvider client.UserClusterConnectionProvider
+	if options.kubeconfig != "" {
+		clientProvider, err = client.NewExternal(mgr.GetClient())
+		if err != nil {
+			log.Fatalf("failed to get clientProvider: %v", err)
+		}
+	} else {
+		clientProvider, err = client.NewInternal(mgr.GetClient())
+		if err != nil {
+			log.Fatalf("failed to get clientProvider: %v", err)
+		}
+	}
+	ctrlCtx := &controllerContext{
+		runOptions:           options,
+		mgr:                  mgr,
+		clientProvider:       clientProvider,
+		seedGetter:           seedGetter,
+		dockerPullConfigJSON: dockerPullConfigJSON,
+		log:                  log,
+	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {
 		log.Fatalf("could not create all controllers: %v", err)
@@ -113,25 +133,23 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	var g run.Group
 	// This group is forever waiting in a goroutine for signals to stop
 	{
-		signalCtx, stopWaitingForSignal := context.WithCancel(context.Background())
-		defer stopWaitingForSignal()
 		signalChan := signals.SetupSignalHandler()
 		g.Add(func() error {
 			select {
 			case <-signalChan:
 				log.Info("Received a signal to stop")
 				return nil
-			case <-signalCtx.Done():
+			case <-rootCtx.Done():
 				return nil
 			}
 		}, func(err error) {
-			stopWaitingForSignal()
+			rootCancel()
 		})
 	}
 
 	// This group is running an internal http server with metrics and other debug information
 	{
-		metricsServerCtx, stopMetricsServer := context.WithCancel(context.Background())
+		metricsServerCtx, stopMetricsServer := context.WithCancel(rootCtx)
 		defer stopMetricsServer()
 		m := &metricsServer{
 			gatherers: []prometheus.Gatherer{
@@ -149,7 +167,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 	// This group is running the actual controller logic
 	{
-		leaderCtx, stopLeaderElection := context.WithCancel(context.Background())
+		leaderCtx, stopLeaderElection := context.WithCancel(rootCtx)
 		defer stopLeaderElection()
 		g.Add(func() error {
 			leaderElectionClient, err := kubernetes.NewForConfig(rest.AddUserAgent(config, "kubermatic-controller-manager-leader-election"))
@@ -200,38 +218,4 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	if err := g.Run(); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func newControllerContext(
-	runOp controllerRunOptions,
-	mgr manager.Manager,
-	log *zap.SugaredLogger,
-) (*controllerContext, error) {
-	ctrlCtx := &controllerContext{
-		mgr:        mgr,
-		runOptions: runOp,
-		log:        log,
-	}
-
-	var err error
-	ctrlCtx.seed, err = provider.LoadSeed(ctrlCtx.runOptions.dcFile, ctrlCtx.runOptions.dc)
-	if err != nil {
-		return nil, err
-	}
-
-	var clientProvider client.UserClusterConnectionProvider
-	if ctrlCtx.runOptions.kubeconfig != "" {
-		clientProvider, err = client.NewExternal(mgr.GetClient())
-		if err != nil {
-			return nil, fmt.Errorf("failed to get clientProvider: %v", err)
-		}
-	} else {
-		clientProvider, err = client.NewInternal(mgr.GetClient())
-		if err != nil {
-			return nil, fmt.Errorf("failed to get clientProvider: %v", err)
-		}
-	}
-	ctrlCtx.clientProvider = clientProvider
-
-	return ctrlCtx, nil
 }

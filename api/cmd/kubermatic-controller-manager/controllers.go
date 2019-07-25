@@ -49,7 +49,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 
 func createCloudController(ctrlCtx *controllerContext) error {
 	predicates := workerlabel.Predicates(ctrlCtx.runOptions.workerName)
-	if err := cloudcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.seed, predicates); err != nil {
+	if err := cloudcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.seedGetter, predicates); err != nil {
 		return fmt.Errorf("failed to add cloud controller to mgr: %v", err)
 	}
 	return nil
@@ -60,7 +60,7 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		ctrlCtx.seed,
+		ctrlCtx.seedGetter,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.runOptions.etcdDiskSize,
@@ -88,7 +88,7 @@ func createClusterController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.externalURL,
-		ctrlCtx.seed,
+		ctrlCtx.seedGetter,
 		ctrlCtx.clientProvider,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
@@ -150,7 +150,7 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.clientProvider,
 
-		ctrlCtx.seed,
+		ctrlCtx.seedGetter,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
 		ctrlCtx.runOptions.nodeAccessNetwork,

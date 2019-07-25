@@ -22,6 +22,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -51,6 +52,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func main() {
@@ -169,10 +171,17 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	defaultKubermaticImpersonationClient := kubernetesprovider.NewKubermaticImpersonationClient(masterCfg)
 	defaultKubernetesImpersonationClient := kubernetesprovider.NewKubernetesImpersonationClient(masterCfg)
 
-	seeds, err := provider.LoadSeeds(options.dcFile)
+	// We use the manager only to get a lister-backed ctrlruntimeclient.Client. We can not use it for most
+	// other actions, because it doesn't support impersonation (and cant be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
+	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0", LeaderElection: false})
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to load datacenter yaml %q: %v", options.dcFile, err)
+		return providers{}, fmt.Errorf("failed to construct manager: %v", err)
 	}
+	seedsGetter, err := provider.SeedsGetterFactory(context.Background(), mgr.GetClient(), options.dcFile, options.workerName, options.dynamicDatacenters)
+	if err != nil {
+		return providers{}, err
+	}
+
 	userMasterLister := kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userMasterLister, kubernetesprovider.IsServiceAccount)
@@ -207,20 +216,19 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	eventRecorderProvider := kubernetesprovider.NewEventRecorder()
 
 	return providers{
-			sshKey:                                sshKeyProvider,
-			user:                                  userProvider,
-			serviceAccountProvider:                serviceAccountProvider,
-			serviceAccountTokenProvider:           serviceAccountTokenProvider,
-			privilegedServiceAccountTokenProvider: serviceAccountTokenProvider,
-			project:                               projectProvider,
-			privilegedProject:                     privilegedProjectProvider,
-			projectMember:                         projectMemberProvider,
-			memberMapper:                          projectMemberProvider,
-			eventRecorderProvider:                 eventRecorderProvider,
-			clusters:                              clusterProviders,
-			credentialsProvider:                   credentialsProvider,
-			seeds:                                 seeds},
-		nil
+		sshKey:                                sshKeyProvider,
+		user:                                  userProvider,
+		serviceAccountProvider:                serviceAccountProvider,
+		serviceAccountTokenProvider:           serviceAccountTokenProvider,
+		privilegedServiceAccountTokenProvider: serviceAccountTokenProvider,
+		project:                               projectProvider,
+		privilegedProject:                     privilegedProjectProvider,
+		projectMember:                         projectMemberProvider,
+		memberMapper:                          projectMemberProvider,
+		eventRecorderProvider:                 eventRecorderProvider,
+		clusters:                              clusterProviders,
+		seedsGetter:                           seedsGetter,
+		credentialsProvider:                   credentialsProvider}, nil
 }
 
 func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error) {
@@ -283,7 +291,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	serviceAccountTokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey))
 
 	r := handler.NewRouting(
-		prov.seeds,
+		prov.seedsGetter,
 		prov.clusters,
 		prov.sshKey,
 		prov.user,

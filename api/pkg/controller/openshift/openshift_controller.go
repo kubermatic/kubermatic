@@ -11,6 +11,7 @@ import (
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/address"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
@@ -72,7 +73,7 @@ type Reconciler struct {
 	client.Client
 	scheme               *runtime.Scheme
 	recorder             record.EventRecorder
-	seed                 *kubermaticv1.Seed
+	seedGetter           provider.SeedGetter
 	overwriteRegistry    string
 	nodeAccessNetwork    string
 	etcdDiskSize         resource.Quantity
@@ -88,7 +89,7 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
-	seed *kubermaticv1.Seed,
+	seedGetter provider.SeedGetter,
 	overwriteRegistry,
 	nodeAccessNetwork string,
 	etcdDiskSize resource.Quantity,
@@ -102,7 +103,7 @@ func Add(
 		Client:               mgr.GetClient(),
 		scheme:               mgr.GetScheme(),
 		recorder:             mgr.GetRecorder(ControllerName),
-		seed:                 seed,
+		seedGetter:           seedGetter,
 		overwriteRegistry:    overwriteRegistry,
 		nodeAccessNetwork:    nodeAccessNetwork,
 		etcdDiskSize:         etcdDiskSize,
@@ -195,7 +196,11 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to ensure Namespace: %v", err)
 	}
 
-	datacenter, found := r.seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
+	seed, err := r.seedGetter()
+	if err != nil {
+		return nil, err
+	}
+	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
@@ -218,7 +223,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to reconcile Services: %v", err)
 	}
 
-	if err := r.address(ctx, cluster); err != nil {
+	if err := r.address(ctx, cluster, seed); err != nil {
 		return nil, fmt.Errorf("failed to reconcile the cluster address: %v", err)
 	}
 
@@ -641,8 +646,8 @@ func (r *Reconciler) ensureNamespace(ctx context.Context, c *kubermaticv1.Cluste
 	return nil
 }
 
-func (r *Reconciler) address(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, r.seed)
+func (r *Reconciler) address(ctx context.Context, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) error {
+	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, seed)
 	if err != nil {
 		return err
 	}

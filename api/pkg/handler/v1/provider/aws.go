@@ -69,7 +69,7 @@ func DecodeAWSZoneReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // AWSZoneEndpoint handles the request to list AWS availability zones in a given region, using provided credentials
-func AWSZoneEndpoint(credentialManager common.PresetsManager, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func AWSZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSZoneReq)
 
@@ -86,12 +86,12 @@ func AWSZoneEndpoint(credentialManager common.PresetsManager, seeds map[string]*
 			}
 		}
 
-		return listAWSZones(ctx, keyID, keySecret, req.DC, seeds)
+		return listAWSZones(ctx, keyID, keySecret, req.DC, seedsGetter)
 	}
 }
 
 // AWSZoneNoCredentialsEndpoint handles the request to list AWS availability zones in a given region, using credentials from a given datacenter
-func AWSZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func AWSZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -110,13 +110,17 @@ func AWSZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seed
 
 		keyID := cluster.Spec.Cloud.AWS.AccessKeyID
 		keySecret := cluster.Spec.Cloud.AWS.SecretAccessKey
-		return listAWSZones(ctx, keyID, keySecret, cluster.Spec.Cloud.DatacenterName, seeds)
+		return listAWSZones(ctx, keyID, keySecret, cluster.Spec.Cloud.DatacenterName, seedsGetter)
 	}
 }
 
-func listAWSZones(ctx context.Context, keyID, keySecret, datacenterName string, seeds map[string]*kubermaticv1.Seed) (apiv1.AWSZoneList, error) {
+func listAWSZones(ctx context.Context, keyID, keySecret, datacenterName string, seedsGetter provider.SeedsGetter) (apiv1.AWSZoneList, error) {
 	zones := apiv1.AWSZoneList{}
 
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
 	datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
 	if err != nil {
 		return nil, errors.NewBadRequest("%v", err)

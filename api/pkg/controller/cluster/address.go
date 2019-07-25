@@ -11,7 +11,7 @@ import (
 )
 
 // syncAddress will set the all address relevant fields on the cluster
-func (r *Reconciler) syncAddress(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) syncAddress(ctx context.Context, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) error {
 	var err error
 	//TODO(mrIncompetent): The token should be moved out of Address. But maybe we rather implement another auth-handling? Like openid-connect?
 	if cluster.Address.AdminToken == "" {
@@ -25,7 +25,7 @@ func (r *Reconciler) syncAddress(ctx context.Context, cluster *kubermaticv1.Clus
 		glog.V(2).Infof("Created admin token for cluster %s", cluster.Name)
 	}
 
-	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, r.seed)
+	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, seed)
 	if err != nil {
 		return err
 	}

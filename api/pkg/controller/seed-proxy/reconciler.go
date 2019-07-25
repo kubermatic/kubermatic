@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/glog"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -26,8 +26,8 @@ import (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	kubeconfig *clientcmdapi.Config
-	seeds      map[string]*kubermaticv1.Seed
+	kubeconfig  *clientcmdapi.Config
+	seedsGetter provider.SeedsGetter
 
 	recorder record.EventRecorder
 }
@@ -292,7 +292,7 @@ func (r *Reconciler) ensureMasterServices(ctx context.Context, contextName strin
 
 func (r *Reconciler) ensureMasterGrafanaProvisioning(ctx context.Context) error {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		masterGrafanaConfigmapCreator(r.seeds, r.kubeconfig),
+		masterGrafanaConfigmapCreator(r.seedsGetter, r.kubeconfig),
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, MasterGrafanaNamespace, r.Client); err != nil {

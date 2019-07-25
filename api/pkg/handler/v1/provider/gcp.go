@@ -11,7 +11,6 @@ import (
 	"google.golang.org/api/compute/v1"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
@@ -250,7 +249,7 @@ func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachine
 	return sizes, err
 }
 
-func GCPZoneEndpoint(credentialManager common.PresetsManager, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func GCPZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPZoneReq)
 
@@ -265,11 +264,11 @@ func GCPZoneEndpoint(credentialManager common.PresetsManager, seeds map[string]*
 			}
 		}
 
-		return listGCPZones(ctx, sa, req.DC, seeds)
+		return listGCPZones(ctx, sa, req.DC, seedsGetter)
 	}
 }
 
-func GCPZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seeds map[string]*kubermaticv1.Seed) endpoint.Endpoint {
+func GCPZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -287,14 +286,12 @@ func GCPZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seed
 		}
 
 		sa := cluster.Spec.Cloud.GCP.ServiceAccount
-		return listGCPZones(ctx, sa, cluster.Spec.Cloud.DatacenterName, seeds)
+		return listGCPZones(ctx, sa, cluster.Spec.Cloud.DatacenterName, seedsGetter)
 	}
 }
 
-func listGCPZones(ctx context.Context, sa, datacenterName string, seeds map[string]*kubermaticv1.Seed) (apiv1.GCPZoneList, error) {
-	zones := apiv1.GCPZoneList{}
-
-	datacenter, err := dc.GetDatacenter(seeds, datacenterName)
+func listGCPZones(ctx context.Context, sa, datacenterName string, seedsGetter provider.SeedsGetter) (apiv1.GCPZoneList, error) {
+	datacenter, err := dc.GetDatacenter(seedsGetter, datacenterName)
 	if err != nil {
 		return nil, errors.NewBadRequest("%v", err)
 	}
@@ -308,6 +305,7 @@ func listGCPZones(ctx context.Context, sa, datacenterName string, seeds map[stri
 		return nil, err
 	}
 
+	zones := apiv1.GCPZoneList{}
 	req := computeService.Zones.List(project)
 	err = req.Pages(ctx, func(page *compute.ZoneList) error {
 		for _, zone := range page.Items {
