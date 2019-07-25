@@ -2,6 +2,7 @@ package reconciling
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,34 +49,115 @@ func DefaultContainer(c *corev1.Container, procMountType *corev1.ProcMountType) 
 	}
 }
 
-// DefaultDeployment defaults all Deployment attributes to the same values as they would et from the Kubernetes API
+// DefaultPodSpec defaults all Container attributes to the same values as they would get from the Kubernetes API
+func DefaultPodSpec(old, new corev1.PodSpec) (corev1.PodSpec, error) {
+	// make sure to keep the old procmount types in case a creator overrides the entire PodSpec
+	initContainerProcMountType := map[string]*corev1.ProcMountType{}
+	containerProcMountType := map[string]*corev1.ProcMountType{}
+	for _, container := range old.InitContainers {
+		if container.SecurityContext != nil {
+			initContainerProcMountType[container.Name] = container.SecurityContext.ProcMount
+		}
+	}
+	for _, container := range old.Containers {
+		if container.SecurityContext != nil {
+			containerProcMountType[container.Name] = container.SecurityContext.ProcMount
+		}
+	}
+
+	for idx, container := range new.InitContainers {
+		t := corev1.DefaultProcMount
+		if tt, ok := initContainerProcMountType[container.Name]; ok && tt != nil {
+			t = *tt
+		}
+
+		DefaultContainer(&new.InitContainers[idx], &t)
+	}
+
+	for idx, container := range new.Containers {
+		t := corev1.DefaultProcMount
+		if tt, ok := containerProcMountType[container.Name]; ok && tt != nil {
+			t = *tt
+		}
+
+		DefaultContainer(&new.Containers[idx], &t)
+	}
+
+	return new, nil
+}
+
+// DefaultDeployment defaults all Deployment attributes to the same values as they would get from the Kubernetes API
 func DefaultDeployment(creator DeploymentCreator) DeploymentCreator {
 	return func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-
-		// Find out the procMountType before running the creator
-		initContaineProcMountType := map[string]*corev1.ProcMountType{}
-		containerProcMountType := map[string]*corev1.ProcMountType{}
-		for _, container := range d.Spec.Template.Spec.InitContainers {
-			if container.SecurityContext != nil {
-				initContaineProcMountType[container.Name] = container.SecurityContext.ProcMount
-			}
-		}
-		for _, container := range d.Spec.Template.Spec.Containers {
-			if container.SecurityContext != nil {
-				containerProcMountType[container.Name] = container.SecurityContext.ProcMount
-			}
-		}
+		old := d.DeepCopy()
 
 		d, err := creator(d)
 		if err != nil {
 			return nil, err
 		}
-		for idx, container := range d.Spec.Template.Spec.InitContainers {
-			DefaultContainer(&d.Spec.Template.Spec.InitContainers[idx], initContaineProcMountType[container.Name])
+
+		d.Spec.Template.Spec, err = DefaultPodSpec(old.Spec.Template.Spec, d.Spec.Template.Spec)
+		if err != nil {
+			return nil, err
 		}
-		for idx, container := range d.Spec.Template.Spec.Containers {
-			DefaultContainer(&d.Spec.Template.Spec.Containers[idx], containerProcMountType[container.Name])
-		}
+
 		return d, nil
+	}
+}
+
+// DefaultStatefulSet defaults all StatefulSet attributes to the same values as they would get from the Kubernetes API
+func DefaultStatefulSet(creator StatefulSetCreator) StatefulSetCreator {
+	return func(ss *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+		old := ss.DeepCopy()
+
+		ss, err := creator(ss)
+		if err != nil {
+			return nil, err
+		}
+
+		ss.Spec.Template.Spec, err = DefaultPodSpec(old.Spec.Template.Spec, ss.Spec.Template.Spec)
+		if err != nil {
+			return nil, err
+		}
+
+		return ss, nil
+	}
+}
+
+// DefaultDaemonSet defaults all DaemonSet attributes to the same values as they would get from the Kubernetes API
+func DefaultDaemonSet(creator DaemonSetCreator) DaemonSetCreator {
+	return func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
+		old := ds.DeepCopy()
+
+		ds, err := creator(ds)
+		if err != nil {
+			return nil, err
+		}
+
+		ds.Spec.Template.Spec, err = DefaultPodSpec(old.Spec.Template.Spec, ds.Spec.Template.Spec)
+		if err != nil {
+			return nil, err
+		}
+
+		return ds, nil
+	}
+}
+
+// DefaultCronJob defaults all CronJob attributes to the same values as they would get from the Kubernetes API
+func DefaultCronJob(creator CronJobCreator) CronJobCreator {
+	return func(cj *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+		old := cj.DeepCopy()
+
+		cj, err := creator(cj)
+		if err != nil {
+			return nil, err
+		}
+
+		cj.Spec.JobTemplate.Spec.Template.Spec, err = DefaultPodSpec(old.Spec.JobTemplate.Spec.Template.Spec, cj.Spec.JobTemplate.Spec.Template.Spec)
+		if err != nil {
+			return nil, err
+		}
+
+		return cj, nil
 	}
 }

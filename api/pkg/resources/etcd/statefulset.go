@@ -91,12 +91,9 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			}
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:                     name,
-					Image:                    data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag,
-					ImagePullPolicy:          corev1.PullIfNotPresent,
-					Command:                  etcdStartCmd,
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+					Name:    name,
+					Image:   data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag,
+					Command: etcdStartCmd,
 					Env: []corev1.EnvVar{
 						{
 							Name: "POD_NAME",

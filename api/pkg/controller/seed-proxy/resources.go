@@ -173,11 +173,10 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            "proxy",
-					Image:           "quay.io/kubermatic/util:1.0.0-5",
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/bin/bash"},
-					Args:            []string{"-c", strings.TrimSpace(proxyScript)},
+					Name:    "proxy",
+					Image:   "quay.io/kubermatic/util:1.0.0-5",
+					Command: []string{"/bin/bash"},
+					Args:    []string{"-c", strings.TrimSpace(proxyScript)},
 					Env: []corev1.EnvVar{
 						{
 							Name:  "KUBERNETES_CONTEXT",
@@ -212,9 +211,7 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 							corev1.ResourceMemory: resource.MustParse("32Mi"),
 						},
 					},
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					TerminationMessagePath:   "/dev/termination-log",
-					ReadinessProbe:           &probe,
+					ReadinessProbe: &probe,
 				},
 			}
 

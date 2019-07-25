@@ -41,12 +41,9 @@ func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGett
 			job.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			job.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:                     "defragger",
-					Image:                    data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag,
-					ImagePullPolicy:          corev1.PullIfNotPresent,
-					Command:                  command,
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+					Name:    "defragger",
+					Image:   data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag,
+					Command: command,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.ApiserverEtcdClientCertificateSecretName,

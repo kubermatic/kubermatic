@@ -40,11 +40,10 @@ func DnatControllerContainer(data dnatControllerData, name, apiserverAddress str
 	}
 
 	return &corev1.Container{
-		Name:            name,
-		Image:           data.KubermaticAPIImage() + ":" + resources.KUBERMATICCOMMIT,
-		ImagePullPolicy: corev1.PullIfNotPresent,
-		Command:         []string{"/usr/local/bin/kubeletdnat-controller"},
-		Args:            args,
+		Name:    name,
+		Image:   data.KubermaticAPIImage() + ":" + resources.KUBERMATICCOMMIT,
+		Command: []string{"/usr/local/bin/kubeletdnat-controller"},
+		Args:    args,
 		SecurityContext: &corev1.SecurityContext{
 			Capabilities: &corev1.Capabilities{
 				Add: []corev1.Capability{"NET_ADMIN"},

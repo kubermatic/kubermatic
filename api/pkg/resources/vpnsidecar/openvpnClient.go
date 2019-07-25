@@ -32,7 +32,6 @@ type openvpnData interface {
 // Also required but not provided by this func:
 // * volumes: resources.OpenVPNClientCertificatesSecretName, resources.CACertSecretName
 func OpenVPNSidecarContainer(data openvpnData, name string) (*corev1.Container, error) {
-	procMountType := corev1.DefaultProcMount
 	return &corev1.Container{
 		Name:    name,
 		Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:v0.5",
@@ -60,7 +59,6 @@ func OpenVPNSidecarContainer(data openvpnData, name string) (*corev1.Container, 
 		},
 		SecurityContext: &corev1.SecurityContext{
 			Privileged: resources.Bool(true),
-			ProcMount:  &procMountType,
 		},
 		Resources: vpnClientResourceRequirements,
 		VolumeMounts: []corev1.VolumeMount{
