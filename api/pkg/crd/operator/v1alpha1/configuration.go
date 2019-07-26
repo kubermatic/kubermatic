@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -16,13 +15,6 @@ const (
 	// LoadBalancerStrategy creates a LoadBalancer service per cluster.
 	LoadBalancerStrategy ExposeStrategy = "LoadBalancer"
 )
-
-// DockerImage describes a Docker image.
-type DockerImage struct {
-	Repository string            `json:"repository"`
-	Tag        string            `json:"tag"`
-	PullPolicy corev1.PullPolicy `json:"pullPolicy"`
-}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -45,8 +37,8 @@ type KubermaticConfigurationSpec struct {
 	// Datacenters is a YAML string containing the available node datacenters. Note that
 	// this is deprecated and you should use explicit Datacenter CRDs instead.
 	Datacenters string `json:"datacenters,omitempty"`
-	// Secrets is a list of predefined credentials, like Docker registry authentication.
-	Secrets KubermaticSecretsConfiguration `json:"secrets,omitempty"`
+	// ImagePullSecret is used to authenticate against Docker registries.
+	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 	// Auth defines keys and URLs for Dex.
 	Auth KubermaticAuthConfiguration `json:"auth"`
 	// FeatureGates are used to optionally enable certain features.
@@ -66,12 +58,6 @@ type KubermaticConfigurationSpec struct {
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
 }
 
-// KubermaticSecretsConfiguration is a list of predefined credentials, like Docker registry authentication.
-type KubermaticSecretsConfiguration struct {
-	// ImagePullSecret is used to authenticate against Docker registries.
-	ImagePullSecret string `json:"imagePullSecret,omitempty"`
-}
-
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
 type KubermaticAuthConfiguration struct {
 	ClientID                 string `json:"clientID,omitempty"`
@@ -88,13 +74,13 @@ type KubermaticAuthConfiguration struct {
 // KubermaticAPIConfiguration configures the dashboard.
 type KubermaticAPIConfiguration struct {
 	// Image is the Docker image containing the Kubermatic REST API.
-	Image DockerImage `json:"image,omitempty"`
+	Image string `json:"image,omitempty"`
 }
 
 // KubermaticUIConfiguration configures the dashboard.
 type KubermaticUIConfiguration struct {
 	// Image is the Docker image containing the Kubermatic dashboard.
-	Image DockerImage `json:"image,omitempty"`
+	Image string `json:"image,omitempty"`
 	// Config sets flags for various dashboard features.
 	Config string `json:"config,omitempty"`
 	// Presets is a YAML string containing pre-defined credentials for cloud providers.
@@ -104,7 +90,7 @@ type KubermaticUIConfiguration struct {
 // KubermaticSeedControllerConfiguration configures the Kubermatic seed controller-manager.
 type KubermaticSeedControllerConfiguration struct {
 	// Image is the Docker image containing the Kubermatic controller-manager.
-	Image DockerImage `json:"image,omitempty"`
+	Image string `json:"image,omitempty"`
 	// Addons controls the optional additions installed into each user cluster.
 	Addons KubermaticAddonsConfiguration `json:"addons,omitempty"`
 	// NodePortRange is the port range for customer clusters - this must match the NodePort
@@ -134,13 +120,13 @@ type KubermaticAddonConfiguration struct {
 	// Default is the list of addons to be installed by default into each cluster.
 	Default []string `json:"default,omitempty"`
 	// Image is the Docker image containing the possible addon manifests.
-	Image DockerImage `json:"image,omitempty"`
+	Image string `json:"image,omitempty"`
 }
 
 // KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.
 type KubermaticMasterControllerConfiguration struct {
 	// Image is the Docker image containing the Kubermatic master controller-manager.
-	Image DockerImage `json:"image,omitempty"`
+	Image string `json:"image,omitempty"`
 	// ProjectsMigrator configures the migrator for user projects.
 	ProjectsMigrator KubermaticProjectsMigratorConfiguration `json:"projectsMigrator,omitempty"`
 }
