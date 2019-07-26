@@ -35,7 +35,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// find the requested configuration
 	config := &operatorv1alpha1.KubermaticConfiguration{}
 	if err := r.Get(ctx, request.NamespacedName, config); err != nil {
-		return reconcile.Result{}, fmt.Errorf("could not find KubermaticConfiguration %q", request)
+		return reconcile.Result{}, fmt.Errorf("could not get KubermaticConfiguration %q: %v", request, err)
 	}
 
 	// silently ignore other worker names
