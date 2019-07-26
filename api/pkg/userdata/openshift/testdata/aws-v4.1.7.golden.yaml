@@ -1,0 +1,252 @@
+#cloud-config
+
+ssh_pwauth: no
+write_files:
+
+- path: "/etc/systemd/journald.conf.d/max_disk_use.conf"
+  content: |
+    [Journal]
+    SystemMaxUse=5G
+    
+
+- path: "/etc/sysctl.d/99-openshift.conf"
+  content: |
+    net.ipv4.ip_forward=1
+
+- path: "/etc/yum.repos.d/crio.repo"
+  content: |
+    [crio]
+    name=CRI-O
+    baseurl=https://cbs.centos.org/repos/paas7-crio-113-candidate/x86_64/os/
+    enabled=1
+    gpgcheck=0
+
+- path: "/opt/bin/setup"
+  permissions: "0777"
+  content: |
+    #!/bin/bash
+    set -xeuo pipefail
+
+    setenforce 0 || true
+
+    systemctl daemon-reload
+
+    # As we added some modules and don't want to reboot, restart the service
+    systemctl restart systemd-modules-load.service
+    sysctl --system
+
+    # crictl does not exist in the centos repos - Thus we directly fetch it from upstream
+    curl -L https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.13.0/crictl-v1.13.0-linux-amd64.tar.gz | tar -xvzC /usr/bin
+
+    if systemctl is-active firewalld; then systemctl stop firewalld; fi;
+    systemctl mask firewalld
+
+    # Coming from the upstream ansible playbook
+    # https://github.com/openshift/openshift-ansible/blob/release-4.1/roles/openshift_node/defaults/main.yml#L19
+    yum install -y  \
+      kernel \
+      irqbalance \
+      microcode_ctl \
+      systemd \
+      selinux-policy-targeted \
+      setools-console \
+      dracut-network \
+      passwd \
+      openssh-server \
+      openssh-clients \
+      podman \
+      skopeo \
+      runc \
+      containernetworking-plugins \
+      nfs-utils \
+      NetworkManager \
+      dnsmasq \
+      lvm2 \
+      iscsi-initiator-utils \
+      sg3_utils \
+      device-mapper-multipath \
+      xfsprogs \
+      e2fsprogs \
+      mdadm \
+      cryptsetup \
+      chrony \
+      logrotate \
+      sssd \
+      shadow-utils \
+      sudo \
+      coreutils \
+      less \
+      tar \
+      xz \
+      gzip \
+      bzip2 \
+      rsync \
+      tmux \
+      nmap-ncat \
+      net-tools \
+      bind-utils \
+      strace \
+      bash-completion \
+      vim-minimal \
+      nano \
+      authconfig \
+      policycoreutils-python \
+      iptables-services \
+      bridge-utils \
+      biosdevname \
+      container-storage-setup \
+      cloud-utils-growpart \
+      ceph-common \
+      cri-o \
+      podman \
+      glusterfs-fuse
+    podman run \
+      -v /usr/bin:/host/usr/bin \
+      -ti quay.io/openshift/origin-hyperkube:4.1 \
+      cp /usr/bin/hyperkube /host/usr/bin/hyperkube
+
+    systemctl enable --now cri-o
+    systemctl enable --now kubelet
+
+- path: "/opt/bin/supervise.sh"
+  permissions: "0755"
+  content: |
+    #!/bin/bash
+    set -xeuo pipefail
+    while ! "$@"; do
+      sleep 1
+    done
+
+- path: "/etc/kubernetes/cloud-config"
+  content: |
+    dummy-cloud-config
+
+- path: "/etc/kubernetes/kubeconfig"
+  content: |
+    apiVersion: v1
+    clusters:
+    - cluster:
+        certificate-authority-data: bXktY2VydA==
+        server: https://server:443
+      name: ""
+    contexts: []
+    current-context: ""
+    kind: Config
+    preferences: {}
+    users:
+    - name: ""
+      user:
+        token: my-token
+    
+
+- path: "/etc/systemd/system/setup.service"
+  permissions: "0644"
+  content: |
+    [Install]
+    WantedBy=multi-user.target
+    [Unit]
+    Requires=network-online.target
+    After=network-online.target
+    [Service]
+    Type=oneshot
+    RemainAfterExit=true
+    ExecStart=/opt/bin/supervise.sh /opt/bin/setup
+
+- path: "/etc/kubernetes/kubelet.conf"
+  content: |
+    kind: KubeletConfiguration
+    apiVersion: kubelet.config.k8s.io/v1beta1
+    cgroupDriver: systemd
+    clusterDNS:
+      - "8.8.8.8"
+      - "1.2.3.4"
+    clusterDomain: cluster.local
+    maxPods: 250
+    rotateCertificates: true
+    runtimeRequestTimeout: 10m
+    serializeImagePulls: false
+    staticPodPath: /etc/kubernetes/manifests
+    systemReserved:
+      cpu: 500m
+      memory: 500Mi
+    featureGates:
+      RotateKubeletServerCertificate: true
+      ExperimentalCriticalPodAnnotation: true
+      SupportPodPidsLimit: true
+      LocalStorageCapacityIsolation: false
+    serverTLSBootstrap: true
+
+- path: "/etc/systemd/system/kubelet.service"
+  content: |
+    [Unit]
+    Description=Kubernetes Kubelet
+    Wants=rpc-statd.service
+  
+    [Service]
+    Type=notify
+    ExecStartPre=/bin/mkdir --parents /etc/kubernetes/manifests
+    ExecStartPre=/bin/rm -f /var/lib/kubelet/cpu_manager_state
+    EnvironmentFile=/etc/os-release
+    EnvironmentFile=-/etc/kubernetes/kubelet-workaround
+    EnvironmentFile=-/etc/kubernetes/kubelet-env
+  
+    ExecStart=/usr/bin/hyperkube \
+        kubelet \
+          --config=/etc/kubernetes/kubelet.conf \
+          --bootstrap-kubeconfig=/etc/kubernetes/kubeconfig \
+          --kubeconfig=/var/lib/kubelet/kubeconfig \
+          --container-runtime=remote \
+          --container-runtime-endpoint=/var/run/crio/crio.sock \
+          --allow-privileged \
+          --minimum-container-ttl-duration=6m0s \
+          --volume-plugin-dir=/etc/kubernetes/kubelet-plugins/volume/exec \
+          --client-ca-file=/etc/kubernetes/ca.crt \
+          --cloud-provider=aws \
+          --cloud-config=/etc/kubernetes/cloud-config \
+          --anonymous-auth=false \
+          --v=3 \
+  
+    Restart=always
+    RestartSec=10
+  
+    [Install]
+    WantedBy=multi-user.target
+
+- path: "/etc/systemd/system.conf.d/kubelet-cgroups.conf"
+  content: |
+    # Turning on Accounting helps track down performance issues.
+    [Manager]
+    DefaultCPUAccounting=yes
+    DefaultMemoryAccounting=yes
+    DefaultBlockIOAccounting=yes
+
+- path: "/etc/containers/registries.conf"
+  content: |
+    [registries.search]
+    registries = ['docker.io']
+
+    [registries.insecure]
+    registries = []
+
+    [registries.block]
+    registries = []
+
+- path: "/etc/containers/storage.conf"
+  content: |
+    [storage]
+    driver = "overlay"
+    runroot = "/var/run/containers/storage"
+    graphroot = "/var/lib/containers/storage"
+    [storage.options]
+    additionalimagestores = [
+    ]
+    size = ""
+    override_kernel_check = "true"
+    [storage.options.thinpool]
+
+- path: "/etc/kubernetes/ca.crt"
+  content: |
+    my-cert
+
+runcmd:
+- systemctl enable --now setup.service
