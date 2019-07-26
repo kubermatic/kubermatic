@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 var (
@@ -62,12 +63,6 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
-			if err != nil {
-				return nil, err
-			}
-			dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
-
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
@@ -113,6 +108,12 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					},
 				},
 			}
+
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
+			if err != nil {
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+			}
+			dep.Spec.Template.Spec = *wrappedPodSpec
 
 			return dep, nil
 		}
