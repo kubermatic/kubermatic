@@ -1,10 +1,9 @@
 package v1alpha1
 
 import (
-	"sort"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // ExposeStrategy is the strategy to expose the cluster with.
@@ -51,7 +50,7 @@ type KubermaticConfigurationSpec struct {
 	// Auth defines keys and URLs for Dex.
 	Auth KubermaticAuthConfiguration `json:"auth"`
 	// FeatureGates are used to optionally enable certain features.
-	FeatureGates map[string]bool `json:"featureGates,omitempty"`
+	FeatureGates sets.String `json:"featureGates,omitempty"`
 	// UI configures the dashboard.
 	UI KubermaticUIConfiguration `json:"ui,omitempty"`
 	// API configures the frontend REST API used by the dashboard.
@@ -65,21 +64,6 @@ type KubermaticConfigurationSpec struct {
 	// ExposeStrategy is the strategy to expose the cluster with.
 	// Note: The `seed_dns_overwrite` setting of the `datacenters.yaml` doesn't have any effect if this is set to LoadBalancerStrategy.
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
-}
-
-// EnabledFeatureGates returns a sorted list of feature names that are currently enabled.
-func (spec *KubermaticConfigurationSpec) EnabledFeatureGates() []string {
-	enabled := make([]string, 0)
-
-	for name, flag := range spec.FeatureGates {
-		if flag {
-			enabled = append(enabled, name)
-		}
-	}
-
-	sort.Strings(enabled)
-
-	return enabled
 }
 
 // KubermaticSecretsConfiguration is a list of predefined credentials, like Docker registry authentication.
@@ -99,12 +83,6 @@ type KubermaticAuthConfiguration struct {
 	CABundle                 string `json:"cABundle,omitempty"`
 	ServiceAccountKey        string `json:"serviceAccountKey,omitempty"`
 	SkipTokenIssuerTLSVerify bool   `json:"skipTokenIssuerTLSVerify,omitempty"`
-}
-
-// SimpleFeatureGate is a helper for features with no additional options.
-type SimpleFeatureGate struct {
-	// Enabled enables the feature.
-	Enabled bool `json:"enabled,omitempty"`
 }
 
 // KubermaticAPIConfiguration configures the dashboard.
