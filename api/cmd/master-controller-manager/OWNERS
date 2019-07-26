@@ -2,11 +2,11 @@
 
 approvers:
   - team-ui
-  - teem-seed
+  - team-seed
 
 reviewers:
   - team-ui
-  - teem-seed
+  - team-seed
 
 labels:
   - team/ui
