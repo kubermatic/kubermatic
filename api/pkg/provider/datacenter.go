@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
@@ -29,6 +30,9 @@ type SeedGetter = func() (*kubermaticv1.Seed, error)
 
 // SeedsGetter is a function to retrieve a list of seeds
 type SeedsGetter = func() (map[string]*kubermaticv1.Seed, error)
+
+// SeedKubeconfigGetter is used to fetch the kubeconfig for a given seed
+type SeedKubeconfigGetter = func(seedName string) (*rest.Config, error)
 
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {

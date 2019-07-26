@@ -2,19 +2,17 @@ package seedproxy
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/golang/glog"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -24,10 +22,11 @@ import (
 // seed clusters. It also takes care of creating a nice ConfigMap for
 // Grafana's provisioning mechanism.
 type Reconciler struct {
+	ctx context.Context
 	ctrlruntimeclient.Client
 
-	kubeconfig  *clientcmdapi.Config
-	seedsGetter provider.SeedsGetter
+	seedsGetter          provider.SeedsGetter
+	seedKubeconfigGetter provider.SeedKubeconfigGetter
 
 	recorder record.EventRecorder
 }
@@ -37,21 +36,24 @@ type Reconciler struct {
 // an error if any API operation failed, otherwise will return an empty
 // dummy Result struct.
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	glog.V(4).Infof("Reconciling seed %q", request.NamespacedName.String())
+	seeds, err := r.seedsGetter()
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to get seeds: %v", err)
+	}
 
 	glog.V(4).Info("Garbage-collecting orphaned resources...")
-	if err := r.garbageCollect(ctx); err != nil {
+	if err := r.garbageCollect(seeds); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to garbage collect: %v", err)
 	}
 
 	glog.V(4).Infof("Reconciling seed cluster %s...", request.Name)
-	if err := r.reconcileContext(ctx, request.Name); err != nil {
+	if err := r.reconcileSeed(request.Name); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile: %v", err)
 	}
 
 	glog.V(4).Info("Reconciling Grafana provisioning...")
-	if err := r.ensureMasterGrafanaProvisioning(ctx); err != nil {
+	if err := r.ensureMasterGrafanaProvisioning(seeds); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile Grafana: %v", err)
 	}
 
@@ -61,7 +63,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 // garbageCollect finds secrets referencing non-existing seeds and deletes
 // those. It relies on the owner references on all other master-cluster
 // resources to let the apiserver remove them automatically.
-func (r *Reconciler) garbageCollect(ctx context.Context) error {
+func (r *Reconciler) garbageCollect(seeds map[string]*kubermaticv1.Seed) error {
 	list := &corev1.SecretList{}
 	options := &ctrlruntimeclient.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set{
@@ -69,17 +71,16 @@ func (r *Reconciler) garbageCollect(ctx context.Context) error {
 		}),
 	}
 
-	if err := r.List(ctx, options, list); err != nil {
+	if err := r.List(r.ctx, options, list); err != nil {
 		return fmt.Errorf("failed to list Secrets: %v", err)
 	}
 
 	for _, item := range list.Items {
-		meta := item.GetObjectMeta()
-		seed := meta.GetLabels()[InstanceLabel]
+		seed := item.Labels[InstanceLabel]
 
-		if r.unknownSeed(seed) {
+		if _, exists := seeds[seed]; !exists {
 			glog.V(4).Infof("Deleting orphaned Secret %s/%s referencing non-existing seed '%s'...", item.Namespace, item.Name, seed)
-			if err := r.Delete(ctx, &item); err != nil {
+			if err := r.Delete(r.ctx, &item); err != nil {
 				return fmt.Errorf("failed to delete Secret: %v", err)
 			}
 		}
@@ -88,122 +89,91 @@ func (r *Reconciler) garbageCollect(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) reconcileContext(ctx context.Context, contextName string) error {
-	var context *clientcmdapi.Context
-
-	for name, c := range r.kubeconfig.Contexts {
-		if name == contextName {
-			context = c
-			break
-		}
+func (r *Reconciler) reconcileSeed(name string) error {
+	cfg, err := r.seedKubeconfigGetter(name)
+	if err != nil {
+		return err
 	}
 
-	if context == nil {
-		return errors.New("could not find context in kubeconfig")
-	}
-
-	client, err := r.seedClusterClient(contextName)
+	client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
 	if err != nil {
 		return fmt.Errorf("failed to create client for seed: %v", err)
 	}
 
-	glog.V(4).Info("Reconciling seed cluster...")
-	if err := r.reconcileSeed(ctx, client); err != nil {
-		return fmt.Errorf("failed to reconcile seed: %v", err)
+	glog.V(4).Info("Reconciling seed cluster %q", name)
+
+	glog.V(4).Info("Reconciling service accounts...")
+	if err := r.ensureSeedServiceAccounts(client); err != nil {
+		return fmt.Errorf("failed to ensure service account: %v", err)
+	}
+
+	glog.V(4).Info("Reconciling roles...")
+	if err := r.ensureSeedRoles(client); err != nil {
+		return fmt.Errorf("failed to ensure role: %v", err)
+	}
+
+	glog.V(4).Info("Reconciling role bindings...")
+	if err := r.ensureSeedRoleBindings(client); err != nil {
+		return fmt.Errorf("failed to ensure role binding: %v", err)
 	}
 
 	glog.V(4).Info("Fetching service account details from seed cluster...")
-	serviceAccountSecret, err := r.fetchServiceAccountSecret(ctx, client)
+	serviceAccountSecret, err := r.fetchServiceAccountSecret(client)
 	if err != nil {
 		return fmt.Errorf("failed to fetch service account: %v", err)
 	}
 
-	if err := r.reconcileMaster(ctx, contextName, serviceAccountSecret); err != nil {
+	if err := r.reconcileMaster(name, serviceAccountSecret); err != nil {
 		return fmt.Errorf("failed to reconcile master: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) seedClusterClient(contextName string) (ctrlruntimeclient.Client, error) {
-	clientConfig := clientcmd.NewNonInteractiveClientConfig(
-		*r.kubeconfig,
-		contextName,
-		&clientcmd.ConfigOverrides{CurrentContext: contextName},
-		nil,
-	)
-
-	cfg, err := clientConfig.ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	return ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
-}
-
-func (r *Reconciler) reconcileSeed(ctx context.Context, client ctrlruntimeclient.Client) error {
-	glog.V(4).Info("Reconciling service accounts...")
-	if err := r.ensureSeedServiceAccounts(ctx, client); err != nil {
-		return fmt.Errorf("failed to ensure service account: %v", err)
-	}
-
-	glog.V(4).Info("Reconciling roles...")
-	if err := r.ensureSeedRoles(ctx, client); err != nil {
-		return fmt.Errorf("failed to ensure role: %v", err)
-	}
-
-	glog.V(4).Info("Reconciling role bindings...")
-	if err := r.ensureSeedRoleBindings(ctx, client); err != nil {
-		return fmt.Errorf("failed to ensure role binding: %v", err)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) ensureSeedServiceAccounts(ctx context.Context, client ctrlruntimeclient.Client) error {
+func (r *Reconciler) ensureSeedServiceAccounts(client ctrlruntimeclient.Client) error {
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		seedServiceAccountCreator(),
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, creators, SeedServiceAccountNamespace, client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, SeedServiceAccountNamespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", SeedServiceAccountNamespace, err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) ensureSeedRoles(ctx context.Context, client ctrlruntimeclient.Client) error {
+func (r *Reconciler) ensureSeedRoles(client ctrlruntimeclient.Client) error {
 	creators := []reconciling.NamedRoleCreatorGetter{
 		seedPrometheusRoleCreator(),
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, creators, SeedPrometheusNamespace, client); err != nil {
+	if err := reconciling.ReconcileRoles(r.ctx, creators, SeedPrometheusNamespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", SeedPrometheusNamespace, err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) ensureSeedRoleBindings(ctx context.Context, client ctrlruntimeclient.Client) error {
+func (r *Reconciler) ensureSeedRoleBindings(client ctrlruntimeclient.Client) error {
 	creators := []reconciling.NamedRoleBindingCreatorGetter{
 		seedPrometheusRoleBindingCreator(),
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, creators, SeedPrometheusNamespace, client); err != nil {
+	if err := reconciling.ReconcileRoleBindings(r.ctx, creators, SeedPrometheusNamespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in the namespace %s: %v", SeedPrometheusNamespace, err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) fetchServiceAccountSecret(ctx context.Context, client ctrlruntimeclient.Client) (*corev1.Secret, error) {
+func (r *Reconciler) fetchServiceAccountSecret(client ctrlruntimeclient.Client) (*corev1.Secret, error) {
 	sa := &corev1.ServiceAccount{}
 	name := types.NamespacedName{
 		Namespace: SeedServiceAccountNamespace,
 		Name:      SeedServiceAccountName,
 	}
 
-	if err := client.Get(ctx, name, sa); err != nil {
+	if err := client.Get(r.ctx, name, sa); err != nil {
 		return nil, fmt.Errorf("could not find ServiceAccount '%s'", name)
 	}
 
@@ -217,93 +187,87 @@ func (r *Reconciler) fetchServiceAccountSecret(ctx context.Context, client ctrlr
 		Name:      sa.Secrets[0].Name,
 	}
 
-	if err := r.Get(ctx, name, secret); err != nil {
+	if err := r.Get(r.ctx, name, secret); err != nil {
 		return nil, fmt.Errorf("could not find Secret '%s'", name)
 	}
 
 	return secret, nil
 }
 
-func (r *Reconciler) reconcileMaster(ctx context.Context, contextName string, credentials *corev1.Secret) error {
+func (r *Reconciler) reconcileMaster(seedName string, credentials *corev1.Secret) error {
 	glog.V(4).Info("Reconciling secrets...")
-	secret, err := r.ensureMasterSecrets(ctx, contextName, credentials)
+	secret, err := r.ensureMasterSecrets(seedName, credentials)
 	if err != nil {
 		return fmt.Errorf("failed to ensure secrets: %v", err)
 	}
 
 	glog.V(4).Info("Reconciling deployments...")
-	if err := r.ensureMasterDeployments(ctx, contextName, secret); err != nil {
+	if err := r.ensureMasterDeployments(seedName, secret); err != nil {
 		return fmt.Errorf("failed to ensure deployments: %v", err)
 	}
 
 	glog.V(4).Info("Reconciling services...")
-	if err := r.ensureMasterServices(ctx, contextName, secret); err != nil {
+	if err := r.ensureMasterServices(seedName, secret); err != nil {
 		return fmt.Errorf("failed to ensure services: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) ensureMasterSecrets(ctx context.Context, contextName string, credentials *corev1.Secret) (*corev1.Secret, error) {
+func (r *Reconciler) ensureMasterSecrets(seedName string, credentials *corev1.Secret) (*corev1.Secret, error) {
 	creators := []reconciling.NamedSecretCreatorGetter{
-		masterSecretCreator(contextName, credentials),
+		masterSecretCreator(seedName, credentials),
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, creators, MasterTargetNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileSecrets(r.ctx, creators, MasterTargetNamespace, r.Client); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Secrets in the namespace %s: %v", MasterTargetNamespace, err)
 	}
 
 	secret := &corev1.Secret{}
 	name := types.NamespacedName{
 		Namespace: MasterTargetNamespace,
-		Name:      secretName(contextName),
+		Name:      secretName(seedName),
 	}
 
-	if err := r.Get(ctx, name, secret); err != nil {
+	if err := r.Get(r.ctx, name, secret); err != nil {
 		return nil, fmt.Errorf("could not find Secret '%s'", name)
 	}
 
 	return secret, nil
 }
 
-func (r *Reconciler) ensureMasterDeployments(ctx context.Context, contextName string, secret *corev1.Secret) error {
+func (r *Reconciler) ensureMasterDeployments(seedName string, secret *corev1.Secret) error {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		masterDeploymentCreator(contextName, secret),
+		masterDeploymentCreator(seedName, secret),
 	}
 
-	if err := reconciling.ReconcileDeployments(ctx, creators, MasterTargetNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileDeployments(r.ctx, creators, MasterTargetNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in the namespace %s: %v", MasterTargetNamespace, err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) ensureMasterServices(ctx context.Context, contextName string, secret *corev1.Secret) error {
+func (r *Reconciler) ensureMasterServices(seedName string, secret *corev1.Secret) error {
 	creators := []reconciling.NamedServiceCreatorGetter{
-		masterServiceCreator(contextName, secret),
+		masterServiceCreator(seedName, secret),
 	}
 
-	if err := reconciling.ReconcileServices(ctx, creators, MasterTargetNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileServices(r.ctx, creators, MasterTargetNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Services in the namespace %s: %v", MasterTargetNamespace, err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) ensureMasterGrafanaProvisioning(ctx context.Context) error {
+func (r *Reconciler) ensureMasterGrafanaProvisioning(seeds map[string]*kubermaticv1.Seed) error {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		masterGrafanaConfigmapCreator(r.seedsGetter, r.kubeconfig),
+		r.masterGrafanaConfigmapCreator(seeds),
 	}
 
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, MasterGrafanaNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileConfigMaps(r.ctx, creators, MasterGrafanaNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in the namespace %s: %v", MasterGrafanaNamespace, err)
 	}
 
 	return nil
-}
-
-func (r *Reconciler) unknownSeed(seed string) bool {
-	_, ok := r.kubeconfig.Contexts[seed]
-
-	return !ok
 }
