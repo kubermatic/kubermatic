@@ -101,7 +101,7 @@ func (r *Reconciler) reconcileSeed(name string) error {
 		return fmt.Errorf("failed to create client for seed: %v", err)
 	}
 
-	glog.V(4).Info("Reconciling seed cluster %q", name)
+	glog.V(4).Infof("Reconciling seed cluster %q", name)
 
 	glog.V(4).Info("Reconciling service accounts...")
 	if err := r.ensureSeedServiceAccounts(client); err != nil {

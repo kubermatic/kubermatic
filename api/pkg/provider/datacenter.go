@@ -255,7 +255,7 @@ func SeedKubeconfigGetterFactory(
 		if _, exists := kubeconfig.Contexts[seedName]; !exists {
 			return nil, fmt.Errorf("found no context with name %q in kubeconfig", seedName)
 		}
-		cfg, err := clientcmd.NewNonInteractiveClientConfig(*kubeconfig, seedName, nil, nil).ClientConfig()
+		cfg, err := clientcmd.NewNonInteractiveClientConfig(*kubeconfig, seedName, &clientcmd.ConfigOverrides{}, nil).ClientConfig()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get restConfig for seed %q: %v", seedName, err)
 		}
