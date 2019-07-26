@@ -5,6 +5,7 @@ ENV VAULT_VERSION="1.1.3"
 ENV HELM_VERSION="2.13.1"
 ENV KUBECTL_VERSION="1.14.4"
 ENV TERRAFORM_VERSION="0.12.5"
+ENV KUBETEST_COMMIT="eb1a87c9083a31f9a9dda7822cb674f9f8d99439"
 
 RUN dnf install -y curl bash unzip jq buildah which findutils make git gcc
 
@@ -12,23 +13,17 @@ ADD registries.conf /etc/containers/registries.conf
 # metacopy is only available on Kernels 4.18+. Ubuntu 18.04 ships with 4.15
 RUN sed -i "s/mountopt = \"nodev,metacopy=on\"/mountopt = \"nodev\"/g" /etc/containers/storage.conf
 
-# Install vault
+# Install vault, Helm, Terraform and kubectl
 RUN cd /tmp && curl -fLO https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
     unzip vault_*.zip && \
     mv vault /usr/local/bin && \
-    rm /tmp/vault_*.zip
-
-# Install Helm
-RUN curl -fL https://storage.googleapis.com/kubernetes-helm/helm-v${HELM_VERSION}-linux-amd64.tar.gz | tar -xvz && \
-    mv linux-amd64/helm /usr/local/bin
-
-# Install kubectl
-RUN curl -fLO https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
+    rm /tmp/vault_*.zip && \
+    curl -fL https://storage.googleapis.com/kubernetes-helm/helm-v${HELM_VERSION}-linux-amd64.tar.gz | tar -xvz && \
+    mv linux-amd64/helm /usr/local/bin && \
+    curl -fLO https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
     chmod +x kubectl && \
-    mv kubectl /usr/local/bin
-
-# Install Terraform
-RUN cd /tmp && curl -fLO https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
+    mv kubectl /usr/local/bin && \
+    cd /tmp && curl -fLO https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
     unzip terraform_*.zip && \
     mv terraform /usr/local/bin && \
     rm /tmp/terraform_*.zip
@@ -40,15 +35,15 @@ RUN curl -fL -o /tmp/golang.tag.gz https://dl.google.com/go/go${GO_VERSION}.linu
     tar -C /usr/local -xzf /tmp/golang.tag.gz && \
     rm /tmp/golang.tag.gz
 
+# Install the kubetest binary
+RUN GO111MODULE=on GOPROXY="https://proxy.golang.org" go get -v k8s.io/test-infra/kubetest@${KUBETEST_COMMIT} && \
+    mv $(go env GOPATH)/bin/kubetest /usr/local/bin
+
 # Install the kubernetes conformance test binaries
 COPY ./install-kube-tests.sh /opt/install-kube-tests.sh
 RUN /opt/install-kube-tests.sh
 # This is linux only, thus we can remove the windows and darwin files
 RUN rm -rf /opt/kube-test/*/platforms/darwin && rm -rf /opt/kube-test/*/platforms/windows
-
-# Install the kubetest binary
-RUN go get -u k8s.io/test-infra/kubetest && \
-    mv $(go env GOPATH)/bin/kubetest /usr/bin/kubetest
 
 # Install the machine-controller pubkey
 RUN mkdir $HOME/.ssh && \
