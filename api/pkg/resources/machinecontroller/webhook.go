@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 	certutil "k8s.io/client-go/util/cert"
 )
 
@@ -53,6 +54,11 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
+			envVars, err := getEnvVars(data)
+			if err != nil {
+				return nil, err
+			}
+
 			volumes := []corev1.Volume{getKubeconfigVolume(), getServingCertVolume()}
 			dep.Spec.Template.Spec.Volumes = volumes
 			podLabels, err := data.GetPodTemplateLabels(resources.MachineControllerWebhookDeploymentName, volumes, nil)
@@ -60,12 +66,6 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 				return nil, fmt.Errorf("failed to create pod labels: %v", err)
 			}
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{Labels: podLabels}
-
-			apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
-			if err != nil {
-				return nil, err
-			}
-			dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -121,6 +121,11 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 					},
 				},
 			}
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(Name))
+			if err != nil {
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+			}
+			dep.Spec.Template.Spec = *wrappedPodSpec
 
 			return dep, nil
 		}
