@@ -66,21 +66,11 @@ func DefaultPodSpec(old, new corev1.PodSpec) (corev1.PodSpec, error) {
 	}
 
 	for idx, container := range new.InitContainers {
-		t := corev1.DefaultProcMount
-		if tt, ok := initContainerProcMountType[container.Name]; ok && tt != nil {
-			t = *tt
-		}
-
-		DefaultContainer(&new.InitContainers[idx], &t)
+		DefaultContainer(&new.InitContainers[idx], initContainerProcMountType[container.Name])
 	}
 
 	for idx, container := range new.Containers {
-		t := corev1.DefaultProcMount
-		if tt, ok := containerProcMountType[container.Name]; ok && tt != nil {
-			t = *tt
-		}
-
-		DefaultContainer(&new.Containers[idx], &t)
+		DefaultContainer(&new.Containers[idx], containerProcMountType[container.Name])
 	}
 
 	return new, nil
