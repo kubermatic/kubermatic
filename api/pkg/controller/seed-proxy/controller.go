@@ -118,7 +118,7 @@ func Add(
 	eventHandler := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
-			glog.Errorf("failed to get seeds: %v", err)
+			glog.Errorf("Failed to get seeds: %v", err)
 			return nil
 		}
 

@@ -132,12 +132,12 @@ func main() {
 	ctrlCtx.mgr = mgr
 	ctrlCtx.seedsGetter, err = provider.SeedsGetterFactory(ctx, ctrlCtx.mgr.GetClient(), ctrlCtx.runOptions.dcFile, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.dynamicDatacenters)
 	if err != nil {
-		sugarLog.Fatalw("failed to get construct seedsGetter", "error", err)
+		sugarLog.Fatalw("failed to construct seedsGetter", "error", err)
 	}
 	ctrlCtx.seedKubeconfigGetter, err = provider.SeedKubeconfigGetterFactory(
 		ctx, mgr.GetClient(), ctrlCtx.runOptions.kubeconfig, ctrlCtx.runOptions.dynamicDatacenters)
 	if err != nil {
-		sugarLog.Fatalf("failed to construct seedKubeconfigGetter", "error", err)
+		sugarLog.Fatalw("failed to construct seedKubeconfigGetter", "error", err)
 	}
 
 	controllers, err := createAllControllers(ctrlCtx)
