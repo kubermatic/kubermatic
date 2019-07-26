@@ -24,6 +24,7 @@ type serverRunOptions struct {
 	versionsFile       string
 	updatesFile        string
 	presetsFile        string
+	swaggerFile        string
 	domain             string
 	exposeStrategy     corev1.ServiceType
 	dynamicDatacenters bool
@@ -61,6 +62,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&s.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
 	flag.StringVar(&s.presetsFile, "presets", "", "The optional file path for a file containing presets")
+	flag.StringVar(&s.swaggerFile, "swagger", "./cmd/kubermatic-api/swagger.json", "The swagger.json file path")
 	flag.StringVar(&s.oidcURL, "oidc-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.BoolVar(&s.oidcSkipTLSVerify, "oidc-skip-tls-verify", false, "Skip TLS verification for the token issuer")
 	flag.StringVar(&s.oidcAuthenticatorClientID, "oidc-authenticator-client-id", "", "Authenticator client ID")
