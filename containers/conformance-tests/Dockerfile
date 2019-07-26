@@ -4,8 +4,9 @@ ENV GO_VERSION="1.12.6"
 ENV VAULT_VERSION="1.1.3"
 ENV HELM_VERSION="2.13.1"
 ENV KUBECTL_VERSION="1.14.4"
+ENV TERRAFORM_VERSION="0.12.5"
 
-RUN dnf install -y curl bash unzip jq buildah which findutils make git
+RUN dnf install -y curl bash unzip jq buildah which findutils make git gcc
 
 ADD registries.conf /etc/containers/registries.conf
 # metacopy is only available on Kernels 4.18+. Ubuntu 18.04 ships with 4.15
@@ -26,6 +27,12 @@ RUN curl -fLO https://storage.googleapis.com/kubernetes-release/release/v${KUBEC
     chmod +x kubectl && \
     mv kubectl /usr/local/bin
 
+# Install Terraform
+RUN cd /tmp && curl -fLO https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
+    unzip terraform_*.zip && \
+    mv terraform /usr/local/bin && \
+    rm /tmp/terraform_*.zip
+
 # Install Golang
 ENV PATH=$PATH:/usr/local/go/bin
 ENV GOPATH /go
@@ -38,6 +45,10 @@ COPY ./install-kube-tests.sh /opt/install-kube-tests.sh
 RUN /opt/install-kube-tests.sh
 # This is linux only, thus we can remove the windows and darwin files
 RUN rm -rf /opt/kube-test/*/platforms/darwin && rm -rf /opt/kube-test/*/platforms/windows
+
+# Install the kubetest binary
+RUN go get -u k8s.io/test-infra/kubetest && \
+    mv $(go env GOPATH)/bin/kubetest /usr/bin/kubetest
 
 # Install the machine-controller pubkey
 RUN mkdir $HOME/.ssh && \
