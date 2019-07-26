@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-TAG=v0.9.7
+TAG=v0.10.0
 
 set -euox pipefail
 
-docker build --no-cache --pull -t kubermatic/kubernetes-test-binaries:${TAG} .
-docker push kubermatic/kubernetes-test-binaries:${TAG}
+buildah build-using-dockerfile --squash --tag docker.io/kubermatic/kubernetes-test-binaries:${TAG} .
+buildah push kubermatic/kubernetes-test-binaries:${TAG}
