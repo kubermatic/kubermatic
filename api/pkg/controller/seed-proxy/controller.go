@@ -3,9 +3,7 @@ package seedproxy
 import (
 	"fmt"
 
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"github.com/golang/glog"
 
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
@@ -14,10 +12,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -99,14 +99,14 @@ const (
 func Add(
 	mgr manager.Manager,
 	numWorkers int,
-	kubeconfig *clientcmdapi.Config,
 	seedsGetter provider.SeedsGetter,
+	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 ) error {
 	reconciler := &Reconciler{
-		Client:      mgr.GetClient(),
-		recorder:    mgr.GetRecorder(ControllerName),
-		kubeconfig:  kubeconfig,
-		seedsGetter: seedsGetter,
+		Client:               mgr.GetClient(),
+		recorder:             mgr.GetRecorder(ControllerName),
+		seedsGetter:          seedsGetter,
+		seedKubeconfigGetter: seedKubeconfigGetter,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
@@ -116,13 +116,16 @@ func Add(
 	}
 
 	eventHandler := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
-		requests := make([]reconcile.Request, 0)
+		seeds, err := seedsGetter()
+		if err != nil {
+			glog.Errorf("Failed to get seeds: %v", err)
+			return nil
+		}
 
-		for name := range kubeconfig.Contexts {
+		var requests []reconcile.Request
+		for seedName := range seeds {
 			requests = append(requests, reconcile.Request{
-				NamespacedName: types.NamespacedName{
-					Name: name,
-				},
+				NamespacedName: types.NamespacedName{Name: seedName},
 			})
 		}
 

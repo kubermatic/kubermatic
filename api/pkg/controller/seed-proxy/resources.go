@@ -6,7 +6,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 func secretName(contextName string) string {
@@ -272,7 +271,7 @@ func masterServiceCreator(contextName string, secret *corev1.Secret) reconciling
 	}
 }
 
-func masterGrafanaConfigmapCreator(seedsGetter provider.SeedsGetter, kubeconfig *clientcmdapi.Config) reconciling.NamedConfigMapCreatorGetter {
+func (r *Reconciler) masterGrafanaConfigmapCreator(seeds map[string]*kubermaticv1.Seed) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return MasterGrafanaConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			labels := func() map[string]string {
@@ -288,15 +287,10 @@ func masterGrafanaConfigmapCreator(seedsGetter provider.SeedsGetter, kubeconfig 
 			c.Labels = labels()
 			c.Labels[ManagedByLabel] = ControllerName
 
-			seeds, err := seedsGetter()
-			if err != nil {
-				return nil, fmt.Errorf("failed to get seeds: %v", err)
-			}
-
 			for seedName := range seeds {
 				filename := fmt.Sprintf("prometheus-%s.yaml", seedName)
 
-				config, err := buildGrafanaDatasource(seedName, kubeconfig)
+				config, err := buildGrafanaDatasource(seedName)
 				if err != nil {
 					return nil, fmt.Errorf("failed to build Grafana config for seed %s: %v", seedName, err)
 				}
@@ -309,10 +303,10 @@ func masterGrafanaConfigmapCreator(seedsGetter provider.SeedsGetter, kubeconfig 
 	}
 }
 
-func buildGrafanaDatasource(contextName string, kubeconfig *clientcmdapi.Config) (string, error) {
+func buildGrafanaDatasource(seedName string) (string, error) {
 	data := map[string]interface{}{
-		"ContextName":             contextName,
-		"ServiceName":             serviceName(contextName),
+		"ContextName":             seedName,
+		"ServiceName":             serviceName(seedName),
 		"ServiceNamespace":        MasterTargetNamespace,
 		"ProxyPort":               KubectlProxyPort,
 		"SeedPrometheusNamespace": SeedPrometheusNamespace,
