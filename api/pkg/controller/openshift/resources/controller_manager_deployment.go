@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 var (
@@ -85,12 +86,6 @@ func ControllerManagerDeploymentCreator(ctx context.Context, data openshiftData)
 			}
 
 			dep.Spec.Template.Spec.Volumes = volumes
-
-			apiserverIsRunningContainer, err := apiserver.IsRunningInitContainer(data)
-			if err != nil {
-				return nil, err
-			}
-			dep.Spec.Template.Spec.InitContainers = []corev1.Container{*apiserverIsRunningContainer}
 
 			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 			if err != nil {
@@ -185,6 +180,12 @@ func ControllerManagerDeploymentCreator(ctx context.Context, data openshiftData)
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(ControllerManagerDeploymentName, data.Cluster().Name)
+
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(ControllerManagerDeploymentName))
+			if err != nil {
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+			}
+			dep.Spec.Template.Spec = *wrappedPodSpec
 
 			return dep, nil
 		}
