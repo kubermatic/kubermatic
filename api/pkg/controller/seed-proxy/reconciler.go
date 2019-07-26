@@ -57,6 +57,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile Grafana: %v", err)
 	}
 
+	glog.V(4).Infof("Successfully reconciled seed %q", request.Name)
 	return reconcile.Result{}, nil
 }
 

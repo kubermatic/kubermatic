@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -11,14 +12,18 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
+
+const KubeconfigSecretKey = "kubeconfig"
 
 var (
 	// AllOperatingSystems defines all available operating systems
@@ -204,5 +209,56 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 			mapToReturn[k] = v.DeepCopy()
 		}
 		return mapToReturn, nil
+	}, nil
+}
+
+func SeedKubeconfigGetterFactory(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	kubeconfigFilePath string,
+	dynamicDatacenters bool) (SeedKubeconfigGetter, error) {
+
+	if dynamicDatacenters {
+		return func(seedName string) (*rest.Config, error) {
+			seed := &kubermaticv1.Seed{}
+			if err := client.Get(ctx, types.NamespacedName{Name: seedName}, seed); err != nil {
+				return nil, fmt.Errorf("failed to get seed %q: %v", seedName, err)
+			}
+			secret := &corev1.Secret{}
+			name := types.NamespacedName{
+				Namespace: seed.Spec.Kubeconfig.Namespace,
+				Name:      seed.Spec.Kubeconfig.Name,
+			}
+			if err := client.Get(ctx, name, secret); err != nil {
+				return nil, fmt.Errorf("failed to get kubeconfig secret %q: %v", name.String(), err)
+			}
+			if _, exists := secret.Data[KubeconfigSecretKey]; !exists {
+				return nil, fmt.Errorf("secret %q has no key %q", name.String(), KubeconfigSecretKey)
+			}
+			cfg := &rest.Config{}
+			if err := json.Unmarshal(secret.Data[KubeconfigSecretKey], cfg); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal kubeconfig: %v", err)
+			}
+			return cfg, nil
+		}, nil
+
+	}
+
+	if kubeconfigFilePath == "" {
+		return nil, errors.New("--kubeconfig is required when --dynamic-datacenters=false")
+	}
+	kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read kubeconfig from %q: %v", kubeconfigFilePath, err)
+	}
+	return func(seedName string) (*rest.Config, error) {
+		if _, exists := kubeconfig.Contexts[seedName]; !exists {
+			return nil, fmt.Errorf("found no context with name %q in kubeconfig", seedName)
+		}
+		cfg, err := clientcmd.NewNonInteractiveClientConfig(*kubeconfig, seedName, nil, nil).ClientConfig()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get restConfig for seed %q: %v", seedName, err)
+		}
+		return cfg, nil
 	}, nil
 }
