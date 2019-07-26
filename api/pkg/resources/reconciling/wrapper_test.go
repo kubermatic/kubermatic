@@ -43,54 +43,64 @@ func TestDefaultPodSpec(t *testing.T) {
 			},
 		},
 		{
-			name: "Default values for security contexts are added",
+			name: "The new version of objects is prioritized",
+			oldObject: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						ImagePullPolicy:          corev1.PullAlways,
+						TerminationMessagePath:   "/dev/old",
+						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+					},
+				},
+			},
 			newObject: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						SecurityContext: &corev1.SecurityContext{},
+						ImagePullPolicy:          corev1.PullNever,
+						TerminationMessagePath:   "/dev/new",
+						TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
 					},
 				},
 			},
 			expectedObject: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						ImagePullPolicy:          corev1.PullIfNotPresent,
-						TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+						ImagePullPolicy:          corev1.PullNever,
+						TerminationMessagePath:   "/dev/new",
+						TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
+					},
+				},
+			},
+		},
+		{
+			name: "The procMountType is always retained and cannot be overwritten",
+			oldObject: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
 						SecurityContext: &corev1.SecurityContext{
 							ProcMount: &defaultProcMountType,
 						},
 					},
 				},
 			},
-		},
-		{
-			name: "Explicit values for security contexts are retained",
-			oldObject: corev1.PodSpec{
+			newObject: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
 						SecurityContext: &corev1.SecurityContext{
 							ProcMount: &otherProcMountType,
 						},
-					},
-				},
-			},
-			newObject: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{
-						SecurityContext: &corev1.SecurityContext{},
 					},
 				},
 			},
 			expectedObject: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
+						SecurityContext: &corev1.SecurityContext{
+							ProcMount: &defaultProcMountType,
+						},
 						ImagePullPolicy:          corev1.PullIfNotPresent,
 						TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-						SecurityContext: &corev1.SecurityContext{
-							ProcMount: &otherProcMountType,
-						},
 					},
 				},
 			},
@@ -225,9 +235,7 @@ func TestDefaultPodSpec(t *testing.T) {
 						ImagePullPolicy:          corev1.PullIfNotPresent,
 						TerminationMessagePath:   corev1.TerminationMessagePathDefault,
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-						SecurityContext: &corev1.SecurityContext{
-							ProcMount: &defaultProcMountType,
-						},
+						SecurityContext:          &corev1.SecurityContext{},
 					},
 				},
 			},
