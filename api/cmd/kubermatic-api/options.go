@@ -24,7 +24,7 @@ type serverRunOptions struct {
 	versionsFile       string
 	updatesFile        string
 	presetsFile        string
-	swaggerFile     string
+	swaggerFile        string
 	domain             string
 	exposeStrategy     corev1.ServiceType
 	dynamicDatacenters bool
