@@ -39,7 +39,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// silently ignore other worker names
-	if labels := config.GetLabels(); labels[WorkerNameLabel] != r.workerName {
+	if config.Labels[WorkerNameLabel] != r.workerName {
 		return reconcile.Result{}, nil
 	}
 
