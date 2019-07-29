@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -159,7 +160,7 @@ func TestResources(t *testing.T) {
 				t.Fatalf("failed to serialize object %q: %v", metav1object.GetName(), err)
 			}
 
-			testhelper.CompareOutput(t, fmt.Sprintf("%s-%s", tc.name, metav1object.GetName()), string(serializedObject), *update, ".yaml")
+			testhelper.CompareOutput(t, fmt.Sprintf("%s-%s", strings.Replace(tc.name, " ", "_", -1), metav1object.GetName()), string(serializedObject), *update, ".yaml")
 		})
 	}
 
