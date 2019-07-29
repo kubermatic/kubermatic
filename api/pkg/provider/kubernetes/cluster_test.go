@@ -3,7 +3,6 @@ package kubernetes_test
 import (
 	"testing"
 
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -80,15 +79,13 @@ func TestCreateCluster(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			impersonationClient, _, indexer, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
+			impersonationClient, _, _, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
 			if err != nil {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
 
-			clusterLister := kubermaticv1lister.NewClusterLister(indexer)
-
 			// act
-			target := kubernetes.NewClusterProvider(impersonationClient.CreateFakeImpersonatedClientSet, nil, clusterLister, tc.workerName, nil, nil, nil, tc.shareKubeconfig)
+			target := kubernetes.NewClusterProvider(impersonationClient.CreateFakeImpersonatedClientSet, nil, tc.workerName, nil, nil, nil, tc.shareKubeconfig)
 			partialCluster := &kubermaticv1.Cluster{}
 			partialCluster.Spec = *tc.spec
 			if tc.clusterType == "openshift" {

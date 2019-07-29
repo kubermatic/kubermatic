@@ -35,6 +35,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
@@ -50,6 +51,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -73,6 +75,10 @@ func main() {
 		}
 	}()
 	kubermaticlog.Logger = log
+
+	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		kubermaticlog.Logger.Fatalw("failed to add kubermaticv1 scheme to scheme.Scheme", "error", err)
+	}
 
 	providers, err := createInitProviders(options)
 	if err != nil {
@@ -107,55 +113,44 @@ func main() {
 func createInitProviders(options serverRunOptions) (providers, error) {
 	// create cluster providers - one foreach context
 	clusterProviders := map[string]provider.ClusterProvider{}
-	{
-		clientcmdConfig, err := clientcmd.LoadFromFile(options.kubeconfig)
+	clientcmdConfig, err := clientcmd.LoadFromFile(options.kubeconfig)
+	if err != nil {
+		return providers{}, fmt.Errorf("unable to create client config for due to %v", err)
+	}
+
+	for ctx := range clientcmdConfig.Contexts {
+		clientConfig := clientcmd.NewNonInteractiveClientConfig(
+			*clientcmdConfig,
+			ctx,
+			&clientcmd.ConfigOverrides{CurrentContext: ctx},
+			nil,
+		)
+		cfg, err := clientConfig.ClientConfig()
 		if err != nil {
-			return providers{}, fmt.Errorf("unable to create client config for due to %v", err)
+			return providers{}, fmt.Errorf("unable to create client config for %s due to %v", ctx, err)
+		}
+		kubermaticlog.Logger.Infow("adding seed", "seed", ctx)
+		kubeClient := kubernetes.NewForConfigOrDie(cfg)
+		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
+		seedCtrlruntimeClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
+		if err != nil {
+			return providers{}, fmt.Errorf("failed to create dynamic seed client: %v", err)
 		}
 
-		for ctx := range clientcmdConfig.Contexts {
-			clientConfig := clientcmd.NewNonInteractiveClientConfig(
-				*clientcmdConfig,
-				ctx,
-				&clientcmd.ConfigOverrides{CurrentContext: ctx},
-				nil,
-			)
-			cfg, err := clientConfig.ClientConfig()
-			if err != nil {
-				return providers{}, fmt.Errorf("unable to create client config for %s due to %v", ctx, err)
-			}
-			kubermaticlog.Logger.Infow("adding seed", "seed", ctx)
-			kubeClient := kubernetes.NewForConfigOrDie(cfg)
-			kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informer.DefaultInformerResyncPeriod)
-			kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
-			kubermaticSeedInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticSeedClient, informer.DefaultInformerResyncPeriod)
-			defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
-			seedCtrlruntimeClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
-			if err != nil {
-				return providers{}, fmt.Errorf("failed to create dynamic seed client: %v", err)
-			}
-
-			userClusterConnectionProvider, err := client.NewExternal(seedCtrlruntimeClient)
-			if err != nil {
-				return providers{}, fmt.Errorf("failed to get userClusterConnectionProvider: %v", err)
-			}
-
-			clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(
-				defaultImpersonationClientForSeed.CreateImpersonatedKubermaticClientSet,
-				userClusterConnectionProvider,
-				kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
-				options.workerName,
-				rbac.ExtractGroupPrefix,
-				seedCtrlruntimeClient,
-				kubeClient,
-				options.featureGates.Enabled(OIDCKubeCfgEndpoint),
-			)
-
-			kubeInformerFactory.Start(wait.NeverStop)
-			kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
-			kubermaticSeedInformerFactory.Start(wait.NeverStop)
-			kubermaticSeedInformerFactory.WaitForCacheSync(wait.NeverStop)
+		userClusterConnectionProvider, err := client.NewExternal(seedCtrlruntimeClient)
+		if err != nil {
+			return providers{}, fmt.Errorf("failed to get userClusterConnectionProvider: %v", err)
 		}
+
+		clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(
+			defaultImpersonationClientForSeed.CreateImpersonatedKubermaticClientSet,
+			userClusterConnectionProvider,
+			options.workerName,
+			rbac.ExtractGroupPrefix,
+			seedCtrlruntimeClient,
+			kubeClient,
+			options.featureGates.Enabled(OIDCKubeCfgEndpoint),
+		)
 	}
 
 	masterCfg, err := clientcmd.BuildConfigFromFlags("", options.kubeconfig)
