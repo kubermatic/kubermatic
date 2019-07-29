@@ -107,55 +107,53 @@ func main() {
 func createInitProviders(options serverRunOptions) (providers, error) {
 	// create cluster providers - one foreach context
 	clusterProviders := map[string]provider.ClusterProvider{}
-	{
-		clientcmdConfig, err := clientcmd.LoadFromFile(options.kubeconfig)
+	clientcmdConfig, err := clientcmd.LoadFromFile(options.kubeconfig)
+	if err != nil {
+		return providers{}, fmt.Errorf("unable to create client config for due to %v", err)
+	}
+
+	for ctx := range clientcmdConfig.Contexts {
+		clientConfig := clientcmd.NewNonInteractiveClientConfig(
+			*clientcmdConfig,
+			ctx,
+			&clientcmd.ConfigOverrides{CurrentContext: ctx},
+			nil,
+		)
+		cfg, err := clientConfig.ClientConfig()
 		if err != nil {
-			return providers{}, fmt.Errorf("unable to create client config for due to %v", err)
+			return providers{}, fmt.Errorf("unable to create client config for %s due to %v", ctx, err)
+		}
+		kubermaticlog.Logger.Infow("adding seed", "seed", ctx)
+		kubeClient := kubernetes.NewForConfigOrDie(cfg)
+		kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informer.DefaultInformerResyncPeriod)
+		kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
+		kubermaticSeedInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticSeedClient, informer.DefaultInformerResyncPeriod)
+		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
+		seedCtrlruntimeClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
+		if err != nil {
+			return providers{}, fmt.Errorf("failed to create dynamic seed client: %v", err)
 		}
 
-		for ctx := range clientcmdConfig.Contexts {
-			clientConfig := clientcmd.NewNonInteractiveClientConfig(
-				*clientcmdConfig,
-				ctx,
-				&clientcmd.ConfigOverrides{CurrentContext: ctx},
-				nil,
-			)
-			cfg, err := clientConfig.ClientConfig()
-			if err != nil {
-				return providers{}, fmt.Errorf("unable to create client config for %s due to %v", ctx, err)
-			}
-			kubermaticlog.Logger.Infow("adding seed", "seed", ctx)
-			kubeClient := kubernetes.NewForConfigOrDie(cfg)
-			kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, informer.DefaultInformerResyncPeriod)
-			kubermaticSeedClient := kubermaticclientset.NewForConfigOrDie(cfg)
-			kubermaticSeedInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticSeedClient, informer.DefaultInformerResyncPeriod)
-			defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
-			seedCtrlruntimeClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
-			if err != nil {
-				return providers{}, fmt.Errorf("failed to create dynamic seed client: %v", err)
-			}
-
-			userClusterConnectionProvider, err := client.NewExternal(seedCtrlruntimeClient)
-			if err != nil {
-				return providers{}, fmt.Errorf("failed to get userClusterConnectionProvider: %v", err)
-			}
-
-			clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(
-				defaultImpersonationClientForSeed.CreateImpersonatedKubermaticClientSet,
-				userClusterConnectionProvider,
-				kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
-				options.workerName,
-				rbac.ExtractGroupPrefix,
-				seedCtrlruntimeClient,
-				kubeClient,
-				options.featureGates.Enabled(OIDCKubeCfgEndpoint),
-			)
-
-			kubeInformerFactory.Start(wait.NeverStop)
-			kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
-			kubermaticSeedInformerFactory.Start(wait.NeverStop)
-			kubermaticSeedInformerFactory.WaitForCacheSync(wait.NeverStop)
+		userClusterConnectionProvider, err := client.NewExternal(seedCtrlruntimeClient)
+		if err != nil {
+			return providers{}, fmt.Errorf("failed to get userClusterConnectionProvider: %v", err)
 		}
+
+		clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(
+			defaultImpersonationClientForSeed.CreateImpersonatedKubermaticClientSet,
+			userClusterConnectionProvider,
+			kubermaticSeedInformerFactory.Kubermatic().V1().Clusters().Lister(),
+			options.workerName,
+			rbac.ExtractGroupPrefix,
+			seedCtrlruntimeClient,
+			kubeClient,
+			options.featureGates.Enabled(OIDCKubeCfgEndpoint),
+		)
+
+		kubeInformerFactory.Start(wait.NeverStop)
+		kubeInformerFactory.WaitForCacheSync(wait.NeverStop)
+		kubermaticSeedInformerFactory.Start(wait.NeverStop)
+		kubermaticSeedInformerFactory.WaitForCacheSync(wait.NeverStop)
 	}
 
 	masterCfg, err := clientcmd.BuildConfigFromFlags("", options.kubeconfig)
