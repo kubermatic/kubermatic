@@ -111,12 +111,6 @@ func main() {
 }
 
 func createInitProviders(options serverRunOptions) (providers, error) {
-	// create cluster providers - one foreach context
-	clientcmdConfig, err := clientcmd.LoadFromFile(options.kubeconfig)
-	if err != nil {
-		return providers{}, fmt.Errorf("unable to create client config for due to %v", err)
-	}
-
 	masterCfg, err := clientcmd.BuildConfigFromFlags("", options.kubeconfig)
 	if err != nil {
 		return providers{}, fmt.Errorf("unable to build client configuration from kubeconfig due to %v", err)

@@ -346,19 +346,29 @@ func ListEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 }
 
 // ListAllEndpoint list clusters for the given project in all datacenters
-func ListAllEndpoint(projectProvider provider.ProjectProvider, clusterProviders map[string]provider.ClusterProvider) endpoint.Endpoint {
+func ListAllEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetProjectRq)
 		allClusters := make([]*apiv1.Cluster, 0)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
-		for _, clusterProvider := range clusterProviders {
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		for seedName := range seeds {
+			clusterProvider, err := clusterProviderGetter(seedName)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
 			apiClusters, err := getClusters(clusterProvider, userInfo, projectProvider, req.ProjectID)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 			allClusters = append(allClusters, apiClusters...)
 		}
+
 		return allClusters, nil
 	}
 }
