@@ -27,6 +27,6 @@ func DeepEqual(a, b metav1.Object) bool {
 		diff = deep.Equal(b, a)
 	}
 
-	glog.V(4).Infof("Object %T %s/%s differs from the one, generated: %v", a, a.GetNamespace(), a.GetName(), diff)
+	glog.V(4).Infof("Object %T %s/%s differs from the generated one: %v", a, a.GetNamespace(), a.GetName(), diff)
 	return false
 }
