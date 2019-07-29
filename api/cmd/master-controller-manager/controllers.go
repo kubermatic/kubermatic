@@ -28,7 +28,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to create serviceaccount controller: %v", err)
 	}
 	if err := seedproxy.Add(ctrlCtx.mgr, 1, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter); err != nil {
-		return fmt.Errorf("failed to create seedproxy controllre: %v", err)
+		return fmt.Errorf("failed to create seedproxy controller: %v", err)
 	}
 	return nil
 }

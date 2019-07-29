@@ -135,7 +135,7 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider, workerCount i
 	}, nil
 }
 
-// Run starts the controller's worker routines. Its an implementation of
+// Run starts the controller's worker routines. It is an implementation of
 // sigs.k8s.io/controller-runtime/pkg/manager.Runnable
 func (a *ControllerAggregator) Run(stopCh <-chan struct{}) error {
 	defer runtime.HandleCrash()
@@ -145,7 +145,7 @@ func (a *ControllerAggregator) Run(stopCh <-chan struct{}) error {
 
 	glog.Info("RBAC generator aggregator controller started")
 	<-stopCh
-	glog.Infof("RBAC generator aggregator controller finished")
+	glog.Info("RBAC generator aggregator controller finished")
 
 	return nil
 }
