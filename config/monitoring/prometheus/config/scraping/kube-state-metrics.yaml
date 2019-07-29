@@ -59,3 +59,8 @@ metric_relabel_configs:
 - source_labels: [namespace]
   regex: .*prow-(e2e|kubermatic)-.*
   action: drop
+- source_labels: [namespace]
+  regex: cluster-([a-z0-9]+)
+  target_label: cluster
+  replacement: $1
+  action: replace

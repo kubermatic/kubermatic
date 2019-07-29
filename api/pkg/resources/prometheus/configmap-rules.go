@@ -1,5 +1,9 @@
 package prometheus
 
+// prometheusRules contains the prerecoding and alerting rules for
+// Prometheus. Be careful when changing alert names, as some of them
+// are used for alert inhibitions and configured inside the
+// seed-cluster's Alertmanager.
 const prometheusRules = `
 groups:
 - name: kubermatic.goprocess
@@ -282,7 +286,7 @@ groups:
 
   - alert: FdExhaustionClose
     annotations:
-      description: '{{ $labels.job }} instance {{ $labels.instance }} will exhaust its file descriptors soon'
+      message: '{{ $labels.job }} instance {{ $labels.instance }} will exhaust its file descriptors soon'
     expr: |
       predict_linear(instance:fd_utilization[10m], 3600) > 1
     for: 10m
@@ -323,13 +327,21 @@ groups:
     labels:
       severity: critical
 
+  - alert: UserClusterControllerDown
+    annotations:
+      message: User Cluster Controller has disappeared from Prometheus target discovery.
+    expr: absent(up{job="usercluster-controller"} == 1)
+    for: 15m
+    labels:
+      severity: critical
+
   - alert: KubeStateMetricsDown
     annotations:
       message: Kube-state-metrics has disappeared from Prometheus target discovery.
     expr: absent(up{job="kube-state-metrics"} == 1)
     for: 15m
     labels:
-      severity: critical
+      severity: warning
 
   - alert: EtcdDown
     annotations:
@@ -338,6 +350,35 @@ groups:
     for: 15m
     labels:
       severity: critical
+
+  # This is triggered if the cluster does have nodes, but the cadvisor could
+  # not successfully be scraped for whatever reason. An absent() on cadvisor
+  # metrics is not a good alert because clusters could simply have no nodes
+  # and hence no cadvisors.
+  - alert: CAdvisorDown
+    annotations:
+      message: cAdvisor on {{ $labels.kubernetes_io_hostname }} could not be scraped.
+    expr: up{job="cadvisor"} == 0
+    for: 15m
+    labels:
+      severity: warning
+
+  # This functions similarly to the cadvisor alert above.
+  - alert: KubernetesNodeDown
+    annotations:
+      message: The kubelet on {{ $labels.kubernetes_io_hostname }} could not be scraped.
+    expr: up{job="kubernetes-nodes"} == 0
+    for: 15m
+    labels:
+      severity: warning
+
+  - alert: DNSResolverDown
+    annotations:
+      message: DNS resolver has disappeared from Prometheus target discovery.
+    expr: absent(up{job="dns-resolver"} == 1)
+    for: 15m
+    labels:
+      severity: warning
 
 - name: kubernetes-nodes
   rules:

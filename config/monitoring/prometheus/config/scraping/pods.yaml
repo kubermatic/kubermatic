@@ -34,3 +34,9 @@ relabel_configs:
   target_label: pod
   replacement: $1
   action: replace
+metric_relabel_configs:
+- source_labels: [namespace]
+  regex: cluster-([a-z0-9]+)
+  target_label: cluster
+  replacement: $1
+  action: replace
