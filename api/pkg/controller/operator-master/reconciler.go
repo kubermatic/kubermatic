@@ -13,9 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// Reconciler (re)stores all components required for proxying requests to
-// seed clusters. It also takes care of creating a nice ConfigMap for
-// Grafana's provisioning mechanism.
+// Reconciler (re)stores all components required for running a Kubermatic
+// master cluster.
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
