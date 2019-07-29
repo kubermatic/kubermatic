@@ -147,15 +147,12 @@ func ControllerManagerDeploymentCreator(ctx context.Context, data openshiftData)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:                     ControllerManagerDeploymentName,
-					Image:                    data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
-					ImagePullPolicy:          corev1.PullIfNotPresent,
-					Command:                  []string{"/usr/bin/openshift", "start", "master", "controllers"},
-					Args:                     []string{"--config=/etc/origin/master/master-config.yaml", "--listen=https://0.0.0.0:8444"},
-					Env:                      getControllerManagerEnvVars(data.Cluster()),
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-					Resources:                resourceRequirements,
+					Name:      ControllerManagerDeploymentName,
+					Image:     data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
+					Command:   []string{"/usr/bin/openshift", "start", "master", "controllers"},
+					Args:      []string{"--config=/etc/origin/master/master-config.yaml", "--listen=https://0.0.0.0:8444"},
+					Env:       getControllerManagerEnvVars(data.Cluster()),
+					Resources: resourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: getHealthGetAction(),

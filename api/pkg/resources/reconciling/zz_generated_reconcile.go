@@ -177,6 +177,7 @@ func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
 func ReconcileStatefulSets(ctx context.Context, namedGetters []NamedStatefulSetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		create = DefaultStatefulSet(create)
 		createObject := StatefulSetObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
@@ -246,6 +247,7 @@ func DaemonSetObjectWrapper(create DaemonSetCreator) ObjectCreator {
 func ReconcileDaemonSets(ctx context.Context, namedGetters []NamedDaemonSetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		create = DefaultDaemonSet(create)
 		createObject := DaemonSetObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
@@ -518,6 +520,7 @@ func CronJobObjectWrapper(create CronJobCreator) ObjectCreator {
 func ReconcileCronJobs(ctx context.Context, namedGetters []NamedCronJobCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		create = DefaultCronJob(create)
 		createObject := CronJobObjectWrapper(create)
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
