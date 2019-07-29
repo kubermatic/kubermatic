@@ -687,27 +687,35 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 	}
 	params.SetTimeout(15 * time.Second)
 
-	if _, err := r.kubermaticClient.Project.CreateCluster(params, r.kubermaticAuthenticator); err != nil {
-		return nil, fmt.Errorf("failed to create cluster via kubermatic api: %q, %v", fmtSwaggerError(err), err)
-	}
-
 	crCluster := &kubermaticv1.Cluster{}
 	selector, err := labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse selector: %v", err)
 	}
-	if err := wait.Poll(time.Second, 15*time.Second, func() (bool, error) {
+
+	if err := wait.PollImmediate(5*time.Second, 45*time.Second, func() (bool, error) {
 		// For some reason the cluster doesn't have the name we set via ID on creation
 		clusterList := &kubermaticv1.ClusterList{}
 		opts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
 		if err := r.seedClusterClient.List(r.ctx, opts, clusterList); err != nil {
 			return false, err
 		}
-		if len(clusterList.Items) != 1 {
+		numFoundClusters := len(clusterList.Items)
+
+		switch {
+		case numFoundClusters < 1:
+			if _, err := r.kubermaticClient.Project.CreateCluster(params, r.kubermaticAuthenticator); err != nil {
+				// Log the error but don't return it, we want to retry
+				log.Errorf("failed to create cluster via kubermatic api: %q, %v", fmtSwaggerError(err), err)
+			}
+			// Always return here, our clusterList is not up to date anymore
 			return false, nil
+		case numFoundClusters > 1:
+			return false, fmt.Errorf("had more than one cluster (%d) with our worker-name, how is this possible?! ", numFoundClusters)
+		default:
+			crCluster = &clusterList.Items[0]
+			return true, err
 		}
-		crCluster = &clusterList.Items[0]
-		return true, err
 	}); err != nil {
 		return nil, fmt.Errorf("failed to get cluster after creating it: %v", err)
 	}
