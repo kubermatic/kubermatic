@@ -15,6 +15,10 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "9253"
+        prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
         app: dns-resolver

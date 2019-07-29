@@ -13,6 +13,7 @@ data:
       forward . /etc/resolv.conf
       errors
       health
+      prometheus 0.0.0.0:9253
     }
 metadata:
   creationTimestamp: null
