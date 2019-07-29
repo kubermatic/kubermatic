@@ -22,18 +22,21 @@ type Reconciler struct {
 	log          *zap.SugaredLogger
 	recorder     record.EventRecorder
 	workerName   string
+	ctx          context.Context
 }
 
 // Reconcile acts upon requests and will restore the state of resources
 // for the given namespace. Will return an error if any API operation
 // failed, otherwise will return an empty dummy Result struct.
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
+	var cancel context.CancelFunc
+
+	r.ctx, cancel = context.WithCancel(context.Background())
 	defer cancel()
 
 	// find the requested configuration
 	config := &operatorv1alpha1.KubermaticConfiguration{}
-	if err := r.Get(ctx, request.NamespacedName, config); err != nil {
+	if err := r.Get(r.ctx, request.NamespacedName, config); err != nil {
 		return reconcile.Result{}, fmt.Errorf("could not get KubermaticConfiguration %q: %v", request, err)
 	}
 
@@ -49,10 +52,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	logger := r.log.With("config", identifier)
 
-	return reconcile.Result{}, r.reconcile(ctx, config, logger)
+	return reconcile.Result{}, r.reconcile(config, logger)
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Kubermatic configuration now.")
 	return nil
 }
