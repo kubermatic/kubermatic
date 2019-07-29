@@ -61,6 +61,9 @@ func init() {
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to add clusterv1alpha1 scheme to scheme.Scheme", "error", err)
 	}
+	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		kubermaticlog.Logger.Fatalw("failed to add kubermaticv1 scheme to scheme.Scheme", "error", err)
+	}
 }
 
 const (
@@ -137,7 +140,10 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	if seedsGetter == nil {
 		seedsGetter = buildSeeds()
 	}
-	fakeClient := fakectrlruntimeclient.NewFakeClient(append(kubeObjects, machineObjects...)...)
+	allObjects := kubeObjects
+	allObjects = append(allObjects, machineObjects...)
+	allObjects = append(allObjects, kubermaticObjects...)
+	fakeClient := fakectrlruntimeclient.NewFakeClient(allObjects...)
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 	kubernetesClient := fakerestclient.NewSimpleClientset(kubeObjects...)
@@ -209,7 +215,6 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	clusterProvider := kubernetes.NewClusterProvider(
 		fakeKubermaticImpersonationClient,
 		fUserClusterConnection,
-		kubermaticInformerFactory.Kubermatic().V1().Clusters().Lister(),
 		"",
 		rbac.ExtractGroupPrefix,
 		fakeClient,
