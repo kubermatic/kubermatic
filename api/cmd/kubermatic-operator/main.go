@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 
@@ -77,7 +78,10 @@ func main() {
 		log.Fatalw("Failed to register types in Scheme", "error", err)
 	}
 
-	if err := operatormaster.Add(mgr, 1, clientConfig, log, opt.workerName); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if err := operatormaster.Add(ctx, mgr, 1, clientConfig, log, opt.workerName); err != nil {
 		log.Fatalw("Failed to add operator-master controller", "error", err)
 	}
 

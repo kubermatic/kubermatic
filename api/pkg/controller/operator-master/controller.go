@@ -1,6 +1,7 @@
 package operatormaster
 
 import (
+	"context"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -25,6 +26,7 @@ const (
 )
 
 func Add(
+	ctx context.Context,
 	mgr manager.Manager,
 	numWorkers int,
 	clientConfig *clientcmdapi.Config,
@@ -37,6 +39,7 @@ func Add(
 		clientConfig: clientConfig,
 		log:          log.Named(ControllerName),
 		workerName:   workerName,
+		ctx:          ctx,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}

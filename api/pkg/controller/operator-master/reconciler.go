@@ -29,11 +29,6 @@ type Reconciler struct {
 // for the given namespace. Will return an error if any API operation
 // failed, otherwise will return an empty dummy Result struct.
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	var cancel context.CancelFunc
-
-	r.ctx, cancel = context.WithCancel(context.Background())
-	defer cancel()
-
 	// find the requested configuration
 	config := &operatorv1alpha1.KubermaticConfiguration{}
 	if err := r.Get(r.ctx, request.NamespacedName, config); err != nil {
