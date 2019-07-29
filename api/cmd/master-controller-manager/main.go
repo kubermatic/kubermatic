@@ -140,8 +140,7 @@ func main() {
 		sugarLog.Fatalw("failed to construct seedKubeconfigGetter", "error", err)
 	}
 
-	controllers, err := createAllControllers(ctrlCtx)
-	if err != nil {
+	if err := createAllControllers(ctrlCtx); err != nil {
 		sugarLog.Fatalw("could not create all controllers", "error", err)
 	}
 
@@ -167,7 +166,7 @@ func main() {
 	// This group is running all controllers
 	{
 		g.Add(func() error {
-			return runAllControllersAndCtrlManager(ctrlCtx.runOptions.workerCount, done, ctxDone, ctrlCtx.mgr, controllers)
+			return ctrlCtx.mgr.Start(ctxDone)
 		}, func(err error) {
 			sugarLog.Infow("Stopping Master Controller", "error", err)
 			ctxDone()
