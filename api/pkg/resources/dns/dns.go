@@ -82,17 +82,18 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(resources.DNSResolverDeploymentName, volumes, nil)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get podlabels: %v", err)
+				return nil, fmt.Errorf("failed to get pod labels: %v", err)
 			}
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
-				Annotations: map[string]string{
-					"prometheus.io/scrape": "true",
-					"prometheus.io/path":   "/metrics",
-					"prometheus.io/port":   "9253",
-				},
+			dep.Spec.Template.ObjectMeta.Labels = podLabels
+
+			if dep.Spec.Template.ObjectMeta.Annotations == nil {
+				dep.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
 			}
+
+			dep.Spec.Template.ObjectMeta.Annotations["prometheus.io/scrape"] = "true"
+			dep.Spec.Template.ObjectMeta.Annotations["prometheus.io/path"] = "/metrics"
+			dep.Spec.Template.ObjectMeta.Annotations["prometheus.io/port"] = "9253"
 
 			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 			if err != nil {
