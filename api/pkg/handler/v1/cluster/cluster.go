@@ -107,7 +107,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		if len(existingClusters) > 0 {
+		if len(existingClusters.Items) > 0 {
 			return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
 		}
 
@@ -588,10 +588,10 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 	return cluster
 }
 
-func convertInternalClustersToExternal(internalClusters []*kubermaticv1.Cluster) []*apiv1.Cluster {
+func convertInternalClustersToExternal(internalClusters []kubermaticv1.Cluster) []*apiv1.Cluster {
 	apiClusters := make([]*apiv1.Cluster, len(internalClusters))
 	for index, cluster := range internalClusters {
-		apiClusters[index] = convertInternalClusterToExternal(cluster)
+		apiClusters[index] = convertInternalClusterToExternal(cluster.DeepCopy())
 	}
 	return apiClusters
 }
@@ -1026,7 +1026,7 @@ func getClusters(clusterProvider provider.ClusterProvider, userInfo *provider.Us
 		return nil, err
 	}
 
-	apiClusters := convertInternalClustersToExternal(clusters)
+	apiClusters := convertInternalClustersToExternal(clusters.Items)
 	return apiClusters, nil
 }
 

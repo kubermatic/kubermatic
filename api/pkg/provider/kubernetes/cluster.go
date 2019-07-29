@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -10,13 +11,13 @@ import (
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -41,7 +42,6 @@ type extractGroupPrefixFunc func(groupName string) string
 func NewClusterProvider(
 	createSeedImpersonatedClient kubermaticImpersonationClient,
 	userClusterConnProvider UserClusterConnectionProvider,
-	clusterLister kubermaticv1lister.ClusterLister,
 	workerName string,
 	extractGroupPrefix extractGroupPrefixFunc,
 	client ctrlruntimeclient.Client,
@@ -50,7 +50,6 @@ func NewClusterProvider(
 	return &ClusterProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		userClusterConnProvider:      userClusterConnProvider,
-		clusterLister:                clusterLister,
 		workerName:                   workerName,
 		extractGroupPrefix:           extractGroupPrefix,
 		client:                       client,
@@ -68,9 +67,6 @@ type ClusterProvider struct {
 
 	// userClusterConnProvider used for obtaining a connection to the client's cluster
 	userClusterConnProvider UserClusterConnectionProvider
-
-	// clusterLister provide access to local cache that stores cluster objects
-	clusterLister kubermaticv1lister.ClusterLister
 
 	oidcKubeConfEndpoint bool
 	workerName           string
@@ -132,33 +128,26 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 // Note:
 // After we get the list of clusters we could try to get each cluster individually using unprivileged account to see if the user have read access,
 // We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
-func (p *ClusterProvider) List(project *kubermaticv1.Project, options *provider.ClusterListOptions) ([]*kubermaticv1.Cluster, error) {
+func (p *ClusterProvider) List(project *kubermaticv1.Project, options *provider.ClusterListOptions) (*kubermaticv1.ClusterList, error) {
 	if project == nil {
 		return nil, errors.New("project is missing but required")
 	}
-	clusters, err := p.clusterLister.List(labels.Everything())
-	if err != nil {
-		return nil, err
+
+	projectClusters := &kubermaticv1.ClusterList{}
+	selector := labels.SelectorFromSet(map[string]string{kubermaticv1.ProjectIDLabelKey: project.Name})
+	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
+	if err := p.client.List(context.Background(), listOpts, projectClusters); err != nil {
+		return nil, fmt.Errorf("failed to list clusters: %v", err)
 	}
 
-	projectClusters := []*kubermaticv1.Cluster{}
-	for _, cluster := range clusters {
-		if clusterProject := cluster.GetLabels()[kubermaticv1.ProjectIDLabelKey]; clusterProject == project.Name {
-			projectClusters = append(projectClusters, cluster.DeepCopy())
-		}
-	}
-
-	if options == nil {
-		return projectClusters, nil
-	}
-	if len(options.ClusterSpecName) == 0 {
+	if options == nil || len(options.ClusterSpecName) == 0 {
 		return projectClusters, nil
 	}
 
-	filteredProjectClusters := []*kubermaticv1.Cluster{}
-	for _, projectCluster := range projectClusters {
+	filteredProjectClusters := &kubermaticv1.ClusterList{}
+	for _, projectCluster := range projectClusters.Items {
 		if projectCluster.Spec.HumanReadableName == options.ClusterSpecName {
-			filteredProjectClusters = append(filteredProjectClusters, projectCluster)
+			filteredProjectClusters.Items = append(filteredProjectClusters.Items, projectCluster)
 		}
 	}
 
@@ -265,20 +254,12 @@ func (p *ClusterProvider) GetUnsecured(project *kubermaticv1.Project, clusterNam
 		return nil, errors.New("project is missing but required")
 	}
 
-	labelSelector, err := labels.Parse(fmt.Sprintf("%s=%s", kubermaticv1.ProjectIDLabelKey, project.Name))
-	if err != nil {
+	cluster := &kubermaticv1.Cluster{}
+	if err := p.client.Get(context.Background(), types.NamespacedName{Name: clusterName}, cluster); err != nil {
 		return nil, err
 	}
-
-	clusters, err := p.clusterLister.List(labelSelector)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, cluster := range clusters {
-		if cluster.Name == clusterName {
-			return cluster.DeepCopy(), nil
-		}
+	if cluster.Labels[kubermaticv1.ProjectIDLabelKey] == project.Name {
+		return cluster, nil
 	}
 
 	return nil, kerrors.NewNotFound(schema.GroupResource{}, clusterName)

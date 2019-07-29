@@ -91,7 +91,7 @@ type ClusterProvider interface {
 	// Note:
 	// After we get the list of clusters we could try to get each cluster individually using unprivileged account to see if the user have read access,
 	// We don't do this because we assume that if the user was able to get the project (argument) it has to have at least read access.
-	List(project *kubermaticv1.Project, options *ClusterListOptions) ([]*kubermaticv1.Cluster, error)
+	List(project *kubermaticv1.Project, options *ClusterListOptions) (*kubermaticv1.ClusterList, error)
 
 	// Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
 	Get(userInfo *UserInfo, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
