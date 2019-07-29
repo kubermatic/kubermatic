@@ -80,7 +80,6 @@ spec:
         - name: ETCDCTL_API
           value: "3"
         image: gcr.io/etcd-development/etcd:v3.3.12
-        imagePullPolicy: IfNotPresent
         name: etcd
         ports:
         - containerPort: 2379
@@ -117,8 +116,6 @@ spec:
           requests:
             cpu: 50m
             memory: 256Mi
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /var/run/etcd
           name: data

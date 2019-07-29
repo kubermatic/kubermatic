@@ -42,6 +42,7 @@ func main() {
 				ResourceName:       "StatefulSet",
 				ImportAlias:        "appsv1",
 				ResourceImportPath: "k8s.io/api/apps/v1",
+				DefaultingFunc:     "DefaultStatefulSet",
 			},
 			{
 				ResourceName: "Deployment",
@@ -53,6 +54,7 @@ func main() {
 				ResourceName: "DaemonSet",
 				ImportAlias:  "appsv1",
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+				DefaultingFunc: "DefaultDaemonSet",
 			},
 			{
 				ResourceName:       "PodDisruptionBudget",
@@ -94,6 +96,7 @@ func main() {
 				ResourceName:       "CronJob",
 				ImportAlias:        "batchv1beta1",
 				ResourceImportPath: "k8s.io/api/batch/v1beta1",
+				DefaultingFunc:     "DefaultCronJob",
 			},
 			{
 				ResourceName:       "MutatingWebhookConfiguration",

@@ -45,11 +45,8 @@ spec:
                 fi
               done
             image: gcr.io/etcd-development/etcd:v3.3.12
-            imagePullPolicy: IfNotPresent
             name: defragger
             resources: {}
-            terminationMessagePath: /dev/termination-log
-            terminationMessagePolicy: File
             volumeMounts:
             - mountPath: /etc/etcd/pki/client
               name: apiserver-etcd-client-certificate

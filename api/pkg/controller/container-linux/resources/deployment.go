@@ -49,10 +49,9 @@ func DeploymentCreator(getRegistry GetImageRegistry) reconciling.NamedDeployment
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            "update-operator",
-					Image:           getRegistry(resources.RegistryQuay) + "/coreos/container-linux-update-operator:v0.7.0",
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/bin/update-operator"},
+					Name:    "update-operator",
+					Image:   getRegistry(resources.RegistryQuay) + "/coreos/container-linux-update-operator:v0.7.0",
+					Command: []string{"/bin/update-operator"},
 					Env: []corev1.EnvVar{
 						{
 							Name: "POD_NAMESPACE",
@@ -64,8 +63,6 @@ func DeploymentCreator(getRegistry GetImageRegistry) reconciling.NamedDeployment
 							},
 						},
 					},
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 				},
 			}
 

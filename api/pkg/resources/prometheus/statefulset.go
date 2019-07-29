@@ -84,11 +84,8 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:                     name,
-					Image:                    data.ImageRegistry(resources.RegistryQuay) + "/prometheus/prometheus:" + tag,
-					ImagePullPolicy:          corev1.PullIfNotPresent,
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+					Name:  name,
+					Image: data.ImageRegistry(resources.RegistryQuay) + "/prometheus/prometheus:" + tag,
 					Args: []string{
 						"--config.file=/etc/prometheus/config/prometheus.yaml",
 						"--storage.tsdb.path=/var/prometheus/data",

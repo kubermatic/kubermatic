@@ -40,10 +40,9 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            "update-agent",
-					Image:           getRegistry(resources.RegistryQuay) + "/coreos/container-linux-update-operator:v0.7.0",
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/bin/update-agent"},
+					Name:    "update-agent",
+					Image:   getRegistry(resources.RegistryQuay) + "/coreos/container-linux-update-operator:v0.7.0",
+					Command: []string{"/bin/update-agent"},
 					Env: []corev1.EnvVar{
 						{
 							Name: "UPDATE_AGENT_NODE",
@@ -64,8 +63,6 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 							},
 						},
 					},
-					TerminationMessagePath:   corev1.TerminationMessagePathDefault,
-					TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "var-run-dbus",

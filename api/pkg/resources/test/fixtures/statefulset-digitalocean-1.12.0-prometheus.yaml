@@ -39,7 +39,6 @@ spec:
         - --storage.tsdb.no-lockfile
         - --web.route-prefix=/
         image: quay.io/prometheus/prometheus:v2.9.2
-        imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 10
           httpGet:
@@ -72,8 +71,6 @@ spec:
           requests:
             cpu: 50m
             memory: 256Mi
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/prometheus/config
           name: config

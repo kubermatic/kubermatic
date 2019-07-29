@@ -145,7 +145,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 
 			gotConfigMap := &corev1.ConfigMap{}
 			if err := client.Get(context.Background(), key, gotConfigMap); err != nil {
-				t.Fatalf("Failed to get the ServiceAccount from the client: %v", err)
+				t.Fatalf("Failed to get the ConfigMap from the client: %v", err)
 			}
 
 			if diff := deep.Equal(gotConfigMap, test.expectedObject); diff != nil {
