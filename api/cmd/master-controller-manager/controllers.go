@@ -10,21 +10,14 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-type minimalControllerContext struct {
-	mgr         manager.Manager
-	workerCount int
-	seedsGetter provider.SeedsGetter
-	selector    func(*metav1.ListOptions)
-}
-
-func createAllControllers(ctrlCtx minimalControllerContext) error {
+func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := createRBACContoller(ctrlCtx); err != nil {
 		return fmt.Errorf("failed to create rbac controller: %v", err)
 	}
@@ -34,13 +27,13 @@ func createAllControllers(ctrlCtx minimalControllerContext) error {
 	if err := serviceaccount.Add(ctrlCtx.mgr); err != nil {
 		return fmt.Errorf("failed to create serviceaccount controller: %v", err)
 	}
-	if err := seedproxy.Add(ctrlCtx.mgr, 1, ctrlCtx.kubeconfig, ctrlCtx.seedsGetter); err != nil {
+	if err := seedproxy.Add(ctrlCtx.mgr, 1, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create seedproxy controllre: %v", err)
 	}
 	return nil
 }
 
-func createRBACContoller(ctrlCtx minimalControllerContext) error {
+func createRBACContoller(ctrlCtx *controllerContext) error {
 	masterClusterProvider, err := rbacClusterProvider(ctrlCtx.mgr.GetConfig(), "master", true, ctrlCtx.labelSelectorFunc)
 	if err != nil {
 		return fmt.Errorf("failed to create master rbac provider: %v", err)
@@ -56,7 +49,7 @@ func createRBACContoller(ctrlCtx minimalControllerContext) error {
 		if err != nil {
 			return fmt.Errorf("failed to get kubeconfig for seed %q: %v", seedName, err)
 		}
-		clusterProvider, err := rbacClusterProvider(kubeConfig, seedName, false, ctrlCtx.selector)
+		clusterProvider, err := rbacClusterProvider(kubeConfig, seedName, false, ctrlCtx.labelSelectorFunc)
 		if err != nil {
 			return fmt.Errorf("failed to create rbac provider for seed %q: %v", seedName, err)
 		}
@@ -100,5 +93,5 @@ func rbacClusterProvider(cfg *rest.Config, name string, master bool, labelSelect
 	kubermaticInformerFactory := externalversions.NewFilteredSharedInformerFactory(kubermaticClient, time.Minute*5, metav1.NamespaceAll, labelSelectorFunc)
 	kubeInformerProvider := rbac.NewInformerProvider(kubeClient, time.Minute*5)
 
-	return rbac.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, name), kubeClient, kubermaticInformerFactory, kubermaticClient, kubermaticInformerFactory), nil
+	return rbac.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, name), kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory), nil
 }
