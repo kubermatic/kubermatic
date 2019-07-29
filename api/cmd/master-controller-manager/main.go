@@ -30,8 +30,7 @@ type controllerRunOptions struct {
 	dynamicDatacenters bool
 	log                kubermaticlog.Options
 
-	workerName  string
-	workerCount int
+	workerName string
 }
 
 type controllerContext struct {
