@@ -341,8 +341,8 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 
 func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, workerName string, oidcKubeCfgEndpointEnabled bool) provider.ClusterProviderGetter {
 	// Discovery can take very long when the cluster is not physically close, so cache the discovery info
-	mapperLock := &sync.Mutex{}
-	restMapperCache := map[string]meta.RESTMapper{}
+	// use a sync.Map as we read a lot from this map but almost never write to it
+	restMapperCache := &sync.Map{}
 
 	return func(seedName string) (provider.ClusterProvider, error) {
 		cfg, err := seedKubeconfigGetter(seedName)
@@ -355,22 +355,26 @@ func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, 
 		}
 		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
 
-		// Make sure this changes if someone uses the same name for a differt seed
+		var mapper meta.RESTMapper
 		mapperKey := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s/%s/%s/%s",
 			seedName, cfg.Host, cfg.APIPath, cfg.Username, cfg.Password, cfg.BearerToken, cfg.BearerTokenFile,
 			string(cfg.CertData), string(cfg.KeyData), string(cfg.CAData))
-
-		// We must acquire the lock here to not get panics for concurrent map access
-		mapperLock.Lock()
-		defer mapperLock.Unlock()
-		if _, exists := restMapperCache[mapperKey]; !exists {
-			restMapperCache[mapperKey], err = restmapper.NewDynamicRESTMapper(cfg)
+		rawMapper, exists := restMapperCache.Load(mapperKey)
+		if !exists {
+			mapper, err = restmapper.NewDynamicRESTMapper(cfg)
 			if err != nil {
+				kubermaticlog.Logger.With("error", err).With("seed", seedName).Error("failed to create restMapper")
 				return nil, fmt.Errorf("failed to create restMapper for seed %q: %v", seedName, err)
 			}
 			kubermaticlog.Logger.With("seed", seedName).Info("Created restMapper")
+			restMapperCache.Store(mapperKey, mapper)
+		} else {
+			var ok bool
+			mapper, ok = rawMapper.(meta.RESTMapper)
+			if !ok {
+				return nil, fmt.Errorf("didn't get a restMapper from the cache")
+			}
 		}
-		mapper := restMapperCache[mapperKey]
 		seedCtrlruntimeClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Mapper: mapper})
 		if err != nil {
 			return nil, fmt.Errorf("failed to create dynamic seed client: %v", err)
