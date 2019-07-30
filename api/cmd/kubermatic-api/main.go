@@ -26,7 +26,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 
+	"github.com/golang/glog"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
@@ -48,6 +50,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
+	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -322,6 +326,10 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 }
 
 func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, workerName string, oidcKubeCfgEndpointEnabled bool) provider.ClusterProviderGetter {
+	// Discovery can take very long when the cluster is not physically close, so cache the discovery info
+	mapperLock := &sync.Mutex{}
+	restMapperCache := map[string]meta.RESTMapper{}
+
 	return func(seedName string) (provider.ClusterProvider, error) {
 		cfg, err := seedKubeconfigGetter(seedName)
 		if err != nil {
@@ -332,7 +340,24 @@ func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, 
 			return nil, fmt.Errorf("faild to create kubeClient: %v", err)
 		}
 		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
-		seedCtrlruntimeClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
+
+		// Make sure this changes if someone uses the same name for a differt seed
+		mapperKey := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s/%s/%s",
+			seedName, cfg.Host, cfg.APIPath, cfg.Username, cfg.Password, cfg.BearerToken, cfg.BearerTokenFile,
+			string(cfg.CertData), string(cfg.KeyData), string(cfg.CAData))
+
+		// We must aquire the lock here to not get panics for concurrent map access
+		mapperLock.Lock()
+		defer mapperLock.Unlock()
+		if _, exists := restMapperCache[mapperKey]; !exists {
+			restMapperCache[mapperKey], err = restmapper.NewDynamicRESTMapper(cfg)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create restMapper for seed %q: %v", seedName, err)
+			}
+			kubermaticlog.Logger.With("seed", seedName).Info("Created restMapper")
+		}
+		mapper := restMapperCache[mapperKey]
+		seedCtrlruntimeClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Mapper: mapper})
 		if err != nil {
 			return nil, fmt.Errorf("failed to create dynamic seed client: %v", err)
 		}
