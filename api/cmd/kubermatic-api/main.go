@@ -28,7 +28,6 @@ import (
 	"os"
 	"sync"
 
-	"github.com/golang/glog"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
@@ -143,6 +142,21 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, err
 	}
 	clusterProviderGetter := clusterProviderFactory(seedKubeconfigGetter, options.workerName, options.featureGates.Enabled(OIDCKubeCfgEndpoint))
+
+	// Warm up the restMapper cache. Log but ignore errors encountered here, maybe there are stale seeds
+	go func() {
+		seeds, err := seedsGetter()
+		if err != nil {
+			kubermaticlog.Logger.With("error", err).Info("failed to get seeds when trying to warm up restMapper cache")
+			return
+		}
+		for seedName := range seeds {
+			if _, err := clusterProviderGetter(seedName); err != nil {
+				kubermaticlog.Logger.With("seed", seedName).With("error", err).Info("failed to get clusterProvider when trying to warm up restMapper cache")
+				continue
+			}
+		}
+	}()
 
 	userMasterLister := kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
@@ -342,11 +356,11 @@ func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, 
 		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
 
 		// Make sure this changes if someone uses the same name for a differt seed
-		mapperKey := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s/%s/%s",
+		mapperKey := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s/%s/%s/%s",
 			seedName, cfg.Host, cfg.APIPath, cfg.Username, cfg.Password, cfg.BearerToken, cfg.BearerTokenFile,
 			string(cfg.CertData), string(cfg.KeyData), string(cfg.CAData))
 
-		// We must aquire the lock here to not get panics for concurrent map access
+		// We must acquire the lock here to not get panics for concurrent map access
 		mapperLock.Lock()
 		defer mapperLock.Unlock()
 		if _, exists := restMapperCache[mapperKey]; !exists {
