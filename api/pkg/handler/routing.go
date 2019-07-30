@@ -41,7 +41,7 @@ type Routing struct {
 	oidcIssuerVerifier          auth.OIDCIssuerVerifier
 	tokenVerifiers              auth.TokenVerifier
 	tokenExtractors             auth.TokenExtractor
-	clusterProviders            map[string]provider.ClusterProvider
+	clusterProviderGetter       provider.ClusterProviderGetter
 	updateManager               common.UpdateManager
 	prometheusClient            prometheusapi.Client
 	projectMemberProvider       provider.ProjectMemberProvider
@@ -56,7 +56,7 @@ type Routing struct {
 // NewRouting creates a new Routing.
 func NewRouting(
 	seedsGetter provider.SeedsGetter,
-	newClusterProviders map[string]provider.ClusterProvider,
+	clusterProviderGetter provider.ClusterProviderGetter,
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
@@ -79,7 +79,7 @@ func NewRouting(
 ) Routing {
 	return Routing{
 		seedsGetter:                 seedsGetter,
-		clusterProviders:            newClusterProviders,
+		clusterProviderGetter:       clusterProviderGetter,
 		sshKeyProvider:              newSSHKeyProvider,
 		userProvider:                userProvider,
 		serviceAccountProvider:      serviceAccountProvider,

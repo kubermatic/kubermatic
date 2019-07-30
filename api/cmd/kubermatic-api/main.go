@@ -111,48 +111,6 @@ func main() {
 }
 
 func createInitProviders(options serverRunOptions) (providers, error) {
-	// create cluster providers - one foreach context
-	clusterProviders := map[string]provider.ClusterProvider{}
-	clientcmdConfig, err := clientcmd.LoadFromFile(options.kubeconfig)
-	if err != nil {
-		return providers{}, fmt.Errorf("unable to create client config for due to %v", err)
-	}
-
-	for ctx := range clientcmdConfig.Contexts {
-		clientConfig := clientcmd.NewNonInteractiveClientConfig(
-			*clientcmdConfig,
-			ctx,
-			&clientcmd.ConfigOverrides{CurrentContext: ctx},
-			nil,
-		)
-		cfg, err := clientConfig.ClientConfig()
-		if err != nil {
-			return providers{}, fmt.Errorf("unable to create client config for %s due to %v", ctx, err)
-		}
-		kubermaticlog.Logger.Infow("adding seed", "seed", ctx)
-		kubeClient := kubernetes.NewForConfigOrDie(cfg)
-		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
-		seedCtrlruntimeClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
-		if err != nil {
-			return providers{}, fmt.Errorf("failed to create dynamic seed client: %v", err)
-		}
-
-		userClusterConnectionProvider, err := client.NewExternal(seedCtrlruntimeClient)
-		if err != nil {
-			return providers{}, fmt.Errorf("failed to get userClusterConnectionProvider: %v", err)
-		}
-
-		clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(
-			defaultImpersonationClientForSeed.CreateImpersonatedKubermaticClientSet,
-			userClusterConnectionProvider,
-			options.workerName,
-			rbac.ExtractGroupPrefix,
-			seedCtrlruntimeClient,
-			kubeClient,
-			options.featureGates.Enabled(OIDCKubeCfgEndpoint),
-		)
-	}
-
 	masterCfg, err := clientcmd.BuildConfigFromFlags("", options.kubeconfig)
 	if err != nil {
 		return providers{}, fmt.Errorf("unable to build client configuration from kubeconfig due to %v", err)
@@ -176,6 +134,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	if err != nil {
 		return providers{}, err
 	}
+	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(context.Background(), mgr.GetClient(), options.kubeconfig, options.dynamicDatacenters)
+	if err != nil {
+		return providers{}, err
+	}
+	clusterProviderGetter := clusterProviderFactory(seedKubeconfigGetter, options.workerName, options.featureGates.Enabled(OIDCKubeCfgEndpoint))
 
 	userMasterLister := kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
@@ -221,7 +184,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		projectMember:                         projectMemberProvider,
 		memberMapper:                          projectMemberProvider,
 		eventRecorderProvider:                 eventRecorderProvider,
-		clusters:                              clusterProviders,
+		clusterProviderGetter:                 clusterProviderGetter,
 		seedsGetter:                           seedsGetter,
 		credentialsProvider:                   credentialsProvider}, nil
 }
@@ -287,7 +250,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 
 	r := handler.NewRouting(
 		prov.seedsGetter,
-		prov.clusters,
+		prov.clusterProviderGetter,
 		prov.sshKey,
 		prov.user,
 		prov.serviceAccountProvider,
@@ -356,4 +319,37 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	}
 
 	return instrumentHandler(mainRouter, lookupRoute), nil
+}
+
+func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, workerName string, oidcKubeCfgEndpointEnabled bool) provider.ClusterProviderGetter {
+	return func(seedName string) (provider.ClusterProvider, error) {
+		cfg, err := seedKubeconfigGetter(seedName)
+		if err != nil {
+			return nil, err
+		}
+		kubeClient, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("faild to create kubeClient: %v", err)
+		}
+		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
+		seedCtrlruntimeClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create dynamic seed client: %v", err)
+		}
+
+		userClusterConnectionProvider, err := client.NewExternal(seedCtrlruntimeClient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get userClusterConnectionProvider: %v", err)
+		}
+
+		return kubernetesprovider.NewClusterProvider(
+			defaultImpersonationClientForSeed.CreateImpersonatedKubermaticClientSet,
+			userClusterConnectionProvider,
+			workerName,
+			rbac.ExtractGroupPrefix,
+			seedCtrlruntimeClient,
+			kubeClient,
+			oidcKubeCfgEndpointEnabled,
+		), nil
+	}
 }
