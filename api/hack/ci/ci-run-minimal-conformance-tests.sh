@@ -119,10 +119,10 @@ retry 5 vault kv get -field=values.yaml \
 retry 5 vault kv get -field=datacenters.yaml \
   dev/seed-clusters/ci.kubermatic.io > $DATACENTERS_FILE
 retry 5 vault kv get -field=project_id \
-	dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_project_id
+  dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_project_id
 export KUBERMATIC_PROJECT_ID="$(cat /tmp/kubermatic_project_id)"
 retry 5 vault kv get -field=serviceaccount_token \
-	dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_serviceaccount_token
+  dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_serviceaccount_token
 export KUBERMATIC_SERVICEACCOUNT_TOKEN="$(cat /tmp/kubermatic_serviceaccount_token)"
 echodate "Successfully got secrets from Vault"
 
@@ -131,7 +131,7 @@ build_tag_if_not_exists() {
   # Build kubermatic binaries and push the image
   if ! curl -Ss --fail "http://registry.registry.svc.cluster.local.:5000/v2/kubermatic/api/tags/list"|grep -q "$1"; then
     mkdir -p /etc/containers
-		cat <<EOF > /etc/containers/registries.conf
+    cat <<EOF > /etc/containers/registries.conf
 [registries.search]
 registries = ['docker.io']
 [registries.insecure]
@@ -196,6 +196,96 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-admin
+---
+kind: Secret
+apiVersion: v1
+metadata:
+  name: ${SEED_NAME}-kubeconfig
+  namespace: ${NAMESPACE}
+data:
+  kubeconfig: "$(cat $KUBECONFIG|base64 -w0)"
+---
+kind: Seed
+apiVersion: kubermatic.k8s.io/v1
+metadata:
+  name: ${SEED_NAME}
+  namespace: ${NAMESPACE}
+spec:
+  country: Germany
+  location: Hamburg
+  kubeconfig:
+    name: ${SEED_NAME}-kubeconfig
+    namespace: ${NAMESPACE}
+    #fieldPath: TODO: Add this to the code, makes the whole thing more intuitive
+  datacenters:
+    aws-eu-west-1a:
+      location: EU (Ireland)
+      country: IE
+      spec:
+        aws:
+          region: eu-west-1
+          zone_character: a
+    syseleven-dbl1:
+      location: Syseleven - dbl1
+      country: DE
+      spec:
+        openstack:
+          auth_url: https://api.cbk.cloud.syseleven.net:5000/v3
+          availability_zone: dbl1
+          region: dbl
+          dns_servers:
+          - "37.123.105.116"
+          - "37.123.105.117"
+          images:
+            ubuntu: "Ubuntu 18.04 LTS - 2018-08-10"
+          enforce_floating_ip: true
+    hetzner-nbg1:
+      location: Nuremberg 1 DC 3
+      country: DE
+      spec:
+        hetzner:
+          datacenter: nbg1-dc3
+    vsphere-ger:
+      location: Hamburg
+      country: DE
+      spec:
+        vsphere:
+          endpoint: "https://vcenter.loodse.io"
+          datacenter: "dc-1"
+          datastore: "exsi-nas"
+          cluster: "cl-1"
+          root_path: "/dc-1/vm/e2e-tests"
+          templates:
+            ubuntu: "machine-controller-e2e-ubuntu"
+            centos: "machine-controller-e2e-centos"
+            coreos: "machine-controller-e2e-coreos"
+    azure-westeurope:
+      location: "Azure West europe"
+      country: NL
+      spec:
+        azure:
+          location: "westeurope"
+    gcp-westeurope:
+      location: "Europe West (Germany)"
+      country: DE
+      spec:
+        gcp:
+          region: europe-west3
+          zone_suffixes:
+          - c
+    packet-ewr1:
+      location: "Packet EWR1 (New York)"
+      country: US
+      spec:
+        packet:
+          facilities:
+          - ewr1
+    do-ams3:
+      location: Amsterdam
+      country: NL
+      spec:
+        digitalocean:
+          region: ams3
 EOF
 )
 echodate "Creating namespace $NAMESPACE to deploy kubermatic in"
@@ -231,6 +321,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
+  --set=kubermatic.dynamicDatacenters=true \
   ${OPENSHIFT_HELM_ARGS:-} \
   --values ${VALUES_FILE} \
   --namespace $NAMESPACE \
