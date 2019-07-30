@@ -58,16 +58,18 @@ func DownloadImage(ctx context.Context, log *zap.Logger, dryRun bool, image stri
 	timeout := 15 * time.Minute
 	timer := time.NewTimer(timeout)
 	interval := time.Minute
+	var err error
 	for {
 		select {
 		case <-timer.C:
 			return fmt.Errorf("failed to pull image %s during %v", image, timeout)
 		default:
-			if err := execCommand(log, dryRun, cmd); err == nil {
+			err = execCommand(log, dryRun, cmd)
+			if err == nil {
 				return nil
-			} else {
-				log.Debug(fmt.Sprintf("%v", err))
 			}
+
+			log.Debug(fmt.Sprintf("%v", err))
 			time.Sleep(interval)
 		}
 	}
