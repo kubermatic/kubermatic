@@ -58,8 +58,14 @@ spec:
         - -worker-name={{ .Values.kubermatic.worker_name }}
         {{- end }}
         - -worker-count={{ .Values.kubermatic.masterController.workerCount }}
+        - -namespace=$(NAMESPACE)
         image: '{{ .Values.kubermatic.masterController.image.repository }}:{{ .Values.kubermatic.masterController.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.masterController.image.pullPolicy }}
+        env:
+        - name: NAMESPACE
+          valueFrom:
+           fieldRef:
+             fieldPath: metadata.namespace
         volumeMounts:
           - name: kubeconfig
             mountPath: "/opt/.kube/"

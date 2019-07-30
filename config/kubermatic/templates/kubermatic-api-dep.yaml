@@ -60,8 +60,14 @@ spec:
         {{- if .Values.kubermatic.exposeStrategy }}
         - -expose-strategy={{ .Values.kubermatic.exposeStrategy }}
         {{- end }}
+        - -namespace=$(NAMESPACE)
         image: '{{ .Values.kubermatic.api.image.repository }}:{{ .Values.kubermatic.api.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.api.image.pullPolicy }}
+        env:
+        - name: NAMESPACE
+          valueFrom:
+           fieldRef:
+             fieldPath: metadata.namespace
         ports:
         - name: metrics
           containerPort: 8085
