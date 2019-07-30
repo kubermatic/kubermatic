@@ -57,12 +57,13 @@ func DownloadImage(ctx context.Context, log *zap.Logger, dryRun bool, image stri
 	cmd := exec.CommandContext(ctx, "docker", "pull", image)
 	timeout := 15 * time.Minute
 	timer := time.NewTimer(timeout)
+	interval := time.Minute
 	for {
 		select {
 		case <-timer.C:
 			return fmt.Errorf("failed to pull image %s during %v", image, timeout)
 		default:
-			time.Sleep(time.Minute)
+			time.Sleep(interval)
 			if err := execCommand(log, dryRun, cmd); err == nil {
 				return nil
 			} else {
