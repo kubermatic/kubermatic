@@ -54,11 +54,6 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			envVars, err := getEnvVars(data)
-			if err != nil {
-				return nil, err
-			}
-
 			volumes := []corev1.Volume{getKubeconfigVolume(), getServingCertVolume()}
 			dep.Spec.Template.Spec.Volumes = volumes
 			podLabels, err := data.GetPodTemplateLabels(resources.MachineControllerWebhookDeploymentName, volumes, nil)
