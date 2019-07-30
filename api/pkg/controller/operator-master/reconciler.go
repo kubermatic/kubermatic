@@ -7,7 +7,6 @@ import (
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"go.uber.org/zap"
 	"k8s.io/client-go/tools/cache"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -18,11 +17,10 @@ import (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	clientConfig *clientcmdapi.Config
-	log          *zap.SugaredLogger
-	recorder     record.EventRecorder
-	workerName   string
-	ctx          context.Context
+	log        *zap.SugaredLogger
+	recorder   record.EventRecorder
+	workerName string
+	ctx        context.Context
 }
 
 // Reconcile acts upon requests and will restore the state of resources

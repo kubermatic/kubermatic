@@ -1,0 +1,40 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kubermatic-operator
+  namespace: kubermatic-operator
+  labels:
+    app.kubernetes.io/name: kubermatic-operator
+    app.kubernetes.io/version: '__KUBERMATIC_TAG__'
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kubermatic-operator
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/scrape_port: '8085'
+        fluentbit.io/parser: glog
+    spec:
+      serviceAccountName: kubermatic-operator
+      containers:
+      - name: operator
+        image: 'quay.io/kubermatic/api:__KUBERMATIC_TAG__'
+        imagePullPolicy: IfNotPresent
+        command:
+        - kubermatic-operator
+        args:
+        - -internal-address=0.0.0.0:8085
+        - -log-format=json
+        ports:
+        - name: metrics
+          containerPort: 8085
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
