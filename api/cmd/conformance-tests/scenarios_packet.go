@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
@@ -15,15 +14,15 @@ func getPacketScenarios(versions []*semver.Semver) []testScenario {
 		// Ubuntu
 		scenarios = append(scenarios, &packetScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-				Ubuntu: &kubermaticapiv1.UbuntuSpec{},
+			nodeOsSpec: apimodels.OperatingSystemSpec{
+				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		})
 		// CoreOS
 		scenarios = append(scenarios, &packetScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-				ContainerLinux: &kubermaticapiv1.ContainerLinuxSpec{
+			nodeOsSpec: apimodels.OperatingSystemSpec{
+				ContainerLinux: &apimodels.ContainerLinuxSpec{
 					// Otherwise the nodes restart directly after creation - bad for tests
 					DisableAutoUpdate: true,
 				},
@@ -32,8 +31,8 @@ func getPacketScenarios(versions []*semver.Semver) []testScenario {
 		// CentOS
 		scenarios = append(scenarios, &packetScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-				CentOS: &kubermaticapiv1.CentOSSpec{},
+			nodeOsSpec: apimodels.OperatingSystemSpec{
+				Centos: &apimodels.CentOSSpec{},
 			},
 		})
 	}
@@ -43,7 +42,7 @@ func getPacketScenarios(versions []*semver.Semver) []testScenario {
 
 type packetScenario struct {
 	version    *semver.Semver
-	nodeOsSpec kubermaticapiv1.OperatingSystemSpec
+	nodeOsSpec apimodels.OperatingSystemSpec
 }
 
 func (s *packetScenario) Name() string {
@@ -68,27 +67,29 @@ func (s *packetScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	}
 }
 
-func (s *packetScenario) NodeDeployments(num int, _ secrets) []kubermaticapiv1.NodeDeployment {
-	return []kubermaticapiv1.NodeDeployment{
+func (s *packetScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDeployment {
+	instanceType := "t1.small.x86"
+	replicas := int32(num)
+	return []apimodels.NodeDeployment{
 		{
-			Spec: kubermaticapiv1.NodeDeploymentSpec{
-				Replicas: int32(num),
-				Template: kubermaticapiv1.NodeSpec{
-					Cloud: kubermaticapiv1.NodeCloudSpec{
-						Packet: &kubermaticapiv1.PacketNodeSpec{
-							InstanceType: "t1.small.x86",
+			Spec: &apimodels.NodeDeploymentSpec{
+				Replicas: &replicas,
+				Template: &apimodels.NodeSpec{
+					Cloud: &apimodels.NodeCloudSpec{
+						Packet: &apimodels.PacketNodeSpec{
+							InstanceType: &instanceType,
 						},
 					},
-					Versions: kubermaticapiv1.NodeVersionInfo{
+					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: s.nodeOsSpec,
+					OperatingSystem: &s.nodeOsSpec,
 				},
 			},
 		},
 	}
 }
 
-func (s *packetScenario) OS() kubermaticapiv1.OperatingSystemSpec {
+func (s *packetScenario) OS() apimodels.OperatingSystemSpec {
 	return s.nodeOsSpec
 }

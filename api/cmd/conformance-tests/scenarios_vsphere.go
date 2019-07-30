@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
@@ -15,15 +14,15 @@ func getVSphereScenarios(versions []*semver.Semver) []testScenario {
 		// Ubuntu
 		scenarios = append(scenarios, &vSphereScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-				Ubuntu: &kubermaticapiv1.UbuntuSpec{},
+			nodeOsSpec: apimodels.OperatingSystemSpec{
+				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		})
 		// CoreOS
 		scenarios = append(scenarios, &vSphereScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-				ContainerLinux: &kubermaticapiv1.ContainerLinuxSpec{
+			nodeOsSpec: apimodels.OperatingSystemSpec{
+				ContainerLinux: &apimodels.ContainerLinuxSpec{
 					// Otherwise the nodes restart directly after creation - bad for tests
 					DisableAutoUpdate: true,
 				},
@@ -32,8 +31,8 @@ func getVSphereScenarios(versions []*semver.Semver) []testScenario {
 		// CentOS
 		scenarios = append(scenarios, &vSphereScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-				CentOS: &kubermaticapiv1.CentOSSpec{},
+			nodeOsSpec: apimodels.OperatingSystemSpec{
+				Centos: &apimodels.CentOSSpec{},
 			},
 		})
 	}
@@ -43,7 +42,7 @@ func getVSphereScenarios(versions []*semver.Semver) []testScenario {
 
 type vSphereScenario struct {
 	version    *semver.Semver
-	nodeOsSpec kubermaticapiv1.OperatingSystemSpec
+	nodeOsSpec apimodels.OperatingSystemSpec
 }
 
 func (s *vSphereScenario) Name() string {
@@ -68,30 +67,31 @@ func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 	}
 }
 
-func (s *vSphereScenario) NodeDeployments(num int, _ secrets) []kubermaticapiv1.NodeDeployment {
+func (s *vSphereScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDeployment {
 	osName := getOSNameFromSpec(s.nodeOsSpec)
-	return []kubermaticapiv1.NodeDeployment{
+	replicas := int32(num)
+	return []apimodels.NodeDeployment{
 		{
-			Spec: kubermaticapiv1.NodeDeploymentSpec{
-				Replicas: int32(num),
-				Template: kubermaticapiv1.NodeSpec{
-					Cloud: kubermaticapiv1.NodeCloudSpec{
-						VSphere: &kubermaticapiv1.VSphereNodeSpec{
+			Spec: &apimodels.NodeDeploymentSpec{
+				Replicas: &replicas,
+				Template: &apimodels.NodeSpec{
+					Cloud: &apimodels.NodeCloudSpec{
+						Vsphere: &apimodels.VSphereNodeSpec{
 							Template: fmt.Sprintf("machine-controller-e2e-%s", osName),
-							CPUs:     2,
+							Cpus:     2,
 							Memory:   2048,
 						},
 					},
-					Versions: kubermaticapiv1.NodeVersionInfo{
+					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: s.nodeOsSpec,
+					OperatingSystem: &s.nodeOsSpec,
 				},
 			},
 		},
 	}
 }
 
-func (s *vSphereScenario) OS() kubermaticapiv1.OperatingSystemSpec {
+func (s *vSphereScenario) OS() apimodels.OperatingSystemSpec {
 	return s.nodeOsSpec
 }

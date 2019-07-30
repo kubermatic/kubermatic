@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
@@ -16,15 +15,15 @@ func getGCPScenarios(versions []*semver.Semver) []testScenario {
 		// Ubuntu
 		scenarios = append(scenarios, &gcpScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-				Ubuntu: &kubermaticapiv1.UbuntuSpec{},
+			nodeOsSpec: apimodels.OperatingSystemSpec{
+				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		})
 		// CoreOS
 		scenarios = append(scenarios, &gcpScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-				ContainerLinux: &kubermaticapiv1.ContainerLinuxSpec{
+			nodeOsSpec: apimodels.OperatingSystemSpec{
+				ContainerLinux: &apimodels.ContainerLinuxSpec{
 					// Otherwise the nodes restart directly after creation - bad for tests
 					DisableAutoUpdate: true,
 				},
@@ -33,8 +32,8 @@ func getGCPScenarios(versions []*semver.Semver) []testScenario {
 		// CentOS
 		scenarios = append(scenarios, &gcpScenario{
 			version: v,
-			nodeOsSpec: kubermaticapiv1.OperatingSystemSpec{
-				CentOS: &kubermaticapiv1.CentOSSpec{},
+			nodeOsSpec: apimodels.OperatingSystemSpec{
+				Centos: &apimodels.CentOSSpec{},
 			},
 		})
 	}
@@ -43,7 +42,7 @@ func getGCPScenarios(versions []*semver.Semver) []testScenario {
 
 type gcpScenario struct {
 	version    *semver.Semver
-	nodeOsSpec kubermaticapiv1.OperatingSystemSpec
+	nodeOsSpec apimodels.OperatingSystemSpec
 }
 
 func (s *gcpScenario) Name() string {
@@ -70,14 +69,16 @@ func (s *gcpScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	}
 }
 
-func (s *gcpScenario) NodeDeployments(num int, secrets secrets) []kubermaticapiv1.NodeDeployment {
-	return []kubermaticapiv1.NodeDeployment{
+func (s *gcpScenario) NodeDeployments(num int, secrets secrets) []apimodels.NodeDeployment {
+	replicas := int32(num)
+
+	return []apimodels.NodeDeployment{
 		{
-			Spec: kubermaticapiv1.NodeDeploymentSpec{
-				Replicas: int32(num),
-				Template: kubermaticapiv1.NodeSpec{
-					Cloud: kubermaticapiv1.NodeCloudSpec{
-						GCP: &kubermaticapiv1.GCPNodeSpec{
+			Spec: &apimodels.NodeDeploymentSpec{
+				Replicas: &replicas,
+				Template: &apimodels.NodeSpec{
+					Cloud: &apimodels.NodeCloudSpec{
+						Gcp: &apimodels.GCPNodeSpec{
 							Zone:        secrets.GCP.Zone,
 							MachineType: "n1-standard-2",
 							DiskType:    "pd-standard",
@@ -88,16 +89,16 @@ func (s *gcpScenario) NodeDeployments(num int, secrets secrets) []kubermaticapiv
 							},
 						},
 					},
-					Versions: kubermaticapiv1.NodeVersionInfo{
+					Versions: &apimodels.NodeVersionInfo{
 						Kubelet: s.version.String(),
 					},
-					OperatingSystem: s.nodeOsSpec,
+					OperatingSystem: &s.nodeOsSpec,
 				},
 			},
 		},
 	}
 }
 
-func (s *gcpScenario) OS() kubermaticapiv1.OperatingSystemSpec {
+func (s *gcpScenario) OS() apimodels.OperatingSystemSpec {
 	return s.nodeOsSpec
 }
