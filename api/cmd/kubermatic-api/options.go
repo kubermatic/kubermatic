@@ -137,6 +137,6 @@ type providers struct {
 	projectMember                         provider.ProjectMemberProvider
 	memberMapper                          provider.ProjectMemberMapper
 	eventRecorderProvider                 provider.EventRecorderProvider
-	clusterProviderGetter                 provider.ClusterProviderGetter
+	clusters                              map[string]provider.ClusterProvider
 	seedsGetter                           provider.SeedsGetter
 }
