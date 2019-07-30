@@ -41,7 +41,7 @@ spec:
         env:
         - name: DO_TOKEN
           value: do-token
-        image: docker.io/kubermatic/machine-controller:v1.4.2
+        image: docker.io/kubermatic/machine-controller:v1.4.3
         livenessProbe:
           failureThreshold: 3
           httpGet:
