@@ -49,20 +49,26 @@ spec:
         - -v=4
         - -logtostderr
         - -kubeconfig=/opt/.kube/kubeconfig
+        {{- if .Values.kubermatic.dynamicDatacenters }}
+        - -dynamic-datacenters=true
+        {{- else }}
         - -datacenters=/opt/datacenter/datacenters.yaml
-        - -worker-count={{ .Values.kubermatic.masterController.workerCount }}
+        {{- end }}
         {{- if .Values.kubermatic.worker_name }}
         - -worker-name={{ .Values.kubermatic.worker_name }}
         {{- end }}
+        - -worker-count={{ .Values.kubermatic.masterController.workerCount }}
         image: '{{ .Values.kubermatic.masterController.image.repository }}:{{ .Values.kubermatic.masterController.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.masterController.image.pullPolicy }}
         volumeMounts:
           - name: kubeconfig
             mountPath: "/opt/.kube/"
             readOnly: true
+        {{- if not .Values.kubermatic.dynamicDatacenters }}
           - name: datacenters
             mountPath: "/opt/datacenter/"
             readOnly: true
+        {{- else }}
         resources:
 {{ toYaml .Values.kubermatic.masterController.resources | indent 10 }}
       imagePullSecrets:
@@ -71,9 +77,11 @@ spec:
       - name: kubeconfig
         secret:
           secretName: kubeconfig
+      {{- if not .Values.kubermatic.dynamicDatacenters }}
       - name: datacenters
         secret:
           secretName: datacenters
+      {{- end }}
       nodeSelector:
 {{ toYaml .Values.kubermatic.masterController.nodeSelector | indent 8 }}
       affinity:

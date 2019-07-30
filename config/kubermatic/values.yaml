@@ -36,6 +36,9 @@ kubermatic:
   controllerManagerDefaultReplicas: "1"
   schedulerDefaultReplicas: "1"
 
+  # Whether to load the datacenters from CRDs dynamically during runtime
+  dynamicDatacenters: false
+
   # helm hooks/checks
   checks:
     # Checks if the last release contains the kubermatic CRD's.
