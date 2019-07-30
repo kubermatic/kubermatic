@@ -28,7 +28,6 @@ import (
 	"os"
 	"sync"
 
-	"github.com/golang/glog"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
