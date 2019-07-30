@@ -58,6 +58,7 @@ type controllerRunOptions struct {
 	log                                              kubermaticlog.Options
 	kubermaticImage                                  string
 	dynamicDatacenters                               bool
+	namespace                                        string
 	apiServerDefaultReplicas                         int
 	controllerManagerDefaultReplicas                 int
 	schedulerDefaultReplicas                         int
@@ -114,6 +115,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.StringVar(&c.kubermaticImage, "kubermatic-image", resources.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
 	flag.BoolVar(&c.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
+	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "The default number of replicas for usercluster api servers")
 	flag.IntVar(&c.controllerManagerDefaultReplicas, "controller-manager-default-replicas", 1, "The default number of replicas for usercluster controller managers")
 	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")

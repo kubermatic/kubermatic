@@ -216,7 +216,7 @@ spec:
   kubeconfig:
     name: ${SEED_NAME}-kubeconfig
     namespace: ${NAMESPACE}
-    #fieldPath: TODO: Add this to the code, makes the whole thing more intuitive
+    fieldPath: kubeconfig
   datacenters:
     aws-eu-west-1a:
       location: EU (Ireland)

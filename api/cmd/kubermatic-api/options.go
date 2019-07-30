@@ -28,6 +28,7 @@ type serverRunOptions struct {
 	domain             string
 	exposeStrategy     corev1.ServiceType
 	dynamicDatacenters bool
+	namespace          string
 	log                kubermaticlog.Options
 
 	// OIDC configuration
@@ -77,6 +78,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.serviceAccountSigningKey, "service-account-signing-key", "", "Signing key authenticates the service account's token value using HMAC. It is recommended to use a key with 32 bytes or longer.")
 	flag.StringVar(&rawExposeStrategy, "expose-strategy", "NodePort", "The strategy to expose the controlplane with, either \"NodePort\" which creates NodePorts with a \"nodeport-proxy.k8s.io/expose: true\" annotation or \"LoadBalancer\", which creates a LoadBalancer")
 	flag.BoolVar(&s.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
+	flag.StringVar(&s.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.BoolVar(&s.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&s.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
