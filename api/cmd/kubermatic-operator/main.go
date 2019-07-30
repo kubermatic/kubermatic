@@ -30,7 +30,7 @@ type controllerRunOptions struct {
 
 func main() {
 	opt := &controllerRunOptions{}
-	flag.StringVar(&opt.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required out-of-cluster.")
+	flag.StringVar(&opt.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if outside of cluster.")
 	flag.IntVar(&opt.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&opt.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served")
 	flag.BoolVar(&opt.log.Debug, "log-debug", false, "Enables debug logging")
