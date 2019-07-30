@@ -116,7 +116,7 @@ func GetUser(email, id, name string, admin bool) apiv1.User {
 // it is meant to be used by legacy handler.createTestEndpointAndGetClients function
 type newRoutingFunc func(
 	seedsGetter provider.SeedsGetter,
-	clusterProviderGetter provider.ClusterProviderGetter,
+	newClusterProviders map[string]provider.ClusterProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
@@ -222,12 +222,6 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		false,
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
-	clusterProviderGetter := func(seedName string) (provider.ClusterProvider, error) {
-		if clusterProvider, exists := clusterProviders[seedName]; exists {
-			return clusterProvider, nil
-		}
-		return nil, fmt.Errorf("can not find clusterprovider for cluster %q", seedName)
-	}
 
 	kubernetesInformerFactory.Start(wait.NeverStop)
 	kubernetesInformerFactory.WaitForCacheSync(wait.NeverStop)
@@ -241,7 +235,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	mainRouter := routingFunc(
 		seedsGetter,
-		clusterProviderGetter,
+		clusterProviders,
 		sshKeyProvider,
 		userProvider,
 		serviceAccountProvider,

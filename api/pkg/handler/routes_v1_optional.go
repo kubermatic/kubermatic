@@ -36,7 +36,7 @@ func (r Routing) RegisterV1Optional(mux *mux.Router, oidcKubeConfEndpoint bool, 
 func (r Routing) createOIDCKubeconfig(oidcCfg common.OIDCConfiguration) http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetClusterProvider(r.clusterProviders, r.seedsGetter),
 			middleware.UserInfoUnauthorized(r.userProjectMapper, r.userProvider),
 		)(cluster.CreateOIDCKubeconfigEndpoint(r.projectProvider, r.oidcIssuerVerifier, oidcCfg)),
 		cluster.DecodeCreateOIDCKubeconfig,
