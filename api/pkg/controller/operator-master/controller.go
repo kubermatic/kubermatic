@@ -8,7 +8,6 @@ import (
 
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -29,17 +28,15 @@ func Add(
 	ctx context.Context,
 	mgr manager.Manager,
 	numWorkers int,
-	clientConfig *clientcmdapi.Config,
 	log *zap.SugaredLogger,
 	workerName string,
 ) error {
 	reconciler := &Reconciler{
-		Client:       mgr.GetClient(),
-		recorder:     mgr.GetRecorder(ControllerName),
-		clientConfig: clientConfig,
-		log:          log.Named(ControllerName),
-		workerName:   workerName,
-		ctx:          ctx,
+		Client:     mgr.GetClient(),
+		recorder:   mgr.GetRecorder(ControllerName),
+		log:        log.Named(ControllerName),
+		workerName: workerName,
+		ctx:        ctx,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}

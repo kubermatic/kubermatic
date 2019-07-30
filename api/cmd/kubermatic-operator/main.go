@@ -30,7 +30,7 @@ type controllerRunOptions struct {
 
 func main() {
 	opt := &controllerRunOptions{}
-	flag.StringVar(&opt.kubeconfig, "kubeconfig", "", "Path to a kubeconfig.")
+	flag.StringVar(&opt.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if outside of cluster.")
 	flag.IntVar(&opt.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&opt.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served")
 	flag.BoolVar(&opt.log.Debug, "log-debug", false, "Enables debug logging")
@@ -52,24 +52,12 @@ func main() {
 	// set the logger used by sigs.k8s.io/controller-runtime
 	ctrllog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
-	clientConfig, err := clientcmd.LoadFromFile(opt.kubeconfig)
+	config, err := clientcmd.BuildConfigFromFlags("", opt.kubeconfig)
 	if err != nil {
-		log.Fatalw("Failed to read the kubeconfig", "error", err)
+		log.Fatalw("Failed to build config", "error", err)
 	}
 
-	config := clientcmd.NewNonInteractiveClientConfig(
-		*clientConfig,
-		clientConfig.CurrentContext,
-		&clientcmd.ConfigOverrides{CurrentContext: clientConfig.CurrentContext},
-		nil,
-	)
-
-	cfg, err := config.ClientConfig()
-	if err != nil {
-		log.Fatalw("Failed to create client", "error", err)
-	}
-
-	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: opt.internalAddr})
+	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: opt.internalAddr})
 	if err != nil {
 		log.Fatalw("Failed to create Controller Manager instance: %v", err)
 	}
@@ -81,7 +69,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if err := operatormaster.Add(ctx, mgr, 1, clientConfig, log, opt.workerName); err != nil {
+	if err := operatormaster.Add(ctx, mgr, 1, log, opt.workerName); err != nil {
 		log.Fatalw("Failed to add operator-master controller", "error", err)
 	}
 

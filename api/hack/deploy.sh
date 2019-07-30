@@ -41,19 +41,23 @@ function deploy {
   retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --atomic --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
 }
 
-sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic/Chart.yaml
+function initTiller() {
+  echodate "Initializing Tiller in namespace ${TILLER_NAMESPACE}"
+  # In clusters which have not been initialized yet, this will fail
+  helm version --tiller-namespace ${TILLER_NAMESPACE} || true
+  kubectl create serviceaccount -n ${TILLER_NAMESPACE} tiller-sa || true
+  kubectl create clusterrolebinding tiller-cluster-role --clusterrole=cluster-admin --serviceaccount=${TILLER_NAMESPACE}:tiller-sa  || true
+  retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} init --service-account tiller-sa --replicas 3 --history-max 10 --upgrade --force-upgrade --wait ${HELM_INIT_ARGS}
+  echodate "Tiller initialized successfully"
+}
 
-echodate "Initializing Tiller in namespace ${TILLER_NAMESPACE}"
-# In clusters which have not been initialized yet, this will fail
-helm version --tiller-namespace ${TILLER_NAMESPACE} || true
-kubectl create serviceaccount -n ${TILLER_NAMESPACE} tiller-sa || true
-kubectl create clusterrolebinding tiller-cluster-role --clusterrole=cluster-admin --serviceaccount=${TILLER_NAMESPACE}:tiller-sa  || true
-retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} init --service-account tiller-sa --replicas 3 --history-max 10 --upgrade --force-upgrade --wait ${HELM_INIT_ARGS}
-echodate "Tiller initialized successfully"
+sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic/Chart.yaml
+sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic-operator/*
 
 echodate "Deploying ${DEPLOY_STACK} stack..."
 case "${DEPLOY_STACK}" in
   monitoring)
+    initTiller
     deploy "node-exporter" "monitoring" ./config/monitoring/node-exporter/
     deploy "kube-state-metrics" "monitoring" ./config/monitoring/kube-state-metrics/
     deploy "grafana" "monitoring" ./config/monitoring/grafana/
@@ -68,12 +72,15 @@ case "${DEPLOY_STACK}" in
     ;;
 
   logging)
+    initTiller
     deploy "elasticsearch" "logging" ./config/logging/elasticsearch/
     deploy "fluentbit" "logging" ./config/logging/fluentbit/
     deploy "kibana" "logging" ./config/logging/kibana/
     ;;
 
   kubermatic)
+    initTiller
+
     echodate "Deploying the CRD's..."
     retry 5 kubectl apply -f ./config/kubermatic/crd/
 
@@ -99,5 +106,10 @@ case "${DEPLOY_STACK}" in
 
     # Kubermatic
     deploy "kubermatic" "kubermatic" ./config/kubermatic/
+    ;;
+
+  kubermatic-operator)
+    kubectl create namespace kubermatic-operator || true
+    kubectl apply -f ./config/kubermatic-operator/
     ;;
 esac
