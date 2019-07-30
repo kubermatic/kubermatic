@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/evanphx/json-patch"
@@ -32,7 +33,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -145,24 +145,18 @@ func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment
 	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, eventRecorder record.EventRecorder) error {
 	return wait.Poll(5*time.Second, 30*time.Minute, func() (bool, error) {
 		err := createInitialNodeDeployment(nodeDeployment, cluster, project, sshKeyProvider, dcs, clusterProvider, userInfo)
-		switch {
-		case err == nil:
-			return true, nil
-		case kerrors.IsInternalError(err):
-			// An internal error can be:
-			//
-			//  Internal error occurred: failed calling webhook "machine-controller.kubermatic.io-machinedeployments"
-			//  Post REDACTED: net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
-			fallthrough
-		case kerrors.IsServiceUnavailable(err):
-			fallthrough
-		case kerrors.IsServerTimeout(err):
+		if err != nil {
+			// unrecoverable
+			if strings.Contains(err.Error(), `admission webhook "machine-controller.kubermatic.io-machinedeployments" denied the request`) {
+				glog.V(4).Infof("giving up creating initial Node Deployments for cluster %s (%s) due to an unrecoverabl err %#v", cluster.Name, cluster.Spec.HumanReadableName, err)
+				return false, err
+			}
+			// Likely recoverable
 			eventRecorder.Eventf(cluster, corev1.EventTypeNormal, string(nodeDeploymentCreationRetry), "retrying creating initial Node Deployments%s for cluster %s (%s) due to %v", getNodeDeploymentDisplayName(nodeDeployment), cluster.Name, cluster.Spec.HumanReadableName, err)
 			glog.V(4).Infof("retrying creating initial Node Deployments for cluster %s (%s) due to %v", cluster.Name, cluster.Spec.HumanReadableName, err)
 			return false, nil
 		}
-		glog.V(4).Infof("giving up creating initial Node Deployments for cluster %s (%s) due to an unknown err %#v", cluster.Name, cluster.Spec.HumanReadableName, err)
-		return false, err
+		return true, nil
 	})
 }
 
