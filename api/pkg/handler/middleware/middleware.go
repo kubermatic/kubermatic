@@ -55,10 +55,10 @@ type dCGetter interface {
 }
 
 // SetClusterProvider is a middleware that injects the current ClusterProvider into the ctx
-func SetClusterProvider(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+func SetClusterProvider(clusterProviders map[string]provider.ClusterProvider, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			clusterProvider, ctx, err := getClusterProvider(ctx, request, seedsGetter, clusterProviderGetter)
+			clusterProvider, ctx, err := getClusterProvider(ctx, request, seedsGetter, clusterProviders)
 			if err != nil {
 				return nil, err
 			}
@@ -70,10 +70,10 @@ func SetClusterProvider(clusterProviderGetter provider.ClusterProviderGetter, se
 }
 
 // SetPrivilegedClusterProvider is a middleware that injects the current ClusterProvider into the ctx
-func SetPrivilegedClusterProvider(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+func SetPrivilegedClusterProvider(clusterProviders map[string]provider.ClusterProvider, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			clusterProvider, ctx, err := getClusterProvider(ctx, request, seedsGetter, clusterProviderGetter)
+			clusterProvider, ctx, err := getClusterProvider(ctx, request, seedsGetter, clusterProviders)
 			if err != nil {
 				return nil, err
 			}
@@ -247,7 +247,7 @@ func createUserInfo(user *kubermaticapiv1.User, projectID string, userProjectMap
 	return &provider.UserInfo{Email: user.Spec.Email, Group: group}, nil
 }
 
-func getClusterProvider(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter) (provider.ClusterProvider, context.Context, error) {
+func getClusterProvider(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, clusterProviders map[string]provider.ClusterProvider) (provider.ClusterProvider, context.Context, error) {
 	getter := request.(dCGetter)
 	seeds, err := seedsGetter()
 	if err != nil {
@@ -259,8 +259,8 @@ func getClusterProvider(ctx context.Context, request interface{}, seedsGetter pr
 	}
 	ctx = context.WithValue(ctx, datacenterContextKey, seed)
 
-	clusterProvider, err := clusterProviderGetter(getter.GetDC())
-	if err != nil {
+	clusterProvider, exists := clusterProviders[getter.GetDC()]
+	if !exists {
 		return nil, ctx, errors.NewNotFound("cluster-provider", getter.GetDC())
 	}
 
