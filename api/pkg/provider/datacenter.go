@@ -39,6 +39,9 @@ type SeedsGetter = func() (map[string]*kubermaticv1.Seed, error)
 // SeedKubeconfigGetter is used to fetch the kubeconfig for a given seed
 type SeedKubeconfigGetter = func(seedName string) (*rest.Config, error)
 
+// ClusterProviderGetter is used to get a clusterProvider
+type ClusterProviderGetter = func(seedName string) (ClusterProvider, error)
+
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
 	Location         string                      `json:"location"`
