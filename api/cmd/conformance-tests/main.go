@@ -121,7 +121,6 @@ const (
 	defaultAPIRetries              = 100
 
 	controlPlaneReadyPollPeriod = 5 * time.Second
-	nodesReadyPollPeriod        = 5 * time.Second
 )
 
 var defaultTimeout = 10 * time.Minute
@@ -422,7 +421,7 @@ func getScenarios(opts Opts, log *logrus.Entry) []testScenario {
 				filteredScenarios = append(filteredScenarios, scenario)
 			}
 		}
-		if osspec.CentOS != nil {
+		if osspec.Centos != nil {
 			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] {
 				filteredScenarios = append(filteredScenarios, scenario)
 			}
