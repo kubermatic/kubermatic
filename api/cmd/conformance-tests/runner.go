@@ -517,7 +517,7 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoR
 }
 
 func (r *testRunner) createNodeDeployments(log *logrus.Entry, scenario testScenario, clusterName string) error {
-	log.Info("Creating NodeDeployment via kubermatic API")
+	log.Info("Creating NodeDeployments via kubermatic API")
 	nodeDeployments := scenario.NodeDeployments(r.nodeCount, r.secrets)
 
 	for _, nd := range nodeDeployments {
@@ -529,11 +529,18 @@ func (r *testRunner) createNodeDeployments(log *logrus.Entry, scenario testScena
 		}
 		params.SetTimeout(15 * time.Second)
 
-		if _, err := r.kubermaticClient.Project.CreateNodeDeployment(params, r.kubermaticAuthenticator); err != nil {
-			return fmt.Errorf("failed to create node deployment via kubermatic api: %q, %v", fmtSwaggerError(err), err)
+		if err := retryNAttempts(defaultAPIRetries, func(attempt int) error {
+			if _, err := r.kubermaticClient.Project.CreateNodeDeployment(params, r.kubermaticAuthenticator); err != nil {
+				log.Warnf("[Attempt %d/%d] Failed to create NodeDeployment %s: %v. Retrying", attempt, defaultAPIRetries, nd.Name, fmtSwaggerError(err))
+				return err
+			}
+			return nil
+		}); err != nil {
+			return fmt.Errorf("failed to create NodeDeployment %s via kubermatic api after %d attempts: %q", nd.Name, defaultAPIRetries, fmtSwaggerError(err))
 		}
 	}
 
+	log.Info("Successfully created NodeDeployments via Kubermatic API")
 	return nil
 }
 
