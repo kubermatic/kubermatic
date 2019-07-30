@@ -45,6 +45,7 @@ func DecodeAWSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 
 	req.AccessKeyID = r.Header.Get("AccessKeyID")
 	req.SecretAccessKey = r.Header.Get("SecretAccessKey")
+	req.Credential = r.Header.Get("Credential")
 
 	return req, nil
 }
