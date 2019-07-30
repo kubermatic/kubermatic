@@ -71,7 +71,6 @@ type Opts struct {
 	printGinkoLogs               bool
 	onlyTestCreation             bool
 	kubermatcProjectID           string
-	kubermaticClusterID          string
 	kubermaticClient             *apiclient.Kubermatic
 	kubermaticAuthenticator      runtime.ClientAuthInfoWriter
 
@@ -237,10 +236,6 @@ func main() {
 	opts.kubermatcProjectID = os.Getenv("KUBERMATIC_PROJECT_ID")
 	if opts.kubermatcProjectID == "" {
 		log.Fatalf("Kubermatic project id must be set via KUBERMATIC_PROJECT_ID env var")
-	}
-	opts.kubermaticClusterID = os.Getenv("KUBERMATIC_CLUSTER_ID")
-	if opts.kubermaticClusterID == "" {
-		log.Fatalf("Kubermatic cluster id must be set via KUBERMATIC_CLUSTER_ID env var")
 	}
 	kubermaticServiceaAccountToken := os.Getenv("KUBERMATIC_SERVICEACCOUNT_TOKEN")
 	if kubermaticServiceaAccountToken == "" {

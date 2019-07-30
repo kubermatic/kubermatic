@@ -82,7 +82,6 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		printGinkoLogs:               opts.printGinkoLogs,
 		onlyTestCreation:             opts.onlyTestCreation,
 		kubermatcProjectID:           opts.kubermatcProjectID,
-		kubermaticClusterID:          opts.kubermaticClusterID,
 		kubermaticClient:             opts.kubermaticClient,
 		kubermaticAuthenticator:      opts.kubermaticAuthenticator,
 	}
@@ -117,7 +116,6 @@ type testRunner struct {
 	existingClusterLabel string
 
 	kubermatcProjectID      string
-	kubermaticClusterID     string
 	kubermaticClient        *apiclient.Kubermatic
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
@@ -310,7 +308,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 	}
 
 	nodeDeployments := scenario.NodeDeployments(r.nodeCount, r.secrets)
-	if err := r.createNodeDeployments(log, scenario); err != nil {
+	if err := r.createNodeDeployments(log, scenario, clusterName); err != nil {
 		return nil, fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
@@ -518,14 +516,14 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoR
 	return ginkgoRes, err
 }
 
-func (r *testRunner) createNodeDeployments(log *logrus.Entry, scenario testScenario) error {
+func (r *testRunner) createNodeDeployments(log *logrus.Entry, scenario testScenario, clusterName string) error {
 	log.Info("Creating NodeDeployment via kubermatic API")
 	nodeDeployments := scenario.NodeDeployments(r.nodeCount, r.secrets)
 
 	for _, nd := range nodeDeployments {
 		params := &projectclient.CreateNodeDeploymentParams{
 			ProjectID: r.kubermatcProjectID,
-			ClusterID: r.kubermaticClusterID,
+			ClusterID: clusterName,
 			Dc:        r.seed.Name,
 			Body:      &nd,
 		}
