@@ -641,50 +641,6 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 	return crCluster, nil
 }
 
-func (r *testRunner) waitForReadyNodes(log *logrus.Entry, client ctrlruntimeclient.Client, num int) error {
-	log.Info("Waiting for nodes to become ready...")
-	started := time.Now()
-
-	nodeIsReady := func(n corev1.Node) bool {
-		for _, condition := range n.Status.Conditions {
-			if condition.Type == corev1.NodeReady {
-				if condition.Status == corev1.ConditionTrue {
-					return true
-				}
-			}
-		}
-		return false
-	}
-
-	err := wait.Poll(nodesReadyPollPeriod, defaultTimeout, func() (done bool, err error) {
-		ctx := context.Background()
-		nodeList := &corev1.NodeList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
-			log.Debugf("failed to list nodes while waiting for them to be ready. %v. Will retry", err)
-			return false, nil
-		}
-
-		if len(nodeList.Items) != num {
-			return false, nil
-		}
-
-		for _, node := range nodeList.Items {
-			if !nodeIsReady(node) {
-				return false, nil
-			}
-		}
-
-		return true, nil
-	})
-
-	if err != nil {
-		return err
-	}
-
-	log.Infof("Nodes got ready after %.2f seconds", time.Since(started).Seconds())
-	return nil
-}
-
 func (r *testRunner) waitForControlPlane(log *logrus.Entry, clusterName string) (*kubermaticv1.Cluster, error) {
 	log.Debug("Waiting for control plane to become ready...")
 	started := time.Now()

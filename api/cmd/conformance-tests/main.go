@@ -121,7 +121,6 @@ const (
 	defaultAPIRetries              = 100
 
 	controlPlaneReadyPollPeriod = 5 * time.Second
-	nodesReadyPollPeriod        = 5 * time.Second
 )
 
 var defaultTimeout = 10 * time.Minute
