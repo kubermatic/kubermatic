@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -48,6 +49,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
+	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -111,48 +114,6 @@ func main() {
 }
 
 func createInitProviders(options serverRunOptions) (providers, error) {
-	// create cluster providers - one foreach context
-	clusterProviders := map[string]provider.ClusterProvider{}
-	clientcmdConfig, err := clientcmd.LoadFromFile(options.kubeconfig)
-	if err != nil {
-		return providers{}, fmt.Errorf("unable to create client config for due to %v", err)
-	}
-
-	for ctx := range clientcmdConfig.Contexts {
-		clientConfig := clientcmd.NewNonInteractiveClientConfig(
-			*clientcmdConfig,
-			ctx,
-			&clientcmd.ConfigOverrides{CurrentContext: ctx},
-			nil,
-		)
-		cfg, err := clientConfig.ClientConfig()
-		if err != nil {
-			return providers{}, fmt.Errorf("unable to create client config for %s due to %v", ctx, err)
-		}
-		kubermaticlog.Logger.Infow("adding seed", "seed", ctx)
-		kubeClient := kubernetes.NewForConfigOrDie(cfg)
-		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
-		seedCtrlruntimeClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
-		if err != nil {
-			return providers{}, fmt.Errorf("failed to create dynamic seed client: %v", err)
-		}
-
-		userClusterConnectionProvider, err := client.NewExternal(seedCtrlruntimeClient)
-		if err != nil {
-			return providers{}, fmt.Errorf("failed to get userClusterConnectionProvider: %v", err)
-		}
-
-		clusterProviders[ctx] = kubernetesprovider.NewClusterProvider(
-			defaultImpersonationClientForSeed.CreateImpersonatedKubermaticClientSet,
-			userClusterConnectionProvider,
-			options.workerName,
-			rbac.ExtractGroupPrefix,
-			seedCtrlruntimeClient,
-			kubeClient,
-			options.featureGates.Enabled(OIDCKubeCfgEndpoint),
-		)
-	}
-
 	masterCfg, err := clientcmd.BuildConfigFromFlags("", options.kubeconfig)
 	if err != nil {
 		return providers{}, fmt.Errorf("unable to build client configuration from kubeconfig due to %v", err)
@@ -176,6 +137,26 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	if err != nil {
 		return providers{}, err
 	}
+	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(context.Background(), mgr.GetClient(), options.kubeconfig, options.dynamicDatacenters)
+	if err != nil {
+		return providers{}, err
+	}
+	clusterProviderGetter := clusterProviderFactory(seedKubeconfigGetter, options.workerName, options.featureGates.Enabled(OIDCKubeCfgEndpoint))
+
+	// Warm up the restMapper cache. Log but ignore errors encountered here, maybe there are stale seeds
+	go func() {
+		seeds, err := seedsGetter()
+		if err != nil {
+			kubermaticlog.Logger.With("error", err).Info("failed to get seeds when trying to warm up restMapper cache")
+			return
+		}
+		for seedName := range seeds {
+			if _, err := clusterProviderGetter(seedName); err != nil {
+				kubermaticlog.Logger.With("seed", seedName).With("error", err).Info("failed to get clusterProvider when trying to warm up restMapper cache")
+				continue
+			}
+		}
+	}()
 
 	userMasterLister := kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
@@ -221,7 +202,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		projectMember:                         projectMemberProvider,
 		memberMapper:                          projectMemberProvider,
 		eventRecorderProvider:                 eventRecorderProvider,
-		clusters:                              clusterProviders,
+		clusterProviderGetter:                 clusterProviderGetter,
 		seedsGetter:                           seedsGetter,
 		credentialsProvider:                   credentialsProvider}, nil
 }
@@ -287,7 +268,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 
 	r := handler.NewRouting(
 		prov.seedsGetter,
-		prov.clusters,
+		prov.clusterProviderGetter,
 		prov.sshKey,
 		prov.user,
 		prov.serviceAccountProvider,
@@ -356,4 +337,63 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	}
 
 	return instrumentHandler(mainRouter, lookupRoute), nil
+}
+
+func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, workerName string, oidcKubeCfgEndpointEnabled bool) provider.ClusterProviderGetter {
+	// Discovery can take very long when the cluster is not physically close, so cache the discovery info
+	// use a sync.Map as we read a lot from this map but almost never write to it
+	restMapperCache := &sync.Map{}
+
+	return func(seedName string) (provider.ClusterProvider, error) {
+		cfg, err := seedKubeconfigGetter(seedName)
+		if err != nil {
+			return nil, err
+		}
+		kubeClient, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("faild to create kubeClient: %v", err)
+		}
+		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
+
+		var mapper meta.RESTMapper
+		// Make sure the key changes if someone creates a new seed with the same name
+		mapperKey := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s/%s/%s/%s",
+			seedName, cfg.Host, cfg.APIPath, cfg.Username, cfg.Password, cfg.BearerToken, cfg.BearerTokenFile,
+			string(cfg.CertData), string(cfg.KeyData), string(cfg.CAData))
+		rawMapper, exists := restMapperCache.Load(mapperKey)
+		if !exists {
+			mapper, err = restmapper.NewDynamicRESTMapper(cfg)
+			if err != nil {
+				kubermaticlog.Logger.With("error", err).With("seed", seedName).Error("failed to create restMapper")
+				return nil, fmt.Errorf("failed to create restMapper for seed %q: %v", seedName, err)
+			}
+			kubermaticlog.Logger.With("seed", seedName).Info("Created restMapper")
+			restMapperCache.Store(mapperKey, mapper)
+		} else {
+			var ok bool
+			mapper, ok = rawMapper.(meta.RESTMapper)
+			if !ok {
+				return nil, fmt.Errorf("didn't get a restMapper from the cache")
+			}
+		}
+		seedCtrlruntimeClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Mapper: mapper})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create dynamic seed client: %v", err)
+		}
+
+		userClusterConnectionProvider, err := client.NewExternal(seedCtrlruntimeClient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get userClusterConnectionProvider: %v", err)
+		}
+
+		return kubernetesprovider.NewClusterProvider(
+			defaultImpersonationClientForSeed.CreateImpersonatedKubermaticClientSet,
+			userClusterConnectionProvider,
+			workerName,
+			rbac.ExtractGroupPrefix,
+			seedCtrlruntimeClient,
+			kubeClient,
+			oidcKubeCfgEndpointEnabled,
+		), nil
+	}
 }
