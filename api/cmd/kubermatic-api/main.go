@@ -146,6 +146,18 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	if err != nil {
 		return providers{}, err
 	}
+	// Make sure there is a cache for seeds
+	if _, err := mgr.GetCache().GetInformer(&kubermaticv1.Seed{}); err != nil {
+		kubermaticlog.Logger.With("error", err).Fatal("failed to get seed informer")
+	}
+	go func() {
+		if err := mgr.Start(wait.NeverStop); err != nil {
+			kubermaticlog.Logger.With("error", err).Fatal("failed to start the mgr")
+		}
+	}()
+	if synced := mgr.GetCache().WaitForCacheSync(wait.NeverStop); !synced {
+		kubermaticlog.Logger.Fatal("failed to sync mgr cache")
+	}
 	clusterProviderGetter := clusterProviderFactory(seedKubeconfigGetter, options.workerName, options.featureGates.Enabled(OIDCKubeCfgEndpoint))
 
 	// Warm up the restMapper cache. Log but ignore errors encountered here, maybe there are stale seeds
