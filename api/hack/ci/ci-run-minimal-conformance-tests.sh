@@ -220,12 +220,12 @@ spec:
     namespace: ${NAMESPACE}
     fieldPath: kubeconfig
   datacenters:
-    aws-eu-west-1a:
-      location: EU (Ireland)
-      country: IE
+    aws-eu-central-1a:
+      location: EU (Frankfurt)
+      country: DE
       spec:
         aws:
-          region: eu-west-1
+          region: eu-central-1
           zone_character: a
     syseleven-dbl1:
       location: Syseleven - dbl1
