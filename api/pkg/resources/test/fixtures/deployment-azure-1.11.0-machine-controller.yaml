@@ -39,13 +39,8 @@ spec:
         - -command
         - '{"command":"/usr/local/bin/machine-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-logtostderr","-v","4","-cluster-dns","169.254.20.10","-internal-listen-address","0.0.0.0:8085"]}'
         command:
-<<<<<<< HEAD
-        - /usr/local/bin/machine-controller
-        image: docker.io/kubermatic/machine-controller:v1.4.3
-=======
         - /http-prober-bin/http-prober
-        image: docker.io/kubermatic/machine-controller:v1.4.2
->>>>>>> Use wrapper instead of initContainer to check if apiserver is reachable (#3857)
+        image: docker.io/kubermatic/machine-controller:v1.4.3
         livenessProbe:
           failureThreshold: 3
           httpGet:

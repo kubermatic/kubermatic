@@ -36,13 +36,8 @@ spec:
         - -command
         - '{"command":"/usr/local/bin/webhook","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-logtostderr","-v","4","-listen-address","0.0.0.0:9876"]}'
         command:
-<<<<<<< HEAD
-        - /usr/local/bin/webhook
-        image: docker.io/kubermatic/machine-controller:v1.4.3
-=======
         - /http-prober-bin/http-prober
-        image: docker.io/kubermatic/machine-controller:v1.4.2
->>>>>>> Use wrapper instead of initContainer to check if apiserver is reachable (#3857)
+        image: docker.io/kubermatic/machine-controller:v1.4.3
         livenessProbe:
           failureThreshold: 8
           httpGet:
