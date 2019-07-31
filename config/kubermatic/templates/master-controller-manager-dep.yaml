@@ -74,7 +74,7 @@ spec:
           - name: datacenters
             mountPath: "/opt/datacenter/"
             readOnly: true
-        {{- else }}
+        {{- end }}
         resources:
 {{ toYaml .Values.kubermatic.masterController.resources | indent 10 }}
       imagePullSecrets:
