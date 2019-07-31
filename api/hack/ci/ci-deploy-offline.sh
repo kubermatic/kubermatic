@@ -80,7 +80,7 @@ docker push 127.0.0.1:5000/kubernetes-helm/tiller:${HELM_VERSION}
 
 cd ../api
 KUBERMATICCOMMIT=${GIT_HEAD_HASH} GITTAG=${GIT_HEAD_HASH} make image-loader
-./_build/image-loader \
+retry 6 ./_build/image-loader \
   -versions ../config/kubermatic/static/master/versions.yaml \
   -addons-path ../addons \
   -registry 127.0.0.1:5000 \
