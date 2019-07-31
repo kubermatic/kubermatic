@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -12,6 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -238,10 +238,11 @@ func SeedKubeconfigGetterFactory(
 			if _, exists := secret.Data[seed.Spec.Kubeconfig.FieldPath]; !exists {
 				return nil, fmt.Errorf("secret %q has no key %q", name.String(), seed.Spec.Kubeconfig.FieldPath)
 			}
-			cfg := &rest.Config{}
-			if err := json.Unmarshal(secret.Data[seed.Spec.Kubeconfig.FieldPath], cfg); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal kubeconfig: %v", err)
+			cfg, err := clientcmd.RESTConfigFromKubeConfig(secret.Data[seed.Spec.Kubeconfig.FieldPath])
+			if err != nil {
+				return nil, fmt.Errorf("failed to load kubeconfig: %v", err)
 			}
+			kubermaticlog.Logger.With("seed", seedName).Debug("Successfully got kubeconfig")
 			return cfg, nil
 		}, nil
 
