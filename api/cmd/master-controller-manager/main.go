@@ -17,6 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -72,6 +73,10 @@ func main() {
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)
 	if err != nil {
 		sugarLog.Fatalw("Failed to create the label selector for the given worker", "workerName", runOpts.workerName, "error", err)
+	}
+
+	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		kubermaticlog.Logger.Fatalw("failed to add kubermaticv1 scheme to scheme.Scheme", "error", err)
 	}
 
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric

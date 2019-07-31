@@ -58,7 +58,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal handler should be exposed")
 	flag.StringVar(&s.prometheusURL, "prometheus-url", "http://prometheus.monitoring.svc.local:web", "The URL on which this API can talk to Prometheus")
 	flag.StringVar(&s.masterResources, "master-resources", "", "The path to the master resources (Required).")
-	flag.StringVar(&s.dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
+	flag.StringVar(&s.dcFile, "datacenters", "", "The datacenters.yaml file path")
 	flag.StringVar(&s.workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
 	flag.StringVar(&s.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&s.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")

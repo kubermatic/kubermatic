@@ -83,7 +83,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.masterResources, "master-resources", "", "The path to the master resources (Required).")
 	flag.StringVar(&c.externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	flag.StringVar(&c.dc, "datacenter-name", "", "The name of the seed datacenter, the controller is running in. It will be used to build the absolute url for a customer cluster.")
-	flag.StringVar(&c.dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
+	flag.StringVar(&c.dcFile, "datacenters", "", "The datacenters.yaml file path")
 	flag.StringVar(&c.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.StringVar(&c.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&c.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
