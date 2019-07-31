@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 {{ if .Values.nginx.asDaemonSet }}
 kind: DaemonSet
 {{ else }}
@@ -15,6 +15,9 @@ spec:
     rollingUpdate:
       maxUnavailable: 35%
 {{ end }}
+  selector:
+    matchLabels:
+      app: ingress-nginx
   template:
     metadata:
       labels:
