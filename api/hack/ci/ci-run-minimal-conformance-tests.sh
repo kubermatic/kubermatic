@@ -210,6 +210,8 @@ apiVersion: kubermatic.k8s.io/v1
 metadata:
   name: ${SEED_NAME}
   namespace: ${NAMESPACE}
+  labels:
+    worker-name: "$BUILD_ID"
 spec:
   country: Germany
   location: Hamburg
