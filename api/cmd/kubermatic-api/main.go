@@ -356,6 +356,7 @@ func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, 
 		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
 
 		var mapper meta.RESTMapper
+		// Make sure the key changes if someone creates a new seed with the same name
 		mapperKey := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s/%s/%s/%s",
 			seedName, cfg.Host, cfg.APIPath, cfg.Username, cfg.Password, cfg.BearerToken, cfg.BearerTokenFile,
 			string(cfg.CertData), string(cfg.KeyData), string(cfg.CAData))
