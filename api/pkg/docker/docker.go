@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
-	"time"
 
 	"github.com/docker/distribution/reference"
 	"go.uber.org/zap"
@@ -55,23 +54,11 @@ func DownloadImage(ctx context.Context, log *zap.Logger, dryRun bool, image stri
 	log.Info("Downloading image...")
 
 	cmd := exec.CommandContext(ctx, "docker", "pull", image)
-	timeout := 15 * time.Minute
-	timer := time.NewTimer(timeout)
-	interval := time.Minute
-	for {
-		select {
-		case <-timer.C:
-			return fmt.Errorf("failed to pull image %s during %v", image, timeout)
-		default:
-			err := execCommand(log, dryRun, cmd)
-			if err == nil {
-				return nil
-			}
-
-			log.Debug(fmt.Sprintf("%v", err))
-			time.Sleep(interval)
-		}
+	if err := execCommand(log, dryRun, cmd); err != nil {
+		return fmt.Errorf("failed to pull image %s: %v", image, err)
 	}
+
+	return nil
 }
 
 // RetagImages invokes the Docker CLI and tags the given images so they belongs to the given registry.
