@@ -93,6 +93,7 @@ spec:
         {{- if .Values.kubermatic.monitoringScrapeAnnotationPrefix }}
         - -monitoring-scrape-annotation-prefix={{ .Values.kubermatic.monitoringScrapeAnnotationPrefix }}
         {{- end }}
+        - -worker-count={{ .Values.kubermatic.controller.workerCount }}
         {{- if .Values.kubermatic.worker_name }}
         - -worker-name={{ .Values.kubermatic.worker_name }}
         {{- end }}

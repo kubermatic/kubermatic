@@ -50,6 +50,7 @@ spec:
         - -logtostderr
         - -kubeconfig=/opt/.kube/kubeconfig
         - -datacenters=/opt/datacenter/datacenters.yaml
+        - -worker-count={{ .Values.kubermatic.masterController.workerCount }}
         {{- if .Values.kubermatic.worker_name }}
         - -worker-name={{ .Values.kubermatic.worker_name }}
         {{- end }}
