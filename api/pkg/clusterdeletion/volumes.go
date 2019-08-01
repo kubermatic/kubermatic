@@ -26,6 +26,8 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Clu
 		return false, fmt.Errorf("failed to disable future PV & PVC creation: %v", err)
 	}
 
+	// TODO: Figure out why we delete PDBs at all.
+	// Henrik thinks this it not required as PDBs only block evictions & we don't trigger an eviction.
 	deletedSomePDBs, err := d.cleanupPDBs(ctx, cluster)
 	if err != nil {
 		return false, fmt.Errorf("failed to cleanup PodDisruptionBudgets: %v", err)
