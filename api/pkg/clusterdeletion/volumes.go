@@ -158,9 +158,8 @@ func (d *Deletion) cleanupPVCUsingPods(ctx context.Context) error {
 	}
 
 	for _, pod := range pvUsingPods {
-		namespace, name := pod.Namespace, pod.Name
 		if err := d.userClusterClient.Delete(ctx, pod); err != nil {
-			return fmt.Errorf("failed to delete pod %s/%s: %v", namespace, name, err)
+			return fmt.Errorf("failed to delete pod %s/%s: %v", pod.Namespace, pod.Name, err)
 		}
 	}
 
