@@ -36,16 +36,23 @@ func (d *Deletion) deleteSecret(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	secret := &corev1.Secret{}
-	err := d.seedClient.Get(ctx, types.NamespacedName{Name: secretName, Namespace: resources.KubermaticNamespace}, secret)
-	if err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to get Secret %s/%s: %v", resources.KubermaticNamespace, secretName, err)
+	name := types.NamespacedName{Name: secretName, Namespace: resources.KubermaticNamespace}
+	err := d.seedClient.Get(ctx, name, secret)
+	// Its already gone
+	if kerrors.IsNotFound(err) {
+		return nil
 	}
 
-	if err == nil {
-		if err := d.seedClient.Delete(ctx, secret); err != nil {
-			return fmt.Errorf("failed to delete Secret '%s/%s': %v", secret.Namespace, secret.Name, err)
-		}
+	// Something failed while loading the secret
+	if err != nil {
+		return fmt.Errorf("failed to get Secret %q: %v", name.String(), err)
 	}
+
+	if err := d.seedClient.Delete(ctx, secret); err != nil {
+		return fmt.Errorf("failed to delete Secret %q: %v", name.String(), err)
+	}
+
+	// We successfully deleted the secret
 	return nil
 }
 
