@@ -16,6 +16,10 @@ import (
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	annotationKeyDescription = "description"
+)
+
 func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Cluster) (deletedSomeResource bool, err error) {
 	// We disable the PV & PVC creation so nothing creates new PV's while we delete them
 	if err := d.disablePVCreation(ctx, cluster); err != nil {
@@ -74,7 +78,7 @@ func terminatingAdmissionWebhook() (string, *admissionregistrationv1beta1.Valida
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 			Annotations: map[string]string{
-				"description": "This webhok configuration exists to prevent creation of any new stateful resources in a cluster that is currently being terminated",
+				annotationKeyDescription: "This webhook configuration exists to prevent creation of any new stateful resources in a cluster that is currently being terminated",
 			},
 		},
 		Webhooks: []admissionregistrationv1beta1.Webhook{
