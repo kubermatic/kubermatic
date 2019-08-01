@@ -315,6 +315,11 @@ func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 	return ext, nil
 }
 
+func getKubevirtProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
+
+	return nil, nil
+}
+
 func getCentOSOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
 	config := centos.Config{
 		DistUpgradeOnBoot: nodeSpec.OperatingSystem.CentOS.DistUpgradeOnBoot,

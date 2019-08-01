@@ -36,9 +36,9 @@ const (
 	HetznerCloudProvider      = "hetzner"
 	VSphereCloudProvider      = "vsphere"
 	GCPCloudProvider          = "gcp"
-
-	DefaultSSHPort     = 22
-	DefaultKubeletPort = 10250
+	KubevirtCloudProvider     = "kubevirt"
+	DefaultSSHPort            = 22
+	DefaultKubeletPort        = 10250
 )
 
 // CloudProvider declares a set of methods for interacting with a cloud provider
