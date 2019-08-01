@@ -9,7 +9,6 @@ import (
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/clusterdeletion"
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
-	kubermaticscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
@@ -23,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -105,10 +103,6 @@ func Add(
 	oidcIssuerClientID string,
 	kubermaticImage string,
 	features Features) error {
-
-	if err := kubermaticscheme.AddToScheme(scheme.Scheme); err != nil {
-		return fmt.Errorf("failed to add kubermatic scheme: %v", err)
-	}
 
 	reconciler := &Reconciler{
 		Client:                  mgr.GetClient(),
