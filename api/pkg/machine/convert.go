@@ -9,6 +9,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/packet"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
@@ -16,7 +17,6 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
-
 	"k8s.io/apimachinery/pkg/util/json"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
@@ -164,6 +164,20 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			Preemptible: config.Preemptible.Value,
 			Labels:      config.Labels,
 			Tags:        config.Tags,
+		}
+	case providerconfig.CloudProviderKubeVirt:
+		config := &kubevirt.RawConfig{}
+		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse gcp config: %v", err)
+		}
+
+		cloudSpec.Kubevirt = &apiv1.KubevirtNodeSpec{
+			CPUs:             config.CPUs.Value,
+			Memory:           config.Memory.Value,
+			Namespace:        config.Namespace.Value,
+			SourceURL:        config.SourceURL.Value,
+			StorageClassName: config.StorageClassName.Value,
+			PVCSize:          config.PVCSize.Value,
 		}
 	default:
 		return nil, fmt.Errorf("unknown cloud provider %q", decodedProviderSpec.CloudProvider)

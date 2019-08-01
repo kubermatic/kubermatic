@@ -804,6 +804,7 @@ type NodeCloudSpec struct {
 	Hetzner      *HetznerNodeSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
 	GCP          *GCPNodeSpec          `json:"gcp,omitempty"`
+	Kubevirt     *KubevirtNodeSpec     `json:"kubevirt,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -976,6 +977,17 @@ type GCPNodeSpec struct {
 	Preemptible bool              `json:"preemptible"`
 	Labels      map[string]string `json:"labels"`
 	Tags        []string          `json:"tags"`
+}
+
+// KubevirtNodeSpec kubevirt specific node settings
+// swagger:model KubevirtNodeSpec
+type KubevirtNodeSpec struct {
+	CPUs             string
+	Memory           string
+	Namespace        string
+	SourceURL        string
+	StorageClassName string
+	PVCSize          string
 }
 
 // NodeResources cpu and memory of a node
