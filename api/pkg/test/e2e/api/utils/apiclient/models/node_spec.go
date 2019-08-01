@@ -23,6 +23,9 @@ type NodeSpec struct {
 	// It will be applied to Nodes allowing users run their apps on specific Node using labelSelector.
 	Labels map[string]string `json:"labels,omitempty"`
 
+	// SSH user name
+	SSHUserName string `json:"sshUserName,omitempty"`
+
 	// List of taints to set on new nodes
 	Taints []*TaintSpec `json:"taints"`
 

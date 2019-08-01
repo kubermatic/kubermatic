@@ -14,17 +14,17 @@ import (
 // GlobalSecretKeySelector global secret key selector
 // swagger:model GlobalSecretKeySelector
 type GlobalSecretKeySelector struct {
-	GlobaObjectKeySelector
+	GlobalObjectKeySelector
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
 func (m *GlobalSecretKeySelector) UnmarshalJSON(raw []byte) error {
 	// AO0
-	var aO0 GlobaObjectKeySelector
+	var aO0 GlobalObjectKeySelector
 	if err := swag.ReadJSON(raw, &aO0); err != nil {
 		return err
 	}
-	m.GlobaObjectKeySelector = aO0
+	m.GlobalObjectKeySelector = aO0
 
 	return nil
 }
@@ -33,7 +33,7 @@ func (m *GlobalSecretKeySelector) UnmarshalJSON(raw []byte) error {
 func (m GlobalSecretKeySelector) MarshalJSON() ([]byte, error) {
 	_parts := make([][]byte, 0, 1)
 
-	aO0, err := swag.WriteJSON(m.GlobaObjectKeySelector)
+	aO0, err := swag.WriteJSON(m.GlobalObjectKeySelector)
 	if err != nil {
 		return nil, err
 	}

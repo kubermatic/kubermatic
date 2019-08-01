@@ -8,6 +8,7 @@ package models
 import (
 	strfmt "github.com/go-openapi/strfmt"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
 )
 
@@ -39,15 +40,40 @@ type AWSCloudSpec struct {
 	// security group ID
 	SecurityGroupID string `json:"securityGroupID,omitempty"`
 
-	// subnet ID
-	SubnetID string `json:"subnetId,omitempty"`
-
 	// v p c ID
 	VPCID string `json:"vpcId,omitempty"`
+
+	// credentials reference
+	CredentialsReference GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 }
 
 // Validate validates this a w s cloud spec
 func (m *AWSCloudSpec) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateCredentialsReference(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AWSCloudSpec) validateCredentialsReference(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.CredentialsReference) { // not required
+		return nil
+	}
+
+	if err := m.CredentialsReference.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("credentialsReference")
+		}
+		return err
+	}
+
 	return nil
 }
 
