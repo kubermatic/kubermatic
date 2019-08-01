@@ -115,17 +115,10 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 	}
 
 	if err := d.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
-		if deletedLoadBalancers.Len() > 0 {
-			cluster.Annotations[deletedLBAnnotationName] = strings.Join(deletedLoadBalancers.List(), ",")
-		} else {
-			delete(cluster.Annotations, deletedLBAnnotationName)
-		}
+		cluster.Annotations[deletedLBAnnotationName] = strings.Join(deletedLoadBalancers.List(), ",")
 	}); err != nil {
 		return false, fmt.Errorf("failed to update cluster: %v", err)
 	}
-	if deletedLoadBalancers.Len() > 0 {
-		return false, nil
-	}
 
-	return true, nil
+	return deletedLoadBalancers.Len() > 0, nil
 }
