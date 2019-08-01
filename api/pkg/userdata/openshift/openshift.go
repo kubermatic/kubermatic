@@ -159,6 +159,7 @@ write_files:
     #!/bin/bash
     set -xeuo pipefail
 
+    # TODO: Figure out why the hyperkube binary installation does not work with selinux enabled 
     setenforce 0 || true
 
     systemctl daemon-reload
@@ -354,6 +355,12 @@ write_files:
     DefaultCPUAccounting=yes
     DefaultMemoryAccounting=yes
     DefaultBlockIOAccounting=yes
+
+- path: "/etc/systemd/system/kubelet.service.d/10-crio.conf"
+  content: |
+    [Unit]
+    After=crio.service
+    Requires=crio.service
 
 - path: "/etc/containers/registries.conf"
   content: |
