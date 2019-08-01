@@ -188,7 +188,8 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 		}
-		return clusterdeletion.New(r.Client, userClusterClient).CleanupCluster(ctx, cluster)
+		// Always requeue a cluster after we executed the cleanup.
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClient).CleanupCluster(ctx, cluster)
 	}
 
 	// Ensure Namespace
