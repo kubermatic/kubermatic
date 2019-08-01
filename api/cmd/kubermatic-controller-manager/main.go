@@ -9,6 +9,7 @@ import (
 	"github.com/go-logr/zapr"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
@@ -57,7 +58,7 @@ func main() {
 
 	config, err := clientcmd.BuildConfigFromFlags(options.masterURL, options.kubeconfig)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalw("Failed to create a kubernetes config", zap.Error(err))
 	}
 
 	// Set the logger used by sigs.k8s.io/controller-runtime
@@ -67,14 +68,14 @@ func main() {
 	// the metrics of both the ctrltuntime registry and the default registry
 	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: "0"})
 	if err != nil {
-		log.Fatalf("failed to create mgr: %v", err)
+		log.Fatalw("Failed to create the manager", zap.Error(err))
 	}
 	// Add all custom type schemes to our scheme. Otherwise we won't get a informer
 	if err := autoscalingv1beta2.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalf("failed to add the autoscaling.k8s.io scheme to mgr: %v", err)
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", autoscalingv1beta2.SchemeGroupVersion), zap.Error(err))
 	}
 	if err := kubermaticv1.SchemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalf("failed to add kubermatic scheme to mgr: %v", err)
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	recorder := mgr.GetRecorder(controllerName)
@@ -93,27 +94,29 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 	dockerPullConfigJSON, err := ioutil.ReadFile(options.dockerPullConfigJSONFile)
 	if err != nil {
-		log.Fatalf("Failed to read dockerPullConfigJSON file %q: %v", options.dockerPullConfigJSONFile, err)
+		log.Fatalw(
+			"Failed to read docker pull config file",
+			zap.String("file", options.dockerPullConfigJSONFile),
+			zap.Error(err),
+		)
 	}
 
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	seedGetter, err := provider.SeedGetterFactory(rootCtx, mgr.GetClient(), options.dc, options.dcFile, options.dynamicDatacenters)
 	if err != nil {
-		log.Fatalf("Unable to create the seed factory: %v", err)
+		log.Fatalw("Unable to create the seed factory", zap.Error(err))
 	}
 
 	var clientProvider client.UserClusterConnectionProvider
 	if options.kubeconfig != "" {
 		clientProvider, err = client.NewExternal(mgr.GetClient())
-		if err != nil {
-			log.Fatalf("failed to get clientProvider: %v", err)
-		}
 	} else {
 		clientProvider, err = client.NewInternal(mgr.GetClient())
-		if err != nil {
-			log.Fatalf("failed to get clientProvider: %v", err)
-		}
 	}
+	if err != nil {
+		log.Fatalw("Failed to get clientProvider", zap.Error(err))
+	}
+
 	ctrlCtx := &controllerContext{
 		runOptions:           options,
 		mgr:                  mgr,
@@ -124,7 +127,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {
-		log.Fatalf("could not create all controllers: %v", err)
+		log.Fatalw("Could not create all controllers", zap.Error(err))
 	}
 
 	log.Debug("Starting clusters collector")
@@ -216,6 +219,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	if err := g.Run(); err != nil {
-		log.Fatal(err)
+		// Set the error as field so we have a consistent way of logging errors
+		log.Fatalw("Shutting down with error", zap.Error(err))
 	}
 }
