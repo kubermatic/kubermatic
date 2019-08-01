@@ -7,7 +7,6 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	provider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,7 +29,7 @@ func (d *Deletion) cleanUpCredentialsSecrets(ctx context.Context, cluster *kuber
 }
 
 func (d *Deletion) deleteSecret(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	secretName := getSecretName(cluster)
+	secretName := cluster.GetSecretName()
 	if secretName == "" {
 		return nil
 	}
@@ -54,11 +53,4 @@ func (d *Deletion) deleteSecret(ctx context.Context, cluster *kubermaticv1.Clust
 
 	// We successfully deleted the secret
 	return nil
-}
-
-func getSecretName(cluster *kubermaticv1.Cluster) string {
-	if cluster.Spec.Cloud.Packet != nil {
-		return fmt.Sprintf("%s-packet-%s", provider.CredentialPrefix, cluster.Name)
-	}
-	return ""
 }

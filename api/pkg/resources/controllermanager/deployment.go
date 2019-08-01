@@ -151,6 +151,12 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
 				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources
 			}
+
+			envVars, err := getEnvVars(data)
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
@@ -158,7 +164,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					Image:     data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
 					Command:   []string{"/hyperkube", "kube-controller-manager"},
 					Args:      flags,
-					Env:       getEnvVars(data.Cluster()),
+					Env:       envVars,
 					Resources: resourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
@@ -338,18 +344,24 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getEnvVars(cluster *kubermaticv1.Cluster) []corev1.EnvVar {
+func getEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
+	credentials, err := resources.GetCredentials(data)
+	if err != nil {
+		return nil, err
+	}
+	cluster := data.Cluster()
+
 	var vars []corev1.EnvVar
 	if cluster.Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: cluster.Spec.Cloud.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: cluster.Spec.Cloud.AWS.SecretAccessKey})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: cluster.Spec.Cloud.AWS.AvailabilityZone})
 	}
 	if cluster.Spec.Cloud.GCP != nil {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_APPLICATION_CREDENTIALS", Value: "/etc/gcp/serviceAccount"})
 	}
-	return vars
+	return vars, nil
 }
 
 func getPodAnnotations(data *resources.TemplateData) map[string]string {

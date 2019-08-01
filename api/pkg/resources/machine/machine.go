@@ -5,6 +5,7 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
@@ -16,7 +17,7 @@ import (
 )
 
 // Machine returns a machine object for the given spec
-func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc *kubermaticv1.Datacenter, keys []*kubermaticv1.UserSSHKey) (*clusterv1alpha1.Machine, error) {
+func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc *kubermaticv1.Datacenter, keys []*kubermaticv1.UserSSHKey, data resources.CredentialsData) (*clusterv1alpha1.Machine, error) {
 	m := clusterv1alpha1.Machine{}
 
 	m.Namespace = metav1.NamespaceSystem
@@ -34,6 +35,12 @@ func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc *kubermaticv1.Datacen
 		err      error
 		cloudExt *runtime.RawExtension
 	)
+
+	credentials, err := resources.GetCredentials(data)
+	if err != nil {
+		return nil, err
+	}
+
 	// Cloud specifics
 	switch {
 	case node.Spec.Cloud.AWS != nil:
@@ -54,7 +61,7 @@ func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc *kubermaticv1.Datacen
 		// We use OverwriteCloudConfig for Vsphere to ensure we always
 		// use the credentials passed in via frontend for the cloud-provider
 		// functionality
-		overwriteCloudConfig, err := cloudconfig.CloudConfig(c, dc)
+		overwriteCloudConfig, err := cloudconfig.CloudConfig(c, dc, credentials)
 		if err != nil {
 			return nil, err
 		}

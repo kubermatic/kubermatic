@@ -20,6 +20,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -68,7 +69,7 @@ func DecodeCreateNodeDeployment(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, credentialsProvider *kubernetesprovider.CredentialsProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createNodeDeploymentReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -116,7 +117,12 @@ func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, k8cerrors.NewBadRequest(fmt.Sprintf("node deployment validation failed: %s", err.Error()))
 		}
 
-		md, err := machineresource.Deployment(cluster, nd, dc, keys)
+		data := common.CredentialsData{
+			KubermaticCluster: cluster,
+			Client:            credentialsProvider.KubernetesClientPrivileged,
+		}
+
+		md, err := machineresource.Deployment(cluster, nd, dc, keys, data)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
 		}
@@ -484,7 +490,7 @@ func DecodePatchNodeDeployment(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, credentialsProvider *kubernetesprovider.CredentialsProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchNodeDeploymentReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -555,7 +561,11 @@ func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		patchedMachineDeployment, err := machineresource.Deployment(cluster, patchedNodeDeployment, dc, keys)
+		data := common.CredentialsData{
+			KubermaticCluster: cluster,
+			Client:            credentialsProvider.KubernetesClientPrivileged,
+		}
+		patchedMachineDeployment, err := machineresource.Deployment(cluster, patchedNodeDeployment, dc, keys, data)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
 		}

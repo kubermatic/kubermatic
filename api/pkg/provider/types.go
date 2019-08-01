@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	apicorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,8 +41,8 @@ const (
 
 // CloudProvider declares a set of methods for interacting with a cloud provider
 type CloudProvider interface {
-	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
-	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
+	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater, SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error)
+	CleanUpCloudProvider(*kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 	DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error
 	ValidateCloudSpec(spec kubermaticv1.CloudSpec) error
 	ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error
@@ -62,6 +63,8 @@ type ClusterGetOptions struct {
 	// not all cluster components are running
 	CheckInitStatus bool
 }
+
+type SecretKeySelectorValueFunc func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 
 // ProjectGetOptions allows to check the status of the Project
 type ProjectGetOptions struct {

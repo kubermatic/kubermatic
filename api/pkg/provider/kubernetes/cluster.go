@@ -94,7 +94,13 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 		labels[kubermaticv1.WorkerNameLabelKey] = p.workerName
 	}
 
-	name := rand.String(10)
+	var name string
+	if cluster.Name != "" {
+		name = cluster.Name
+	} else {
+		name = rand.String(10)
+	}
+
 	newCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: cluster.Annotations,

@@ -48,7 +48,7 @@ func ValidateKubernetesToken(token string) error {
 }
 
 func ValidateSecretKeySelector(selector *providerconfig.GlobalSecretKeySelector, key string) error {
-	if selector.Name == "" && selector.Namespace == "" && selector.Key == "" {
+	if selector.Name == "" && selector.Namespace == "" && key == "" {
 		return fmt.Errorf("%q cannot be empty", key)
 	}
 	return nil

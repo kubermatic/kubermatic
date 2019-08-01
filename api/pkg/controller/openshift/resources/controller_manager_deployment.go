@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
@@ -144,6 +143,12 @@ func ControllerManagerDeploymentCreator(ctx context.Context, data openshiftData)
 			if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
 				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources
 			}
+
+			envVars, err := getControllerManagerEnvVars(data)
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
@@ -151,7 +156,7 @@ func ControllerManagerDeploymentCreator(ctx context.Context, data openshiftData)
 					Image:     data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
 					Command:   []string{"/usr/bin/openshift", "start", "master", "controllers"},
 					Args:      []string{"--config=/etc/origin/master/master-config.yaml", "--listen=https://0.0.0.0:8444"},
-					Env:       getControllerManagerEnvVars(data.Cluster()),
+					Env:       envVars,
 					Resources: resourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
@@ -269,15 +274,21 @@ func getControllerManagerVolumes() []corev1.Volume {
 	}
 }
 
-func getControllerManagerEnvVars(cluster *kubermaticv1.Cluster) []corev1.EnvVar {
+func getControllerManagerEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
+	credentials, err := resources.GetCredentials(data)
+	if err != nil {
+		return nil, err
+	}
+	cluster := data.Cluster()
+
 	var vars []corev1.EnvVar
 	if cluster.Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: cluster.Spec.Cloud.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: cluster.Spec.Cloud.AWS.SecretAccessKey})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: cluster.Spec.Cloud.AWS.AvailabilityZone})
 	}
-	return vars
+	return vars, nil
 }
 
 func getHealthGetAction() *corev1.HTTPGetAction {

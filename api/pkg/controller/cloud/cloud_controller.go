@@ -12,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/azure"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"github.com/golang/glog"
 
@@ -124,7 +125,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			finalizers.Has(kubermaticapiv1.CredentialsSecretsCleanupFinalizer) {
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
-		_, err := prov.CleanUpCloudProvider(cluster, r.updateCluster)
+		_, err := prov.CleanUpCloudProvider(cluster)
 		return nil, err
 	}
 
@@ -143,7 +144,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 	}
 
-	_, err = prov.InitializeCloudProvider(cluster, r.updateCluster)
+	_, err = prov.InitializeCloudProvider(cluster, r.updateCluster, r.getGlobalSecretKeySelectorValue)
 	return nil, err
 }
 
@@ -180,7 +181,7 @@ func (r *Reconciler) migrateICMP(ctx context.Context, cluster *kubermaticv1.Clus
 func (r *Reconciler) migrateAWSMultiAZ(ctx context.Context, cluster *kubermaticv1.Cluster, cloudProvider provider.CloudProvider) error {
 	if awsprovider, ok := cloudProvider.(*aws.AmazonEC2); ok {
 
-		if err := awsprovider.MigrateToMultiAZ(cluster, r.updateCluster); err != nil {
+		if err := awsprovider.MigrateToMultiAZ(cluster); err != nil {
 			return fmt.Errorf("failed to migrate AWS cluster %q to multi-AZ: %q", cluster.Name, err)
 		}
 	}
@@ -205,4 +206,20 @@ func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluste
 		modify(cluster)
 		return r.Update(context.Background(), cluster)
 	})
+}
+
+func (r *Reconciler) getGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+	if configVar.Name != "" && configVar.Namespace != "" && key != "" {
+		secret := &corev1.Secret{}
+		namespacedName := types.NamespacedName{Namespace: configVar.Namespace, Name: configVar.Name}
+		if err := r.Get(context.Background(), namespacedName, secret); err != nil {
+			return "", fmt.Errorf("error retrieving secret %q from namespace %q: %v", configVar.Name, configVar.Namespace, err)
+		}
+
+		if val, ok := secret.Data[key]; ok {
+			return string(val), nil
+		}
+		return "", fmt.Errorf("secret %q in namespace %q has no key %q", configVar.Name, configVar.Namespace, key)
+	}
+	return "", nil
 }

@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -131,6 +130,11 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
 			}
 
+			envVars, err := getAPIServerEnvVars(data)
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				*dnatControllerSidecar,
@@ -139,7 +143,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 					Image:     data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
 					Command:   []string{"/usr/bin/openshift", "start", "master", "api"},
 					Args:      []string{"--config=/etc/origin/master/master-config.yaml"},
-					Env:       getAPIServerEnvVars(data.Cluster()),
+					Env:       envVars,
 					Resources: *resourceRequirements,
 					Ports: []corev1.ContainerPort{
 						{
@@ -387,13 +391,19 @@ func getAPIServerVolumes() []corev1.Volume {
 	}
 }
 
-func getAPIServerEnvVars(cluster *kubermaticv1.Cluster) []corev1.EnvVar {
+func getAPIServerEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
+	credentials, err := resources.GetCredentials(data)
+	if err != nil {
+		return nil, err
+	}
+	cluster := data.Cluster()
+
 	var vars []corev1.EnvVar
 	if cluster.Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: cluster.Spec.Cloud.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: cluster.Spec.Cloud.AWS.SecretAccessKey})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: cluster.Spec.Cloud.AWS.AvailabilityZone})
 	}
-	return vars
+	return vars, nil
 }

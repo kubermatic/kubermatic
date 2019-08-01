@@ -1,8 +1,9 @@
 package packet
 
 import (
+	"fmt"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 )
 
@@ -26,23 +27,17 @@ func (p *packet) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 // ValidateCloudSpec validates the given CloudSpec.
 func (p *packet) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	if spec.Packet.APIKey == "" {
-		if err := kuberneteshelper.ValidateSecretKeySelector(spec.Packet.APIKeyReference, "apiKey"); err != nil {
-			return err
-		}
+		return fmt.Errorf("apiKey cannot be empty")
 	}
-
 	if spec.Packet.ProjectID == "" {
-		if err := kuberneteshelper.ValidateSecretKeySelector(spec.Packet.ProjectIDReference, "projectID"); err != nil {
-			return err
-		}
+		return fmt.Errorf("projectID cannot be empty")
 	}
-
 	return nil
 }
 
 // InitializeCloudProvider initializes a cluster, in particular
 // updates BillingCycle to the defaultBillingCycle, if it is not set.
-func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	var err error
 	if cluster.Spec.Cloud.Packet.BillingCycle == "" {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -57,7 +52,7 @@ func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update p
 }
 
 // CleanUpCloudProvider
-func (p *packet) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (p *packet) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 

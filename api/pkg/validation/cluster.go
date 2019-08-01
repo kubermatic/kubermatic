@@ -9,6 +9,7 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 )
@@ -267,11 +268,15 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 }
 
 func validateAWSCloudSpec(spec *kubermaticv1.AWSCloudSpec) error {
-	if spec.SecretAccessKey == "" {
-		return errors.New("no secret access key specified")
-	}
 	if spec.AccessKeyID == "" {
-		return errors.New("no access key ID specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AWSAccessKeyID); err != nil {
+			return err
+		}
+	}
+	if spec.SecretAccessKey == "" {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AWSSecretAccessKey); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -293,12 +298,12 @@ func validateHetznerCloudSpec(spec *kubermaticv1.HetznerCloudSpec) error {
 
 func validatePacketCloudSpec(spec *kubermaticv1.PacketCloudSpec) error {
 	if spec.APIKey == "" {
-		if err := kuberneteshelper.ValidateSecretKeySelector(spec.APIKeyReference, "apiKey"); err != nil {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.PacketAPIKey); err != nil {
 			return err
 		}
 	}
 	if spec.ProjectID == "" {
-		if err := kuberneteshelper.ValidateSecretKeySelector(spec.ProjectIDReference, "projectID"); err != nil {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.PacketProjectID); err != nil {
 			return err
 		}
 	}

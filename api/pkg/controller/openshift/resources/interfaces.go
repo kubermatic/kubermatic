@@ -18,7 +18,7 @@ type openshiftData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	GetPodTemplateLabelsWithContext(context.Context, string, []corev1.Volume, map[string]string) (map[string]string, error)
-	GetGlobalSecretKeySelectorValue(configVar providerconfig.GlobalSecretKeySelector) (string, error)
+	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	GetApiserverExternalNodePort(context.Context) (int32, error)
 	NodePortRange(context.Context) string
 	ClusterIPByServiceName(name string) (string, error)

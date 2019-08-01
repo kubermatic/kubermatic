@@ -147,7 +147,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 				defer utilruntime.HandleCrash()
 				ndName := getNodeDeploymentDisplayName(req.Body.NodeDeployment)
 				eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationStart), "started creation of initial node deployment%s", ndName)
-				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, seeds, clusterProvider, userInfo, eventRecorderProvider.ClusterRecorderFor(k8sClient))
+				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, credentialsProvider, seeds, clusterProvider, userInfo, eventRecorderProvider.ClusterRecorderFor(k8sClient))
 				if err != nil {
 					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(nodeDeploymentCreationFail), "failed to create initial node deployment%s: %v", ndName, err)
 					glog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
@@ -164,10 +164,10 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 }
 
 func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
-	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider, seeds map[string]*kubermaticv1.Seed,
-	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, eventRecorder record.EventRecorder) error {
+	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider, credentialsProvider *kubernetesprovider.CredentialsProvider,
+	seeds map[string]*kubermaticv1.Seed, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, eventRecorder record.EventRecorder) error {
 	return wait.Poll(5*time.Second, 30*time.Minute, func() (bool, error) {
-		err := createInitialNodeDeployment(nodeDeployment, cluster, project, sshKeyProvider, seeds, clusterProvider, userInfo)
+		err := createInitialNodeDeployment(nodeDeployment, cluster, project, sshKeyProvider, credentialsProvider, seeds, clusterProvider, userInfo)
 		if err != nil {
 			// unrecoverable
 			if strings.Contains(err.Error(), `admission webhook "machine-controller.kubermatic.io-machinedeployments" denied the request`) {
@@ -184,8 +184,8 @@ func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment
 }
 
 func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
-	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider, seeds map[string]*kubermaticv1.Seed,
-	clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
+	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider, credentialsProvider *kubernetesprovider.CredentialsProvider,
+	seeds map[string]*kubermaticv1.Seed, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
 
@@ -214,7 +214,11 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 		return fmt.Errorf("error getting dc: %v", err)
 	}
 
-	md, err := machineresource.Deployment(cluster, nd, dc, keys)
+	data := common.CredentialsData{
+		KubermaticCluster: cluster,
+		Client:            credentialsProvider.KubernetesClientPrivileged,
+	}
+	md, err := machineresource.Deployment(cluster, nd, dc, keys, data)
 	if err != nil {
 		return err
 	}
