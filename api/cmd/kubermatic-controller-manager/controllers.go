@@ -31,11 +31,11 @@ import (
 // start function that will essentially run the controller
 var allControllers = map[string]controllerCreator{
 	cluster.ControllerName:                   createClusterController,
-	"Update":                                 createUpdateController,
-	"Addon":                                  createAddonController,
-	"AddonInstaller":                         createAddonInstallerController,
-	"Backup":                                 createBackupController,
-	"Monitoring":                             createMonitoringController,
+	updatecontroller.ControllerName:          createUpdateController,
+	addon.ControllerName:                     createAddonController,
+	addoninstaller.ControllerName:            createAddonInstallerController,
+	backupcontroller.ControllerName:          createBackupController,
+	monitoring.ControllerName:                createMonitoringController,
 	cloudcontroller.ControllerName:           createCloudController,
 	openshiftcontroller.ControllerName:       createOpenshiftController,
 	clustercomponentdefaulter.ControllerName: createClusterComponentDefaulter,
