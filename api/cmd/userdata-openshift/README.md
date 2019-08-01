@@ -15,4 +15,4 @@ Thus we require a custom controller.
 Sidenote:
 A new node creates 2 CSRs:
 - Kubelet client certificate
-- Kubelet service certificate
+- Kubelet serving certificate

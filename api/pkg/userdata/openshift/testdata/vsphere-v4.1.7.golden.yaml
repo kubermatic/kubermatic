@@ -38,9 +38,6 @@ write_files:
     # As we added some modules and don't want to reboot, restart the service
     systemctl restart systemd-modules-load.service
     sysctl --system
-
-    # crictl does not exist in the centos repos - Thus we directly fetch it from upstream
-    curl -L https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.13.0/crictl-v1.13.0-linux-amd64.tar.gz | tar -xvzC /usr/bin
     # The normal way of setting it via cloud-init is broken:
     # https://bugs.launchpad.net/cloud-init/+bug/1662542
     hostnamectl set-hostname my-vsphere-node
@@ -105,6 +102,7 @@ write_files:
       cloud-utils-growpart \
       ceph-common \
       cri-o \
+      cri-tools \
       podman \
       glusterfs-fuse \
       open-vm-tools

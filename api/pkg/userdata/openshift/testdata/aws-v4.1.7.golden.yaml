@@ -36,9 +36,6 @@ write_files:
     systemctl restart systemd-modules-load.service
     sysctl --system
 
-    # crictl does not exist in the centos repos - Thus we directly fetch it from upstream
-    curl -L https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.13.0/crictl-v1.13.0-linux-amd64.tar.gz | tar -xvzC /usr/bin
-
     if systemctl is-active firewalld; then systemctl stop firewalld; fi;
     systemctl mask firewalld
 
@@ -99,6 +96,7 @@ write_files:
       cloud-utils-growpart \
       ceph-common \
       cri-o \
+      cri-tools \
       podman \
       glusterfs-fuse
     podman run \

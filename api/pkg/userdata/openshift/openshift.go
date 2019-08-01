@@ -96,7 +96,6 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 		Kubeconfig            string
 		KubernetesCACert      string
 		CRIORepo              string
-		CRICtlURL             string
 	}{
 		UserDataRequest:       req,
 		ProviderSpec:          pconfig,
@@ -108,8 +107,6 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 		KubernetesCACert:      kubernetesCACert,
 		// There is a CRI-O release for every Kubernetes release.
 		CRIORepo: fmt.Sprintf("https://cbs.centos.org/repos/paas7-crio-1%d-candidate/x86_64/os/", kubernetesMinor),
-		// There is a crictl release for every Kubernetes release.
-		CRICtlURL: fmt.Sprintf("https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.%d.0/crictl-v1.%d.0-linux-amd64.tar.gz", kubernetesMinor, kubernetesMinor),
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -151,6 +148,7 @@ write_files:
     name=CRI-O
     baseurl={{ .CRIORepo }}
     enabled=1
+    {{- /* The repo has no publickey. The Kubernetes docs also disable the gpg check: https://kubernetes.io/docs/setup/production-environment/container-runtimes/ */}}
     gpgcheck=0
 
 - path: "/opt/bin/setup"
@@ -167,9 +165,6 @@ write_files:
     # As we added some modules and don't want to reboot, restart the service
     systemctl restart systemd-modules-load.service
     sysctl --system
-
-    # crictl does not exist in the centos repos - Thus we directly fetch it from upstream
-    curl -L {{ .CRICtlURL }} | tar -xvzC /usr/bin
 
     {{- if ne .CloudProviderName "aws" }}
     # The normal way of setting it via cloud-init is broken:
@@ -237,6 +232,7 @@ write_files:
       cloud-utils-growpart \
       ceph-common \
       cri-o \
+      cri-tools \
       podman \ {{- /* # We install podman to be able to fetch the hyperkube image from the image */}}
       glusterfs-fuse{{ if eq .CloudProviderName "vsphere" }} \
       open-vm-tools{{ end }}
