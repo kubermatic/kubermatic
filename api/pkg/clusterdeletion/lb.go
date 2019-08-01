@@ -16,6 +16,10 @@ import (
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	eventReasonDeletedLoadBalancer = "DeletedLoadBalancer"
+)
+
 func (d *Deletion) cleanupLBs(ctx context.Context, cluster *kubermaticv1.Cluster) (deletedSomeLBs bool, err error) {
 	serviceList := &corev1.ServiceList{}
 	if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, serviceList); err != nil {
@@ -104,7 +108,7 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 			return false, fmt.Errorf("failed to get service events: %v", err)
 		}
 		for _, event := range events.Items {
-			if event.Reason == "DeletedLoadBalancer" {
+			if event.Reason == eventReasonDeletedLoadBalancer {
 				deletedLoadBalancers.Delete(deletedLB)
 			}
 		}
