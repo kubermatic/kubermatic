@@ -150,7 +150,7 @@ func main() {
 	// we know it's been a CLI parsing failure and the cli package
 	// has already output the error and printed the usage hints.
 	if err != nil && logger != nil {
-		logger.Fatal("Failed to run command", zap.Error(err))
+		logger.Fatalw("Failed to run command", zap.Error(err))
 	}
 }
 
