@@ -76,7 +76,7 @@ func (cc *AddonCollector) collectAddon(ch chan<- prometheus.Metric, c *kubermati
 	ch <- prometheus.MustNewConstMetric(
 		cc.addonCreated,
 		prometheus.GaugeValue,
-		float64(c.CreationTimestamp.Unix()),
+		float64(addon.CreationTimestamp.Unix()),
 		c.Name,
 		addon.Name,
 	)
@@ -85,7 +85,7 @@ func (cc *AddonCollector) collectAddon(ch chan<- prometheus.Metric, c *kubermati
 		ch <- prometheus.MustNewConstMetric(
 			cc.addonDeleted,
 			prometheus.GaugeValue,
-			float64(c.DeletionTimestamp.Unix()),
+			float64(addon.DeletionTimestamp.Unix()),
 			c.Name,
 			addon.Name,
 		)
