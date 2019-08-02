@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/go-logr/zapr"
 	"github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/storeuploader"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
-	ctrllog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var logger *zap.SugaredLogger
@@ -135,11 +133,6 @@ func main() {
 		format := c.GlobalGeneric("log-format").(*log.Format)
 		rawLog := log.New(c.GlobalBool("log-debug"), *format)
 		logger = rawLog.Sugar()
-
-		// update global logger instance
-		log.Logger = logger
-
-		ctrllog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 		return nil
 	}
