@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/Masterminds/semver"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 
@@ -606,6 +605,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			Hetzner:        newPublicHetznerCloudSpec(cs.Cloud.Hetzner),
 			VSphere:        newPublicVSphereCloudSpec(cs.Cloud.VSphere),
 			GCP:            newPublicGCPCloudSpec(cs.Cloud.GCP),
+			Kubevirt:       newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
 		},
 		Version:                             cs.Version,
 		MachineNetworks:                     cs.MachineNetworks,
@@ -629,6 +629,7 @@ type PublicCloudSpec struct {
 	Hetzner        *PublicHetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere        *PublicVSphereCloudSpec      `json:"vsphere,omitempty"`
 	GCP            *PublicGCPCloudSpec          `json:"gcp,omitempty"`
+	Kubevirt       *PublicKubevirtCloudSpec     `json:"kubevirt,omitempty"`
 }
 
 // PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.
@@ -743,6 +744,17 @@ func newPublicGCPCloudSpec(internal *kubermaticv1.GCPCloudSpec) (public *PublicG
 	}
 
 	return &PublicGCPCloudSpec{}
+}
+
+// PublicKubevirtCloudSpec is a public counterpart of apiv1.KubevirtCloudSpec.
+type PublicKubevirtCloudSpec struct{}
+
+func newPublicKubevirtCloudSpec(internal *kubermaticv1.KubevirtCloudSpec) (public *PublicKubevirtCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicKubevirtCloudSpec{}
 }
 
 // ClusterStatus defines the cluster status
@@ -982,12 +994,24 @@ type GCPNodeSpec struct {
 // KubevirtNodeSpec kubevirt specific node settings
 // swagger:model KubevirtNodeSpec
 type KubevirtNodeSpec struct {
-	CPUs             string
-	Memory           string
-	Namespace        string
-	SourceURL        string
+	// CPUs states how many cpus the kubevirt node will have.
+	// required: true
+	CPUs string
+	// Memory states the memory that kubevirt node will have.
+	// required: true
+	Memory string
+	// Namespace states in which namespace kubevirt node will be provisioned.
+	// required: true
+	Namespace string
+	// SourceURL states the url from which the imported image will be downloaded.
+	// required: true
+	SourceURL string
+	// StorageClassName states the storage class name for the provisioned PVCs.
+	// required: true
 	StorageClassName string
-	PVCSize          string
+	// PVCSize states the size of the provisioned pvc per node.
+	// required: true
+	PVCSize string
 }
 
 // NodeResources cpu and memory of a node

@@ -313,6 +313,9 @@ func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	if spec.GCP != nil {
 		clouds = append(clouds, GCPCloudProvider)
 	}
+	if spec.Kubevirt != nil {
+		clouds = append(clouds, KubevirtCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
@@ -376,6 +379,9 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	}
 	if spec.Fake != nil {
 		clouds = append(clouds, FakeCloudProvider)
+	}
+	if spec.Kubevirt != nil {
+		clouds = append(clouds, KubevirtCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil

@@ -62,6 +62,8 @@ function cleanup {
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Domain|Tenant|Username|Password'
     elif [[ $provider == "vsphere" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Username|Password'
+    elif [[ $provider == "kubevirt" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Kubeconfig'
     else
       echo "Provider $provider is not yet supported."
       exit 1
@@ -416,6 +418,8 @@ elif [[ $provider == "openstack" ]]; then
 elif [[ $provider == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}"
+elif [[ $provider == "kubevirt" ]]; then
+  EXTRA_ARGS="-kubevirt-kubeconfig=${KUBEVIRT_E2E_KUBECONFIG}"
 fi
 
 # Gather the total time it takes between starting this sscript and staring the conformance tester

@@ -48,6 +48,9 @@ type CloudSpec struct {
 
 	// vsphere
 	Vsphere *VSphereCloudSpec `json:"vsphere,omitempty"`
+
+	// kubevirt
+	Kubevirt *KubevirtCloudSpec `json:"kubevirt,omitempty"`
 }
 
 // Validate validates this cloud spec
@@ -87,6 +90,10 @@ func (m *CloudSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateVsphere(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateKubevirt(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -250,6 +257,23 @@ func (m *CloudSpec) validateVsphere(formats strfmt.Registry) error {
 		if err := m.Vsphere.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("vsphere")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *CloudSpec) validateKubevirt(formats strfmt.Registry) error {
+	if swag.IsZero(m.Kubevirt) {
+		return nil
+	}
+
+	if m.Kubevirt != nil {
+		if err := m.Kubevirt.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubevirt")
 			}
 			return err
 		}
