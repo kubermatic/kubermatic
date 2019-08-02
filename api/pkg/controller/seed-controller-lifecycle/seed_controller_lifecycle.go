@@ -107,7 +107,9 @@ func (r *Reconciler) reconcile() error {
 	for seedName := range seeds {
 		cfg, err := r.seedKubeconfigGetter(seedName)
 		if err != nil {
-			return fmt.Errorf("failed to get kubeconfig for seed %q: %v", seedName, err)
+			// Don't let a single broken kubeconfig break everything.
+			r.log.Errorw("failed to get kubeconfig", "seed", seedName, zap.Error(err))
+			continue
 		}
 		seedKubeconfigMap[seedName] = *cfg
 	}
