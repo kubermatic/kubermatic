@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"errors"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/kubevirt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -47,6 +48,9 @@ func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}
 	if datacenter.Spec.Fake != nil {
 		return fake.NewCloudProvider(), nil
+	}
+	if datacenter.Spec.Kubevirt != nil {
+		return kubevirt.NewCloudProvider(), nil
 	}
 	return nil, errors.New("no cloudprovider found")
 }

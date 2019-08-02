@@ -5598,6 +5598,9 @@
         },
         "vsphere": {
           "$ref": "#/definitions/VSphereCloudSpec"
+        },
+        "kubevirt": {
+          "$ref": "#/definitions/KubevirtCloudSpec"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -6818,6 +6821,9 @@
         },
         "vsphere": {
           "$ref": "#/definitions/VSphereNodeSpec"
+        },
+        "kubevirt": {
+          "$ref": "#/definitions/KubevirtNodeSpec"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -7519,6 +7525,63 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "KubevirtCloudSpec": {
+      "type": "object",
+      "title": "KubevirtCloudSpec specifies access data to a Kubevirt cloud.",
+      "properties": {
+        "config": {
+          "description": "config is the kubeconfig file for the kubevirt cluster",
+          "type": "string",
+          "x-go-name": "Config"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "KubevirtNodeSpec": {
+      "description": "KubevirtNodeSpec specifies kubevirt specific node settings",
+      "type": "object",
+      "required": [
+        "memory",
+        "namespace",
+        "sourceURL",
+        "storageClassName",
+        "pvcSize",
+        "cpus"
+      ],
+      "properties": {
+        "memory": {
+          "description": "Memory denotes how much memory the node will have.",
+          "type": "string",
+          "x-go-name": "Memory"
+        },
+        "namespace": {
+          "description": "Namespace denotes the namespaces where the vm will be provisioned",
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
+        "sourceURL": {
+          "description": "SourceURL denotes the image source for the VMI.",
+          "type": "string",
+          "x-go-name": "SourceURL"
+        },
+        "storageClassName": {
+          "description": "StorageClassName denotes the storage class name for the VMI PVC.",
+          "type": "string",
+          "x-go-name": "StorageClassName"
+        },
+        "pvcSize": {
+          "description": "PVCSize denotes the size of the PVC.",
+          "type": "string",
+          "x-go-name": "PVCSize"
+        },
+        "cpus": {
+          "description": "CPUs denotes the number of CPUs per VMI.",
+          "type": "string",
+          "x-go-name": "CPUs"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "Preferences": {
       "type": "object",
       "properties": {
@@ -7646,6 +7709,9 @@
         },
         "vsphere": {
           "$ref": "#/definitions/PublicVSphereCloudSpec"
+        },
+        "kubevirt": {
+          "$ref": "#/definitions/PublicKubevirtCloudSpec"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -7684,6 +7750,11 @@
     "PublicPacketCloudSpec": {
       "type": "object",
       "title": "PublicPacketCloudSpec is a public counterpart of apiv1.PacketCloudSpec.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PublicKubevirtCloudSpec": {
+      "type": "object",
+      "title": "PublicKubevirtCloudSpec is a public counterpart of apiv1.PublicKubevirtCloudSpec.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicServiceAccountToken": {

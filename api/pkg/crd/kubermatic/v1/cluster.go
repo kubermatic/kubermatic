@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
