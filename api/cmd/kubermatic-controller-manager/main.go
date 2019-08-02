@@ -28,6 +28,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -76,6 +77,9 @@ func main() {
 	}
 	if err := kubermaticv1.SchemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	recorder := mgr.GetRecorder(controllerName)

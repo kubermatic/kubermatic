@@ -13,10 +13,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -31,9 +29,6 @@ type UserClusterConnectionProvider interface {
 // only works from within the seed cluster but has the advantage that it doesn't leave
 // the seed clusters network
 func NewInternal(seedClient ctrlruntimeclient.Client) (UserClusterConnectionProvider, error) {
-	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		return nil, fmt.Errorf("failed to add clusterv1alpha1 to scheme: %v", err)
-	}
 	return &provider{
 		seedClient:         seedClient,
 		useExternalAddress: false,
@@ -45,9 +40,6 @@ func NewInternal(seedClient ctrlruntimeclient.Client) (UserClusterConnectionProv
 // that uses the external cluster address and hence works from everywhere.
 // Use NewInternal if possible
 func NewExternal(seedClient ctrlruntimeclient.Client) (UserClusterConnectionProvider, error) {
-	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
-		return nil, fmt.Errorf("failed to add clusterv1alpha1 to scheme: %v", err)
-	}
 	return &provider{
 		seedClient:         seedClient,
 		useExternalAddress: true,
