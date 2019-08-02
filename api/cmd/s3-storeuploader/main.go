@@ -70,7 +70,7 @@ func main() {
 		Usage: "Enables more verbose logging",
 	}
 
-	defaultLogFormat := log.FormatConsole
+	defaultLogFormat := log.FormatJSON
 	logFormatFlag := cli.GenericFlag{
 		Name:  "log-format",
 		Value: &defaultLogFormat,
