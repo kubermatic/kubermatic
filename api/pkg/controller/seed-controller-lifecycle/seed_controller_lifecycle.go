@@ -14,7 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
+	ctrlruntimecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -35,17 +35,16 @@ type Reconciler struct {
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
 	controllerFactory    func() (manager.Runnable, error)
 	enqueue              func()
-	activeController     *controllersInstance
+	activeController     controllerInstance
 }
 
-// controllersInstance represents an instance of a set of running controllers
-type controllersInstance struct {
-	log        *zap.SugaredLogger
+// controllerInstance represents an instance of a running
+// controller
+type controllerInstance struct {
 	config     map[string]rest.Config
 	controller manager.Runnable
 	running    bool
 	stopChan   chan struct{}
-	enqueue    func()
 }
 
 func Add(
@@ -64,8 +63,8 @@ func Add(
 		seedKubeconfigGetter: seedKubeconfigGetter,
 		controllerFactory:    controllerFactory,
 	}
-	c, err := controller.New(ControllerName, mgr,
-		controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: 1})
+	c, err := ctrlruntimecontroller.New(ControllerName, mgr,
+		ctrlruntimecontroller.Options{Reconciler: reconciler, MaxConcurrentReconciles: 1})
 	if err != nil {
 		return fmt.Errorf("failed to construct controller: %v", err)
 	}
@@ -113,24 +112,24 @@ func (r *Reconciler) reconcile() error {
 		seedKubeconfigMap[seedName] = *cfg
 	}
 
-	if r.activeController != nil && r.activeController.running && reflect.DeepEqual(r.activeController.config, seedKubeconfigMap) {
+	if r.activeController.running && reflect.DeepEqual(r.activeController.config, seedKubeconfigMap) {
 		r.log.Debug("found running controller instance with up-to-date config, nothing to do")
 		return nil
 	}
 
-	controllerInstance, err := r.controllerFactory()
+	controller, err := r.controllerFactory()
 	if err != nil {
 		return fmt.Errorf("failed to construct controllers: %v", err)
 	}
 
-	if r.activeController != nil && r.activeController.running {
+	if r.activeController.running {
 		r.log.Info("Stopping old version of controllers")
 		close(r.activeController.stopChan)
 	}
 
-	r.activeController = &controllersInstance{
+	r.activeController = controllerInstance{
 		config:     seedKubeconfigMap,
-		controller: controllerInstance,
+		controller: controller,
 		stopChan:   make(chan struct{}),
 	}
 	go func() {
