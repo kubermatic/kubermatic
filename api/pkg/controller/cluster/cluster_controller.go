@@ -195,7 +195,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		log.Debugw(
 			"Skipping because the cluster has a different worker name set",
 			"cluster-worker-name", cluster.Labels[kubermaticv1.WorkerNameLabelKey],
-			"my-worker-name", r.workerName,
+			"worker-name", r.workerName,
 		)
 		return reconcile.Result{}, nil
 	}
