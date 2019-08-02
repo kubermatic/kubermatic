@@ -83,6 +83,9 @@ func (u *StoreUploader) DeleteOldBackups(bucket, prefix string, revisionsToKeep 
 
 	var existingObjects []minio.ObjectInfo
 	for object := range u.client.ListObjects(bucket, fmt.Sprintf("%s-%s", prefix, prefixSeparator), true, doneCh) {
+		if object.Err != nil {
+			return object.Err
+		}
 		existingObjects = append(existingObjects, object)
 	}
 
@@ -111,6 +114,9 @@ func (u *StoreUploader) DeleteAll(bucket, prefix string) error {
 
 	var existingObjects []minio.ObjectInfo
 	for object := range u.client.ListObjects(bucket, fmt.Sprintf("%s-%s", prefix, prefixSeparator), true, doneCh) {
+		if object.Err != nil {
+			return object.Err
+		}
 		existingObjects = append(existingObjects, object)
 	}
 
