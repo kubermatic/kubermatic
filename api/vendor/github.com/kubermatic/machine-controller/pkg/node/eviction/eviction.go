@@ -17,6 +17,7 @@ limitations under the License.
 package eviction
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -28,10 +29,11 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	listerscorev1 "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/util/retry"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -39,27 +41,28 @@ const (
 )
 
 type NodeEviction struct {
+	ctx        context.Context
 	nodeName   string
-	nodeLister listerscorev1.NodeLister
-	client     kubernetes.Interface
+	client     ctrlruntimeclient.Client
+	kubeClient kubernetes.Interface
 }
 
 // New returns a new NodeEviction
-func New(nodeName string, nodeLister listerscorev1.NodeLister, client kubernetes.Interface) *NodeEviction {
+func New(ctx context.Context, nodeName string, client ctrlruntimeclient.Client, kubeClient kubernetes.Interface) *NodeEviction {
 	return &NodeEviction{
+		ctx:        ctx,
 		nodeName:   nodeName,
-		nodeLister: nodeLister,
 		client:     client,
+		kubeClient: kubeClient,
 	}
 }
 
 // Run excutes the eviction
 func (ne *NodeEviction) Run() (bool, error) {
-	listerNode, err := ne.nodeLister.Get(ne.nodeName)
-	if err != nil {
+	node := &corev1.Node{}
+	if err := ne.client.Get(ne.ctx, types.NamespacedName{Name: ne.nodeName}, node); err != nil {
 		return false, fmt.Errorf("failed to get node from lister: %v", err)
 	}
-	node := listerNode.DeepCopy()
 	if _, exists := node.Annotations[SkipEvictionAnnotationKey]; exists {
 		glog.V(3).Infof("Skipping eviction for node %s as it has a %s annotation", ne.nodeName, SkipEvictionAnnotationKey)
 		return false, nil
@@ -107,8 +110,8 @@ func (ne *NodeEviction) cordonNode(node *corev1.Node) error {
 	// pods in between, those will then get deleted upon node deletion and
 	// not evicted
 	return wait.Poll(1*time.Second, 10*time.Second, func() (bool, error) {
-		node, err := ne.nodeLister.Get(ne.nodeName)
-		if err != nil {
+		node := &corev1.Node{}
+		if err := ne.client.Get(ne.ctx, types.NamespacedName{Name: ne.nodeName}, node); err != nil {
 			return false, err
 		}
 		if node.Spec.Unschedulable {
@@ -119,11 +122,14 @@ func (ne *NodeEviction) cordonNode(node *corev1.Node) error {
 }
 
 func (ne *NodeEviction) getFilteredPods() ([]corev1.Pod, error) {
-	pods, err := ne.client.CoreV1().Pods(metav1.NamespaceAll).List(metav1.ListOptions{
+	// The lister-backed client from the mgr automatically creates a lister for all objects requested through it.
+	// We explicitly do not want that for pods, hence we have to use the kubernetes core client
+	// TODO @alvaroaleman: Add source code ref for this
+	pods, err := ne.kubeClient.CoreV1().Pods(metav1.NamespaceAll).List(metav1.ListOptions{
 		FieldSelector: fields.SelectorFromSet(fields.Set{"spec.nodeName": ne.nodeName}).String(),
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list pods: %v", err)
 	}
 
 	var filteredPods []corev1.Pod
@@ -197,25 +203,20 @@ func (ne *NodeEviction) evictPod(pod *corev1.Pod) error {
 			Namespace: pod.Namespace,
 		},
 	}
-	return ne.client.PolicyV1beta1().Evictions(eviction.Namespace).Evict(eviction)
+	return ne.kubeClient.PolicyV1beta1().Evictions(eviction.Namespace).Evict(eviction)
 }
 
 func (ne *NodeEviction) updateNode(modify func(*corev1.Node)) (*corev1.Node, error) {
-	var updatedNode *corev1.Node
+	node := &corev1.Node{}
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		var retryErr error
-
-		//Get latest version from API
-		currentNode, err := ne.client.CoreV1().Nodes().Get(ne.nodeName, metav1.GetOptions{})
-		if err != nil {
+		if err := ne.client.Get(ne.ctx, types.NamespacedName{Name: ne.nodeName}, node); err != nil {
 			return err
 		}
 		// Apply modifications
-		modify(currentNode)
+		modify(node)
 		// Update the node
-		updatedNode, retryErr = ne.client.CoreV1().Nodes().Update(currentNode)
-		return retryErr
+		return ne.client.Update(ne.ctx, node)
 	})
 
-	return updatedNode, err
+	return node, err
 }

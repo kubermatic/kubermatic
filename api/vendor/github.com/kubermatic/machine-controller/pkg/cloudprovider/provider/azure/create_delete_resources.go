@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-04-01/network"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-06-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-06-01/network"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/golang/glog"
@@ -58,7 +58,7 @@ func deleteInterfacesByMachineUID(ctx context.Context, c *config, machineUID typ
 				return err
 			}
 
-			if err = future.WaitForCompletion(ctx, ifClient.Client); err != nil {
+			if err = future.WaitForCompletionRef(ctx, ifClient.Client); err != nil {
 				return err
 			}
 		}
@@ -97,7 +97,7 @@ func deleteIPAddressesByMachineUID(ctx context.Context, c *config, machineUID ty
 				return err
 			}
 
-			if err = future.WaitForCompletion(ctx, ipClient.Client); err != nil {
+			if err = future.WaitForCompletionRef(ctx, ipClient.Client); err != nil {
 				return err
 			}
 		}
@@ -133,7 +133,7 @@ func deleteVMsByMachineUID(ctx context.Context, c *config, machineUID types.UID)
 				return err
 			}
 
-			if err = future.WaitForCompletion(ctx, vmClient.Client); err != nil {
+			if err = future.WaitForCompletionRef(ctx, vmClient.Client); err != nil {
 				return err
 			}
 		}
@@ -159,7 +159,7 @@ func deleteDisksByMachineUID(ctx context.Context, c *config, machineUID types.UI
 			return fmt.Errorf("failed to delete disk %s: %v", *disk.Name, err)
 		}
 
-		if err = future.WaitForCompletion(ctx, disksClient.Client); err != nil {
+		if err = future.WaitForCompletionRef(ctx, disksClient.Client); err != nil {
 			return fmt.Errorf("failed to wait for deletion of disk %s: %v", *disk.Name, err)
 		}
 	}
@@ -212,7 +212,7 @@ func createOrUpdatePublicIPAddress(ctx context.Context, ipName string, machineUI
 		return nil, fmt.Errorf("failed to create public IP address: %v", err)
 	}
 
-	err = future.WaitForCompletion(ctx, ipClient.Client)
+	err = future.WaitForCompletionRef(ctx, ipClient.Client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve public IP address creation result: %v", err)
 	}
@@ -304,7 +304,7 @@ func createOrUpdateNetworkInterface(ctx context.Context, ifName string, machineU
 		return nil, fmt.Errorf("failed to create interface: %v", err)
 	}
 
-	err = future.WaitForCompletion(ctx, ifClient.Client)
+	err = future.WaitForCompletionRef(ctx, ifClient.Client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get interface creation response: %v", err)
 	}
