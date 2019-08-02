@@ -1,13 +1,18 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
 
-	"github.com/golang/glog"
+	"github.com/go-logr/zapr"
+	"github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/storeuploader"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
+
+var logger *zap.SugaredLogger
 
 func main() {
 	app := cli.NewApp()
@@ -62,6 +67,23 @@ func main() {
 		Usage: "Maximum number of revisions of the file to keep in S3. Older ones will be deleted",
 	}
 
+	logDebugFlag := cli.BoolFlag{
+		Name:  "log-debug",
+		Usage: "Enables more verbose logging",
+	}
+
+	defaultLogFormat := log.FormatConsole
+	logFormatFlag := cli.GenericFlag{
+		Name:  "log-format",
+		Value: &defaultLogFormat,
+		Usage: fmt.Sprintf("Use either %s or %s to change the log output", log.FormatConsole, log.FormatJSON),
+	}
+
+	app.Flags = []cli.Flag{
+		logDebugFlag,
+		logFormatFlag,
+	}
+
 	app.Commands = []cli.Command{
 		{
 			Name:   "store",
@@ -108,27 +130,58 @@ func main() {
 		},
 	}
 
+	// setup logging
+	app.Before = func(c *cli.Context) error {
+		format := c.GlobalGeneric("log-format").(*log.Format)
+		rawLog := log.New(c.GlobalBool("log-debug"), *format)
+		logger = rawLog.Sugar()
+
+		// update global logger instance
+		log.Logger = logger
+
+		ctrllog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
+
+		return nil
+	}
+
+	defer func() {
+		if logger != nil {
+			if err := logger.Sync(); err != nil {
+				fmt.Println(err)
+			}
+		}
+	}()
+
 	err := app.Run(os.Args)
-	if err != nil {
-		log.Fatal(err)
+	// Only log failures when the logger has been setup, otherwise
+	// we know it's been a CLI parsing failure and the cli package
+	// has already output the error and printed the usage hints.
+	if err != nil && logger != nil {
+		logger.Fatalw("Failed to run command", "err", err)
 	}
 }
 
-func getUploaderFromCtx(c *cli.Context) *storeuploader.StoreUploader {
+func getUploaderFromCtx(c *cli.Context) (*storeuploader.StoreUploader, error) {
 	uploader, err := storeuploader.New(
 		c.String("endpoint"),
 		c.Bool("secure"),
 		c.String("access-key-id"),
 		c.String("secret-access-key"),
+		logger,
 	)
 	if err != nil {
-		glog.Fatal(err)
+		return nil, fmt.Errorf("failed to create store uploader: %v", err)
 	}
-	return uploader
+
+	return uploader, nil
 }
 
 func store(c *cli.Context) error {
-	uploader := getUploaderFromCtx(c)
+	uploader, err := getUploaderFromCtx(c)
+	if err != nil {
+		return err
+	}
+
 	return uploader.Store(
 		c.String("file"),
 		c.String("bucket"),
@@ -137,18 +190,24 @@ func store(c *cli.Context) error {
 	)
 }
 func deleteOldRevisions(c *cli.Context) error {
-	uploader := getUploaderFromCtx(c)
+	uploader, err := getUploaderFromCtx(c)
+	if err != nil {
+		return err
+	}
+
 	return uploader.DeleteOldBackups(
-		c.String("file"),
 		c.String("bucket"),
 		c.String("prefix"),
 		c.Int("max-revisions"),
 	)
 }
 func deleteAll(c *cli.Context) error {
-	uploader := getUploaderFromCtx(c)
+	uploader, err := getUploaderFromCtx(c)
+	if err != nil {
+		return err
+	}
+
 	return uploader.DeleteAll(
-		c.String("file"),
 		c.String("bucket"),
 		c.String("prefix"),
 	)
