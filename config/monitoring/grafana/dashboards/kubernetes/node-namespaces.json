@@ -76,7 +76,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (namespace) (container_memory_rss{kubernetes_io_hostname=\"$hostname\",namespace!=\"\",namespace!~\"^$exclude.*\"})",
+          "expr": "sum by (namespace) (container_memory_rss{kubernetes_io_hostname=\"$hostname\",job=\"cadvisor\",container_name!=\"\",namespace!=\"\",namespace!~\"^$exclude.*\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ namespace }}",
@@ -190,7 +190,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (kubernetes_io_hostname, namespace) (rate(container_cpu_usage_seconds_total{kubernetes_io_hostname=\"$hostname\",namespace!=\"\",namespace!~\"$exclude\",namespace!~\"^$exclude.*\"}[5m]))",
+          "expr": "sum by (kubernetes_io_hostname, namespace) (rate(container_cpu_usage_seconds_total{kubernetes_io_hostname=\"$hostname\",job=\"cadvisor\",namespace!=\"\",namespace!~\"$exclude\",namespace!~\"^$exclude.*\"}[5m]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ namespace }}",
@@ -250,14 +250,14 @@
         "allValue": null,
         "current": {},
         "datasource": "prometheus",
-        "definition": "label_values(container_memory_rss, kubernetes_io_hostname)",
+        "definition": "label_values(container_memory_rss{job=\"cadvisor\"}, kubernetes_io_hostname)",
         "hide": 0,
         "includeAll": true,
         "label": "Hostname",
         "multi": true,
         "name": "hostname",
         "options": [],
-        "query": "label_values(container_memory_rss, kubernetes_io_hostname)",
+        "query": "label_values(container_memory_rss{job=\"cadvisor\"}, kubernetes_io_hostname)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,

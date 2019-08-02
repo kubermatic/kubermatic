@@ -50,7 +50,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum (container_memory_usage_bytes{job=\"cadvisor\", namespace=\"$namespace\", pod_name=\"$pod\", container_name!=\"POD\"})",
+          "expr": "sum (container_memory_usage_bytes{job=\"cadvisor\", namespace=\"$namespace\", pod_name=\"$pod\", container_name!=\"POD\", image!=\"\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Current Usage",
@@ -347,7 +347,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(container_network_receive_bytes_total{job=\"cadvisor\", pod_name=\"$pod\"}[1m])",
+          "expr": "rate(container_network_receive_bytes_total{job=\"cadvisor\", namespace=\"$namespace\", pod_name=\"$pod\"}[1m])",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "bytes",
