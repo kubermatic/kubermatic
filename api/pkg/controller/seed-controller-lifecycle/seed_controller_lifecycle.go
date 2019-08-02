@@ -16,11 +16,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -38,7 +36,7 @@ type Reconciler struct {
 	seedsGetter          provider.SeedsGetter
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
 	controllerFactory    func() (manager.Runnable, error)
-	enqueuer             *enqueuer
+	enqueue              func()
 	activeControllers    *controllersInstance
 }
 
@@ -50,35 +48,6 @@ type controllersInstance struct {
 	running     bool
 	stopChan    chan struct{}
 	enqueue     func()
-}
-
-// enqueuer implements source.Source and is used to allow controllerInstances
-// to trigger a re-enqueue if they stop
-type enqueuer struct {
-	queue workqueue.RateLimitingInterface
-}
-
-func (e *enqueuer) Start(_ handler.EventHandler, queue workqueue.RateLimitingInterface, _ ...predicate.Predicate) error {
-	e.queue = queue
-	return nil
-}
-
-func (e *enqueuer) Enqueue() {
-	e.queue.AddRateLimited(queueKey)
-}
-
-func (ci *controllersInstance) Start(stopCh <-chan struct{}) {
-	ci.log.Info("Starting controllers")
-	err := ci.controllers.Start(stopCh)
-	if err != nil {
-		ci.log.With("error", err).Error("controllers stopped with error")
-	} else {
-		ci.log.Info("controllers stopped")
-	}
-	ci.running = false
-
-	// Make sure a reconciliation happens
-	ci.enqueue()
 }
 
 func Add(
@@ -96,7 +65,6 @@ func Add(
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,
 		controllerFactory:    controllerFactory,
-		enqueuer:             &enqueuer{},
 	}
 	c, err := controller.New(ControllerName, mgr,
 		controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: 1})
@@ -109,8 +77,16 @@ func Add(
 			return fmt.Errorf("failed to create watch for type %T: %v", t, err)
 		}
 	}
-	if err := c.Watch(reconciler.enqueuer, controllerutil.EnqueueConst(queueKey)); err != nil {
-		return fmt.Errorf("failed to create watch for enqueuer: %v", err)
+
+	sourceChannel := make(chan event.GenericEvent)
+	reconciler.enqueue = func() {
+		sourceChannel <- event.GenericEvent{
+			// TODO: Is it needed to fill this?
+			Object: &kubermaticv1.Seed{},
+		}
+	}
+	if err := c.Watch(&source.Channel{Source: sourceChannel}, controllerutil.EnqueueConst(queueKey)); err != nil {
+		return fmt.Errorf("failed to create watch for channelSource: %v", err)
 	}
 
 	return nil
@@ -148,7 +124,7 @@ func (r *Reconciler) reconcile() error {
 	if r.activeControllers != nil && r.activeControllers.configHash == configHash {
 		if !r.activeControllers.running {
 			log.Info("found matching controllers but were not running, starting them")
-			r.activeControllers.Start(r.activeControllers.stopChan)
+			r.activeControllers.controllers.Start(r.activeControllers.stopChan)
 		}
 		return nil
 	}
@@ -164,13 +140,20 @@ func (r *Reconciler) reconcile() error {
 	}
 
 	r.activeControllers = &controllersInstance{
-		log:         log,
 		configHash:  configHash,
 		controllers: controllers,
-		enqueue:     r.enqueuer.Enqueue,
 		stopChan:    make(chan struct{}),
 	}
-	go r.activeControllers.Start(r.activeControllers.stopChan)
+	go func() {
+		if err := r.activeControllers.controllers.Start(r.activeControllers.stopChan); err != nil {
+			log.Errorw("controllers stopped with error", zap.Error(err))
+		}
+		log.Debug("controllers stopped")
+		// Make sure we check on this
+		r.activeControllers.running = false
+		r.enqueue()
+	}()
+
 	return nil
 }
 
