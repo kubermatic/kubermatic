@@ -37,17 +37,17 @@ type Reconciler struct {
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
 	controllerFactory    func() (manager.Runnable, error)
 	enqueue              func()
-	activeControllers    *controllersInstance
+	activeController     *controllersInstance
 }
 
 // controllersInstance represents an instance of a set of running controllers
 type controllersInstance struct {
-	log         *zap.SugaredLogger
-	configHash  string
-	controllers manager.Runnable
-	running     bool
-	stopChan    chan struct{}
-	enqueue     func()
+	log        *zap.SugaredLogger
+	configHash string
+	controller manager.Runnable
+	running    bool
+	stopChan   chan struct{}
+	enqueue    func()
 }
 
 func Add(
@@ -121,36 +121,36 @@ func (r *Reconciler) reconcile() error {
 	}
 	log := r.log.With("config_hash", configHash)
 
-	if r.activeControllers != nil && r.activeControllers.configHash == configHash {
-		if !r.activeControllers.running {
+	if r.activeController != nil && r.activeController.configHash == configHash {
+		if !r.activeController.running {
 			log.Info("found matching controllers but were not running, starting them")
-			r.activeControllers.controllers.Start(r.activeControllers.stopChan)
+			r.activeController.controller.Start(r.activeController.stopChan)
 		}
 		return nil
 	}
 
-	controllers, err := r.controllerFactory()
+	controllerInstance, err := r.controllerFactory()
 	if err != nil {
 		return fmt.Errorf("failed to construct controllers: %v", err)
 	}
 
-	if r.activeControllers != nil && r.activeControllers.running {
+	if r.activeController != nil && r.activeController.running {
 		log.Info("Stopping old version of controllers")
-		close(r.activeControllers.stopChan)
+		close(r.activeController.stopChan)
 	}
 
-	r.activeControllers = &controllersInstance{
-		configHash:  configHash,
-		controllers: controllers,
-		stopChan:    make(chan struct{}),
+	r.activeController = &controllersInstance{
+		configHash: configHash,
+		controller: controllerInstance,
+		stopChan:   make(chan struct{}),
 	}
 	go func() {
-		if err := r.activeControllers.controllers.Start(r.activeControllers.stopChan); err != nil {
+		if err := r.activeController.controller.Start(r.activeController.stopChan); err != nil {
 			log.Errorw("controllers stopped with error", zap.Error(err))
 		}
 		log.Debug("controllers stopped")
 		// Make sure we check on this
-		r.activeControllers.running = false
+		r.activeController.running = false
 		r.enqueue()
 	}()
 
