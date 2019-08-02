@@ -2,10 +2,8 @@ package seedcontrollerlifecycle
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/json"
 	"fmt"
-	"sort"
+	"reflect"
 
 	"go.uber.org/zap"
 
@@ -43,7 +41,7 @@ type Reconciler struct {
 // controllersInstance represents an instance of a set of running controllers
 type controllersInstance struct {
 	log        *zap.SugaredLogger
-	configHash string
+	config     map[string]rest.Config
 	controller manager.Runnable
 	running    bool
 	stopChan   chan struct{}
@@ -115,17 +113,8 @@ func (r *Reconciler) reconcile() error {
 		seedKubeconfigMap[seedName] = *cfg
 	}
 
-	configHash, err := r.seedKubeconfigHashStable(seedKubeconfigMap)
-	if err != nil {
-		return fmt.Errorf("failed to calculate hash for seed kubeconfigs: %v", err)
-	}
-	log := r.log.With("config_hash", configHash)
-
-	if r.activeController != nil && r.activeController.configHash == configHash {
-		if !r.activeController.running {
-			log.Info("found matching controllers but were not running, starting them")
-			r.activeController.controller.Start(r.activeController.stopChan)
-		}
+	if r.activeController != nil && r.activeController.running && reflect.DeepEqual(r.activeController.config, seedKubeconfigMap) {
+		r.log.Debug("found running controller instance with up-to-date config, nothing to do")
 		return nil
 	}
 
@@ -135,52 +124,26 @@ func (r *Reconciler) reconcile() error {
 	}
 
 	if r.activeController != nil && r.activeController.running {
-		log.Info("Stopping old version of controllers")
+		r.log.Info("Stopping old version of controllers")
 		close(r.activeController.stopChan)
 	}
 
 	r.activeController = &controllersInstance{
-		configHash: configHash,
+		config:     seedKubeconfigMap,
 		controller: controllerInstance,
 		stopChan:   make(chan struct{}),
 	}
 	go func() {
+		r.log.Info("starting controllers")
+		r.activeController.running = true
 		if err := r.activeController.controller.Start(r.activeController.stopChan); err != nil {
-			log.Errorw("controllers stopped with error", zap.Error(err))
+			r.log.Errorw("controllers stopped with error", zap.Error(err))
 		}
-		log.Debug("controllers stopped")
+		r.log.Info("controllers stopped")
 		// Make sure we check on this
 		r.activeController.running = false
 		r.enqueue()
 	}()
 
 	return nil
-}
-
-// seedKubeconfigStableHash returns a hash over the seedNames + associated kubeconfigs
-// it is used to determine config changes, so it must not rely on ordering of items it gets
-func (r *Reconciler) seedKubeconfigHashStable(seedKubeConfigs map[string]rest.Config) (string, error) {
-
-	var sortedNames []string
-	for name := range seedKubeConfigs {
-		sortedNames = append(sortedNames, name)
-	}
-	sort.Strings(sortedNames)
-
-	var rawConfigData []byte
-	for _, seed := range sortedNames {
-		// Function types can not be marshalled, so we have to extract the marshallable parts...
-		cfg := seedKubeConfigs[seed]
-		identifier := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s/%s/%s/%s",
-			seed, cfg.Host, cfg.APIPath, cfg.Username, cfg.Password, cfg.BearerToken, cfg.BearerTokenFile,
-			string(cfg.CertData), string(cfg.KeyData), string(cfg.CAData))
-		jsonEncodedRestConfig, err := json.Marshal([]byte(identifier))
-		if err != nil {
-			return "", fmt.Errorf("failed to marshal restconfig: %v", err)
-		}
-		rawConfigData = append(rawConfigData, jsonEncodedRestConfig...)
-	}
-
-	checksumRaw := sha256.Sum256(rawConfigData)
-	return string(checksumRaw[:]), nil
 }
