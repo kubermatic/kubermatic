@@ -92,7 +92,7 @@ func Add(
 func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 	err := r.reconcile()
 	if err != nil {
-		r.log.With("error", err).Error("reconciliation failed")
+		r.log.Errorw("reconiliation failed", zap.Error(err))
 	}
 	return reconcile.Result{}, err
 }
