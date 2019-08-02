@@ -104,6 +104,7 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 func createClusterController(ctrlCtx *controllerContext) error {
 	return cluster.Add(
 		ctrlCtx.mgr,
+		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.externalURL,
