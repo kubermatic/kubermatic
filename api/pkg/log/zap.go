@@ -34,6 +34,25 @@ func (o *Options) Validate() error {
 
 type Format string
 
+// String implements the cli.Value and flag.Value interfaces
+func (f *Format) String() string {
+	return string(*f)
+}
+
+// Set implements the cli.Value and flag.Value interfaces
+func (f *Format) Set(s string) error {
+	switch strings.ToLower(s) {
+	case "json":
+		*f = FormatJSON
+		return nil
+	case "console":
+		*f = FormatConsole
+		return nil
+	default:
+		return fmt.Errorf("invalid format '%s'", s)
+	}
+}
+
 type Formats []Format
 
 const (

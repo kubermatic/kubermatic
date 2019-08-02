@@ -1,6 +1,7 @@
 package storeuploader
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/minio/minio-go"
+	"go.uber.org/zap"
 )
 
 // prefix separator separates the prefix
@@ -21,10 +23,11 @@ const prefixSeparator = "storeuploader"
 type StoreUploader struct {
 	// client is a pointer to an initialized client
 	client *minio.Client
+	logger *zap.SugaredLogger
 }
 
 // New returns a new instance of the StoreUploader
-func New(endpoint string, secure bool, accessKeyID, secretAccessKey string) (*StoreUploader, error) {
+func New(endpoint string, secure bool, accessKeyID, secretAccessKey string, logger *zap.SugaredLogger) (*StoreUploader, error) {
 	client, err := minio.New(endpoint, accessKeyID, secretAccessKey, secure)
 	if err != nil {
 		return nil, err
@@ -32,21 +35,30 @@ func New(endpoint string, secure bool, accessKeyID, secretAccessKey string) (*St
 	client.SetAppInfo("kubermatic-store-uploader", "v0.1")
 	return &StoreUploader{
 		client: client,
+		logger: logger,
 	}, nil
 }
 
 // Store uploads the given file to S3
 func (u *StoreUploader) Store(file, bucket, prefix string, createBucket bool) error {
+	if len(prefix) == 0 {
+		return errors.New("prefix cannot be empty")
+	}
+
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return fmt.Errorf("%s not found", file)
 	}
 
+	logger := u.logger.With("bucket", bucket)
+
 	if createBucket {
+		logger.Debug("Check if bucket exists")
 		exists, err := u.client.BucketExists(bucket)
 		if err != nil {
 			return err
 		}
 		if !exists {
+			logger.Infow("Creating bucket")
 			if err := u.client.MakeBucket(bucket, ""); err != nil {
 				return err
 			}
@@ -54,21 +66,37 @@ func (u *StoreUploader) Store(file, bucket, prefix string, createBucket bool) er
 	}
 
 	objectName := fmt.Sprintf("%s-%s-%s-%s", prefix, prefixSeparator, time.Now().Format("2006-01-02T15:04:05"), path.Base(file))
+	logger.Infow("Uploading file", "src", file, "dst", objectName)
+
 	_, err := u.client.FPutObject(bucket, objectName, file, minio.PutObjectOptions{})
 	return err
 }
 
-// DeleteOldBackups deletes revisions of the given file which are older than max-revisions
-func (u *StoreUploader) DeleteOldBackups(file, bucket, prefix string, revisionsToKeep int) error {
+// DeleteOldBackups deletes revisions of all files of the given prefix which are older than max-revisions
+func (u *StoreUploader) DeleteOldBackups(bucket, prefix string, revisionsToKeep int) error {
+	if len(prefix) == 0 {
+		return errors.New("prefix cannot be empty")
+	}
+
 	doneCh := make(chan struct{})
 	defer close(doneCh)
 
+	logger := u.logger.With("bucket", bucket, "prefix", prefix, "keep", revisionsToKeep)
+
+	logger.Debugw("Listing existing objects")
+
 	var existingObjects []minio.ObjectInfo
 	for object := range u.client.ListObjects(bucket, fmt.Sprintf("%s-%s", prefix, prefixSeparator), true, doneCh) {
+		if object.Err != nil {
+			return object.Err
+		}
 		existingObjects = append(existingObjects, object)
 	}
 
+	logger.Debugw("Done listing bucket", "objects", len(existingObjects))
+
 	for _, object := range u.getObjectsToDelete(existingObjects, revisionsToKeep) {
+		logger.Infow("Removing object", "object", object.Key)
 		if err := u.client.RemoveObject(bucket, object.Key); err != nil {
 			return err
 		}
@@ -77,17 +105,31 @@ func (u *StoreUploader) DeleteOldBackups(file, bucket, prefix string, revisionsT
 	return nil
 }
 
-// DeleteAll deletes all revisions of the given file
-func (u *StoreUploader) DeleteAll(file, bucket, prefix string) error {
+// DeleteAll deletes all revisions of all files matching the given prefix
+func (u *StoreUploader) DeleteAll(bucket, prefix string) error {
+	if len(prefix) == 0 {
+		return errors.New("prefix cannot be empty")
+	}
+
 	doneCh := make(chan struct{})
 	defer close(doneCh)
 
+	logger := u.logger.With("bucket", bucket, "prefix", prefix)
+
+	logger.Debugw("Listing existing objects")
+
 	var existingObjects []minio.ObjectInfo
 	for object := range u.client.ListObjects(bucket, fmt.Sprintf("%s-%s", prefix, prefixSeparator), true, doneCh) {
+		if object.Err != nil {
+			return object.Err
+		}
 		existingObjects = append(existingObjects, object)
 	}
 
+	logger.Debugw("Done listing bucket", "objects", len(existingObjects))
+
 	for _, object := range existingObjects {
+		logger.Infow("Removing object", "object", object.Key)
 		if err := u.client.RemoveObject(bucket, object.Key); err != nil {
 			return err
 		}
