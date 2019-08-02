@@ -146,11 +146,11 @@ required = [
 
 [[constraint]]
   name = "github.com/Azure/azure-sdk-for-go"
-  version = "18.*"
+  version = "v31.1.*"
 
 [[constraint]]
   name = "github.com/Azure/go-autorest"
-  version = "10.12.*"
+  version = "v12.3.*"
 
 [[constraint]]
   name = "github.com/stretchr/testify"

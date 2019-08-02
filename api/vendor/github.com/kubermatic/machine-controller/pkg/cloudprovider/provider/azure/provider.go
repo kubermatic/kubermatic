@@ -24,8 +24,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-04-01/network"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-06-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-06-01/network"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/golang/glog"
 
@@ -465,7 +465,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, data *cloudprovidertypes.Pr
 		return nil, fmt.Errorf("trying to create a VM: %v", err)
 	}
 
-	err = future.WaitForCompletion(context.TODO(), vmClient.Client)
+	err = future.WaitForCompletionRef(context.TODO(), vmClient.Client)
 	if err != nil {
 		return nil, fmt.Errorf("waiting for operation returned: %v", err.Error())
 	}
@@ -807,7 +807,7 @@ func (p *provider) MigrateUID(machine *v1alpha1.Machine, new types.UID) error {
 			if err != nil {
 				return fmt.Errorf("failed to update UID for disk %s: %v", *disk.Name, err)
 			}
-			if err := future.WaitForCompletion(ctx, disksClient.Client); err != nil {
+			if err := future.WaitForCompletionRef(ctx, disksClient.Client); err != nil {
 				return fmt.Errorf("failed waiting for completion of update UID operation for disk %s: %v", *disk.Name, err)
 			}
 		}
@@ -825,7 +825,7 @@ func (p *provider) MigrateUID(machine *v1alpha1.Machine, new types.UID) error {
 		return fmt.Errorf("failed to update UID of the instance: %v", err)
 	}
 
-	if err := future.WaitForCompletion(ctx, vmClient.Client); err != nil {
+	if err := future.WaitForCompletionRef(ctx, vmClient.Client); err != nil {
 		return fmt.Errorf("error waiting for instance to have the updated UID: %v", err)
 	}
 

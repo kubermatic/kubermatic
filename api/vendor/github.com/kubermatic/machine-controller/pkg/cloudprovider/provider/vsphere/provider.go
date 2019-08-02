@@ -27,9 +27,13 @@ import (
 
 	"github.com/golang/glog"
 
-	"k8s.io/apimachinery/pkg/labels"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ktypes "k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	common "sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
@@ -42,10 +46,6 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	cloudprovidertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
-
-	ktypes "k8s.io/apimachinery/pkg/types"
-	common "sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 const (
@@ -537,12 +537,12 @@ func (p *provider) Cleanup(machine *v1alpha1.Machine, data *cloudprovidertypes.P
 		return false, fmt.Errorf("failed to get devices for virtual machine: %v", err)
 	}
 
-	pvs, err := data.PVLister.List(labels.Everything())
-	if err != nil {
+	pvs := &corev1.PersistentVolumeList{}
+	if err := data.Client.List(data.Ctx, &ctrlruntimeclient.ListOptions{}, pvs); err != nil {
 		return false, fmt.Errorf("failed to list PVs: %v", err)
 	}
 
-	for _, pv := range pvs {
+	for _, pv := range pvs.Items {
 		if pv.Spec.VsphereVolume == nil {
 			continue
 		}
