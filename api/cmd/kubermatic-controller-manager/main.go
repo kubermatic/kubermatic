@@ -50,7 +50,9 @@ func main() {
 		os.Exit(1)
 	}
 	rawLog := kubermaticlog.New(options.log.Debug, kubermaticlog.Format(options.log.Format))
-	log := rawLog.Sugar()
+	log := rawLog.Sugar().With(
+		"worker-name", options.workerName,
+	)
 	defer func() {
 		if err := log.Sync(); err != nil {
 			fmt.Println(err)
