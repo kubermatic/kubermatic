@@ -92,7 +92,7 @@ func (u *StoreUploader) DeleteOldBackups(bucket, prefix string, revisionsToKeep 
 	u.logger.Debugw("Done listing bucket", "bucket", bucket, "prefix", prefix, "objects", len(existingObjects))
 
 	for _, object := range u.getObjectsToDelete(existingObjects, revisionsToKeep) {
-		u.logger.Debugw("Removing object", "bucket", bucket, "object", object.Key)
+		u.logger.Infow("Removing object", "bucket", bucket, "object", object.Key)
 		if err := u.client.RemoveObject(bucket, object.Key); err != nil {
 			return err
 		}
@@ -123,7 +123,7 @@ func (u *StoreUploader) DeleteAll(bucket, prefix string) error {
 	u.logger.Debugw("Done listing bucket", "bucket", bucket, "prefix", prefix, "objects", len(existingObjects))
 
 	for _, object := range existingObjects {
-		u.logger.Debugw("Removing object", "bucket", bucket, "object", object.Key)
+		u.logger.Infow("Removing object", "bucket", bucket, "object", object.Key)
 		if err := u.client.RemoveObject(bucket, object.Key); err != nil {
 			return err
 		}
