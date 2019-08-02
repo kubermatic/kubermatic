@@ -76,7 +76,7 @@ func main() {
 	logFormatFlag := cli.GenericFlag{
 		Name:  "log-format",
 		Value: &defaultLogFormat,
-		Usage: fmt.Sprintf("Use either %s or %s to change the log output", log.FormatConsole, log.FormatJSON),
+		Usage: fmt.Sprintf("Use one of [%v] to change the log output", log.AvailableFormats),
 	}
 
 	app.Flags = []cli.Flag{

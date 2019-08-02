@@ -34,12 +34,12 @@ func (o *Options) Validate() error {
 
 type Format string
 
-// String implements the cli.Generic and flag.Value interfaces
+// String implements the cli.Value and flag.Value interfaces
 func (f *Format) String() string {
 	return string(*f)
 }
 
-// SetValue implements the cli.Generic and flag.Value interfaces
+// Set implements the cli.Value and flag.Value interfaces
 func (f *Format) Set(s string) error {
 	switch strings.ToLower(s) {
 	case "json":
