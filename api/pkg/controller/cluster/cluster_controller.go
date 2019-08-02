@@ -179,11 +179,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kubeapierrors.IsNotFound(err) {
-			log.Info("Could not find cluster")
+			log.Debug("Could not find cluster")
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
 	}
+	log = log.With("cluster", cluster.Name)
 
 	if cluster.Spec.Pause {
 		log.Debug("Skipping because the cluster is paused")
