@@ -40,6 +40,9 @@ type CloudSpec struct {
 	// hetzner
 	Hetzner *HetznerCloudSpec `json:"hetzner,omitempty"`
 
+	// kubevirt
+	Kubevirt *KubevirtCloudSpec `json:"kubevirt,omitempty"`
+
 	// openstack
 	Openstack *OpenstackCloudSpec `json:"openstack,omitempty"`
 
@@ -48,9 +51,6 @@ type CloudSpec struct {
 
 	// vsphere
 	Vsphere *VSphereCloudSpec `json:"vsphere,omitempty"`
-
-	// kubevirt
-	Kubevirt *KubevirtCloudSpec `json:"kubevirt,omitempty"`
 }
 
 // Validate validates this cloud spec
@@ -81,6 +81,10 @@ func (m *CloudSpec) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateKubevirt(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateOpenstack(formats); err != nil {
 		res = append(res, err)
 	}
@@ -90,10 +94,6 @@ func (m *CloudSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateVsphere(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateKubevirt(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -211,6 +211,24 @@ func (m *CloudSpec) validateHetzner(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *CloudSpec) validateKubevirt(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Kubevirt) { // not required
+		return nil
+	}
+
+	if m.Kubevirt != nil {
+		if err := m.Kubevirt.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubevirt")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *CloudSpec) validateOpenstack(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Openstack) { // not required
@@ -257,23 +275,6 @@ func (m *CloudSpec) validateVsphere(formats strfmt.Registry) error {
 		if err := m.Vsphere.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("vsphere")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *CloudSpec) validateKubevirt(formats strfmt.Registry) error {
-	if swag.IsZero(m.Kubevirt) {
-		return nil
-	}
-
-	if m.Kubevirt != nil {
-		if err := m.Kubevirt.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("kubevirt")
 			}
 			return err
 		}
