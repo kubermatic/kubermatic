@@ -891,10 +891,10 @@
     "pkg/cloudprovider/provider/digitalocean",
     "pkg/cloudprovider/provider/gce",
     "pkg/cloudprovider/provider/hetzner",
+    "pkg/cloudprovider/provider/kubevirt",
     "pkg/cloudprovider/provider/openstack",
     "pkg/cloudprovider/provider/packet",
     "pkg/cloudprovider/provider/vsphere",
-    "pkg/cloudprovider/provider/kubevirt",
     "pkg/cloudprovider/types",
     "pkg/ini",
     "pkg/kubernetes",
@@ -1997,6 +1997,30 @@
   packages = ["pointer"]
   pruneopts = "NUT"
   revision = "c55fbcfc754a5b2ec2fbae8fb9dcac36bdba6a12"
+
+[[projects]]
+  digest = "1:a662690aaa202e4bb9d05410af32bad7ed7e0ad3145f9a2d427716ce02c26098"
+  name = "kubevirt.io/containerized-data-importer"
+  packages = [
+    "pkg/apis/core",
+    "pkg/apis/core/v1alpha1",
+  ]
+  pruneopts = "NUT"
+  revision = "3dcef90a28402b4b9cde7dc40dbebc075cc7b6ad"
+  source = "github.com/kubevirt/containerized-data-importer"
+  version = "v1.10.0"
+
+[[projects]]
+  branch = "release-0.18"
+  digest = "1:6cdfc8fc487edd231f6505a51f806b9dde46d7a182e367ba4724566e2a9d1137"
+  name = "kubevirt.io/kubevirt"
+  packages = [
+    "pkg/api/v1",
+    "pkg/precond",
+  ]
+  pruneopts = "NUT"
+  revision = "4913335bc20764d0d0bec55da00146887726ae15"
+  source = "github.com/kubevirt/kubevirt"
 
 [[projects]]
   digest = "1:63ea39743dfa0c5d53e2ef1551ca6d9b80d868364b098193b7135e032fb3e487"
