@@ -24,8 +24,6 @@ spec:
           command:
           - /usr/local/bin/s3-exporter
           args:
-          - -v=4
-          - -logtostderr
           - -endpoint={{ .Values.s3Exporter.endpoint }}
           - -access-key-id=$(ACCESS_KEY_ID)
           - -secret-access-key=$(SECRET_ACCESS_KEY)
