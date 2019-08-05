@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -146,16 +147,19 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	if err != nil {
 		return providers{}, err
 	}
-	// Make sure there is a cache for seeds
+
+	// Make sure the manager creates a cache for Seeds by requesting an informer
 	if _, err := mgr.GetCache().GetInformer(&kubermaticv1.Seed{}); err != nil {
 		kubermaticlog.Logger.With("error", err).Fatal("failed to get seed informer")
 	}
+	// mgr.Start() is blocking
 	go func() {
 		if err := mgr.Start(wait.NeverStop); err != nil {
 			kubermaticlog.Logger.With("error", err).Fatal("failed to start the mgr")
 		}
 	}()
-	if synced := mgr.GetCache().WaitForCacheSync(wait.NeverStop); !synced {
+	mgrSyncCtx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	if synced := mgr.GetCache().WaitForCacheSync(mgrSyncCtx.Done()); !synced {
 		kubermaticlog.Logger.Fatal("failed to sync mgr cache")
 	}
 	clusterProviderGetter := clusterProviderFactory(seedKubeconfigGetter, options.workerName, options.featureGates.Enabled(OIDCKubeCfgEndpoint))
