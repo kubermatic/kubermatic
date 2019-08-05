@@ -139,6 +139,9 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	log.Debug("Starting clusters collector")
 	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetClient())
 
+	log.Debug("Starting addons collector")
+	collectors.MustRegisterAddonCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetClient())
+
 	var g run.Group
 	// This group is forever waiting in a goroutine for signals to stop
 	{

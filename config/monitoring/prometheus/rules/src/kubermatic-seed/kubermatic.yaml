@@ -29,6 +29,20 @@ groups:
       - If all resources have been cleaned up, remove the blocking finalizer (e.g. `kubermatic.io/delete-nodes`) from the cluster resource.
       - If nothing else helps, manually delete the cluster namespace as a last resort.
 
+  - alert: KubermaticAddonDeletionTakesTooLong
+    annotations:
+      message: Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticaddondeletiontakestoolong
+    expr: (time() - max by (cluster,addon) (kubermatic_addon_deleted)) > 30*60
+    for: 0m
+    labels:
+      severity: warning
+    runbook:
+      steps:
+        - Check the kubermatic controller-manager's logs via `kubectl -n kubermatic logs -l 'role=controller-manager'` for errors related to deletion of the addon.
+          Manually deleted resources inside of the user cluster is a common reason for failing deletions.
+        - If all resources of the addon inside the user cluster have been cleaned up, remove the blocking finalizer (e.g. `cleanup-manifests`) from the addon resource.
+
   - alert: KubermaticControllerManagerDown
     annotations:
       message: KubermaticControllerManager has disappeared from Prometheus target discovery.
