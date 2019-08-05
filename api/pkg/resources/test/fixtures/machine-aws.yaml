@@ -26,6 +26,7 @@ spec:
           AWSExampleTagKey1: AWSExampleTagValue1
           AWSExampleTagKey2: AWSExampleTagValue2
           kubernetes.io/cluster/awscluster-1a2b3c4d5e: ""
+          system/cluster: awscluster-1a2b3c4d5e
         vpcId: aws-vpc-ic
       operatingSystem: ubuntu
       operatingSystemSpec:

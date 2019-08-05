@@ -43,6 +43,14 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 	}
 	md.Spec.Template.Labels = md.Spec.Selector.MatchLabels
 	md.Spec.Template.Spec.Labels = nd.Spec.Template.Labels
+	if md.Spec.Template.Spec.Labels == nil {
+		md.Spec.Template.Spec.Labels = make(map[string]string)
+	}
+	md.Spec.Template.Spec.Labels["system/cluster"] = c.Name
+	projectID, ok := c.Labels[kubermaticv1.ProjectIDLabelKey]
+	if ok {
+		md.Spec.Template.Spec.Labels["system/project"] = projectID
+	}
 
 	var taints []corev1.Taint
 	for _, taint := range nd.Spec.Template.Taints {
