@@ -86,7 +86,7 @@ kubermatic:
         - nodelocal-dns-cache
         image:
           repository: "quay.io/kubermatic/addons"
-          tag: "v0.2.20"
+          tag: "__KUBERMATIC_TAG__"
           pullPolicy: "IfNotPresent"
       openshift:
         # list of Addons to install into every user-cluster. All need to exist in the addons image
