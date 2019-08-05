@@ -155,7 +155,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	// mgr.Start() is blocking
 	go func() {
 		if err := mgr.Start(wait.NeverStop); err != nil {
-			kubermaticlog.Fatalw("failed to start the mgr", zap.Error(err))
+			kubermaticlog.Logger.Fatalw("failed to start the mgr", zap.Error(err))
 		}
 	}()
 	mgrSyncCtx, _ := context.WithTimeout(context.Background(), 30*time.Second)
