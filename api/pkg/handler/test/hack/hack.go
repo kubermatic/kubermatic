@@ -25,6 +25,7 @@ import (
 func NewTestRouting(
 	seedsGetter provider.SeedsGetter,
 	clusterProvidersGetter provider.ClusterProviderGetter,
+	addonProviderGetter provider.AddonProviderGetter,
 	sshKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
@@ -48,6 +49,7 @@ func NewTestRouting(
 	r := handler.NewRouting(
 		seedsGetter,
 		clusterProvidersGetter,
+		addonProviderGetter,
 		sshKeyProvider,
 		userProvider,
 		serviceAccountProvider,
