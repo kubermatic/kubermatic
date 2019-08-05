@@ -25,11 +25,11 @@ echodate "Building addons"
 time docker build -t quay.io/kubermatic/addons:${GIT_HEAD_HASH} ./addons
 for TAG in $TAGS
 do
-    if [[ -z "$TAG" ]]; then
+    if [ -z "$TAG" ]; then
       continue
     fi
 
-    if [[ "$TAG" -eq "$GIT_HEAD_HASH" ]]; then
+    if [ "$TAG" = "$GIT_HEAD_HASH" ]; then
       continue
     fi
 
