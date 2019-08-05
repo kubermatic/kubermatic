@@ -115,8 +115,6 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider, workerCount i
 		},
 	}
 
-	prometheus.MustRegister(metrics.Workers)
-
 	projectRBACCtrl, err := newProjectRBACController(metrics, allClusterProviders, projectResources)
 	if err != nil {
 		return nil, err
@@ -137,7 +135,7 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider, workerCount i
 
 // Run starts the controller's worker routines. It is an implementation of
 // sigs.k8s.io/controller-runtime/pkg/manager.Runnable
-func (a *ControllerAggregator) Run(stopCh <-chan struct{}) error {
+func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
 	defer runtime.HandleCrash()
 
 	go a.rbacProjectController.run(a.workerCount, stopCh)

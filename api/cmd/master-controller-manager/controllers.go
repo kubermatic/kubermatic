@@ -5,11 +5,15 @@ import (
 	"time"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
+	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-lifecycle"
 	seedproxy "github.com/kubermatic/kubermatic/api/pkg/controller/seed-proxy"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/prometheus/client_golang/prometheus"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -18,8 +22,21 @@ import (
 )
 
 func createAllControllers(ctrlCtx *controllerContext) error {
-	if err := createRBACContoller(ctrlCtx); err != nil {
-		return fmt.Errorf("failed to create rbac controller: %v", err)
+	rbacControllerFactory := rbacControllerFactoryCreator(
+		ctrlCtx.mgr.GetConfig(),
+		ctrlCtx.seedsGetter,
+		ctrlCtx.seedKubeconfigGetter,
+		ctrlCtx.workerCount,
+		ctrlCtx.labelSelectorFunc)
+
+	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
+		kubermaticlog.Logger,
+		ctrlCtx.mgr,
+		ctrlCtx.seedsGetter,
+		ctrlCtx.seedKubeconfigGetter,
+		rbacControllerFactory); err != nil {
+		//TODO: Find a better name
+		return fmt.Errorf("failed to create seedcontrollerlifecycle: %v", err)
 	}
 	if err := userprojectbinding.Add(ctrlCtx.mgr); err != nil {
 		return fmt.Errorf("failed to create userprojectbinding controller: %v", err)
@@ -33,47 +50,60 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	return nil
 }
 
-func createRBACContoller(ctrlCtx *controllerContext) error {
-	masterClusterProvider, err := rbacClusterProvider(ctrlCtx.mgr.GetConfig(), "master", true, ctrlCtx.labelSelectorFunc)
-	if err != nil {
-		return fmt.Errorf("failed to create master rbac provider: %v", err)
-	}
-	allClusterProviders := []*rbac.ClusterProvider{masterClusterProvider}
+func rbacControllerFactoryCreator(
+	mastercfg *rest.Config,
+	seedsGetter provider.SeedsGetter,
+	seedKubeconfigGetter provider.SeedKubeconfigGetter,
+	workerCount int,
+	selectorOps func(*metav1.ListOptions),
+) func() (manager.Runnable, error) {
 
-	seeds, err := ctrlCtx.seedsGetter()
-	if err != nil {
-		return fmt.Errorf("failed to get seeds: %v", err)
-	}
-	for seedName := range seeds {
-		kubeConfig, err := ctrlCtx.seedKubeconfigGetter(seedName)
+	rbacMetrics := rbac.NewMetrics()
+	prometheus.MustRegister(rbacMetrics.Workers)
+
+	return func() (manager.Runnable, error) {
+		seeds, err := seedsGetter()
 		if err != nil {
-			return fmt.Errorf("failed to get kubeconfig for seed %q: %v", seedName, err)
+			return nil, fmt.Errorf("failed to get seeds: %v", err)
 		}
-		clusterProvider, err := rbacClusterProvider(kubeConfig, seedName, false, ctrlCtx.labelSelectorFunc)
+		masterClusterProvider, err := rbacClusterProvider(mastercfg, "master", true, selectorOps)
 		if err != nil {
-			return fmt.Errorf("failed to create rbac provider for seed %q: %v", seedName, err)
+			return nil, fmt.Errorf("failed to create master rbac provider: %v", err)
 		}
-		allClusterProviders = append(allClusterProviders, clusterProvider)
-	}
+		allClusterProviders := []*rbac.ClusterProvider{masterClusterProvider}
 
-	ctrl, err := rbac.New(rbac.NewMetrics(), allClusterProviders, ctrlCtx.workerCount)
-	if err != nil {
-		return err
-	}
-
-	// This is an implementation of
-	// sigs.k8s.io/controller-runtime/pkg/manager.Runnable
-	// It wraps the actual controllers implementation to defer the informer start
-	runnableFunc := func(stopCh <-chan struct{}) error {
-		for _, clusterProvider := range allClusterProviders {
-			clusterProvider.StartInformers(stopCh)
-			if err := clusterProvider.WaitForCachesToSync(stopCh); err != nil {
-				return fmt.Errorf("RBAC controller failed to sync cache: %v", err)
+		for seedName := range seeds {
+			kubeConfig, err := seedKubeconfigGetter(seedName)
+			if err != nil {
+				kubermaticlog.Logger.With("error", err).With("seed", seedName).Error("error getting kubeconfig")
+				// Dont let a single broken kubeconfig break the whole controller creation
+				continue
 			}
+			clusterProvider, err := rbacClusterProvider(kubeConfig, seedName, false, selectorOps)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create rbac provider for seed %q: %v", seedName, err)
+			}
+			allClusterProviders = append(allClusterProviders, clusterProvider)
 		}
-		return ctrl.Run(stopCh)
+
+		ctrl, err := rbac.New(rbacMetrics, allClusterProviders, workerCount)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create rbac controller: %v", err)
+		}
+
+		// This is an implementation of sigs.k8s.io/controller-runtime/pkg/manager.Runnable
+		// It wraps the actual controllers implementation to make sure informers are started first
+		runnableFunc := func(stopCh <-chan struct{}) error {
+			for _, clusterProvider := range allClusterProviders {
+				clusterProvider.StartInformers(stopCh)
+				if err := clusterProvider.WaitForCachesToSync(stopCh); err != nil {
+					return fmt.Errorf("RBAC controller failed to sync cache: %v", err)
+				}
+			}
+			return ctrl.Start(stopCh)
+		}
+		return manager.RunnableFunc(runnableFunc), nil
 	}
-	return ctrlCtx.mgr.Add(manager.RunnableFunc(runnableFunc))
 }
 
 func rbacClusterProvider(cfg *rest.Config, name string, master bool, labelSelectorFunc func(*metav1.ListOptions)) (*rbac.ClusterProvider, error) {

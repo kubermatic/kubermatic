@@ -34,6 +34,7 @@ type controllerRunOptions struct {
 }
 
 type controllerContext struct {
+	ctx                  context.Context
 	mgr                  manager.Manager
 	workerCount          int
 	seedsGetter          provider.SeedsGetter
@@ -79,6 +80,7 @@ func main() {
 	ctx, ctxDone := context.WithCancel(context.Background())
 	defer ctxDone()
 	done := ctx.Done()
+	ctrlCtx.ctx = ctx
 
 	kubeconfig, err := clientcmd.LoadFromFile(runOpts.kubeconfig)
 	if err != nil {
