@@ -112,12 +112,15 @@ export VAULT_TOKEN=$(vault write \
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 export DATACENTERS_FILE=/tmp/datacenters.yaml
+export OPENSTACK_DATACENTER_FILE=/tmp/openstack-datacenters.yaml
 retry 5 vault kv get -field=kubeconfig \
   dev/seed-clusters/ci.kubermatic.io > $KUBECONFIG
 retry 5 vault kv get -field=values.yaml \
   dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
 retry 5 vault kv get -field=datacenters.yaml \
   dev/seed-clusters/ci.kubermatic.io > $DATACENTERS_FILE
+retry 5 vault kv get -field=openstack-datacenter.yaml \
+  dev/seed-clusters/ci.kubermatic.io > $OPENSTACK_DATACENTER_FILE
 retry 5 vault kv get -field=project_id \
   dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_project_id
 export KUBERMATIC_PROJECT_ID="$(cat /tmp/kubermatic_project_id)"
@@ -227,20 +230,6 @@ spec:
         aws:
           region: eu-central-1
           zone_character: a
-    syseleven-dbl1:
-      location: Syseleven - dbl1
-      country: DE
-      spec:
-        openstack:
-          auth_url: https://api.cbk.cloud.syseleven.net:5000/v3
-          availability_zone: dbl1
-          region: dbl
-          dns_servers:
-          - "37.123.105.116"
-          - "37.123.105.117"
-          images:
-            ubuntu: "Ubuntu 18.04 LTS - 2018-08-10"
-          enforce_floating_ip: true
     hetzner-nbg1:
       location: Nuremberg 1 DC 3
       country: DE
@@ -288,6 +277,7 @@ spec:
       spec:
         digitalocean:
           region: ams3
+$(cat $OPENSTACK_DATACENTER_FILE)
 EOF
 )
 echodate "Creating namespace $NAMESPACE to deploy kubermatic in"
