@@ -20,6 +20,7 @@ spec:
         - digitalocean-example-tag-2
         - kubernetes
         - kubernetes-cluster-docluster-1a2b3c4d5e
+        - system/cluster:docluster-1a2b3c4d5e
         token: ""
       operatingSystem: ubuntu
       operatingSystemSpec:
