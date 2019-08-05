@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/Masterminds/semver"
+	"github.com/hetznercloud/hcloud-go/hcloud"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
@@ -212,6 +213,47 @@ type AzureSize struct {
 	MemoryInMB           int32  `json:"memoryInMB"`
 	MaxDataDiskCount     int32  `json:"maxDataDiskCount"`
 }
+
+// HetznerSizeList represents an array of Hetzner sizes.
+// swagger:model HetznerSizeList
+type HetznerSizeList struct {
+	Standard  []HetznerSize `json:"standard"`
+	Dedicated []HetznerSize `json:"dedicated"`
+}
+
+// HetznerSize is the object representing Hetzner sizes.
+// swagger:model HetznerSize
+type HetznerSize struct {
+	ID          int                                `json:"id"`
+	Name        string                             `json:"name"`
+	Description string                             `json:"description"`
+	Cores       int                                `json:"cores"`
+	Memory      float32                            `json:"memory"`
+	Disk        int                                `json:"disk"`
+	Pricings    []hcloud.ServerTypeLocationPricing `json:"pricings"`
+	StorageType hcloud.StorageType                 `json:"storageType"`
+	CPUType     hcloud.CPUType                     `json:"cpuType"`
+}
+
+// StorageType specifies the type of storage.
+type StorageType string
+
+const (
+	// StorageTypeLocal is the type for local storage.
+	StorageTypeLocal StorageType = "local"
+	// StorageTypeCeph is the type for remote storage.
+	StorageTypeCeph StorageType = "ceph"
+)
+
+// CPUType specifies the type of the CPU.
+type CPUType string
+
+const (
+	// CPUTypeShared is the type for shared CPU.
+	CPUTypeShared CPUType = "shared"
+	//CPUTypeDedicated is the type for dedicated CPU.
+	CPUTypeDedicated CPUType = "dedicated"
+)
 
 // SSHKey represents a ssh key
 // swagger:model SSHKey

@@ -3644,6 +3644,32 @@
         }
       }
     },
+    "/api/v1/providers/hetzner/sizes": {
+      "get": {
+        "description": "Lists sizes from hetzner",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "hetzner"
+        ],
+        "operationId": "listHetznerSizes",
+        "responses": {
+          "200": {
+            "description": "HetznerSizeList",
+            "schema": {
+              "$ref": "#/definitions/HetznerSizeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/openstack/networks": {
       "get": {
         "description": "Lists networks from openstack",
@@ -4431,6 +4457,11 @@
     "BringYourOwnDatacenterSpec": {
       "type": "object",
       "title": "BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "CPUType": {
+      "type": "string",
+      "title": "CPUType specifies the type of the CPU.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "CentOSSpec": {
@@ -5302,6 +5333,75 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "HetznerSize": {
+      "type": "object",
+      "title": "HetznerSize is the object representing Hetzner sizes.",
+      "properties": {
+        "cores": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Cores"
+        },
+        "cpuType": {
+          "$ref": "#/definitions/CPUType"
+        },
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "disk": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Disk"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ID"
+        },
+        "memory": {
+          "type": "number",
+          "format": "float",
+          "x-go-name": "Memory"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "pricings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServerTypeLocationPricing"
+          },
+          "x-go-name": "Pricings"
+        },
+        "storageType": {
+          "$ref": "#/definitions/StorageType"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "HetznerSizeList": {
+      "type": "object",
+      "title": "HetznerSizeList represents an array of Hetzner sizes.",
+      "properties": {
+        "dedicated": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HetznerSize"
+          },
+          "x-go-name": "Dedicated"
+        },
+        "standard": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HetznerSize"
+          },
+          "x-go-name": "Standard"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "ImageList": {
       "description": "ImageList defines a map of operating system and the image to use",
       "type": "object",
@@ -5412,6 +5512,37 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "Location": {
+      "type": "object",
+      "title": "Location represents a location in the Hetzner Cloud.",
+      "properties": {
+        "City": {
+          "type": "string"
+        },
+        "Country": {
+          "type": "string"
+        },
+        "Description": {
+          "type": "string"
+        },
+        "ID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "Latitude": {
+          "type": "number",
+          "format": "double"
+        },
+        "Longitude": {
+          "type": "number",
+          "format": "double"
+        },
+        "Name": {
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/hetznercloud/hcloud-go/hcloud"
     },
     "MachineDeploymentStatus": {
       "description": "[MachineDeploymentStatus]\nMachineDeploymentStatus defines the observed state of MachineDeployment",
@@ -6247,6 +6378,25 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
+    "Price": {
+      "description": "Price represents a price. Net amount, gross amount, as well as VAT rate are\nspecified as strings and it is the user's responsibility to convert them to\nappropriate types for calculations.",
+      "type": "object",
+      "properties": {
+        "Currency": {
+          "type": "string"
+        },
+        "Gross": {
+          "type": "string"
+        },
+        "Net": {
+          "type": "string"
+        },
+        "VATRate": {
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/hetznercloud/hcloud-go/hcloud"
+    },
     "Project": {
       "description": "Project is a top-level container for a set of resources",
       "type": "object",
@@ -6503,6 +6653,22 @@
       "type": "object",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/semver"
     },
+    "ServerTypeLocationPricing": {
+      "description": "ServerTypeLocationPricing provides pricing information for a server type\nat a location.",
+      "type": "object",
+      "properties": {
+        "Hourly": {
+          "$ref": "#/definitions/Price"
+        },
+        "Location": {
+          "$ref": "#/definitions/Location"
+        },
+        "Monthly": {
+          "$ref": "#/definitions/Price"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/hetznercloud/hcloud-go/hcloud"
+    },
     "ServiceAccount": {
       "description": "ServiceAccount represent an API service account",
       "type": "object",
@@ -6580,6 +6746,11 @@
           "x-go-name": "Token"
         }
       },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "StorageType": {
+      "type": "string",
+      "title": "StorageType specifies the type of storage.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "TaintSpec": {

@@ -96,6 +96,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listVSphereNetworks())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/hetzner/sizes").
+		Handler(r.listHetznerSizes())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/presets/credentials").
 		Handler(r.listCredentials())
 
@@ -715,6 +719,28 @@ func (r Routing) listOpenstackSecurityGroups() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackSecurityGroupEndpoint(r.seedsGetter, r.presetsManager)),
 		provider.DecodeOpenstackReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/hetzner/sizes hetzner listHetznerSizes
+//
+// Lists sizes from hetzner
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: HetznerSizeList
+func (r Routing) listHetznerSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.HetznerSizeEndpoint(r.presetsManager)),
+		provider.DecodeHetznerSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
