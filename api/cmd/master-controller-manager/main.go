@@ -29,7 +29,6 @@ type controllerRunOptions struct {
 	masterURL          string
 	internalAddr       string
 	dynamicDatacenters bool
-	namespace          string
 	log                kubermaticlog.Options
 
 	workerName string
@@ -42,6 +41,7 @@ type controllerContext struct {
 	seedsGetter          provider.SeedsGetter
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
 	labelSelectorFunc    func(*metav1.ListOptions)
+	namespace            string
 }
 
 func main() {
@@ -55,7 +55,7 @@ func main() {
 	flag.IntVar(&ctrlCtx.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&runOpts.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served")
 	flag.BoolVar(&runOpts.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
-	flag.StringVar(&runOpts.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
+	flag.StringVar(&ctrlCtx.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.BoolVar(&runOpts.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&runOpts.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
@@ -118,12 +118,12 @@ func main() {
 		sugarLog.Fatalw("failed to register types in Scheme", "error", err)
 	}
 	ctrlCtx.mgr = mgr
-	ctrlCtx.seedsGetter, err = provider.SeedsGetterFactory(ctx, ctrlCtx.mgr.GetClient(), runOpts.dcFile, runOpts.namespace, runOpts.workerName, runOpts.dynamicDatacenters)
+	ctrlCtx.seedsGetter, err = provider.SeedsGetterFactory(ctx, ctrlCtx.mgr.GetClient(), runOpts.dcFile, ctrlCtx.namespace, runOpts.workerName, runOpts.dynamicDatacenters)
 	if err != nil {
 		sugarLog.Fatalw("failed to construct seedsGetter", "error", err)
 	}
 	ctrlCtx.seedKubeconfigGetter, err = provider.SeedKubeconfigGetterFactory(
-		ctx, mgr.GetClient(), runOpts.kubeconfig, runOpts.namespace, runOpts.dynamicDatacenters)
+		ctx, mgr.GetClient(), runOpts.kubeconfig, ctrlCtx.namespace, runOpts.dynamicDatacenters)
 	if err != nil {
 		sugarLog.Fatalw("failed to construct seedKubeconfigGetter", "error", err)
 	}
