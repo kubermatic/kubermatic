@@ -8,7 +8,6 @@ import (
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -24,18 +23,6 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Clu
 	// We disable the PV & PVC creation so nothing creates new PV's while we delete them
 	if err := d.disablePVCreation(ctx, cluster); err != nil {
 		return false, fmt.Errorf("failed to disable future PV & PVC creation: %v", err)
-	}
-
-	// TODO: Figure out why we delete PDBs at all.
-	// Henrik thinks this it not required as PDBs only block evictions & we don't trigger an eviction.
-	deletedSomePDBs, err := d.cleanupPDBs(ctx, cluster)
-	if err != nil {
-		return false, fmt.Errorf("failed to cleanup PodDisruptionBudgets: %v", err)
-	}
-	// Make sure we don't continue until all PDBs are actually gone.
-	// TODO: Why?
-	if deletedSomePDBs {
-		return true, nil
 	}
 
 	// Delete all Pods that use PVs. We must keep the remaining pods, otherwise
@@ -128,20 +115,6 @@ func (d *Deletion) disablePVCreation(ctx context.Context, cluster *kubermaticv1.
 	}
 
 	return nil
-}
-
-func (d *Deletion) cleanupPDBs(ctx context.Context, cluster *kubermaticv1.Cluster) (deletedPDBs bool, err error) {
-	pdbs := &policyv1beta1.PodDisruptionBudgetList{}
-	if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pdbs); err != nil {
-		return false, fmt.Errorf("failed to list pdbs: %v", err)
-	}
-	for _, pdb := range pdbs.Items {
-		if err := d.userClusterClient.Delete(ctx, &pdb); err != nil {
-			return false, fmt.Errorf("failed to delete pdb '%s/%s': %v", pdb.Namespace, pdb.Name, err)
-		}
-		deletedPDBs = true
-	}
-	return deletedPDBs, nil
 }
 
 func (d *Deletion) cleanupPVCUsingPods(ctx context.Context) error {
