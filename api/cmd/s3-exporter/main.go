@@ -2,26 +2,41 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"strings"
 
+	"github.com/minio/minio-go"
+	"go.uber.org/zap"
+
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/exporters/s3"
-
-	"github.com/golang/glog"
-	"github.com/minio/minio-go"
+	"github.com/kubermatic/kubermatic/api/pkg/log"
 
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 func main() {
+	logFormat := log.FormatJSON
+
 	endpointWithProto := flag.String("endpoint", "", "The s3 endpoint, e.G. https://my-s3.com:9000")
 	accessKeyID := flag.String("access-key-id", "", "S3 Access key, defaults to the ACCESS_KEY_ID environment variable")
 	secretAccessKey := flag.String("secret-access-key", "", "S3 Secret Access Key, defaults to the SECRET_ACCESS_KEY evnironment variable")
 	bucket := flag.String("bucket", "kubermatic-etcd-backups", "The bucket to monitor")
 	kubeconfig := flag.String("kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	listenAddress := flag.String("address", ":9340", "The port to listen on")
+	debugLogging := flag.Bool("log-debug", false, "Enable more verbose logging")
+	flag.Var(&logFormat, "log-format", fmt.Sprintf("Use one of [%v] to change the log output format", log.AvailableFormats))
 	flag.Parse()
+
+	// setup logging
+	rawLog := log.New(*debugLogging, logFormat)
+	logger := rawLog.Sugar()
+	defer func() {
+		if err := logger.Sync(); err != nil {
+			fmt.Println(err)
+		}
+	}()
 
 	if *accessKeyID == "" {
 		*accessKeyID = os.Getenv("ACCESS_KEY_ID")
@@ -31,18 +46,18 @@ func main() {
 	}
 
 	if *endpointWithProto == "" || *accessKeyID == "" || *secretAccessKey == "" {
-		glog.Fatalf("All of 'endpoint', 'access-key-id' and 'secret-access-key' must be set!")
+		logger.Fatal("All of 'endpoint', 'access-key-id' and 'secret-access-key' must be set!")
 	}
 
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		glog.Fatal(err)
+		logger.Fatalw("Failed to load kubeconfig", zap.Error(err))
 	}
 	kubermaticClient := kubermaticclientset.NewForConfigOrDie(config)
 
 	secure := true
 	if strings.HasPrefix(*endpointWithProto, "http://") {
-		glog.Info("Disabling tls due to http:// prefix in url..")
+		logger.Info("Disabling TLS due to http:// prefix in endpoint")
 		secure = false
 	}
 	endpoint := strings.TrimPrefix(*endpointWithProto, "http://")
@@ -51,12 +66,12 @@ func main() {
 	stopChannel := make(chan struct{})
 	minioClient, err := minio.New(endpoint, *accessKeyID, *secretAccessKey, secure)
 	if err != nil {
-		glog.Fatalf("Failed to get S3 client: %v", err)
+		logger.Fatalw("Failed to get S3 client", zap.Error(err))
 	}
 
-	s3.MustRun(minioClient, kubermaticClient, *bucket, *listenAddress)
+	s3.MustRun(minioClient, kubermaticClient, *bucket, *listenAddress, logger)
 
-	glog.Infof("Successfully started, listening on %s", *listenAddress)
+	logger.Infof("Successfully started, listening on %s", *listenAddress)
 	<-stopChannel
-	glog.Infof("Shutting down..")
+	logger.Info("Shutting down")
 }
