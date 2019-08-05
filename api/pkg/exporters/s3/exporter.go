@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-
-	"github.com/golang/glog"
 	"github.com/minio/minio-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
+
+	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,15 +24,16 @@ type s3Exporter struct {
 	kubermaticClient       kubermaticclientset.Interface
 	bucket                 string
 	minioClient            *minio.Client
+	logger                 *zap.SugaredLogger
 }
 
 // MustRun starts a s3 exporter or panic
-func MustRun(minioClient *minio.Client, kubermaticClient kubermaticclientset.Interface, bucket, listenAddress string) {
-
+func MustRun(minioClient *minio.Client, kubermaticClient kubermaticclientset.Interface, bucket, listenAddress string, logger *zap.SugaredLogger) {
 	exporter := s3Exporter{}
 	exporter.minioClient = minioClient
 	exporter.kubermaticClient = kubermaticClient
 	exporter.bucket = bucket
+	exporter.logger = logger
 
 	exporter.ObjectCount = prometheus.NewDesc(
 		"kubermatic_s3_object_count",
@@ -56,7 +57,7 @@ func MustRun(minioClient *minio.Client, kubermaticClient kubermaticclientset.Int
 	http.Handle("/", promhttp.Handler())
 	go func() {
 		if err := http.ListenAndServe(listenAddress, nil); err != nil {
-			glog.Fatalf("Failed to listen: %v", err)
+			logger.Fatalw("Failed to listen", zap.Error(err))
 		}
 	}()
 }
@@ -71,7 +72,7 @@ func (e *s3Exporter) Describe(ch chan<- *prometheus.Desc) {
 func (e *s3Exporter) Collect(ch chan<- prometheus.Metric) {
 	clusters, err := e.kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
 	if err != nil {
-		glog.Errorf("Failed to list clusters: %v", err)
+		e.logger.Errorw("Failed to list clusters", zap.Error(err))
 		ch <- prometheus.MustNewConstMetric(
 			e.QuerySuccess,
 			prometheus.GaugeValue,
@@ -82,10 +83,12 @@ func (e *s3Exporter) Collect(ch chan<- prometheus.Metric) {
 	doneCh := make(chan struct{})
 	defer close(doneCh)
 
+	logger := e.logger.With("bucket", e.bucket)
+
 	var objects []minio.ObjectInfo
 	for listerObject := range e.minioClient.ListObjects(e.bucket, "", true, doneCh) {
 		if listerObject.Err != nil {
-			glog.Errorf("Error on object %s: %v", listerObject.Key, listerObject.Err)
+			logger.Errorw("Error on object", "object", listerObject.Key, zap.Error(listerObject.Err))
 			ch <- prometheus.MustNewConstMetric(
 				e.QuerySuccess,
 				prometheus.GaugeValue,

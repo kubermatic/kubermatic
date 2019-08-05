@@ -1,7 +1,7 @@
 apiVersion: v1
 name: s3-exporter
-version: 1.0.0
-appVersion: v0.3
+version: 1.0.1
+appVersion: v0.4
 keywords:
 - kubermatic
 - prometheus

@@ -1,7 +1,7 @@
 s3Exporter:
   image:
     repository: quay.io/kubermatic/s3-exporter
-    tag: v0.3
+    tag: v0.4
   endpoint: http://minio.minio.svc.cluster.local:9000
   bucket: kubermatic-etcd-backups
   resources:
