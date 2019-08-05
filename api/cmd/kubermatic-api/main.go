@@ -158,7 +158,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 			kubermaticlog.Logger.Fatalw("failed to start the mgr", zap.Error(err))
 		}
 	}()
-	mgrSyncCtx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	mgrSyncCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	if synced := mgr.GetCache().WaitForCacheSync(mgrSyncCtx.Done()); !synced {
 		kubermaticlog.Logger.Fatal("failed to sync mgr cache")
 	}
