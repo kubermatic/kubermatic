@@ -8,10 +8,12 @@ import (
 
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
+	metricserver "github.com/kubermatic/kubermatic/api/pkg/metrics/server"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
@@ -101,7 +103,7 @@ func main() {
 
 	ctrlCtx.labelSelectorFunc = selector
 
-	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: runOpts.internalAddr})
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: ""})
 	if err != nil {
 		sugarLog.Fatalw("failed to create Controller Manager instance: %v", err)
 	}
@@ -121,6 +123,10 @@ func main() {
 
 	if err := createAllControllers(ctrlCtx); err != nil {
 		sugarLog.Fatalw("could not create all controllers", "error", err)
+	}
+
+	if err := mgr.Add(metricserver.New(runOpts.internalAddr)); err != nil {
+		sugarLog.Fatalw("failed to add metrics server", zap.Error(err))
 	}
 
 	// This group is forever waiting in a goroutine for signals to stop

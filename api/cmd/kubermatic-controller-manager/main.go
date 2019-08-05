@@ -18,6 +18,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
+	metricserver "github.com/kubermatic/kubermatic/api/pkg/metrics/server"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
@@ -30,7 +31,6 @@ import (
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	ctrlruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -142,6 +142,10 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	log.Debug("Starting addons collector")
 	collectors.MustRegisterAddonCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetClient())
 
+	if err := mgr.Add(metricserver.New(options.internalAddr)); err != nil {
+		log.Fatalw("failed to add the metricsserver", zap.Error(err))
+	}
+
 	var g run.Group
 	// This group is forever waiting in a goroutine for signals to stop
 	{
@@ -156,24 +160,6 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			}
 		}, func(err error) {
 			rootCancel()
-		})
-	}
-
-	// This group is running an internal http server with metrics and other debug information
-	{
-		metricsServerCtx, stopMetricsServer := context.WithCancel(rootCtx)
-		defer stopMetricsServer()
-		m := &metricsServer{
-			gatherers: []prometheus.Gatherer{
-				prometheus.DefaultGatherer, ctrlruntimemetrics.Registry},
-			listenAddress: options.internalAddr,
-		}
-
-		g.Add(func() error {
-			log.Infof("Starting the internal HTTP server: %s\n", options.internalAddr)
-			return m.Start(metricsServerCtx.Done())
-		}, func(err error) {
-			stopMetricsServer()
 		})
 	}
 
