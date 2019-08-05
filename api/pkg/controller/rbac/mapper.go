@@ -62,6 +62,10 @@ func generateRBACRoleNameForResources(resourceName, groupName string) string {
 	return fmt.Sprintf("%s:%s:%s", RBACResourcesNamePrefix, resourceName, groupPrefix)
 }
 
+func generateRBACRoleNameForClusterNamespaceResource(kind, groupName string) string {
+	return fmt.Sprintf("%s:%s:%s", RBACResourcesNamePrefix, strings.ToLower(kind), ExtractGroupPrefix(groupName))
+}
+
 // generateClusterRBACRoleNamedResource generates ClusterRole for a named resource.
 // named resources have its rules set to a resource with the given name for example:
 // the following rule allows reading a ConfigMap named “my-config”
@@ -276,6 +280,56 @@ func generateRBACRoleBindingNamedResource(kind, resourceName, groupName, namespa
 	return binding
 }
 
+// generateRBACRoleForClusterNamespaceResource generates per-cluster Role for the given cluster in the cluster namespace
+// Note that for some groups we don't want to generate Role in that case a nil will be returned
+func generateRBACRoleForClusterNamespaceResource(cluster *kubermaticv1.Cluster, groupName, policyResource, policyAPIGroups, kind string) (*rbacv1.Role, error) {
+	verbs, err := generateVerbsForClusterNamespaceResource(cluster, groupName, kind)
+	if err != nil {
+		return nil, err
+	}
+	if len(verbs) == 0 {
+		return nil, nil
+	}
+	role := &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      generateRBACRoleNameForClusterNamespaceResource(kind, groupName),
+			Namespace: cluster.Status.NamespaceName,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{policyAPIGroups},
+				Resources: []string{policyResource},
+				Verbs:     verbs,
+			},
+		},
+	}
+	return role, nil
+}
+
+// generateRBACRoleBindingForClusterNamespaceResource generates per-cluster RoleBinding for the given cluster in the cluster namespace
+// Note that for some groups we don't want to generate RoleBinding in that case a nil will be returned
+func generateRBACRoleBindingForClusterNamespaceResource(cluster *kubermaticv1.Cluster, groupName, kind string) *rbacv1.RoleBinding {
+	binding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      generateRBACRoleNameForClusterNamespaceResource(kind, groupName),
+			Namespace: cluster.Status.NamespaceName,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "Group",
+				Name:     groupName,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "Role",
+			Name:     generateRBACRoleNameForClusterNamespaceResource(kind, groupName),
+		},
+	}
+	return binding
+}
+
 // generateVerbsForNamedResource generates a set of verbs for a named resource
 // for example a "cluster" named "beefy-john"
 func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, error) {
@@ -395,4 +449,17 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 
 	// unknown group passed
 	return nil, fmt.Errorf("unable to generate verbs for group = %s, kind = %s, namespace = %s", groupName, resourceKind, namespace)
+}
+
+func generateVerbsForClusterNamespaceResource(cluster *kubermaticv1.Cluster, groupName, kind string) ([]string, error) {
+	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) && kind == kubermaticv1.AddonKindName {
+		return []string{"get", "list"}, nil
+	}
+
+	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) || strings.HasPrefix(groupName, EditorGroupNamePrefix) {
+		return []string{"get", "list", "create", "update", "delete"}, nil
+	}
+
+	// unknown group passed
+	return nil, fmt.Errorf("unable to generate verbs for cluster namespace resource cluster = %s, group = %s, kind = %s", cluster.Name, groupName, kind)
 }

@@ -2,7 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-
 	"github.com/Masterminds/semver"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -597,6 +596,22 @@ type ClusterHealth struct {
 	Etcd                         kubermaticv1.HealthStatus `json:"etcd"`
 	CloudProviderInfrastructure  kubermaticv1.HealthStatus `json:"cloudProviderInfrastructure"`
 	UserClusterControllerManager kubermaticv1.HealthStatus `json:"userClusterControllerManager"`
+}
+
+// Addon represents a predefined addon that users may install into their cluster
+// swagger:model Addon
+type Addon struct {
+	ObjectMeta `json:",inline"`
+
+	Spec AddonSpec `json:"spec"`
+}
+
+// AddonSpec addon specification
+// swagger:model AddonSpec
+type AddonSpec struct {
+
+	// Variables is free form data to use for parsing the manifest templates
+	Variables map[string]interface{} `json:"variables,omitempty"`
 }
 
 // ClusterList represents a list of clusters

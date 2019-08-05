@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/features"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -29,6 +31,7 @@ type serverRunOptions struct {
 	exposeStrategy     corev1.ServiceType
 	dynamicDatacenters bool
 	log                kubermaticlog.Options
+	accessibleAddons   sets.String
 
 	// OIDC configuration
 	oidcURL                        string
@@ -51,6 +54,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	s := serverRunOptions{}
 	var rawFeatureGates string
 	var rawExposeStrategy string
+	var rawAccessibleAddons string
 
 	flag.StringVar(&s.listenAddress, "address", ":8080", "The address to listen on")
 	flag.StringVar(&s.kubeconfig, "kubeconfig", "", "Path to the kubeconfig.")
@@ -63,6 +67,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
 	flag.StringVar(&s.presetsFile, "presets", "", "The optional file path for a file containing presets")
 	flag.StringVar(&s.swaggerFile, "swagger", "./cmd/kubermatic-api/swagger.json", "The swagger.json file path")
+	flag.StringVar(&rawAccessibleAddons, "accessible-addons", "", "Comma-separated list of user cluster addons to expose via the API")
 	flag.StringVar(&s.oidcURL, "oidc-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.BoolVar(&s.oidcSkipTLSVerify, "oidc-skip-tls-verify", false, "Skip TLS verification for the token issuer")
 	flag.StringVar(&s.oidcAuthenticatorClientID, "oidc-authenticator-client-id", "", "Authenticator client ID")
@@ -95,6 +100,10 @@ func newServerRunOptions() (serverRunOptions, error) {
 	default:
 		return s, fmt.Errorf("--expose-strategy must be either `NodePort` or `LoadBalancer`, got %q", rawExposeStrategy)
 	}
+
+	s.accessibleAddons = sets.NewString(strings.Split(rawAccessibleAddons, ",")...)
+	s.accessibleAddons.Delete("")
+
 	return s, nil
 }
 
@@ -139,4 +148,5 @@ type providers struct {
 	eventRecorderProvider                 provider.EventRecorderProvider
 	clusterProviderGetter                 provider.ClusterProviderGetter
 	seedsGetter                           provider.SeedsGetter
+	addons                                provider.AddonProviderGetter
 }

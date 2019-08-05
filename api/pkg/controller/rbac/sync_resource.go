@@ -48,6 +48,15 @@ func (c *resourcesController) syncProjectResource(item *resourceToProcess) error
 		if err := ensureClusterRBACRoleBindingForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
 			return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
 		}
+		if item.kind == kubermaticv1.ClusterKindName {
+			if err := c.ensureRBACRoleForClusterAddons(projectName, item.metaObject, item.clusterProvider); err != nil {
+				return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
+			}
+			if err := c.ensureRBACRoleBindingForClusterAddons(projectName, item.metaObject, item.clusterProvider); err != nil {
+				return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
+			}
+		}
+
 		return nil
 	}
 
@@ -291,6 +300,133 @@ func shouldSkipRBACRoleBindingForNamedResource(projectName string, objectGVR sch
 			UID:        object.GetUID(),
 			Name:       object.GetName(),
 		},
+	)
+
+	if err != nil {
+		return false, generatedRole, err
+	}
+	if generatedRole == nil {
+		return true, nil, nil
+	}
+	return false, generatedRole, nil
+}
+
+func (c *resourcesController) ensureRBACRoleForClusterAddons(projectName string, object metav1.Object, clusterProvider *ClusterProvider) error {
+	cluster, ok := object.(*kubermaticv1.Cluster)
+	if !ok {
+		return fmt.Errorf("ensureRBACRoleForClusterAddons called with non-cluster: %+v", object)
+	}
+
+	rbacRoleLister := clusterProvider.kubeClient.RbacV1().Roles(cluster.Status.NamespaceName)
+
+	for _, groupPrefix := range AllGroupsPrefixes {
+		skip, generatedRole, err := shouldSkipRBACRoleForClusterNamespaceResource(
+			projectName,
+			cluster,
+			kubermaticv1.AddonResourceName,
+			kubermaticv1.GroupName,
+			kubermaticv1.AddonKindName,
+			groupPrefix)
+		if err != nil {
+			return err
+		}
+		if skip {
+			glog.V(4).Infof("skipping Role generation for cluster addons for group %q and cluster namespace %q", groupPrefix, cluster.Status.NamespaceName)
+			continue
+		}
+		sharedExistingRole, err := rbacRoleLister.Get(generatedRole.Name, metav1.GetOptions{})
+		if err != nil {
+			if !kerrors.IsNotFound(err) {
+				return err
+			}
+		}
+
+		// make sure that existing rbac role has appropriate rules/policies
+		if err == nil { // sharedExistingRole found
+			if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+				continue
+			}
+			existingRole := sharedExistingRole.DeepCopy()
+			existingRole.Rules = generatedRole.Rules
+			if _, err = clusterProvider.kubeClient.RbacV1().Roles(cluster.Status.NamespaceName).Update(existingRole); err != nil {
+				return err
+			}
+			continue
+		}
+
+		if _, err = clusterProvider.kubeClient.RbacV1().Roles(cluster.Status.NamespaceName).Create(generatedRole); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *resourcesController) ensureRBACRoleBindingForClusterAddons(projectName string, object metav1.Object, clusterProvider *ClusterProvider) error {
+	cluster, ok := object.(*kubermaticv1.Cluster)
+	if !ok {
+		return fmt.Errorf("ensureRBACRoleBindingForClusterAddons called with non-cluster: %+v", object)
+	}
+
+	rbacRoleBindingLister := clusterProvider.kubeClient.RbacV1().RoleBindings(cluster.Status.NamespaceName)
+
+	for _, groupPrefix := range AllGroupsPrefixes {
+		skip, _, err := shouldSkipRBACRoleForClusterNamespaceResource(
+			projectName,
+			cluster,
+			kubermaticv1.AddonResourceName,
+			kubermaticv1.GroupName,
+			kubermaticv1.AddonKindName,
+			groupPrefix)
+		if err != nil {
+			return err
+		}
+		if skip {
+			glog.V(4).Infof("skipping RoleBinding generation for cluster addons for group %q and cluster namespace %q", groupPrefix, cluster.Status.NamespaceName)
+			continue
+		}
+
+		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResource(
+			cluster,
+			GenerateActualGroupNameFor(projectName, groupPrefix),
+			kubermaticv1.AddonKindName,
+		)
+
+		sharedExistingRoleBinding, err := rbacRoleBindingLister.Get(generatedRoleBinding.Name, metav1.GetOptions{})
+		if err != nil {
+			if !kerrors.IsNotFound(err) {
+				return err
+			}
+		}
+
+		if err == nil { // sharedExistingRoleBinding found
+			if equality.Semantic.DeepEqual(sharedExistingRoleBinding.Subjects, generatedRoleBinding.Subjects) {
+				continue
+			}
+			existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
+			existingRoleBinding.Subjects = generatedRoleBinding.Subjects
+			if _, err = clusterProvider.kubeClient.RbacV1().RoleBindings(cluster.Status.NamespaceName).Update(existingRoleBinding); err != nil {
+				return err
+			}
+			continue
+		}
+		if _, err = clusterProvider.kubeClient.RbacV1().RoleBindings(cluster.Status.NamespaceName).Create(generatedRoleBinding); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// shouldSkipRBACRoleForClusterNamespaceResource will tell you if you should skip the generation of Role/Rolebinding or not,
+// because for some groupPrefixes we actually don't create Role
+//
+// note that this method returns generated role if is not meant to be skipped
+func shouldSkipRBACRoleForClusterNamespaceResource(projectName string, cluster *kubermaticv1.Cluster, policyResource, policyAPIGroups, kind, groupPrefix string) (bool, *rbacv1.Role, error) {
+	generatedRole, err := generateRBACRoleForClusterNamespaceResource(
+		cluster,
+		GenerateActualGroupNameFor(projectName, groupPrefix),
+		policyResource,
+		policyAPIGroups,
+		kind,
 	)
 
 	if err != nil {

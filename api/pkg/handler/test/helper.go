@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -117,6 +118,7 @@ func GetUser(email, id, name string, admin bool) apiv1.User {
 type newRoutingFunc func(
 	seedsGetter provider.SeedsGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
+	addonProviderGetter provider.AddonProviderGetter,
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
@@ -229,6 +231,18 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find clusterprovider for cluster %q", seedName)
 	}
 
+	addonProvider := kubernetes.NewAddonProvider(
+		fakeKubermaticImpersonationClient,
+		sets.NewString("addon1", "addon2"),
+	)
+	addonProviders := map[string]provider.AddonProvider{"us-central1": addonProvider}
+	addonProviderGetter := func(seedName string) (provider.AddonProvider, error) {
+		if addonProvider, exists := addonProviders[seedName]; exists {
+			return addonProvider, nil
+		}
+		return nil, fmt.Errorf("can not find addonprovider for cluster %q", seedName)
+	}
+
 	kubernetesInformerFactory.Start(wait.NeverStop)
 	kubernetesInformerFactory.WaitForCacheSync(wait.NeverStop)
 	kubermaticInformerFactory.Start(wait.NeverStop)
@@ -242,6 +256,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	mainRouter := routingFunc(
 		seedsGetter,
 		clusterProviderGetter,
+		addonProviderGetter,
 		sshKeyProvider,
 		userProvider,
 		serviceAccountProvider,
@@ -656,6 +671,37 @@ func GenTestMachineDeployment(name, rawProviderSpec string, selector map[string]
 						Kubelet: "v9.9.9",
 					},
 				},
+			},
+		},
+	}
+}
+
+func GenTestAddon(name string, variables *runtime.RawExtension, cluster *kubermaticapiv1.Cluster, creationTime time.Time) *kubermaticapiv1.Addon {
+	if variables == nil {
+		variables = &runtime.RawExtension{}
+	}
+	return &kubermaticapiv1.Addon{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: cluster.Status.NamespaceName,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticapiv1.ClusterKindName,
+					Name:       cluster.Name,
+					UID:        cluster.UID,
+				},
+			},
+			CreationTimestamp: metav1.NewTime(creationTime),
+		},
+		Spec: kubermaticapiv1.AddonSpec{
+			Name:      name,
+			Variables: *variables,
+			Cluster: v1.ObjectReference{
+				APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+				Kind:       kubermaticapiv1.ClusterKindName,
+				Name:       cluster.Name,
+				UID:        cluster.UID,
 			},
 		},
 	}
