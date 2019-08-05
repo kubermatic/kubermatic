@@ -70,7 +70,7 @@ helm template logging/elasticsearch | ../api/hack/retag-images.sh
 helm template logging/fluentbit | ../api/hack/retag-images.sh
 helm template logging/kibana | ../api/hack/retag-images.sh
 
-HELM_EXTRA_ARGS="--set kubermatic.controller.image.tag=${GIT_HEAD_HASH},kubermatic.api.image.tag=${GIT_HEAD_HASH},kubermatic.masterController.image.tag=${GIT_HEAD_HASH}"
+HELM_EXTRA_ARGS="--set kubermatic.controller.image.tag=${GIT_HEAD_HASH},kubermatic.api.image.tag=${GIT_HEAD_HASH},kubermatic.masterController.image.tag=${GIT_HEAD_HASH},kubermatic.controller.addons.kubernetes.image.tag=${GIT_HEAD_HASH}"
 helm template ${HELM_EXTRA_ARGS} kubermatic | ../api/hack/retag-images.sh
 
 # Push a tiller image
