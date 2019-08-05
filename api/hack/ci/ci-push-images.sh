@@ -6,7 +6,7 @@ cd $(dirname $0)/../../..
 
 source ./api/hack/lib.sh
 
-TAGS=("$GIT_HEAD_HASH" "$(git tag -l --points-at HEAD)" "latest")
+TAGS="$GIT_HEAD_HASH $(git tag -l --points-at HEAD) latest"
 
 echodate "Logging into Quay"
 docker ps &>/dev/null || start-docker.sh
@@ -18,12 +18,12 @@ time make -C api build
 echodate "Successfully finished building binaries"
 
 echodate "Building and pushing quay images"
-retry 5 ./api/hack/push_image.sh "${TAGS[@]}"
+retry 5 ./api/hack/push_image.sh $TAGS
 echodate "Sucessfully finished building and pushing quay images"
 
 echodate "Building addons"
 time docker build -t quay.io/kubermatic/addons:${GIT_HEAD_HASH} ./addons
-for TAG in "${TAGS[@]}"
+for TAG in $TAGS
 do
     if [[ -z "$TAG" ]]; then
       continue
@@ -39,7 +39,7 @@ done
 echodate "Successfully finished building addon image"
 
 echodate "Pushing addon images"
-for TAG in "${TAGS[@]}"
+for TAG in $TAGS
 do
     echo "Pusing ${TAG}"
     retry 5 docker push quay.io/kubermatic/addons:${TAG}
