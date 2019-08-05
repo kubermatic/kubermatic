@@ -150,12 +150,12 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 	// Make sure the manager creates a cache for Seeds by requesting an informer
 	if _, err := mgr.GetCache().GetInformer(&kubermaticv1.Seed{}); err != nil {
-		kubermaticlog.Logger.With("error", err).Fatal("failed to get seed informer")
+		kubermaticlog.Logger.Fatalw("failed to get seed informer", zap.Error(err))
 	}
 	// mgr.Start() is blocking
 	go func() {
 		if err := mgr.Start(wait.NeverStop); err != nil {
-			kubermaticlog.Logger.With("error", err).Fatal("failed to start the mgr")
+			kubermaticlog.Fatalw("failed to start the mgr", zap.Error(err))
 		}
 	}()
 	mgrSyncCtx, _ := context.WithTimeout(context.Background(), 30*time.Second)
@@ -168,12 +168,12 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	go func() {
 		seeds, err := seedsGetter()
 		if err != nil {
-			kubermaticlog.Logger.With("error", err).Info("failed to get seeds when trying to warm up restMapper cache")
+			kubermaticlog.Logger.Infow("failed to get seeds when trying to warm up restMapper cache", zap.Error(err))
 			return
 		}
 		for seedName := range seeds {
 			if _, err := clusterProviderGetter(seedName); err != nil {
-				kubermaticlog.Logger.With("seed", seedName).With("error", err).Info("failed to get clusterProvider when trying to warm up restMapper cache")
+				kubermaticlog.Logger.Infow("failed to get clusterProvider when trying to warm up restMapper cache", zap.Error(err), "seed", seedName)
 				continue
 			}
 		}

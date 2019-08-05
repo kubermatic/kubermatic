@@ -8,6 +8,7 @@ import (
 
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
@@ -72,11 +73,11 @@ func main() {
 
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)
 	if err != nil {
-		sugarLog.Fatalw("Failed to create the label selector for the given worker", "workerName", runOpts.workerName, "error", err)
+		sugarLog.Fatalw("Failed to create the label selector for the given worker", "workerName", runOpts.workerName, zap.Error(err))
 	}
 
 	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to add kubermaticv1 scheme to scheme.Scheme", "error", err)
+		kubermaticlog.Logger.Fatalw("failed to add kubermaticv1 scheme to scheme.Scheme", zap.Error(err))
 	}
 
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
@@ -91,7 +92,7 @@ func main() {
 
 	kubeconfig, err := clientcmd.LoadFromFile(runOpts.kubeconfig)
 	if err != nil {
-		sugarLog.Fatalw("Failed to read the kubeconfig", "error", err)
+		sugarLog.Fatalw("Failed to read the kubeconfig", zap.Error(err))
 	}
 
 	config := clientcmd.NewNonInteractiveClientConfig(
@@ -103,7 +104,7 @@ func main() {
 
 	cfg, err := config.ClientConfig()
 	if err != nil {
-		sugarLog.Fatalw("Failed to create client", "error", err)
+		sugarLog.Fatalw("Failed to create client", zap.Error(err))
 	}
 
 	ctrlCtx.labelSelectorFunc = func(listOpts *metav1.ListOptions) {
@@ -112,24 +113,24 @@ func main() {
 
 	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: runOpts.internalAddr})
 	if err != nil {
-		sugarLog.Fatalw("failed to create Controller Manager instance: %v", err)
+		sugarLog.Fatalw("failed to create Controller Manager instance", zap.Error(err))
 	}
 	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
-		sugarLog.Fatalw("failed to register types in Scheme", "error", err)
+		sugarLog.Fatalw("failed to register types in Scheme", zap.Error(err))
 	}
 	ctrlCtx.mgr = mgr
 	ctrlCtx.seedsGetter, err = provider.SeedsGetterFactory(ctx, ctrlCtx.mgr.GetClient(), runOpts.dcFile, ctrlCtx.namespace, runOpts.workerName, runOpts.dynamicDatacenters)
 	if err != nil {
-		sugarLog.Fatalw("failed to construct seedsGetter", "error", err)
+		sugarLog.Fatalw("failed to construct seedsGetter", zap.Error(err))
 	}
 	ctrlCtx.seedKubeconfigGetter, err = provider.SeedKubeconfigGetterFactory(
 		ctx, mgr.GetClient(), runOpts.kubeconfig, ctrlCtx.namespace, runOpts.dynamicDatacenters)
 	if err != nil {
-		sugarLog.Fatalw("failed to construct seedKubeconfigGetter", "error", err)
+		sugarLog.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {
-		sugarLog.Fatalw("could not create all controllers", "error", err)
+		sugarLog.Fatalw("could not create all controllers", zap.Error(err))
 	}
 
 	// This group is forever waiting in a goroutine for signals to stop
@@ -151,12 +152,12 @@ func main() {
 		g.Add(func() error {
 			return mgr.Start(ctx.Done())
 		}, func(err error) {
-			sugarLog.Infow("Stopping Master Controller", "error", err)
+			sugarLog.Infow("Stopping Master Controller", zap.Error(err))
 			ctxDone()
 		})
 	}
 
 	if err := g.Run(); err != nil {
-		sugarLog.Fatalw("Can not start Master Controller", "error", err)
+		sugarLog.Fatalw("Can not start Master Controller", zap.Error(err))
 	}
 }
