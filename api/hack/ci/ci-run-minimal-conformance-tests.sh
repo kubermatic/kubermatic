@@ -138,13 +138,21 @@ registries = ["registry.registry.svc.cluster.local:5000"]
 EOF
     echodate "Building binaries"
     time make -C api build
-    cd api
-    echodate "Building docker image"
-    time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/api:$1" .
+    (
+      echodate "Building docker image"
+      cd api
+      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/api:$1" .
+    )
+    (
+      echodate "Building addons image"
+      cd addons
+      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1" .
+    )
     echodate "Pushing docker image"
     time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/api:$1"
+    echodate "Pushing addons image"
+    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1"
     echodate "Finished building and pushing docker image"
-    cd -
   else
     echodate "Omitting building of binaries and docker image, as tag $1 already exists in local registry"
   fi
@@ -220,6 +228,8 @@ rm -f config/kubermatic/templates/vpa-*
 retry 3 helm upgrade --install --force --wait --timeout 300 \
   --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
+  --set-string=kubermatic.controller.addons.kubernetes.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
+  --set-string=kubermatic.controller.addons.kubernetes.image.repository=127.0.0.1:5000/kubermatic/addons \
   --set-string=kubermatic.controller.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.controller.image.repository=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.api.image.repository=127.0.0.1:5000/kubermatic/api \
@@ -306,6 +316,8 @@ echodate "Installing current version of Kubermatic"
 retry 3 helm upgrade --install --force --wait --timeout 300 \
   --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
+  --set-string=kubermatic.controller.addons.kubernetes.image.tag=${GIT_HEAD_HASH} \
+  --set-string=kubermatic.controller.addons.kubernetes.image.repository=127.0.0.1:5000/kubermatic/addons \
   --set-string=kubermatic.controller.image.tag=${GIT_HEAD_HASH} \
   --set-string=kubermatic.controller.image.repository=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.api.image.repository=127.0.0.1:5000/kubermatic/api \

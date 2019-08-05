@@ -21,7 +21,8 @@ export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 export HELM_EXTRA_ARGS="--set=kubermatic.controller.image.tag=${GIT_HEAD_HASH} \
     --set=kubermatic.api.image.tag=${GIT_HEAD_HASH} \
-    --set=kubermatic.masterController.image.tag=${GIT_HEAD_HASH}"
+    --set=kubermatic.masterController.image.tag=${GIT_HEAD_HASH} \
+    --set=kubermatic.controller.addons.kubernetes.image.tag=${GIT_HEAD_HASH}"
 
 # deploy to dev-asia
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}
