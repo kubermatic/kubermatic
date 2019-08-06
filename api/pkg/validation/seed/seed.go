@@ -11,16 +11,13 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func New(
+func newValidator(
 	ctx context.Context,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
-	listOpts *ctrlruntimeclient.ListOptions) *SeedValidator {
+	listOpts *ctrlruntimeclient.ListOptions) *seedValidator {
 
-	if listOpts == nil {
-		listOpts = &ctrlruntimeclient.ListOptions{}
-	}
-	return &SeedValidator{
+	return &seedValidator{
 		ctx:                  ctx,
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,
@@ -29,7 +26,7 @@ func New(
 	}
 }
 
-type SeedValidator struct {
+type seedValidator struct {
 	ctx                  context.Context
 	seedsGetter          provider.SeedsGetter
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
@@ -38,7 +35,7 @@ type SeedValidator struct {
 	listOpts *ctrlruntimeclient.ListOptions
 }
 
-func (sv *SeedValidator) Validate(seed *kubermaticv1.Seed, isDelete bool) error {
+func (sv *seedValidator) Validate(seed *kubermaticv1.Seed, isDelete bool) error {
 	// We need locking to make the validation concurrency-safe
 	sv.lock.Lock()
 	defer sv.lock.Unlock()
@@ -56,7 +53,7 @@ func (sv *SeedValidator) Validate(seed *kubermaticv1.Seed, isDelete bool) error 
 	return sv.validate(seed, client, seeds, isDelete)
 }
 
-func (sv *SeedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, existingSeeds map[string]*kubermaticv1.Seed, isDelete bool) error {
+func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, existingSeeds map[string]*kubermaticv1.Seed, isDelete bool) error {
 
 	newDatacenters := sets.NewString()
 	for datacenter := range seed.Spec.Datacenters {
@@ -90,7 +87,7 @@ func (sv *SeedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntim
 	return nil
 }
 
-func (sv *SeedValidator) clientForSeed(seedName string) (ctrlruntimeclient.Client, error) {
+func (sv *seedValidator) clientForSeed(seedName string) (ctrlruntimeclient.Client, error) {
 	cfg, err := sv.seedKubeconfigGetter(seedName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get kubeconfig for seed %q: %v", seedName, err)
