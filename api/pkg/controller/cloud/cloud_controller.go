@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -208,6 +209,9 @@ func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluste
 }
 
 func (r *Reconciler) getGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+	if configVar == nil {
+		return "", errors.New("configVar is nil")
+	}
 	if configVar.Name == "" || configVar.Namespace == "" {
 		return "", fmt.Errorf("both name and namespace must be specified in the secret key selector")
 	}
