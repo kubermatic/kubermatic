@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: s3-exporter
-  namespace: kube-system
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 2
   selector:
