@@ -14,11 +14,6 @@ import (
 )
 
 func (d *Deletion) cleanUpCredentialsSecrets(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	// If no relevant finalizer exists, directly return
-	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer) {
-		return nil
-	}
-
 	if err := d.deleteSecret(ctx, cluster); err != nil {
 		return err
 	}

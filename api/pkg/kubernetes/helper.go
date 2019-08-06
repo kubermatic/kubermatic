@@ -18,6 +18,12 @@ func HasFinalizer(o metav1.Object, name string) bool {
 	return sets.NewString(o.GetFinalizers()...).Has(name)
 }
 
+// HasOnlyFinalizer tells if an object has only the given finalizer
+func HasOnlyFinalizer(o metav1.Object, name string) bool {
+	set := sets.NewString(o.GetFinalizers()...)
+	return set.Has(name) && set.Len() == 1
+}
+
 // RemoveFinalizer removes the given finalizer from the object
 func RemoveFinalizer(obj metav1.Object, toRemove string) {
 	set := sets.NewString(obj.GetFinalizers()...)
