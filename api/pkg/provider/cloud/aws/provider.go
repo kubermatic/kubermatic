@@ -8,6 +8,7 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"github.com/golang/glog"
 
@@ -196,6 +197,13 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter) (*AmazonEC2, error) {
 	}
 	return &AmazonEC2{
 		dc: dc.Spec.AWS,
+		// This is hacky at best, but dodge a couple of NPDs this way and trade them for errors
+		clusterUpdater: func(string, func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
+			return nil, errors.New("NPD when calling clusterUpdater")
+		},
+		secretKeySelector: func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+			return "", errors.New("NPD when calling secretKeySelector")
+		},
 	}, nil
 }
 
