@@ -237,16 +237,10 @@ type PacketSizeList []PacketSize
 // PacketSize is the object representing Packet VM sizes.
 // swagger:model PacketSize
 type PacketSize struct {
-	ID              string        `json:"id"`
-	Slug            string        `json:"slug,omitempty"`
-	Name            string        `json:"name,omitempty"`
-	Description     string        `json:"description,omitempty"`
-	Line            string        `json:"line,omitempty"`
-	Cores           int32         `json:"cpus,omitempty"`
-	Memory          string        `json:"memory,omitempty"`
-	Drives          []PacketDrive `json:"drives,omitempty"`
-	DeploymentTypes []string      `json:"deployment_types"`
-	Class           string        `json:"class"`
+	Name   string        `json:"name,omitempty"`
+	Cores  int32         `json:"cpus,omitempty"`
+	Memory string        `json:"memory,omitempty"`
+	Drives []PacketDrive `json:"drives,omitempty"`
 }
 
 // PacketDrive represents an array of Packet drives. It is a part of PacketSize.

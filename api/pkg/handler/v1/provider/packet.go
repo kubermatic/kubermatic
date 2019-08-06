@@ -150,15 +150,9 @@ func toPacketSize(plan packngo.Plan) apiv1.PacketSize {
 	}
 
 	return apiv1.PacketSize{
-		ID:              plan.ID,
-		Slug:            plan.Slug,
-		Name:            plan.Name,
-		Description:     plan.Description,
-		Line:            plan.Line,
-		Cores:           int32(len(plan.Specs.Cpus)),
-		Memory:          memory,
-		Drives:          drives,
-		DeploymentTypes: plan.DeploymentTypes,
-		Class:           plan.Class,
+		Name:   plan.Name,
+		Cores:  int32(len(plan.Specs.Cpus)),
+		Memory: memory,
+		Drives: drives,
 	}
 }

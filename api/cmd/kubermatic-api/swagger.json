@@ -6792,25 +6792,10 @@
       "type": "object",
       "title": "PacketSize is the object representing Packet VM sizes.",
       "properties": {
-        "class": {
-          "type": "string",
-          "x-go-name": "Class"
-        },
         "cpus": {
           "type": "integer",
           "format": "int32",
           "x-go-name": "Cores"
-        },
-        "deployment_types": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "DeploymentTypes"
-        },
-        "description": {
-          "type": "string",
-          "x-go-name": "Description"
         },
         "drives": {
           "type": "array",
@@ -6819,14 +6804,6 @@
           },
           "x-go-name": "Drives"
         },
-        "id": {
-          "type": "string",
-          "x-go-name": "ID"
-        },
-        "line": {
-          "type": "string",
-          "x-go-name": "Line"
-        },
         "memory": {
           "type": "string",
           "x-go-name": "Memory"
@@ -6834,10 +6811,6 @@
         "name": {
           "type": "string",
           "x-go-name": "Name"
-        },
-        "slug": {
-          "type": "string",
-          "x-go-name": "Slug"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
