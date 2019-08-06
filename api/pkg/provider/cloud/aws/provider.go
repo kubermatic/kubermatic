@@ -643,8 +643,9 @@ func (a *AmazonEC2) getIAMClient(cloud kubermaticv1.CloudSpec) (*iam.IAM, error)
 	return iam.New(sess), nil
 }
 
-func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
+func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	a.secretKeySelector = secretKeySelector
+	a.clusterUpdater = updater
 	ec2client, err := a.getEC2client(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ec2 client: %v", err)

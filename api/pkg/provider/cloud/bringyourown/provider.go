@@ -24,7 +24,7 @@ func (b *bringyourown) InitializeCloudProvider(cluster *kubermaticv1.Cluster, up
 	return cluster, nil
 }
 
-func (b *bringyourown) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
+func (b *bringyourown) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
