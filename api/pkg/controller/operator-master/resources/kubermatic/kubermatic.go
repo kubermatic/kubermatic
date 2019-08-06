@@ -48,13 +48,9 @@ func DockercfgSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) recon
 		return dockercfgSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			s.Type = corev1.SecretTypeDockerConfigJson
 
-			if s.Data == nil {
-				s.Data = make(map[string][]byte)
-			}
-
-			s.Data[corev1.DockerConfigJsonKey] = []byte(cfg.Spec.ImagePullSecret)
-
-			return s, nil
+			return createSecretData(s, map[string]string{
+				corev1.DockerConfigJsonKey: cfg.Spec.ImagePullSecret,
+			}), nil
 		}
 	}
 }
@@ -62,13 +58,9 @@ func DockercfgSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) recon
 func KubeconfigSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return kubeconfigSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			if s.Data == nil {
-				s.Data = make(map[string][]byte)
-			}
-
-			s.Data["kubeconfig"] = []byte(cfg.Spec.Auth.CABundle)
-
-			return s, nil
+			return createSecretData(s, map[string]string{
+				"kubeconfig": cfg.Spec.Auth.CABundle,
+			}), nil
 		}
 	}
 }
@@ -76,13 +68,9 @@ func KubeconfigSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reco
 func DatacentersSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return datacentersSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			if s.Data == nil {
-				s.Data = make(map[string][]byte)
-			}
-
-			s.Data["datacenters.yaml"] = []byte(cfg.Spec.Datacenters)
-
-			return s, nil
+			return createSecretData(s, map[string]string{
+				"datacenters.yaml": cfg.Spec.Datacenters,
+			}), nil
 		}
 	}
 }
@@ -90,13 +78,9 @@ func DatacentersSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) rec
 func DexCASecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return dexCASecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			if s.Data == nil {
-				s.Data = make(map[string][]byte)
-			}
-
-			s.Data["caBundle.pem"] = []byte(cfg.Spec.Auth.CABundle)
-
-			return s, nil
+			return createSecretData(s, map[string]string{
+				"caBundle.pem": cfg.Spec.Auth.CABundle,
+			}), nil
 		}
 	}
 }
@@ -104,15 +88,7 @@ func DexCASecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcili
 func MasterFilesSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return masterFilesSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			if s.Data == nil {
-				s.Data = make(map[string][]byte)
-			}
-
-			for name, content := range cfg.Spec.MasterFiles {
-				s.Data[name] = []byte(content)
-			}
-
-			return s, nil
+			return createSecretData(s, cfg.Spec.MasterFiles), nil
 		}
 	}
 }
@@ -120,13 +96,9 @@ func MasterFilesSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) rec
 func PresetsSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return presetsSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			if s.Data == nil {
-				s.Data = make(map[string][]byte)
-			}
-
-			s.Data["presets.yaml"] = []byte(cfg.Spec.Auth.CABundle)
-
-			return s, nil
+			return createSecretData(s, map[string]string{
+				"presets.yaml": cfg.Spec.UI.Presets,
+			}), nil
 		}
 	}
 }
