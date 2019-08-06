@@ -6,12 +6,15 @@ import (
 	"testing"
 
 	"github.com/go-logr/zapr"
+	"go.uber.org/zap"
+
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -54,17 +57,12 @@ func TestDefaultingConfigurations(t *testing.T) {
 		},
 	}
 
-	rawLog := kubermaticlog.New(true, kubermaticlog.FormatJSON)
+	rawLog := zap.NewNop()
 	log := rawLog.Sugar()
-	defer func() {
-		if err := log.Sync(); err != nil {
-			fmt.Println(err)
-		}
-	}()
 
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 	if err := operatorv1alpha1.AddToScheme(scheme.Scheme); err != nil {
-		log.Fatalw("Failed to register types in Scheme", "error", err)
+		t.Fatalf("Failed to register types in Scheme: %v", err)
 	}
 
 	for _, test := range tests {
@@ -78,30 +76,28 @@ func TestDefaultingConfigurations(t *testing.T) {
 				ctx:      context.Background(),
 			}
 
-			log.Info("hallo world")
-
 			request := reconcile.Request{NamespacedName: types.NamespacedName{
 				Name:      test.input.GetName(),
 				Namespace: test.input.GetNamespace(),
 			}}
 
 			if _, err := reconciler.Reconcile(request); err != nil {
-				t.Errorf("Reconcile returned an error while none was expected: %v", err)
+				t.Fatalf("Reconcile returned an error while none was expected: %v", err)
 			}
 
-			// key, err := controllerruntimeclient.ObjectKeyFromObject(test.input)
-			// if err != nil {
-			// 	t.Errorf("Failed to generate a ObjectKey: %v", err)
-			// }
+			key, err := controllerruntimeclient.ObjectKeyFromObject(test.input)
+			if err != nil {
+				t.Fatalf("Failed to generate a ObjectKey: %v", err)
+			}
 
-			// defaultedConfig := &operatorv1alpha1.KubermaticConfiguration{}
-			// if err := client.Get(context.Background(), key, defaultedConfig); err != nil {
-			// 	t.Errorf("Failed to get the KubermaticConfiguration from the client: %v", err)
-			// }
+			defaultedConfig := &operatorv1alpha1.KubermaticConfiguration{}
+			if err := client.Get(context.Background(), key, defaultedConfig); err != nil {
+				t.Fatalf("Failed to get the KubermaticConfiguration from the client: %v", err)
+			}
 
-			// if err := test.validate(defaultedConfig); err != nil {
-			// 	t.Errorf("Resulting configuration is not valid: %v", err)
-			// }
+			if err := test.validate(defaultedConfig); err != nil {
+				t.Fatalf("Resulting configuration is not valid: %v", err)
+			}
 		})
 	}
 }
