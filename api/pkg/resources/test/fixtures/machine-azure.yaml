@@ -22,7 +22,7 @@ spec:
         tags:
           KubernetesCluster: azurecluster-1a2b3c4d5e
           foo: bar
-          system/cluster: azurecluster-1a2b3c4d5e
+          system-cluster: azurecluster-1a2b3c4d5e
         tenantID: 38w7giefb32fhifw3q
         vmSize: Standard_B1ms
         vnetName: cluster-azurecluster-1a2b3c4d5e

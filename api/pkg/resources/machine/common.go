@@ -122,10 +122,10 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *
 		config.Tags[key] = value
 	}
 	config.Tags["KubernetesCluster"] = c.Name
-	config.Tags["system/cluster"] = c.Name
+	config.Tags["system-cluster"] = c.Name
 	projectID, ok := c.Labels[kubermaticv1.ProjectIDLabelKey]
 	if ok {
-		config.Tags["system/project"] = projectID
+		config.Tags["system-project"] = projectID
 	}
 
 	ext := &runtime.RawExtension{}
