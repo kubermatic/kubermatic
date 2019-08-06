@@ -5342,9 +5342,6 @@
           "format": "int64",
           "x-go-name": "Cores"
         },
-        "cpuType": {
-          "$ref": "#/definitions/CPUType"
-        },
         "description": {
           "type": "string",
           "x-go-name": "Description"
@@ -5367,16 +5364,6 @@
         "name": {
           "type": "string",
           "x-go-name": "Name"
-        },
-        "pricings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ServerTypeLocationPricing"
-          },
-          "x-go-name": "Pricings"
-        },
-        "storageType": {
-          "$ref": "#/definitions/StorageType"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -5512,37 +5499,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "Location": {
-      "type": "object",
-      "title": "Location represents a location in the Hetzner Cloud.",
-      "properties": {
-        "City": {
-          "type": "string"
-        },
-        "Country": {
-          "type": "string"
-        },
-        "Description": {
-          "type": "string"
-        },
-        "ID": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "Latitude": {
-          "type": "number",
-          "format": "double"
-        },
-        "Longitude": {
-          "type": "number",
-          "format": "double"
-        },
-        "Name": {
-          "type": "string"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/hetznercloud/hcloud-go/hcloud"
     },
     "MachineDeploymentStatus": {
       "description": "[MachineDeploymentStatus]\nMachineDeploymentStatus defines the observed state of MachineDeployment",
@@ -6378,25 +6334,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
-    "Price": {
-      "description": "Price represents a price. Net amount, gross amount, as well as VAT rate are\nspecified as strings and it is the user's responsibility to convert them to\nappropriate types for calculations.",
-      "type": "object",
-      "properties": {
-        "Currency": {
-          "type": "string"
-        },
-        "Gross": {
-          "type": "string"
-        },
-        "Net": {
-          "type": "string"
-        },
-        "VATRate": {
-          "type": "string"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/hetznercloud/hcloud-go/hcloud"
-    },
     "Project": {
       "description": "Project is a top-level container for a set of resources",
       "type": "object",
@@ -6652,22 +6589,6 @@
       "description": "Semver is struct that encapsulates semver.Semver struct so we can use it in API\n+k8s:deepcopy-gen=true",
       "type": "object",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/semver"
-    },
-    "ServerTypeLocationPricing": {
-      "description": "ServerTypeLocationPricing provides pricing information for a server type\nat a location.",
-      "type": "object",
-      "properties": {
-        "Hourly": {
-          "$ref": "#/definitions/Price"
-        },
-        "Location": {
-          "$ref": "#/definitions/Location"
-        },
-        "Monthly": {
-          "$ref": "#/definitions/Price"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/hetznercloud/hcloud-go/hcloud"
     },
     "ServiceAccount": {
       "description": "ServiceAccount represent an API service account",

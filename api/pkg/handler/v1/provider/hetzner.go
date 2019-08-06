@@ -61,7 +61,7 @@ func hetznerSize(ctx context.Context, token string) (apiv1.HetznerSizeList, erro
 	client := hcloud.NewClient(hcloud.WithToken(token))
 
 	listOptions := hcloud.ServerTypeListOpts{
-		hcloud.ListOpts{
+		ListOpts: hcloud.ListOpts{
 			Page:    1,
 			PerPage: 1000,
 		},
@@ -82,9 +82,6 @@ func hetznerSize(ctx context.Context, token string) (apiv1.HetznerSizeList, erro
 			Cores:       size.Cores,
 			Memory:      size.Memory,
 			Disk:        size.Disk,
-			Pricings:    size.Pricings,
-			StorageType: size.StorageType,
-			CPUType:     size.CPUType,
 		}
 		switch {
 		case reStandardSize.MatchString(size.Name):

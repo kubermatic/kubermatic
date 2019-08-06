@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/Masterminds/semver"
-	"github.com/hetznercloud/hcloud-go/hcloud"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
@@ -224,15 +223,12 @@ type HetznerSizeList struct {
 // HetznerSize is the object representing Hetzner sizes.
 // swagger:model HetznerSize
 type HetznerSize struct {
-	ID          int                                `json:"id"`
-	Name        string                             `json:"name"`
-	Description string                             `json:"description"`
-	Cores       int                                `json:"cores"`
-	Memory      float32                            `json:"memory"`
-	Disk        int                                `json:"disk"`
-	Pricings    []hcloud.ServerTypeLocationPricing `json:"pricings"`
-	StorageType hcloud.StorageType                 `json:"storageType"`
-	CPUType     hcloud.CPUType                     `json:"cpuType"`
+	ID          int     `json:"id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Cores       int     `json:"cores"`
+	Memory      float32 `json:"memory"`
+	Disk        int     `json:"disk"`
 }
 
 // StorageType specifies the type of storage.
