@@ -20,25 +20,30 @@ const (
 )
 
 func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Cluster) (deletedSomeResource bool, err error) {
+	userClusterClient, err := d.userClusterClientGetter()
+	if err != nil {
+		return false, err
+	}
+
 	// We disable the PV & PVC creation so nothing creates new PV's while we delete them
-	if err := d.disablePVCreation(ctx, cluster); err != nil {
+	if err := d.disablePVCreation(ctx, userClusterClient); err != nil {
 		return false, fmt.Errorf("failed to disable future PV & PVC creation: %v", err)
 	}
 
 	// Delete all Pods that use PVs. We must keep the remaining pods, otherwise
 	// we end up in a deadlock when CSI is used
-	if err := d.cleanupPVCUsingPods(ctx); err != nil {
+	if err := d.cleanupPVCUsingPods(ctx, userClusterClient); err != nil {
 		return false, fmt.Errorf("failed to clean up PV using pod from user cluster: %v", err)
 	}
 
 	// Delete PVC's
 	pvcList := &corev1.PersistentVolumeClaimList{}
-	if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvcList); err != nil {
+	if err := userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvcList); err != nil {
 		return false, fmt.Errorf("failed to list PVCs from user cluster: %v", err)
 	}
 
 	for _, pvc := range pvcList.Items {
-		if err := d.userClusterClient.Delete(ctx, &pvc); err != nil {
+		if err := userClusterClient.Delete(ctx, &pvc); err != nil {
 			return deletedSomeResource, fmt.Errorf("failed to delete PVC '%s/%s' from user cluster: %v", pvc.Namespace, pvc.Name, err)
 		}
 		deletedSomeResource = true
@@ -46,12 +51,12 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Clu
 
 	// Delete PV's
 	pvList := &corev1.PersistentVolumeList{}
-	if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvList); err != nil {
+	if err := userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvList); err != nil {
 		return deletedSomeResource, fmt.Errorf("failed to list PVs from user cluster: %v", err)
 	}
 
 	for _, pv := range pvList.Items {
-		if err := d.userClusterClient.Delete(ctx, &pv); err != nil {
+		if err := userClusterClient.Delete(ctx, &pv); err != nil {
 			return deletedSomeResource, fmt.Errorf("failed to delete PV '%s' from user cluster: %v", pv.Name, err)
 		}
 		deletedSomeResource = true
@@ -101,15 +106,15 @@ func terminatingAdmissionWebhook() (string, *admissionregistrationv1beta1.Valida
 	}
 }
 
-func (d *Deletion) disablePVCreation(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (d *Deletion) disablePVCreation(ctx context.Context, userClusterClient controllerruntimeclient.Client) error {
 	// Prevent re-creation of PVs, PVCs and PDBs by using an intentionally defunct admissionWebhook
 	admissionWebhookName, admissionWebhook := terminatingAdmissionWebhook()
-	err := d.userClusterClient.Get(ctx, types.NamespacedName{Name: admissionWebhookName}, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{})
+	err := userClusterClient.Get(ctx, types.NamespacedName{Name: admissionWebhookName}, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		return fmt.Errorf("error checking if %q webhook configuration already exists: %v", admissionWebhookName, err)
 	}
 	if kerrors.IsNotFound(err) {
-		if err := d.userClusterClient.Create(ctx, admissionWebhook); err != nil {
+		if err := userClusterClient.Create(ctx, admissionWebhook); err != nil {
 			return fmt.Errorf("failed to create %q webhook configuration: %v", admissionWebhookName, err)
 		}
 	}
@@ -117,9 +122,9 @@ func (d *Deletion) disablePVCreation(ctx context.Context, cluster *kubermaticv1.
 	return nil
 }
 
-func (d *Deletion) cleanupPVCUsingPods(ctx context.Context) error {
+func (d *Deletion) cleanupPVCUsingPods(ctx context.Context, userClusterClient controllerruntimeclient.Client) error {
 	podList := &corev1.PodList{}
-	if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, podList); err != nil {
+	if err := userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, podList); err != nil {
 		return fmt.Errorf("failed to list Pods from user cluster: %v", err)
 	}
 
@@ -131,7 +136,7 @@ func (d *Deletion) cleanupPVCUsingPods(ctx context.Context) error {
 	}
 
 	for _, pod := range pvUsingPods {
-		if err := d.userClusterClient.Delete(ctx, pod); err != nil {
+		if err := userClusterClient.Delete(ctx, pod); err != nil {
 			return fmt.Errorf("failed to delete pod %s/%s: %v", pod.Namespace, pod.Name, err)
 		}
 	}
