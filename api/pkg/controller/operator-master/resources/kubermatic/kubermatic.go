@@ -25,7 +25,6 @@ const (
 	ingressName                           = "kubermatic"
 	apiDeploymentName                     = "kubermatic-api-v1"
 	uiDeploymentName                      = "kubermatic-ui-v2"
-	seedControllerManagerDeploymentName   = "kubermatic-seed-controller-manager-v1"
 	masterControllerManagerDeploymentName = "kubermatic-master-controller-manager-v1"
 	apiServiceName                        = "kubermatic-api"
 	uiServiceName                         = "kubermatic-ui"
