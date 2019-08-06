@@ -97,6 +97,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listVSphereNetworks())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/packet/sizes").
+		Handler(r.listPacketSizes())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/hetzner/sizes").
 		Handler(r.listHetznerSizes())
 
@@ -308,6 +312,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks").
 		Handler(r.listVSphereNetworksNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes").
+		Handler(r.listPacketSizesNoCredentials())
 
 	//
 	// Defines set of HTTP endpoints for Users of the given project
@@ -652,6 +660,50 @@ func (r Routing) listVSphereNetworks() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.VsphereNetworksEndpoint(r.seedsGetter, r.presetsManager)),
 		provider.DecodeVSphereNetworksReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/packet/sizes packet listPacketSizes
+//
+// Lists sizes from packet
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []PacketSizeList
+func (r Routing) listPacketSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.PacketSizesEndpoint(r.presetsManager)),
+		provider.DecodePacketSizesReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes packet listPacketSizesNoCredentials
+//
+// Lists sizes from packet
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []PacketSizeList
+func (r Routing) listPacketSizesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.PacketSizesNoCredentialsEndpoint(r.projectProvider)),
+		provider.DecodePacketSizesNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

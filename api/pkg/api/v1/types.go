@@ -230,6 +230,33 @@ type HetznerSize struct {
 	Disk        int     `json:"disk"`
 }
 
+// PacketSizeList represents an array of Packet VM sizes.
+// swagger:model PacketSizeList
+type PacketSizeList []PacketSize
+
+// PacketSize is the object representing Packet VM sizes.
+// swagger:model PacketSize
+type PacketSize struct {
+	ID              string        `json:"id"`
+	Slug            string        `json:"slug,omitempty"`
+	Name            string        `json:"name,omitempty"`
+	Description     string        `json:"description,omitempty"`
+	Line            string        `json:"line,omitempty"`
+	Cores           int32         `json:"cpus,omitempty"`
+	Memory          string        `json:"memory,omitempty"`
+	Drives          []PacketDrive `json:"drives,omitempty"`
+	DeploymentTypes []string      `json:"deployment_types"`
+	Class           string        `json:"class"`
+}
+
+// PacketDrive represents an array of Packet drives. It is a part of PacketSize.
+// swagger:model PacketDrive
+type PacketDrive struct {
+	Count int    `json:"count,omitempty"`
+	Size  string `json:"size,omitempty"`
+	Type  string `json:"type,omitempty"`
+}
+
 // SSHKey represents a ssh key
 // swagger:model SSHKey
 type SSHKey struct {
