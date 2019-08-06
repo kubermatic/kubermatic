@@ -93,27 +93,30 @@ func (r *Reconciler) applyOwnerLabels(config *operatorv1alpha1.KubermaticConfigu
 				return obj, err
 			}
 
-			if o, ok := obj.(metav1.Object); ok {
-				annotations := o.GetAnnotations()
-				if annotations == nil {
-					annotations = make(map[string]string)
-				}
-
-				identifier, err := cache.MetaNamespaceKeyFunc(config)
-				if err != nil {
-					return obj, fmt.Errorf("failed to determine KubermaticConfiguration string key: %v", err)
-				}
-
-				annotations[ConfigurationOwnerAnnotation] = identifier
-				o.SetAnnotations(annotations)
-
-				labels := o.GetLabels()
-				if labels == nil {
-					labels = make(map[string]string)
-				}
-				labels[ManagedByLabel] = ControllerName
-				o.SetLabels(labels)
+			o, ok := obj.(metav1.Object)
+			if !ok {
+				return obj, nil
 			}
+
+			annotations := o.GetAnnotations()
+			if annotations == nil {
+				annotations = make(map[string]string)
+			}
+
+			identifier, err := cache.MetaNamespaceKeyFunc(config)
+			if err != nil {
+				return obj, fmt.Errorf("failed to determine KubermaticConfiguration string key: %v", err)
+			}
+
+			annotations[ConfigurationOwnerAnnotation] = identifier
+			o.SetAnnotations(annotations)
+
+			labels := o.GetLabels()
+			if labels == nil {
+				labels = make(map[string]string)
+			}
+			labels[ManagedByLabel] = ControllerName
+			o.SetLabels(labels)
 
 			return obj, nil
 		}

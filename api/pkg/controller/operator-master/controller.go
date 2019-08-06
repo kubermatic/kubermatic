@@ -26,10 +26,10 @@ const (
 	// ControllerName is the name of this very controller.
 	ControllerName = "kubermatic-master-operator"
 
-	// NameLabel is the recommended name for an identifying label.
+	// NameLabel is the label containing the application's name.
 	NameLabel = "app.kubernetes.io/name"
 
-	// VersionLabel is the recommended name for a version label.
+	// VersionLabel is the label containing the application's version.
 	VersionLabel = "app.kubernetes.io/version"
 
 	// ManagedByLabel is the label used to identify the resources
@@ -68,7 +68,7 @@ func Add(
 	}
 
 	// put the config's identifier on the queue
-	kbmConfigHandler := newEventHandler(func(a handler.MapObject) []reconcile.Request {
+	kubermaticConfigHandler := newEventHandler(func(a handler.MapObject) []reconcile.Request {
 		if a.Meta.GetLabels()[WorkerNameLabel] != workerName {
 			return nil
 		}
@@ -84,7 +84,7 @@ func Add(
 	})
 
 	obj := &operatorv1alpha1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: obj}, kbmConfigHandler); err != nil {
+	if err := c.Watch(&source.Kind{Type: obj}, kubermaticConfigHandler); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %v", obj, err)
 	}
 
