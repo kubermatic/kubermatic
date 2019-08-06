@@ -61,10 +61,10 @@ func TestCleanUpPVUsingWorkloads(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			client := fake.NewFakeClient(tc.objects...)
-			d := &Deletion{userClusterClient: client}
+			d := &Deletion{}
 			ctx := context.Background()
 
-			if err := d.cleanupPVCUsingPods(ctx); (err != nil) != tc.errExpected {
+			if err := d.cleanupPVCUsingPods(ctx, client); (err != nil) != tc.errExpected {
 				t.Fatalf("Expected err=%v, got err=%v", tc.errExpected, err)
 			}
 			if tc.errExpected {
