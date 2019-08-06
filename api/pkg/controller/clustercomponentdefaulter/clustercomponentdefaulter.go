@@ -58,6 +58,9 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("request", request)
+	log.Debug("Processing")
+
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.client.Get(r.ctx, request.NamespacedName, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
@@ -65,9 +68,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		}
 		return reconcile.Result{}, err
 	}
+	log = r.log.With("cluster", cluster.Name)
 
 	// Add a wrapping here so we can emit an event on error
-	err := r.reconcile(cluster)
+	err := r.reconcile(log, cluster)
 	if err != nil {
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 		r.log.With("error", err).With("cluster", request.NamespacedName.Name).Error("failed to reconcile cluster")
@@ -75,18 +79,14 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return reconcile.Result{}, err
 }
 
-func (r *Reconciler) reconcile(cluster *kubermaticv1.Cluster) error {
-
-	log := r.log.With("cluster", cluster.Name)
+func (r *Reconciler) reconcile(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	if cluster.Spec.Pause {
-		log.Info("Skipping paused cluster")
+		log.Debug("Skipping paused cluster")
 		return nil
 	}
-	log.Info("syncing cluster")
+	log.Debug("Syncing cluster")
 
-	originalComponentsOverride := cluster.Spec.ComponentsOverride.DeepCopy()
-	targetComponentsOverride := cluster.Spec.ComponentsOverride
-
+	targetComponentsOverride := cluster.Spec.ComponentsOverride.DeepCopy()
 	if targetComponentsOverride.Apiserver.Replicas == nil {
 		targetComponentsOverride.Apiserver.Replicas = r.defaults.Apiserver.Replicas
 	}
@@ -112,16 +112,16 @@ func (r *Reconciler) reconcile(cluster *kubermaticv1.Cluster) error {
 		targetComponentsOverride.Prometheus.Resources = r.defaults.Prometheus.Resources
 	}
 
-	if apiequality.Semantic.DeepEqual(originalComponentsOverride, targetComponentsOverride) {
+	if apiequality.Semantic.DeepEqual(&cluster.Spec.ComponentsOverride, targetComponentsOverride) {
 		return nil
 	}
 
 	if _, err := r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-		c.Spec.ComponentsOverride = targetComponentsOverride
+		targetComponentsOverride.DeepCopyInto(&c.Spec.ComponentsOverride)
 	}); err != nil {
 		return fmt.Errorf("failed to update componentsOverride: %v", err)
 	}
-	log.Info("Successfully updated componentsOverride")
+	log.Info("Successfully defaulted componentsOverride")
 	return nil
 }
 
