@@ -194,13 +194,13 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							MountPath: "var/run/secrets/kubernetes.io/serviceaccount/",
-							Name:      "serviceaccount",
-							ReadOnly:  true,
-						},
-					},
+					//		VolumeMounts: []corev1.VolumeMount{
+					//			{
+					//				MountPath: "var/run/secrets/kubernetes.io/serviceaccount/",
+					//				Name:      "serviceaccount",
+					//				ReadOnly:  true,
+					//			},
+					//		},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("10m"),
@@ -217,7 +217,7 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 
 			d.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
-					Name: "serviceaccount",
+					Name: "kubeconfig",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							DefaultMode: i32ptr(420),
