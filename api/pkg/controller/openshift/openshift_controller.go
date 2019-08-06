@@ -184,12 +184,18 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	glog.V(4).Infof("Reconciling cluster %s", cluster.Name)
 
 	if cluster.DeletionTimestamp != nil {
-		userClusterClient, err := r.getUserClusterClient(ctx, cluster)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get user cluster client: %v", err)
+
+		// Defer getting the client to make sure we only request it if we actually need it
+		userClusterClientGetter := func() (client.Client, error) {
+			userClusterClient, err := r.getUserClusterClient(ctx, cluster)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get user cluster client: %v", err)
+			}
+			return userClusterClient, nil
 		}
+
 		// Always requeue a cluster after we executed the cleanup.
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClient).CleanupCluster(ctx, cluster)
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClientGetter).CleanupCluster(ctx, cluster)
 	}
 
 	// Ensure Namespace
@@ -364,6 +370,7 @@ func (r *Reconciler) getUserClusterClient(ctx context.Context, cluster *kubermat
 	if err != nil {
 		return nil, fmt.Errorf("failed to get config from secret: %v", err)
 	}
+	// TODO: Cache the restmapping, its very expensive to create it adhoc
 	return client.New(cfg, client.Options{})
 }
 

@@ -16,16 +16,16 @@ const (
 	deletedLBAnnotationName = "kubermatic.io/cleaned-up-loadbalancers"
 )
 
-func New(seedClient, userClusterClient controllerruntimeclient.Client) *Deletion {
+func New(seedClient controllerruntimeclient.Client, userClusterClientGetter func() (controllerruntimeclient.Client, error)) *Deletion {
 	return &Deletion{
-		seedClient:        seedClient,
-		userClusterClient: userClusterClient,
+		seedClient:              seedClient,
+		userClusterClientGetter: userClusterClientGetter,
 	}
 }
 
 type Deletion struct {
-	seedClient        controllerruntimeclient.Client
-	userClusterClient controllerruntimeclient.Client
+	seedClient              controllerruntimeclient.Client
+	userClusterClientGetter func() (controllerruntimeclient.Client, error)
 }
 
 // CleanupCluster is responsible for cleaning up a cluster.

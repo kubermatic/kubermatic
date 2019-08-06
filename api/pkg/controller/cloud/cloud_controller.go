@@ -120,8 +120,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		finalizers := sets.NewString(cluster.Finalizers...)
 		if finalizers.Has(kubermaticapiv1.InClusterLBCleanupFinalizer) ||
 			finalizers.Has(kubermaticapiv1.InClusterPVCleanupFinalizer) ||
-			finalizers.Has(kubermaticapiv1.NodeDeletionFinalizer) ||
-			finalizers.Has(kubermaticapiv1.CredentialsSecretsCleanupFinalizer) {
+			finalizers.Has(kubermaticapiv1.NodeDeletionFinalizer) {
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
 		_, err := prov.CleanUpCloudProvider(cluster, r.updateCluster)
