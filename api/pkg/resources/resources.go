@@ -357,6 +357,14 @@ const (
 	minimumCertValidity30d = 30 * 24 * time.Hour
 )
 
+const (
+	AWSAccessKeyID     = "accessKeyId"
+	AWSSecretAccessKey = "secretAccessKey"
+
+	PacketAPIKey    = "apiKey"
+	PacketProjectID = "projectID"
+)
+
 // ECDSAKeyPair is a ECDSA x509 certifcate and private key
 type ECDSAKeyPair struct {
 	Key  *ecdsa.PrivateKey
@@ -739,10 +747,10 @@ func GetPodTemplateLabels(
 	return podLabels, nil
 }
 
-type GetGlobalSecretKeySelectorValue = func(configVar providerconfig.GlobalSecretKeySelector) (string, error)
+type GetGlobalSecretKeySelectorValue = func(configVar *providerconfig.GlobalSecretKeySelector) (string, error)
 
 func GlobalSecretKeySelectorValueGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) GetGlobalSecretKeySelectorValue {
-	return func(configVar providerconfig.GlobalSecretKeySelector) (string, error) {
+	return func(configVar *providerconfig.GlobalSecretKeySelector) (string, error) {
 		// We need all three of these to fetch and use a secret
 		if configVar.Name != "" && configVar.Namespace != "" && configVar.Key != "" {
 			secret := &corev1.Secret{}

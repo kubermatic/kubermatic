@@ -1,12 +1,18 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 // OIDCConfiguration is a struct that holds
@@ -57,4 +63,28 @@ func IsBringYourOwnProvider(spec kubermaticv1.CloudSpec) (bool, error) {
 		return false, err
 	}
 	return providerName == provider.BringYourOwnCloudProvider, nil
+}
+
+type CredentialsData struct {
+	KubermaticCluster *kubermaticv1.Cluster
+	Client            kubernetes.Interface
+}
+
+func (d CredentialsData) Cluster() *kubermaticv1.Cluster {
+	return d.KubermaticCluster
+}
+
+func (d CredentialsData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+	if configVar.Name != "" && configVar.Namespace != "" && key != "" {
+		secret, err := d.Client.CoreV1().Secrets(configVar.Namespace).Get(configVar.Name, metav1.GetOptions{})
+		if err != nil {
+			return "", fmt.Errorf("error retrieving secret %q from namespace %q: %v", configVar.Name, configVar.Namespace, err)
+		}
+
+		if val, ok := secret.Data[key]; ok {
+			return string(val), nil
+		}
+		return "", fmt.Errorf("secret %q in namespace %q has no key %q", configVar.Name, configVar.Namespace, key)
+	}
+	return "", nil
 }

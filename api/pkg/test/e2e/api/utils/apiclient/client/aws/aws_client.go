@@ -25,23 +25,23 @@ type Client struct {
 }
 
 /*
-ListAWSCredentials Lists credential names for AWS
+ListAWSZones Lists available AWS zones
 */
-func (a *Client) ListAWSCredentials(params *ListAWSCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSCredentialsOK, error) {
+func (a *Client) ListAWSZones(params *ListAWSZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSZonesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListAWSCredentialsParams()
+		params = NewListAWSZonesParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "listAWSCredentials",
+		ID:                 "listAWSZones",
 		Method:             "GET",
-		PathPattern:        "/api/v1/providers/aws/credentials",
+		PathPattern:        "/api/v1/providers/aws/{dc}/zones",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
-		Reader:             &ListAWSCredentialsReader{formats: a.formats},
+		Reader:             &ListAWSZonesReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -49,7 +49,36 @@ func (a *Client) ListAWSCredentials(params *ListAWSCredentialsParams, authInfo r
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListAWSCredentialsOK), nil
+	return result.(*ListAWSZonesOK), nil
+
+}
+
+/*
+ListAWSZonesNoCredentials Lists available AWS zones
+*/
+func (a *Client) ListAWSZonesNoCredentials(params *ListAWSZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSZonesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAWSZonesNoCredentialsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAWSZonesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/zones",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &ListAWSZonesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListAWSZonesNoCredentialsOK), nil
 
 }
 

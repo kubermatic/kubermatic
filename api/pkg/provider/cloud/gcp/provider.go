@@ -24,6 +24,7 @@ const (
 )
 
 type gcp struct {
+	clusterUpdater provider.ClusterUpdater
 }
 
 // NewCloudProvider creates a new gcp provider.
@@ -33,7 +34,9 @@ func NewCloudProvider() provider.CloudProvider {
 
 // TODO: update behaviour of all these methods
 // InitializeCloudProvider initializes a cluster.
-func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
+	g.clusterUpdater = update
+
 	var err error
 	if cluster.Spec.Cloud.GCP.Network == "" && cluster.Spec.Cloud.GCP.Subnetwork == "" {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -65,7 +68,7 @@ func (g *gcp) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 }
 
 // CleanUpCloudProvider removes firewall rules and related finalizer.
-func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	svc, projectID, err := ConnectToComputeService(cluster.Spec.Cloud.GCP.ServiceAccount)
 	if err != nil {
 		return nil, err
@@ -82,7 +85,7 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", selfRuleName, err)
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = g.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, firewallSelfCleanupFinalizer)
 		})
 		if err != nil {
@@ -96,7 +99,7 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", icmpRuleName, err)
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = g.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, firewallICMPCleanupFinalizer)
 		})
 		if err != nil {

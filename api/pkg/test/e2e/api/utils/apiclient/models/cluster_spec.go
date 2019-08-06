@@ -24,6 +24,9 @@ type ClusterSpec struct {
 	// cloud
 	Cloud *CloudSpec `json:"cloud,omitempty"`
 
+	// oidc
+	Oidc *OIDCSettings `json:"oidc,omitempty"`
+
 	// version
 	Version Semver `json:"version,omitempty"`
 }
@@ -37,6 +40,10 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateCloud(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOidc(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -81,6 +88,24 @@ func (m *ClusterSpec) validateCloud(formats strfmt.Registry) error {
 		if err := m.Cloud.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cloud")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) validateOidc(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Oidc) { // not required
+		return nil
+	}
+
+	if m.Oidc != nil {
+		if err := m.Oidc.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("oidc")
 			}
 			return err
 		}

@@ -43,8 +43,14 @@ func (d *Deletion) CleanupCluster(ctx context.Context, cluster *kubermaticv1.Clu
 		return nil
 	}
 
-	if err := d.cleanUpCredentialsSecrets(ctx, cluster); err != nil {
-		return err
+	// We might need credentials for cloud provider cleanup. Since different cloud providers use different
+	// finalizers, we need to ensure that the credentials are not removed until the cloud provider is cleaned
+	// up, or in other words, all other finalizers have been removed from the cluster, and the
+	// CredentialsSecretsCleanupFinalizer is the only finalizer left.
+	if kuberneteshelper.HasOnlyFinalizer(cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer) {
+		if err := d.cleanUpCredentialsSecrets(ctx, cluster); err != nil {
+			return err
+		}
 	}
 
 	return nil

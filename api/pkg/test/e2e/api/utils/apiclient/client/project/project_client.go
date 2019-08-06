@@ -614,6 +614,35 @@ func (a *Client) GetNodeForClusterLegacy(params *GetNodeForClusterLegacyParams, 
 }
 
 /*
+GetOidcClusterKubeconfig gets the kubeconfig for the specified cluster with oidc authentication
+*/
+func (a *Client) GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeconfigOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetOidcClusterKubeconfigParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getOidcClusterKubeconfig",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig",
+		ProducesMediaTypes: []string{"application/yaml"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetOidcClusterKubeconfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetOidcClusterKubeconfigOK), nil
+
+}
+
+/*
 GetProject Gets the project with the given ID
 */
 func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetProjectOK, error) {

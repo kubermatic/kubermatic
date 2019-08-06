@@ -25,11 +25,11 @@ func (p *fakeCloudProvider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error
 	return nil
 }
 
-func (p *fakeCloudProvider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (p *fakeCloudProvider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
-func (p *fakeCloudProvider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (p *fakeCloudProvider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
