@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -12,8 +11,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -22,8 +21,6 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
-
-const KubeconfigSecretKey = "kubeconfig"
 
 var (
 	// AllOperatingSystems defines all available operating systems
@@ -143,7 +140,7 @@ func validateDatacenters(datacenters map[string]DatacenterMeta) error {
 }
 
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
-func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName, dcFile string, dynamicDatacenters bool) (SeedGetter, error) {
+func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName, dcFile, namespace string, dynamicDatacenters bool) (SeedGetter, error) {
 	if dcFile != "" && dynamicDatacenters {
 		return nil, errors.New("--datacenters must be empty when --dynamic-datacenters is enabled")
 	}
@@ -151,7 +148,7 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 	if dynamicDatacenters {
 		return func() (*kubermaticv1.Seed, error) {
 			seed := &kubermaticv1.Seed{}
-			if err := client.Get(ctx, types.NamespacedName{Name: seedName}, seed); err != nil {
+			if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: seedName}, seed); err != nil {
 				return nil, fmt.Errorf("failed to get seed %q: %v", seedName, err)
 			}
 			return seed, nil
@@ -172,19 +169,21 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 
 }
 
-func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, workerName string, dynamicDatacenters bool) (SeedsGetter, error) {
+func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace, workerName string, dynamicDatacenters bool) (SeedsGetter, error) {
 	if dcFile != "" && dynamicDatacenters {
 		return nil, errors.New("--datacenters must be empty when --dynamic-datacenters is enabled")
 	}
 
 	if dynamicDatacenters {
-		selectorOpts, err := workerlabel.LabelSelector(workerName)
+		labelSelector, err := workerlabel.LabelSelector(workerName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to construct label selector for worker-name: %v", err)
 		}
-		listOptsRaw := &metav1.ListOptions{}
-		selectorOpts(listOptsRaw)
-		listOpts := &ctrlruntimeclient.ListOptions{Raw: listOptsRaw}
+		// We only have a options func for raw *metav1.ListOpts as the rbac controller currently required that
+		listOpts := &ctrlruntimeclient.ListOptions{
+			LabelSelector: labelSelector,
+			Namespace:     namespace,
+		}
 
 		return func() (map[string]*kubermaticv1.Seed, error) {
 			seeds := &kubermaticv1.SeedList{}
@@ -221,13 +220,14 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 func SeedKubeconfigGetterFactory(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
-	kubeconfigFilePath string,
+	kubeconfigFilePath,
+	namespace string,
 	dynamicDatacenters bool) (SeedKubeconfigGetter, error) {
 
 	if dynamicDatacenters {
 		return func(seedName string) (*rest.Config, error) {
 			seed := &kubermaticv1.Seed{}
-			if err := client.Get(ctx, types.NamespacedName{Name: seedName}, seed); err != nil {
+			if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: seedName}, seed); err != nil {
 				return nil, fmt.Errorf("failed to get seed %q: %v", seedName, err)
 			}
 			secret := &corev1.Secret{}
@@ -238,13 +238,14 @@ func SeedKubeconfigGetterFactory(
 			if err := client.Get(ctx, name, secret); err != nil {
 				return nil, fmt.Errorf("failed to get kubeconfig secret %q: %v", name.String(), err)
 			}
-			if _, exists := secret.Data[KubeconfigSecretKey]; !exists {
-				return nil, fmt.Errorf("secret %q has no key %q", name.String(), KubeconfigSecretKey)
+			if _, exists := secret.Data[seed.Spec.Kubeconfig.FieldPath]; !exists {
+				return nil, fmt.Errorf("secret %q has no key %q", name.String(), seed.Spec.Kubeconfig.FieldPath)
 			}
-			cfg := &rest.Config{}
-			if err := json.Unmarshal(secret.Data[KubeconfigSecretKey], cfg); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal kubeconfig: %v", err)
+			cfg, err := clientcmd.RESTConfigFromKubeConfig(secret.Data[seed.Spec.Kubeconfig.FieldPath])
+			if err != nil {
+				return nil, fmt.Errorf("failed to load kubeconfig: %v", err)
 			}
+			kubermaticlog.Logger.With("seed", seedName).Debug("Successfully got kubeconfig")
 			return cfg, nil
 		}, nil
 

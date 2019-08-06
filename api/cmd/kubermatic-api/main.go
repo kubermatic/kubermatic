@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -138,13 +139,29 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to construct manager: %v", err)
 	}
-	seedsGetter, err := provider.SeedsGetterFactory(context.Background(), mgr.GetClient(), options.dcFile, options.workerName, options.dynamicDatacenters)
+	seedsGetter, err := provider.SeedsGetterFactory(context.Background(), mgr.GetClient(), options.dcFile, options.namespace, options.workerName, options.dynamicDatacenters)
 	if err != nil {
 		return providers{}, err
 	}
-	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(context.Background(), mgr.GetClient(), options.kubeconfig, options.dynamicDatacenters)
+	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(context.Background(), mgr.GetClient(), options.kubeconfig, options.namespace, options.dynamicDatacenters)
 	if err != nil {
 		return providers{}, err
+	}
+
+	// Make sure the manager creates a cache for Seeds by requesting an informer
+	if _, err := mgr.GetCache().GetInformer(&kubermaticv1.Seed{}); err != nil {
+		kubermaticlog.Logger.Fatalw("failed to get seed informer", zap.Error(err))
+	}
+	// mgr.Start() is blocking
+	go func() {
+		if err := mgr.Start(wait.NeverStop); err != nil {
+			kubermaticlog.Logger.Fatalw("failed to start the mgr", zap.Error(err))
+		}
+	}()
+	mgrSyncCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	if synced := mgr.GetCache().WaitForCacheSync(mgrSyncCtx.Done()); !synced {
+		kubermaticlog.Logger.Fatal("failed to sync mgr cache")
 	}
 	clusterProviderGetter := clusterProviderFactory(seedKubeconfigGetter, options.workerName, options.featureGates.Enabled(OIDCKubeCfgEndpoint))
 
@@ -152,12 +169,12 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	go func() {
 		seeds, err := seedsGetter()
 		if err != nil {
-			kubermaticlog.Logger.With("error", err).Info("failed to get seeds when trying to warm up restMapper cache")
+			kubermaticlog.Logger.Infow("failed to get seeds when trying to warm up restMapper cache", zap.Error(err))
 			return
 		}
 		for seedName := range seeds {
 			if _, err := clusterProviderGetter(seedName); err != nil {
-				kubermaticlog.Logger.With("seed", seedName).With("error", err).Info("failed to get clusterProvider when trying to warm up restMapper cache")
+				kubermaticlog.Logger.Infow("failed to get clusterProvider when trying to warm up restMapper cache", zap.Error(err), "seed", seedName)
 				continue
 			}
 		}

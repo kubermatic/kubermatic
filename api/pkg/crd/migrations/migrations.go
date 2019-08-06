@@ -84,8 +84,9 @@ func cleanupClusters(workerName string, ctx *cleanupContext) error {
 	if err != nil {
 		return err
 	}
-	options := metav1.ListOptions{}
-	selector(&options)
+	options := metav1.ListOptions{
+		LabelSelector: selector.String(),
+	}
 	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(options)
 	if err != nil {
 		return fmt.Errorf("failed to list clusters: %v", err)

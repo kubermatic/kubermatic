@@ -32,6 +32,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		kubermaticlog.Logger,
 		ctrlCtx.mgr,
+		ctrlCtx.namespace,
 		ctrlCtx.seedsGetter,
 		ctrlCtx.seedKubeconfigGetter,
 		rbacControllerFactory); err != nil {

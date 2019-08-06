@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -13,7 +12,7 @@ import (
 )
 
 // LabelSelector returns a label selector to only process clusters with a matching worker-name label
-func LabelSelector(workerName string) (func(*metav1.ListOptions), error) {
+func LabelSelector(workerName string) (labels.Selector, error) {
 	var req *labels.Requirement
 	var err error
 	if workerName == "" {
@@ -26,9 +25,7 @@ func LabelSelector(workerName string) (func(*metav1.ListOptions), error) {
 		return nil, fmt.Errorf("failed to build label selector: %v", err)
 	}
 
-	return func(options *metav1.ListOptions) {
-		options.LabelSelector = req.String()
-	}, nil
+	return labels.Parse(req.String())
 }
 
 // Predicates returns a prediate func to only process objects with a matching worker-name label
