@@ -16,6 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -60,7 +61,17 @@ func rbacControllerFactoryCreator(
 ) func() (manager.Runnable, error) {
 
 	rbacMetrics := rbac.NewMetrics()
-	prometheus.MustRegister(rbacMetrics.Workers)
+	seedKubeconfigRetrievalSuccessMetric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "kubermatic",
+		Subsystem: "master_controller_manager",
+		Name:      "seed_kubeconfig_retrieval_success",
+		Help:      "Indicates if retrieving the kubeconfig for the given seed was successful",
+	}, []string{"seed"})
+	// GaugeVec doesn't have a func to only keep metrics with a given label value, it only
+	// has a func to delete metrics with a given label value. Hence we have to track ourselves
+	// which label values get removed
+	seedsWithMetrics := sets.NewString()
+	prometheus.MustRegister(rbacMetrics.Workers, seedKubeconfigRetrievalSuccessMetric)
 
 	return func() (manager.Runnable, error) {
 		seeds, err := seedsGetter()
@@ -73,19 +84,27 @@ func rbacControllerFactoryCreator(
 		}
 		allClusterProviders := []*rbac.ClusterProvider{masterClusterProvider}
 
+		newSeedsWithMetrics := sets.NewString()
 		for seedName := range seeds {
+			newSeedsWithMetrics.Insert(seedName)
 			kubeConfig, err := seedKubeconfigGetter(seedName)
 			if err != nil {
 				kubermaticlog.Logger.With("error", err).With("seed", seedName).Error("error getting kubeconfig")
 				// Dont let a single broken kubeconfig break the whole controller creation
+				seedKubeconfigRetrievalSuccessMetric.WithLabelValues(seedName).Set(0)
 				continue
 			}
+			seedKubeconfigRetrievalSuccessMetric.WithLabelValues(seedName).Set(1)
 			clusterProvider, err := rbacClusterProvider(kubeConfig, seedName, false, selectorOps)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create rbac provider for seed %q: %v", seedName, err)
 			}
 			allClusterProviders = append(allClusterProviders, clusterProvider)
 		}
+		removedSeeds := sets.NewString(seedsWithMetrics.List()...)
+		removedSeeds.Delete(newSeedsWithMetrics.List()...)
+		_ = seedKubeconfigRetrievalSuccessMetric.DeleteLabelValues(removedSeeds.List()...)
+		seedsWithMetrics = newSeedsWithMetrics
 
 		ctrl, err := rbac.New(rbacMetrics, allClusterProviders, workerCount)
 		if err != nil {
