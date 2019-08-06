@@ -6,8 +6,10 @@ import (
 	"go.uber.org/zap"
 
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -80,11 +82,10 @@ func (r *Reconciler) defaultImage(img *string, defaultImage string, key string, 
 	}
 }
 
-// defaultFields is generating a new ObjectModifier that wraps an
-// ObjectCreator and takes care of applying the default labels and
-// annotations from this operator. These are then used to establish
-// a weak ownership.
-func (r *Reconciler) defaultFields(config *operatorv1alpha1.KubermaticConfiguration) reconciling.ObjectModifier {
+// applyOwnerLabels is generating a new ObjectModifier that wraps an ObjectCreator and takes care
+// of applying the default labels and annotations from this operator. These are then used to
+// establish a weak ownership.
+func (r *Reconciler) applyOwnerLabels(config *operatorv1alpha1.KubermaticConfiguration) reconciling.ObjectModifier {
 	return func(create reconciling.ObjectCreator) reconciling.ObjectCreator {
 		return func(existing runtime.Object) (runtime.Object, error) {
 			obj, err := create(existing)
@@ -112,6 +113,40 @@ func (r *Reconciler) defaultFields(config *operatorv1alpha1.KubermaticConfigurat
 				}
 				labels[ManagedByLabel] = ControllerName
 				o.SetLabels(labels)
+			}
+
+			return obj, nil
+		}
+	}
+}
+
+// volumeRevisionLabels scans volume mounts for pod templates for ConfigMaps and Secrets and
+// will then put new labels for these mounts onto the pod template, causing restarts when
+// the volumes changed.
+func (r *Reconciler) volumeRevisionLabels() reconciling.ObjectModifier {
+	return func(create reconciling.ObjectCreator) reconciling.ObjectCreator {
+		return func(existing runtime.Object) (runtime.Object, error) {
+			obj, err := create(existing)
+			if err != nil {
+				return obj, err
+			}
+
+			deployment, ok := obj.(*appsv1.Deployment)
+			if !ok {
+				return obj, nil
+			}
+
+			volumeLabels, err := resources.VolumeRevisionLabels(r.ctx, r.Client, deployment.Namespace, deployment.Spec.Template.Spec.Volumes)
+			if !ok {
+				return obj, fmt.Errorf("failed to determine revision labels for volumes: %v", err)
+			}
+
+			// switch to a new map in case the deployment used the same map for selector.matchLabels and labels
+			oldLabels := deployment.Spec.Template.Labels
+			deployment.Spec.Template.Labels = volumeLabels
+
+			for k, v := range oldLabels {
+				deployment.Spec.Template.Labels[k] = v
 			}
 
 			return obj, nil

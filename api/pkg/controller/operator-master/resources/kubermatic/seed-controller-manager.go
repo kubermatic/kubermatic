@@ -36,8 +36,6 @@ func SeedControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConf
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   "8085",
 				"fluentbit.io/parser":  "glog",
-
-				// TODO: add checksums for kubeconfig, datacenters etc. to trigger redeployments
 			}
 
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
