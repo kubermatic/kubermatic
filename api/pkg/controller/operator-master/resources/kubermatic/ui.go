@@ -105,11 +105,13 @@ func UIServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling
 			s.Spec.Type = corev1.ServiceTypeNodePort
 			s.Spec.Selector = uiPodLabels()
 
-			s.Spec.Ports = mergeServicePort(s.Spec.Ports, corev1.ServicePort{
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-				Protocol:   corev1.ProtocolTCP,
-			})
+			if len(s.Spec.Ports) < 1 {
+				s.Spec.Ports = make([]corev1.ServicePort, 1)
+			}
+
+			s.Spec.Ports[0].Port = 80
+			s.Spec.Ports[0].TargetPort = intstr.FromInt(8080)
+			s.Spec.Ports[0].Protocol = corev1.ProtocolTCP
 
 			return s, nil
 		}

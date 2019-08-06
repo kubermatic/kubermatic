@@ -232,19 +232,19 @@ func APIServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcilin
 			s.Spec.Type = corev1.ServiceTypeNodePort
 			s.Spec.Selector = apiPodLabels()
 
-			s.Spec.Ports = mergeServicePort(s.Spec.Ports, corev1.ServicePort{
-				Name:       "http",
-				Port:       80,
-				TargetPort: intstr.FromInt(8080),
-				Protocol:   corev1.ProtocolTCP,
-			})
+			if len(s.Spec.Ports) < 2 {
+				s.Spec.Ports = make([]corev1.ServicePort, 2)
+			}
 
-			s.Spec.Ports = mergeServicePort(s.Spec.Ports, corev1.ServicePort{
-				Name:       "metrics",
-				Port:       8085,
-				TargetPort: intstr.FromInt(8085),
-				Protocol:   corev1.ProtocolTCP,
-			})
+			s.Spec.Ports[0].Name = "http"
+			s.Spec.Ports[0].Port = 80
+			s.Spec.Ports[0].TargetPort = intstr.FromInt(8080)
+			s.Spec.Ports[0].Protocol = corev1.ProtocolTCP
+
+			s.Spec.Ports[1].Name = "metrics"
+			s.Spec.Ports[1].Port = 8085
+			s.Spec.Ports[1].TargetPort = intstr.FromInt(8080)
+			s.Spec.Ports[1].Protocol = corev1.ProtocolTCP
 
 			return s, nil
 		}
