@@ -12,8 +12,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-04-01/network"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-06-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-06-01/network"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-02-01/resources"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
@@ -102,7 +102,7 @@ func deleteSubnet(ctx context.Context, cloud kubermaticv1.CloudSpec) error {
 		return err
 	}
 
-	if err = deleteSubnetFuture.WaitForCompletion(ctx, subnetsClient.Client); err != nil {
+	if err = deleteSubnetFuture.WaitForCompletionRef(ctx, subnetsClient.Client); err != nil {
 		return err
 	}
 
@@ -130,7 +130,7 @@ func deleteVNet(ctx context.Context, cloud kubermaticv1.CloudSpec) error {
 		return err
 	}
 
-	if err = deleteVNetFuture.WaitForCompletion(ctx, networksClient.Client); err != nil {
+	if err = deleteVNetFuture.WaitForCompletionRef(ctx, networksClient.Client); err != nil {
 		return err
 	}
 
@@ -155,7 +155,7 @@ func deleteResourceGroup(ctx context.Context, cloud kubermaticv1.CloudSpec) erro
 		return err
 	}
 
-	if err = future.WaitForCompletion(ctx, groupsClient.Client); err != nil {
+	if err = future.WaitForCompletionRef(ctx, groupsClient.Client); err != nil {
 		return err
 	}
 
@@ -173,7 +173,7 @@ func deleteRouteTable(ctx context.Context, cloud kubermaticv1.CloudSpec) error {
 		return err
 	}
 
-	if err = future.WaitForCompletion(ctx, routeTablesClient.Client); err != nil {
+	if err = future.WaitForCompletionRef(ctx, routeTablesClient.Client); err != nil {
 		return err
 	}
 
@@ -191,7 +191,7 @@ func deleteSecurityGroup(ctx context.Context, cloud kubermaticv1.CloudSpec) erro
 		return err
 	}
 
-	if err = future.WaitForCompletion(ctx, securityGroupsClient.Client); err != nil {
+	if err = future.WaitForCompletionRef(ctx, securityGroupsClient.Client); err != nil {
 		return err
 	}
 
@@ -443,7 +443,7 @@ func ensureVNet(ctx context.Context, cloud kubermaticv1.CloudSpec, location stri
 		return fmt.Errorf("failed to create or update virtual network %q: %v", cloud.Azure.VNetName, err)
 	}
 
-	if err = future.WaitForCompletion(ctx, networksClient.Client); err != nil {
+	if err = future.WaitForCompletionRef(ctx, networksClient.Client); err != nil {
 		return fmt.Errorf("failed to create or update virtual network %q: %v", cloud.Azure.VNetName, err)
 	}
 
@@ -469,7 +469,7 @@ func ensureSubnet(ctx context.Context, cloud kubermaticv1.CloudSpec) error {
 		return fmt.Errorf("failed to create or update subnetwork %q: %v", cloud.Azure.SubnetName, err)
 	}
 
-	if err = future.WaitForCompletion(ctx, subnetsClient.Client); err != nil {
+	if err = future.WaitForCompletionRef(ctx, subnetsClient.Client); err != nil {
 		return fmt.Errorf("failed to create or update subnetwork %q: %v", cloud.Azure.SubnetName, err)
 	}
 
@@ -501,7 +501,7 @@ func ensureRouteTable(ctx context.Context, cloud kubermaticv1.CloudSpec, locatio
 		return fmt.Errorf("failed to create or update route table %q: %v", cloud.Azure.RouteTableName, err)
 	}
 
-	if err = future.WaitForCompletion(ctx, routeTablesClient.Client); err != nil {
+	if err = future.WaitForCompletionRef(ctx, routeTablesClient.Client); err != nil {
 		return fmt.Errorf("failed to create or update route table %q: %v", cloud.Azure.RouteTableName, err)
 	}
 
