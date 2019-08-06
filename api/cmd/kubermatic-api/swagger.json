@@ -4459,11 +4459,6 @@
       "title": "BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "CPUType": {
-      "type": "string",
-      "title": "CPUType specifies the type of the CPU.",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "CentOSSpec": {
       "description": "CentOSSpec contains CentOS specific settings",
       "type": "object",
@@ -6667,11 +6662,6 @@
           "x-go-name": "Token"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "StorageType": {
-      "type": "string",
-      "title": "StorageType specifies the type of storage.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "TaintSpec": {

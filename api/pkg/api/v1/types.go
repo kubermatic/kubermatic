@@ -231,26 +231,6 @@ type HetznerSize struct {
 	Disk        int     `json:"disk"`
 }
 
-// StorageType specifies the type of storage.
-type StorageType string
-
-const (
-	// StorageTypeLocal is the type for local storage.
-	StorageTypeLocal StorageType = "local"
-	// StorageTypeCeph is the type for remote storage.
-	StorageTypeCeph StorageType = "ceph"
-)
-
-// CPUType specifies the type of the CPU.
-type CPUType string
-
-const (
-	// CPUTypeShared is the type for shared CPU.
-	CPUTypeShared CPUType = "shared"
-	//CPUTypeDedicated is the type for dedicated CPU.
-	CPUTypeDedicated CPUType = "dedicated"
-)
-
 // SSHKey represents a ssh key
 // swagger:model SSHKey
 type SSHKey struct {
