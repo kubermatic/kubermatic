@@ -7,10 +7,12 @@ import (
 
 	"go.uber.org/zap"
 
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/clusterdeletion"
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -215,6 +217,28 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		log.Debug("Cleaning up cluster")
 		userClusterClient, err := r.userClusterConnProvider.GetClient(cluster)
 		if err != nil {
+			if kuberneteshelper.HasFinalizer(cluster, apiv1.CredentialsSecretsCleanupFinalizer) {
+				kuberneteshelper.RemoveFinalizer(cluster, apiv1.CredentialsSecretsCleanupFinalizer)
+				errUpdate := r.Update(ctx, cluster)
+				if errUpdate != nil {
+					return nil, fmt.Errorf("failed to update cluster: %v", errUpdate)
+				}
+			}
+			if kuberneteshelper.HasFinalizer(cluster, apiv1.InClusterLBCleanupFinalizer) {
+				kuberneteshelper.RemoveFinalizer(cluster, apiv1.InClusterLBCleanupFinalizer)
+				errUpdate := r.Update(ctx, cluster)
+				if errUpdate != nil {
+					return nil, fmt.Errorf("failed to update cluster: %v", errUpdate)
+				}
+			}
+			if kuberneteshelper.HasFinalizer(cluster, apiv1.InClusterPVCleanupFinalizer) {
+				kuberneteshelper.RemoveFinalizer(cluster, apiv1.InClusterPVCleanupFinalizer)
+				errUpdate := r.Update(ctx, cluster)
+				if errUpdate != nil {
+					return nil, fmt.Errorf("failed to update cluster: %v", errUpdate)
+				}
+			}
+
 			return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 		}
 		// Always requeue a cluster after we executed the cleanup.
