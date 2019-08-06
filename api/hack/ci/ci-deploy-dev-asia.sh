@@ -23,7 +23,7 @@ export HELM_EXTRA_ARGS="--set=kubermatic.controller.image.tag=${GIT_HEAD_HASH} \
     --set=kubermatic.api.image.tag=${GIT_HEAD_HASH} \
     --set=kubermatic.masterController.image.tag=${GIT_HEAD_HASH} \
     --set=kubermatic.controller.addons.kubernetes.image.tag=${GIT_HEAD_HASH} \
-    --set=kubermatic.contoller.datacenterName=asia-south1-c"
+    --set=kubermatic.controller.datacenterName=asia-south1-c"
 
 # deploy to dev-asia
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}
