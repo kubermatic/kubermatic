@@ -63,7 +63,13 @@ func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
 			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.schedulerDefaultReplicas))},
 	}
 	return clustercomponentdefaulter.Add(
-		context.Background(), ctrlCtx.log, ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, defaultCompontentsOverrides, predicates)
+		context.Background(),
+		ctrlCtx.log,
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		defaultCompontentsOverrides,
+		predicates,
+	)
 }
 
 func createCloudController(ctrlCtx *controllerContext) error {
