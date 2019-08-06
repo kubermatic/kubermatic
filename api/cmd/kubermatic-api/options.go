@@ -30,6 +30,7 @@ type serverRunOptions struct {
 	domain             string
 	exposeStrategy     corev1.ServiceType
 	dynamicDatacenters bool
+	namespace          string
 	log                kubermaticlog.Options
 	accessibleAddons   sets.String
 
@@ -61,7 +62,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal handler should be exposed")
 	flag.StringVar(&s.prometheusURL, "prometheus-url", "http://prometheus.monitoring.svc.local:web", "The URL on which this API can talk to Prometheus")
 	flag.StringVar(&s.masterResources, "master-resources", "", "The path to the master resources (Required).")
-	flag.StringVar(&s.dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
+	flag.StringVar(&s.dcFile, "datacenters", "", "The datacenters.yaml file path")
 	flag.StringVar(&s.workerName, "worker-name", "", "Create clusters only processed by worker-name cluster controller")
 	flag.StringVar(&s.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&s.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
@@ -82,6 +83,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.serviceAccountSigningKey, "service-account-signing-key", "", "Signing key authenticates the service account's token value using HMAC. It is recommended to use a key with 32 bytes or longer.")
 	flag.StringVar(&rawExposeStrategy, "expose-strategy", "NodePort", "The strategy to expose the controlplane with, either \"NodePort\" which creates NodePorts with a \"nodeport-proxy.k8s.io/expose: true\" annotation or \"LoadBalancer\", which creates a LoadBalancer")
 	flag.BoolVar(&s.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
+	flag.StringVar(&s.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.BoolVar(&s.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&s.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()

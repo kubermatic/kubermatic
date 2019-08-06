@@ -17,6 +17,7 @@ import (
 	ctrlruntimecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -51,6 +52,7 @@ func Add(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	mgr manager.Manager,
+	namespace string,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 	controllerFactory func() (manager.Runnable, error),
@@ -69,8 +71,23 @@ func Add(
 		return fmt.Errorf("failed to construct controller: %v", err)
 	}
 
+	nsPredicate := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return e.Meta.GetNamespace() == namespace
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return e.MetaNew.GetNamespace() == namespace
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return e.Meta.GetNamespace() == namespace
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return e.Meta.GetNamespace() == namespace
+		},
+	}
+
 	for _, t := range []runtime.Object{&kubermaticv1.Seed{}, &corev1.Secret{}} {
-		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueConst(queueKey)); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueConst(queueKey), nsPredicate); err != nil {
 			return fmt.Errorf("failed to create watch for type %T: %v", t, err)
 		}
 	}

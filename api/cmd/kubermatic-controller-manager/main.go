@@ -108,7 +108,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	rootCtx, rootCancel := context.WithCancel(context.Background())
-	seedGetter, err := provider.SeedGetterFactory(rootCtx, mgr.GetClient(), options.dc, options.dcFile, options.dynamicDatacenters)
+	seedGetter, err := provider.SeedGetterFactory(rootCtx, mgr.GetClient(), options.dc, options.dcFile, options.namespace, options.dynamicDatacenters)
 	if err != nil {
 		log.Fatalw("Unable to create the seed factory", zap.Error(err))
 	}
