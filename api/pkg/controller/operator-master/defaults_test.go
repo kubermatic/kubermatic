@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-logr/zapr"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	controllerruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 type nopEventRecorder struct{}
@@ -60,15 +62,14 @@ func TestDefaultingConfigurations(t *testing.T) {
 		}
 	}()
 
-	controllerruntime.SetLogger(nil)
-
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 	if err := operatorv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		log.Fatalw("Failed to register types in Scheme", "error", err)
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			client := controllerruntimefake.NewFakeClient(test.input)
+			client := ctrlruntimefake.NewFakeClient(test.input)
 
 			reconciler := Reconciler{
 				Client:   client,
