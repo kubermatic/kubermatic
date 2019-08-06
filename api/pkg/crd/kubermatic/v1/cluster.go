@@ -308,14 +308,21 @@ type BringYourOwnCloudSpec struct{}
 type AWSCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	AccessKeyID         string `json:"accessKeyId,omitempty"`
-	SecretAccessKey     string `json:"secretAccessKey,omitempty"`
-	VPCID               string `json:"vpcId"`
-	RoleName            string `json:"roleName"`
-	RoleARN             string `json:"roleARN"`
+	AccessKeyID     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+	VPCID           string `json:"vpcId"`
+	// The IAM role, the control plane will use. The control plane will perform an assume-rule
+	ControlPlaneRoleARN string `json:"roleARN"`
 	RouteTableID        string `json:"routeTableId"`
 	InstanceProfileName string `json:"instanceProfileName"`
 	SecurityGroupID     string `json:"securityGroupID"`
+
+	AvailabilityZone string `json:"availabilityZone"`
+
+	// DEPRECATED. Don't care for the role name. We only require the ControlPlaneRoleARN to be set so the control plane
+	// can perform the assume-role.
+	// We keep it for backwards compatibility (We use this name for cleanup purpose).
+	RoleName string `json:"roleName"`
 }
 
 // OpenstackCloudSpec specifies access data to an OpenStack cloud.

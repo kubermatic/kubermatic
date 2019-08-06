@@ -23,17 +23,13 @@ import (
 const (
 	resourceNamePrefix = "kubernetes-"
 
-	policyRoute53FullAccess = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
-	policyEC2FullAccess     = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
-
-	securityGroupCleanupFinalizer   = "kubermatic.io/cleanup-aws-security-group"
-	instanceProfileCleanupFinalizer = "kubermatic.io/cleanup-aws-instance-profile"
-	tagCleanupFinalizer             = "kubermatic.io/cleanup-aws-tags"
+	securityGroupCleanupFinalizer    = "kubermatic.io/cleanup-aws-security-group"
+	instanceProfileCleanupFinalizer  = "kubermatic.io/cleanup-aws-instance-profile"
+	controlPlaneRoleCleanupFinalizer = "kubermatic.io/cleanup-aws-control-plane-role"
+	tagCleanupFinalizer              = "kubermatic.io/cleanup-aws-tags"
 
 	tagNameKubernetesClusterPrefix = "kubernetes.io/cluster/"
 )
-
-var roleARNS = []string{policyRoute53FullAccess, policyEC2FullAccess}
 
 type AmazonEC2 struct {
 	dc                *kubermaticv1.DatacenterSpecAWS
@@ -86,7 +82,7 @@ func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster) error {
 		return nil
 	}
 
-	if cluster.Spec.Cloud.AWS.RoleARN == "" {
+	if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN == "" {
 		svcIAM, err := a.getIAMClient(cluster.Spec.Cloud)
 		if err != nil {
 			return fmt.Errorf("failed to get IAM client: %v", err)
@@ -99,7 +95,7 @@ func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster) error {
 		}
 
 		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.AWS.RoleARN = *getRoleOut.Role.Arn
+			cluster.Spec.Cloud.AWS.ControlPlaneRoleARN = *getRoleOut.Role.Arn
 		})
 		if err != nil {
 			return err
@@ -261,6 +257,13 @@ func getVPCByID(vpcID string, client *ec2.EC2) (*ec2.Vpc, error) {
 	return vpcOut.Vpcs[0], nil
 }
 
+func clusterTag(clusterName string) *ec2.Tag {
+	return &ec2.Tag{
+		Key:   aws.String(tagNameKubernetesClusterPrefix + clusterName),
+		Value: aws.String(""),
+	}
+}
+
 func tagResources(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
 	sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
 		Filters: []*ec2.Filter{
@@ -280,12 +283,7 @@ func tagResources(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
 
 	_, err = client.CreateTags(&ec2.CreateTagsInput{
 		Resources: resourceIDs,
-		Tags: []*ec2.Tag{
-			{
-				Key:   aws.String(tagNameKubernetesClusterPrefix + cluster.Name),
-				Value: aws.String(""),
-			},
-		},
+		Tags:      []*ec2.Tag{clusterTag(cluster.Name)},
 	})
 	return err
 }
@@ -309,12 +307,7 @@ func removeTags(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
 
 	_, err = client.DeleteTags(&ec2.DeleteTagsInput{
 		Resources: resourceIDs,
-		Tags: []*ec2.Tag{
-			{
-				Key:   aws.String(tagNameKubernetesClusterPrefix + cluster.Name),
-				Value: aws.String(""),
-			},
-		},
+		Tags:      []*ec2.Tag{clusterTag(cluster.Name)},
 	})
 	return err
 }
@@ -409,98 +402,6 @@ func createSecurityGroup(client *ec2.EC2, vpcID, clusterName string) (string, er
 	return sgid, nil
 }
 
-func createInstanceProfile(client *iam.IAM, clusterName string) (*iam.Role, *iam.InstanceProfile, error) {
-	kubermaticRoleName := resourceNamePrefix + clusterName
-	kubermaticInstanceProfileName := resourceNamePrefix + clusterName
-
-	roleName := aws.String(kubermaticRoleName)
-	paramsRole := &iam.CreateRoleInput{
-		AssumeRolePolicyDocument: aws.String(`{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": { "Service": "ec2.amazonaws.com"},
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}`),
-		RoleName: roleName, // Required
-	}
-	var role *iam.Role
-
-	// Do the create before doing a get, because in 90% of the cases
-	// this will not exist yet
-	rOut, err := client.CreateRole(paramsRole)
-	if err != nil {
-		if !isEntityAlreadyExists(err) {
-			return nil, nil, fmt.Errorf("failed to create role: %v", err)
-		}
-		// Accept "EntityAlreadyExists" and assume the config is correct
-		paramsRoleGet := &iam.GetRoleInput{RoleName: roleName}
-		getRoleOut, err := client.GetRole(paramsRoleGet)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get already existing aws IAM role %s: %v", kubermaticRoleName, err)
-		}
-		role = getRoleOut.Role
-	} else {
-		role = rOut.Role
-	}
-
-	for _, arn := range roleARNS {
-		paramsAttachPolicy := &iam.AttachRolePolicyInput{
-			PolicyArn: aws.String(arn),
-			RoleName:  aws.String(kubermaticRoleName),
-		}
-		_, err = client.AttachRolePolicy(paramsAttachPolicy)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to attach role %q to policy %q: %v", kubermaticRoleName, arn, err)
-		}
-	}
-
-	instanceProfileName := aws.String(kubermaticInstanceProfileName)
-	paramsInstanceProfile := &iam.CreateInstanceProfileInput{
-		InstanceProfileName: instanceProfileName, // Required
-	}
-	var instanceProfile *iam.InstanceProfile
-
-	// Do the create before doing a get, because in 90% of the cases
-	// this will not exist yet
-	cipOut, err := client.CreateInstanceProfile(paramsInstanceProfile)
-	if err != nil {
-		if !isEntityAlreadyExists(err) {
-			return nil, nil, fmt.Errorf("failed to create instance profile: %v", err)
-		}
-		// Accept "EntityAlreadyExists" and assume the config is correct
-		paramsInstanceProfileGet := &iam.GetInstanceProfileInput{InstanceProfileName: instanceProfileName}
-		getInstanceProfileOut, err := client.GetInstanceProfile(paramsInstanceProfileGet)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get already existing InstanceProfile %s: %v", *instanceProfileName, err)
-		}
-		instanceProfile = getInstanceProfileOut.InstanceProfile
-	} else {
-		instanceProfile = cipOut.InstanceProfile
-	}
-
-	// Just return if Role is already associated to InstanceProfile
-	for _, role := range instanceProfile.Roles {
-		if *role.RoleName == *roleName {
-			return role, instanceProfile, nil
-		}
-	}
-
-	paramsAddRole := &iam.AddRoleToInstanceProfileInput{
-		InstanceProfileName: aws.String(kubermaticInstanceProfileName), // Required
-		RoleName:            aws.String(kubermaticRoleName),            // Required
-	}
-	_, err = client.AddRoleToInstanceProfile(paramsAddRole)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to add role %q to instance profile %q: %v", kubermaticInstanceProfileName, kubermaticRoleName, err)
-	}
-
-	return role, instanceProfile, nil
-}
-
 func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	a.clusterUpdater = update
 	a.secretKeySelector = secretKeySelector
@@ -540,21 +441,35 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	if cluster.Spec.Cloud.AWS.RoleName == "" && cluster.Spec.Cloud.AWS.InstanceProfileName == "" {
-		svcIAM, err := a.getIAMClient(cluster.Spec.Cloud)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get IAM client: %v", err)
-		}
+	iamClient, err := a.getIAMClient(cluster.Spec.Cloud)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get IAM client: %v", err)
+	}
 
-		role, instanceProfile, err := createInstanceProfile(svcIAM, cluster.Name)
+	// We create a dedicated role for the control plane
+	if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN == "" {
+		controlPlaneRole, err := createControlPlaneRole(iamClient, cluster.Name)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create instance profile: %v", err)
+			return nil, fmt.Errorf("failed to create control plane role: %v", err)
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.AddFinalizer(cluster, controlPlaneRoleCleanupFinalizer)
+			cluster.Spec.Cloud.AWS.ControlPlaneRoleARN = *controlPlaneRole.RoleName
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if cluster.Spec.Cloud.AWS.InstanceProfileName == "" {
+		workerInstanceProfile, err := createWorkerInstanceProfile(iamClient, cluster.Name)
+		if err != nil {
+			return nil, fmt.Errorf("failed to setup the required roles/instance profiles: %v", err)
+		}
+
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, instanceProfileCleanupFinalizer)
-			cluster.Spec.Cloud.AWS.RoleName = *role.RoleName
-			cluster.Spec.Cloud.AWS.RoleARN = *role.Arn
-			cluster.Spec.Cloud.AWS.InstanceProfileName = *instanceProfile.InstanceProfileName
+			cluster.Spec.Cloud.AWS.InstanceProfileName = *workerInstanceProfile.InstanceProfileName
 		})
 		if err != nil {
 			return nil, err
@@ -660,49 +575,45 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 		}
 	}
 
+	iamClient, err := a.getIAMClient(cluster.Spec.Cloud)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get iam ec2client: %v", err)
+	}
+
 	if kuberneteshelper.HasFinalizer(cluster, instanceProfileCleanupFinalizer) {
-		iamClient, err := a.getIAMClient(cluster.Spec.Cloud)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get iam ec2client: %v", err)
+		if err := deleteInstanceProfile(iamClient, cluster.Spec.Cloud.AWS.InstanceProfileName); err != nil {
+			return nil, fmt.Errorf("failed to delete the instance profile: %v", err)
 		}
 
-		_, err = iamClient.RemoveRoleFromInstanceProfile(&iam.RemoveRoleFromInstanceProfileInput{
-			RoleName:            aws.String(cluster.Spec.Cloud.AWS.RoleName),
-			InstanceProfileName: aws.String(cluster.Spec.Cloud.AWS.InstanceProfileName),
-		})
-		if err != nil {
-			if err.(awserr.Error).Code() != iam.ErrCodeNoSuchEntityException {
-				return nil, fmt.Errorf("failed to remove role %s from instance profile %s: %s", cluster.Spec.Cloud.AWS.RoleName, cluster.Spec.Cloud.AWS.InstanceProfileName, err.(awserr.Error).Message())
+		rolesToDelete := []string{
+			workerRoleName(cluster.Name),
+		}
+		// There was a time where we saved the role name on the cluster & deleted based on that field.
+		// We now have a fixed name for the roles and delete on that.
+		if cluster.Spec.Cloud.AWS.RoleName != "" {
+			rolesToDelete = append(rolesToDelete, cluster.Spec.Cloud.AWS.RoleName)
+		}
+		for _, role := range rolesToDelete {
+			if err := deleteRole(iamClient, role); err != nil {
+				return nil, fmt.Errorf("failed to delete role %q: %v", role, err)
 			}
 		}
 
-		_, err = iamClient.DeleteInstanceProfile(&iam.DeleteInstanceProfileInput{InstanceProfileName: &cluster.Spec.Cloud.AWS.InstanceProfileName})
-		if err != nil {
-			if err.(awserr.Error).Code() != iam.ErrCodeNoSuchEntityException {
-				return nil, fmt.Errorf("failed to delete InstanceProfile %s: %s", cluster.Spec.Cloud.AWS.InstanceProfileName, err.(awserr.Error).Message())
-			}
-		}
-
-		rpout, err := iamClient.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{RoleName: aws.String(cluster.Spec.Cloud.AWS.RoleName)})
-		if err != nil {
-			if err.(awserr.Error).Code() != iam.ErrCodeNoSuchEntityException {
-				return nil, fmt.Errorf("failed to list attached role policies: %v", err)
-			}
-		}
-
-		for _, policy := range rpout.AttachedPolicies {
-			if _, err = iamClient.DetachRolePolicy(&iam.DetachRolePolicyInput{PolicyArn: policy.PolicyArn, RoleName: aws.String(cluster.Spec.Cloud.AWS.RoleName)}); err != nil {
-				return nil, fmt.Errorf("failed to detach policy %s: %v", *policy.PolicyName, err)
-			}
-		}
-
-		if _, err := iamClient.DeleteRole(&iam.DeleteRoleInput{RoleName: &cluster.Spec.Cloud.AWS.RoleName}); err != nil {
-			if err.(awserr.Error).Code() != iam.ErrCodeNoSuchEntityException {
-				return nil, fmt.Errorf("failed to delete Role %s: %s", cluster.Spec.Cloud.AWS.RoleName, err.(awserr.Error).Message())
-			}
-		}
 		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, instanceProfileCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if kuberneteshelper.HasFinalizer(cluster, controlPlaneRoleCleanupFinalizer) {
+		roleName := controlPlaneRoleName(cluster.Name)
+		if err := deleteRole(iamClient, roleName); err != nil {
+			return nil, fmt.Errorf("failed to delete role %q: %v", roleName, err)
+		}
+		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(cluster, controlPlaneRoleCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -730,6 +641,15 @@ func isEntityAlreadyExists(err error) bool {
 		return false
 	}
 	return aerr.Code() == "EntityAlreadyExists"
+}
+
+func isNoSuchEntity(err error) bool {
+	if awsErr, ok := err.(awserr.Error); ok {
+		if awsErr.Code() == "NoSuchEntity" {
+			return true
+		}
+	}
+	return false
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
