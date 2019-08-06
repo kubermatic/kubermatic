@@ -60,12 +60,17 @@ func (r *Reconciler) defaultConfiguration(config *operatorv1alpha1.KubermaticCon
 	r.defaultImage(&config.Spec.SeedController.Addons.Kubernetes.Image, "quay.io/kubermatic/addons:v0.2.19", "seedController.addons.kubernetes.image", logger)
 	r.defaultImage(&config.Spec.SeedController.Addons.Openshift.Image, "quay.io/kubermatic/openshift-addons:v0.9", "seedController.addons.openshift.image", logger)
 
-	var err error
+	var (
+		err       error
+		defaulted bool
+	)
+
 	if !equality.Semantic.DeepEqual(original, config) {
 		err = r.Client.Update(r.ctx, config)
+		defaulted = true
 	}
 
-	return false, err
+	return defaulted, err
 }
 
 func (r *Reconciler) defaultImage(img *string, defaultImage string, key string, logger *zap.SugaredLogger) {
