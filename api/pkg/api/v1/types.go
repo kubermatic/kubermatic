@@ -212,6 +212,24 @@ type AzureSize struct {
 	MaxDataDiskCount     int32  `json:"maxDataDiskCount"`
 }
 
+// HetznerSizeList represents an array of Hetzner sizes.
+// swagger:model HetznerSizeList
+type HetznerSizeList struct {
+	Standard  []HetznerSize `json:"standard"`
+	Dedicated []HetznerSize `json:"dedicated"`
+}
+
+// HetznerSize is the object representing Hetzner sizes.
+// swagger:model HetznerSize
+type HetznerSize struct {
+	ID          int     `json:"id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Cores       int     `json:"cores"`
+	Memory      float32 `json:"memory"`
+	Disk        int     `json:"disk"`
+}
+
 // SSHKey represents a ssh key
 // swagger:model SSHKey
 type SSHKey struct {

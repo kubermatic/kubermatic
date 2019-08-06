@@ -3954,6 +3954,32 @@
         }
       }
     },
+    "/api/v1/providers/hetzner/sizes": {
+      "get": {
+        "description": "Lists sizes from hetzner",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "hetzner"
+        ],
+        "operationId": "listHetznerSizes",
+        "responses": {
+          "200": {
+            "description": "HetznerSizeList",
+            "schema": {
+              "$ref": "#/definitions/HetznerSizeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/openstack/networks": {
       "get": {
         "description": "Lists networks from openstack",
@@ -5655,6 +5681,62 @@
           "description": "server type",
           "type": "string",
           "x-go-name": "Type"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "HetznerSize": {
+      "type": "object",
+      "title": "HetznerSize is the object representing Hetzner sizes.",
+      "properties": {
+        "cores": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Cores"
+        },
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "disk": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Disk"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ID"
+        },
+        "memory": {
+          "type": "number",
+          "format": "float",
+          "x-go-name": "Memory"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "HetznerSizeList": {
+      "type": "object",
+      "title": "HetznerSizeList represents an array of Hetzner sizes.",
+      "properties": {
+        "dedicated": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HetznerSize"
+          },
+          "x-go-name": "Dedicated"
+        },
+        "standard": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HetznerSize"
+          },
+          "x-go-name": "Standard"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
