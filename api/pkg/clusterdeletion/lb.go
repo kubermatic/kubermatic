@@ -21,8 +21,13 @@ const (
 )
 
 func (d *Deletion) cleanupLBs(ctx context.Context, cluster *kubermaticv1.Cluster) (deletedSomeLBs bool, err error) {
+	userClusterClient, err := d.userClusterClientGetter()
+	if err != nil {
+		return false, err
+	}
+
 	serviceList := &corev1.ServiceList{}
-	if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, serviceList); err != nil {
+	if err := userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, serviceList); err != nil {
 		return false, fmt.Errorf("failed to list Service's from user cluster: %v", err)
 	}
 
@@ -33,7 +38,7 @@ func (d *Deletion) cleanupLBs(ctx context.Context, cluster *kubermaticv1.Cluster
 		}
 
 		serviceName := fmt.Sprintf("%s/%s", service.Namespace, service.Name)
-		if err := d.cleanupLB(ctx, &service, cluster); err != nil {
+		if err := d.cleanupLB(ctx, userClusterClient, &service, cluster); err != nil {
 			return deletedSomeLBs, fmt.Errorf("failed to delete service %q inside user cluster: %v", serviceName, err)
 		}
 		deletedSomeLBs = true
@@ -42,8 +47,8 @@ func (d *Deletion) cleanupLBs(ctx context.Context, cluster *kubermaticv1.Cluster
 	return deletedSomeLBs, nil
 }
 
-func (d *Deletion) cleanupLB(ctx context.Context, service *corev1.Service, cluster *kubermaticv1.Cluster) error {
-	if err := d.userClusterClient.Delete(ctx, service); err != nil {
+func (d *Deletion) cleanupLB(ctx context.Context, userClusterClient controllerruntimeclient.Client, service *corev1.Service, cluster *kubermaticv1.Cluster) error {
+	if err := userClusterClient.Delete(ctx, service); err != nil {
 		return fmt.Errorf("failed to delete service: %v", err)
 	}
 
@@ -101,10 +106,14 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 		return true, nil
 	}
 
+	userClusterClient, err := d.userClusterClientGetter()
+	if err != nil {
+		return false, err
+	}
 	for deletedLB := range deletedLoadBalancers {
 		selector := fields.OneTermEqualSelector("involvedObject.uid", deletedLB)
 		events := &corev1.EventList{}
-		if err := d.userClusterClient.List(context.Background(), &controllerruntimeclient.ListOptions{FieldSelector: selector}, events); err != nil {
+		if err := userClusterClient.List(context.Background(), &controllerruntimeclient.ListOptions{FieldSelector: selector}, events); err != nil {
 			return false, fmt.Errorf("failed to get service events: %v", err)
 		}
 		for _, event := range events.Items {

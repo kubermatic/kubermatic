@@ -213,12 +213,17 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	if cluster.DeletionTimestamp != nil {
 		log.Debug("Cleaning up cluster")
-		userClusterClient, err := r.userClusterConnProvider.GetClient(cluster)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get user cluster client: %v", err)
+
+		// Defer getting the client to make sure we only request it if we actually need it
+		userClusterClientGetter := func() (ctrlruntimeclient.Client, error) {
+			client, err := r.userClusterConnProvider.GetClient(cluster)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get user cluster client: %v", err)
+			}
+			return client, nil
 		}
 		// Always requeue a cluster after we executed the cleanup.
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClient).CleanupCluster(ctx, cluster)
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClientGetter).CleanupCluster(ctx, cluster)
 	}
 
 	res, err := r.reconcileCluster(ctx, cluster)
