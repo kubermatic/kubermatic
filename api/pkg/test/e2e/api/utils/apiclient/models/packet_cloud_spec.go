@@ -16,31 +16,24 @@ import (
 // swagger:model PacketCloudSpec
 type PacketCloudSpec struct {
 
-	// APIKey is deprecated. Please use APIKeyReference instead.
+	// API key
 	APIKey string `json:"apiKey,omitempty"`
 
 	// billing cycle
 	BillingCycle string `json:"billingCycle,omitempty"`
 
-	// ProjectID is deprecated. Please use ProjectIDReference instead.
+	// project ID
 	ProjectID string `json:"projectID,omitempty"`
 
-	// api key reference
-	APIKeyReference GlobalSecretKeySelector `json:"apiKeyReference,omitempty"`
-
-	// project ID reference
-	ProjectIDReference GlobalSecretKeySelector `json:"projectIDReference,omitempty"`
+	// credentials reference
+	CredentialsReference GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 }
 
 // Validate validates this packet cloud spec
 func (m *PacketCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateAPIKeyReference(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateProjectIDReference(formats); err != nil {
+	if err := m.validateCredentialsReference(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -50,31 +43,15 @@ func (m *PacketCloudSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *PacketCloudSpec) validateAPIKeyReference(formats strfmt.Registry) error {
+func (m *PacketCloudSpec) validateCredentialsReference(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.APIKeyReference) { // not required
+	if swag.IsZero(m.CredentialsReference) { // not required
 		return nil
 	}
 
-	if err := m.APIKeyReference.Validate(formats); err != nil {
+	if err := m.CredentialsReference.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("apiKeyReference")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (m *PacketCloudSpec) validateProjectIDReference(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.ProjectIDReference) { // not required
-		return nil
-	}
-
-	if err := m.ProjectIDReference.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("projectIDReference")
+			return ve.ValidateName("credentialsReference")
 		}
 		return err
 	}

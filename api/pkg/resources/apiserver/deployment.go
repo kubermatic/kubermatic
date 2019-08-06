@@ -136,6 +136,11 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
 			}
 
+			envVars, err := getEnvVars(data)
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				*dnatControllerSidecar,
@@ -143,7 +148,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 					Name:      name,
 					Image:     data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
 					Command:   []string{"/hyperkube", "kube-apiserver"},
-					Env:       getEnvVars(data.Cluster()),
+					Env:       envVars,
 					Args:      flags,
 					Resources: *resourceRequirements,
 					Ports: []corev1.ContainerPort{
@@ -468,15 +473,21 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getEnvVars(cluster *kubermaticv1.Cluster) []corev1.EnvVar {
+func getEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
+	credentials, err := resources.GetCredentials(data)
+	if err != nil {
+		return nil, err
+	}
+	cluster := data.Cluster()
+
 	var vars []corev1.EnvVar
 	if cluster.Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: cluster.Spec.Cloud.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: cluster.Spec.Cloud.AWS.SecretAccessKey})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_AVAILABILITY_ZONE", Value: cluster.Spec.Cloud.AWS.AvailabilityZone})
 	}
-	return vars
+	return vars, nil
 }
 
 func getDexCASecretVolume() corev1.Volume {

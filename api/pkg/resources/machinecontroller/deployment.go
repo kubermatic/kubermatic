@@ -41,7 +41,7 @@ const (
 
 type machinecontrollerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
-	GetGlobalSecretKeySelectorValue(configVar providerconfig.GlobalSecretKeySelector) (string, error)
+	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
 	ClusterIPByServiceName(string) (string, error)
@@ -161,15 +161,15 @@ func getKubeconfigVolume() corev1.Volume {
 }
 
 func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
-	credentials, err := GetCredentials(data)
+	credentials, err := resources.GetCredentials(data)
 	if err != nil {
 		return nil, err
 	}
 
 	var vars []corev1.EnvVar
 	if data.Cluster().Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: data.Cluster().Spec.Cloud.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: data.Cluster().Spec.Cloud.AWS.SecretAccessKey})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 	}
 	if data.Cluster().Spec.Cloud.Openstack != nil {
 		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC().Spec.Openstack.AuthURL})

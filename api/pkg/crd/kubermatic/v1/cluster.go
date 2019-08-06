@@ -23,6 +23,9 @@ const (
 	// used to determine if the cluster-autoscaler is enabled for this cluster. It is
 	// enabled when this Annotation is set with any value
 	AnnotationNameClusterAutoscalerEnabled = "kubermatic.io/cluster-autoscaler-enabled"
+
+	// CredentialPrefix is the prefix used for the secrets containing cloud provider crednentials.
+	CredentialPrefix = "credential"
 )
 
 const (
@@ -303,8 +306,10 @@ type BringYourOwnCloudSpec struct{}
 
 // AWSCloudSpec specifies access data to Amazon Web Services.
 type AWSCloudSpec struct {
-	AccessKeyID         string `json:"accessKeyId"`
-	SecretAccessKey     string `json:"secretAccessKey"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	AccessKeyID         string `json:"accessKeyId,omitempty"`
+	SecretAccessKey     string `json:"secretAccessKey,omitempty"`
 	VPCID               string `json:"vpcId"`
 	RoleName            string `json:"roleName"`
 	RoleARN             string `json:"roleARN"`
@@ -342,11 +347,9 @@ type OpenstackCloudSpec struct {
 
 // PacketCloudSpec specifies access data to a Packet cloud.
 type PacketCloudSpec struct {
-	APIKeyReference    *providerconfig.GlobalSecretKeySelector `json:"apiKeyReference,omitempty"`
-	ProjectIDReference *providerconfig.GlobalSecretKeySelector `json:"projectIDReference,omitempty"`
-	// APIKey is deprecated. Please use APIKeyReference instead.
-	APIKey string `json:"apiKey,omitempty"`
-	// ProjectID is deprecated. Please use ProjectIDReference instead.
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	APIKey       string `json:"apiKey,omitempty"`
 	ProjectID    string `json:"projectID,omitempty"`
 	BillingCycle string `json:"billingCycle"`
 }
@@ -429,4 +432,14 @@ func NewBytes(b64 string) Bytes {
 		panic(fmt.Sprintf("Invalid base64 string %q", b64))
 	}
 	return Bytes(bs)
+}
+
+func (cluster *Cluster) GetSecretName() string {
+	if cluster.Spec.Cloud.AWS != nil {
+		return fmt.Sprintf("%s-aws-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.Packet != nil {
+		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, cluster.Name)
+	}
+	return ""
 }

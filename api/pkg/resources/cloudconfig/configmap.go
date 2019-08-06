@@ -15,6 +15,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -26,6 +27,7 @@ const (
 type configMapCreatorData interface {
 	DC() *kubermaticv1.Datacenter
 	Cluster() *kubermaticv1.Cluster
+	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 }
 
 // ConfigMapCreator returns a function to create the ConfigMap containing the cloud-config
@@ -36,7 +38,12 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 				cm.Data = map[string]string{}
 			}
 
-			cloudConfig, err := CloudConfig(data.Cluster(), data.DC())
+			credentials, err := resources.GetCredentials(data)
+			if err != nil {
+				return nil, err
+			}
+
+			cloudConfig, err := CloudConfig(data.Cluster(), data.DC(), credentials)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create cloud-config: %v", err)
 			}
@@ -51,7 +58,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 }
 
 // CloudConfig returns the cloud-config for the supplied data
-func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter) (cloudConfig string, err error) {
+func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, credentials resources.Credentials) (cloudConfig string, err error) {
 	cloud := cluster.Spec.Cloud
 	if cloud.AWS != nil {
 		awsCloudConfig := &aws.CloudConfig{

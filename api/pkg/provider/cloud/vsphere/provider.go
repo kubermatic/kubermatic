@@ -24,7 +24,8 @@ const (
 
 // Provider represents the vsphere provider.
 type Provider struct {
-	dc *kubermaticv1.DatacenterSpecVSphere
+	dc             *kubermaticv1.DatacenterSpecVSphere
+	clusterUpdater provider.ClusterUpdater
 }
 
 // Network represents a vsphere network backing.
@@ -208,14 +209,15 @@ func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 }
 
 // InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
-func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
+	v.clusterUpdater = update
 	return v.createVMFolderForCluster(cluster, update)
 }
 
 // CleanUpCloudProvider we always check if the folder is there and remove it if yes because we know its absolute path
 // This covers cases where the finalizer was not added
 // We also remove the finalizer if either the folder is not present or we successfully deleted it
-func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	vsphereRootPath, err := v.getVsphereRootPath(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, err
@@ -236,7 +238,7 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 			return nil, fmt.Errorf("failed to get folder: %v", err)
 		}
 		// Folder is not there anymore, maybe someone deleted it manually
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = v.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
 		})
 		if err != nil {
@@ -253,7 +255,7 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		return nil, fmt.Errorf("failed to wait for deletion of folder: %v", err)
 	}
 
-	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	cluster, err = v.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
 	})
 	if err != nil {

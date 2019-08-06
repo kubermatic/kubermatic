@@ -7,6 +7,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"github.com/golang/glog"
 
@@ -34,7 +35,9 @@ const (
 var roleARNS = []string{policyRoute53FullAccess, policyEC2FullAccess}
 
 type AmazonEC2 struct {
-	dc *kubermaticv1.DatacenterSpecAWS
+	dc                *kubermaticv1.DatacenterSpecAWS
+	clusterUpdater    provider.ClusterUpdater
+	secretKeySelector provider.SecretKeySelectorValueFunc
 }
 
 func (a *AmazonEC2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
@@ -75,7 +78,7 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 }
 
 // MigrateToMultiAZ migrates an AWS cluster from the old AZ-hardcoded spec to multi-AZ spec
-func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {
+func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster) error {
 	// If not even the role name is set, then the cluster is not fully
 	// initialized and we don't need to worry about this migration just yet.
 	if cluster.Spec.Cloud.AWS.RoleName == "" {
@@ -94,7 +97,7 @@ func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster, update provi
 			return fmt.Errorf("failed to get already existing aws IAM role %s: %v", cluster.Spec.Cloud.AWS.RoleName, err)
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.AWS.RoleARN = *getRoleOut.Role.Arn
 		})
 		if err != nil {
@@ -490,7 +493,10 @@ func createInstanceProfile(client *iam.IAM, clusterName string) (*iam.Role, *iam
 	return role, instanceProfile, nil
 }
 
-func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
+	a.clusterUpdater = update
+	a.secretKeySelector = secretKeySelector
+
 	client, err := a.getEC2client(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get EC2 client: %v", err)
@@ -585,9 +591,30 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 }
 
 func (a *AmazonEC2) getSession(cloud kubermaticv1.CloudSpec) (*session.Session, error) {
+	var accessKeyID, secretAccessKey string
+	var err error
+
+	if cloud.AWS.AccessKeyID != "" {
+		accessKeyID = cloud.AWS.AccessKeyID
+	} else if a.secretKeySelector != nil {
+		accessKeyID, err = a.secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSAccessKeyID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if cloud.AWS.SecretAccessKey != "" {
+		secretAccessKey = cloud.AWS.SecretAccessKey
+	} else if a.secretKeySelector != nil {
+		secretAccessKey, err = a.secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSSecretAccessKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	config := aws.NewConfig()
 	config = config.WithRegion(a.dc.Region)
-	config = config.WithCredentials(credentials.NewStaticCredentials(cloud.AWS.AccessKeyID, cloud.AWS.SecretAccessKey, ""))
+	config = config.WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""))
 	config = config.WithMaxRetries(3)
 	return session.NewSession(config)
 }
@@ -608,7 +635,7 @@ func (a *AmazonEC2) getIAMClient(cloud kubermaticv1.CloudSpec) (*iam.IAM, error)
 	return iam.New(sess), nil
 }
 
-func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	ec2client, err := a.getEC2client(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ec2 client: %v", err)
@@ -624,7 +651,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 				return nil, fmt.Errorf("failed to delete security group %s: %s", cluster.Spec.Cloud.AWS.SecurityGroupID, err.(awserr.Error).Message())
 			}
 		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, securityGroupCleanupFinalizer)
 		})
 		if err != nil {
@@ -673,7 +700,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 				return nil, fmt.Errorf("failed to delete Role %s: %s", cluster.Spec.Cloud.AWS.RoleName, err.(awserr.Error).Message())
 			}
 		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, instanceProfileCleanupFinalizer)
 		})
 		if err != nil {
@@ -685,7 +712,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 		if err := removeTags(cluster, ec2client); err != nil {
 			return nil, err
 		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinalizer)
 		})
 		if err != nil {

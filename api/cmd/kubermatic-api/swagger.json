@@ -4406,6 +4406,9 @@
           "type": "string",
           "x-go-name": "AvailabilityZone"
         },
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "instanceProfileName": {
           "type": "string",
           "x-go-name": "InstanceProfileName"
@@ -6608,24 +6611,19 @@
       "title": "PacketCloudSpec specifies access data to a Packet cloud.",
       "properties": {
         "apiKey": {
-          "description": "APIKey is deprecated. Please use APIKeyReference instead.",
           "type": "string",
           "x-go-name": "APIKey"
-        },
-        "apiKeyReference": {
-          "$ref": "#/definitions/GlobalSecretKeySelector"
         },
         "billingCycle": {
           "type": "string",
           "x-go-name": "BillingCycle"
         },
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "projectID": {
-          "description": "ProjectID is deprecated. Please use ProjectIDReference instead.",
           "type": "string",
           "x-go-name": "ProjectID"
-        },
-        "projectIDReference": {
-          "$ref": "#/definitions/GlobalSecretKeySelector"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"

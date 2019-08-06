@@ -18,6 +18,12 @@ func HasFinalizer(o metav1.Object, name string) bool {
 	return sets.NewString(o.GetFinalizers()...).Has(name)
 }
 
+// HasOnlyFinalizer tells if an object has only the given finalizer
+func HasOnlyFinalizer(o metav1.Object, name string) bool {
+	set := sets.NewString(o.GetFinalizers()...)
+	return set.Has(name) && set.Len() == 1
+}
+
 // RemoveFinalizer removes the given finalizer from the object
 func RemoveFinalizer(obj metav1.Object, toRemove string) {
 	set := sets.NewString(obj.GetFinalizers()...)
@@ -48,7 +54,7 @@ func ValidateKubernetesToken(token string) error {
 }
 
 func ValidateSecretKeySelector(selector *providerconfig.GlobalSecretKeySelector, key string) error {
-	if selector.Name == "" && selector.Namespace == "" && selector.Key == "" {
+	if selector.Name == "" && selector.Namespace == "" && key == "" {
 		return fmt.Errorf("%q cannot be empty", key)
 	}
 	return nil

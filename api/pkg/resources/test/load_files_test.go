@@ -23,6 +23,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
+	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
@@ -1135,7 +1136,12 @@ func TestExecute(t *testing.T) {
 	for fixture, test := range tests {
 		//TODO: Each test above needs to be executed for every supported version
 		t.Run(test.name, func(t *testing.T) {
-			machine, err := machine.Machine(test.data.Cluster, test.data.Node, test.data.Datacenter, test.data.Keys)
+
+			credentialsData := testhelper.CredentialsData{
+				KubermaticCluster: test.data.Cluster,
+				Client:            ctrlruntimefakeclient.NewFakeClient(),
+			}
+			machine, err := machine.Machine(test.data.Cluster, test.data.Node, test.data.Datacenter, test.data.Keys, credentialsData)
 			if err != nil {
 				t.Fatalf("failed to generate machine: %v", err)
 			}

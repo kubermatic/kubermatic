@@ -270,19 +270,19 @@ func (d *TemplateData) KubermaticAPIImage() string {
 	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }
 
-func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar providerconfig.GlobalSecretKeySelector) (string, error) {
+func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
 	// We need all three of these to fetch and use a secret
-	if configVar.Name != "" && configVar.Namespace != "" && configVar.Key != "" {
+	if configVar.Name != "" && configVar.Namespace != "" && key != "" {
 		secret := &corev1.Secret{}
-		key := types.NamespacedName{Namespace: configVar.Namespace, Name: configVar.Name}
-		if err := d.client.Get(d.ctx, key, secret); err != nil {
+		namespacedName := types.NamespacedName{Namespace: configVar.Namespace, Name: configVar.Name}
+		if err := d.client.Get(d.ctx, namespacedName, secret); err != nil {
 			return "", fmt.Errorf("error retrieving secret %q from namespace %q: %v", configVar.Name, configVar.Namespace, err)
 		}
 
-		if val, ok := secret.Data[configVar.Key]; ok {
+		if val, ok := secret.Data[key]; ok {
 			return string(val), nil
 		}
-		return "", fmt.Errorf("secret %q in namespace %q has no key %q", configVar.Name, configVar.Namespace, configVar.Key)
+		return "", fmt.Errorf("secret %q in namespace %q has no key %q", configVar.Name, configVar.Namespace, key)
 	}
 	return "", nil
 }

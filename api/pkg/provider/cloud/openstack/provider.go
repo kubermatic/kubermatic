@@ -41,7 +41,8 @@ const (
 
 // Provider is a struct that implements CloudProvider interface
 type Provider struct {
-	dc *kubermaticv1.DatacenterSpecOpenstack
+	dc             *kubermaticv1.DatacenterSpecOpenstack
+	clusterUpdater provider.ClusterUpdater
 }
 
 // NewCloudProvider creates a new openstack provider.
@@ -129,7 +130,8 @@ func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.Serv
 
 // InitializeCloudProvider initializes a cluster, in particular
 // creates security group and network configuration
-func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
+	os.clusterUpdater = update
 	netClient, err := os.getNetClient(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a authenticated openstack client: %v", err)
@@ -248,7 +250,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 // CleanUpCloudProvider does the clean-up in particular:
 // removes security group and network configuration
-func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	netClient, err := os.getNetClient(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a authenticated openstack client: %v", err)
@@ -261,7 +263,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 			}
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = os.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kubernetes.RemoveFinalizer(cluster, SecurityGroupCleanupFinalizer)
 		})
 		if err != nil {
@@ -275,7 +277,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 				return nil, fmt.Errorf("failed to detach subnet from router: %v", err)
 			}
 		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = os.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kubernetes.RemoveFinalizer(cluster, RouterSubnetLinkCleanupFinalizer)
 		})
 		if err != nil {
@@ -287,7 +289,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 		if err := deleteSubnet(netClient, cluster.Spec.Cloud.Openstack.SubnetID); err != nil {
 			return nil, fmt.Errorf("failed to delete subnet '%s': %v", cluster.Spec.Cloud.Openstack.SubnetID, err)
 		}
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = os.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kubernetes.RemoveFinalizer(cluster, SubnetCleanupFinalizer)
 		})
 		if err != nil {
@@ -302,7 +304,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 			}
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = os.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kubernetes.RemoveFinalizer(cluster, NetworkCleanupFinalizer)
 		})
 		if err != nil {
@@ -317,7 +319,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 			}
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = os.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kubernetes.RemoveFinalizer(cluster, RouterCleanupFinalizer)
 		})
 		if err != nil {
@@ -326,7 +328,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 	}
 
 	if kubernetes.HasFinalizer(cluster, OldNetworkCleanupFinalizer) {
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = os.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kubernetes.RemoveFinalizer(cluster, OldNetworkCleanupFinalizer)
 		})
 		if err != nil {
