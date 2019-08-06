@@ -33,7 +33,7 @@ func (do *digitalocean) InitializeCloudProvider(cluster *kubermaticv1.Cluster, u
 	return cluster, nil
 }
 
-func (do *digitalocean) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (do *digitalocean) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 

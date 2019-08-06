@@ -124,7 +124,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			finalizers.Has(kubermaticapiv1.NodeDeletionFinalizer) {
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
-		_, err := prov.CleanUpCloudProvider(cluster)
+		_, err := prov.CleanUpCloudProvider(cluster, r.getGlobalSecretKeySelectorValue)
 		return nil, err
 	}
 

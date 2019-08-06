@@ -34,7 +34,7 @@ func (h *hetzner) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update 
 }
 
 // CleanUpCloudProvider
-func (h *hetzner) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (h *hetzner) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 

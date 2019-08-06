@@ -29,7 +29,7 @@ func (p *fakeCloudProvider) InitializeCloudProvider(cluster *kubermaticv1.Cluste
 	return cluster, nil
 }
 
-func (p *fakeCloudProvider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (p *fakeCloudProvider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 
