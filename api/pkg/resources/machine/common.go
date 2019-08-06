@@ -188,10 +188,10 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 		config.Tags[key] = value
 	}
 	config.Tags["kubernetes-cluster"] = c.Name
-	config.Tags["system/cluster"] = c.Name
+	config.Tags["system-cluster"] = c.Name
 	projectID, ok := c.Labels[kubermaticv1.ProjectIDLabelKey]
 	if ok {
-		config.Tags["system/project"] = projectID
+		config.Tags["system-project"] = projectID
 	}
 	ext := &runtime.RawExtension{}
 	b, err := json.Marshal(config)
@@ -231,10 +231,10 @@ func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpe
 	}
 
 	tags := sets.NewString(nodeSpec.Cloud.Digitalocean.Tags...)
-	tags.Insert("kubernetes", fmt.Sprintf("kubernetes-cluster-%s", c.Name), fmt.Sprintf("system/cluster:%s", c.Name))
+	tags.Insert("kubernetes", fmt.Sprintf("kubernetes-cluster-%s", c.Name), fmt.Sprintf("system-cluster-%s", c.Name))
 	projectID, ok := c.Labels[kubermaticv1.ProjectIDLabelKey]
 	if ok {
-		tags.Insert(fmt.Sprintf("system/project:%s", projectID))
+		tags.Insert(fmt.Sprintf("system-project-%s", projectID))
 	}
 
 	config.Tags = make([]providerconfig.ConfigVarString, len(tags.List()))
@@ -297,10 +297,10 @@ func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 	}
 
 	tags := sets.NewString(nodeSpec.Cloud.GCP.Tags...)
-	tags.Insert(fmt.Sprintf("kubernetes-cluster-%s", c.Name), fmt.Sprintf("system/cluster:%s", c.Name))
+	tags.Insert(fmt.Sprintf("kubernetes-cluster-%s", c.Name), fmt.Sprintf("system-cluster-%s", c.Name))
 	projectID, ok := c.Labels[kubermaticv1.ProjectIDLabelKey]
 	if ok {
-		tags.Insert(fmt.Sprintf("system/project:%s", projectID))
+		tags.Insert(fmt.Sprintf("system-project-%s", projectID))
 	}
 	config.Tags = tags.List()
 
