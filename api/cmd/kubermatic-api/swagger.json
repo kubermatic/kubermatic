@@ -2558,6 +2558,58 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes": {
+      "get": {
+        "description": "Lists sizes from packet",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "packet"
+        ],
+        "operationId": "listPacketSizesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PacketSizeList",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PacketSizeList"
+              }
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks": {
       "get": {
         "description": "Lists networks from vsphere datacenter",
@@ -4155,6 +4207,55 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/OpenstackTenant"
+              }
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/providers/packet/sizes": {
+      "get": {
+        "description": "Lists sizes from packet",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "packet"
+        ],
+        "operationId": "listPacketSizes",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "APIKey",
+            "name": "apiKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "projectID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "x-go-name": "Credential",
+            "name": "credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PacketSizeList",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PacketSizeList"
               }
             }
           },
@@ -6644,6 +6745,26 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "PacketDrive": {
+      "type": "object",
+      "title": "PacketDrive represents an array of Packet drives. It is a part of PacketSize.",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Count"
+        },
+        "size": {
+          "type": "string",
+          "x-go-name": "Size"
+        },
+        "type": {
+          "type": "string",
+          "x-go-name": "Type"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "PacketNodeSpec": {
       "description": "PacketNodeSpec specifies packet specific node settings",
       "type": "object",
@@ -6664,6 +6785,68 @@
           },
           "x-go-name": "Tags"
         }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PacketSize": {
+      "type": "object",
+      "title": "PacketSize is the object representing Packet VM sizes.",
+      "properties": {
+        "class": {
+          "type": "string",
+          "x-go-name": "Class"
+        },
+        "cpus": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Cores"
+        },
+        "deployment_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "DeploymentTypes"
+        },
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "drives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PacketDrive"
+          },
+          "x-go-name": "Drives"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "line": {
+          "type": "string",
+          "x-go-name": "Line"
+        },
+        "memory": {
+          "type": "string",
+          "x-go-name": "Memory"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "slug": {
+          "type": "string",
+          "x-go-name": "Slug"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PacketSizeList": {
+      "type": "array",
+      "title": "PacketSizeList represents an array of Packet VM sizes.",
+      "items": {
+        "$ref": "#/definitions/PacketSize"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },

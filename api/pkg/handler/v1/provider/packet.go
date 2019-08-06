@@ -3,16 +3,16 @@ package provider
 import (
 	"context"
 	"fmt"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	"github.com/packethost/packngo"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/packethost/packngo"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 // PacketSizesReq represent a request for Packet sizes.
