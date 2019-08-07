@@ -1,6 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
-function retry {
+retry() {
   local retries=$1
   shift
 
