@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -17,10 +18,23 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func New(
+type SeedWebhookOpts struct {
+	listenAddress string
+	certFile      string
+	keyFile       string
+}
+
+func (opts *SeedWebhookOpts) AddFlags(fs *flag.FlagSet) {
+	fs.StringVar(&opts.listenAddress, "seed-admisisonwebhook-listen-address", ":8100", "The listen address for the seed amission webhook")
+	fs.StringVar(&opts.certFile, "seed-admissionwebhook-cert-file", "", "The location of the certificate file")
+	fs.StringVar(&opts.keyFile, "seed-admissionwebhook-key-file", "", "The location of the certificate key file")
+}
+
+// Server returns a Server that validates AdmissionRequests for Seed CRs
+func (opts *SeedWebhookOpts) Server(
 	ctx context.Context,
 	log *zap.SugaredLogger,
-	certFile, keyFile, listenAddress, workerName string,
+	workerName string,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter) (*Server, error) {
 
@@ -32,16 +46,16 @@ func New(
 
 	server := &Server{
 		Server: &http.Server{
-			Address: listenAddress,
+			Addr: opts.listenAddress,
 		},
-		log:           log,
-		listenAddress: listenAddress,
-		certFile:      certFile,
-		keyFile:       keyFile,
+		log:           log.Named("seed-webhook-server"),
+		listenAddress: opts.listenAddress,
+		certFile:      opts.certFile,
+		keyFile:       opts.keyFile,
 		validator:     newValidator(ctx, seedsGetter, seedKubeconfigGetter, listOpts),
 	}
 	mux := http.NewServeMux()
-	mux.Handle("/v1/seed-validation", server.handleSeedValidationRequests)
+	mux.HandleFunc("/v1/seed-validation", server.handleSeedValidationRequests)
 	server.Handler = mux
 
 	return server, nil
@@ -57,7 +71,7 @@ type Server struct {
 }
 
 // This implements sigs.k8s.io/controller-runtime/pkg/manager.Runnable
-func (s *Server) Start(_ chan struct{}) error {
+func (s *Server) Start(_ <-chan struct{}) error {
 	return s.ListenAndServeTLS(s.certFile, s.keyFile)
 }
 

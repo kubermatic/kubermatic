@@ -17,6 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
+	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -32,6 +33,7 @@ type controllerRunOptions struct {
 	internalAddr       string
 	dynamicDatacenters bool
 	log                kubermaticlog.Options
+	seedvalidationHook seedvalidation.SeedWebhookOpts
 
 	workerName string
 }
@@ -50,6 +52,7 @@ func main() {
 	var g run.Group
 	ctrlCtx := &controllerContext{}
 	runOpts := controllerRunOptions{}
+	runOpts.seedvalidationHook.AddFlags(flag.CommandLine)
 	flag.StringVar(&runOpts.kubeconfig, "kubeconfig", "", "Path to a kubeconfig.")
 	flag.StringVar(&runOpts.dcFile, "datacenters", "", "The datacenters.yaml file path")
 	flag.StringVar(&runOpts.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
@@ -128,6 +131,15 @@ func main() {
 		ctx, mgr.GetClient(), runOpts.kubeconfig, ctrlCtx.namespace, runOpts.dynamicDatacenters)
 	if err != nil {
 		sugarLog.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
+	}
+
+	seedValidationWebhookServer, err := runOpts.seedvalidationHook.Server(
+		ctx, sugarLog, runOpts.workerName, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter)
+	if err != nil {
+		sugarLog.Fatalw("failed to create validatingAdmissionWebhook server for seeds", zap.Error(err))
+	}
+	if err := mgr.Add(seedValidationWebhookServer); err != nil {
+		sugarLog.Fatalf("failed to add validatingAdmissionWebhook server to mgr", zap.Error(err))
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {
