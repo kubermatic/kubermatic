@@ -15,6 +15,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 func secretName(contextName string) string {
@@ -65,8 +68,6 @@ func seedServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 func seedPrometheusRoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return SeedPrometheusRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Name = SeedPrometheusRoleName
-			r.Namespace = SeedPrometheusNamespace
 			r.Labels = defaultLabels(SeedPrometheusRoleName, "")
 
 			r.Rules = []rbacv1.PolicyRule{
@@ -86,8 +87,6 @@ func seedPrometheusRoleCreator() reconciling.NamedRoleCreatorGetter {
 func seedPrometheusRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return SeedPrometheusRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			rb.Name = SeedPrometheusRoleBindingName
-			rb.Namespace = SeedPrometheusNamespace
 			rb.Labels = defaultLabels(SeedPrometheusRoleBindingName, "")
 
 			rb.RoleRef = rbacv1.RoleRef{
@@ -109,26 +108,55 @@ func seedPrometheusRoleBindingCreator() reconciling.NamedRoleBindingCreatorGette
 	}
 }
 
-func masterSecretCreator(contextName string, credentials *corev1.Secret) reconciling.NamedSecretCreatorGetter {
+func masterSecretCreator(contextName string, kubeconfig *rest.Config, credentials *corev1.Secret) reconciling.NamedSecretCreatorGetter {
 	name := secretName(contextName)
+	host := kubeconfig.Host
 
 	return func() (string, reconciling.SecretCreator) {
 		return name, func(s *corev1.Secret) (*corev1.Secret, error) {
-			s.Name = name
-			s.Namespace = MasterTargetNamespace
 			s.Labels = defaultLabels("seed-proxy", contextName)
 
 			if s.Data == nil {
 				s.Data = make(map[string][]byte)
 			}
 
-			for k, v := range credentials.Data {
-				s.Data[k] = v
+			// convert the service account CA and token into a handy kubeconfig so that
+			// consuming the credentials becomes easier later on
+			kubeconfig, err := convertServiceAccountToKubeconfig(host, credentials)
+			if err != nil {
+				return s, fmt.Errorf("failed to create kubeconfig: %v", err)
 			}
+
+			s.Data["kubeconfig"] = kubeconfig
 
 			return s, nil
 		}
 	}
+}
+
+func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret) ([]byte, error) {
+	clusterName := "seed"
+	contextName := "default"
+	authName := "token-based"
+
+	cluster := api.NewCluster()
+	cluster.CertificateAuthorityData = credentials.Data["ca.crt"]
+	cluster.Server = host
+
+	context := api.NewContext()
+	context.Cluster = clusterName
+	context.AuthInfo = authName
+
+	user := api.NewAuthInfo()
+	user.Token = string(credentials.Data["token"])
+
+	kubeconfig := api.NewConfig()
+	kubeconfig.Clusters[clusterName] = cluster
+	kubeconfig.Contexts[contextName] = context
+	kubeconfig.AuthInfos[authName] = user
+	kubeconfig.CurrentContext = contextName
+
+	return clientcmd.Write(*kubeconfig)
 }
 
 func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconciling.NamedDeploymentCreatorGetter {
@@ -156,8 +184,6 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 				},
 			}
 
-			d.Name = name
-			d.Namespace = MasterTargetNamespace
 			d.OwnerReferences = ownerReferences(secret)
 			d.Labels = labels()
 			d.Labels[ManagedByLabel] = ControllerName
@@ -183,6 +209,10 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 							Value: contextName,
 						},
 						{
+							Name:  "KUBECONFIG",
+							Value: "/opt/kubeconfig/kubeconfig",
+						},
+						{
 							Name:  "PROXY_PORT",
 							Value: fmt.Sprintf("%d", KubectlProxyPort),
 						},
@@ -194,13 +224,13 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					//		VolumeMounts: []corev1.VolumeMount{
-					//			{
-					//				MountPath: "var/run/secrets/kubernetes.io/serviceaccount/",
-					//				Name:      "serviceaccount",
-					//				ReadOnly:  true,
-					//			},
-					//		},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							MountPath: "/opt/kubeconfig",
+							Name:      "kubeconfig",
+							ReadOnly:  true,
+						},
+					},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("10m"),
@@ -237,8 +267,6 @@ func masterServiceCreator(contextName string, secret *corev1.Secret) reconciling
 
 	return func() (string, reconciling.ServiceCreator) {
 		return name, func(s *corev1.Service) (*corev1.Service, error) {
-			s.Name = name
-			s.Namespace = MasterTargetNamespace
 			s.OwnerReferences = ownerReferences(secret)
 			s.Labels = map[string]string{
 				NameLabel:      MasterServiceName,
@@ -277,8 +305,6 @@ func (r *Reconciler) masterGrafanaConfigmapCreator(seeds map[string]*kubermaticv
 				}
 			}
 
-			c.Name = MasterGrafanaConfigMapName
-			c.Namespace = MasterGrafanaNamespace
 			c.Data = make(map[string]string)
 
 			c.Labels = labels()
