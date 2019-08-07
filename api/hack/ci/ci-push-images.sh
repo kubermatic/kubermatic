@@ -8,14 +8,14 @@ cd "$(git rev-parse --show-toplevel)"
 GIT_HEAD_HASH="$(git rev-parse HEAD)"
 TAGS="$GIT_HEAD_HASH $(git tag -l --points-at HEAD)"
 
+apt install time -y
+
 echodate "Logging into Quay"
 docker ps > /dev/null 2>&1 || start-docker.sh
 retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
 echodate "Successfully logged into Quay"
 
 echodate "Building binaries"
-echo $PATH
-which time
 time make -C api build
 echodate "Successfully finished building binaries"
 
