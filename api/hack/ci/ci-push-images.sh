@@ -15,6 +15,8 @@ retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
 echodate "Successfully logged into Quay"
 
 echodate "Building binaries"
+echo $PATH
+which time
 time make -C api build
 echodate "Successfully finished building binaries"
 
