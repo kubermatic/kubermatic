@@ -12,7 +12,7 @@ spec:
         accessKeyId: ""
         ami: aws-ami
         assignPublicIP: null
-        availabilityZone: fra1aws-zone-character
+        availabilityZone: ""
         diskSize: 25
         diskType: standard
         instanceProfile: aws-instance-profile-name

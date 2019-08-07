@@ -4402,10 +4402,6 @@
           "type": "string",
           "x-go-name": "AccessKeyID"
         },
-        "availabilityZone": {
-          "type": "string",
-          "x-go-name": "AvailabilityZone"
-        },
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
