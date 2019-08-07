@@ -20,6 +20,9 @@ data:
         HTTP_Port     2020
 
     @INCLUDE kubernetes.conf
+    {{- if .Values.logging.fluentbit.configuration.collectSystemd }}
+    @INCLUDE systemd.conf
+    {{- end }}
     @INCLUDE outputs.conf
 
   kubernetes.conf: |
@@ -41,6 +44,78 @@ data:
         Merge_Log_Trim      On
         K8S-Logging.Parser  On
         Annotations         Off
+
+  systemd.conf: |
+    ############################################################
+    # Systemd / Journald
+    ############################################################
+    # We simply expect that journald either stores logs to /var/log/journal (persistent) or /run/log/journal/ (in memory)
+    # Persistent is the default on most operating systems, in memory though is the journald default.
+    # By using both we should cover 95% of all systems. FluentBit will just log an error in case one directory does not exist - Acceptable
+    [INPUT]
+        Name              systemd
+        Path              /var/log/journal
+        Tag               systemd.*
+        DB                /var/log/fluentbit_systemd_persistent.db
+        Max_Entries       1000
+        Read_From_Tail    true
+        Strip_Underscores true
+    [INPUT]
+        Name              systemd
+        Path              /run/log/journal
+        Tag               systemd.*
+        DB                /var/log/fluentbit_systemd_volatile.db
+        Max_Entries       1000
+        Read_From_Tail    true
+        Strip_Underscores true
+
+    # Only keep the relevant fields
+    [FILTER]
+        Name record_modifier
+        Match systemd.*
+        Whitelist_key SYSTEMD_UNIT
+        Whitelist_key MESSAGE
+        Whitelist_key SYSTEMD_CGROUP
+        Whitelist_key CMDLINE
+        Whitelist_key EXE
+        Whitelist_key SYSLOG_IDENTIFIER
+        Whitelist_key SYSTEMD_SLICE
+        Whitelist_key SOURCE_REALTIME_TIMESTAMP
+
+    # Give all fields except MESSAGE a prefix, so we can later nest all prefixed fields below "systemd"
+    # Also lowercase all systemd keys to be consistend with the kubernetes fields
+    [FILTER]
+        Name modify
+        Match systemd.*
+        Set source systemd
+        # We use log for all logging. Using a consistent field makes searching easier
+        Rename MESSAGE log
+        # Add a _NEST prefix so we can nest only those
+        Rename SYSTEMD_UNIT _NEST_systemd_unit
+        Rename SYSTEMD_CGROUP _NEST_systemd_group
+        Rename SYSTEMD_SLICE _NEST_systemd_slice
+        Rename CMDLINE _NEST_cmdline
+        Rename EXE _NEST_exe
+        Rename SYSLOG_IDENTIFIER _NEST_syslog_identifier
+        Rename SOURCE_REALTIME_TIMESTAMP _NEST_source_realtime_timestamp
+
+    # We nest all systemd specific fields below a top level systemd key. That makes it easier to check what fields we have available during troubleshooting
+    [FILTER]
+        Name nest
+        Match systemd.*
+        Operation nest
+        Wildcard _NEST_*
+        Nest_under systemd
+        Remove_prefix _NEST_
+
+    # When using systemd as cgroup driver, runc tests systemd compatibility with each invocation (At least it looks like that).
+    # Systemd logs the creation & deletion of the cgroup creation each time. Which can result in 100+ messages per minute
+    # https://www.ibm.com/support/knowledgecenter/en/SSBS6K_3.2.0/troubleshoot/cgroup_driver.html
+    # This filter will filter all messages related to the test cgroups
+    [FILTER]
+        Name    grep
+        Match systemd.*
+        Exclude log libcontainer.*?test_default\.slice
 
   outputs.conf: |
 {{- range .Values.logging.fluentbit.configuration.outputs }}
