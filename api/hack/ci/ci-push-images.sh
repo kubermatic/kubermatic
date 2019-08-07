@@ -1,12 +1,11 @@
 #!/bin/sh
 
 set -euo pipefail
-GIT_HEAD_HASH="$(git rev-parse HEAD)"
-here=$(dirname "$0")
-cd "$here/../../.."
+cd "$(git rev-parse --show-toplevel)"
 
 . ./api/hack/lib.sh
 
+GIT_HEAD_HASH="$(git rev-parse HEAD)"
 # FIXME: use `latest` only on the master branch
 TAGS="$GIT_HEAD_HASH $(git tag -l --points-at HEAD) latest"
 
