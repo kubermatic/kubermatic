@@ -52,9 +52,11 @@ type serverRunOptions struct {
 
 func newServerRunOptions() (serverRunOptions, error) {
 	s := serverRunOptions{}
-	var rawFeatureGates string
-	var rawExposeStrategy string
-	var rawAccessibleAddons string
+	var (
+		rawFeatureGates   string
+		rawExposeStrategy string
+		rawAccessibleAddons string
+	)
 
 	flag.StringVar(&s.listenAddress, "address", ":8080", "The address to listen on")
 	flag.StringVar(&s.kubeconfig, "kubeconfig", "", "Path to the kubeconfig.")

@@ -63,6 +63,10 @@ type VSphereDatacenterSpec struct {
 	Templates  ImageList `json:"templates"`
 }
 
+// KubevirtDatacenterSpec specifies a datacenter of Kubevirt.
+type KubevirtDatacenterSpec struct {
+}
+
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
 type BringYourOwnDatacenterSpec struct{}
 
@@ -112,6 +116,7 @@ type DatacenterSpec struct {
 	GCP          *GCPDatacenterSpec           `json:"gcp,omitempty"`
 	Hetzner      *HetznerDatacenterSpec       `json:"hetzner,omitempty"`
 	VSphere      *VSphereDatacenterSpec       `json:"vsphere,omitempty"`
+	Kubevirt     *KubevirtDatacenterSpec      `json:"kubevirt,omitempty"`
 }
 
 // DatacenterList represents a list of datacenters
