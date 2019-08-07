@@ -250,7 +250,9 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 // CleanUpCloudProvider does the clean-up in particular:
 // removes security group and network configuration
-func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
+func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
+	os.clusterUpdater = update
+
 	netClient, err := os.getNetClient(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a authenticated openstack client: %v", err)
