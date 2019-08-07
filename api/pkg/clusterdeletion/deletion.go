@@ -7,6 +7,9 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+
+	"go.uber.org/zap"
+
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,9 +32,11 @@ type Deletion struct {
 }
 
 // CleanupCluster is responsible for cleaning up a cluster.
-func (d *Deletion) CleanupCluster(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	log = log.Named("cleanup")
+
 	// Delete Volumes and LB's inside the user cluster
-	if err := d.cleanupInClusterResources(ctx, cluster); err != nil {
+	if err := d.cleanupInClusterResources(ctx, log, cluster); err != nil {
 		return err
 	}
 	if err := d.cleanupNodes(ctx, cluster); err != nil {
@@ -56,12 +61,15 @@ func (d *Deletion) CleanupCluster(ctx context.Context, cluster *kubermaticv1.Clu
 	return nil
 }
 
-func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	log = log.Named("in-cluster-resources")
+
 	shouldDeleteLBs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterLBCleanupFinalizer)
 	shouldDeletePVs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterPVCleanupFinalizer)
 
 	// If no relevant finalizer exists, directly return
 	if !shouldDeleteLBs && !shouldDeletePVs {
+		log.Debug("Skipping in-cluster-resources deletion. Neither the LB nor the PV finalizers is set")
 		return nil
 	}
 
@@ -70,7 +78,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 	var deletedSomeResource bool
 
 	if shouldDeleteLBs {
-		deletedSomeLBs, err := d.cleanupLBs(ctx, cluster)
+		deletedSomeLBs, err := d.cleanupLBs(ctx, log, cluster)
 		if err != nil {
 			return fmt.Errorf("failed to cleanup LBs: %v", err)
 		}

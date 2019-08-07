@@ -8,6 +8,8 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	"go.uber.org/zap"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,7 +22,10 @@ const (
 	eventReasonDeletedLoadBalancer = "DeletedLoadBalancer"
 )
 
-func (d *Deletion) cleanupLBs(ctx context.Context, cluster *kubermaticv1.Cluster) (deletedSomeLBs bool, err error) {
+func (d *Deletion) cleanupLBs(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (deletedSomeLBs bool, err error) {
+	log = log.Named("lb-cleanup")
+	log.Debug("Cleaning up LoadBalancers...")
+
 	userClusterClient, err := d.userClusterClientGetter()
 	if err != nil {
 		return false, err
@@ -32,13 +37,16 @@ func (d *Deletion) cleanupLBs(ctx context.Context, cluster *kubermaticv1.Cluster
 	}
 
 	for _, service := range serviceList.Items {
+		serviceName := fmt.Sprintf("%s/%s", service.Namespace, service.Name)
+		slog := log.With("service", serviceName)
+
 		// Only LoadBalancer services create cost on cloud providers
 		if service.Spec.Type != corev1.ServiceTypeLoadBalancer {
+			slog.Debug("Skipping cleanup of service as it's not a LoadBalancer")
 			continue
 		}
 
-		serviceName := fmt.Sprintf("%s/%s", service.Namespace, service.Name)
-		if err := d.cleanupLB(ctx, userClusterClient, &service, cluster); err != nil {
+		if err := d.cleanupLB(ctx, slog, userClusterClient, &service, cluster); err != nil {
 			return deletedSomeLBs, fmt.Errorf("failed to delete service %q inside user cluster: %v", serviceName, err)
 		}
 		deletedSomeLBs = true
@@ -47,10 +55,12 @@ func (d *Deletion) cleanupLBs(ctx context.Context, cluster *kubermaticv1.Cluster
 	return deletedSomeLBs, nil
 }
 
-func (d *Deletion) cleanupLB(ctx context.Context, userClusterClient controllerruntimeclient.Client, service *corev1.Service, cluster *kubermaticv1.Cluster) error {
+func (d *Deletion) cleanupLB(ctx context.Context, log *zap.SugaredLogger, userClusterClient controllerruntimeclient.Client, service *corev1.Service, cluster *kubermaticv1.Cluster) error {
+	log.Debug("Deleting service...")
 	if err := userClusterClient.Delete(ctx, service); err != nil {
 		return fmt.Errorf("failed to delete service: %v", err)
 	}
+	log.Info("Deleted service")
 
 	// We store the deleted service UID's on the cluster so we can check on the next iteration if they are really gone.
 	// We only really know if a LoadBalancer(The cloud provider LB) is gone, until there has been an event stating that.
