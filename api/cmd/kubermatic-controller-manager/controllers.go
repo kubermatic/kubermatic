@@ -74,7 +74,13 @@ func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
 
 func createCloudController(ctrlCtx *controllerContext) error {
 	predicates := workerlabel.Predicates(ctrlCtx.runOptions.workerName)
-	if err := cloudcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.seedGetter, predicates); err != nil {
+	if err := cloudcontroller.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.seedGetter,
+		predicates,
+	); err != nil {
 		return fmt.Errorf("failed to add cloud controller to mgr: %v", err)
 	}
 	return nil
