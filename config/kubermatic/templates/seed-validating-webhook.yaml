@@ -1,0 +1,63 @@
+{{- $seedAdmissionControllerCA := genCA "seed-admission-controller" 3650 -}}
+{{- $seedAdmissionControllerServingCN := "seed-webhook" -}}
+{{- $seedAdmissionControllerServingAlt1 := (printf "seed-webhook.%s" .Release.Namespace) -}}
+{{- $seedAdmissionControllerServingAlt2 := (printf "seed-webhook.%s.svc" .Release.Namespace) -}}
+{{- $seedAdmissionControllerServingCert := genSignedCert $seedAdmissionControllerServingCN nil (list $seedAdmissionControllerServingAlt1 $seedAdmissionControllerServingAlt2) 3650 $seedAdmissionControllerCA -}}
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: kubermatic.io-seeds{{ if .Values.kubermatic.worker_name}}-{{.Values.kubermatic.worker_name}}{{ end}}
+webhooks:
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    caBundle: "{{ b64enc $seedAdmissionControllerCA.Cert }}"
+    service:
+      name: seed-webhook
+      namespace: {{ .Release.Namespace }}
+  failurePolicy: Fail
+  name: seeds
+  rules:
+  - apiGroups:
+    - kubermatic.k8s.io
+    apiVersions:
+    - *
+    operations:
+    - *
+    resources:
+    - seeds
+    scope: '*'
+  sideEffects: Unknown
+  timeoutSeconds: 30
+{{- if .Values.kubermatic.worker_name}}
+  namespaceSelector:
+    workerName: {{ .Values.kubermatic.worker_name}}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seed-webhook
+spec:
+  ports:
+  - name: "443"
+    port: 443
+    protocol: TCP
+    targetPort: 8100
+  selector:
+{{- if .Values.kubermatic.isMaster }}
+    app: master-controller
+{{- else }}
+    role: controller-manager
+{{- end }}
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: seed-webhook-serving-cert
+type: Opaque
+data:
+  caCert.pem: {{ b64enc $seedAdmissionControllerCA.Cert }}
+  serverCert.pem: {{ b64enc $seedAdmissionControllerServingCert.Cert }}
+  serverKey.pem: {{ b64enc $seedAdmissionControllerServingCert.Key }}
