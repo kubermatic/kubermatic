@@ -162,6 +162,8 @@ func apiSpec(dc *kubermaticv1.Datacenter) (*apiv1.DatacenterSpec, error) {
 			ZoneSuffixes: dc.Spec.GCP.ZoneSuffixes,
 			Regional:     dc.Spec.GCP.Regional,
 		}
+	case dc.Spec.Kubevirt != nil:
+		spec.Kubevirt = &apiv1.KubevirtDatacenterSpec{}
 	}
 
 	return spec, nil

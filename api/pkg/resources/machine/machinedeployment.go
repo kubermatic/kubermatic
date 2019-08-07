@@ -181,6 +181,7 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 	default:
 		return nil, errors.New("unknown cloud provider")
 	}
+	config.CloudProviderSpec = *cloudExt
 
 	var osExt *runtime.RawExtension
 
