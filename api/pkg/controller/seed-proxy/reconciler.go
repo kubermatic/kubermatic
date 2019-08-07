@@ -13,6 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -124,7 +125,7 @@ func (r *Reconciler) reconcileSeed(name string) error {
 		return fmt.Errorf("failed to fetch service account: %v", err)
 	}
 
-	if err := r.reconcileMaster(name, serviceAccountSecret); err != nil {
+	if err := r.reconcileMaster(name, cfg, serviceAccountSecret); err != nil {
 		return fmt.Errorf("failed to reconcile master: %v", err)
 	}
 
@@ -195,9 +196,9 @@ func (r *Reconciler) fetchServiceAccountSecret(client ctrlruntimeclient.Client) 
 	return secret, nil
 }
 
-func (r *Reconciler) reconcileMaster(seedName string, credentials *corev1.Secret) error {
+func (r *Reconciler) reconcileMaster(seedName string, kubeconfig *rest.Config, credentials *corev1.Secret) error {
 	glog.V(4).Info("Reconciling secrets...")
-	secret, err := r.ensureMasterSecrets(seedName, credentials)
+	secret, err := r.ensureMasterSecrets(seedName, kubeconfig, credentials)
 	if err != nil {
 		return fmt.Errorf("failed to ensure secrets: %v", err)
 	}
@@ -215,9 +216,9 @@ func (r *Reconciler) reconcileMaster(seedName string, credentials *corev1.Secret
 	return nil
 }
 
-func (r *Reconciler) ensureMasterSecrets(seedName string, credentials *corev1.Secret) (*corev1.Secret, error) {
+func (r *Reconciler) ensureMasterSecrets(seedName string, kubeconfig *rest.Config, credentials *corev1.Secret) (*corev1.Secret, error) {
 	creators := []reconciling.NamedSecretCreatorGetter{
-		masterSecretCreator(seedName, credentials),
+		masterSecretCreator(seedName, kubeconfig, credentials),
 	}
 
 	if err := reconciling.ReconcileSecrets(r.ctx, creators, MasterTargetNamespace, r.Client); err != nil {
