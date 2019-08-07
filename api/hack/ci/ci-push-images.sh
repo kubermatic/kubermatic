@@ -31,7 +31,7 @@ time docker build -t "quay.io/kubermatic/addons:$GIT_HEAD_HASH" ./addons
 for TAG in $TAGS; do
     [ -z "$TAG" ] && continue
 
-    if ! [ "$TAG" = "$GIT_HEAD_HASH" ]; then
+    if  [ "$TAG" != "$GIT_HEAD_HASH" ]; then
       echo "Tagging ${TAG}"
       docker tag "quay.io/kubermatic/addons:$GIT_HEAD_HASH" "quay.io/kubermatic/addons:$TAG"
     fi

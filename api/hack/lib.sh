@@ -19,5 +19,5 @@ retry() {
 }
 
 echodate() {
-  echo "$(date)" "$@"
+  echo "$(date -Is)" "$@"
 }
