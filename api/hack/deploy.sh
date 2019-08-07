@@ -96,7 +96,7 @@ case "${DEPLOY_STACK}" in
     # CI has its own Minio deployment as a proxy for GCS, so we do not install the default Helm chart here.
     if [[ "${DEPLOY_MINIO}" = true ]]; then
       deploy "minio" "minio" ./config/minio/
-      deploy "s3-exporter" "kubermatic" ./config/s3-exporter/
+      deploy "s3-exporter" "kube-system" ./config/s3-exporter/
     fi
 
     # The NodePort proxy is only relevant in cloud environments (Where LB services can be used)
