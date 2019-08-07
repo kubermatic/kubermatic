@@ -19,11 +19,10 @@ data:
         HTTP_Listen   0.0.0.0
         HTTP_Port     2020
 
-    @INCLUDE input-kubernetes.conf
-    @INCLUDE filter-kubernetes.conf
+    @INCLUDE kubernetes.conf
     @INCLUDE outputs.conf
 
-  input-kubernetes.conf: |
+  kubernetes.conf: |
     [INPUT]
         Name              tail
         Tag               kube.*
@@ -34,7 +33,6 @@ data:
         Skip_Long_Lines   On
         Refresh_Interval  10
 
-  filter-kubernetes.conf: |
     [FILTER]
         Name                kubernetes
         Match               kube.*
