@@ -217,7 +217,7 @@ func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update
 // CleanUpCloudProvider we always check if the folder is there and remove it if yes because we know its absolute path
 // This covers cases where the finalizer was not added
 // We also remove the finalizer if either the folder is not present or we successfully deleted it
-func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	vsphereRootPath, err := v.getVsphereRootPath(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, err
