@@ -6,6 +6,7 @@ logging:
       pullPolicy: IfNotPresent
     configuration:
       containerRuntimeParser: docker
+      collectSystemd: false
       outputs:
       - |
         Name            es

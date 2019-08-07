@@ -20,7 +20,9 @@ data:
         HTTP_Port     2020
 
     @INCLUDE kubernetes.conf
+    {{- if .Values.logging.fluentbit.configuration.collectSystemd }}
     @INCLUDE systemd.conf
+    {{- end }}
     @INCLUDE outputs.conf
 
   kubernetes.conf: |
