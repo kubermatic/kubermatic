@@ -55,7 +55,6 @@ type Opts struct {
 	reportsRoot                  string
 	seedClusterClient            ctrlruntimeclient.Client
 	clusterClientProvider        clusterclient.UserClusterConnectionProvider
-	dcFile                       string
 	repoRoot                     string
 	seed                         *kubermaticv1.Seed
 	cleanupOnStart               bool
@@ -157,7 +156,7 @@ func main() {
 	flag.StringVar(&opts.repoRoot, "repo-root", "/opt/kube-test/", "Root path for the different kubernetes repositories")
 	flag.IntVar(&opts.nodeCount, "kubermatic-nodes", 3, "number of worker nodes")
 	flag.IntVar(&opts.clusterParallelCount, "kubermatic-parallel-clusters", 5, "number of clusters to test in parallel")
-	flag.StringVar(&opts.dcFile, "datacenters", "datacenters.yaml", "The datacenters.yaml file path")
+	_ = flag.String("datacenters", "", "No-Op flag kept for compatibility reasons")
 	flag.StringVar(&opts.reportsRoot, "reports-root", "/opt/reports", "Root for reports")
 	flag.BoolVar(&opts.cleanupOnStart, "cleanup-on-start", false, "Cleans up all clusters on start and exit afterwards - must be used with name-prefix.")
 	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", defaultTimeout, "cluster creation timeout")
@@ -292,11 +291,6 @@ func main() {
 		}
 	}()
 
-	opts.seed, err = provider.LoadSeed(opts.dcFile, seedName)
-	if err != nil {
-		log.Fatalf("failed to get seed %q: %v", seedName, err)
-	}
-
 	config, err := clientcmd.BuildConfigFromFlags("", opts.kubeconfigPath)
 	if err != nil {
 		log.Fatal(err)
@@ -314,6 +308,19 @@ func main() {
 		log.Fatal(err)
 	}
 	opts.seedClusterClient = seedClusterClient
+
+	namespaceName := os.Getenv("NAMESPACE")
+	if namespaceName == "" {
+		log.Fatal("Environment variable `NAMESPACE` must be set and contain the namespace for our seed")
+	}
+	seedGetter, err := provider.SeedGetterFactory(context.Background(), seedClusterClient, seedName, "", namespaceName, true)
+	if err != nil {
+		log.WithError(err).Fatal("failed to consturct seedGetter")
+	}
+	opts.seed, err = seedGetter()
+	if err != nil {
+		log.WithError(err).Fatal("failed to get seed")
+	}
 
 	clusterClientProvider, err := clusterclient.NewExternal(seedClusterClient)
 	if err != nil {
