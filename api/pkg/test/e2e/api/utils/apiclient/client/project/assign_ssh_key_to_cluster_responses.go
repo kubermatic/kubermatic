@@ -65,16 +65,24 @@ func NewAssignSSHKeyToClusterCreated() *AssignSSHKeyToClusterCreated {
 
 /*AssignSSHKeyToClusterCreated handles this case with default header values.
 
-EmptyResponse is a empty response
+SSHKey
 */
 type AssignSSHKeyToClusterCreated struct {
+	Payload *models.SSHKey
 }
 
 func (o *AssignSSHKeyToClusterCreated) Error() string {
-	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] assignSshKeyToClusterCreated ", 201)
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] assignSshKeyToClusterCreated  %+v", 201, o.Payload)
 }
 
 func (o *AssignSSHKeyToClusterCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.SSHKey)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
 
 	return nil
 }
