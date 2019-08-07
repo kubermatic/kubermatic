@@ -159,19 +159,19 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 }
 
 func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, cloudProvider provider.CloudProvider) error {
-	switch provider := cloudProvider.(type) {
+	switch prov := cloudProvider.(type) {
 	case *aws.AmazonEC2:
-		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
+		if err := prov.AddICMPRulesIfRequired(cluster); err != nil {
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
 		}
 		log.Info("Successfully ensured ICMP rules in security group of cluster")
 	case *openstack.Provider:
-		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
+		if err := prov.AddICMPRulesIfRequired(cluster); err != nil {
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
 		}
 		log.Info("Successfully ensured ICMP rules in security group of cluster")
 	case *azure.Azure:
-		if err := provider.AddICMPRulesIfRequired(cluster); err != nil {
+		if err := prov.AddICMPRulesIfRequired(cluster); err != nil {
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
 		}
 		log.Info("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
@@ -189,8 +189,8 @@ func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cl
 }
 
 func (r *Reconciler) migrateAWSMultiAZ(ctx context.Context, cluster *kubermaticv1.Cluster, cloudProvider provider.CloudProvider) error {
-	if awsprovider, ok := cloudProvider.(*aws.AmazonEC2); ok {
-		if err := awsprovider.MigrateToMultiAZ(cluster); err != nil {
+	if prov, ok := cloudProvider.(*aws.AmazonEC2); ok {
+		if err := prov.MigrateToMultiAZ(cluster); err != nil {
 			return fmt.Errorf("failed to migrate AWS cluster %q to multi-AZ: %q", cluster.Name, err)
 		}
 	}
