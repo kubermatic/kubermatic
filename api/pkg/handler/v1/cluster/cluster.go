@@ -341,15 +341,21 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if req.DeleteLoadBalancers {
-				kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterLBCleanupFinalizer)
-			}
-			if req.DeleteVolumes {
-				kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterPVCleanupFinalizer)
-			}
 
-			if _, err = clusterProvider.Update(userInfo, existingCluster); err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
+			// Use the NodeDeletionFinalizer to determine if the cluster was ever up, the LB and PV finalizers
+			// will prevent cluster deletion if the APIserver was never created
+			wasUpOnce := kuberneteshelper.HasFinalizer(existingCluster, apiv1.NodeDeletionFinalizer)
+			if wasUpOnce && (req.DeleteVolumes || req.DeleteLoadBalancers) {
+				if req.DeleteLoadBalancers {
+					kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterLBCleanupFinalizer)
+				}
+				if req.DeleteVolumes {
+					kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterPVCleanupFinalizer)
+				}
+
+				if _, err = clusterProvider.Update(userInfo, existingCluster); err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
 			}
 		}
 
