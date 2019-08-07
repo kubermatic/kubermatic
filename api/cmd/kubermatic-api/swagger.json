@@ -4511,10 +4511,12 @@
           "x-go-name": "InstanceProfileName"
         },
         "roleARN": {
+          "description": "The IAM role, the control plane will use. The control plane will perform an assume-rule",
           "type": "string",
-          "x-go-name": "RoleARN"
+          "x-go-name": "ControlPlaneRoleARN"
         },
         "roleName": {
+          "description": "DEPRECATED. Don't care for the role name. We only require the ControlPlaneRoleARN to be set so the control plane\ncan perform the assume-role.\nWe keep it for backwards compatibility (We use this name for cleanup purpose).",
           "type": "string",
           "x-go-name": "RoleName"
         },
