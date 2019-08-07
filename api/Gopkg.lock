@@ -136,7 +136,7 @@
   version = "v9"
 
 [[projects]]
-  digest = "1:89b0c818be2a0d8b504f0e27d201962cb94d29d88cc0526eb41d36cb64ad84ec"
+  digest = "1:d0059a8ddfd972094c9b8febfbbaf04044b40182184349095f8edacca1fcd849"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -171,6 +171,7 @@
     "private/protocol/xml/xmlutil",
     "service/ec2",
     "service/iam",
+    "service/iam/iamiface",
     "service/sts",
     "service/sts/stsiface",
   ]
@@ -2047,6 +2048,7 @@
     "github.com/aws/aws-sdk-go/aws/session",
     "github.com/aws/aws-sdk-go/service/ec2",
     "github.com/aws/aws-sdk-go/service/iam",
+    "github.com/aws/aws-sdk-go/service/iam/iamiface",
     "github.com/coreos/go-oidc",
     "github.com/digitalocean/godo",
     "github.com/docker/distribution/reference",
