@@ -22,7 +22,7 @@ import (
 
 type nopEventRecorder struct{}
 
-// These implement the record.EventRecorder interface.
+// These mock the record.EventRecorder interface.
 
 func (n *nopEventRecorder) Event(object runtime.Object, eventtype, reason, message string) {
 }
@@ -34,6 +34,8 @@ func (n *nopEventRecorder) AnnotatedEventf(object runtime.Object, annotations ma
 }
 
 func TestDefaultingConfigurations(t *testing.T) {
+	clientID := "foobar"
+
 	tests := []struct {
 		name     string
 		input    *operatorv1alpha1.KubermaticConfiguration
@@ -50,6 +52,30 @@ func TestDefaultingConfigurations(t *testing.T) {
 			validate: func(c *operatorv1alpha1.KubermaticConfiguration) error {
 				if c.Spec.Namespace != c.Namespace {
 					return fmt.Errorf("expected namespace %s, but got '%s'", c.Namespace, c.Spec.Namespace)
+				}
+
+				return nil
+			},
+		},
+		{
+			name: "Auth fields are defaulted",
+			input: &operatorv1alpha1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "foo",
+					Namespace: "bar",
+				},
+				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
+					Domain: "example.com",
+					Auth: operatorv1alpha1.KubermaticAuthConfiguration{
+						ClientID: clientID,
+					},
+				},
+			},
+			validate: func(c *operatorv1alpha1.KubermaticConfiguration) error {
+				expected := fmt.Sprintf("%sIssuer", clientID)
+
+				if c.Spec.Auth.IssuerClientID != expected {
+					return fmt.Errorf("expected IssuerClientID %s, but got '%s'", expected, c.Spec.Auth.IssuerClientID)
 				}
 
 				return nil
