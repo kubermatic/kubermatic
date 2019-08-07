@@ -10,6 +10,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
+	"go.uber.org/zap"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -65,6 +66,7 @@ func TestResources(t *testing.T) {
 			name: "Kubermatic API image is overwritten",
 			reconciler: Reconciler{
 				kubermaticImage: "my.corp/kubermatic",
+				log:             zap.NewNop().Sugar(),
 			},
 			object: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{

@@ -83,6 +83,7 @@ func createCloudController(ctrlCtx *controllerContext) error {
 func createOpenshiftController(ctrlCtx *controllerContext) error {
 	if err := openshiftcontroller.Add(
 		ctrlCtx.mgr,
+		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.seedGetter,
