@@ -26,7 +26,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/usercluster"
 
-	"github.com/golang/glog"
+	"go.uber.org/zap"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -71,6 +71,7 @@ type Features struct {
 
 type Reconciler struct {
 	client.Client
+	log                  *zap.SugaredLogger
 	scheme               *runtime.Scheme
 	recorder             record.EventRecorder
 	seedGetter           provider.SeedGetter
@@ -87,6 +88,7 @@ type Reconciler struct {
 
 func Add(
 	mgr manager.Manager,
+	log *zap.SugaredLogger,
 	numWorkers int,
 	workerName string,
 	seedGetter provider.SeedGetter,
@@ -101,6 +103,7 @@ func Add(
 ) error {
 	reconciler := &Reconciler{
 		Client:               mgr.GetClient(),
+		log:                  log.Named(ControllerName),
 		scheme:               mgr.GetScheme(),
 		recorder:             mgr.GetRecorder(ControllerName),
 		seedGetter:           seedGetter,
@@ -145,6 +148,8 @@ func Add(
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	log := r.log.With("request", request)
+	log.Debug("Processing")
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
@@ -153,25 +158,31 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		}
 		return reconcile.Result{}, err
 	}
+	log = log.With("cluster", cluster.Name)
 
 	if cluster.Spec.Pause {
-		glog.V(4).Infof("skipping paused cluster %s", cluster.Name)
+		log.Debug("Skipping because the cluster is paused")
 		return reconcile.Result{}, nil
 	}
 
 	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+		log.Debug("Skipping because the cluster is an Kubernetes cluster")
 		return reconcile.Result{}, nil
 	}
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		log.Debugw(
+			"Skipping because the cluster has a different worker name set",
+			"cluster-worker-name", cluster.Labels[kubermaticv1.WorkerNameLabelKey],
+		)
 		return reconcile.Result{}, nil
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := r.reconcile(ctx, cluster)
+	result, err := r.reconcile(ctx, log, cluster)
 	recorderCluster := cluster.DeepCopy()
 	if err != nil {
-		glog.Errorf("failed reconciling cluster %s: %v", cluster.Name, err)
+		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Eventf(recorderCluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
 	if result == nil {
@@ -180,10 +191,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	glog.V(4).Infof("Reconciling cluster %s", cluster.Name)
-
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	if cluster.DeletionTimestamp != nil {
+		log.Debug("Cleaning up cluster")
 
 		// Defer getting the client to make sure we only request it if we actually need it
 		userClusterClientGetter := func() (client.Client, error) {
