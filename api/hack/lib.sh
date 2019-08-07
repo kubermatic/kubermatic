@@ -1,23 +1,23 @@
-#!/bin/sh
-
 retry() {
-  local retries=$1
-  shift
+  retries=$1 ; shift
 
-  local count=0
+  count=0
+  delay=1
   until "$@"; do
-    exit=$?
-    wait=$((2 ** $count))
-    count=$(($count + 1))
-    if [ $count -lt $retries ]; then
-      echo "Retry $count/$retries exited $exit, retrying in $wait seconds..."
-      sleep $wait
+    rc=$?
+    count=$(( count + 1 ))
+    if [ $count -lt "$retries" ]; then
+      echo "Retry $count/$retries exited $rc, retrying in $delay seconds..."
+      sleep $delay
     else
-      echo "Retry $count/$retries exited $exit, no more retries left."
-      return $exit
+      echo "Retry $count/$retries exited $rc, no more retries left."
+      return $rc
     fi
+    delay=$(( delay * 2 ))
   done
   return 0
 }
 
-echodate() { echo "$(date) $@"; }
+echodate() {
+  echo "$(date)" "$@"
+}
