@@ -22,7 +22,7 @@ metadata:
     storageclass.beta.kubernetes.io/is-default-class: "true"
   labels:
     kubernetes.io/cluster-service: "true"
-  name: standard
+  name: standard-v2
 provisioner: kubernetes.io/aws-ebs
 parameters:
   type: gp2
