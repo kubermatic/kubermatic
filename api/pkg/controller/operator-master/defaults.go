@@ -55,11 +55,14 @@ func (r *Reconciler) defaultConfiguration(config *operatorv1alpha1.KubermaticCon
 
 	config.Spec.Auth = auth
 
-	r.defaultImage(&config.Spec.API.Image, "quay.io/kubermatic/api", "api.image", logger)
+	kubermaticDefaultImage := fmt.Sprintf("quay.io/kubermatic/api:%s", resources.KUBERMATICCOMMIT)
+	addonsDefaultImage := fmt.Sprintf("quay.io/kubermatic/addons:%s", resources.KUBERMATICCOMMIT)
+
+	r.defaultImage(&config.Spec.API.Image, kubermaticDefaultImage, "api.image", logger)
 	r.defaultImage(&config.Spec.UI.Image, "quay.io/kubermatic/ui-v2:v1.3.0", "ui.image", logger)
-	r.defaultImage(&config.Spec.MasterController.Image, "quay.io/kubermatic/api", "masterController.image", logger)
-	r.defaultImage(&config.Spec.SeedController.Image, "quay.io/kubermatic/api", "seedController.image", logger)
-	r.defaultImage(&config.Spec.SeedController.Addons.Kubernetes.Image, "quay.io/kubermatic/addons:v0.2.19", "seedController.addons.kubernetes.image", logger)
+	r.defaultImage(&config.Spec.MasterController.Image, kubermaticDefaultImage, "masterController.image", logger)
+	r.defaultImage(&config.Spec.SeedController.Image, kubermaticDefaultImage, "seedController.image", logger)
+	r.defaultImage(&config.Spec.SeedController.Addons.Kubernetes.Image, addonsDefaultImage, "seedController.addons.kubernetes.image", logger)
 	r.defaultImage(&config.Spec.SeedController.Addons.Openshift.Image, "quay.io/kubermatic/openshift-addons:v0.9", "seedController.addons.openshift.image", logger)
 
 	var (
