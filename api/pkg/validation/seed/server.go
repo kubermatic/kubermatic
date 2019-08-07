@@ -6,16 +6,21 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"go.uber.org/zap"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func New(
 	ctx context.Context,
-	listenAddress, workerName string,
+	log *zap.SugaredLogger,
+	certFile, keyFile, listenAddress, workerName string,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter) (*Server, error) {
 
@@ -23,17 +28,37 @@ func New(
 	if err != nil {
 		return nil, err
 	}
-	listOpts := &ctrlruntimeclient.ListOptions{Selector: labelSelector}
+	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}
 
-	return &Server{
+	server := &Server{
+		Server: &http.Server{
+			Address: listenAddress,
+		},
+		log:           log,
 		listenAddress: listenAddress,
+		certFile:      certFile,
+		keyFile:       keyFile,
 		validator:     newValidator(ctx, seedsGetter, seedKubeconfigGetter, listOpts),
 	}
+	mux := http.NewServeMux()
+	mux.Handle("/v1/seed-validation", server.handleSeedValidationRequests)
+	server.Handler = mux
+
+	return server, nil
 }
 
 type Server struct {
+	*http.Server
+	log           *zap.SugaredLogger
 	listenAddress string
+	certFile      string
+	keyFile       string
 	validator     *seedValidator
+}
+
+// This implements sigs.k8s.io/controller-runtime/pkg/manager.Runnable
+func (s *Server) Start(_ chan struct{}) error {
+	return s.ListenAndServeTLS(s.certFile, s.keyFile)
 }
 
 func (s *Server) handleSeedValidationRequests(resp http.ResponseWriter, req *http.Request) {
@@ -51,8 +76,31 @@ func (s *Server) handleSeedValidationRequests(resp http.ResponseWriter, req *htt
 
 	seed := &kubermaticv1.Seed{}
 	if err := json.Unmarshal(admissionRequest.Object.Raw, seed); err != nil {
-		http.Error(resp, "failed to unmarshal admissionRequest.Body into a Seed: "+err.Error, http.StatusBadRequest)
+		http.Error(resp, "failed to unmarshal admissionRequest.Body into a Seed: "+err.Error(), http.StatusBadRequest)
+	}
+	log := s.log.With("seed", seed.Name)
+
+	var result *metav1.Status
+	validationErr := s.validator.Validate(seed, admissionRequest.Operation == admissionv1beta1.Delete)
+	if validationErr != nil {
+		log.Errorw("seed failed validation", "validationError", validationErr.Error())
+		result = &metav1.Status{Message: validationErr.Error()}
 	}
 
-	validationErr := s.validator.Validate(seed, admissionRequest.Operation == admissionv1beta1.Delete)
+	admissionResponse := &admissionv1beta1.AdmissionResponse{
+		UID:     admissionRequest.UID,
+		Allowed: validationErr == nil,
+		Result:  result,
+	}
+	serializedAdmissionResponse, err := json.Marshal(admissionResponse)
+	if err != nil {
+		log.Errorw("failed to serialize admission response", zap.Error(err))
+		http.Error(resp, "failed to serialize response", http.StatusInternalServerError)
+		return
+	}
+
+	resp.WriteHeader(http.StatusOK)
+	if _, err := resp.Write(serializedAdmissionResponse); err != nil {
+		log.Errorw("failed to write response body", zap.Error(err))
+	}
 }
