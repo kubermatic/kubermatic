@@ -43,7 +43,7 @@ const (
 // CloudProvider declares a set of methods for interacting with a cloud provider
 type CloudProvider interface {
 	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater, SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error)
-	CleanUpCloudProvider(*kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater, SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error)
 	DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error
 	ValidateCloudSpec(spec kubermaticv1.CloudSpec) error
 	ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error

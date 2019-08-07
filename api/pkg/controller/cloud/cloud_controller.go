@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -124,7 +125,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			finalizers.Has(kubermaticapiv1.NodeDeletionFinalizer) {
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
-		_, err := prov.CleanUpCloudProvider(cluster)
+		_, err := prov.CleanUpCloudProvider(cluster, r.updateCluster, r.getGlobalSecretKeySelectorValue)
 		return nil, err
 	}
 
@@ -208,6 +209,9 @@ func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluste
 }
 
 func (r *Reconciler) getGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+	if configVar == nil {
+		return "", errors.New("configVar is nil")
+	}
 	if configVar.Name == "" || configVar.Namespace == "" {
 		return "", fmt.Errorf("both name and namespace must be specified in the secret key selector")
 	}

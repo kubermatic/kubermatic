@@ -52,7 +52,7 @@ func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update p
 }
 
 // CleanUpCloudProvider
-func (p *packet) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (p *packet) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	return cluster, nil
 }
 

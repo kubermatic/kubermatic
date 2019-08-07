@@ -203,7 +203,7 @@ func deleteSecurityGroup(ctx context.Context, cloud kubermaticv1.CloudSpec) erro
 	return nil
 }
 
-func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (a *Azure) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.ClusterUpdater, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	var err error
 	logger := a.log.With("cluster", cluster.Name)
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerSecurityGroup) {
