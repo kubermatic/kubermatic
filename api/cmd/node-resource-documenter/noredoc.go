@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+// handleResources handles the resource informations
+// of one YAML file.
+func handleResources(filename string, lines []string) {
+	for _, line := range lines {
+		log.Printf("%s: %s", filename, line)
+	}
+}
+
 // parseYAML analysis a YAML file for limits. But read them
 // as text files as they are also templates (non-valid YAML).
 func parseYAML(filename string) error {
@@ -21,6 +29,7 @@ func parseYAML(filename string) error {
 	resourcesMode := false
 	resourcePrefixes := []string{"limits:", "requests:", "memory:", "cpu:"}
 	s := bufio.NewScanner(f)
+	lines := []string{}
 scan:
 	for s.Scan() {
 		l := s.Text()
@@ -32,11 +41,13 @@ scan:
 		if resourcesMode {
 			for _, prefix := range resourcePrefixes {
 				if strings.HasPrefix(t, prefix) {
-					log.Printf("Resource: %s", t)
+					lines = append(lines, t)
 					continue scan
 				}
 			}
 			// TODO: Take care for comments.
+			handleResources(filename, lines)
+			lines = []string{}
 			resourcesMode = false
 		}
 	}
