@@ -7,6 +7,9 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
+
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -23,6 +26,7 @@ func newValidator(
 		seedKubeconfigGetter: seedKubeconfigGetter,
 		lock:                 &sync.Mutex{},
 		listOpts:             listOpts,
+		restMapperCache:      &sync.Map{},
 	}
 }
 
@@ -32,7 +36,8 @@ type seedValidator struct {
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
 	lock                 *sync.Mutex
 	// Can be used to insert a labelSelector
-	listOpts *ctrlruntimeclient.ListOptions
+	listOpts        *ctrlruntimeclient.ListOptions
+	restMapperCache *sync.Map
 }
 
 func (sv *seedValidator) Validate(seed *kubermaticv1.Seed, isDelete bool) error {
@@ -93,9 +98,25 @@ func (sv *seedValidator) clientForSeed(seed *kubermaticv1.Seed) (ctrlruntimeclie
 		return nil, fmt.Errorf("failed to get kubeconfig for seed %q: %v", seed.Name, err)
 	}
 
-	// TODO: Restmapper cache? User will use master to create Seeds, our EU master -> asia seed
-	// takes 10-20s for the discovery
-	client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
+	var mapper meta.RESTMapper
+	mapperKey := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s/%s/%s/%s",
+		seed.Name, cfg.Host, cfg.APIPath, cfg.Username, cfg.Password, cfg.BearerToken, cfg.BearerTokenFile,
+		string(cfg.CertData), string(cfg.KeyData), string(cfg.CAData))
+	rawMapper, exists := sv.restMapperCache.Load(mapperKey)
+	if !exists {
+		mapper, err = restmapper.NewDynamicRESTMapper(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create restMapper for seed %q: %v", seed.Name, err)
+		}
+		sv.restMapperCache.Store(mapperKey, mapper)
+	} else {
+		var ok bool
+		mapper, ok = rawMapper.(meta.RESTMapper)
+		if !ok {
+			return nil, fmt.Errorf("didn't get a restMapper from the cache")
+		}
+	}
+	client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Mapper: mapper})
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct client for seed %q: %v", seed.Name, err)
 	}
