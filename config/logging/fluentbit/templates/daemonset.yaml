@@ -60,9 +60,11 @@ spec:
           readOnly: true
         - name: config
           mountPath: /fluent-bit/etc/
+        {{- if .Values.logging.fluentbit.configuration.collectKernelMessages }}
         - name: kmsg
           mountPath: /dev/kmsg
           readOnly: true
+        {{- end }}
         resources:
 {{ toYaml .Values.logging.fluentbit.resources | indent 10 }}
       terminationGracePeriodSeconds: 10
@@ -83,9 +85,11 @@ spec:
       - name: config
         configMap:
           name: fluent-bit
+      {{- if .Values.logging.fluentbit.configuration.collectKernelMessages }}
       - name: kmsg
         hostPath:
           path: /dev/kmsg
+      {{- end }}
       nodeSelector:
 {{ toYaml .Values.logging.fluentbit.nodeSelector | indent 8 }}
       affinity:
