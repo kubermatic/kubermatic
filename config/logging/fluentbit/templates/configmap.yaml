@@ -55,6 +55,12 @@ data:
         K8S-Logging.Parser  On
         Annotations         Off
 
+    # Set the source field so we can later check identify from which input the data was coming
+    [FILTER]
+        Name modify
+        Match kube.*
+        Set source kubernetes
+
   systemd.conf: |
     ############################################################
     # Systemd / Journald
