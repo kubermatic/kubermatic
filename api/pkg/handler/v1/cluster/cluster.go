@@ -534,10 +534,6 @@ func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvide
 				Name:              sshKey.Spec.Name,
 				CreationTimestamp: apiv1.NewTime(sshKey.CreationTimestamp.Time),
 			},
-			Spec: apiv1.SSHKeySpec{
-				Fingerprint: sshKey.Spec.Fingerprint,
-				PublicKey:   sshKey.Spec.PublicKey,
-			},
 		}
 
 		if sshKey.IsUsedByCluster(req.ClusterID) {

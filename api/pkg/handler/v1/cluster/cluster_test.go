@@ -524,7 +524,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		{
 			Name:             "scenario 1: an ssh key that belongs to the given project is assigned to the cluster",
 			SSHKeyID:         "key-c08aa5c7abf34504f18552846485267d-yafn",
-			ExpectedResponse: `{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"yafn","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"","publicKey":""}}`,
+			ExpectedResponse: `{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"","publicKey":""}}`,
 			HTTPStatus:       http.StatusCreated,
 			ProjectToSync:    test.GenDefaultProject().Name,
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
@@ -808,11 +808,11 @@ func TestGetClusterHealth(t *testing.T) {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
 
-						Apiserver:         kubermaticv1.HealthStatusUp,
-						Scheduler:         kubermaticv1.HealthStatusDown,
-						Controller:        kubermaticv1.HealthStatusUp,
-						MachineController: kubermaticv1.HealthStatusDown,
-						Etcd:              kubermaticv1.HealthStatusUp,
+						Apiserver:                    kubermaticv1.HealthStatusUp,
+						Scheduler:                    kubermaticv1.HealthStatusDown,
+						Controller:                   kubermaticv1.HealthStatusUp,
+						MachineController:            kubermaticv1.HealthStatusDown,
+						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 					}
