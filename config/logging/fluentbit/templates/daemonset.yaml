@@ -47,6 +47,11 @@ spec:
           value: es-data
         - name: FLUENT_ELASTICSEARCH_PORT
           value: '9200'
+        # We attach the node name to each log line
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
         volumeMounts:
         - name: etcmachineid
           mountPath: /etc/machine-id
