@@ -63,7 +63,7 @@ type controllerRunOptions struct {
 	apiServerDefaultReplicas                         int
 	controllerManagerDefaultReplicas                 int
 	schedulerDefaultReplicas                         int
-	seedValidationHook                               seedvalidation.SeedWebhookOpts
+	seedValidationHook                               seedvalidation.WebhookOpts
 
 	// OIDC configuration
 	oidcCAFile             string

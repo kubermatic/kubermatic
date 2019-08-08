@@ -18,20 +18,20 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type SeedWebhookOpts struct {
+type WebhookOpts struct {
 	listenAddress string
 	certFile      string
 	keyFile       string
 }
 
-func (opts *SeedWebhookOpts) AddFlags(fs *flag.FlagSet) {
+func (opts *WebhookOpts) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&opts.listenAddress, "seed-admisisonwebhook-listen-address", ":8100", "The listen address for the seed amission webhook")
 	fs.StringVar(&opts.certFile, "seed-admissionwebhook-cert-file", "", "The location of the certificate file")
 	fs.StringVar(&opts.keyFile, "seed-admissionwebhook-key-file", "", "The location of the certificate key file")
 }
 
 // Server returns a Server that validates AdmissionRequests for Seed CRs
-func (opts *SeedWebhookOpts) Server(
+func (opts *WebhookOpts) Server(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	workerName string,

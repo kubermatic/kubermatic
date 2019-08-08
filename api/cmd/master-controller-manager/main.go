@@ -33,7 +33,7 @@ type controllerRunOptions struct {
 	internalAddr       string
 	dynamicDatacenters bool
 	log                kubermaticlog.Options
-	seedvalidationHook seedvalidation.SeedWebhookOpts
+	seedvalidationHook seedvalidation.WebhookOpts
 
 	workerName string
 }

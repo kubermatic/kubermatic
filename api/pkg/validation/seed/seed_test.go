@@ -38,13 +38,13 @@ func TestValidate(t *testing.T) {
 		{
 			name: "DatacenterName already in use, error",
 			existingSeeds: map[string]*kubermaticv1.Seed{
-				"existing-seed": &kubermaticv1.Seed{
+				"existing-seed": {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
 					Spec: kubermaticv1.SeedSpec{
 						Datacenters: map[string]kubermaticv1.Datacenter{
-							"in-use": kubermaticv1.Datacenter{},
+							"in-use": {},
 						},
 					},
 				},
@@ -52,7 +52,7 @@ func TestValidate(t *testing.T) {
 			seedToValidate: &kubermaticv1.Seed{
 				Spec: kubermaticv1.SeedSpec{
 					Datacenters: map[string]kubermaticv1.Datacenter{
-						"in-use": kubermaticv1.Datacenter{},
+						"in-use": {},
 					},
 				},
 			},
