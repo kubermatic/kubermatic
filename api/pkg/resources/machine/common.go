@@ -50,20 +50,13 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 		ami = nodeSpec.Cloud.AWS.AMI
 	}
 
-	// TODO fallback to cluster-hardcoded AZ for interim compatibility.
-	// Shall be removed after the transition to multi-AZ is complete.
-	availabilityZone := nodeSpec.Cloud.AWS.AvailabilityZone
-	if availabilityZone == "" {
-		availabilityZone = dc.Spec.AWS.Region + dc.Spec.AWS.ZoneCharacter
-	}
-
 	config := aws.RawConfig{
 		// If the node spec doesn't provide a subnet ID, AWS will just pick the AZ's default subnet.
 		SubnetID:         providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.SubnetID},
 		VpcID:            providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.VPCID},
 		SecurityGroupIDs: []providerconfig.ConfigVarString{{Value: c.Spec.Cloud.AWS.SecurityGroupID}},
 		Region:           providerconfig.ConfigVarString{Value: dc.Spec.AWS.Region},
-		AvailabilityZone: providerconfig.ConfigVarString{Value: availabilityZone},
+		AvailabilityZone: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.AvailabilityZone},
 		InstanceProfile:  providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.InstanceProfileName},
 		InstanceType:     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.InstanceType},
 		DiskType:         providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.VolumeType},

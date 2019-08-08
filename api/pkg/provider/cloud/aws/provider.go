@@ -523,15 +523,6 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	if cluster.Spec.Cloud.AWS.AvailabilityZone == "" {
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.AWS.AvailabilityZone = a.dc.Region + a.dc.ZoneCharacter
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
 		securityGroupID, err := createSecurityGroup(client, cluster.Spec.Cloud.AWS.VPCID, cluster.Name)
 		if err != nil {

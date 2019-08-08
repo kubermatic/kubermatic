@@ -237,7 +237,6 @@ spec:
       spec:
         aws:
           region: eu-central-1
-          zone_character: a
     hetzner-nbg1:
       location: Nuremberg 1 DC 3
       country: DE
