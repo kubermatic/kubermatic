@@ -316,8 +316,6 @@ type AWSCloudSpec struct {
 	RouteTableID        string `json:"routeTableId"`
 	InstanceProfileName string `json:"instanceProfileName"`
 	SecurityGroupID     string `json:"securityGroupID"`
-
-	AvailabilityZone string `json:"availabilityZone"`
 }
 
 // OpenstackCloudSpec specifies access data to an OpenStack cloud.

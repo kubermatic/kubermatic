@@ -135,9 +135,8 @@ type DatacenterSpecVSphere struct {
 
 // DatacenterSpecAWS describes a aws datacenter
 type DatacenterSpecAWS struct {
-	Region        string    `json:"region"`
-	Images        ImageList `json:"images"`
-	ZoneCharacter string    `json:"zone_character"`
+	Region string    `json:"region"`
+	Images ImageList `json:"images"`
 }
 
 // DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes
