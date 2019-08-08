@@ -43,8 +43,13 @@ spec:
         - name: FLUENT_ELASTICSEARCH_PORT
           value: '9200'
         volumeMounts:
+        - name: etcmachineid
+          mountPath: /etc/machine-id
+          readOnly: true
         - name: varlog
           mountPath: /var/log
+        - name: runlogjournal
+          mountPath: /run/log/journal
         - name: varlibdockercontainers
           mountPath: /var/lib/docker/containers
           readOnly: true
@@ -54,9 +59,16 @@ spec:
 {{ toYaml .Values.logging.fluentbit.resources | indent 10 }}
       terminationGracePeriodSeconds: 10
       volumes:
+      - name: etcmachineid
+        hostPath:
+          path: /etc/machine-id
+          type: File
       - name: varlog
         hostPath:
           path: /var/log
+      - name: runlogjournal
+        hostPath:
+          path: /run/log/journal
       - name: varlibdockercontainers
         hostPath:
           path: /var/lib/docker/containers
