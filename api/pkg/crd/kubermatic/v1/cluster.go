@@ -311,7 +311,7 @@ type AWSCloudSpec struct {
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
 	VPCID           string `json:"vpcId"`
-	// The IAM role, the control plane will use. The control plane will perform an assume-rule
+	// The IAM role, the control plane will use. The control plane will perform an assume-role
 	ControlPlaneRoleARN string `json:"roleARN"`
 	RouteTableID        string `json:"routeTableId"`
 	InstanceProfileName string `json:"instanceProfileName"`
