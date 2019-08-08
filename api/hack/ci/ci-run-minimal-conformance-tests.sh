@@ -169,6 +169,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: $NAMESPACE
+  labels:
+    worker-name: "$BUILD_ID"
 spec: {}
 status: {}
 ---
