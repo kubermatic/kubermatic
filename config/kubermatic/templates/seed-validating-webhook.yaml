@@ -18,7 +18,7 @@ webhooks:
   failurePolicy: Fail
   name: seeds.kubermatic.io
 {{- if .Values.kubermatic.worker_name}}
-  namespaceSelector:
+  objectSelector:
     matchLabels:
       worker-name: "{{ .Values.kubermatic.worker_name}}"
 {{- end }}

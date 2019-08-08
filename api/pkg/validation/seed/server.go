@@ -55,7 +55,7 @@ func (opts *WebhookOpts) Server(
 		validator:     newValidator(ctx, seedsGetter, seedKubeconfigGetter, listOpts),
 	}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/v1/seed-validation", server.handleSeedValidationRequests)
+	mux.HandleFunc("/", server.handleSeedValidationRequests)
 	server.Handler = mux
 
 	return server, nil
