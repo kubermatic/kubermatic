@@ -16,6 +16,7 @@ import (
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -78,10 +79,14 @@ func (s *Server) Start(_ <-chan struct{}) error {
 
 func (s *Server) handleSeedValidationRequests(resp http.ResponseWriter, req *http.Request) {
 	admissionRequest, validationErr := s.handle(req)
+	var uid types.UID
+	if admissionRequest != nil {
+		uid = admissionRequest.UID
+	}
 	response := &admissionv1beta1.AdmissionReview{
 		Request: admissionRequest,
 		Response: &admissionv1beta1.AdmissionResponse{
-			UID:     admissionRequest.UID,
+			UID:     uid,
 			Allowed: validationErr == nil,
 			Result: &metav1.Status{
 				Message: fmt.Sprintf("%v", validationErr),
