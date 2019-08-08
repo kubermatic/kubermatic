@@ -26,6 +26,13 @@ data:
     {{- if .Values.logging.fluentbit.configuration.collectKernelMessages }}
     @INCLUDE kmesg.conf
     {{- end }}
+
+    # We attach the node name to each log line
+    [FILTER]
+        Name modify
+        Match *
+        Set node ${NODE_NAME}
+
     @INCLUDE outputs.conf
 
   kubernetes.conf: |
