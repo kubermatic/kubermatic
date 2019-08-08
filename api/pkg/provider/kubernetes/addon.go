@@ -148,8 +148,8 @@ func (p *AddonProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv
 }
 
 func AddonProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, accessibleAddons sets.String) provider.AddonProviderGetter {
-	return func(seedName string) (provider.AddonProvider, error) {
-		cfg, err := seedKubeconfigGetter(seedName)
+	return func(seed *kubermaticv1.Seed) (provider.AddonProvider, error) {
+		cfg, err := seedKubeconfigGetter(seed)
 		if err != nil {
 			return nil, err
 		}

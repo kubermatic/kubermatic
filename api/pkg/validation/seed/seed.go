@@ -40,7 +40,7 @@ func (sv *seedValidator) Validate(seed *kubermaticv1.Seed, isDelete bool) error 
 	sv.lock.Lock()
 	defer sv.lock.Unlock()
 
-	client, err := sv.clientForSeed(seed.Name)
+	client, err := sv.clientForSeed(seed)
 	if err != nil {
 		return fmt.Errorf("failed to get client for seed %q: %v", seed.Name, err)
 	}
@@ -87,17 +87,17 @@ func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntim
 	return nil
 }
 
-func (sv *seedValidator) clientForSeed(seedName string) (ctrlruntimeclient.Client, error) {
-	cfg, err := sv.seedKubeconfigGetter(seedName)
+func (sv *seedValidator) clientForSeed(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+	cfg, err := sv.seedKubeconfigGetter(seed)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get kubeconfig for seed %q: %v", seedName, err)
+		return nil, fmt.Errorf("failed to get kubeconfig for seed %q: %v", seed.Name, err)
 	}
 
 	// TODO: Restmapper cache? User will use master to create Seeds, our EU master -> asia seed
 	// takes 10-20s for the discovery
 	client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to construct client for seed %q: %v", seedName, err)
+		return nil, fmt.Errorf("failed to construct client for seed %q: %v", seed.Name, err)
 	}
 
 	return client, nil

@@ -140,9 +140,9 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			// This controler doesn't necessarily have an explicit kubeconfig, most of the time it
 			// runs with in-cluster config. Just return the config from the manager and only allow
 			// our own seed
-			func(seedName string) (*rest.Config, error) {
-				if seedName != options.dc {
-					return nil, fmt.Errorf("can only return kubeconfig for our own seed(%q), got request for %q", options.dc, seedName)
+			func(seed *kubermaticv1.Seed) (*rest.Config, error) {
+				if seed.Name != options.dc {
+					return nil, fmt.Errorf("can only return kubeconfig for our own seed(%q), got request for %q", options.dc, seed.Name)
 				}
 				return mgr.GetConfig(), nil
 			})

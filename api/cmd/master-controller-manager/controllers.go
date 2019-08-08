@@ -85,19 +85,18 @@ func rbacControllerFactoryCreator(
 		allClusterProviders := []*rbac.ClusterProvider{masterClusterProvider}
 
 		newSeedsWithMetrics := sets.NewString()
-		for seedName := range seeds {
-			newSeedsWithMetrics.Insert(seedName)
-			kubeConfig, err := seedKubeconfigGetter(seedName)
+		for _, seed := range seeds {
+			kubeConfig, err := seedKubeconfigGetter(seed)
 			if err != nil {
-				kubermaticlog.Logger.With("error", err).With("seed", seedName).Error("error getting kubeconfig")
+				kubermaticlog.Logger.With("error", err).With("seed", seed.Name).Error("error getting kubeconfig")
 				// Dont let a single broken kubeconfig break the whole controller creation
-				seedKubeconfigRetrievalSuccessMetric.WithLabelValues(seedName).Set(0)
+				seedKubeconfigRetrievalSuccessMetric.WithLabelValues(seed.Name).Set(0)
 				continue
 			}
-			seedKubeconfigRetrievalSuccessMetric.WithLabelValues(seedName).Set(1)
-			clusterProvider, err := rbacClusterProvider(kubeConfig, seedName, false, selectorOps)
+			seedKubeconfigRetrievalSuccessMetric.WithLabelValues(seed.Name).Set(1)
+			clusterProvider, err := rbacClusterProvider(kubeConfig, seed.Name, false, selectorOps)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create rbac provider for seed %q: %v", seedName, err)
+				return nil, fmt.Errorf("failed to create rbac provider for seed %q: %v", seed.Name, err)
 			}
 			allClusterProviders = append(allClusterProviders, clusterProvider)
 		}

@@ -227,11 +227,20 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier) endpoint.Middleware {
 }
 
 // Addons is a middleware that injects the current AddonProvider into the ctx
-func Addons(addonProviderGetter provider.AddonProviderGetter) endpoint.Middleware {
+func Addons(addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			getter := request.(dCGetter)
-			addonProvider, err := addonProviderGetter(getter.GetDC())
+			seeds, err := seedsGetter()
+			if err != nil {
+				return nil, err
+			}
+			seedName := request.(dCGetter).GetDC()
+			seed, found := seeds[seedName]
+			if !found {
+				return nil, fmt.Errorf("couldn't find seed %q", seedName)
+			}
+
+			addonProvider, err := addonProviderGetter(seed)
 			if err != nil {
 				return nil, err
 			}
@@ -277,7 +286,7 @@ func getClusterProvider(ctx context.Context, request interface{}, seedsGetter pr
 	}
 	ctx = context.WithValue(ctx, datacenterContextKey, seed)
 
-	clusterProvider, err := clusterProviderGetter(getter.GetDC())
+	clusterProvider, err := clusterProviderGetter(seed)
 	if err != nil {
 		return nil, ctx, errors.NewNotFound("cluster-provider", getter.GetDC())
 	}
