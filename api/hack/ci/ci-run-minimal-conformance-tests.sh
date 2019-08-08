@@ -335,7 +335,7 @@ spec:
           region: ams3
 $(cat $OPENSTACK_DATACENTER_FILE)
 EOF
-retry 15 kubectl apply -f $SEED_MANIFEST
+retry 5 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing seed"
 
 # We build the CLI after deploying to make sure we fail fast if the helm deployment fails
