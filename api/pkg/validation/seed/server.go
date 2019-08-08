@@ -94,7 +94,9 @@ func (s *Server) handleSeedValidationRequests(resp http.ResponseWriter, req *htt
 	}
 	log := s.log.With("seed", seed.Name)
 
-	var result *metav1.Status
+	result := &metav1.Status{
+		Code: http.StatusOK,
+	}
 	validationErr := s.validator.Validate(seed, admissionRequest.Operation == admissionv1beta1.Delete)
 	if validationErr != nil {
 		log.Errorw("seed failed validation", "validationError", validationErr.Error())
