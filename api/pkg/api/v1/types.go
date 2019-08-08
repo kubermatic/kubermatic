@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+
 	"github.com/Masterminds/semver"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
