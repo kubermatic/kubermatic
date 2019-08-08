@@ -94,21 +94,22 @@ func (s *Server) handleSeedValidationRequests(resp http.ResponseWriter, req *htt
 	}
 	log := s.log.With("seed", seed.Name)
 
-	result := &metav1.Status{
-		Code: http.StatusOK,
-	}
+	var result *metav1.Status
 	validationErr := s.validator.Validate(seed, admissionRequest.Operation == admissionv1beta1.Delete)
 	if validationErr != nil {
 		log.Errorw("seed failed validation", "validationError", validationErr.Error())
 		result = &metav1.Status{Message: validationErr.Error()}
 	}
 
-	admissionResponse := &admissionv1beta1.AdmissionResponse{
-		UID:     admissionRequest.UID,
-		Allowed: validationErr == nil,
-		Result:  result,
+	response := &admissionv1beta1.AdmissionReview{
+		Request: admissionRequest,
+		Response: &admissionv1beta1.AdmissionResponse{
+			UID:     admissionRequest.UID,
+			Allowed: validationErr == nil,
+			Result:  result,
+		},
 	}
-	serializedAdmissionResponse, err := json.Marshal(admissionResponse)
+	serializedAdmissionResponse, err := json.Marshal(response)
 	if err != nil {
 		log.Errorw("failed to serialize admission response", zap.Error(err))
 		http.Error(resp, "failed to serialize response", http.StatusInternalServerError)
@@ -119,4 +120,5 @@ func (s *Server) handleSeedValidationRequests(resp http.ResponseWriter, req *htt
 	if _, err := resp.Write(serializedAdmissionResponse); err != nil {
 		log.Errorw("failed to write response body", zap.Error(err))
 	}
+	log.Info("Successfully validated seed")
 }
