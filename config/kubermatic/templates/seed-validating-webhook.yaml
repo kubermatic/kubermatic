@@ -21,9 +21,9 @@ webhooks:
   - apiGroups:
     - kubermatic.k8s.io
     apiVersions:
-    - *
+    - '*'
     operations:
-    - *
+    - '*'
     resources:
     - seeds
     scope: '*'
