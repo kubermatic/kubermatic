@@ -16,7 +16,7 @@ webhooks:
       name: seed-webhook
       namespace: {{ .Release.Namespace }}
   failurePolicy: Fail
-  name: seeds
+  name: seeds.kubermatic.io
   rules:
   - apiGroups:
     - kubermatic.k8s.io
