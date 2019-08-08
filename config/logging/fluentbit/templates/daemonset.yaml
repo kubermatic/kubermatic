@@ -35,9 +35,11 @@ spec:
       - name: fluent-bit
         image: '{{ .Values.logging.fluentbit.image.repository }}:{{ .Values.logging.fluentbit.image.tag }}'
         imagePullPolicy: {{ .Values.logging.fluentbit.image.pullPolicy }}
+        {{- if .Values.logging.fluentbit.configuration.collectKernelMessages }}
         securityContext:
           # Required to read kmesg. TODO: Find decent capabilities
           privileged: true
+        {{- end }}
         ports:
         - containerPort: 2020
         env:
