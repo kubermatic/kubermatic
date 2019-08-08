@@ -2768,7 +2768,10 @@
         ],
         "responses": {
           "201": {
-            "$ref": "#/responses/empty"
+            "description": "SSHKey",
+            "schema": {
+              "$ref": "#/definitions/SSHKey"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
