@@ -23,6 +23,9 @@ data:
     {{- if .Values.logging.fluentbit.configuration.collectSystemd }}
     @INCLUDE systemd.conf
     {{- end }}
+    {{- if .Values.logging.fluentbit.configuration.collectKernelMessages }}
+    @INCLUDE kmesg.conf
+    {{- end }}
     @INCLUDE outputs.conf
 
   kubernetes.conf: |
@@ -116,6 +119,36 @@ data:
         Name    grep
         Match systemd.*
         Exclude log libcontainer.*?test_default\.slice
+
+  kmesg.conf: |
+    ############################################################
+    # kmesg
+    ############################################################
+    [INPUT]
+        Name   kmsg
+        Tag    kmsg
+
+    # Only keep the relevant fields
+    [FILTER]
+        Name record_modifier
+        Match kmsg
+        Whitelist_key msg
+        Whitelist_key priority
+
+    [FILTER]
+        Name modify
+        Match kmsg
+        Set source kmsg
+        Rename msg log
+        Rename priority _NEST_priority
+
+    [FILTER]
+        Name nest
+        Match kmesg
+        Operation nest
+        Wildcard _NEST_*
+        Nest_under kmesg
+        Remove_prefix _NEST_
 
   outputs.conf: |
 {{- range .Values.logging.fluentbit.configuration.outputs }}
