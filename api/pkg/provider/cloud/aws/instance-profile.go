@@ -73,7 +73,7 @@ func deleteInstanceProfile(client iamiface.IAMAPI, profileName string) error {
 	profileOutput, err := client.GetInstanceProfile(getProfileInput)
 	if err != nil {
 		// If the profile is already gone: Success!
-		if isNoSuchEntity(err) {
+		if isNotFound(err) {
 			return nil
 		}
 		return fmt.Errorf("failed to get instance profile %q: %v", profileName, err)

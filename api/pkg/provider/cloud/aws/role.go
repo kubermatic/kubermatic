@@ -77,7 +77,7 @@ func deleteRole(client iamiface.IAMAPI, roleName string) error {
 	}
 	if _, err := client.GetRole(getRoleInput); err != nil {
 		// If the profile is already gone: Success!
-		if isNoSuchEntity(err) {
+		if isNotFound(err) {
 			return nil
 		}
 		return fmt.Errorf("failed to get role %q: %v", roleName, err)

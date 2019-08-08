@@ -643,7 +643,7 @@ func isEntityAlreadyExists(err error) bool {
 	return aerr.Code() == "EntityAlreadyExists"
 }
 
-func isNoSuchEntity(err error) bool {
+func isNotFound(err error) bool {
 	if awsErr, ok := err.(awserr.Error); ok {
 		if awsErr.Code() == "NoSuchEntity" {
 			return true
