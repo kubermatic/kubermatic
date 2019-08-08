@@ -527,14 +527,6 @@ func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvide
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		if sshKey.IsUsedByCluster(req.ClusterID) {
-			return nil, nil
-		}
-		sshKey.AddToCluster(req.ClusterID)
-		_, err = sshKeyProvider.Update(userInfo, sshKey)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
 
 		apiKey := apiv1.SSHKey{
 			ObjectMeta: apiv1.ObjectMeta{
@@ -546,6 +538,15 @@ func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvide
 				Fingerprint: sshKey.Spec.Fingerprint,
 				PublicKey:   sshKey.Spec.PublicKey,
 			},
+		}
+
+		if sshKey.IsUsedByCluster(req.ClusterID) {
+			return apiKey, nil
+		}
+		sshKey.AddToCluster(req.ClusterID)
+		_, err = sshKeyProvider.Update(userInfo, sshKey)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		return apiKey, nil
