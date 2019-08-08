@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -76,49 +77,50 @@ func (s *Server) Start(_ <-chan struct{}) error {
 }
 
 func (s *Server) handleSeedValidationRequests(resp http.ResponseWriter, req *http.Request) {
-	body := bytes.NewBuffer([]byte{})
-	if _, err := body.ReadFrom(req.Body); err != nil {
-		http.Error(resp, "failed to read request body: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	admissionRequest := &admissionv1beta1.AdmissionRequest{}
-	if err := json.Unmarshal(body.Bytes(), admissionRequest); err != nil {
-		http.Error(resp, "failed to unmarshal request body: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	seed := &kubermaticv1.Seed{}
-	if err := json.Unmarshal(admissionRequest.Object.Raw, seed); err != nil {
-		http.Error(resp, "failed to unmarshal admissionRequest.Body into a Seed: "+err.Error(), http.StatusBadRequest)
-	}
-	log := s.log.With("seed", seed.Name)
-
-	var result *metav1.Status
-	validationErr := s.validator.Validate(seed, admissionRequest.Operation == admissionv1beta1.Delete)
-	if validationErr != nil {
-		log.Errorw("seed failed validation", "validationError", validationErr.Error())
-		result = &metav1.Status{Message: validationErr.Error()}
-	}
-
+	admissionRequest, validationErr := s.handle(req)
 	response := &admissionv1beta1.AdmissionReview{
 		Request: admissionRequest,
 		Response: &admissionv1beta1.AdmissionResponse{
 			UID:     admissionRequest.UID,
 			Allowed: validationErr == nil,
-			Result:  result,
+			Result: &metav1.Status{
+				Message: fmt.Sprintf("%v", validationErr),
+			},
 		},
 	}
 	serializedAdmissionResponse, err := json.Marshal(response)
 	if err != nil {
-		log.Errorw("failed to serialize admission response", zap.Error(err))
+		s.log.Errorw("failed to serialize admission response", zap.Error(err))
 		http.Error(resp, "failed to serialize response", http.StatusInternalServerError)
 		return
 	}
-
 	resp.WriteHeader(http.StatusOK)
 	if _, err := resp.Write(serializedAdmissionResponse); err != nil {
-		log.Errorw("failed to write response body", zap.Error(err))
+		s.log.Errorw("failed to write response body", zap.Error(err))
 	}
-	log.Info("Successfully validated seed")
+	s.log.Info("Successfully validated seed")
+}
+
+func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, error) {
+	body := bytes.NewBuffer([]byte{})
+	if _, err := body.ReadFrom(req.Body); err != nil {
+		return nil, fmt.Errorf("failed to read request body: %v", err)
+	}
+
+	admissionReview := &admissionv1beta1.AdmissionReview{}
+	if err := json.Unmarshal(body.Bytes(), admissionReview); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal request body: %v", err)
+	}
+
+	seed := &kubermaticv1.Seed{}
+	if err := json.Unmarshal(admissionReview.Request.Object.Raw, seed); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal object from request into a Seed: %v", err)
+	}
+
+	validationErr := s.validator.Validate(seed, admissionReview.Request.Operation == admissionv1beta1.Delete)
+	if validationErr != nil {
+		s.log.With("seed", seed.Name).Errorw("seed failed validation", "validationError", validationErr.Error())
+	}
+
+	return admissionReview.Request, validationErr
 }
