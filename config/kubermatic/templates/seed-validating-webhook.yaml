@@ -17,6 +17,11 @@ webhooks:
       namespace: {{ .Release.Namespace }}
   failurePolicy: Fail
   name: seeds.kubermatic.io
+{{- if .Values.kubermatic.worker_name}}
+  namespaceSelector:
+    matchLabels:
+      worker-name: "{{ .Values.kubermatic.worker_name}}"
+{{- end }}
   rules:
   - apiGroups:
     - kubermatic.k8s.io
@@ -29,10 +34,6 @@ webhooks:
     scope: '*'
   sideEffects: Unknown
   timeoutSeconds: 30
-{{- if .Values.kubermatic.worker_name}}
-  namespaceSelector:
-    worker-name: {{ .Values.kubermatic.worker_name}}
-{{- end }}
 ---
 apiVersion: v1
 kind: Service
