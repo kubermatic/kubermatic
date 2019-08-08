@@ -35,6 +35,9 @@ spec:
       - name: fluent-bit
         image: '{{ .Values.logging.fluentbit.image.repository }}:{{ .Values.logging.fluentbit.image.tag }}'
         imagePullPolicy: {{ .Values.logging.fluentbit.image.pullPolicy }}
+        securityContext:
+          # Required to read kmesg. TODO: Find decent capabilities
+          privileged: true
         ports:
         - containerPort: 2020
         env:
@@ -55,6 +58,9 @@ spec:
           readOnly: true
         - name: config
           mountPath: /fluent-bit/etc/
+        - name: kmsg
+          mountPath: /dev/kmsg
+          readOnly: true
         resources:
 {{ toYaml .Values.logging.fluentbit.resources | indent 10 }}
       terminationGracePeriodSeconds: 10
@@ -75,6 +81,9 @@ spec:
       - name: config
         configMap:
           name: fluent-bit
+      - name: kmsg
+        hostPath:
+          path: /dev/kmsg
       nodeSelector:
 {{ toYaml .Values.logging.fluentbit.nodeSelector | indent 8 }}
       affinity:
