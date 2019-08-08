@@ -536,7 +536,19 @@ func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return nil, nil
+		apiKey := apiv1.SSHKey{
+			ObjectMeta: apiv1.ObjectMeta{
+				ID:                sshKey.Name,
+				Name:              sshKey.Spec.Name,
+				CreationTimestamp: apiv1.NewTime(sshKey.CreationTimestamp.Time),
+			},
+			Spec: apiv1.SSHKeySpec{
+				Fingerprint: sshKey.Spec.Fingerprint,
+				PublicKey:   sshKey.Spec.PublicKey,
+			},
+		}
+
+		return apiKey, nil
 	}
 }
 

@@ -1319,7 +1319,7 @@ func (r Routing) getClusterHealth() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: empty
+//       201: SSHKey
 //       401: empty
 //       403: empty
 func (r Routing) assignSSHKeyToCluster() http.Handler {
