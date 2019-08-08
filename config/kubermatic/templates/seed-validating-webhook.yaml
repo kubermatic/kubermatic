@@ -31,7 +31,7 @@ webhooks:
   timeoutSeconds: 30
 {{- if .Values.kubermatic.worker_name}}
   namespaceSelector:
-    workerName: {{ .Values.kubermatic.worker_name}}
+    worker-name: {{ .Values.kubermatic.worker_name}}
 {{- end }}
 ---
 apiVersion: v1

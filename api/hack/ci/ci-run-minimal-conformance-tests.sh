@@ -164,7 +164,8 @@ EOF
 
 build_tag_if_not_exists "$GIT_HEAD_HASH"
 
-INITIAL_MANIFESTS=$(cat <<EOF
+INITIAL_MANIFESTS="$(mktemp)"
+cat <<EOF >$INITIAL_MANIFESTS
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -210,6 +211,52 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
 ---
+EOF
+echodate "Creating namespace $NAMESPACE to deploy kubermatic in"
+retry 5 kubectl apply -f $INITIAL_MANIFESTS
+
+echodate "Deploying tiller"
+helm init --wait --service-account=tiller --tiller-namespace=$NAMESPACE
+
+echodate "Installing Kubermatic via Helm"
+
+if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
+  echodate "Upgradetest, checking out revision ${UPGRADE_TEST_BASE_HASH}"
+  git checkout $UPGRADE_TEST_BASE_HASH
+  build_tag_if_not_exists "$UPGRADE_TEST_BASE_HASH"
+fi
+# We must delete all templates for cluster-scoped resources
+# because those already exist because of the main Kubermatic installation
+# otherwise the helm upgrade --install fails
+rm -f config/kubermatic/templates/cluster-role-binding.yaml
+rm -f config/kubermatic/templates/vpa-*
+# --force is needed in case the first attempt at installing didn't succeed
+# see https://github.com/helm/helm/pull/3597
+retry 3 helm upgrade --install --force --wait --timeout 300 \
+  --tiller-namespace=$NAMESPACE \
+  --set=kubermatic.isMaster=true \
+  --set-string=kubermatic.controller.addons.kubernetes.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
+  --set-string=kubermatic.controller.addons.kubernetes.image.repository=127.0.0.1:5000/kubermatic/addons \
+  --set-string=kubermatic.controller.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
+  --set-string=kubermatic.controller.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.api.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.api.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
+  --set-string=kubermatic.masterController.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
+  --set-string=kubermatic.masterController.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.kubermaticImage=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.worker_name=$BUILD_ID \
+  --set=kubermatic.ingressClass=non-existent \
+  --set=kubermatic.checks.crd.disable=true \
+  --set=kubermatic.dynamicDatacenters=true \
+  ${OPENSHIFT_HELM_ARGS:-} \
+  --values ${VALUES_FILE} \
+  --namespace $NAMESPACE \
+  kubermatic-$BUILD_ID ./config/kubermatic/
+echodate "Finished installing Kubermatic"
+
+echodate "Installing seed"
+SEED_MANIFEST="$(mktemp)"
+cat <<EOF >$SEED_MANIFEST
 kind: Secret
 apiVersion: v1
 metadata:
@@ -288,50 +335,8 @@ spec:
           region: ams3
 $(cat $OPENSTACK_DATACENTER_FILE)
 EOF
-)
-echodate "Creating namespace $NAMESPACE to deploy kubermatic in"
-echo "$INITIAL_MANIFESTS"|kubectl apply -f -
-
-echodate "Deploying tiller"
-helm init --wait --service-account=tiller --tiller-namespace=$NAMESPACE
-
-echodate "Installing Kubermatic via Helm"
-
-if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
-  echodate "Upgradetest, checking out revision ${UPGRADE_TEST_BASE_HASH}"
-  git checkout $UPGRADE_TEST_BASE_HASH
-  build_tag_if_not_exists "$UPGRADE_TEST_BASE_HASH"
-fi
-# We must delete all templates for cluster-scoped resources
-# because those already exist because of the main Kubermatic installation
-# otherwise the helm upgrade --install fails
-rm -f config/kubermatic/templates/cluster-role-binding.yaml
-rm -f config/kubermatic/templates/vpa-*
-# --force is needed in case the first attempt at installing didn't succeed
-# see https://github.com/helm/helm/pull/3597
-retry 3 helm upgrade --install --force --wait --timeout 300 \
-  --tiller-namespace=$NAMESPACE \
-  --set=kubermatic.isMaster=true \
-  --set-string=kubermatic.controller.addons.kubernetes.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
-  --set-string=kubermatic.controller.addons.kubernetes.image.repository=127.0.0.1:5000/kubermatic/addons \
-  --set-string=kubermatic.controller.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
-  --set-string=kubermatic.controller.image.repository=127.0.0.1:5000/kubermatic/api \
-  --set-string=kubermatic.api.image.repository=127.0.0.1:5000/kubermatic/api \
-  --set-string=kubermatic.api.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
-  --set-string=kubermatic.masterController.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
-  --set-string=kubermatic.masterController.image.repository=127.0.0.1:5000/kubermatic/api \
-  --set-string=kubermatic.kubermaticImage=127.0.0.1:5000/kubermatic/api \
-  --set-string=kubermatic.worker_name=$BUILD_ID \
-  --set=kubermatic.ingressClass=non-existent \
-  --set=kubermatic.checks.crd.disable=true \
-  --set=kubermatic.dynamicDatacenters=true \
-  ${OPENSHIFT_HELM_ARGS:-} \
-  --values ${VALUES_FILE} \
-  --namespace $NAMESPACE \
-  kubermatic-$BUILD_ID ./config/kubermatic/
-
-
-echodate "Finished installing Kubermatic"
+retry 5 kubectl apply -f $SEED_MANIFEST
+echodate "Finished installing seed"
 
 # We build the CLI after deploying to make sure we fail fast if the helm deployment fails
 echodate "Building conformance-tests cli"
