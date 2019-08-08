@@ -73,7 +73,8 @@ spec:
           secretName: datacenters
       {{- end }}
       - name: seed-webhook-serving-cert
-        secret: seed-webhook-serving-cert
+        secret:
+          secretName: seed-webhook-serving-cert
       nodeSelector:
 {{ toYaml .Values.kubermatic.masterController.nodeSelector | indent 8 }}
       affinity:
