@@ -322,7 +322,7 @@ type AWSCloudSpec struct {
 	// DEPRECATED. Don't care for the role name. We only require the ControlPlaneRoleARN to be set so the control plane
 	// can perform the assume-role.
 	// We keep it for backwards compatibility (We use this name for cleanup purpose).
-	RoleName string `json:"roleName"`
+	RoleName string `json:"roleName,omitempty"`
 }
 
 // OpenstackCloudSpec specifies access data to an OpenStack cloud.
