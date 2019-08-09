@@ -44,4 +44,3 @@ issues:
   - "`osData` can be `github.com/kubermatic/kubermatic/api/pkg/resources.RoleBindingDataProvider`"
   - "cyclomatic complexity 31 of func `main` is high"
   - "`currentMigrationRevision` is unused"
-  - "unreachable code"

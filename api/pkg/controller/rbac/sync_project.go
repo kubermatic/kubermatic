@@ -98,11 +98,6 @@ func (c *projectController) ensureProjectIsInActivePhase(project *kubermaticv1.P
 
 // ensureProjectOwner makes sure that the owner of the project is assign to "owners" group
 func (c *projectController) ensureProjectOwner(project *kubermaticv1.Project) error {
-	// TODO: Cleanup
-	// This is a hotfix to prevent that owners that got removed from a project get a new UserProjectBinding.
-	// We already create & delete the appropriate UserProjectBinding in the API when adding/removing users, so this should not be needed.
-	// TODO: Revisit the OwnerReferences approach. This has the potential to delete clusters unintentionally.
-	return nil
 	var sharedOwner *kubermaticv1.User
 	for _, ref := range project.OwnerReferences {
 		if ref.Kind == kubermaticv1.UserKindName {
