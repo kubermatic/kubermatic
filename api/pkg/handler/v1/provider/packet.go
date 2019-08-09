@@ -149,9 +149,17 @@ func toPacketSize(plan packngo.Plan) apiv1.PacketSize {
 		memory = plan.Specs.Memory.Total
 	}
 
+	cpus := make([]apiv1.PacketCPU, 0)
+	for _, cpu := range plan.Specs.Cpus {
+		cpus = append(cpus, apiv1.PacketCPU{
+			Count: cpu.Count,
+			Type:  cpu.Type,
+		})
+	}
+
 	return apiv1.PacketSize{
 		Name:   plan.Name,
-		Cores:  int32(len(plan.Specs.Cpus)),
+		CPUs:   cpus,
 		Memory: memory,
 		Drives: drives,
 	}

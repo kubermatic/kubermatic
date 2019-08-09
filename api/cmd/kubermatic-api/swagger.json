@@ -6708,6 +6708,22 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "PacketCPU": {
+      "type": "object",
+      "title": "PacketCPU represents an array of Packet CPUs. It is a part of PacketSize.",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Count"
+        },
+        "type": {
+          "type": "string",
+          "x-go-name": "Type"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "PacketCloudSpec": {
       "type": "object",
       "title": "PacketCloudSpec specifies access data to a Packet cloud.",
@@ -6792,9 +6808,11 @@
       "title": "PacketSize is the object representing Packet VM sizes.",
       "properties": {
         "cpus": {
-          "type": "integer",
-          "format": "int32",
-          "x-go-name": "Cores"
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PacketCPU"
+          },
+          "x-go-name": "CPUs"
         },
         "drives": {
           "type": "array",
