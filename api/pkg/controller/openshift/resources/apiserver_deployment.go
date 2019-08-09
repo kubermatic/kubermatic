@@ -65,7 +65,10 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 					IntVal: 0,
 				},
 			}
-			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
+				{Name: resources.ImagePullSecretName},
+				{Name: openshiftImagePullSecretName},
+			}
 
 			volumes := getAPIServerVolumes()
 
@@ -135,13 +138,19 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				return nil, err
 			}
 
+			// TODO: Make it cope with our registry overwriting
+			image, err := getAPIServerImage(data.Cluster().Spec.Version.String())
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				*dnatControllerSidecar,
 				{
 					Name:      ApiserverDeploymentName,
-					Image:     data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
-					Command:   []string{"/usr/bin/openshift", "start", "master", "api"},
+					Image:     image,
+					Command:   []string{"hypershift", "openshift-apiserver"},
 					Args:      []string{"--config=/etc/origin/master/master-config.yaml"},
 					Env:       envVars,
 					Resources: *resourceRequirements,
@@ -405,4 +414,14 @@ func getAPIServerEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 	}
 	return vars, nil
+}
+
+func getAPIServerImage(openshiftVersion) (string, error) {
+	switch openshiftVersion {
+	case "4.1.9":
+		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:86255c4efe6bbc141a0f41444f863bbd5cd832ffca21d2b737a4f9c225ed00ad", nil
+	default:
+		return "", fmt.Errorf("no image available for openshift version %q", openshiftVersion)
+	}
+
 }

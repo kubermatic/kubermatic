@@ -37,15 +37,18 @@ func OpenshiftAPIServerConfigMapCreator(ctx context.Context, data masterConfigDa
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
-			masterConfig, err := getMasterConfig(ctx, data, "apiserver")
+			apiServerConfigBuffer := bytes.Buffer{}
+			tmpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(openshiftAPIServerConfigTemplate)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get master config :%v", err)
+				return nil, fmt.Errorf("failed to parse openshiftControlPlaneConfigTemplate: %v", err)
 			}
-			cm.Labels = resources.BaseAppLabel(openshiftAPIServerConfigMapName, nil)
-			cm.Data[openshiftContolPlaneConfigKeyName] = masterConfig
-			cm.Data["policy.json"] = policyJSON
-			cm.Data["scheduler.json"] = schedulerJSON
-
+			templateInput := openshiftConfigInput{
+				ETCDEndpoints: etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
+			}
+			if err := tmpl.Execute(&apiServerConfigBuffer, templateInput); err != nil {
+				return nil, fmt.Errorf("failed to execute template: %v", err)
+			}
+			cm.Data[openshiftContolPlaneConfigKeyName] = apiServerConfigBuffer.String()
 			return cm, nil
 		}
 	}
@@ -151,6 +154,70 @@ spec:
   volumes:
   - name: vol
 `
+// TODO Use OpenShiftAPIServerConfig type from github.com/openshift/api/openshiftcontrolplane/v1/types.go
+const openshiftAPIServerConfigTemplate = `aggregatorConfig:
+  allowedNames:
+  - kube-apiserver-proxy
+  - system:kube-apiserver-proxy
+  - system:openshift-aggregator
+  clientCA: /var/run/configmaps/aggregator-client-ca/ca-bundle.crt
+  extraHeaderPrefixes:
+  - X-Remote-Extra-
+  groupHeaders:
+  - X-Remote-Group
+  usernameHeaders:
+  - X-Remote-User
+apiServerArguments:
+  minimal-shutdown-duration:
+  - 3s
+apiVersion: openshiftcontrolplane.config.openshift.io/v1
+auditConfig:
+  # TODO: Doesn't make much sense in a production setup, but useful for debugging
+  auditFilePath: /var/log/openshift-apiserver/audit.log
+  enabled: true
+  logFormat: json
+  maximumFileSizeMegabytes: 100
+  maximumRetainedFiles: 10
+  policyConfiguration:
+    apiVersion: audit.k8s.io/v1beta1
+    kind: Policy
+    omitStages:
+    - RequestReceived
+    rules:
+    - level: None
+      resources:
+      - group: ''
+        resources:
+        - events
+    - level: None
+      resources:
+      - group: oauth.openshift.io
+        resources:
+        - oauthaccesstokens
+        - oauthauthorizetokens
+    - level: None
+      nonResourceURLs:
+      - /api*
+      - /version
+      - /healthz
+      userGroups:
+      - system:authenticated
+      - system:unauthenticated
+    - level: Metadata
+      omitStages:
+      - RequestReceived
+imagePolicyConfig:
+  internalRegistryHostname: image-registry.openshift-image-registry.svc:5000
+kind: OpenShiftAPIServerConfig
+projectConfig:
+  projectRequestMessage: ''
+routingConfig:
+  # TODO: Fix
+  subdomain: apps.openshift-test.aws.k8c.io
+storageConfig:
+  urls: {{ range .ETCDEndpoints }}
+  - "{{ . }}"
+{{- end }}`
 
 //TODO: Replace template with actual types in
 // https://github.com/openshift/origin/pkg/cmd/server/apis/config/v1/types.go
