@@ -4503,6 +4503,10 @@
           "type": "string",
           "x-go-name": "AccessKeyID"
         },
+        "availabilityZone": {
+          "type": "string",
+          "x-go-name": "AvailabilityZone"
+        },
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
@@ -4511,7 +4515,7 @@
           "x-go-name": "InstanceProfileName"
         },
         "roleARN": {
-          "description": "The IAM role, the control plane will use. The control plane will perform an assume-rule",
+          "description": "The IAM role, the control plane will use. The control plane will perform an assume-role",
           "type": "string",
           "x-go-name": "ControlPlaneRoleARN"
         },
