@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
@@ -17,7 +17,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *testRunner) testUserclusterControllerRBAC(log *logrus.Entry, cluster *kubermaticv1.Cluster, userClusterClient, seedClusterClient ctrlruntimeclient.Client) error {
+func (r *testRunner) testUserclusterControllerRBAC(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, userClusterClient, seedClusterClient ctrlruntimeclient.Client) error {
 	log.Info("Testing user cluster RBAC controller")
 	ctx := context.Background()
 	clusterNamespace := fmt.Sprintf("cluster-%s", cluster.Name)
