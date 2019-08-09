@@ -11,6 +11,7 @@ logging:
       outputs:
       - |
         Name            es
+        Alias           elasticsearch
         Match           *
         Host            ${FLUENT_ELASTICSEARCH_HOST}
         Port            ${FLUENT_ELASTICSEARCH_PORT}
