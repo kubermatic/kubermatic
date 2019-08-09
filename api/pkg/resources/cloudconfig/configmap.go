@@ -72,7 +72,7 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 				DisableSecurityGroupIngress: false,
 				RouteTableID:                cloud.AWS.RouteTableID,
 				DisableStrictZoneCheck:      true,
-				RoleARN:                     cloud.AWS.RoleARN,
+				RoleARN:                     cloud.AWS.ControlPlaneRoleARN,
 			},
 		}
 		cloudConfig, err = aws.CloudConfigToString(awsCloudConfig)

@@ -139,7 +139,7 @@ func TestLoadFiles(t *testing.T) {
 				RouteTableID:        "aws-route-table-id",
 				SecurityGroupID:     "aws-security-group",
 				VPCID:               "aws-vpn-id",
-				RoleARN:             "aws-role-arn",
+				ControlPlaneRoleARN: "aws-role-arn",
 			},
 		},
 		"openstack": {
