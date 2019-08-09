@@ -1,3 +1,25 @@
+### [v2.11.1]()
+
+
+**Misc:**
+
+- Openstack: A bug that could result in many securtiy groups being created when the creation of security group rules failed was fixed [#3848](https://github.com/kubermatic/kubermatic/issues/3848) ([alvaroaleman](https://github.com/alvaroaleman))
+- Added Kubernetes `v1.15.1` [#3859](https://github.com/kubermatic/kubermatic/issues/3859) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Updated machine controller to `v1.5.1` [#3883](https://github.com/kubermatic/kubermatic/issues/3883) ([kdomanski](https://github.com/kdomanski))
+- A bug that sometimes resulted in the creation of the initial NodeDeployment failing was fixed [#3894](https://github.com/kubermatic/kubermatic/issues/3894) ([alvaroaleman](https://github.com/alvaroaleman))
+- Fixed an issue that kept clusters stuck if their creation didn't succeed and they got deleted with PV and/or PV cleanup enabled [#3973](https://github.com/kubermatic/kubermatic/issues/3973) ([alvaroaleman](https://github.com/alvaroaleman))
+- Fixed joining nodes to Bring Your Own clusters running Kubernetes 1.14 [#3976](https://github.com/kubermatic/kubermatic/issues/3976) ([kubermatic-bot](https://github.com/kubermatic-bot))
+
+
+**Dashboard:**
+
+- Fixed an issue with handling resources refresh on error conditions [#1452](https://github.com/kubermatic/dashboard-v2/issues/1452) ([floreks](https://github.com/floreks))
+- Openstack: the project name can now be provided manually [#1426](https://github.com/kubermatic/dashboard-v2/issues/1426) ([floreks](https://github.com/floreks))
+- JS dependencies have been updated to address potential vulnerabilities in some of them. [#1388](https://github.com/kubermatic/dashboard-v2/issues/1388) ([kgroschoff](https://github.com/kgroschoff)
+
+
+
+
 ### [v2.11.0]()
 
 
