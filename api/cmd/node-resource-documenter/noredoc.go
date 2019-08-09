@@ -10,32 +10,95 @@ import (
 	"strings"
 )
 
+// parser is a function type for the state machine analyzing
+// the YAML lines (including the templates which make a YAML
+// lib unusable).
+type parser func(current parser, line string, lines []string) ([]string, parser)
+
 // resourcesToDoc creates documentation out of the
 // collected configuration.
-func resourcesToDoc(filepath, containername string, lines []string) []string {
-	if len(lines) == 0 {
-		return nil
-	}
-
+func resourcesToDoc(filepath string, lines []string) []string {
 	var resdoc []string
 
-	_, filename := path.Split(filepath)
+	dir, filename := path.Split(filepath)
 
-	resdoc = append(resdoc, "### File: ", filename, "\n\n")
-	resdoc = append(resdoc, "#### Container: ", containername, "\n\n")
-	resdoc = append(resdoc, "```\n")
+	isCode := false
+	dirs := strings.Split(dir, "/")
+	addon := dirs[len(dirs)-2]
+	resdoc = append(resdoc, "### Addon: ", addon, " / File: ", filename, "\n\n")
 
 	for _, line := range lines {
-		if line == "limits:" || line == "requests:" {
+		switch {
+		case strings.HasPrefix(line, "container: "):
+			container := line[11:]
+			if isCode {
+				resdoc = append(resdoc, "\n\n```\n\n")
+			}
+			resdoc = append(resdoc, "#### Container: ", container, "\n\n")
+			resdoc = append(resdoc, "```\n")
+			isCode = true
+		case line == "limits:" || line == "requests:":
 			resdoc = append(resdoc, line, "\n")
-			continue
+		default:
+			resdoc = append(resdoc, "\t", line, "\n")
 		}
-		resdoc = append(resdoc, "\t", line, "\n")
 	}
 
 	resdoc = append(resdoc, "```\n\n")
 
 	return resdoc
+}
+
+// mkParseResourceValues creates a parser for the resource values.
+func mkParseResourceValues(index int) parser {
+	return func(current parser, line string, lines []string) ([]string, parser) {
+		trimmed := strings.Trim(line, " \t")
+		switch {
+		case trimmed == "limits:" || trimmed == "requests:":
+			return append(lines, trimmed), current
+		case strings.HasPrefix(trimmed, "memory:") || strings.HasPrefix(trimmed, "cpu:"):
+			return append(lines, trimmed), current
+		case strings.HasPrefix(trimmed, "#"):
+			return lines, current
+		}
+		// TODO Currently don't handle multiple containes in one list.
+		return lines, parseContainer
+	}
+}
+
+// mkParseResources creates a parser for the "resources:" field.
+func mkParseResources(index int) parser {
+	return func(current parser, line string, lines []string) ([]string, parser) {
+		if strings.IndexFunc(line, func(r rune) bool {
+			return r != ' ' && r != '\t'
+		}) < index {
+			return lines, mkParseContainerName(index)
+		}
+		if strings.Index(line, "resources:") == -1 {
+			return lines, current
+		}
+		return lines, mkParseResourceValues(index)
+	}
+}
+
+// mkParseContainerName creates a parser for the container name.
+func mkParseContainerName(index int) parser {
+	return func(current parser, line string, lines []string) ([]string, parser) {
+		if strings.Index(line, "- name: ") != index {
+			return lines, current
+		}
+		name := strings.Trim(line, " \t")[8:]
+		return append(lines, "container: "+name), mkParseResources(index)
+	}
+}
+
+// parseContainer parses until "containers:" is found.
+func parseContainer(current parser, line string, lines []string) ([]string, parser) {
+	ci := strings.Index(line, "containers:")
+	if ci == -1 {
+		return lines, current
+	}
+	return lines, mkParseContainerName(ci)
 }
 
 // parseYAML analysis a YAML file for limits. But read them
@@ -48,41 +111,15 @@ func parseYAML(filepath string) ([]string, error) {
 	}
 	defer f.Close()
 
-	resourcesMode := false
-	resourcePrefixes := []string{"limits:", "requests:", "memory:", "cpu:"}
-
-	var filedoc []string
-	var lines []string
-	var containername string
-
+	lines := []string{}
+	p := parseContainer
 	s := bufio.NewScanner(f)
-scan:
+
 	for s.Scan() {
-		l := s.Text()
-		t := strings.Trim(l, " \t")
-		switch {
-		case strings.HasPrefix(t, "- name: "):
-			containername = t[8:]
-			continue
-		case t == "resources:":
-			resourcesMode = true
-			continue
-		case resourcesMode:
-			for _, prefix := range resourcePrefixes {
-				if strings.HasPrefix(t, prefix) {
-					lines = append(lines, t)
-					continue scan
-				}
-			}
-			// TODO: Take care for comments.
-			resdoc := resourcesToDoc(filepath, containername, lines)
-			filedoc = append(filedoc, resdoc...)
-			containername = ""
-			lines = []string{}
-			resourcesMode = false
-		}
+		line := s.Text()
+		lines, p = p(p, line, lines)
 	}
-	return filedoc, s.Err()
+	return lines, s.Err()
 }
 
 // traverseAddons traverses the directories in kubermatic/addons
@@ -93,20 +130,20 @@ func traverseAddons(dir string) ([]string, error) {
 	if err := filepath.Walk(
 		dir,
 		func(filepath string, info os.FileInfo, err error) error {
-			if err != nil {
+			switch {
+			case err != nil:
 				return err
-			}
-			if info.IsDir() {
+			case info.IsDir() || !strings.HasSuffix(info.Name(), ".yaml"):
 				return nil
+			default:
+				lines, err := parseYAML(filepath)
+				if err != nil {
+					return err
+				}
+				if len(lines) > 1 {
+					doc = append(doc, resourcesToDoc(filepath, lines)...)
+				}
 			}
-			if !strings.HasSuffix(info.Name(), ".yaml") {
-				return nil
-			}
-			filedoc, err := parseYAML(filepath)
-			if err != nil {
-				return err
-			}
-			doc = append(doc, filedoc...)
 			return nil
 		}); err != nil {
 		return nil, err
