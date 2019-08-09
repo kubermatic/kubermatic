@@ -105,6 +105,8 @@ type KubermaticSeedControllerConfiguration struct {
 	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
 	// KubermaticImage can be used to overwrite the Docker image that is deployed inside user clusters.
 	KubermaticImage string `json:"kubermaticImage,omitempty"`
+	// Monitoring can be used to fine-tune to in-cluster Prometheus.
+	Monitoring KubermaticSeedMonitoringConfiguration `json:"monitoring,omitempty"`
 }
 
 // KubermaticAddonsConfiguration controls the optional additions installed into each user cluster.
@@ -113,6 +115,21 @@ type KubermaticAddonsConfiguration struct {
 	Kubernetes KubermaticAddonConfiguration `json:"kubernetes,omitempty"`
 	// Openshift controls the addons for Openshift-based clusters.
 	Openshift KubermaticAddonConfiguration `json:"openshift,omitempty"`
+}
+
+// KubermaticSeedMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
+type KubermaticSeedMonitoringConfiguration struct {
+	// DisableDefaultRules disables the recording and alerting rules.
+	DisableDefaultRules bool `json:"disableDefaultRules,omitempty"`
+	// DisableDefaultScrapingConfigs disables the default scraping targets.
+	DisableDefaultScrapingConfigs bool `json:"disableDefaultScrapingConfigs,omitempty"`
+	// CustomRules can be used to inject custom recording and alerting rules.
+	CustomRules string `json:"customRules,omitempty"`
+	// CustomScrapingConfigs can be used to inject custom scraping rules.
+	CustomScrapingConfigs string `json:"customScrapingConfigs,omitempty"`
+	// ScrapeAnnotationPrefix (if set) is used to make the in-cluster Prometheus scrape pods
+	// inside the user clusters.
+	ScrapeAnnotationPrefix string `json:"scrapeAnnotationPrefix,omitempty"`
 }
 
 // KubermaticAddonConfiguration describes the addons for a given cluster runtime.

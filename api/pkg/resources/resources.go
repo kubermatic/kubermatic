@@ -32,7 +32,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// KUBERMATICCOMMIT is a magic variable containing the git commit hash of the current (as in currently executing) kubermatic api. It gets feeded by Makefile as a ldflag.
+// KUBERMATICCOMMIT is a magic variable containing the git commit hash of the current (as in currently executing) kubermatic api. It gets fed by Makefile as an ldflag.
 var KUBERMATICCOMMIT string
 
 // KUBERMATICGITTAG is a magic variable containing the output of `git describe` for the current (as in currently executing) kubermatic api. It gets fed by Makefile as an ldflag.
@@ -714,8 +714,42 @@ func ConfigMapRevision(ctx context.Context, key types.NamespacedName, client ctr
 	return cm.ResourceVersion, nil
 }
 
-// GetPodTemplateLabels returns a set of labels for a Pod including the revisions of depending secrets and configmaps.
-// This will force pods being restarted as soon as one of the secrets/configmaps get updated.
+// VolumeRevisionLabels returns a set of labels for the given volumes, with one label per
+// ConfigMap or Secret, containing the objects' revisions.
+// When used for pod template labels, this will force pods being restarted as soon as one
+// of the secrets/configmaps get updated.
+func VolumeRevisionLabels(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	namespace string,
+	volumes []corev1.Volume,
+) (map[string]string, error) {
+	labels := make(map[string]string)
+
+	for _, v := range volumes {
+		if v.VolumeSource.Secret != nil {
+			key := types.NamespacedName{Namespace: namespace, Name: v.VolumeSource.Secret.SecretName}
+			revision, err := SecretRevision(ctx, key, client)
+			if err != nil {
+				return nil, err
+			}
+			labels[fmt.Sprintf("%s-secret-revision", v.VolumeSource.Secret.SecretName)] = revision
+		}
+		if v.VolumeSource.ConfigMap != nil {
+			key := types.NamespacedName{Namespace: namespace, Name: v.VolumeSource.ConfigMap.Name}
+			revision, err := ConfigMapRevision(ctx, key, client)
+			if err != nil {
+				return nil, err
+			}
+			labels[fmt.Sprintf("%s-configmap-revision", v.VolumeSource.ConfigMap.Name)] = revision
+		}
+	}
+
+	return labels, nil
+}
+
+// GetPodTemplateLabels is a specialized version of VolumeRevisionLabels that adds additional
+// typical labels like app and cluster names.
 func GetPodTemplateLabels(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
@@ -725,23 +759,13 @@ func GetPodTemplateLabels(
 ) (map[string]string, error) {
 	podLabels := AppClusterLabel(appName, clusterName, additionalLabels)
 
-	for _, v := range volumes {
-		if v.VolumeSource.Secret != nil {
-			key := types.NamespacedName{Namespace: namespace, Name: v.VolumeSource.Secret.SecretName}
-			revision, err := SecretRevision(ctx, key, client)
-			if err != nil {
-				return nil, err
-			}
-			podLabels[fmt.Sprintf("%s-secret-revision", v.VolumeSource.Secret.SecretName)] = revision
-		}
-		if v.VolumeSource.ConfigMap != nil {
-			key := types.NamespacedName{Namespace: namespace, Name: v.VolumeSource.ConfigMap.Name}
-			revision, err := ConfigMapRevision(ctx, key, client)
-			if err != nil {
-				return nil, err
-			}
-			podLabels[fmt.Sprintf("%s-configmap-revision", v.VolumeSource.ConfigMap.Name)] = revision
-		}
+	volumeLabels, err := VolumeRevisionLabels(ctx, client, namespace, volumes)
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range volumeLabels {
+		podLabels[k] = v
 	}
 
 	return podLabels, nil
