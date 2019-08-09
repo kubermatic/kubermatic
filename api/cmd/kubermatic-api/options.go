@@ -53,8 +53,8 @@ type serverRunOptions struct {
 func newServerRunOptions() (serverRunOptions, error) {
 	s := serverRunOptions{}
 	var (
-		rawFeatureGates   string
-		rawExposeStrategy string
+		rawFeatureGates     string
+		rawExposeStrategy   string
 		rawAccessibleAddons string
 	)
 

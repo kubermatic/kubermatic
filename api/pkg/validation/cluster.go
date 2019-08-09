@@ -249,6 +249,11 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter)
 			return fmt.Errorf("datacenter %q is not a bringyourown datacenter", spec.DatacenterName)
 		}
 		return nil
+	case spec.Kubevirt != nil:
+		if dc.Spec.Kubevirt == nil {
+			return fmt.Errorf("datacenter %q is not a kubevirt datacenter", spec.DatacenterName)
+		}
+		return nil
 	default:
 		return errors.New("no cloud provider specified")
 	}

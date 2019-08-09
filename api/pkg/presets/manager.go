@@ -22,6 +22,7 @@ type Presets struct {
 	Packet       Packet       `json:"packet,omitempty"`
 	GCP          GCP          `json:"gcp,omitempty"`
 	Fake         Fake         `json:"fake,omitempty"`
+	Kubevirt     Kubevirt     `json:"kubevirt,omitempty"`
 }
 
 type Digitalocean struct {
@@ -58,6 +59,10 @@ type GCP struct {
 
 type Fake struct {
 	Credentials []FakeCredentials `json:"credentials,omitempty"`
+}
+
+type Kubevirt struct {
+	Credentials []KubevirtCredentials `json:"credentials,omitempty"`
 }
 
 // DigitaloceanCredential defines Digitalocean credential
@@ -139,6 +144,12 @@ type GCPCredentials struct {
 	Subnetwork string `json:"subnetwork,omitempty"`
 }
 
+// KubevirtCredentials specifies access data to Kubevirt.
+type KubevirtCredentials struct {
+	Name   string `json:"name,omitempty"`
+	Config string `json:"config,omitempty"`
+}
+
 // FakeCredentials defines fake credential for tests
 type FakeCredentials struct {
 	Name  string `json:"name"`
@@ -185,8 +196,10 @@ func NewWithPresets(presets *Presets) *Manager {
 
 // NewFromFile returns a instance of manager with the credentials loaded from the given paths
 func NewFromFile(credentialsFilename string) (*Manager, error) {
-	var presets *Presets
-	var err error
+	var (
+		presets *Presets
+		err     error
+	)
 	if len(credentialsFilename) > 0 {
 		presets, err = loadPresets(credentialsFilename)
 		if err != nil {
@@ -204,6 +217,7 @@ func NewFromFile(credentialsFilename string) (*Manager, error) {
 			AWS:          AWS{},
 			Packet:       Packet{},
 			Fake:         Fake{},
+			Kubevirt:     Kubevirt{},
 		}
 	}
 	return &Manager{presets: presets}, nil
@@ -242,6 +256,9 @@ func (m *Manager) SetCloudCredentials(credentialName string, cloud kubermaticv1.
 	if cloud.Fake != nil {
 		return m.setFakeCredentials(credentialName, cloud)
 	}
+	if cloud.Kubevirt != nil {
+		return m.setKubevirtCredentials(credentialName, cloud)
+	}
 
 	return nil, fmt.Errorf("can not find provider to set credentials")
 }
@@ -261,6 +278,20 @@ func (m *Manager) setFakeCredentials(credentialName string, cloud kubermaticv1.C
 	for _, credential := range m.presets.Fake.Credentials {
 		if credentialName == credential.Name {
 			cloud.Fake.Token = credential.Token
+			return &cloud, nil
+		}
+	}
+	return nil, noCredentialError(credentialName)
+}
+
+func (m *Manager) setKubevirtCredentials(credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	if m.presets.Kubevirt.Credentials == nil {
+		return nil, emptyCredentialListError("Kubevirt")
+	}
+	for _, credential := range m.presets.Kubevirt.Credentials {
+		if credentialName == credential.Name {
+
+			cloud.Kubevirt.Config = credential.Config
 			return &cloud, nil
 		}
 	}
