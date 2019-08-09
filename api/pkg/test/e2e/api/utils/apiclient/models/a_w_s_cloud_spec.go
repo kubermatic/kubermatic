@@ -19,9 +19,6 @@ type AWSCloudSpec struct {
 	// access key ID
 	AccessKeyID string `json:"accessKeyId,omitempty"`
 
-	// availability zone
-	AvailabilityZone string `json:"availabilityZone,omitempty"`
-
 	// instance profile name
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 

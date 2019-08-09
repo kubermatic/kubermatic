@@ -1,45 +1,57 @@
-// +build cloud
+// +build create
 
 package e2e
 
 import (
-	"os"
 	"testing"
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
-const getAWSMaxAttempts = 12
+const getDOMaxAttempts = 24
 
-func getSecretAccessKey() string {
-	return os.Getenv("AWS_E2E_TESTS_SECRET")
-}
+func cleanUpProject(id string) func(t *testing.T) {
+	return func(t *testing.T) {
+		masterToken, err := GetMasterToken()
+		if err != nil {
+			t.Fatalf("can not get master token due error: %v", err)
+		}
+		apiRunner := CreateAPIRunner(masterToken, t)
 
-func getAccessKeyID() string {
-	return os.Getenv("AWS_E2E_TESTS_KEY_ID")
-}
-
-func getKubernetesVersion() string {
-	version := os.Getenv("VERSIONS_TO_TEST")
-	if len(version) > 0 {
-		return version
+		if err := apiRunner.DeleteProject(id); err != nil {
+			t.Fatalf("can not delete project due error: %v", err)
+		}
+		for attempt := 1; attempt <= getDOMaxAttempts; attempt++ {
+			_, err := apiRunner.GetProject(id, 5)
+			if err != nil {
+				break
+			}
+			time.Sleep(3 * time.Second)
+		}
+		_, err = apiRunner.GetProject(id, 5)
+		if err == nil {
+			t.Fatalf("can not delete the project")
+		}
 	}
-	return "v1.14.2"
 }
 
-func TestCreateAWSCluster(t *testing.T) {
+func TestCreateDOCluster(t *testing.T) {
 	tests := []struct {
-		name     string
-		dc       string
-		location string
-		replicas int32
+		name       string
+		dc         string
+		location   string
+		version    string
+		credential string
+		replicas   int32
 	}{
 		{
-			name:     "create cluster on AWS",
-			dc:       "europe-west3-c-1",
-			location: "aws-eu-central-1a",
-			replicas: 1,
+			name:       "create cluster on DigitalOcean",
+			dc:         "prow-build-cluster",
+			location:   "do-fra1",
+			version:    "v1.14.2",
+			credential: "digitalocean",
+			replicas:   1,
 		},
 	}
 	for _, tc := range tests {
@@ -57,13 +69,13 @@ func TestCreateAWSCluster(t *testing.T) {
 			teardown := cleanUpProject(project.ID)
 			defer teardown(t)
 
-			cluster, err := apiRunner.CreateAWSCluster(project.ID, tc.dc, rand.String(10), getSecretAccessKey(), getAccessKeyID(), getKubernetesVersion(), tc.location, tc.replicas)
+			cluster, err := apiRunner.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
 			if err != nil {
 				t.Fatalf("can not create cluster due to error: %v", GetErrorResponse(err))
 			}
 
 			var clusterReady bool
-			for attempt := 1; attempt <= getAWSMaxAttempts; attempt++ {
+			for attempt := 1; attempt <= getDOMaxAttempts; attempt++ {
 				healthStatus, err := apiRunner.GetClusterHealthStatus(project.ID, tc.dc, cluster.ID)
 				if err != nil {
 					t.Fatalf("can not get health status %v", GetErrorResponse(err))
@@ -77,11 +89,11 @@ func TestCreateAWSCluster(t *testing.T) {
 			}
 
 			if !clusterReady {
-				t.Fatalf("cluster is not redy after %d attempts", getAWSMaxAttempts)
+				t.Fatalf("cluster is not redy after %d attempts", getDOMaxAttempts)
 			}
 
 			var ndReady bool
-			for attempt := 1; attempt <= getAWSMaxAttempts; attempt++ {
+			for attempt := 1; attempt <= getDOMaxAttempts; attempt++ {
 				ndList, err := apiRunner.GetClusterNodeDeployment(project.ID, tc.dc, cluster.ID)
 				if err != nil {
 					t.Fatalf("can not get node deployments %v", GetErrorResponse(err))
@@ -94,11 +106,11 @@ func TestCreateAWSCluster(t *testing.T) {
 				time.Sleep(30 * time.Second)
 			}
 			if !ndReady {
-				t.Fatalf("node deployment is not redy after %d attempts", getAWSMaxAttempts)
+				t.Fatalf("node deployment is not redy after %d attempts", getDOMaxAttempts)
 			}
 
 			var replicasReady bool
-			for attempt := 1; attempt <= getAWSMaxAttempts; attempt++ {
+			for attempt := 1; attempt <= getDOMaxAttempts; attempt++ {
 				ndList, err := apiRunner.GetClusterNodeDeployment(project.ID, tc.dc, cluster.ID)
 				if err != nil {
 					t.Fatalf("can not get node deployments %v", GetErrorResponse(err))

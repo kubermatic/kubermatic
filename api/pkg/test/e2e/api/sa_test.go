@@ -3,9 +3,10 @@
 package e2e
 
 import (
-	"k8s.io/apimachinery/pkg/util/rand"
 	"strings"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 func cleanUpProject(id string) func(t *testing.T) {
@@ -86,7 +87,7 @@ func TestTokenAccessForProject(t *testing.T) {
 			apiRunner := CreateAPIRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", err)
+				t.Fatalf("can not create project due error: %v", GetErrorResponse(err))
 			}
 			teardown := cleanUpProject(project.ID)
 			defer teardown(t)
@@ -134,7 +135,7 @@ func TestTokenAccessForProject(t *testing.T) {
 			// check access to not owned project
 			notOwnedProject, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", err)
+				t.Fatalf("can not create project due error: %v", GetErrorResponse(err))
 			}
 			teardownNotOwnedProject := cleanUpProject(notOwnedProject.ID)
 			defer teardownNotOwnedProject(t)

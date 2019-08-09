@@ -22,6 +22,7 @@ dockerd > /dev/null 2> /dev/null &
 # Step 1: Build kubermatic docker image that will be used by the inner Kube cluster
 (
 cd ${SDIR}/../..
+export KUBERMATICCOMMIT="latestbuild"
 time make build
 time make docker-build
 )
@@ -58,4 +59,4 @@ make run > /dev/null 2> ./_build/oidc-proxy-client-errors &
 echo "running the API E2E tests"
 more /etc/hosts
 go test -tags=e2e ${SDIR}/../../pkg/test/e2e/api -v
-
+go test -tags=create -timeout 20m ${SDIR}/../../pkg/test/e2e/api -v

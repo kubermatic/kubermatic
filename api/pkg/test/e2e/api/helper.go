@@ -314,7 +314,7 @@ func (r *APIRunner) ListCredentials(providerName string) ([]string, error) {
 	return names, nil
 }
 
-// CreateAWSCluster creates cluster for Vsphere provider
+// CreateAWSCluster creates cluster for AWS provider
 func (r *APIRunner) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location string, replicas int32) (*apiv1.Cluster, error) {
 
 	vr, err := semver.NewVersion(version)
@@ -349,6 +349,60 @@ func (r *APIRunner) CreateAWSCluster(projectID, dc, name, secretAccessKey, acces
 						InstanceType: &instanceType,
 						VolumeSize:   &volumeSize,
 						VolumeType:   &volumeType,
+					},
+				},
+				OperatingSystem: &models.OperatingSystemSpec{
+					Ubuntu: &models.UbuntuSpec{
+						DistUpgradeOnBoot: false,
+					},
+				},
+			},
+		},
+	}
+
+	params := &project.CreateClusterParams{ProjectID: projectID, Dc: dc, Body: clusterSpec}
+	params.WithTimeout(timeout)
+	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertCluster(clusterResponse.Payload)
+}
+
+// CreateDOCluster creates cluster for DigitalOcean provider
+func (r *APIRunner) CreateDOCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
+
+	vr, err := semver.NewVersion(version)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
+	}
+
+	instanceSize := "s-1vcpu-1gb"
+
+	clusterSpec := &models.CreateClusterSpec{}
+	clusterSpec.Cluster = &models.Cluster{
+		Type:       "kubernetes",
+		Name:       name,
+		Credential: credential,
+		Spec: &models.ClusterSpec{
+			Cloud: &models.CloudSpec{
+				DatacenterName: location,
+				Digitalocean:   &models.DigitaloceanCloudSpec{},
+			},
+			Version: vr,
+		},
+	}
+	clusterSpec.NodeDeployment = &models.NodeDeployment{
+		Spec: &models.NodeDeploymentSpec{
+			Replicas: &replicas,
+			Template: &models.NodeSpec{
+				Cloud: &models.NodeCloudSpec{
+					Digitalocean: &models.DigitaloceanNodeSpec{
+						Size:       &instanceSize,
+						Backups:    false,
+						IPV6:       false,
+						Monitoring: false,
 					},
 				},
 				OperatingSystem: &models.OperatingSystemSpec{
@@ -519,4 +573,14 @@ func GetErrorResponse(err error) string {
 		return err.Error()
 	}
 	return string(rawData)
+}
+
+// IsHealthyCluster check if all cluster components are up
+func IsHealthyCluster(healthStatus *apiv1.ClusterHealth) bool {
+	if healthStatus.UserClusterControllerManager == kubermaticv1.HealthStatusUp && healthStatus.Scheduler == kubermaticv1.HealthStatusUp &&
+		healthStatus.MachineController == kubermaticv1.HealthStatusUp && healthStatus.Etcd == kubermaticv1.HealthStatusUp &&
+		healthStatus.Controller == kubermaticv1.HealthStatusUp && healthStatus.Apiserver == kubermaticv1.HealthStatusUp {
+		return true
+	}
+	return false
 }
