@@ -172,9 +172,9 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 			kubermaticlog.Logger.Infow("failed to get seeds when trying to warm up restMapper cache", zap.Error(err))
 			return
 		}
-		for seedName := range seeds {
-			if _, err := clusterProviderGetter(seedName); err != nil {
-				kubermaticlog.Logger.Infow("failed to get clusterProvider when trying to warm up restMapper cache", zap.Error(err), "seed", seedName)
+		for _, seed := range seeds {
+			if _, err := clusterProviderGetter(seed); err != nil {
+				kubermaticlog.Logger.Infow("failed to get clusterProvider when trying to warm up restMapper cache", zap.Error(err), "seed", seed.Name)
 				continue
 			}
 		}
@@ -370,8 +370,8 @@ func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, 
 	// use a sync.Map as we read a lot from this map but almost never write to it
 	restMapperCache := &sync.Map{}
 
-	return func(seedName string) (provider.ClusterProvider, error) {
-		cfg, err := seedKubeconfigGetter(seedName)
+	return func(seed *kubermaticv1.Seed) (provider.ClusterProvider, error) {
+		cfg, err := seedKubeconfigGetter(seed)
 		if err != nil {
 			return nil, err
 		}
@@ -384,16 +384,16 @@ func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, 
 		var mapper meta.RESTMapper
 		// Make sure the key changes if someone creates a new seed with the same name
 		mapperKey := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s/%s/%s/%s",
-			seedName, cfg.Host, cfg.APIPath, cfg.Username, cfg.Password, cfg.BearerToken, cfg.BearerTokenFile,
+			seed.Name, cfg.Host, cfg.APIPath, cfg.Username, cfg.Password, cfg.BearerToken, cfg.BearerTokenFile,
 			string(cfg.CertData), string(cfg.KeyData), string(cfg.CAData))
 		rawMapper, exists := restMapperCache.Load(mapperKey)
 		if !exists {
 			mapper, err = restmapper.NewDynamicRESTMapper(cfg)
 			if err != nil {
-				kubermaticlog.Logger.With("error", err).With("seed", seedName).Error("failed to create restMapper")
-				return nil, fmt.Errorf("failed to create restMapper for seed %q: %v", seedName, err)
+				kubermaticlog.Logger.With("error", err).With("seed", seed.Name).Error("failed to create restMapper")
+				return nil, fmt.Errorf("failed to create restMapper for seed %q: %v", seed.Name, err)
 			}
-			kubermaticlog.Logger.With("seed", seedName).Info("Created restMapper")
+			kubermaticlog.Logger.With("seed", seed.Name).Info("Created restMapper")
 			restMapperCache.Store(mapperKey, mapper)
 		} else {
 			var ok bool

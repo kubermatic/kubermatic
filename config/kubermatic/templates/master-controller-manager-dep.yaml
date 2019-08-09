@@ -39,6 +39,8 @@ spec:
         {{- end }}
         - -worker-count={{ .Values.kubermatic.masterController.workerCount }}
         - -namespace=$(NAMESPACE)
+        - -seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/serverCert.pem
+        - -seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/serverKey.pem
         image: '{{ .Values.kubermatic.masterController.image.repository }}:{{ .Values.kubermatic.masterController.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.masterController.image.pullPolicy }}
         env:
@@ -55,6 +57,8 @@ spec:
             mountPath: "/opt/datacenter/"
             readOnly: true
         {{- end }}
+          - name: seed-webhook-serving-cert
+            mountPath: /opt/seed-webhook-serving-cert
         resources:
 {{ toYaml .Values.kubermatic.masterController.resources | indent 10 }}
       imagePullSecrets:
@@ -68,6 +72,9 @@ spec:
         secret:
           secretName: datacenters
       {{- end }}
+      - name: seed-webhook-serving-cert
+        secret:
+          secretName: seed-webhook-serving-cert
       nodeSelector:
 {{ toYaml .Values.kubermatic.masterController.nodeSelector | indent 8 }}
       affinity:

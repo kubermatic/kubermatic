@@ -34,13 +34,13 @@ type SeedGetter = func() (*kubermaticv1.Seed, error)
 type SeedsGetter = func() (map[string]*kubermaticv1.Seed, error)
 
 // SeedKubeconfigGetter is used to fetch the kubeconfig for a given seed
-type SeedKubeconfigGetter = func(seedName string) (*rest.Config, error)
+type SeedKubeconfigGetter = func(seed *kubermaticv1.Seed) (*rest.Config, error)
 
 // ClusterProviderGetter is used to get a clusterProvider
-type ClusterProviderGetter = func(seedName string) (ClusterProvider, error)
+type ClusterProviderGetter = func(seed *kubermaticv1.Seed) (ClusterProvider, error)
 
 // AddonProviderGetterr is used to get an AddonProvider
-type AddonProviderGetter = func(seedName string) (AddonProvider, error)
+type AddonProviderGetter = func(seed *kubermaticv1.Seed) (AddonProvider, error)
 
 // DatacenterMeta describes a Kubermatic datacenter.
 type DatacenterMeta struct {
@@ -225,11 +225,7 @@ func SeedKubeconfigGetterFactory(
 	dynamicDatacenters bool) (SeedKubeconfigGetter, error) {
 
 	if dynamicDatacenters {
-		return func(seedName string) (*rest.Config, error) {
-			seed := &kubermaticv1.Seed{}
-			if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: seedName}, seed); err != nil {
-				return nil, fmt.Errorf("failed to get seed %q: %v", seedName, err)
-			}
+		return func(seed *kubermaticv1.Seed) (*rest.Config, error) {
 			secret := &corev1.Secret{}
 			name := types.NamespacedName{
 				Namespace: seed.Spec.Kubeconfig.Namespace,
@@ -245,7 +241,7 @@ func SeedKubeconfigGetterFactory(
 			if err != nil {
 				return nil, fmt.Errorf("failed to load kubeconfig: %v", err)
 			}
-			kubermaticlog.Logger.With("seed", seedName).Debug("Successfully got kubeconfig")
+			kubermaticlog.Logger.With("seed", seed.Name).Debug("Successfully got kubeconfig")
 			return cfg, nil
 		}, nil
 
@@ -258,13 +254,13 @@ func SeedKubeconfigGetterFactory(
 	if err != nil {
 		return nil, fmt.Errorf("failed to read kubeconfig from %q: %v", kubeconfigFilePath, err)
 	}
-	return func(seedName string) (*rest.Config, error) {
-		if _, exists := kubeconfig.Contexts[seedName]; !exists {
-			return nil, fmt.Errorf("found no context with name %q in kubeconfig", seedName)
+	return func(seed *kubermaticv1.Seed) (*rest.Config, error) {
+		if _, exists := kubeconfig.Contexts[seed.Name]; !exists {
+			return nil, fmt.Errorf("found no context with name %q in kubeconfig", seed.Name)
 		}
-		cfg, err := clientcmd.NewNonInteractiveClientConfig(*kubeconfig, seedName, &clientcmd.ConfigOverrides{}, nil).ClientConfig()
+		cfg, err := clientcmd.NewNonInteractiveClientConfig(*kubeconfig, seed.Name, &clientcmd.ConfigOverrides{}, nil).ClientConfig()
 		if err != nil {
-			return nil, fmt.Errorf("failed to get restConfig for seed %q: %v", seedName, err)
+			return nil, fmt.Errorf("failed to get restConfig for seed %q: %v", seed.Name, err)
 		}
 		return cfg, nil
 	}, nil

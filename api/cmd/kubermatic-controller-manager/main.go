@@ -123,6 +123,37 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Failed to get clientProvider", zap.Error(err))
 	}
 
+	if options.dynamicDatacenters {
+		seedValidationWebhookServer, err := options.seedValidationHook.Server(
+			rootCtx,
+			log,
+			options.workerName,
+			// We only have a SeedGetter and not a SeedsGetter, so construct a little
+			// wrapper
+			func() (map[string]*kubermaticv1.Seed, error) {
+				seed, err := seedGetter()
+				if err != nil {
+					return nil, err
+				}
+				return map[string]*kubermaticv1.Seed{seed.Name: seed}, nil
+			},
+			// This controler doesn't necessarily have an explicit kubeconfig, most of the time it
+			// runs with in-cluster config. Just return the config from the manager and only allow
+			// our own seed
+			func(seed *kubermaticv1.Seed) (*rest.Config, error) {
+				if seed.Name != options.dc {
+					return nil, fmt.Errorf("can only return kubeconfig for our own seed(%q), got request for %q", options.dc, seed.Name)
+				}
+				return mgr.GetConfig(), nil
+			})
+		if err != nil {
+			log.Fatalw("Failed to get seedValidationWebhookServer", zap.Error(err))
+		}
+		if err := mgr.Add(seedValidationWebhookServer); err != nil {
+			log.Fatalw("Failed to add seedValidationWebhookServer to mgr", zap.Error(err))
+		}
+	}
+
 	ctrlCtx := &controllerContext{
 		runOptions:           options,
 		mgr:                  mgr,
