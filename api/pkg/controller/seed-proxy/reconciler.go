@@ -49,7 +49,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	glog.V(4).Infof("Reconciling seed cluster %s...", request.Name)
-	if err := r.reconcileSeed(request.Name); err != nil {
+	seed, found := seeds[request.Name]
+	if !found {
+		return reconcile.Result{}, fmt.Errorf("didn't find seed %q", request.Name)
+	}
+	if err := r.reconcileSeed(seed); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile: %v", err)
 	}
 
@@ -91,11 +95,12 @@ func (r *Reconciler) garbageCollect(seeds map[string]*kubermaticv1.Seed) error {
 	return nil
 }
 
-func (r *Reconciler) reconcileSeed(name string) error {
-	cfg, err := r.seedKubeconfigGetter(name)
+func (r *Reconciler) reconcileSeed(seed *kubermaticv1.Seed) error {
+	cfg, err := r.seedKubeconfigGetter(seed)
 	if err != nil {
 		return err
 	}
+	name := seed.Name
 
 	client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
 	if err != nil {

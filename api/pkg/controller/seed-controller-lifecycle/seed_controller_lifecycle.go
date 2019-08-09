@@ -121,14 +121,14 @@ func (r *Reconciler) reconcile() error {
 	}
 
 	seedKubeconfigMap := map[string]rest.Config{}
-	for seedName := range seeds {
-		cfg, err := r.seedKubeconfigGetter(seedName)
+	for _, seed := range seeds {
+		cfg, err := r.seedKubeconfigGetter(seed)
 		if err != nil {
 			// Don't let a single broken kubeconfig break everything.
-			r.log.Errorw("failed to get kubeconfig", "seed", seedName, zap.Error(err))
+			r.log.Errorw("failed to get kubeconfig", "seed", seed.Name, zap.Error(err))
 			continue
 		}
-		seedKubeconfigMap[seedName] = *cfg
+		seedKubeconfigMap[seed.Name] = *cfg
 	}
 
 	if r.activeController.running && reflect.DeepEqual(r.activeController.config, seedKubeconfigMap) {

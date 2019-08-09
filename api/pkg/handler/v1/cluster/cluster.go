@@ -356,8 +356,8 @@ func ListAllEndpoint(projectProvider provider.ProjectProvider, seedsGetter provi
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		for seedName := range seeds {
-			clusterProvider, err := clusterProviderGetter(seedName)
+		for _, seed := range seeds {
+			clusterProvider, err := clusterProviderGetter(seed)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}

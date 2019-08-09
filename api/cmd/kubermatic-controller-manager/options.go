@@ -17,6 +17,7 @@ import (
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/net"
@@ -62,6 +63,7 @@ type controllerRunOptions struct {
 	apiServerDefaultReplicas                         int
 	controllerManagerDefaultReplicas                 int
 	schedulerDefaultReplicas                         int
+	seedValidationHook                               seedvalidation.WebhookOpts
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -119,6 +121,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "The default number of replicas for usercluster api servers")
 	flag.IntVar(&c.controllerManagerDefaultReplicas, "controller-manager-default-replicas", 1, "The default number of replicas for usercluster controller managers")
 	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")
+	c.seedValidationHook.AddFlags(flag.CommandLine)
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)

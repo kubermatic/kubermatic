@@ -223,11 +223,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		false,
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
-	clusterProviderGetter := func(seedName string) (provider.ClusterProvider, error) {
-		if clusterProvider, exists := clusterProviders[seedName]; exists {
+	clusterProviderGetter := func(seed *kubermaticv1.Seed) (provider.ClusterProvider, error) {
+		if clusterProvider, exists := clusterProviders[seed.Name]; exists {
 			return clusterProvider, nil
 		}
-		return nil, fmt.Errorf("can not find clusterprovider for cluster %q", seedName)
+		return nil, fmt.Errorf("can not find clusterprovider for cluster %q", seed.Name)
 	}
 
 	addonProvider := kubernetes.NewAddonProvider(
@@ -235,11 +235,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		sets.NewString("addon1", "addon2"),
 	)
 	addonProviders := map[string]provider.AddonProvider{"us-central1": addonProvider}
-	addonProviderGetter := func(seedName string) (provider.AddonProvider, error) {
-		if addonProvider, exists := addonProviders[seedName]; exists {
+	addonProviderGetter := func(seed *kubermaticv1.Seed) (provider.AddonProvider, error) {
+		if addonProvider, exists := addonProviders[seed.Name]; exists {
 			return addonProvider, nil
 		}
-		return nil, fmt.Errorf("can not find addonprovider for cluster %q", seedName)
+		return nil, fmt.Errorf("can not find addonprovider for cluster %q", seed.Name)
 	}
 
 	kubernetesInformerFactory.Start(wait.NeverStop)

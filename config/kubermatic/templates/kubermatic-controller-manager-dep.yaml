@@ -108,6 +108,8 @@ spec:
         - -controller-manager-default-replicas={{ .Values.kubermatic.controllerManagerDefaultReplicas}}
         - -scheduler-default-replicas={{ .Values.kubermatic.schedulerDefaultReplicas}}
         - -namespace=$(NAMESPACE)
+        - -seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/serverCert.pem
+        - -seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/serverKey.pem
         image: '{{ .Values.kubermatic.controller.image.repository }}:{{ .Values.kubermatic.controller.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.image.pullPolicy }}
         env:
@@ -152,6 +154,8 @@ spec:
           mountPath: "/opt/incluster-prometheus-scraping-configs/"
           readOnly: true
         {{- end }}
+        - name: seed-webhook-serving-cert
+          mountPath: /opt/seed-webhook-serving-cert
         resources:
 {{ toYaml .Values.kubermatic.controller.resources | indent 10 }}
       imagePullSecrets:
@@ -188,6 +192,9 @@ spec:
         configMap:
           name: clusterns-prometheus-scraping-configs
       {{- end }}
+      - name: seed-webhook-serving-cert
+        secret:
+          secretName: seed-webhook-serving-cert
       nodeSelector:
 {{ toYaml .Values.kubermatic.controller.nodeSelector | indent 8 }}
       affinity:
