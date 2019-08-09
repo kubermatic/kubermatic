@@ -102,8 +102,9 @@ func (s *Server) handleSeedValidationRequests(resp http.ResponseWriter, req *htt
 	resp.WriteHeader(http.StatusOK)
 	if _, err := resp.Write(serializedAdmissionResponse); err != nil {
 		s.log.Errorw("failed to write response body", zap.Error(err))
+		return
 	}
-	s.log.Info("Successfully validated seed")
+	s.log.Debug("Successfully validated seed")
 }
 
 func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, error) {
@@ -124,7 +125,7 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 
 	validationErr := s.validator.Validate(seed, admissionReview.Request.Operation == admissionv1beta1.Delete)
 	if validationErr != nil {
-		s.log.With("seed", seed.Name).Errorw("seed failed validation", "validationError", validationErr.Error())
+		s.log.Errorw("seed failed validation", "seed", seed.Name, "validationError", validationErr.Error())
 	}
 
 	return admissionReview.Request, validationErr
