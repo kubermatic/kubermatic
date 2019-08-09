@@ -11,14 +11,17 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/addon"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/aws"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/azure"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/credentials"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/datacenter"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/digitalocean"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/gcp"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/hetzner"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/operations"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/packet"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/serviceaccounts"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/tokens"
@@ -70,6 +73,8 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli := new(Kubermatic)
 	cli.Transport = transport
 
+	cli.Addon = addon.New(transport, formats)
+
 	cli.Aws = aws.New(transport, formats)
 
 	cli.Azure = azure.New(transport, formats)
@@ -82,9 +87,13 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 
 	cli.Gcp = gcp.New(transport, formats)
 
+	cli.Hetzner = hetzner.New(transport, formats)
+
 	cli.Openstack = openstack.New(transport, formats)
 
 	cli.Operations = operations.New(transport, formats)
+
+	cli.Packet = packet.New(transport, formats)
 
 	cli.Project = project.New(transport, formats)
 
@@ -142,6 +151,8 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 
 // Kubermatic is a client for kubermatic
 type Kubermatic struct {
+	Addon *addon.Client
+
 	Aws *aws.Client
 
 	Azure *azure.Client
@@ -154,9 +165,13 @@ type Kubermatic struct {
 
 	Gcp *gcp.Client
 
+	Hetzner *hetzner.Client
+
 	Openstack *openstack.Client
 
 	Operations *operations.Client
+
+	Packet *packet.Client
 
 	Project *project.Client
 
@@ -177,6 +192,8 @@ type Kubermatic struct {
 func (c *Kubermatic) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
 
+	c.Addon.SetTransport(transport)
+
 	c.Aws.SetTransport(transport)
 
 	c.Azure.SetTransport(transport)
@@ -189,9 +206,13 @@ func (c *Kubermatic) SetTransport(transport runtime.ClientTransport) {
 
 	c.Gcp.SetTransport(transport)
 
+	c.Hetzner.SetTransport(transport)
+
 	c.Openstack.SetTransport(transport)
 
 	c.Operations.SetTransport(transport)
+
+	c.Packet.SetTransport(transport)
 
 	c.Project.SetTransport(transport)
 

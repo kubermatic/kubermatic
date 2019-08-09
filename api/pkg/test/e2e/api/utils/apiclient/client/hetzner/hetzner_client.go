@@ -25,23 +25,23 @@ type Client struct {
 }
 
 /*
-ListHetznerCredentials Lists credential names for hetzner
+ListHetznerSizes Lists sizes from hetzner
 */
-func (a *Client) ListHetznerCredentials(params *ListHetznerCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListHetznerCredentialsOK, error) {
+func (a *Client) ListHetznerSizes(params *ListHetznerSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListHetznerSizesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListHetznerCredentialsParams()
+		params = NewListHetznerSizesParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "listHetznerCredentials",
+		ID:                 "listHetznerSizes",
 		Method:             "GET",
-		PathPattern:        "/api/v1/providers/hetzner/credentials",
+		PathPattern:        "/api/v1/providers/hetzner/sizes",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
-		Reader:             &ListHetznerCredentialsReader{formats: a.formats},
+		Reader:             &ListHetznerSizesReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -49,7 +49,7 @@ func (a *Client) ListHetznerCredentials(params *ListHetznerCredentialsParams, au
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListHetznerCredentialsOK), nil
+	return result.(*ListHetznerSizesOK), nil
 
 }
 

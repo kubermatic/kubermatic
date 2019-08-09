@@ -25,23 +25,23 @@ type Client struct {
 }
 
 /*
-ListPacketCredentials Lists credential names for Packet
+ListPacketSizes Lists sizes from packet
 */
-func (a *Client) ListPacketCredentials(params *ListPacketCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListPacketCredentialsOK, error) {
+func (a *Client) ListPacketSizes(params *ListPacketSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewListPacketCredentialsParams()
+		params = NewListPacketSizesParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "listPacketCredentials",
+		ID:                 "listPacketSizes",
 		Method:             "GET",
-		PathPattern:        "/api/v1/providers/packet/credentials",
+		PathPattern:        "/api/v1/providers/packet/sizes",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
-		Reader:             &ListPacketCredentialsReader{formats: a.formats},
+		Reader:             &ListPacketSizesReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -49,7 +49,36 @@ func (a *Client) ListPacketCredentials(params *ListPacketCredentialsParams, auth
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListPacketCredentialsOK), nil
+	return result.(*ListPacketSizesOK), nil
+
+}
+
+/*
+ListPacketSizesNoCredentials Lists sizes from packet
+*/
+func (a *Client) ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListPacketSizesNoCredentialsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listPacketSizesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &ListPacketSizesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListPacketSizesNoCredentialsOK), nil
 
 }
 
