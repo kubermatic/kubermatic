@@ -54,7 +54,7 @@ func (r *reconcileSyncProjectBinding) Reconcile(request reconcile.Request) (reco
 	}
 
 	if projectBinding.DeletionTimestamp != nil {
-		return reconcile.Result{}, r.removeFinalizerFromBinding(projectBinding)
+		return reconcile.Result{}, r.ensureNotProjectOwnerForBinding(projectBinding)
 	}
 	if rbac.ExtractGroupPrefix(projectBinding.Spec.Group) == rbac.OwnerGroupNamePrefix {
 		return reconcile.Result{}, r.ensureProjectOwnerForBinding(projectBinding)
