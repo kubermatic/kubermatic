@@ -239,9 +239,16 @@ type PacketSizeList []PacketSize
 // swagger:model PacketSize
 type PacketSize struct {
 	Name   string        `json:"name,omitempty"`
-	Cores  int32         `json:"cpus,omitempty"`
+	CPUs   []PacketCPU   `json:"cpus,omitempty"`
 	Memory string        `json:"memory,omitempty"`
 	Drives []PacketDrive `json:"drives,omitempty"`
+}
+
+// PacketCPU represents an array of Packet CPUs. It is a part of PacketSize.
+// swagger:model PacketCPU
+type PacketCPU struct {
+	Count int    `json:"count,omitempty"`
+	Type  string `json:"type,omitempty"`
 }
 
 // PacketDrive represents an array of Packet drives. It is a part of PacketSize.
@@ -649,7 +656,6 @@ type Addon struct {
 // AddonSpec addon specification
 // swagger:model AddonSpec
 type AddonSpec struct {
-
 	// Variables is free form data to use for parsing the manifest templates
 	Variables map[string]interface{} `json:"variables,omitempty"`
 }
