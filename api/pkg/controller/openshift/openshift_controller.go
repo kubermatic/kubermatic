@@ -172,6 +172,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		log.Debug("Skipping because the cluster is an Kubernetes cluster")
 		return reconcile.Result{}, nil
 	}
+	if cluster.Spec.Openshift == nil {
+		log.Error("cluster has Openshift annotaiton but .Spec.Openshift is unset")
+		return reconcile.Result{}, nil
+	}
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
 		log.Debugw(
@@ -485,6 +489,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, osData),
 		resources.GetInternalKubeconfigCreator(resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, osData),
 		resources.GetInternalKubeconfigCreator(resources.ClusterAutoscalerKubeconfigSecretName, resources.ClusterAutoscalerCertUsername, nil, osData),
+		openshiftresources.ImagePullSecretCreator(osData.Cluster()),
 
 		//TODO: This is only needed because of the ServiceAccount Token needed for Openshift
 		//TODO: Streamline this by using it everywhere and use the clientprovider here or remove
