@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -21,7 +21,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *testRunner) testPVC(log *logrus.Entry, userClusterClient ctrlruntimeclient.Client, attempt int) error {
+func (r *testRunner) testPVC(log *zap.SugaredLogger, userClusterClient ctrlruntimeclient.Client, attempt int) error {
 	log.Info("Testing support for PVC's...")
 
 	ns := &corev1.Namespace{
@@ -125,7 +125,7 @@ func (r *testRunner) testPVC(log *logrus.Entry, userClusterClient ctrlruntimecli
 	return nil
 }
 
-func (r *testRunner) testLB(log *logrus.Entry, userClusterClient ctrlruntimeclient.Client, attempt int) error {
+func (r *testRunner) testLB(log *zap.SugaredLogger, userClusterClient ctrlruntimeclient.Client, attempt int) error {
 	log.Info("Testing support for LB's...")
 
 	ns := &corev1.Namespace{

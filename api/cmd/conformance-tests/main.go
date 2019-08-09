@@ -19,11 +19,12 @@ import (
 
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
@@ -62,7 +63,6 @@ type Opts struct {
 	workerName                   string
 	homeDir                      string
 	versions                     []*semver.Semver
-	log                          *logrus.Entry
 	excludeSelector              excludeSelector
 	excludeSelectorRaw           string
 	existingClusterLabel         string
@@ -127,14 +127,10 @@ var defaultTimeout = 10 * time.Minute
 var (
 	providers  string
 	pubKeyPath string
-	debug      bool
 	sversions  string
 )
 
 func main() {
-	mainLog := logrus.New()
-	mainLog.SetLevel(logrus.InfoLevel)
-
 	opts := Opts{
 		providers:  sets.NewString(),
 		publicKeys: [][]byte{},
@@ -143,9 +139,17 @@ func main() {
 
 	defaultTimeoutMinutes := 10
 
+	rawLog := kubermaticlog.New(true, kubermaticlog.FormatJSON)
+	log := rawLog.Sugar()
+	defer func() {
+		if err := log.Sync(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
 	usr, err := user.Current()
 	if err != nil {
-		mainLog.Fatal(err)
+		log.Fatal("failed to get the current user", zap.Error(err))
 	}
 	pubkeyPath := path.Join(usr.HomeDir, ".ssh/id_rsa.pub")
 
@@ -161,7 +165,6 @@ func main() {
 	flag.BoolVar(&opts.cleanupOnStart, "cleanup-on-start", false, "Cleans up all clusters on start and exit afterwards - must be used with name-prefix.")
 	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", defaultTimeout, "cluster creation timeout")
 	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster at the exit")
-	flag.BoolVar(&debug, "debug", false, "Enable debug logs")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
 	flag.StringVar(&sversions, "versions", "v1.10.11,v1.11.6,v1.12.4,v1.13.1", "a comma-separated list of versions to test")
@@ -171,6 +174,7 @@ func main() {
 	flag.BoolVar(&opts.openshift, "openshift", false, "Whether to create an openshift cluster")
 	flag.BoolVar(&opts.printGinkoLogs, "print-ginkgo-logs", false, "Whether to print ginkgo logs when ginkgo encountered failures")
 	flag.BoolVar(&opts.onlyTestCreation, "only-test-creation", false, "Only test if nodes become ready. Does not perform any extended checks like conformance tests")
+	_ = flag.Bool("debug", false, "No-Op flag kept for compatibility reasons")
 
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
 	flag.StringVar(&opts.secrets.AWS.SecretAccessKey, "aws-secret-access-key", "", "AWS: SecretAccessKey")
@@ -197,8 +201,8 @@ func main() {
 
 	defaultTimeout = time.Duration(defaultTimeoutMinutes) * time.Minute
 
-	if debug {
-		mainLog.SetLevel(logrus.DebugLevel)
+	if opts.workerName != "" {
+		log = log.With("worker-name", opts.workerName)
 	}
 
 	if opts.excludeSelectorRaw != "" {
@@ -215,7 +219,7 @@ func main() {
 			case "coreos":
 				opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] = true
 			default:
-				mainLog.Fatalf("Unknown distribution '%s' in '-exclude-distributions' param", excludedDistribution)
+				log.Fatalf("Unknown distribution '%s' in '-exclude-distributions' param", excludedDistribution)
 			}
 		}
 	}
@@ -223,13 +227,6 @@ func main() {
 	for _, s := range strings.Split(sversions, ",") {
 		opts.versions = append(opts.versions, semver.NewSemverOrDie(s))
 	}
-
-	fields := logrus.Fields{}
-	if opts.workerName != "" {
-		fields["worker-name"] = opts.workerName
-	}
-	log := mainLog.WithFields(fields)
-	opts.log = log
 
 	opts.kubermatcProjectID = os.Getenv("KUBERMATIC_PROJECT_ID")
 	if opts.kubermatcProjectID == "" {
@@ -276,7 +273,7 @@ func main() {
 	}
 	opts.publicKeys = append(opts.publicKeys, e2eTestPubKeyBytes)
 	opts.homeDir = homeDir
-	log = logrus.WithFields(logrus.Fields{"home": homeDir})
+	log = log.With("home", homeDir)
 
 	stopCh := kubermaticsignals.SetupSignalHandler()
 	rootCtx, rootCancel := context.WithCancel(context.Background())
@@ -315,16 +312,16 @@ func main() {
 	}
 	seedGetter, err := provider.SeedGetterFactory(context.Background(), seedClusterClient, seedName, "", namespaceName, true)
 	if err != nil {
-		log.WithError(err).Fatal("failed to consturct seedGetter")
+		log.Fatalw("failed to consturct seedGetter", zap.Error(err))
 	}
 	opts.seed, err = seedGetter()
 	if err != nil {
-		log.WithError(err).Fatal("failed to get seed")
+		log.Fatalw("failed to get seed", zap.Error(err))
 	}
 
 	clusterClientProvider, err := clusterclient.NewExternal(seedClusterClient)
 	if err != nil {
-		log.Fatalf("failed to get clusterClientProvider: %v", err)
+		log.Fatalw("failed to get clusterClientProvider", zap.Error(err))
 	}
 	opts.clusterClientProvider = clusterClientProvider
 
@@ -335,7 +332,7 @@ func main() {
 	}
 
 	log.Info("Starting E2E tests...")
-	runner := newRunner(getScenarios(opts, log), &opts)
+	runner := newRunner(getScenarios(opts, log), &opts, log)
 
 	start := time.Now()
 	if err := runner.Run(); err != nil {
@@ -344,7 +341,7 @@ func main() {
 	log.Infof("Whole suite took: %.2f seconds", time.Since(start).Seconds())
 }
 
-func cleanupClusters(opts Opts, log *logrus.Entry, seedClusterClient ctrlruntimeclient.Client, clusterClientProvider clusterclient.UserClusterConnectionProvider) error {
+func cleanupClusters(opts Opts, log *zap.SugaredLogger, seedClusterClient ctrlruntimeclient.Client, clusterClientProvider clusterclient.UserClusterConnectionProvider) error {
 	if opts.namePrefix == "" {
 		log.Fatalf("cleanup-on-start was specified but name-prefix is empty")
 	}
@@ -358,7 +355,7 @@ func cleanupClusters(opts Opts, log *logrus.Entry, seedClusterClient ctrlruntime
 		if strings.HasPrefix(cluster.Name, opts.namePrefix) {
 			wg.Add(1)
 			go func(cluster kubermaticv1.Cluster) {
-				clusterDeleteLog := logrus.WithFields(logrus.Fields{"cluster": cluster.Name})
+				clusterDeleteLog := log.With("cluster", cluster.Name)
 				defer wg.Done()
 				if err := tryToDeleteClusterWithRetries(clusterDeleteLog, &cluster, clusterClientProvider, seedClusterClient); err != nil {
 					clusterDeleteLog.Errorf("failed to delete cluster: %v", err)
@@ -371,7 +368,7 @@ func cleanupClusters(opts Opts, log *logrus.Entry, seedClusterClient ctrlruntime
 	return nil
 }
 
-func getScenarios(opts Opts, log *logrus.Entry) []testScenario {
+func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 	if opts.openshift {
 		// Openshift is only supported on CentOS
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] = true
@@ -439,7 +436,7 @@ func getScenarios(opts Opts, log *logrus.Entry) []testScenario {
 	return shuffle(filteredScenarios)
 }
 
-func setupHomeDir(log *logrus.Entry) (string, []byte, error) {
+func setupHomeDir(log *zap.SugaredLogger) (string, []byte, error) {
 	// Setup temporary home dir (Because the e2e tests have some filenames hardcoded - which might conflict with the user files)
 	// We'll set the env-var $HOME to this directory when executing the tests
 	homeDir, err := ioutil.TempDir("/tmp", "e2e-home-")

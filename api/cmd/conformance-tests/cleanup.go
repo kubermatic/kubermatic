@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -23,7 +23,7 @@ var (
 	protectedNamespaces = sets.NewString(metav1.NamespaceDefault, metav1.NamespaceSystem, metav1.NamespacePublic, corev1.NamespaceNodeLease)
 )
 
-func deleteAllNonDefaultNamespaces(log *logrus.Entry, client ctrlruntimeclient.Client) error {
+func deleteAllNonDefaultNamespaces(log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
 	return wait.Poll(defaultUserClusterPollInterval, defaultTimeout, func() (done bool, err error) {
 		namespaceList := &corev1.NamespaceList{}
 		ctx := context.Background()
@@ -41,7 +41,7 @@ func deleteAllNonDefaultNamespaces(log *logrus.Entry, client ctrlruntimeclient.C
 			if protectedNamespaces.Has(namespace.Name) {
 				continue
 			}
-			log = log.WithFields(logrus.Fields{"namespace-to-delete": namespace.Name})
+			log = log.With("namespace-to-delete", namespace.Name)
 
 			// If its not gone & the DeletionTimestamp is nil, delete it
 			if namespace.DeletionTimestamp == nil {
@@ -56,7 +56,7 @@ func deleteAllNonDefaultNamespaces(log *logrus.Entry, client ctrlruntimeclient.C
 	})
 }
 
-func tryToDeleteClusterWithRetries(log *logrus.Entry, cluster *kubermaticv1.Cluster, clusterClientProvider clusterclient.UserClusterConnectionProvider, seedClusterClient ctrlruntimeclient.Client) error {
+func tryToDeleteClusterWithRetries(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, clusterClientProvider clusterclient.UserClusterConnectionProvider, seedClusterClient ctrlruntimeclient.Client) error {
 	const maxAttempts = 5
 	return retryNAttempts(maxAttempts, func(attempt int) error {
 		err := tryToDeleteCluster(log, cluster, clusterClientProvider, seedClusterClient)
@@ -69,7 +69,7 @@ func tryToDeleteClusterWithRetries(log *logrus.Entry, cluster *kubermaticv1.Clus
 
 // tryToDeleteCluster will try to delete all potential orphaned cloud provider resources like LB's & PVC's
 // After deleting them it will delete the kubermatic cluster object
-func tryToDeleteCluster(log *logrus.Entry, cluster *kubermaticv1.Cluster, clusterClientProvider clusterclient.UserClusterConnectionProvider, seedClusterClient ctrlruntimeclient.Client) error {
+func tryToDeleteCluster(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, clusterClientProvider clusterclient.UserClusterConnectionProvider, seedClusterClient ctrlruntimeclient.Client) error {
 	log.Infof("Trying to delete cluster...")
 
 	userClusterClient, err := clusterClientProvider.GetClient(cluster)

@@ -18,7 +18,7 @@ import (
 
 	"github.com/go-openapi/runtime"
 	"github.com/onsi/ginkgo/reporters"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
@@ -59,7 +59,7 @@ type testScenario interface {
 	OS() apimodels.OperatingSystemSpec
 }
 
-func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
+func newRunner(scenarios []testScenario, opts *Opts, log *zap.SugaredLogger) *testRunner {
 	return &testRunner{
 		scenarios:                    scenarios,
 		controlPlaneReadyWaitTimeout: opts.controlPlaneReadyWaitTimeout,
@@ -76,7 +76,7 @@ func newRunner(scenarios []testScenario, opts *Opts) *testRunner {
 		workerName:                   opts.workerName,
 		homeDir:                      opts.homeDir,
 		seedClusterClient:            opts.seedClusterClient,
-		log:                          opts.log,
+		log:                          log,
 		existingClusterLabel:         opts.existingClusterLabel,
 		openshift:                    opts.openshift,
 		printGinkoLogs:               opts.printGinkoLogs,
@@ -97,7 +97,7 @@ type testRunner struct {
 	PublicKeys       [][]byte
 	workerName       string
 	homeDir          string
-	log              *logrus.Entry
+	log              *zap.SugaredLogger
 	openshift        bool
 	printGinkoLogs   bool
 	onlyTestCreation bool
@@ -148,10 +148,7 @@ func (t *testResult) Passed() bool {
 
 func (r *testRunner) worker(id int, scenarios <-chan testScenario, results chan<- testResult) {
 	for s := range scenarios {
-		scenarioLog := r.log.WithFields(logrus.Fields{
-			"scenario": s.Name(),
-			"worker":   id,
-		})
+		scenarioLog := r.log.With("scenario", s.Name(), "worker", id)
 		scenarioLog.Info("Starting to test scenario...")
 
 		report, err := r.executeScenario(scenarioLog, s)
@@ -174,12 +171,12 @@ func (r *testRunner) Run() error {
 	scenariosCh := make(chan testScenario, len(r.scenarios))
 	resultsCh := make(chan testResult, len(r.scenarios))
 
-	r.log.Infoln("Test suite:")
+	r.log.Info("Test suite:")
 	for _, scenario := range r.scenarios {
-		r.log.Infoln(scenario.Name())
+		r.log.Info(scenario.Name())
 		scenariosCh <- scenario
 	}
-	r.log.Infoln(fmt.Sprintf("Total: %d tests", len(r.scenarios)))
+	r.log.Info(fmt.Sprintf("Total: %d tests", len(r.scenarios)))
 
 	for i := 1; i <= r.clusterParallelCount; i++ {
 		go r.worker(i, scenariosCh, resultsCh)
@@ -221,7 +218,7 @@ func (r *testRunner) Run() error {
 	return nil
 }
 
-func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (*reporters.JUnitTestSuite, error) {
+func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenario) (*reporters.JUnitTestSuite, error) {
 	var err error
 	var cluster *kubermaticv1.Cluster
 
@@ -271,11 +268,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		return nil, fmt.Errorf("failed to get cloud provider name from cluster: %v", err)
 	}
 
-	log = log.WithFields(logrus.Fields{
-		"cluster":        cluster.Name,
-		"cloud-provider": providerName,
-		"version":        cluster.Spec.Version,
-	})
+	log = log.With("cluster", cluster.Name, "cloud-provider", providerName, "version", cluster.Spec.Version)
 
 	_, exists := r.seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !exists {
@@ -295,7 +288,7 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 	if err != nil {
 		return nil, fmt.Errorf("failed to get kubeconfig: %v", err)
 	}
-	log = log.WithFields(logrus.Fields{"kubeconfig": kubeconfigFilename})
+	log = log.With("kubeconfig", kubeconfigFilename)
 
 	cloudConfigFilename, err := r.getCloudConfig(log, cluster)
 	if err != nil {
@@ -350,7 +343,7 @@ func retryNAttempts(maxAttempts int, f func(attempt int) error) error {
 }
 
 func (r *testRunner) testCluster(
-	log *logrus.Entry,
+	log *zap.SugaredLogger,
 	scenarioName string,
 	cluster *kubermaticv1.Cluster,
 	userClusterClient ctrlruntimeclient.Client,
@@ -483,7 +476,7 @@ func (r *testRunner) testCluster(
 // executeGinkgoRunWithRetries executes the passed GinkgoRun and retries if it failed hard(Failed to execute the Ginkgo binary for example)
 // Or if the JUnit report from Ginkgo contains failed tests.
 // Only if Ginkgo failed hard, an error will be returned. If some tests still failed after retrying the run, the report will reflect that.
-func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoRun, client ctrlruntimeclient.Client) (ginkgoRes *ginkgoResult, err error) {
+func (r *testRunner) executeGinkgoRunWithRetries(log *zap.SugaredLogger, run *ginkgoRun, client ctrlruntimeclient.Client) (ginkgoRes *ginkgoResult, err error) {
 	const maxAttempts = 3
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
@@ -516,7 +509,7 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *logrus.Entry, run *ginkgoR
 	return ginkgoRes, err
 }
 
-func (r *testRunner) createNodeDeployments(log *logrus.Entry, scenario testScenario, clusterName string) error {
+func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario testScenario, clusterName string) error {
 	log.Info("Creating NodeDeployments via kubermatic API")
 	nodeDeployments := scenario.NodeDeployments(r.nodeCount, r.secrets)
 
@@ -544,7 +537,7 @@ func (r *testRunner) createNodeDeployments(log *logrus.Entry, scenario testScena
 	return nil
 }
 
-func (r *testRunner) getKubeconfig(log *logrus.Entry, cluster *kubermaticv1.Cluster) (string, error) {
+func (r *testRunner) getKubeconfig(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (string, error) {
 	log.Debug("Getting kubeconfig...")
 	kubeconfig, err := r.clusterClientProvider.GetAdminKubeconfig(cluster)
 	if err != nil {
@@ -559,7 +552,7 @@ func (r *testRunner) getKubeconfig(log *logrus.Entry, cluster *kubermaticv1.Clus
 	return filename, nil
 }
 
-func (r *testRunner) getCloudConfig(log *logrus.Entry, cluster *kubermaticv1.Cluster) (string, error) {
+func (r *testRunner) getCloudConfig(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (string, error) {
 	log.Debug("Getting cloud-config...")
 
 	var cmData string
@@ -585,7 +578,7 @@ func (r *testRunner) getCloudConfig(log *logrus.Entry, cluster *kubermaticv1.Clu
 	return filename, nil
 }
 
-func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*kubermaticv1.Cluster, error) {
+func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario) (*kubermaticv1.Cluster, error) {
 	log.Info("Creating cluster via kubermatic API")
 
 	cluster := scenario.Cluster(r.secrets)
@@ -648,7 +641,7 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 	return crCluster, nil
 }
 
-func (r *testRunner) waitForControlPlane(log *logrus.Entry, clusterName string) (*kubermaticv1.Cluster, error) {
+func (r *testRunner) waitForControlPlane(log *zap.SugaredLogger, clusterName string) (*kubermaticv1.Cluster, error) {
 	log.Debug("Waiting for control plane to become ready...")
 	started := time.Now()
 	namespacedClusterName := types.NamespacedName{Name: clusterName}
@@ -701,7 +694,7 @@ func (r *testRunner) waitForControlPlane(log *logrus.Entry, clusterName string) 
 	return cluster, nil
 }
 
-func (r *testRunner) waitUntilAllPodsAreReady(log *logrus.Entry, userClusterClient ctrlruntimeclient.Client) error {
+func (r *testRunner) waitUntilAllPodsAreReady(log *zap.SugaredLogger, userClusterClient ctrlruntimeclient.Client) error {
 	log.Debug("Waiting for all pods to be ready...")
 	started := time.Now()
 
@@ -745,7 +738,7 @@ type ginkgoRun struct {
 }
 
 func (r *testRunner) getGinkgoRuns(
-	log *logrus.Entry,
+	log *zap.SugaredLogger,
 	scenarioName,
 	kubeconfigFilename,
 	cloudConfigFilename string,
@@ -850,9 +843,9 @@ func (r *testRunner) getGinkgoRuns(
 	return ginkgoRuns, nil
 }
 
-func executeGinkgoRun(parentLog *logrus.Entry, run *ginkgoRun, client ctrlruntimeclient.Client) (*ginkgoResult, error) {
+func executeGinkgoRun(parentLog *zap.SugaredLogger, run *ginkgoRun, client ctrlruntimeclient.Client) (*ginkgoResult, error) {
 	started := time.Now()
-	log := parentLog.WithField("reports-dir", run.reportsDir)
+	log := parentLog.With("reports-dir", run.reportsDir)
 
 	if err := deleteAllNonDefaultNamespaces(log, client); err != nil {
 		return nil, fmt.Errorf("failed to cleanup namespaces before the Ginkgo run: %v", err)
@@ -872,7 +865,7 @@ func executeGinkgoRun(parentLog *logrus.Entry, run *ginkgoRun, client ctrlruntim
 		return nil, fmt.Errorf("failed to open logfile: %v", err)
 	}
 	defer file.Close()
-	log = log.WithField("ginkgo-log", file.Name())
+	log = log.With("ginkgo-log", file.Name())
 
 	writer := bufio.NewWriter(file)
 	defer writer.Flush()
