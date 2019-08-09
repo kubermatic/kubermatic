@@ -154,6 +154,7 @@ spec:
   volumes:
   - name: vol
 `
+
 // TODO Use OpenShiftAPIServerConfig type from github.com/openshift/api/openshiftcontrolplane/v1/types.go
 const openshiftAPIServerConfigTemplate = `aggregatorConfig:
   allowedNames:
@@ -215,6 +216,9 @@ routingConfig:
   # TODO: Fix
   subdomain: apps.openshift-test.aws.k8c.io
 storageConfig:
+  ca: /etc/etcd/pki/client/ca.crt
+  certFile: /etc/etcd/pki/client/apiserver-etcd-client.crt
+  keyFile: /etc/etcd/pki/client/apiserver-etcd-client.key
   urls: {{ range .ETCDEndpoints }}
   - "{{ . }}"
 {{- end }}`
