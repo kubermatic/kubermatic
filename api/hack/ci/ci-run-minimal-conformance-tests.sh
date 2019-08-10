@@ -103,6 +103,7 @@ function cleanup {
 }
 trap cleanup EXIT
 
+TEST_NAME="Get secrets from vault"
 echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
 export VAULT_TOKEN=$(vault write \
@@ -141,19 +142,24 @@ registries = ['docker.io']
 registries = ["registry.registry.svc.cluster.local:5000"]
 EOF
     echodate "Building binaries"
-    time make -C api build
+    TEST_NAME="Build Kubermatic binaries"
+    time retry 1 make -C api build
     (
       echodate "Building docker image"
+      TEST_NAME="Build Kubermatic Docker image"
       cd api
       time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/api:$1" .
     )
     (
       echodate "Building addons image"
+      TEST_NAME="Build addons Docker image"
       cd addons
       time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1" .
     )
     echodate "Pushing docker image"
+    TEST_NAME="Push Kubermatic Docker image"
     time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/api:$1"
+    TEST_NAME="Push addon Docker image"
     echodate "Pushing addons image"
     time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1"
     echodate "Finished building and pushing docker image"
@@ -213,12 +219,15 @@ roleRef:
 ---
 EOF
 echodate "Creating namespace $NAMESPACE to deploy kubermatic in"
+TEST_NAME="Create Kubermatic namespace and Bindings"
 retry 5 kubectl apply -f $INITIAL_MANIFESTS
 
 echodate "Deploying tiller"
+TEST_NAME="Deploy Tiller"
 helm init --wait --service-account=tiller --tiller-namespace=$NAMESPACE
 
 echodate "Installing Kubermatic via Helm"
+TEST_NAME="Deploy Kubermatic"
 
 if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   echodate "Upgradetest, checking out revision ${UPGRADE_TEST_BASE_HASH}"
@@ -335,6 +344,7 @@ spec:
           region: ams3
 $(cat $OPENSTACK_DATACENTER_FILE)
 EOF
+TEST_NAME="Deploy Seed Manifest"
 retry 5 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing seed"
 

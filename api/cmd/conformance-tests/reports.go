@@ -64,7 +64,9 @@ func combineReports(name string, a, b *reporters.JUnitTestSuite) *reporters.JUni
 	resultSuite.Failures += a.Failures + b.Failures
 	resultSuite.TestCases = append(a.TestCases, b.TestCases...)
 
-	sort.Slice(resultSuite.TestCases, func(i, j int) bool { return resultSuite.TestCases[i].Name < resultSuite.TestCases[j].Name })
+	sort.Slice(resultSuite.TestCases, func(i, j int) bool {
+		return resultSuite.TestCases[i].Name < resultSuite.TestCases[j].Name
+	})
 
 	return resultSuite
 }
