@@ -60,6 +60,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 					IntVal: 0,
 				},
 			}
+			dep.Spec.Template.Labels = resources.BaseAppLabel(OpenshiftAPIServerDeploymentName, nil)
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 				{Name: openshiftImagePullSecretName},
@@ -80,6 +81,24 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 						Secret: &corev1.SecretVolumeSource{
 							SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
 							DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+						},
+					},
+				},
+				{
+					Name: resources.OpenVPNClientCertificatesSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName:  resources.OpenVPNClientCertificatesSecretName,
+							DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+						},
+					},
+				},
+				{
+					Name: resources.KubeletDnatControllerKubeconfigSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName:  resources.KubeletDnatControllerKubeconfigSecretName,
+							DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
 						},
 					},
 				},

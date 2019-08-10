@@ -522,19 +522,8 @@ func GetStatefulSetCreators(osData *openshiftData, enableDataCorruptionChecks bo
 }
 
 func (r *Reconciler) statefulSets(ctx context.Context, osData *openshiftData) error {
-	for _, namedStatefulSetCreator := range GetStatefulSetCreators(osData, r.features.EtcdDataCorruptionChecks) {
-		statefulSetName, statefulSetCreator := namedStatefulSetCreator()
-		if err := reconciling.EnsureNamedObject(ctx,
-			nn(osData.Cluster().Status.NamespaceName, statefulSetName),
-			reconciling.StatefulSetObjectWrapper(statefulSetCreator),
-			r.Client,
-			&appsv1.StatefulSet{},
-			false); err != nil {
-			return fmt.Errorf("failed to ensure StatefulSet %q: %v", statefulSetName, err)
-		}
-	}
-
-	return nil
+	creators := GetStatefulSetCreators(osData, r.features.EtcdDataCorruptionChecks)
+	return reconciling.ReconcileStatefulSets(ctx, creators, osData.Cluster().Status.NamespaceName, r.Client)
 }
 
 func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedConfigMapCreatorGetter {
@@ -587,12 +576,9 @@ func GetCronJobCreators(osData *openshiftData) []reconciling.NamedCronJobCreator
 }
 
 func (r *Reconciler) cronJobs(ctx context.Context, osData *openshiftData) error {
-	for _, cronJobCreator := range GetCronJobCreators(osData) {
-		cronJobName, cronJobCreator := cronJobCreator()
-		if err := reconciling.EnsureNamedObject(ctx,
-			nn(osData.Cluster().Status.NamespaceName, cronJobName), reconciling.CronJobObjectWrapper(cronJobCreator), r.Client, &batchv1beta1.CronJob{}, false); err != nil {
-			return fmt.Errorf("failed to ensure CronJob %q: %v", cronJobName, err)
-		}
+	creators := GetCronJobCreators(osData)
+	if err := reconciling.ReconcileCronJobs(ctx, creators, osData.Cluster().Status.NamespaceName, r.Client); err != nil {
+		return fmt.Errorf("failed to ensure that the CronJobs exists: %v", err)
 	}
 	return nil
 }

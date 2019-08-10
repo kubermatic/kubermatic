@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"encoding/base64"
 	"errors"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -22,10 +21,7 @@ func ImagePullSecretCreator(cluster *kubermaticv1.Cluster) reconciling.NamedSecr
 			if cluster.Spec.Openshift == nil {
 				return nil, errors.New("Openshift spec is nil")
 			}
-
-			base64EncodedSecret := []byte{}
-			base64.RawStdEncoding.Encode(base64EncodedSecret, []byte(cluster.Spec.Openshift.ImagePullSecret))
-			s.Data[corev1.DockerConfigJsonKey] = base64EncodedSecret
+			s.Data[corev1.DockerConfigJsonKey] = []byte(cluster.Spec.Openshift.ImagePullSecret)
 			return s, nil
 		}
 	}
