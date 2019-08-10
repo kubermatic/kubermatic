@@ -17,10 +17,14 @@ webhooks:
       namespace: {{ .Release.Namespace }}
   failurePolicy: Fail
   name: seeds.kubermatic.io
-{{- if .Values.kubermatic.worker_name}}
   objectSelector:
+{{- if .Values.kubermatic.worker_name}}
     matchLabels:
       worker-name: "{{ .Values.kubermatic.worker_name}}"
+{{- else }}
+    matchExpressions:
+    - key: worker-name
+      operator: DoesNotExist
 {{- end }}
   rules:
   - apiGroups:
