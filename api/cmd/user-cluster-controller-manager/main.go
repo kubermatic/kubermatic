@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -19,7 +20,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/nodecsrapprover"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
+	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -166,6 +169,18 @@ func main() {
 	if len(runOp.networks) > 0 {
 		if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 			glog.Fatalf("failed to add clusterv1alpha1 scheme: %v", err)
+		}
+		// We need to add the machine CRDs once here, because otherwise the IPAM
+		// controller keeps the manager from starting as it can not establish a
+		// watch for machine CRs, keeping us from creating them
+		creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{
+			machinecontrolerresources.MachineCRDCreator(),
+		}
+		if err := reconciling.ReconcileCustomResourceDefinitions(context.Background(), creators, "", mgr.GetClient()); err != nil {
+			// The mgr.Client is uninitianlized here and hence always returns a 404, regardless of the object existing or not
+			if !strings.Contains(err.Error(), `customresourcedefinitions.apiextensions.k8s.io "machines.cluster.k8s.io" already exists`) {
+				glog.Fatalf("failed to initially create the Machine CR: %v", err)
+			}
 		}
 		if err := ipam.Add(mgr, runOp.networks); err != nil {
 			glog.Fatalf("failed to add IPAM controller to mgr: %v", err)
