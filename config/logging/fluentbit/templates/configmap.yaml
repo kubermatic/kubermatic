@@ -22,6 +22,7 @@ data:
     @INCLUDE kubernetes.conf
     {{- if .Values.logging.fluentbit.configuration.collectSystemd }}
     @INCLUDE systemd.conf
+    @INCLUDE kubelet.conf
     {{- end }}
     {{- if .Values.logging.fluentbit.configuration.collectKernelMessages }}
     @INCLUDE kmesg.conf
@@ -133,16 +134,6 @@ data:
         Nest_under    systemd
         Remove_prefix _NEST_
 
-    # When using systemd as cgroup driver, runc tests systemd compatibility with each invocation (At least it looks like that).
-    # Systemd logs the creation & deletion of the cgroup creation each time. Which can result in 100+ messages per minute
-    # https://www.ibm.com/support/knowledgecenter/en/SSBS6K_3.2.0/troubleshoot/cgroup_driver.html
-    # This filter will filter all messages related to the test cgroups
-    [FILTER]
-        Name    grep
-        Alias   systemd_filter_out_kubelet_systemd_noise
-        Match   systemd.*
-        Exclude log libcontainer.*?test_default\.slice
-
   kmesg.conf: |
     ############################################################
     # kmesg
@@ -176,6 +167,35 @@ data:
         Wildcard      _NEST_*
         Nest_under    kmesg
         Remove_prefix _NEST_
+
+  kubelet.conf: |
+    [FILTER]
+        Name    grep
+        Alias   kublet_filter_noise
+        Match   systemd.*
+
+        # When using systemd as cgroup driver, runc tests systemd compatibility with each invocation (At least it looks like that).
+        # Systemd logs the creation & deletion of the cgroup creation each time. Which can result in 100+ messages per minute
+        # https://www.ibm.com/support/knowledgecenter/en/SSBS6K_3.2.0/troubleshoot/cgroup_driver.html
+        # This filter will filter all messages related to the test cgroups
+        Exclude log libcontainer.*?test_default\.slice
+
+    [FILTER]
+        Name         parser
+        Alias        kublet_glog
+        Match        systemd.kubelet.service
+        Key_Name     log
+        Parser       glog
+        Reserve_Data On
+
+    [FILTER]
+        Name          nest
+        Alias         kubelet_nest_glog_fields
+        Match         systemd.kubelet.service
+        Operation     nest
+        Wildcard      glog_*
+        Nest_under    glog
+        Remove_prefix glog_
 
   outputs.conf: |
 {{- range .Values.logging.fluentbit.configuration.outputs }}
@@ -258,7 +278,5 @@ data:
     [PARSER]
         Name        glog
         Format      regex
-        Regex       ^(?<level>[A-Z])(?<time>[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]+)\s+(?<thread>[0-9]+)\s+(?<file>[^:]+):(?<line>[0-9]+)\]\s*(?<message>.*)$
-        Time_Key    time
-        Time_Format %m%d %H:%M:%S.%L
-        Types       thread:integer line:integer
+        Regex       ^(?<glog_level>[A-Z])(?<glog_time>[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]+)\s+(?<glog_thread>[0-9]+)\s+(?<glog_file>[^:]+):(?<glog_line>[0-9]+)\]\s*(?<log>.*)$
+        Types       glog_thread:integer glog_line:integer
