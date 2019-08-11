@@ -1,8 +1,8 @@
 retry() {
   # Works only with bash but doesn't fail on other shells
-  start_time=${SECONDS:-0}
+  start_time=$(date +%s)
   actual_retry $@
-  elapsed_time=$((${SECONDS:-0} - $start_time))
+  elapsed_time=$(($(date +%s) - $start_time))
   rc=$?
   write_junit "$rc" "$elapsed_time"
   return $rc
