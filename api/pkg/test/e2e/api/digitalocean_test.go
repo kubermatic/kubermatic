@@ -11,31 +11,6 @@ import (
 
 const getDOMaxAttempts = 24
 
-func cleanUpProject(id string) func(t *testing.T) {
-	return func(t *testing.T) {
-		masterToken, err := GetMasterToken()
-		if err != nil {
-			t.Fatalf("can not get master token due error: %v", err)
-		}
-		apiRunner := CreateAPIRunner(masterToken, t)
-
-		if err := apiRunner.DeleteProject(id); err != nil {
-			t.Fatalf("can not delete project due error: %v", err)
-		}
-		for attempt := 1; attempt <= getDOMaxAttempts; attempt++ {
-			_, err := apiRunner.GetProject(id, 5)
-			if err != nil {
-				break
-			}
-			time.Sleep(3 * time.Second)
-		}
-		_, err = apiRunner.GetProject(id, 5)
-		if err == nil {
-			t.Fatalf("can not delete the project")
-		}
-	}
-}
-
 func TestCreateDOCluster(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -66,7 +41,7 @@ func TestCreateDOCluster(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create project %v", GetErrorResponse(err))
 			}
-			teardown := cleanUpProject(project.ID)
+			teardown := cleanUpProject(project.ID, getDOMaxAttempts)
 			defer teardown(t)
 
 			cluster, err := apiRunner.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)

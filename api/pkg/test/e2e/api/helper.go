@@ -584,3 +584,28 @@ func IsHealthyCluster(healthStatus *apiv1.ClusterHealth) bool {
 	}
 	return false
 }
+
+func cleanUpProject(id string, attempts int) func(t *testing.T) {
+	return func(t *testing.T) {
+		masterToken, err := GetMasterToken()
+		if err != nil {
+			t.Fatalf("can not get master token due error: %v", err)
+		}
+		apiRunner := CreateAPIRunner(masterToken, t)
+
+		if err := apiRunner.DeleteProject(id); err != nil {
+			t.Fatalf("can not delete project due error: %v", err)
+		}
+		for attempt := 1; attempt <= attempts; attempt++ {
+			_, err := apiRunner.GetProject(id, 5)
+			if err != nil {
+				break
+			}
+			time.Sleep(3 * time.Second)
+		}
+		_, err = apiRunner.GetProject(id, 5)
+		if err == nil {
+			t.Fatalf("can not delete the project")
+		}
+	}
+}

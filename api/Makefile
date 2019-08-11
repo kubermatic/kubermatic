@@ -35,6 +35,13 @@ check: gofmt lint
 
 test:
 	CGO_ENABLED=1 $(GO) test -tags=unit -race ./...
+	@# Make sure all e2e tests compile with their individual build tag
+	@# without actually running them by using `-run` with a non-existing test.
+	@# **Imortant:** Do not replace this with one `go test` with multiple tags,
+	@# as that doesn't properly reflect if each individual tag still builds
+	$(GO) test -tags cloud -run nope ./pkg/test/e2e/api/...
+	$(GO) test -tags create -run nope ./pkg/test/e2e/api/...
+	$(GO) test -tags e2e -run nope ./pkg/test/e2e/api/...
 
 test-update:
 	-$(GO) test ./... -update
