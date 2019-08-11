@@ -35,14 +35,15 @@ echodate() {
 
 write_junit() {
   # Doesn't make any sense if we don't know a testname
-  [ -z "$TEST_NAME" ] && return
+  if [ -z "$TEST_NAME" ]; then return; fi
   # Only run in CI
-  [ -z "${ARTIFACTS}" ] && return
+  if [ -z "$ARTIFACTS" ]; then return; fi
 
   rc=$1
   duration=${2:-0}
-  errors=0; [ "$rc" -ne 0 ] && errors=1
-  TEST_NAME="[KUBERMATIC] $TEST_NAME"
+  errors=0
+  if [ "$rc" -ne 0 ]; then errors=1; fi
+  TEST_NAME="[Kubermatic] $TEST_NAME"
   cat <<EOF > ${ARTIFACTS}/junit.$(echo $TEST_NAME|sed 's/ /_/g').xml
 <?xml version="1.0" ?>
 <testsuites>

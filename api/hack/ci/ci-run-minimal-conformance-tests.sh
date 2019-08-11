@@ -6,6 +6,8 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
+setup_start_time=${SECONDS:-0}
+
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 export SEED_NAME=prow-build-cluster
 
@@ -103,7 +105,7 @@ function cleanup {
 }
 trap cleanup EXIT
 
-TEST_NAME="Get secrets from vault"
+TEST_NAME="Get Vault token"
 echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
 export VAULT_TOKEN=$(vault write \
@@ -114,17 +116,23 @@ export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 export DATACENTERS_FILE=/tmp/datacenters.yaml
 export OPENSTACK_DATACENTER_FILE=/tmp/openstack-datacenters.yaml
+TEST_NAME="Get Kubeconfig from Vault"
 retry 5 vault kv get -field=kubeconfig \
   dev/seed-clusters/ci.kubermatic.io > $KUBECONFIG
+TEST_NAME="Get Values file from Vault"
 retry 5 vault kv get -field=values.yaml \
   dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
+TEST_NAME="Get datacenters.yaml from Vault"
 retry 5 vault kv get -field=datacenters.yaml \
   dev/seed-clusters/ci.kubermatic.io > $DATACENTERS_FILE
+TEST_NAME="Get Openstack datacenters file from Vault"
 retry 5 vault kv get -field=openstack-datacenter.yaml \
   dev/seed-clusters/ci.kubermatic.io > $OPENSTACK_DATACENTER_FILE
+TEST_NAME="Get ProjectID from Vault"
 retry 5 vault kv get -field=project_id \
   dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_project_id
 export KUBERMATIC_PROJECT_ID="$(cat /tmp/kubermatic_project_id)"
+TEST_NAME="Get ServiceAccount token from Vault"
 retry 5 vault kv get -field=serviceaccount_token \
   dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_serviceaccount_token
 export KUBERMATIC_SERVICEACCOUNT_TOKEN="$(cat /tmp/kubermatic_serviceaccount_token)"
@@ -386,6 +394,10 @@ elif [[ $provider == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}"
 fi
+
+# Gather the total time it takes between starting this sscript and staring the conformance tester
+setup_elasped_time=$((${SECONDS:-} - $setup_start_time))
+TEST_NAME="Setup Kubermatic total" write_junit "0" "$setup_elasped_time"
 
 timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
   -debug \
