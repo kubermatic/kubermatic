@@ -54,7 +54,7 @@ func TestCreateAWSCluster(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create project %v", GetErrorResponse(err))
 			}
-			teardown := cleanUpProject(project.ID)
+			teardown := cleanUpProject(project.ID, 1)
 			defer teardown(t)
 
 			cluster, err := apiRunner.CreateAWSCluster(project.ID, tc.dc, rand.String(10), getSecretAccessKey(), getAccessKeyID(), getKubernetesVersion(), tc.location, tc.replicas)
