@@ -17,16 +17,13 @@ type ClientSet struct {
 	IAM iamiface.IAMAPI
 }
 
-func getSession(accessKeyID, secretAccessKey, region string) (*session.Session, error) {
+func GetClientSet(accessKeyID, secretAccessKey, region string) (*ClientSet, error) {
 	config := aws.NewConfig()
 	config = config.WithRegion(region)
 	config = config.WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""))
 	config = config.WithMaxRetries(3)
-	return session.NewSession(config)
-}
 
-func GetClientSet(accessKeyID, secretAccessKey, region string) (*ClientSet, error) {
-	sess, err := getSession(accessKeyID, secretAccessKey, region)
+	sess, err := session.NewSession(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API session: %v", err)
 	}
