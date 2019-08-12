@@ -1,9 +1,11 @@
 retry() {
   # Works only with bash but doesn't fail on other shells
   start_time=$(date +%s)
+  set +e
   actual_retry $@
-  elapsed_time=$(($(date +%s) - $start_time))
   rc=$?
+  set -e
+  elapsed_time=$(($(date +%s) - $start_time))
   write_junit "$rc" "$elapsed_time"
   return $rc
 }
@@ -42,13 +44,18 @@ write_junit() {
   rc=$1
   duration=${2:-0}
   errors=0
-  if [ "$rc" -ne 0 ]; then errors=1; fi
+  failure=""
+  if [ "$rc" -ne 0 ]; then
+    errors=1
+    failure='<failure type="Failure">Step failed</failure>'
+  fi
   TEST_NAME="[Kubermatic] $TEST_NAME"
   cat <<EOF > ${ARTIFACTS}/junit.$(echo $TEST_NAME|sed 's/ /_/g').xml
 <?xml version="1.0" ?>
 <testsuites>
     <testsuite errors="$errors" failures="$errors" name="$TEST_NAME" tests="1">
         <testcase classname="$TEST_NAME" name="$TEST_NAME" time="$duration">
+          $failure
         </testcase>
     </testsuite>
 </testsuites>
