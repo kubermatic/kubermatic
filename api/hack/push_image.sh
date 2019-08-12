@@ -17,7 +17,7 @@ make build
 docker build -t quay.io/kubermatic/api:${1} .
 cd cmd/nodeport-proxy && export TAG=${1} && make docker && unset TAG && cd -
 cd cmd/kubeletdnat-controller && export TAG=${1} && make docker && unset TAG && cd -
-docker build -t "quay.io/kubermatic/addons:${1}" ./addons
+docker build -t "quay.io/kubermatic/addons:${1}" ../addons
 
 for TAG in "$@"
 do
