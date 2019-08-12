@@ -133,7 +133,7 @@ spec:
         - -logtostderr
         command:
         - /usr/local/bin/kubeletdnat-controller
-        image: 'quay.io/kubermatic/api:'
+        image: 'quay.io/kubermatic/kubeletdnat-controller:'
         name: dnat-controller
         resources:
           limits:

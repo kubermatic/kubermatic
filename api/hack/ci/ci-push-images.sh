@@ -25,18 +25,3 @@ set -f # prevent globbing, do word splitting
 # shellcheck disable=SC2086
 retry 5 ./api/hack/push_image.sh $TAGS
 echodate "Sucessfully finished building and pushing quay images"
-
-echodate "Building addons"
-time docker build -t "quay.io/kubermatic/addons:$GIT_HEAD_HASH" ./addons
-for TAG in $TAGS; do
-    [ -z "$TAG" ] && continue
-
-    if  [ "$TAG" != "$GIT_HEAD_HASH" ]; then
-      echo "Tagging ${TAG}"
-      docker tag "quay.io/kubermatic/addons:$GIT_HEAD_HASH" "quay.io/kubermatic/addons:$TAG"
-    fi
-
-    echo "Pushing ${TAG}"
-    retry 5 docker push "quay.io/kubermatic/addons:$TAG"
-done
-echodate "Successfully finished building and pushing addon image"

@@ -1,7 +1,7 @@
 export CGO_ENABLED?=0
 REPO=quay.io/kubermatic/api
 GO?=go
-CMD=$(filter-out OWNERS nodeport-proxy, $(notdir $(wildcard ./cmd/*)))
+CMD=$(filter-out OWNERS nodeport-proxy kubeletdnat-controller, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS?=-v
 GITTAG=$(shell git describe --tags --always)
 TAGS?=$(GITTAG)

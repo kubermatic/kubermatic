@@ -119,7 +119,7 @@ spec:
         - https://127.0.0.1:30000
         command:
         - /usr/local/bin/kubeletdnat-controller
-        image: 'quay.io/kubermatic/api:'
+        image: 'quay.io/kubermatic/kubeletdnat-controller:'
         name: dnat-controller
         resources:
           limits:
