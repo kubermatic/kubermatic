@@ -30,16 +30,18 @@ func getKubernetesVersion() string {
 
 func TestCreateAWSCluster(t *testing.T) {
 	tests := []struct {
-		name     string
-		dc       string
-		location string
-		replicas int32
+		name             string
+		dc               string
+		location         string
+		availabilityZone string
+		replicas         int32
 	}{
 		{
-			name:     "create cluster on AWS",
-			dc:       "europe-west3-c-1",
-			location: "aws-eu-central-1a",
-			replicas: 1,
+			name:             "create cluster on AWS",
+			dc:               "europe-west3-c-1",
+			location:         "aws-eu-central-1a",
+			availabilityZone: "eu-central-1a",
+			replicas:         1,
 		},
 	}
 	for _, tc := range tests {
@@ -57,7 +59,7 @@ func TestCreateAWSCluster(t *testing.T) {
 			teardown := cleanUpProject(project.ID, 1)
 			defer teardown(t)
 
-			cluster, err := apiRunner.CreateAWSCluster(project.ID, tc.dc, rand.String(10), getSecretAccessKey(), getAccessKeyID(), getKubernetesVersion(), tc.location, tc.replicas)
+			cluster, err := apiRunner.CreateAWSCluster(project.ID, tc.dc, rand.String(10), getSecretAccessKey(), getAccessKeyID(), getKubernetesVersion(), tc.location, tc.availabilityZone, tc.replicas)
 			if err != nil {
 				t.Fatalf("can not create cluster due to error: %v", GetErrorResponse(err))
 			}

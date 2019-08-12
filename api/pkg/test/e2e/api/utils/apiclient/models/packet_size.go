@@ -18,8 +18,8 @@ import (
 // swagger:model PacketSize
 type PacketSize struct {
 
-	// cores
-	Cores int32 `json:"cpus,omitempty"`
+	// cpus
+	Cpus []*PacketCPU `json:"cpus"`
 
 	// drives
 	Drives []*PacketDrive `json:"drives"`
@@ -35,6 +35,10 @@ type PacketSize struct {
 func (m *PacketSize) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCpus(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateDrives(formats); err != nil {
 		res = append(res, err)
 	}
@@ -42,6 +46,31 @@ func (m *PacketSize) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *PacketSize) validateCpus(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Cpus) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Cpus); i++ {
+		if swag.IsZero(m.Cpus[i]) { // not required
+			continue
+		}
+
+		if m.Cpus[i] != nil {
+			if err := m.Cpus[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("cpus" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
