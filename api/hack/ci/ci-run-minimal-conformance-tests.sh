@@ -111,12 +111,288 @@ export VAULT_TOKEN=$(vault write \
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 export DATACENTERS_FILE=/tmp/datacenters.yaml
+cat <<EOF > $DATACENTERS_FILE
+datacenters:
+#==================================
+#===============Seed===============
+#==================================
+  'prow-build-cluster': #master
+    location: Helsinki
+    country: FL
+    is_seed: true
+    spec:
+      bringyourown: {}
+#==================================
+#===========BringYourOwn===========
+#==================================
+  'byo-prow-build-cluster':
+    location: Helsinki
+    seed: 'prow-build-cluster'
+    country: FL
+    spec:
+      bringyourown: {}
+#==================================
+#===========Digitalocean===========
+#==================================
+  do-ams3:
+    location: Amsterdam
+    seed: 'prow-build-cluster'
+    country: NL
+    spec:
+      digitalocean:
+        region: ams3
+  do-nyc1:
+    location: New York
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      digitalocean:
+        region: nyc1
+  do-sfo2:
+    location: San Francisco
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      digitalocean:
+        region: sfo2
+  do-sgp1:
+    location: Singapore
+    seed: 'prow-build-cluster'
+    country: SG
+    spec:
+      digitalocean:
+        region: sgp1
+  do-lon1:
+    location: London
+    seed: 'prow-build-cluster'
+    country: GB
+    spec:
+      digitalocean:
+        region: lon1
+  do-fra1:
+    location: Frankfurt
+    seed: 'prow-build-cluster'
+    country: DE
+    spec:
+      digitalocean:
+        region: fra1
+  do-tor1:
+    location: Toronto
+    seed: 'prow-build-cluster'
+    country: CA
+    spec:
+      digitalocean:
+        region: tor1
+  do-blr1:
+    location: Bangalore
+    seed: 'prow-build-cluster'
+    country: IN
+    spec:
+      digitalocean:
+        region: blr1
+#==================================
+#===============AWS================
+#==================================
+  aws-us-east-1a:
+    location: US East (N. Virginia)
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      aws:
+        region: us-east-1
+        zone_character: a
+  aws-us-east-2a:
+    location: US East (Ohio)
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      aws:
+        region: us-east-2
+        zone_character: a
+  aws-us-west-1b:
+    location: US West (N. California)
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      aws:
+        region: us-west-1
+        zone_character: b
+  aws-us-west-2a:
+    location: US West (Oregon)
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      aws:
+        region: us-west-2
+        zone_character: a
+  aws-ca-central-1a:
+    location: Canada (Central)
+    seed: 'prow-build-cluster'
+    country: CA
+    spec:
+      aws:
+        region: ca-central-1
+        zone_character: a
+  aws-eu-west-1a:
+    location: EU (Ireland)
+    seed: 'prow-build-cluster'
+    country: IE
+    spec:
+      aws:
+        region: eu-west-1
+        zone_character: a
+  aws-eu-central-1a:
+    location: EU (Frankfurt)
+    seed: 'prow-build-cluster'
+    country: DE
+    spec:
+      aws:
+        region: eu-central-1
+        zone_character: a
+  aws-eu-west-2a:
+    location: EU (London)
+    seed: 'prow-build-cluster'
+    country: GB
+    spec:
+      aws:
+        region: eu-west-2
+        zone_character: a
+  aws-ap-northeast-1a:
+    location: Asia Pacific (Tokyo)
+    seed: 'prow-build-cluster'
+    country: JP
+    spec:
+      aws:
+        region: ap-northeast-1
+        zone_character: a
+  aws-ap-northeast-2a:
+    location: Asia Pacific (Seoul)
+    seed: 'prow-build-cluster'
+    country: KR
+    spec:
+      aws:
+        region: ap-northeast-2
+        zone_character: a
+  aws-ap-southeast-1a:
+    location: Asia Pacific (Singapore)
+    seed: 'prow-build-cluster'
+    country: SG
+    spec:
+      aws:
+        region: ap-southeast-1
+        zone_character: a
+  aws-ap-southeast-2a:
+    location: Asia Pacific (Sydney)
+    seed: 'prow-build-cluster'
+    country: AU
+    spec:
+      aws:
+        region: ap-southeast-2
+        zone_character: a
+  aws-ap-south-1a:
+    location: Asia Pacific (Mumbai)
+    seed: 'prow-build-cluster'
+    country: IN
+    spec:
+      aws:
+        region: ap-south-1
+        zone_character: a
+  aws-sa-east-1a:
+    location: South America (São Paulo)
+    seed: 'prow-build-cluster'
+    country: BR
+    spec:
+      aws:
+        region: sa-east-1
+        zone_character: a
+#==================================
+#=============Hetzner==============
+#==================================
+  hetzner-fsn1:
+    location: Falkenstein 1 DC 8
+    seed: 'prow-build-cluster'
+    country: DE
+    spec:
+      hetzner:
+        datacenter: fsn1-dc8
+  hetzner-nbg1:
+    location: Nuremberg 1 DC 3
+    seed: 'prow-build-cluster'
+    country: DE
+    spec:
+      hetzner:
+        datacenter: nbg1-dc3
+#==================================
+#=============vSphere==============
+#==================================
+  vsphere-ger:
+    location: Hetzner
+    seed: 'prow-build-cluster'
+    country: DE
+    spec:
+      vsphere:
+        endpoint: "https://vcenter.loodse.com"
+        datacenter: "dc-1"
+        datastore: "exsi-nas"
+        cluster: "cl-1"
+        root_path: "/dc-1/vm/e2e-tests"
+        templates:
+          ubuntu: "machine-controller-e2e-ubuntu"
+          centos: "machine-controller-e2e-centos"
+          coreos: "machine-controller-e2e-coreos"
+#==================================
+#============= Azure ==============
+#==================================
+  azure-westeurope:
+    location: "Azure West europe"
+    seed: 'prow-build-cluster'
+    country: NL
+    spec:
+      azure:
+        location: "westeurope"
+  azure-eastus:
+    location: "Azure East US"
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      azure:
+        location: "eastus"
+  azure-southeastasia:
+    location: "Azure South-East Asia"
+    seed: 'prow-build-cluster'
+    country: HK
+    spec:
+      azure:
+        location: "southeastasia"
+#==================================
+#============= GCP ================
+#==================================
+  gcp-westeurope:
+    location: "Europe West (Germany)"
+    seed: 'prow-build-cluster'
+    country: DE
+    spec:
+      gcp:
+        region: europe-west3
+        zone_suffixes:
+        - c
+#==================================
+#============= Packet ================
+#==================================
+  packet-ams1:
+    location: "Packet AMS1 (Amsterdam)"
+    seed: 'prow-build-cluster'
+    country: NL
+    spec:
+      packet:
+        facilities:
+        - ams1
+EOF
 retry 5 vault kv get -field=kubeconfig \
   dev/seed-clusters/ci.kubermatic.io > $KUBECONFIG
 retry 5 vault kv get -field=values.yaml \
   dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
-retry 5 vault kv get -field=datacenters.yaml \
-  dev/seed-clusters/ci.kubermatic.io > $DATACENTERS_FILE
+sed -E "s/(datacenters: ).*/\1$(base64 -w0 $DATACENTERS_FILE)/" -i $VALUES_FILE
 retry 5 vault kv get -field=project_id \
 	dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_project_id
 export KUBERMATIC_PROJECT_ID="$(cat /tmp/kubermatic_project_id)"
