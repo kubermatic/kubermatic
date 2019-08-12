@@ -6,6 +6,8 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
+setup_start_time=${SECONDS:-0}
+
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 export SEED_NAME=prow-build-cluster
 
@@ -103,6 +105,7 @@ function cleanup {
 }
 trap cleanup EXIT
 
+TEST_NAME="Get Vault token"
 echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
 export VAULT_TOKEN=$(vault write \
@@ -113,17 +116,23 @@ export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 export DATACENTERS_FILE=/tmp/datacenters.yaml
 export OPENSTACK_DATACENTER_FILE=/tmp/openstack-datacenters.yaml
+TEST_NAME="Get Kubeconfig from Vault"
 retry 5 vault kv get -field=kubeconfig \
   dev/seed-clusters/ci.kubermatic.io > $KUBECONFIG
+TEST_NAME="Get Values file from Vault"
 retry 5 vault kv get -field=values.yaml \
   dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
+TEST_NAME="Get datacenters.yaml from Vault"
 retry 5 vault kv get -field=datacenters.yaml \
   dev/seed-clusters/ci.kubermatic.io > $DATACENTERS_FILE
+TEST_NAME="Get Openstack datacenters file from Vault"
 retry 5 vault kv get -field=openstack-datacenter.yaml \
   dev/seed-clusters/ci.kubermatic.io > $OPENSTACK_DATACENTER_FILE
+TEST_NAME="Get ProjectID from Vault"
 retry 5 vault kv get -field=project_id \
   dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_project_id
 export KUBERMATIC_PROJECT_ID="$(cat /tmp/kubermatic_project_id)"
+TEST_NAME="Get ServiceAccount token from Vault"
 retry 5 vault kv get -field=serviceaccount_token \
   dev/seed-clusters/ci.kubermatic.io > /tmp/kubermatic_serviceaccount_token
 export KUBERMATIC_SERVICEACCOUNT_TOKEN="$(cat /tmp/kubermatic_serviceaccount_token)"
@@ -141,19 +150,24 @@ registries = ['docker.io']
 registries = ["registry.registry.svc.cluster.local:5000"]
 EOF
     echodate "Building binaries"
-    time make -C api build
+    TEST_NAME="Build Kubermatic binaries"
+    time retry 1 make -C api build
     (
       echodate "Building docker image"
+      TEST_NAME="Build Kubermatic Docker image"
       cd api
       time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/api:$1" .
     )
     (
       echodate "Building addons image"
+      TEST_NAME="Build addons Docker image"
       cd addons
       time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1" .
     )
     echodate "Pushing docker image"
+    TEST_NAME="Push Kubermatic Docker image"
     time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/api:$1"
+    TEST_NAME="Push addon Docker image"
     echodate "Pushing addons image"
     time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1"
     echodate "Finished building and pushing docker image"
@@ -213,12 +227,15 @@ roleRef:
 ---
 EOF
 echodate "Creating namespace $NAMESPACE to deploy kubermatic in"
+TEST_NAME="Create Kubermatic namespace and Bindings"
 retry 5 kubectl apply -f $INITIAL_MANIFESTS
 
 echodate "Deploying tiller"
+TEST_NAME="Deploy Tiller"
 helm init --wait --service-account=tiller --tiller-namespace=$NAMESPACE
 
 echodate "Installing Kubermatic via Helm"
+TEST_NAME="Deploy Kubermatic"
 
 if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   echodate "Upgradetest, checking out revision ${UPGRADE_TEST_BASE_HASH}"
@@ -335,6 +352,7 @@ spec:
           region: ams3
 $(cat $OPENSTACK_DATACENTER_FILE)
 EOF
+TEST_NAME="Deploy Seed Manifest"
 retry 5 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing seed"
 
@@ -376,6 +394,10 @@ elif [[ $provider == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}"
 fi
+
+# Gather the total time it takes between starting this sscript and staring the conformance tester
+setup_elasped_time=$((${SECONDS:-} - $setup_start_time))
+TEST_NAME="Setup Kubermatic total" write_junit "0" "$setup_elasped_time"
 
 timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
   -debug \
