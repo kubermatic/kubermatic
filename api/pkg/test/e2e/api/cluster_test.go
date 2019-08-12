@@ -114,6 +114,8 @@ func TestCreateAWSCluster(t *testing.T) {
 				t.Fatalf("number of nodes is not as expected")
 			}
 
+			cleanUpCluster(t, apiRunner, project.ID, tc.dc, cluster.ID)
+
 		})
 	}
 }
