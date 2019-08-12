@@ -168,6 +168,7 @@ EOF
       echodate "Building dnatcontroller image"
       TEST_NAME="Build dnatcontroller Docker image"
       cd api/cmd/kubeletdnat-controller
+      make build
       time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/kubeletdnat-controller:$1 ."
     )
     echodate "Pushing docker image"
