@@ -5590,6 +5590,9 @@
         "hetzner": {
           "$ref": "#/definitions/HetznerCloudSpec"
         },
+        "kubevirt": {
+          "$ref": "#/definitions/KubevirtCloudSpec"
+        },
         "openstack": {
           "$ref": "#/definitions/OpenstackCloudSpec"
         },
@@ -5598,9 +5601,6 @@
         },
         "vsphere": {
           "$ref": "#/definitions/VSphereCloudSpec"
-        },
-        "kubevirt": {
-          "$ref": "#/definitions/KubevirtCloudSpec"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -5867,6 +5867,9 @@
         },
         "hetzner": {
           "$ref": "#/definitions/HetznerDatacenterSpec"
+        },
+        "kubevirt": {
+          "$ref": "#/definitions/KubevirtDatacenterSpec"
         },
         "location": {
           "type": "string",
@@ -6564,6 +6567,61 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "KubevirtCloudSpec": {
+      "type": "object",
+      "title": "KubevirtCloudSpec specifies the access data to Kubevirt.",
+      "properties": {
+        "config": {
+          "type": "string",
+          "x-go-name": "Config"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "KubevirtDatacenterSpec": {
+      "type": "object",
+      "title": "KubevirtDatacenterSpec specifies a datacenter of Kubevirt.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "KubevirtNodeSpec": {
+      "description": "KubevirtNodeSpec kubevirt specific node settings",
+      "type": "object",
+      "required": [
+        "CPUs",
+        "Memory",
+        "Namespace",
+        "SourceURL",
+        "StorageClassName",
+        "PVCSize"
+      ],
+      "properties": {
+        "CPUs": {
+          "description": "CPUs states how many cpus the kubevirt node will have.",
+          "type": "string"
+        },
+        "Memory": {
+          "description": "Memory states the memory that kubevirt node will have.",
+          "type": "string"
+        },
+        "Namespace": {
+          "description": "Namespace states in which namespace kubevirt node will be provisioned.",
+          "type": "string"
+        },
+        "PVCSize": {
+          "description": "PVCSize states the size of the provisioned pvc per node.",
+          "type": "string"
+        },
+        "SourceURL": {
+          "description": "SourceURL states the url from which the imported image will be downloaded.",
+          "type": "string"
+        },
+        "StorageClassName": {
+          "description": "StorageClassName states the storage class name for the provisioned PVCs.",
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "LegacyObjectMeta": {
       "description": "Deprecated: LegacyObjectMeta is deprecated use ObjectMeta instead.",
       "type": "object",
@@ -6813,6 +6871,9 @@
         "hetzner": {
           "$ref": "#/definitions/HetznerNodeSpec"
         },
+        "kubevirt": {
+          "$ref": "#/definitions/KubevirtNodeSpec"
+        },
         "openstack": {
           "$ref": "#/definitions/OpenstackNodeSpec"
         },
@@ -6821,9 +6882,6 @@
         },
         "vsphere": {
           "$ref": "#/definitions/VSphereNodeSpec"
-        },
-        "kubevirt": {
-          "$ref": "#/definitions/KubevirtNodeSpec"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -7525,63 +7583,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "KubevirtCloudSpec": {
-      "type": "object",
-      "title": "KubevirtCloudSpec specifies access data to a Kubevirt cloud.",
-      "properties": {
-        "config": {
-          "description": "config is the kubeconfig file for the kubevirt cluster",
-          "type": "string",
-          "x-go-name": "Config"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "KubevirtNodeSpec": {
-      "description": "KubevirtNodeSpec specifies kubevirt specific node settings",
-      "type": "object",
-      "required": [
-        "memory",
-        "namespace",
-        "sourceURL",
-        "storageClassName",
-        "pvcSize",
-        "cpus"
-      ],
-      "properties": {
-        "memory": {
-          "description": "Memory denotes how much memory the node will have.",
-          "type": "string",
-          "x-go-name": "Memory"
-        },
-        "namespace": {
-          "description": "Namespace denotes the namespaces where the vm will be provisioned",
-          "type": "string",
-          "x-go-name": "Namespace"
-        },
-        "sourceURL": {
-          "description": "SourceURL denotes the image source for the VMI.",
-          "type": "string",
-          "x-go-name": "SourceURL"
-        },
-        "storageClassName": {
-          "description": "StorageClassName denotes the storage class name for the VMI PVC.",
-          "type": "string",
-          "x-go-name": "StorageClassName"
-        },
-        "pvcSize": {
-          "description": "PVCSize denotes the size of the PVC.",
-          "type": "string",
-          "x-go-name": "PVCSize"
-        },
-        "cpus": {
-          "description": "CPUs denotes the number of CPUs per VMI.",
-          "type": "string",
-          "x-go-name": "CPUs"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "Preferences": {
       "type": "object",
       "properties": {
@@ -7701,6 +7702,9 @@
         "hetzner": {
           "$ref": "#/definitions/PublicHetznerCloudSpec"
         },
+        "kubevirt": {
+          "$ref": "#/definitions/PublicKubevirtCloudSpec"
+        },
         "openstack": {
           "$ref": "#/definitions/PublicOpenstackCloudSpec"
         },
@@ -7709,9 +7713,6 @@
         },
         "vsphere": {
           "$ref": "#/definitions/PublicVSphereCloudSpec"
-        },
-        "kubevirt": {
-          "$ref": "#/definitions/PublicKubevirtCloudSpec"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -7736,6 +7737,11 @@
       "title": "PublicHetznerCloudSpec is a public counterpart of apiv1.HetznerCloudSpec.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "PublicKubevirtCloudSpec": {
+      "type": "object",
+      "title": "PublicKubevirtCloudSpec is a public counterpart of apiv1.KubevirtCloudSpec.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "PublicOpenstackCloudSpec": {
       "type": "object",
       "title": "PublicOpenstackCloudSpec is a public counterpart of apiv1.OpenstackCloudSpec.",
@@ -7750,11 +7756,6 @@
     "PublicPacketCloudSpec": {
       "type": "object",
       "title": "PublicPacketCloudSpec is a public counterpart of apiv1.PacketCloudSpec.",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "PublicKubevirtCloudSpec": {
-      "type": "object",
-      "title": "PublicKubevirtCloudSpec is a public counterpart of apiv1.PublicKubevirtCloudSpec.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicServiceAccountToken": {
