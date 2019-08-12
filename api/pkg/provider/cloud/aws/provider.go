@@ -14,9 +14,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/iam"
 )
 
@@ -42,13 +41,9 @@ func (a *AmazonEC2) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 }
 
 func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
-	client, err := a.getEC2client(spec)
+	client, err := a.getClientSet(spec)
 	if err != nil {
-		return err
-	}
-
-	if _, err = a.getIAMClient(spec); err != nil {
-		return err
+		return fmt.Errorf("failed to get API client: %v", err)
 	}
 
 	// Some settings require the vpc to be set
@@ -59,13 +54,13 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	}
 
 	if spec.AWS.VPCID != "" {
-		vpc, err := getVPCByID(spec.AWS.VPCID, client)
+		vpc, err := getVPCByID(spec.AWS.VPCID, client.EC2)
 		if err != nil {
 			return err
 		}
 
 		if spec.AWS.SecurityGroupID != "" {
-			if _, err = getSecurityGroupByID(client, vpc, spec.AWS.SecurityGroupID); err != nil {
+			if _, err = getSecurityGroupByID(client.EC2, vpc, spec.AWS.SecurityGroupID); err != nil {
 				return err
 			}
 		}
@@ -83,13 +78,13 @@ func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster) error {
 	}
 
 	if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN == "" {
-		svcIAM, err := a.getIAMClient(cluster.Spec.Cloud)
+		client, err := a.getClientSet(cluster.Spec.Cloud)
 		if err != nil {
-			return fmt.Errorf("failed to get IAM client: %v", err)
+			return fmt.Errorf("failed to get API client: %v", err)
 		}
 
 		paramsRoleGet := &iam.GetRoleInput{RoleName: aws.String(cluster.Spec.Cloud.AWS.RoleName)}
-		getRoleOut, err := svcIAM.GetRole(paramsRoleGet)
+		getRoleOut, err := client.IAM.GetRole(paramsRoleGet)
 		if err != nil {
 			return fmt.Errorf("failed to get already existing aws IAM role %s: %v", cluster.Spec.Cloud.AWS.RoleName, err)
 		}
@@ -114,11 +109,11 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 		return nil
 	}
 
-	client, err := a.getEC2client(cluster.Spec.Cloud)
+	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
-		return fmt.Errorf("failed to get EC2 client: %v", err)
+		return fmt.Errorf("failed to get API client: %v", err)
 	}
-	out, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+	out, err := client.EC2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
 		GroupIds: aws.StringSlice([]string{cluster.Spec.Cloud.AWS.SecurityGroupID}),
 	})
 	if err != nil {
@@ -173,7 +168,7 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 	}
 
 	if len(secGroupRules) > 0 {
-		_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
+		_, err = client.EC2.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
 			GroupId:       aws.String(cluster.Spec.Cloud.AWS.SecurityGroupID),
 			IpPermissions: secGroupRules,
 		})
@@ -203,7 +198,7 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter) (*AmazonEC2, error) {
 	}, nil
 }
 
-func getDefaultVpc(client *ec2.EC2) (*ec2.Vpc, error) {
+func getDefaultVpc(client ec2iface.EC2API) (*ec2.Vpc, error) {
 	vpcOut, err := client.DescribeVpcs(&ec2.DescribeVpcsInput{
 		Filters: []*ec2.Filter{
 			{Name: aws.String("isDefault"), Values: []*string{aws.String("true")}},
@@ -221,7 +216,7 @@ func getDefaultVpc(client *ec2.EC2) (*ec2.Vpc, error) {
 	return vpcOut.Vpcs[0], nil
 }
 
-func getRouteTable(vpcID string, client *ec2.EC2) (*ec2.RouteTable, error) {
+func getRouteTable(vpcID string, client ec2iface.EC2API) (*ec2.RouteTable, error) {
 	out, err := client.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
 		Filters: []*ec2.Filter{
 			{Name: aws.String("vpc-id"), Values: []*string{&vpcID}},
@@ -239,7 +234,7 @@ func getRouteTable(vpcID string, client *ec2.EC2) (*ec2.RouteTable, error) {
 	return out.RouteTables[0], nil
 }
 
-func getVPCByID(vpcID string, client *ec2.EC2) (*ec2.Vpc, error) {
+func getVPCByID(vpcID string, client ec2iface.EC2API) (*ec2.Vpc, error) {
 	vpcOut, err := client.DescribeVpcs(&ec2.DescribeVpcsInput{
 		Filters: []*ec2.Filter{
 			{Name: aws.String("vpc-id"), Values: []*string{aws.String(vpcID)}},
@@ -264,7 +259,7 @@ func clusterTag(clusterName string) *ec2.Tag {
 	}
 }
 
-func tagResources(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
+func tagResources(cluster *kubermaticv1.Cluster, client ec2iface.EC2API) error {
 	sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
 		Filters: []*ec2.Filter{
 			{
@@ -288,7 +283,7 @@ func tagResources(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
 	return err
 }
 
-func removeTags(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
+func removeTags(cluster *kubermaticv1.Cluster, client ec2iface.EC2API) error {
 	sOut, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{
 		Filters: []*ec2.Filter{
 			{
@@ -314,7 +309,7 @@ func removeTags(cluster *kubermaticv1.Cluster, client *ec2.EC2) error {
 
 // Get security group by aws generated id string (sg-xxxxx).
 // Error is returned in case no such group exists.
-func getSecurityGroupByID(client *ec2.EC2, vpc *ec2.Vpc, id string) (*ec2.SecurityGroup, error) {
+func getSecurityGroupByID(client ec2iface.EC2API, vpc *ec2.Vpc, id string) (*ec2.SecurityGroup, error) {
 	dsgOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
 		GroupIds: aws.StringSlice([]string{id}),
 		Filters: []*ec2.Filter{
@@ -337,7 +332,7 @@ func getSecurityGroupByID(client *ec2.EC2, vpc *ec2.Vpc, id string) (*ec2.Securi
 // Create security group ("sg") with name `name` in `vpc`. The name
 // in a sg must be unique within the vpc (no pre-existing sg with
 // that name is allowed).
-func createSecurityGroup(client *ec2.EC2, vpcID, clusterName string) (string, error) {
+func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (string, error) {
 	newSecurityGroupName := resourceNamePrefix + clusterName
 	csgOut, err := client.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
 		VpcId:       &vpcID,
@@ -406,13 +401,13 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	a.clusterUpdater = update
 	a.secretKeySelector = secretKeySelector
 
-	client, err := a.getEC2client(cluster.Spec.Cloud)
+	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get EC2 client: %v", err)
+		return nil, fmt.Errorf("failed to get API client: %v", err)
 	}
 
 	if cluster.Spec.Cloud.AWS.VPCID == "" {
-		vpc, err := getDefaultVpc(client)
+		vpc, err := getDefaultVpc(client.EC2)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get default vpc: %v", err)
 		}
@@ -425,7 +420,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
-		securityGroupID, err := createSecurityGroup(client, cluster.Spec.Cloud.AWS.VPCID, cluster.Name)
+		securityGroupID, err := createSecurityGroup(client.EC2, cluster.Spec.Cloud.AWS.VPCID, cluster.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add security group for cluster %s: %v", cluster.Name, err)
 		}
@@ -441,14 +436,9 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	iamClient, err := a.getIAMClient(cluster.Spec.Cloud)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get IAM client: %v", err)
-	}
-
 	// We create a dedicated role for the control plane
 	if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN == "" {
-		controlPlaneRole, err := createControlPlaneRole(iamClient, cluster.Name)
+		controlPlaneRole, err := createControlPlaneRole(client.IAM, cluster.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create control plane role: %v", err)
 		}
@@ -462,7 +452,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.AWS.InstanceProfileName == "" {
-		workerInstanceProfile, err := createWorkerInstanceProfile(iamClient, cluster.Name)
+		workerInstanceProfile, err := createWorkerInstanceProfile(client.IAM, cluster.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to setup the required roles/instance profiles: %v", err)
 		}
@@ -477,7 +467,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.AWS.RouteTableID == "" {
-		routeTable, err := getRouteTable(cluster.Spec.Cloud.AWS.VPCID, client)
+		routeTable, err := getRouteTable(cluster.Spec.Cloud.AWS.VPCID, client.EC2)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get default RouteTable: %v", err)
 		}
@@ -490,7 +480,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if !kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
-		if err := tagResources(cluster, client); err != nil {
+		if err := tagResources(cluster, client.EC2); err != nil {
 			return nil, err
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -504,7 +494,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	return cluster, nil
 }
 
-func (a *AmazonEC2) getSession(cloud kubermaticv1.CloudSpec) (*session.Session, error) {
+func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, error) {
 	var accessKeyID, secretAccessKey string
 	var err error
 
@@ -526,39 +516,20 @@ func (a *AmazonEC2) getSession(cloud kubermaticv1.CloudSpec) (*session.Session, 
 		}
 	}
 
-	config := aws.NewConfig()
-	config = config.WithRegion(a.dc.Region)
-	config = config.WithCredentials(credentials.NewStaticCredentials(accessKeyID, secretAccessKey, ""))
-	config = config.WithMaxRetries(3)
-	return session.NewSession(config)
-}
-
-func (a *AmazonEC2) getEC2client(cloud kubermaticv1.CloudSpec) (*ec2.EC2, error) {
-	sess, err := a.getSession(cloud)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get AmazonEC2 session: %v", err)
-	}
-	return ec2.New(sess), nil
-}
-
-func (a *AmazonEC2) getIAMClient(cloud kubermaticv1.CloudSpec) (*iam.IAM, error) {
-	sess, err := a.getSession(cloud)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get AmazonEC2 session: %v", err)
-	}
-	return iam.New(sess), nil
+	return GetClientSet(accessKeyID, secretAccessKey, a.dc.Region)
 }
 
 func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	a.secretKeySelector = secretKeySelector
 	a.clusterUpdater = updater
-	ec2client, err := a.getEC2client(cluster.Spec.Cloud)
+
+	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get ec2 client: %v", err)
+		return nil, fmt.Errorf("failed to get API client: %v", err)
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, securityGroupCleanupFinalizer) {
-		_, err = ec2client.DeleteSecurityGroup(&ec2.DeleteSecurityGroupInput{
+		_, err = client.EC2.DeleteSecurityGroup(&ec2.DeleteSecurityGroupInput{
 			GroupId: aws.String(cluster.Spec.Cloud.AWS.SecurityGroupID),
 		})
 
@@ -575,13 +546,8 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 		}
 	}
 
-	iamClient, err := a.getIAMClient(cluster.Spec.Cloud)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get iam ec2client: %v", err)
-	}
-
 	if kuberneteshelper.HasFinalizer(cluster, instanceProfileCleanupFinalizer) {
-		if err := deleteInstanceProfile(iamClient, cluster.Spec.Cloud.AWS.InstanceProfileName); err != nil {
+		if err := deleteInstanceProfile(client.IAM, cluster.Spec.Cloud.AWS.InstanceProfileName); err != nil {
 			return nil, fmt.Errorf("failed to delete the instance profile: %v", err)
 		}
 
@@ -594,7 +560,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 			rolesToDelete = append(rolesToDelete, cluster.Spec.Cloud.AWS.RoleName)
 		}
 		for _, role := range rolesToDelete {
-			if err := deleteRole(iamClient, role); err != nil {
+			if err := deleteRole(client.IAM, role); err != nil {
 				return nil, fmt.Errorf("failed to delete role %q: %v", role, err)
 			}
 		}
@@ -609,7 +575,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 
 	if kuberneteshelper.HasFinalizer(cluster, controlPlaneRoleCleanupFinalizer) {
 		roleName := controlPlaneRoleName(cluster.Name)
-		if err := deleteRole(iamClient, roleName); err != nil {
+		if err := deleteRole(client.IAM, roleName); err != nil {
 			return nil, fmt.Errorf("failed to delete role %q: %v", roleName, err)
 		}
 		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -621,7 +587,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
-		if err := removeTags(cluster, ec2client); err != nil {
+		if err := removeTags(cluster, client.EC2); err != nil {
 			return nil, err
 		}
 		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -659,16 +625,16 @@ func (a *AmazonEC2) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newS
 
 // GetAvailabilityZonesInRegion returns the list of availability zones in the selected AWS region.
 func (a *AmazonEC2) GetAvailabilityZonesInRegion(spec kubermaticv1.CloudSpec, regionName string) ([]*ec2.AvailabilityZone, error) {
-	client, err := a.getEC2client(spec)
+	client, err := a.getClientSet(spec)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get API client: %v", err)
 	}
 
 	filters := []*ec2.Filter{
 		{Name: aws.String("region-name"), Values: []*string{aws.String(regionName)}},
 	}
 	azinput := &ec2.DescribeAvailabilityZonesInput{Filters: filters}
-	out, err := client.DescribeAvailabilityZones(azinput)
+	out, err := client.EC2.DescribeAvailabilityZones(azinput)
 	if err != nil {
 		return nil, err
 	}
