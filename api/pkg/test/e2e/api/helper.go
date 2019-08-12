@@ -315,7 +315,7 @@ func (r *APIRunner) ListCredentials(providerName string) ([]string, error) {
 }
 
 // CreateAWSCluster creates cluster for AWS provider
-func (r *APIRunner) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location string, replicas int32) (*apiv1.Cluster, error) {
+func (r *APIRunner) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location, availabilityZone string, replicas int32) (*apiv1.Cluster, error) {
 
 	vr, err := semver.NewVersion(version)
 	if err != nil {
@@ -346,9 +346,10 @@ func (r *APIRunner) CreateAWSCluster(projectID, dc, name, secretAccessKey, acces
 			Template: &models.NodeSpec{
 				Cloud: &models.NodeCloudSpec{
 					Aws: &models.AWSNodeSpec{
-						InstanceType: &instanceType,
-						VolumeSize:   &volumeSize,
-						VolumeType:   &volumeType,
+						AvailabilityZone: availabilityZone,
+						InstanceType:     &instanceType,
+						VolumeSize:       &volumeSize,
+						VolumeType:       &volumeType,
 					},
 				},
 				OperatingSystem: &models.OperatingSystemSpec{
