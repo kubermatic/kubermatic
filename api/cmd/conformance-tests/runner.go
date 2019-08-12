@@ -226,10 +226,19 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 	var err error
 	var cluster *kubermaticv1.Cluster
 
+	report := &reporters.JUnitTestSuite{
+		Name: scenario.Name(),
+	}
+
 	if r.existingClusterLabel == "" {
-		cluster, err = r.createCluster(log, scenario)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create cluster: %v", err)
+		if err := junitReporterWrapper(
+			"[Kubermatic] Create cluster",
+			report,
+			func() error {
+				cluster, err = r.createCluster(log, scenario)
+				return err
+			}); err != nil {
+			return report, fmt.Errorf("failed to create cluster: %v", err)
 		}
 	} else {
 		selector, err := labels.Parse(r.existingClusterLabel)
@@ -247,23 +256,32 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		cluster = &clusterList.Items[0]
 	}
 
-	cluster, err = r.waitForControlPlane(log, cluster.Name)
-	if err != nil {
-		return nil, fmt.Errorf("failed waiting for control plane to become ready: %v", err)
+	if err := junitReporterWrapper(
+		"[Kubermatic] Wait for controlplane",
+		report,
+		func() error {
+			cluster, err = r.waitForControlPlane(log, cluster.Name)
+			return err
+		},
+		func() string { return r.controlplaneWaitFailureStdout(cluster.Name) }); err != nil {
+		return report, fmt.Errorf("failed waiting for control plane to become ready: %v", err)
 	}
 
 	// We must store the name here because the cluster object may be nil on error
 	clusterName := cluster.Name
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		if err := r.seedClusterClient.Get(context.Background(), types.NamespacedName{Name: clusterName}, cluster); err != nil {
-			return err
-		}
-		cluster.Finalizers = append(cluster.Finalizers, kubermaticapiv1.InClusterPVCleanupFinalizer, kubermaticapiv1.InClusterLBCleanupFinalizer)
-
-		return r.seedClusterClient.Update(context.Background(), cluster)
-
-	})
-	if err != nil {
+	if err := junitReporterWrapper(
+		"[Kubermatic] Add LB and PV Finalizers",
+		report,
+		func() error {
+			return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+				if err := r.seedClusterClient.Get(context.Background(), types.NamespacedName{Name: clusterName}, cluster); err != nil {
+					return err
+				}
+				cluster.Finalizers = append(cluster.Finalizers, kubermaticapiv1.InClusterPVCleanupFinalizer, kubermaticapiv1.InClusterLBCleanupFinalizer)
+				return r.seedClusterClient.Update(context.Background(), cluster)
+			})
+		},
+	); err != nil {
 		return nil, fmt.Errorf("failed to add PV and LB cleanup finalizers: %v", err)
 	}
 
@@ -308,33 +326,34 @@ func (r *testRunner) executeScenario(log *logrus.Entry, scenario testScenario) (
 		return nil, fmt.Errorf("failed to get the client for the cluster: %v", err)
 	}
 
-	nodeDeployment := scenario.Nodes(r.nodeCount, r.secrets)
-	if err := r.setupNodes(log, scenario.Name(), cluster, userClusterClient, nodeDeployment, dc); err != nil {
-		return nil, fmt.Errorf("failed to setup nodes: %v", err)
+	nodeDeployments := scenario.NodeDeployments(r.nodeCount, r.secrets)
+	if err := junitReporterWrapper(
+		"[Kubermatic] Create NodeDeployments",
+		report,
+		func() error {
+			return r.createNodeDeployments(log, scenario, clusterName)
+		},
+	); err != nil {
+		return report, fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
-	if err := r.waitUntilAllPodsAreReady(log, userClusterClient); err != nil {
+	if err := junitReporterWrapper(
+		"[Kubermatic] Wait for Pods inside usercluster to be ready",
+		report,
+		func() error {
+			return r.waitUntilAllPodsAreReady(log, userClusterClient)
+		}); err != nil {
 		return nil, fmt.Errorf("failed to wait until all pods are running after creating the cluster: %v", err)
 	}
 
 	if r.onlyTestCreation {
-		return &reporters.JUnitTestSuite{
-			Name: "cluster creation",
-			TestCases: []reporters.JUnitTestCase{
-				{
-					Name: "cluster creation",
-				},
-			},
-		}, nil
+		return report, nil
 	}
 
-	report, err := r.testCluster(log, scenario.Name(), cluster, userClusterClient, nodeDeployment, dc, kubeconfigFilename, cloudConfigFilename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to test cluster: %v", err)
+	if err := r.testCluster(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, kubeconfigFilename, cloudConfigFilename, report); err != nil {
+		return report, fmt.Errorf("failed to test cluster: %v", err)
 	}
-	if report == nil {
-		return nil, errors.New("no report generated")
-	}
+
 	return report, nil
 }
 
@@ -359,7 +378,8 @@ func (r *testRunner) testCluster(
 	dc provider.DatacenterMeta,
 	kubeconfigFilename string,
 	cloudConfigFilename string,
-) (*reporters.JUnitTestSuite, error) {
+	report *reporters.JUnitTestSuite,
+) error {
 	const maxTestAttempts = 3
 	var err error
 	totalStart := time.Now()
@@ -369,117 +389,89 @@ func (r *testRunner) testCluster(
 	// We'll store the report there and all kinds of logs
 	scenarioFolder := path.Join(r.reportsRoot, scenarioName)
 	if err := os.MkdirAll(scenarioFolder, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("failed to create the scenario folder '%s': %v", scenarioFolder, err)
+		return fmt.Errorf("failed to create the scenario folder '%s': %v", scenarioFolder, err)
 	}
-
-	report := &reporters.JUnitTestSuite{
-		Name: scenarioName,
-	}
-
-	testCase := reporters.JUnitTestCase{
-		Name:      "[Kubermatic] Test cluster becomes ready, nodes join and kubermatic-managed pods get ready",
-		ClassName: "Kubermatic custom tests",
-	}
-	report.TestCases = append(report.TestCases, testCase)
-	report.Tests++
 
 	if r.openshift {
 		// Openshift supports neither the conformance tests nor PVs/LBs yet :/
-		return report, nil
+		return nil
 	}
 
 	ginkgoRuns, err := r.getGinkgoRuns(log, scenarioName, kubeconfigFilename, cloudConfigFilename, cluster, nd, dc)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Ginkgo runs: %v", err)
+		return fmt.Errorf("failed to get Ginkgo runs: %v", err)
 	}
 	for _, run := range ginkgoRuns {
-
-		ginkgoRes, err := r.executeGinkgoRunWithRetries(log, run, userClusterClient)
-		if err != nil {
-			// Ginkgo failed hard. We don't have any JUnit reports to append, so we appenda custom one to indicate the hard failure
-			report.TestCases = append(report.TestCases, reporters.JUnitTestCase{
-				Name:           "[Ginkgo] Run ginkgo tests",
-				ClassName:      "Ginkgo",
-				FailureMessage: &reporters.JUnitFailureMessage{Message: fmt.Sprintf("%v", err)},
-			})
-
+		if err := junitReporterWrapper(
+			"[Ginkgo] Run ginkgo tests",
+			report,
+			func() error {
+				ginkgoRes, err := r.executeGinkgoRunWithRetries(log, run, userClusterClient)
+				if ginkgoRes != nil {
+					// We append the report from Ginkgo to our scenario wide report
+					report = combineReports("Kubernetes Conformance tests", report, ginkgoRes.report)
+				}
+				return err
+			},
+		); err != nil {
 			// We still wan't to run potential next runs
 			continue
 		}
 
-		// We have a valid report from Ginkgo. It might contain failed tests, but that's ok here.
-		// The executor if this scenario will later on interpret the junit report and decides for a return code.
-		// We append the report from Ginkgo to our scenario wide report
-		report = combineReports("Kubernetes Conformance tests", report, ginkgoRes.report)
 	}
 
 	// Do a simple PVC test - with retries
 	if supportsStorage(cluster) {
-		testStart := time.Now()
-		testCase := reporters.JUnitTestCase{
-			Name:      "[CloudProvider] Test PVC support with the existing StorageClass",
-			ClassName: "Kubermatic custom tests",
-		}
-		err := retryNAttempts(maxTestAttempts, func(attempt int) error { return r.testPVC(log, userClusterClient, attempt) })
-		if err != nil {
-			report.Errors++
-			testCase.FailureMessage = &reporters.JUnitFailureMessage{Message: err.Error()}
+		if err := junitReporterWrapper(
+			"[Kubermatic] [CloudProvider] Test PersistentVolumes",
+			report,
+			func() error {
+				return retryNAttempts(maxTestAttempts,
+					func(attempt int) error { return r.testPVC(log, userClusterClient, attempt) })
+			},
+		); err != nil {
 			log.Errorf("Failed to verify that PVC's work: %v", err)
 		}
-		testCase.Time = time.Since(testStart).Seconds()
-		report.TestCases = append(report.TestCases, testCase)
-		report.Tests++
 	}
 
 	// Do a simple LB test - with retries
 	if supportsLBs(cluster) {
-		testStart := time.Now()
-		testCase := reporters.JUnitTestCase{
-			Name:      "[CloudProvider] Test LB support",
-			ClassName: "Kubermatic custom tests",
-		}
-		err := retryNAttempts(maxTestAttempts, func(attempt int) error { return r.testLB(log, userClusterClient, attempt) })
-		if err != nil {
-			report.Errors++
-			testCase.FailureMessage = &reporters.JUnitFailureMessage{Message: err.Error()}
+		if err := junitReporterWrapper(
+			"[Kubermatic] [CloudProvider] Test LoadBalancers",
+			report,
+			func() error {
+				return retryNAttempts(maxTestAttempts,
+					func(attempt int) error { return r.testLB(log, userClusterClient, attempt) })
+			},
+		); err != nil {
 			log.Errorf("Failed to verify that LB's work: %v", err)
 		}
-		testCase.Time = time.Since(testStart).Seconds()
-		report.TestCases = append(report.TestCases, testCase)
-		report.Tests++
 	}
 
 	// Do user cluster RBAC controller test - with retries
-	{
-		testStart := time.Now()
-		testCase := reporters.JUnitTestCase{
-			Name:      "Test user cluster RBAC controller",
-			ClassName: "Kubermatic custom tests",
-		}
-		err = retryNAttempts(maxTestAttempts, func(attempt int) error {
-			return r.testUserclusterControllerRBAC(log, cluster, userClusterClient, r.seedClusterClient)
-		})
-		if err != nil {
-			report.Errors++
-			testCase.FailureMessage = &reporters.JUnitFailureMessage{Message: err.Error()}
-			log.Errorf("Failed to verify that user cluster RBAC controller work: %v", err)
-		}
-		testCase.Time = time.Since(testStart).Seconds()
-		report.TestCases = append(report.TestCases, testCase)
-		report.Tests++
+	if err := junitReporterWrapper(
+		"[Kubermatic] Test user cluster RBAC controller",
+		report,
+		func() error {
+			return retryNAttempts(maxTestAttempts,
+				func(attempt int) error {
+					return r.testUserclusterControllerRBAC(log, cluster, userClusterClient, r.seedClusterClient)
+				})
+		}); err != nil {
+		log.Errorf("Failed to verify that user cluster RBAC controller work: %v", err)
 	}
 
 	report.Time = time.Since(totalStart).Seconds()
 	b, err := xml.Marshal(report)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal combined report file: %v", err)
+		return fmt.Errorf("failed to marshal combined report file: %v", err)
 	}
 
 	if err := ioutil.WriteFile(path.Join(r.reportsRoot, fmt.Sprintf("junit.%s.xml", scenarioName)), b, 0644); err != nil {
-		return nil, fmt.Errorf("failed to write combined report file: %v", err)
+		return fmt.Errorf("failed to write combined report file: %v", err)
 	}
 
-	return report, nil
+	return nil
 }
 
 // executeGinkgoRunWithRetries executes the passed GinkgoRun and retries if it failed hard(Failed to execute the Ginkgo binary for example)
@@ -704,20 +696,32 @@ func (r *testRunner) createCluster(log *logrus.Entry, scenario testScenario) (*k
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse selector: %v", err)
 	}
-	if err := wait.Poll(time.Second, 15*time.Second, func() (bool, error) {
+
+	var errs []error
+	if err := wait.PollImmediate(5*time.Second, 45*time.Second, func() (bool, error) {
 		// For some reason the cluster doesn't have the name we set via ID on creation
 		clusterList := &kubermaticv1.ClusterList{}
 		opts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
 		if err := r.seedClusterClient.List(r.ctx, opts, clusterList); err != nil {
 			return false, err
 		}
-		if len(clusterList.Items) != 1 {
+		numFoundClusters := len(clusterList.Items)
+
+		switch {
+		case numFoundClusters < 1:
+			if _, err := r.kubermaticClient.Project.CreateCluster(params, r.kubermaticAuthenticator); err != nil {
+				// Log the error but don't return it, we want to retry
+				errs = append(errs, err)
+				log.Errorf("failed to create cluster via kubermatic api: %q, %v", fmtSwaggerError(err), err)
+			}
+			// Always return here, our clusterList is not up to date anymore
 			return false, nil
 		}
 		crCluster = &clusterList.Items[0]
 		return true, err
 	}); err != nil {
-		return nil, fmt.Errorf("failed to get cluster after creating it: %v", err)
+		errs = append(errs, err)
+		return nil, fmt.Errorf("cluster creation failed: %v", errs)
 	}
 
 	log.Info("Successfully created cluster via Kubermatic API")
@@ -801,13 +805,6 @@ func (r *testRunner) waitForControlPlane(log *logrus.Entry, clusterName string) 
 	})
 	// Timeout or other error
 	if err != nil {
-		// Be helpful and log what is not ready
-		if err := r.logNotReadyControlPlaneComponents(clusterName); err != nil {
-			r.log.Infof("failed to log not ready control plane pods: %v", err)
-		}
-		if err := r.logNotReadyControlPlanePods(clusterName); err != nil {
-			r.log.Infof("failed to log not ready control plane pods: %v", err)
-		}
 		return nil, err
 	}
 
@@ -1055,42 +1052,40 @@ func supportsLBs(cluster *kubermaticv1.Cluster) bool {
 		cluster.Spec.Cloud.GCP != nil
 }
 
-func (r *testRunner) logNotReadyControlPlanePods(clusterName string) error {
-	cluster := &kubermaticv1.Cluster{}
-	ctx := context.Background()
-	if err := r.seedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-		return err
-	}
-
-	controlPlanePods := &corev1.PodList{}
-	listOpts := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
-	if err := r.seedClusterClient.List(ctx, listOpts, controlPlanePods); err != nil {
-		return err
-	}
-
-	notReadyControlPlanePods := sets.NewString()
-	for _, pod := range controlPlanePods.Items {
-		if !podIsReady(&pod) {
-			notReadyControlPlanePods.Insert(pod.Name)
+func (r *testRunner) controlplaneWaitFailureStdout(clusterName string) string {
+	// Closure to be able to properly distinguish errors from the rest
+	res, err := func() (string, error) {
+		cluster := &kubermaticv1.Cluster{}
+		ctx := context.Background()
+		if err := r.seedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
+			return "", fmt.Errorf("failed to get cluster %q: %v", clusterName, err)
 		}
-	}
-	r.log.Infof("Failed because these control plane pods didn't get ready: %v", notReadyControlPlanePods.List())
-	return nil
-}
 
-func (r *testRunner) logNotReadyControlPlaneComponents(clusterName string) error {
-	cluster := &kubermaticv1.Cluster{}
-	ctx := context.Background()
-	if err := r.seedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-		return err
-	}
+		var ret string
+		clusterHealthStatus, err := json.Marshal(cluster.Status.ExtendedHealth)
+		if err == nil {
+			ret = fmt.Sprintf("ClusterHealthStatus: '%s'", clusterHealthStatus)
+		}
 
-	clusterHealthStatus, err := json.Marshal(cluster.Status.Health.ClusterHealthStatus)
+		controlPlanePods := &corev1.PodList{}
+		listOpts := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
+		if err := r.seedClusterClient.List(ctx, listOpts, controlPlanePods); err != nil {
+			return ret, fmt.Errorf("failed to list pods: %v", err)
+		}
+
+		notReadyControlPlanePods := sets.NewString()
+		for _, pod := range controlPlanePods.Items {
+			if !podIsReady(&pod) {
+				notReadyControlPlanePods.Insert(pod.Name)
+			}
+		}
+		// TODO: Getting events and logs for not ready pods would be pretty nifty
+		return fmt.Sprintf("%s\nNot ready pods: %v", ret, notReadyControlPlanePods.List()), nil
+	}()
 	if err != nil {
-		return fmt.Errorf("failed to marshal cluster health status: %v", err)
+		return fmt.Sprintf("Encountered error getting controlplane timeout output: %v\n%s", err, res)
 	}
-	r.log.Infof("ClusterHealthStatus: %q", string(clusterHealthStatus))
-	return nil
+	return res
 }
 
 func printFileUnbuffered(filename string) error {
@@ -1112,4 +1107,37 @@ func fmtSwaggerError(err error) string {
 		return fmt.Sprintf("failed to marshal response(%v): %v", err, newErr)
 	}
 	return string(rawData)
+}
+
+// junitReporterWrapper is a convenience func to get junit results for a step
+// It will create a report, append it to the passed in testsuite and propagate
+// the error of the executor back up
+// TODO: Should we add optional retrying here to limit the amount of wrappers we need?
+func junitReporterWrapper(
+	testCaseName string,
+	report *reporters.JUnitTestSuite,
+	executor func() error,
+	extraOutputFn ...func() string,
+) error {
+	junitTestCase := reporters.JUnitTestCase{
+		Name:      testCaseName,
+		ClassName: testCaseName,
+	}
+
+	startTime := time.Now()
+	err := executor()
+	junitTestCase.Time = time.Since(startTime).Seconds()
+	if err != nil {
+		junitTestCase.FailureMessage = &reporters.JUnitFailureMessage{Message: err.Error()}
+		report.Failures++
+	}
+
+	for _, extraOut := range extraOutputFn {
+		junitTestCase.SystemOut = junitTestCase.SystemOut + "\n" + extraOut()
+	}
+
+	report.TestCases = append(report.TestCases, junitTestCase)
+	report.Tests++
+
+	return err
 }
