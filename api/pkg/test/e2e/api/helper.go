@@ -424,6 +424,31 @@ func (r *APIRunner) CreateDOCluster(projectID, dc, name, credential, version, lo
 	return convertCluster(clusterResponse.Payload)
 }
 
+// DeleteCluster delete cluster method
+func (r *APIRunner) DeleteCluster(projectID, dc, clusterID string) error {
+
+	params := &project.DeleteClusterParams{ProjectID: projectID, Dc: dc, ClusterID: clusterID}
+	params.WithTimeout(timeout)
+
+	if _, err := r.client.Project.DeleteCluster(params, r.bearerToken); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetCluster cluster getter
+func (r *APIRunner) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster, error) {
+
+	params := &project.GetClusterParams{ProjectID: projectID, Dc: dc, ClusterID: clusterID}
+	params.WithTimeout(timeout)
+
+	cluster, err := r.client.Project.GetCluster(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	return convertCluster(cluster.Payload)
+}
+
 // GetClusterHealthStatus gets the cluster status
 func (r *APIRunner) GetClusterHealthStatus(projectID, dc, clusterID string) (*apiv1.ClusterHealth, error) {
 	params := &project.GetClusterHealthParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
@@ -607,5 +632,24 @@ func cleanUpProject(id string, attempts int) func(t *testing.T) {
 		if err == nil {
 			t.Fatalf("can not delete the project")
 		}
+	}
+}
+
+func cleanUpCluster(t *testing.T, apiRunner *APIRunner, projectID, dc, clusterID string) {
+	if err := apiRunner.DeleteCluster(projectID, dc, clusterID); err != nil {
+		t.Fatalf("can not delete the cluster %v", GetErrorResponse(err))
+	}
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		_, err := apiRunner.GetCluster(projectID, dc, clusterID)
+		if err != nil {
+			t.Logf("cluster deleted %v", GetErrorResponse(err))
+			break
+		}
+		time.Sleep(10 * time.Second)
+	}
+	_, err := apiRunner.GetCluster(projectID, dc, clusterID)
+	if err == nil {
+		t.Fatalf("can not delete the cluster after %d attempts", maxAttempts)
 	}
 }
