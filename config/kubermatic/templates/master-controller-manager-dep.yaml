@@ -26,7 +26,7 @@ spec:
         - master-controller-manager
         args:
         - -internal-address=0.0.0.0:8085
-        - -v=4
+        - -v=2
         - -logtostderr
         - -kubeconfig=/opt/.kube/kubeconfig
         {{- if .Values.kubermatic.dynamicDatacenters }}
