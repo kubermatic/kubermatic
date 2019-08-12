@@ -35,7 +35,7 @@ echodate() {
 
 write_junit() {
   # Doesn't make any sense if we don't know a testname
-  if [ -z "$TEST_NAME" ]; then return; fi
+  if [ -z "${TEST_NAME:-}" ]; then return; fi
   # Only run in CI
   if [ -z "$ARTIFACTS" ]; then return; fi
 
