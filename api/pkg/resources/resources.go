@@ -287,6 +287,9 @@ const (
 
 	// DefaultKubermaticImage defines the default image which contains the Kubermatic applications
 	DefaultKubermaticImage = "quay.io/kubermatic/api"
+
+	// DefaultDNATControllerImage defines the default image containing the dnat controller
+	DefaultDNATControllerImage = "quay.io/kubermatic/kubeletdnat-controller"
 )
 
 const (

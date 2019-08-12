@@ -246,7 +246,7 @@ func (r *Reconciler) applyDNATRules(rules []string, haveJump, haveMasquerade boo
 }
 
 func execSave() ([]string, error) {
-	cmd := exec.Command("iptables-legacy-save", []string{"-t", "nat"}...)
+	cmd := exec.Command("iptables-save", []string{"-t", "nat"}...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute %q: %v. Output: \n%s", strings.Join(cmd.Args, " "), err, out)
@@ -255,7 +255,7 @@ func execSave() ([]string, error) {
 }
 
 func execRestore(rules []string) error {
-	cmd := exec.Command("iptables-legacy-restore", []string{"--noflush", "-v", "-T", "nat"}...)
+	cmd := exec.Command("iptables-restore", []string{"--noflush", "-v", "-T", "nat"}...)
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {

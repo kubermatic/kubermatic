@@ -58,6 +58,7 @@ type controllerRunOptions struct {
 	dockerPullConfigJSONFile                         string
 	log                                              kubermaticlog.Options
 	kubermaticImage                                  string
+	dnatControllerImage                              string
 	dynamicDatacenters                               bool
 	namespace                                        string
 	apiServerDefaultReplicas                         int
@@ -116,6 +117,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.BoolVar(&c.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&c.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.StringVar(&c.kubermaticImage, "kubermatic-image", resources.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
+	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", resources.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
 	flag.BoolVar(&c.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "The default number of replicas for usercluster api servers")

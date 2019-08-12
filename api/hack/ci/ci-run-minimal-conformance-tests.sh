@@ -164,13 +164,22 @@ EOF
       cd addons
       time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1" .
     )
+    (
+      echodate "Building dnatcontroller image"
+      TEST_NAME="Build dnatcontroller Docker image"
+      cd api/cmd/kubeletdnat-controller
+      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/kubeletdnat-controller:$1 ."
+    )
     echodate "Pushing docker image"
     TEST_NAME="Push Kubermatic Docker image"
     time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/api:$1"
     TEST_NAME="Push addon Docker image"
     echodate "Pushing addons image"
     time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1"
-    echodate "Finished building and pushing docker image"
+    TEST_NAME="Push dnatcontroller Docker image"
+    echodate "Pushing dnatcontroller image"
+    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/kubeletdnat-controller:$1"
+    echodate "Finished building and pushing docker images"
   else
     echodate "Omitting building of binaries and docker image, as tag $1 already exists in local registry"
   fi
@@ -437,6 +446,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.masterController.image.tag=${GIT_HEAD_HASH} \
   --set-string=kubermatic.masterController.image.repository=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.kubermaticImage=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.dnatcontrollerImage=127.0.0.1:5000/kubermatic/kubeletdnat-controller \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \

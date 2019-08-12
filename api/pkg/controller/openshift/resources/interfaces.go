@@ -32,4 +32,5 @@ type openshiftData interface {
 	EtcdDiskSize() resource.Quantity
 	NodeLocalDNSCacheEnabled() bool
 	KubermaticAPIImage() string
+	DNATControllerImage() string
 }
