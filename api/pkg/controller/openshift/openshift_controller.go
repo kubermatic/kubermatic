@@ -83,6 +83,7 @@ type Reconciler struct {
 	externalURL          string
 	oidc                 OIDCConfig
 	kubermaticImage      string
+	dnatControllerImage  string
 	features             Features
 }
 
@@ -99,6 +100,7 @@ func Add(
 	externalURL string,
 	oidcConfig OIDCConfig,
 	kubermaticImage string,
+	dnatControllerImage string,
 	features Features,
 ) error {
 	reconciler := &Reconciler{
@@ -115,6 +117,7 @@ func Add(
 		externalURL:          externalURL,
 		oidc:                 oidcConfig,
 		kubermaticImage:      kubermaticImage,
+		dnatControllerImage:  dnatControllerImage,
 		features:             features,
 	}
 
@@ -222,14 +225,15 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
 	osData := &openshiftData{
-		cluster:           cluster,
-		client:            r.Client,
-		dc:                &datacenter,
-		overwriteRegistry: r.overwriteRegistry,
-		nodeAccessNetwork: r.nodeAccessNetwork,
-		oidc:              r.oidc,
-		etcdDiskSize:      r.etcdDiskSize,
-		kubermaticImage:   r.kubermaticImage,
+		cluster:             cluster,
+		client:              r.Client,
+		dc:                  &datacenter,
+		overwriteRegistry:   r.overwriteRegistry,
+		nodeAccessNetwork:   r.nodeAccessNetwork,
+		oidc:                r.oidc,
+		etcdDiskSize:        r.etcdDiskSize,
+		kubermaticImage:     r.kubermaticImage,
+		dnatControllerImage: r.dnatControllerImage,
 	}
 
 	if err := r.networkDefaults(ctx, cluster); err != nil {

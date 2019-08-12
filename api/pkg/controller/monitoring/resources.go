@@ -46,6 +46,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		"",
 		r.nodeLocalDNSCacheEnabled,
 		"",
+		"",
 	), nil
 }
 

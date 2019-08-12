@@ -42,6 +42,7 @@ type TemplateData struct {
 	oidcIssuerClientID                               string
 	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
+	dnatControllerImage                              string
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -64,7 +65,8 @@ func NewTemplateData(
 	oidcURL string,
 	oidcIssuerClientID string,
 	nodeLocalDNSCacheEnabled bool,
-	kubermaticImage string) *TemplateData {
+	kubermaticImage string,
+	dnatControllerImage string) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
 		client:                                 client,
@@ -85,6 +87,7 @@ func NewTemplateData(
 		oidcIssuerClientID:                               oidcIssuerClientID,
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,
+		dnatControllerImage:                              dnatControllerImage,
 	}
 }
 
@@ -266,6 +269,19 @@ func (d *TemplateData) KubermaticAPIImage() string {
 	} else {
 		registry = apiImageSplit[0]
 		imageWithoutRegistry = strings.Join(apiImageSplit[1:], "/")
+	}
+	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
+}
+
+func (d *TemplateData) DNATControllerImage() string {
+	dnatControllerImageSplit := strings.Split(d.dnatControllerImage, "/")
+	var registry, imageWithoutRegistry string
+	if len(dnatControllerImageSplit) != 3 {
+		registry = "docker.io"
+		imageWithoutRegistry = strings.Join(dnatControllerImageSplit, "/")
+	} else {
+		registry = dnatControllerImageSplit[0]
+		imageWithoutRegistry = strings.Join(dnatControllerImageSplit[1:], "/")
 	}
 	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }

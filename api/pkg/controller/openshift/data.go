@@ -25,14 +25,15 @@ import (
 // openshiftData implements the openshiftData interface which is
 // passed into all creator funcs and contains all data they need
 type openshiftData struct {
-	cluster           *kubermaticv1.Cluster
-	client            client.Client
-	dc                *kubermaticv1.Datacenter
-	overwriteRegistry string
-	nodeAccessNetwork string
-	oidc              OIDCConfig
-	etcdDiskSize      resource.Quantity
-	kubermaticImage   string
+	cluster             *kubermaticv1.Cluster
+	client              client.Client
+	dc                  *kubermaticv1.Datacenter
+	overwriteRegistry   string
+	nodeAccessNetwork   string
+	oidc                OIDCConfig
+	etcdDiskSize        resource.Quantity
+	kubermaticImage     string
+	dnatControllerImage string
 }
 
 func (od *openshiftData) DC() *kubermaticv1.Datacenter {
@@ -285,4 +286,17 @@ func (od *openshiftData) GetGlobalSecretKeySelectorValue(configVar *providerconf
 		return "", fmt.Errorf("secret '%s' in namespace '%s' has no key '%s'", configVar.Name, configVar.Namespace, key)
 	}
 	return "", nil
+}
+
+func (od *openshiftData) DNATControllerImage() string {
+	dnatControllerImageSplit := strings.Split(od.dnatControllerImage, "/")
+	var registry, imageWithoutRegistry string
+	if len(dnatControllerImageSplit) != 3 {
+		registry = "docker.io"
+		imageWithoutRegistry = strings.Join(dnatControllerImageSplit, "/")
+	} else {
+		registry = dnatControllerImageSplit[0]
+		imageWithoutRegistry = strings.Join(dnatControllerImageSplit[1:], "/")
+	}
+	return od.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }

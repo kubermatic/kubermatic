@@ -528,7 +528,8 @@ func TestLoadFiles(t *testing.T) {
 					"https://dev.kubermatic.io/dex",
 					"kubermaticIssuer",
 					true,
-					"quay.io/kubermatic/api")
+					"quay.io/kubermatic/api",
+					"quay.io/kubermatic/kubeletdnat-controller")
 
 				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter
 				deploymentCreators = append(deploymentCreators, clustercontroller.GetDeploymentCreators(data, true)...)
