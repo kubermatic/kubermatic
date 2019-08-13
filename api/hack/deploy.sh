@@ -39,12 +39,12 @@ function deploy {
 
   TEST_NAME="[Helm] Deploy chart ${name}"
 
-  retry 5 inital_revision="$(helm list --tiller-namespace=${TILLER_NAMESPACE} ${name} --output=json|jq '.Releases[0].Revision')"
+	inital_revision="$(retry 5 helm list --tiller-namespace=${TILLER_NAMESPACE} ${name} --output=json|jq '.Releases[0].Revision')"
 
   echodate "Upgrading ${name}..."
   retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --atomic --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
 
-  if [ ${CANARY_DEPLOYMENT:-} = "true" ]; then
+  if [ "${CANARY_DEPLOYMENT:-}" = "true" ]; then
     TEST_NAME="[Helm] Roll back chart ${name}"
     echodate "Rolling back ${name} to revision ${inital_revision} as this was only a canary deployment"
     retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} rollback --wait --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path} ${inital_revision}
@@ -56,7 +56,7 @@ function deploy {
 function initTiller() {
   TEST_NAME="[Helm] Init Tiller"
   echodate "Initializing Tiller in namespace ${TILLER_NAMESPACE}"
-  helm version --client --tiller-namespace ${TILLER_NAMESPACE}
+  helm version --client
   kubectl create serviceaccount -n ${TILLER_NAMESPACE} tiller-sa --dry-run -oyaml|kubectl apply -f -
   kubectl create clusterrolebinding tiller-cluster-role --clusterrole=cluster-admin --serviceaccount=${TILLER_NAMESPACE}:tiller-sa  --dry-run -oyaml|kubectl apply -f -
   retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} init --service-account tiller-sa --replicas 3 --history-max 10 --upgrade --force-upgrade --wait ${HELM_INIT_ARGS}
