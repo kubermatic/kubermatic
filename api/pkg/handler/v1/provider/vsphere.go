@@ -160,7 +160,7 @@ func getVsphereFolders(seedsGetter provider.SeedsGetter, username, password, dat
 		return nil, fmt.Errorf("failed to create new cloud provider: %v", err)
 	}
 
-	folders, err := vsProvider.GetFolders(kubermaticv1.CloudSpec{
+	folders, err := vsProvider.GetVMFolders(kubermaticv1.CloudSpec{
 		DatacenterName: datacenterName,
 		VSphere: &kubermaticv1.VSphereCloudSpec{
 			InfraManagementUser: kubermaticv1.VSphereCredentials{
