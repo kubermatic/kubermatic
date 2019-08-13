@@ -208,7 +208,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 						},
 						{
 							Name:      resources.FrontProxyCASecretName,
-							MountPath: "/etc/kubernetes/pki/front-proxy/ca",
+							MountPath: "/var/run/configmaps/aggregator-client-ca",
 							ReadOnly:  true,
 						},
 						{

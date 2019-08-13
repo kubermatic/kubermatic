@@ -161,7 +161,7 @@ const openshiftAPIServerConfigTemplate = `aggregatorConfig:
   - kube-apiserver-proxy
   - system:kube-apiserver-proxy
   - system:openshift-aggregator
-  clientCA: /var/run/configmaps/aggregator-client-ca/ca-bundle.crt
+  clientCA: /var/run/configmaps/aggregator-client-ca/ca.crt
   extraHeaderPrefixes:
   - X-Remote-Extra-
   groupHeaders:
