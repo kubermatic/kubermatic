@@ -42,8 +42,24 @@ func (v *vSphereMock) tearDown() {
 	v.server.Close()
 }
 
-func TestVsphereNetworksEndpoint(t *testing.T) {
+func TestVsphereEndpoint(t *testing.T) {
 	t.Parallel()
+	testcases := []struct {
+		Name             string
+		URL              string
+		ExpectedResponse string
+	}{
+		{
+			Name:             "test networks endpoint",
+			URL:              "/api/v1/providers/vsphere/networks",
+			ExpectedResponse: `[{"name":"VM Network"}]`,
+		},
+		{
+			Name:             "test folders endpoint",
+			URL:              "/api/v1/providers/vsphere/folders",
+			ExpectedResponse: `[{"path":"/ha-datacenter/vm"}]`,
+		},
+	}
 
 	mock := &vSphereMock{}
 	err := mock.tearUp()
@@ -53,25 +69,30 @@ func TestVsphereNetworksEndpoint(t *testing.T) {
 
 	defer mock.tearDown()
 
-	req := httptest.NewRequest("GET", "/api/v1/providers/vsphere/networks", nil)
-	req.Header.Add("DatacenterName", vSphereDatacenterName)
-	req.Header.Add("Username", "user")
-	req.Header.Add("Password", "pass")
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", tc.URL, nil)
+			req.Header.Add("DatacenterName", vSphereDatacenterName)
+			req.Header.Add("Username", "user")
+			req.Header.Add("Password", "pass")
 
-	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
+			apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
 
-	res := httptest.NewRecorder()
-	ep, _, err := test.CreateTestEndpointAndGetClients(apiUser, mock.buildVSphereDatacenter(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
-	if err != nil {
-		t.Fatalf("failed to create test endpoint due to %v", err)
+			res := httptest.NewRecorder()
+			ep, _, err := test.CreateTestEndpointAndGetClients(apiUser, mock.buildVSphereDatacenter(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+			ep.ServeHTTP(res, req)
+
+			if res.Code != http.StatusOK {
+				t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
+			}
+
+			compareJSON(t, res, tc.ExpectedResponse)
+		})
 	}
-	ep.ServeHTTP(res, req)
 
-	if res.Code != http.StatusOK {
-		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
-	}
-
-	test.CompareWithResult(t, res, `[{"name":"VM Network"}]`)
 }
 
 func (v *vSphereMock) buildVSphereDatacenter() provider.SeedsGetter {
