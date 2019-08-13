@@ -127,7 +127,7 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 			return nil, fmt.Errorf("failed to get seeds: %v", err)
 		}
 		if _, exists := seeds[admissionReview.Request.Name]; !exists {
-			return nil, nil
+			return admissionReview.Request, nil
 		}
 		seed = seeds[admissionReview.Request.Name]
 	} else {
