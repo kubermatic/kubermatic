@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -30,6 +31,7 @@ type openshiftData struct {
 	nodeAccessNetwork string
 	oidc              OIDCConfig
 	etcdDiskSize      resource.Quantity
+	kubermaticImage   string
 }
 
 func (od *openshiftData) DC() *provider.DatacenterMeta {
@@ -247,4 +249,17 @@ func (od *openshiftData) HasEtcdOperatorService() (bool, error) {
 
 func (od *openshiftData) EtcdDiskSize() resource.Quantity {
 	return od.etcdDiskSize
+}
+
+func (od *openshiftData) KubermaticAPIImage() string {
+	apiImageSplit := strings.Split(od.kubermaticImage, "/")
+	var registry, imageWithoutRegistry string
+	if len(apiImageSplit) != 3 {
+		registry = "docker.io"
+		imageWithoutRegistry = strings.Join(apiImageSplit, "/")
+	} else {
+		registry = apiImageSplit[0]
+		imageWithoutRegistry = strings.Join(apiImageSplit[1:], "/")
+	}
+	return od.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }

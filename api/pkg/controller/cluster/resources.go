@@ -13,7 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
+	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
@@ -108,6 +108,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		r.oidcCAFile,
 		r.oidcIssuerURL,
 		r.oidcIssuerClientID,
+		r.kubermaticImage,
 	), nil
 }
 

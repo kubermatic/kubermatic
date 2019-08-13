@@ -80,6 +80,7 @@ type Reconciler struct {
 	workerName           string
 	externalURL          string
 	oidc                 OIDCConfig
+	kubermaticImage      string
 	features             Features
 }
 
@@ -95,6 +96,7 @@ func Add(
 	dockerPullConfigJSON []byte,
 	externalURL string,
 	oidcConfig OIDCConfig,
+	kubermaticImage string,
 	features Features,
 ) error {
 	reconciler := &Reconciler{
@@ -110,6 +112,7 @@ func Add(
 		workerName:           workerName,
 		externalURL:          externalURL,
 		oidc:                 oidcConfig,
+		kubermaticImage:      kubermaticImage,
 		features:             features,
 	}
 
@@ -205,6 +208,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		nodeAccessNetwork: r.nodeAccessNetwork,
 		oidc:              r.oidc,
 		etcdDiskSize:      r.etcdDiskSize,
+		kubermaticImage:   r.kubermaticImage,
 	}
 
 	if err := r.address(ctx, cluster); err != nil {

@@ -18,6 +18,9 @@ echodate "Testing versions: ${VERSIONS}"
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
 
+# if no provider argument has been specified, default to aws
+provider=${PROVIDER:-"aws"}
+
 function cleanup {
   testRC=$?
 
@@ -27,10 +30,16 @@ function cleanup {
   # Try being a little helpful
   if [[ ${testRC} -ne 0 ]]; then
     echodate "tests failed, describing cluster"
-    # TODO: If this runs on something other than AWS, we need to adjust the egrep expression
-    kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Secret Access Key|Access Key Id'
 
-    echodate "Getting controllre manager logs"
+    if [[ $provider = "aws" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Secret Access Key|Access Key Id'
+    elif [[ $provider = "packet" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'APIKey|ProjectID'
+    else
+      echo "Provider $provider is not yet supported."
+      exit 1
+    fi
+
     kubectl logs -n $NAMESPACE  $(kubectl get pod -n $NAMESPACE -l role=controller-manager |tail -n 1|awk '{print $1}')
   fi
 
@@ -71,34 +80,326 @@ export VAULT_TOKEN=$(vault write \
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 export DATACENTERS_FILE=/tmp/datacenters.yaml
+cat <<EOF > $DATACENTERS_FILE
+datacenters:
+#==================================
+#===============Seed===============
+#==================================
+  'prow-build-cluster': #master
+    location: Helsinki
+    country: FL
+    is_seed: true
+    spec:
+      bringyourown: {}
+#==================================
+#===========BringYourOwn===========
+#==================================
+  'byo-prow-build-cluster':
+    location: Helsinki
+    seed: 'prow-build-cluster'
+    country: FL
+    spec:
+      bringyourown: {}
+#==================================
+#===========Digitalocean===========
+#==================================
+  do-ams3:
+    location: Amsterdam
+    seed: 'prow-build-cluster'
+    country: NL
+    spec:
+      digitalocean:
+        region: ams3
+  do-nyc1:
+    location: New York
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      digitalocean:
+        region: nyc1
+  do-sfo2:
+    location: San Francisco
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      digitalocean:
+        region: sfo2
+  do-sgp1:
+    location: Singapore
+    seed: 'prow-build-cluster'
+    country: SG
+    spec:
+      digitalocean:
+        region: sgp1
+  do-lon1:
+    location: London
+    seed: 'prow-build-cluster'
+    country: GB
+    spec:
+      digitalocean:
+        region: lon1
+  do-fra1:
+    location: Frankfurt
+    seed: 'prow-build-cluster'
+    country: DE
+    spec:
+      digitalocean:
+        region: fra1
+  do-tor1:
+    location: Toronto
+    seed: 'prow-build-cluster'
+    country: CA
+    spec:
+      digitalocean:
+        region: tor1
+  do-blr1:
+    location: Bangalore
+    seed: 'prow-build-cluster'
+    country: IN
+    spec:
+      digitalocean:
+        region: blr1
+#==================================
+#===============AWS================
+#==================================
+  aws-us-east-1a:
+    location: US East (N. Virginia)
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      aws:
+        region: us-east-1
+        zone_character: a
+  aws-us-east-2a:
+    location: US East (Ohio)
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      aws:
+        region: us-east-2
+        zone_character: a
+  aws-us-west-1b:
+    location: US West (N. California)
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      aws:
+        region: us-west-1
+        zone_character: b
+  aws-us-west-2a:
+    location: US West (Oregon)
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      aws:
+        region: us-west-2
+        zone_character: a
+  aws-ca-central-1a:
+    location: Canada (Central)
+    seed: 'prow-build-cluster'
+    country: CA
+    spec:
+      aws:
+        region: ca-central-1
+        zone_character: a
+  aws-eu-west-1a:
+    location: EU (Ireland)
+    seed: 'prow-build-cluster'
+    country: IE
+    spec:
+      aws:
+        region: eu-west-1
+        zone_character: a
+  aws-eu-central-1a:
+    location: EU (Frankfurt)
+    seed: 'prow-build-cluster'
+    country: DE
+    spec:
+      aws:
+        region: eu-central-1
+        zone_character: a
+  aws-eu-west-2a:
+    location: EU (London)
+    seed: 'prow-build-cluster'
+    country: GB
+    spec:
+      aws:
+        region: eu-west-2
+        zone_character: a
+  aws-ap-northeast-1a:
+    location: Asia Pacific (Tokyo)
+    seed: 'prow-build-cluster'
+    country: JP
+    spec:
+      aws:
+        region: ap-northeast-1
+        zone_character: a
+  aws-ap-northeast-2a:
+    location: Asia Pacific (Seoul)
+    seed: 'prow-build-cluster'
+    country: KR
+    spec:
+      aws:
+        region: ap-northeast-2
+        zone_character: a
+  aws-ap-southeast-1a:
+    location: Asia Pacific (Singapore)
+    seed: 'prow-build-cluster'
+    country: SG
+    spec:
+      aws:
+        region: ap-southeast-1
+        zone_character: a
+  aws-ap-southeast-2a:
+    location: Asia Pacific (Sydney)
+    seed: 'prow-build-cluster'
+    country: AU
+    spec:
+      aws:
+        region: ap-southeast-2
+        zone_character: a
+  aws-ap-south-1a:
+    location: Asia Pacific (Mumbai)
+    seed: 'prow-build-cluster'
+    country: IN
+    spec:
+      aws:
+        region: ap-south-1
+        zone_character: a
+  aws-sa-east-1a:
+    location: South America (São Paulo)
+    seed: 'prow-build-cluster'
+    country: BR
+    spec:
+      aws:
+        region: sa-east-1
+        zone_character: a
+#==================================
+#=============Hetzner==============
+#==================================
+  hetzner-fsn1:
+    location: Falkenstein 1 DC 8
+    seed: 'prow-build-cluster'
+    country: DE
+    spec:
+      hetzner:
+        datacenter: fsn1-dc8
+  hetzner-nbg1:
+    location: Nuremberg 1 DC 3
+    seed: 'prow-build-cluster'
+    country: DE
+    spec:
+      hetzner:
+        datacenter: nbg1-dc3
+#==================================
+#=============vSphere==============
+#==================================
+  vsphere-ger:
+    location: Hetzner
+    seed: 'prow-build-cluster'
+    country: DE
+    spec:
+      vsphere:
+        endpoint: "https://vcenter.loodse.com"
+        datacenter: "dc-1"
+        datastore: "exsi-nas"
+        cluster: "cl-1"
+        root_path: "/dc-1/vm/e2e-tests"
+        templates:
+          ubuntu: "machine-controller-e2e-ubuntu"
+          centos: "machine-controller-e2e-centos"
+          coreos: "machine-controller-e2e-coreos"
+#==================================
+#============= Azure ==============
+#==================================
+  azure-westeurope:
+    location: "Azure West europe"
+    seed: 'prow-build-cluster'
+    country: NL
+    spec:
+      azure:
+        location: "westeurope"
+  azure-eastus:
+    location: "Azure East US"
+    seed: 'prow-build-cluster'
+    country: US
+    spec:
+      azure:
+        location: "eastus"
+  azure-southeastasia:
+    location: "Azure South-East Asia"
+    seed: 'prow-build-cluster'
+    country: HK
+    spec:
+      azure:
+        location: "southeastasia"
+#==================================
+#============= GCP ================
+#==================================
+  gcp-westeurope:
+    location: "Europe West (Germany)"
+    seed: 'prow-build-cluster'
+    country: DE
+    spec:
+      gcp:
+        region: europe-west3
+        zone_suffixes:
+        - c
+#==================================
+#============= Packet ================
+#==================================
+  packet-ams1:
+    location: "Packet AMS1 (Amsterdam)"
+    seed: 'prow-build-cluster'
+    country: NL
+    spec:
+      packet:
+        facilities:
+        - ams1
+EOF
+
 vault kv get -field=kubeconfig \
   dev/seed-clusters/ci.kubermatic.io > $KUBECONFIG
 vault kv get -field=values.yaml \
   dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
-vault kv get -field=datacenters.yaml \
-  dev/seed-clusters/ci.kubermatic.io > $DATACENTERS_FILE
+# update the datacenters in the values file
+sed -E "s/(datacenters: ).*/\1$(base64 -w0 $DATACENTERS_FILE)/" -i $VALUES_FILE
 echodate "Successfully got secrets from Vault"
 
 
-# Build kubermatic binaries and push the image to quay
-if ! curl -Ss --fail \
-    "https://${QUAY_IO_USERNAME}:${QUAY_IO_PASSWORD}@quay.io/v1/repositories/kubermatic/api/tags/${GIT_HEAD_HASH}" &>/dev/null; then
-  docker ps &>/dev/null || start-docker.sh
-  echodate "Logging into quay"
-  docker login -u $QUAY_IO_USERNAME -p $QUAY_IO_PASSWORD quay.io
-  echodate "Successfully logged into quay"
-  echodate "Building binaries"
-  time make -C api build
-  cd api
-  echodate "Building quay image"
-  time docker build -t quay.io/kubermatic/api:${GIT_HEAD_HASH} .
-  echodate "Pushing quay image"
-  time retry 5 docker push quay.io/kubermatic/api:${GIT_HEAD_HASH}
-  echodate "Finished building and pushing quay image"
-  cd -
-else
-  echodate "Omitting building of binaries and docker image, as tag ${GIT_HEAD_HASH} already exists on quay"
-fi
+build_tag_if_not_exists() {
+  # Build kubermatic binaries and push the image
+  if ! curl -Ss --fail "http://registry.registry.svc.cluster.local.:5000/v2/kubermatic/api/tags/list"|grep -q "$1"; then
+    mkdir -p /etc/containers
+		cat <<EOF > /etc/containers/registries.conf
+[registries.search]
+registries = ['docker.io']
+[registries.insecure]
+registries = ["registry.registry.svc.cluster.local:5000"]
+EOF
+    echodate "Building binaries"
+    time make -C api build
+    (
+      echodate "Building docker image"
+      cd api
+      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/api:$1" .
+    )
+    (
+      echodate "Building addons image"
+      cd addons
+      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1" .
+    )
+    echodate "Pushing docker image"
+    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/api:$1"
+    echodate "Pushing addons image"
+    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1"
+    echodate "Finished building and pushing docker image"
+  else
+    echodate "Omitting building of binaries and docker image, as tag $1 already exists in local registry"
+  fi
+}
+
+build_tag_if_not_exists "$GIT_HEAD_HASH"
 
 INITIAL_MANIFESTS=$(cat <<EOF
 apiVersion: v1
@@ -156,6 +457,7 @@ echodate "Installing Kubermatic via Helm"
 if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   echodate "Upgradetest, checking out revision ${UPGRADE_TEST_BASE_HASH}"
   git checkout $UPGRADE_TEST_BASE_HASH
+  build_tag_if_not_exists "$UPGRADE_TEST_BASE_HASH"
 fi
 # We must delete all templates for cluster-scoped resources
 # because those already exist because of the main Kubermatic installation
@@ -167,11 +469,15 @@ rm -f config/kubermatic/templates/vpa-*
 retry 3 helm upgrade --install --force --wait --timeout 300 \
   --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
+  --set-string=kubermatic.controller.addons.kubernetes.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
+  --set-string=kubermatic.controller.addons.kubernetes.image.repository=127.0.0.1:5000/kubermatic/addons \
   --set-string=kubermatic.controller.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
-  --set-string=kubermatic.api.image.repository=quay.io/kubermatic/api \
+  --set-string=kubermatic.controller.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.api.image.repository=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.api.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.masterController.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
-  --set-string=kubermatic.rbac.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
+  --set-string=kubermatic.masterController.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.kubermaticImage=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
@@ -193,7 +499,16 @@ if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
 fi
 
 echodate "Starting conformance tests"
-timeout -s 9 90m ./conformance-tests \
+
+if [[ $provider = "aws" ]]; then
+  EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
+     -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"
+elif [[ $provider = "packet" ]]; then
+  EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
+     -packet-project-id=${PACKET_PROJECT_ID}"
+fi
+
+timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
   -debug \
   -worker-name=$BUILD_ID \
   -kubeconfig=$KUBECONFIG \
@@ -204,10 +519,8 @@ timeout -s 9 90m ./conformance-tests \
   -reports-root=/reports \
   -cleanup-on-start=false \
   -run-kubermatic-controller-manager=false \
-  -aws-access-key-id="$AWS_E2E_TESTS_KEY_ID" \
-  -aws-secret-access-key="$AWS_E2E_TESTS_SECRET" \
   -versions="$VERSIONS" \
-  -providers=aws \
+  -providers=$provider \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   -kubermatic-delete-cluster=false
 
@@ -221,11 +534,15 @@ echodate "Installing current version of Kubermatic"
 retry 3 helm upgrade --install --force --wait --timeout 300 \
   --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
-  --set-string=kubermatic.controller.image.tag=$GIT_HEAD_HASH \
-  --set-string=kubermatic.api.image.repository=quay.io/kubermatic/api \
-  --set-string=kubermatic.api.image.tag=$GIT_HEAD_HASH \
-  --set-string=kubermatic.masterController.image.tag=$GIT_HEAD_HASH \
-  --set-string=kubermatic.rbac.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
+  --set-string=kubermatic.controller.addons.kubernetes.image.tag=${GIT_HEAD_HASH} \
+  --set-string=kubermatic.controller.addons.kubernetes.image.repository=127.0.0.1:5000/kubermatic/addons \
+  --set-string=kubermatic.controller.image.tag=${GIT_HEAD_HASH} \
+  --set-string=kubermatic.controller.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.api.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.api.image.tag=${GIT_HEAD_HASH} \
+  --set-string=kubermatic.masterController.image.tag=${GIT_HEAD_HASH} \
+  --set-string=kubermatic.masterController.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.kubermaticImage=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
@@ -242,7 +559,7 @@ echodate "Running conformance tester with existing cluster"
 
 # We increase the number of nodes to make sure creation
 # of nodes still work
-timeout -s 9 60m ./conformance-tests \
+timeout -s 9 60m ./conformance-tests $EXTRA_ARGS \
   -debug \
   -existing-cluster-label=worker-name=$BUILD_ID \
   -worker-name=$BUILD_ID \
@@ -254,9 +571,7 @@ timeout -s 9 60m ./conformance-tests \
   -name-prefix=prow-e2e \
   -reports-root=/reports \
   -cleanup-on-start=false \
-  -aws-access-key-id="$AWS_E2E_TESTS_KEY_ID" \
-  -aws-secret-access-key="$AWS_E2E_TESTS_SECRET" \
   -versions="$VERSIONS" \
-  -providers=aws \
+  -providers=$provider \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   -kubermatic-delete-cluster=false

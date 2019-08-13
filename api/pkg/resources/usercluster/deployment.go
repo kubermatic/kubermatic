@@ -43,6 +43,7 @@ type userclusterControllerData interface {
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
 	GetOpenVPNServerPort() (int32, error)
+	KubermaticAPIImage() string
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
@@ -102,7 +103,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            name,
-					Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/api:" + resources.KUBERMATICCOMMIT,
+					Image:           data.KubermaticAPIImage() + ":" + resources.KUBERMATICCOMMIT,
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         []string{"/usr/local/bin/user-cluster-controller-manager"},
 					Args: append([]string{
