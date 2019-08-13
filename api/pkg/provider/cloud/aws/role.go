@@ -83,20 +83,37 @@ func deleteRole(client iamiface.IAMAPI, roleName string) error {
 		return fmt.Errorf("failed to get role %q: %v", roleName, err)
 	}
 
-	listPolicyOut, err := client.ListRolePolicies(&iam.ListRolePoliciesInput{
+	// List & delete the custom policies
+	listPoliciesOut, err := client.ListRolePolicies(&iam.ListRolePoliciesInput{
 		RoleName: aws.String(roleName),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to list policies for role %q: %v", roleName, err)
 	}
-
-	for _, policyName := range listPolicyOut.PolicyNames {
+	for _, policyName := range listPoliciesOut.PolicyNames {
 		deleteRolePolicyInput := &iam.DeleteRolePolicyInput{
 			PolicyName: policyName,
 			RoleName:   aws.String(roleName),
 		}
 		if _, err = client.DeleteRolePolicy(deleteRolePolicyInput); err != nil {
 			return fmt.Errorf("failed to delete role policy %q: %v", *policyName, err)
+		}
+	}
+
+	// Detach potential AWS managed policies
+	listAttachedPoliciesOut, err := client.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{
+		RoleName: aws.String(roleName),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list attached policies for role %q: %v", roleName, err)
+	}
+	for _, policy := range listAttachedPoliciesOut.AttachedPolicies {
+		detachRolePolicyInput := &iam.DetachRolePolicyInput{
+			RoleName:  aws.String(roleName),
+			PolicyArn: policy.PolicyArn,
+		}
+		if _, err := client.DetachRolePolicy(detachRolePolicyInput); err != nil {
+			return fmt.Errorf("failed to detach policy %q: %v", *policy.PolicyName, err)
 		}
 	}
 
