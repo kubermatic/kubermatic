@@ -157,10 +157,10 @@ func getVsphereFolders(seedsGetter provider.SeedsGetter, username, password, dat
 	}
 	vsProvider, err := vsphere.NewCloudProvider(datacenter)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create new cloud provider: %v", err)
 	}
 
-	networks, err := vsProvider.GetFolders(kubermaticv1.CloudSpec{
+	folders, err := vsProvider.GetFolders(kubermaticv1.CloudSpec{
 		DatacenterName: datacenterName,
 		VSphere: &kubermaticv1.VSphereCloudSpec{
 			InfraManagementUser: kubermaticv1.VSphereCredentials{
@@ -170,14 +170,14 @@ func getVsphereFolders(seedsGetter provider.SeedsGetter, username, password, dat
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get folders: %v", err)
 	}
 
 	var filterVM = regexp.MustCompile(`(^\/[\w\d\-]+\/vm)`)
 	var apiFolders []apiv1.VSphereFolder
-	for _, net := range networks {
-		if filterVM.MatchString(net.Path) {
-			apiFolders = append(apiFolders, apiv1.VSphereFolder{Path: net.Path})
+	for _, folder := range folders {
+		if filterVM.MatchString(folder.Path) {
+			apiFolders = append(apiFolders, apiv1.VSphereFolder{Path: folder.Path})
 		}
 	}
 

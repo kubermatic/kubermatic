@@ -217,8 +217,8 @@ func (v *Provider) GetFolders(cloud kubermaticv1.CloudSpec) ([]Folder, error) {
 	}
 
 	var folders []Folder
-	for _, netRef := range folderRefs {
-		folder := Folder{Path: netRef.Common.InventoryPath}
+	for _, folderRef := range folderRefs {
+		folder := Folder{Path: folderRef.Common.InventoryPath}
 		folders = append(folders, folder)
 	}
 
