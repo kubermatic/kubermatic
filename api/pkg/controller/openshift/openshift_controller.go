@@ -531,6 +531,7 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 	return []reconciling.NamedConfigMapCreatorGetter{
 		cloudconfig.ConfigMapCreator(osData),
 		openshiftresources.OpenshiftAPIServerConfigMapCreator(ctx, osData),
+		openshiftresources.OpenshiftKubeAPIServerConfigMapCreator(osData),
 		openshiftresources.OpenshiftControllerMangerConfigMapCreator(ctx, osData),
 		openvpn.ServerClientConfigsConfigMapCreator(osData),
 		dns.ConfigMapCreator(osData),

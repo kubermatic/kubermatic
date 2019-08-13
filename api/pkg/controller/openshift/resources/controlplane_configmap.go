@@ -19,6 +19,7 @@ import (
 
 const (
 	openshiftAPIServerConfigMapName        = "openshift-config-apiserver"
+	openshiftKubeAPIServerConfigMapName    = "openshift-config-kube-apiserver"
 	openshiftControllerMangerConfigMapName = "openshift-config-controller-manager"
 	openshiftContolPlaneConfigKeyName      = "master-config.yaml"
 )
@@ -50,6 +51,31 @@ func OpenshiftAPIServerConfigMapCreator(ctx context.Context, data masterConfigDa
 			}
 			cm.Data[openshiftContolPlaneConfigKeyName] = apiServerConfigBuffer.String()
 			return cm, nil
+		}
+	}
+}
+
+func OpenshiftKubeAPIServerConfigMapCreator(data masterConfigData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return openshiftKubeAPIServerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
+			apiServerConfigBuffer := bytes.Buffer{}
+			tmpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(openshiftKubeAPIServerConfigTemplate)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse config template for openshift Kube apiserverr: %v", err)
+			}
+			templateInput := openshiftConfigInput{
+				ListenPort:    fmt.Sprint(data.Cluster().Address.Port),
+				ETCDEndpoints: etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
+			}
+			if err := tmpl.Execute(&apiServerConfigBuffer, templateInput); err != nil {
+				return nil, fmt.Errorf("failed to execute template: %v", err)
+			}
+			cm.Data[openshiftContolPlaneConfigKeyName] = apiServerConfigBuffer.String()
+			return cm, nil
+
 		}
 	}
 }
@@ -226,6 +252,141 @@ servingInfo:
   # TODO: Use consts from resources package
   certFile: /var/run/secrets/serving-cert/apiserver-tls.crt
   keyFile: /var/run/secrets/serving-cert/apiserver-tls.key`
+
+const openshiftKubeAPIServerConfigTemplate = `admission:
+  pluginConfig:
+    network.openshift.io/RestrictedEndpointsAdmission:
+      configuration:
+        apiVersion: network.openshift.io/v1
+        kind: RestrictedEndpointsAdmissionConfig
+        restrictedCIDRs:
+        - 10.128.0.0/14
+        - 172.30.0.0/16
+aggregatorConfig:
+  proxyClientInfo:
+    certFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.crt
+    keyFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.key
+apiServerArguments:
+  cloud-provider:
+  # TODO: Re-Enable
+  # - aws
+  enable-aggregator-routing:
+  - 'true'
+  feature-gates:
+  - ExperimentalCriticalPodAnnotation=true
+  - RotateKubeletServerCertificate=true
+  - SupportPodPidsLimit=true
+  - LocalStorageCapacityIsolation=false
+  http2-max-streams-per-connection:
+  - '2000'
+  minimal-shutdown-duration:
+  - 70s
+  storage-backend:
+  - etcd3
+  storage-media-type:
+  - application/vnd.kubernetes.protobuf
+apiVersion: kubecontrolplane.config.openshift.io/v1
+auditConfig:
+  # TODO: Doesn't make much sense in a production setup, but useful for debugging
+  auditFilePath: /var/log/kube-apiserver/audit.log
+  enabled: true
+  logFormat: json
+  maximumFileSizeMegabytes: 100
+  maximumRetainedFiles: 10
+  policyConfiguration:
+    apiVersion: audit.k8s.io/v1beta1
+    kind: Policy
+    omitStages:
+    - RequestReceived
+    rules:
+    - level: None
+      resources:
+      - group: ''
+        resources:
+        - events
+    - level: None
+      resources:
+      - group: oauth.openshift.io
+        resources:
+        - oauthaccesstokens
+        - oauthauthorizetokens
+    - level: None
+      nonResourceURLs:
+      - /api*
+      - /version
+      - /healthz
+      - /readyz
+      userGroups:
+      - system:authenticated
+      - system:unauthenticated
+    - level: Metadata
+      omitStages:
+      - RequestReceived
+authConfig:
+  # TODO: What is this? Looks like an additional auth webhook source?
+  # oauthMetadataFile: /etc/kubernetes/static-pod-resources/configmaps/oauth-metadata/oauthMetadata
+  requestHeader:
+    clientCA: /etc/kubernetes/pki/front-proxy/client/ca.crt
+    clientCommonNames:
+    - kube-apiserver-proxy
+    - system:kube-apiserver-proxy
+    - system:openshift-aggregator
+    extraHeaderPrefixes:
+    - X-Remote-Extra-
+    groupHeaders:
+    - X-Remote-Group
+    usernameHeaders:
+    - X-Remote-User
+  webhookTokenAuthenticators: null
+consolePublicURL: ''
+corsAllowedOrigins:
+- //127\.0\.0\.1(:|$)
+- //localhost(:|$)
+imagePolicyConfig:
+  internalRegistryHostname: image-registry.openshift-image-registry.svc:5000
+kind: KubeAPIServerConfig
+kubeletClientInfo:
+  ca: /etc/kubernetes/pki/ca/ca.crt
+  certFile: /etc/kubernetes/kubelet/kubelet-client.crt
+  keyFile: /etc/kubernetes/kubelet/kubelet-client.key
+  port: 10250
+projectConfig:
+  defaultNodeSelector: ''
+serviceAccountPublicKeyFiles:
+- /etc/kubernetes/service-account-key/sa.pub
+servicesNodePortRange: 30000-32767
+servicesSubnet: 172.30.0.0/16
+servingInfo:
+  bindAddress: 0.0.0.0:{{ .ListenPort }}
+  bindNetwork: tcp4
+  clientCA: /etc/kubernetes/pki/ca/ca.crt
+  certFile: /etc/kubernetes/tls/apiserver-tls.crt
+  keyFile: /etc/kubernetes/tls/apiserver-tls.key
+  maxRequestsInFlight: 1200
+  namedCertificates: []
+ # TODO: What are they needed for? Additional serving certs?
+ # - certFile: /etc/kubernetes/static-pod-certs/secrets/localhost-serving-cert-certkey/tls.crt
+ #   keyFile: /etc/kubernetes/static-pod-certs/secrets/localhost-serving-cert-certkey/tls.key
+ # - certFile: /etc/kubernetes/static-pod-certs/secrets/service-network-serving-certkey/tls.crt
+ #   keyFile: /etc/kubernetes/static-pod-certs/secrets/service-network-serving-certkey/tls.key
+ # - certFile: /etc/kubernetes/static-pod-certs/secrets/external-loadbalancer-serving-certkey/tls.crt
+ #   keyFile: /etc/kubernetes/static-pod-certs/secrets/external-loadbalancer-serving-certkey/tls.key
+ # - certFile: /etc/kubernetes/static-pod-certs/secrets/internal-loadbalancer-serving-certkey/tls.crt
+ #   keyFile: /etc/kubernetes/static-pod-certs/secrets/internal-loadbalancer-serving-certkey/tls.key
+  requestTimeoutSeconds: 3600
+storageConfig:
+  ca: /etc/etcd/pki/client/ca.crt
+  certFile: /etc/etcd/pki/client/apiserver-etcd-client.crt
+  keyFile: /etc/etcd/pki/client/apiserver-etcd-client.key
+  urls: {{ range .ETCDEndpoints }}
+  - "{{ . }}"
+{{- end }}
+userAgentMatchingConfig:
+  defaultRejectionMessage: ''
+  deniedClients: null
+  requiredClients: null
+kubeClientConfig:
+  kubeConfig: /etc/origin/master/loopback-kubeconfig/kubeconfig`
 
 //TODO: Replace template with actual types in
 // https://github.com/openshift/origin/pkg/cmd/server/apis/config/v1/types.go
