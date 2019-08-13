@@ -33,6 +33,11 @@ type Network struct {
 	Name string
 }
 
+// Folder represents a vsphere folder.
+type Folder struct {
+	Path string
+}
+
 // NewCloudProvider creates a new vSphere provider.
 func NewCloudProvider(dc *kubermaticv1.Datacenter) (*Provider, error) {
 	if dc.Spec.VSphere == nil {
@@ -179,6 +184,45 @@ func (v *Provider) GetNetworks(cloud kubermaticv1.CloudSpec) ([]Network, error) 
 	}
 
 	return networks, nil
+}
+
+// GetFolders returns a slice of VSphereFolders of the datacenter from the passed cloudspec.
+func (v *Provider) GetFolders(cloud kubermaticv1.CloudSpec) ([]Folder, error) {
+	if v.dc.InfraManagementUser != nil {
+		cloud.VSphere.InfraManagementUser.Username = v.dc.InfraManagementUser.Username
+		cloud.VSphere.InfraManagementUser.Password = v.dc.InfraManagementUser.Password
+	}
+
+	client, err := v.getClient(cloud)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't initialize vsphere client: %v", err)
+	}
+	defer logout(client)
+
+	finder := find.NewFinder(client.Client, true)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	vsphereDC, err := finder.Datacenter(ctx, v.dc.Datacenter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get vsphere datacenter: %v", err)
+	}
+	finder.SetDatacenter(vsphereDC)
+
+	// finder is relative to datacenter, so * is fine for us.
+	folderRefs, err := finder.FolderList(ctx, "*")
+	if err != nil {
+		return nil, fmt.Errorf("couldn't retrieve folder list: %v", err)
+	}
+
+	var folders []Folder
+	for _, netRef := range folderRefs {
+		folder := Folder{Path: netRef.Common.InventoryPath}
+		folders = append(folders, folder)
+	}
+
+	return folders, nil
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec
