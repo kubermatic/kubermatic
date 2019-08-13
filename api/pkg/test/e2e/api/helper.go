@@ -647,7 +647,7 @@ func cleanUpCluster(t *testing.T, apiRunner *APIRunner, projectID, dc, clusterID
 			t.Logf("cluster deleted %v", GetErrorResponse(err))
 			break
 		}
-		time.Sleep(30 * time.Second)
+		time.Sleep(60 * time.Second)
 	}
 	_, err := apiRunner.GetCluster(projectID, dc, clusterID)
 	if err == nil {
