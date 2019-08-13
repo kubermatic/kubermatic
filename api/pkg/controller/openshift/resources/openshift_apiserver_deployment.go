@@ -102,6 +102,15 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 						},
 					},
 				},
+				{
+					Name: openshiftAPIServerConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{Name: openshiftAPIServerConfigMapName},
+							DefaultMode:          resources.Int32(resources.DefaultAllReadOnlyMode),
+						},
+					},
+				},
 			}
 
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
@@ -200,6 +209,11 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 						{
 							Name:      resources.FrontProxyCASecretName,
 							MountPath: "/etc/kubernetes/pki/front-proxy/ca",
+							ReadOnly:  true,
+						},
+						{
+							Name:      openshiftAPIServerConfigMapName,
+							MountPath: "/etc/origin/master",
 							ReadOnly:  true,
 						},
 					},
