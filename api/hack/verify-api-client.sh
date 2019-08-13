@@ -3,7 +3,6 @@
 set -o errexit
 set -o nounset
 set -o pipefail
-set -x
 
 function cleanup() {
     if [[ -n "${TMP_DIFFROOT:-}" ]]; then
@@ -20,12 +19,13 @@ TMP_DIFFROOT=$(mktemp -d)
 
 cp -a "${DIFFROOT}"/* "${TMP_DIFFROOT}"
 
-"${SCRIPT_ROOT}/hack/gen-api-client.sh"
+"${SCRIPT_ROOT}/hack/gen-api-client.sh" &>/dev/null
 
 echo "diffing ${DIFFROOT} against freshly generated api client"
 ret=0
 diff -Naupr "${DIFFROOT}" "${TMP_DIFFROOT}" || ret=$?
-cp -a "${TMP_DIFFROOT}"/* "${DIFFROOT}"
+cp -a "${TMP_DIFFROOT}"/client "${DIFFROOT}"
+cp -a "${TMP_DIFFROOT}"/models "${DIFFROOT}"
 
 if [[ $ret -eq 0 ]]
 then
