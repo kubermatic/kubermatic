@@ -90,6 +90,7 @@ run-master-controller-manager:
 verify: gofmt
 		./hack/verify-codegen.sh
 		./hack/verify-swagger.sh
+		./hack/verify-api-client.sh
 
 check-dependencies:
 	# We need mercurial for bitbucket.org/ww/goautoneg, otherwise dep hangs forever
@@ -100,5 +101,8 @@ check-dependencies:
 
 license-validation:
 	wwhrd check -f ../allowed_licensed.yaml
+
+gen-api-client:
+	./hack/gen-api-client.sh
 
 .PHONY: vendor build install test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture $(TARGET)
