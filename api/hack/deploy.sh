@@ -47,7 +47,7 @@ function deploy {
   if [ "${CANARY_DEPLOYMENT:-}" = "true" ]; then
     TEST_NAME="[Helm] Roll back chart ${name}"
     echodate "Rolling back ${name} to revision ${inital_revision} as this was only a canary deployment"
-    retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} rollback --wait --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path} ${inital_revision}
+    retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} rollback --wait --timeout $timeout ${name} ${inital_revision}
   fi
 
   unset TEST_NAME
