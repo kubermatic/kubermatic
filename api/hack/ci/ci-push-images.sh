@@ -16,12 +16,15 @@ docker ps > /dev/null 2>&1 || start-docker.sh
 retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
 echodate "Successfully logged into Quay"
 
+TEST_NAME="Build binaries"
 echodate "Building binaries"
 time make -C api build
 echodate "Successfully finished building binaries"
 
+TEST_NAME="Build and push docker images"
 echodate "Building and pushing quay images"
 set -f # prevent globbing, do word splitting
 # shellcheck disable=SC2086
 retry 5 ./api/hack/push_image.sh $TAGS
 echodate "Sucessfully finished building and pushing quay images"
+unset TEST_NAME
