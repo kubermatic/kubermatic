@@ -12,7 +12,7 @@ spec:
       annotations:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '8085'
-        checksum/tls: {{ include (print $.Template.BasePath "/seeds-validating-webhook-tls.yaml") . | sha256sum }}
+        checksum/tls: {{ include (print $.Template.BasePath "/seed-validating-webhook.yaml") . | sha256sum }}
         checksum/master-files: {{ include (print $.Template.BasePath "/master-files-secret.yaml") . | sha256sum }}
         checksum/datecenters: {{ include (print $.Template.BasePath "/datacenter-yaml-secret.yaml") . | sha256sum }}
         checksum/backup-container-configmap: {{ include (print $.Template.BasePath "/backup-container-configmap.yaml") . | sha256sum }}
