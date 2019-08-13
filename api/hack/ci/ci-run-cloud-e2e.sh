@@ -30,4 +30,4 @@ export KUBERMATIC_OIDC_PASSWORD=${KUBERMATIC_DEX_DEV_E2E_PASSWORD:-"password"}
 
 
 echo "running the API E2E tests"
-go test -tags=cloud ${SDIR}/../../pkg/test/e2e/api -v
+go test -tags=cloud -timeout 25m ${SDIR}/../../pkg/test/e2e/api -v
