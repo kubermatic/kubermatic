@@ -153,6 +153,8 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 				t.Fatal("Cluster is ready too fast")
 			}
 
+			time.Sleep(5 * time.Second)
+
 			cleanUpCluster(t, apiRunner, project.ID, tc.dc, cluster.ID)
 
 		})
