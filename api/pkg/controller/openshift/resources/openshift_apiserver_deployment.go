@@ -67,6 +67,30 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 			}
 			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
+					Name: resources.CASecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName:  resources.CASecretName,
+							DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+							Items: []corev1.KeyToPath{
+								{
+									Path: "ca-bundle.crt",
+									Key:  resources.CACertSecretKey,
+								},
+							},
+						},
+					},
+				},
+				{
+					Name: openshiftAPIServerTLSServingCertSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName:  openshiftAPIServerTLSServingCertSecretName,
+							DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+						},
+					},
+				},
+				{
 					Name: resources.FrontProxyCASecretName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
@@ -216,11 +240,26 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 							MountPath: "/etc/origin/master",
 							ReadOnly:  true,
 						},
+						{
+							Name:      resources.CASecretName,
+							MountPath: "/var/run/configmaps/client-ca",
+							ReadOnly:  true,
+						},
+						{
+							Name:      openshiftAPIServerTLSServingCertSecretName,
+							MountPath: "/var/run/secrets/serving-cert",
+							ReadOnly:  true,
+						},
 					},
 				},
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(OpenshiftAPIServerDeploymentName, data.Cluster().Name)
+			podLabels, err := data.GetPodTemplateLabels(OpenshiftAPIServerDeploymentName, dep.Spec.Template.Spec.Volumes, nil)
+			if err != nil {
+				return nil, err
+			}
+			dep.Spec.Template.Labels = podLabels
 
 			return dep, nil
 		}

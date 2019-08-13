@@ -221,7 +221,11 @@ storageConfig:
   keyFile: /etc/etcd/pki/client/apiserver-etcd-client.key
   urls: {{ range .ETCDEndpoints }}
   - "{{ . }}"
-{{- end }}`
+{{- end }}
+servingInfo:
+  # TODO: Use consts from resources package
+  certFile: /var/run/secrets/serving-cert/apiserver-tls.crt
+  keyFile: /var/run/secrets/serving-cert/apiserver-tls.key`
 
 //TODO: Replace template with actual types in
 // https://github.com/openshift/origin/pkg/cmd/server/apis/config/v1/types.go

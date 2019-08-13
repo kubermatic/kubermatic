@@ -468,6 +468,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		openvpn.CACreator(),
 		apiserver.DexCACertificateCreator(osData.GetDexCA),
 		certificates.FrontProxyCACreator(),
+		openshiftresources.OpenShiftTLSServingCertificateCreator(osData),
 		openshiftresources.ServiceSignerCA(),
 		resources.ImagePullSecretCreator(r.dockerPullConfigJSON),
 		apiserver.FrontProxyClientCertificateCreator(osData),
