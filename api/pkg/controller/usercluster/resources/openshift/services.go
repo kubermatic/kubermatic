@@ -22,3 +22,15 @@ func OpenshiftAPIServicecreatorGetter() (string, reconciling.ServiceCreator) {
 		return s, nil
 	}
 }
+
+func OpenshiftAPIEndpointsCreatorGetterFactory(targetVIP string) reconciling.NamedEndpointsCreatorGetter {
+	return func() (string, reconciling.EndpointsCreator) {
+		return "api", func(ep *corev1.Endpoints) (*corev1.Endpoints, error) {
+			ep.Subsets = []corev1.EndpointSubset{{
+				Addresses: []corev1.EndpointAddress{{IP: targetVIP}},
+				Ports:     []corev1.EndpointPort{{Port: 8443}},
+			}}
+			return ep, nil
+		}
+	}
+}

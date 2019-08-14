@@ -30,11 +30,17 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
+	// We need to reconcile namespaces, services and endpoints next to make sure
+	// the openshift apiservices become available ASAP
 	if err := r.reconcileNamespaces(ctx); err != nil {
 		return err
 	}
 
 	if err := r.reconcileServices(ctx); err != nil {
+		return err
+	}
+
+	if err := r.reconcileEndpoints(ctx); err != nil {
 		return err
 	}
 
@@ -309,12 +315,25 @@ func (r *reconciler) reconcileSecrets(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
-	creators := []reconciling.NamedNamespaceCreatorGetter{}
-	if r.openshift {
-		creators = append(creators, openshift.OpenshiftAPIServerNSCreatorGetter)
+	if !r.openshift {
+		return nil
 	}
+	creators := []reconciling.NamedNamespaceCreatorGetter{openshift.OpenshiftAPIServerNSCreatorGetter}
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile namespaces: %v", err)
+	}
+
+	return nil
+}
+
+func (r *reconciler) reconcileEndpoints(ctx context.Context) error {
+	if !r.openshift {
+		return nil
+	}
+	creators := []reconciling.NamedEndpointsCreatorGetter{
+		openshift.OpenshiftAPIEndpointsCreatorGetterFactory("1.2.3.4")}
+	if err := reconciling.ReconcileEndpointss(ctx, creators, "openshift-apiserver", r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile endpoints: %v", err)
 	}
 
 	return nil
