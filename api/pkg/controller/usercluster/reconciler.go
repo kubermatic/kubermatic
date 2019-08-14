@@ -20,10 +20,16 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	certutil "k8s.io/client-go/util/cert"
 )
 
 // Reconcile creates, updates, or deletes Kubernetes resources to match the desired state.
 func (r *reconciler) reconcile(ctx context.Context) error {
+
+	// Must be first because of openshift
+	if err := r.ensureAPIServices(ctx); err != nil {
+		return err
+	}
 	if err := r.reconcileServiceAcconts(ctx); err != nil {
 		return err
 	}
@@ -64,10 +70,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.ensureAPIServices(ctx); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -76,7 +78,7 @@ func (r *reconciler) ensureAPIServices(ctx context.Context) error {
 		metricsserver.APIServiceCreator(),
 	}
 	if r.openshift {
-		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion("test", nil)
+		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion(r.version, certutil.EncodeCertPEM(r.caCert))
 		if err != nil {
 			return fmt.Errorf("failed to get openshift apiservice creators: %v", err)
 		}
