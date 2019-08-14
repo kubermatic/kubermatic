@@ -11,6 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/kube-state-metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/metrics-server"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/openshift"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/scheduler"
@@ -73,6 +74,13 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 func (r *reconciler) ensureAPIServices(ctx context.Context) error {
 	creators := []reconciling.NamedAPIServiceCreatorGetter{
 		metricsserver.APIServiceCreator(),
+	}
+	if r.openshift {
+		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion("test", nil)
+		if err != nil {
+			return fmt.Errorf("failed to get openshift apiservice creators: %v", err)
+		}
+		creators = append(creators, openshiftAPIServiceCreators...)
 	}
 
 	if err := reconciling.ReconcileAPIServices(ctx, creators, metav1.NamespaceNone, r.Client); err != nil {
