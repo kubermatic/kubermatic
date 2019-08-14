@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"path"
+	"strings"
 
 	"github.com/golang/glog"
 	"github.com/vmware/govmomi"
@@ -31,6 +33,11 @@ type Provider struct {
 // Network represents a vsphere network backing.
 type Network struct {
 	Name string
+}
+
+// Folder represents a vsphere folder.
+type Folder struct {
+	Path string
 }
 
 // NewCloudProvider creates a new vSphere provider.
@@ -65,12 +72,16 @@ func (v *Provider) getClient(cloud kubermaticv1.CloudSpec) (*govmomi.Client, err
 	return c, nil
 }
 
-func (v *Provider) getVsphereRootPath(cloud kubermaticv1.CloudSpec) (string, error) {
-	if v.dc.RootPath == "" {
-		return "", fmt.Errorf("missing property 'root_path' for datacenter %s", cloud.DatacenterName)
+// getVMRootPath is a helper func to get the root path for VM's
+// We extracted it because we use it in several places
+func (v *Provider) getVMRootPath(cloud kubermaticv1.CloudSpec) string {
+	// Each datacenter root directory for VM's is: ${DATACENTER_NAME}/vm
+	rootPath := path.Join("/", v.dc.Datacenter, "vm")
+	// We offer a different root path though in case people would like to store all Kubermatic VM's below a certain directory
+	if v.dc.RootPath != "" {
+		rootPath = path.Clean(v.dc.RootPath)
 	}
-
-	return v.dc.RootPath, nil
+	return rootPath
 }
 
 // createVMFolderForCluster adds a vm folder beneath the rootpath set in the datacenter.yamls with the name of the cluster.
@@ -78,11 +89,6 @@ func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, updat
 	// Don't add the finalizer if the folder is passed in
 	if cluster.Spec.Cloud.VSphere.Folder != "" {
 		return cluster, nil
-	}
-
-	dcRootPath, err := v.getVsphereRootPath(cluster.Spec.Cloud)
-	if err != nil {
-		return nil, err
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -95,6 +101,7 @@ func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, updat
 	defer logout(client)
 
 	finder := find.NewFinder(client.Client, true)
+	dcRootPath := v.getVMRootPath(cluster.Spec.Cloud)
 	rootFolder, err := finder.Folder(ctx, dcRootPath)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't find rootpath, see: %v", err)
@@ -181,6 +188,53 @@ func (v *Provider) GetNetworks(cloud kubermaticv1.CloudSpec) ([]Network, error) 
 	return networks, nil
 }
 
+// GetVMFolders returns a slice of VSphereFolders of the datacenter from the passed cloudspec.
+func (v *Provider) GetVMFolders(cloud kubermaticv1.CloudSpec) ([]Folder, error) {
+	if v.dc.InfraManagementUser != nil {
+		cloud.VSphere.InfraManagementUser.Username = v.dc.InfraManagementUser.Username
+		cloud.VSphere.InfraManagementUser.Password = v.dc.InfraManagementUser.Password
+	}
+
+	client, err := v.getClient(cloud)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't initialize vsphere client: %v", err)
+	}
+	defer logout(client)
+
+	finder := find.NewFinder(client.Client, true)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	vsphereDC, err := finder.Datacenter(ctx, v.dc.Datacenter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get vsphere datacenter: %v", err)
+	}
+	finder.SetDatacenter(vsphereDC)
+
+	// We simply list all folders & filter out afterwards.
+	// Filtering here is not possible as vCenter only lists the first level when giving a path.
+	// vCenter only lists folders recursively if you just specify "*".
+	folderRefs, err := finder.FolderList(ctx, "*")
+	if err != nil {
+		return nil, fmt.Errorf("couldn't retrieve folder list: %v", err)
+	}
+
+	rootPath := v.getVMRootPath(cloud)
+	var folders []Folder
+	for _, folderRef := range folderRefs {
+		// We filter by rootPath. If someone configures it, we should respect it.
+		if !strings.HasPrefix(folderRef.InventoryPath, rootPath+"/") && folderRef.InventoryPath != rootPath {
+			continue
+		}
+
+		folder := Folder{Path: folderRef.Common.InventoryPath}
+		folders = append(folders, folder)
+	}
+
+	return folders, nil
+}
+
 // DefaultCloudSpec adds defaults to the cloud spec
 func (v *Provider) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	if v.dc.InfraManagementUser != nil {
@@ -220,10 +274,6 @@ func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update
 func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	v.clusterUpdater = update
 
-	vsphereRootPath, err := v.getVsphereRootPath(cluster.Spec.Cloud)
-	if err != nil {
-		return nil, err
-	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -234,7 +284,8 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	defer logout(client)
 
 	finder := find.NewFinder(client.Client, true)
-	folder, err := finder.Folder(ctx, fmt.Sprintf("%s/%s", vsphereRootPath, cluster.Name))
+	vmRootPath := v.getVMRootPath(cluster.Spec.Cloud)
+	folder, err := finder.Folder(ctx, fmt.Sprintf("%s/%s", vmRootPath, cluster.Name))
 	if err != nil {
 		if _, ok := err.(*find.NotFoundError); !ok {
 			return nil, fmt.Errorf("failed to get folder: %v", err)
@@ -264,7 +315,7 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		return nil, err
 	}
 
-	glog.V(2).Infof("Successfully deleted vsphere folder %s/%s for cluster %s", vsphereRootPath, cluster.Name, cluster.Name)
+	glog.V(2).Infof("Successfully deleted vsphere folder %s/%s for cluster %s", vmRootPath, cluster.Name, cluster.Name)
 	return cluster, nil
 }
 
