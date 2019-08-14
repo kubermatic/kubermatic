@@ -39,7 +39,7 @@ func (a *Client) ListHetznerSizes(params *ListHetznerSizesParams, authInfo runti
 		PathPattern:        "/api/v1/providers/hetzner/sizes",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
+		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &ListHetznerSizesReader{formats: a.formats},
 		AuthInfo:           authInfo,
