@@ -13,10 +13,10 @@ import (
 )
 
 var (
-	vSphereDatacenter = os.Getenv("TEST_VSPHERE_DATACENTER")
-	vSphereEndpoint   = os.Getenv("TEST_VSPHERE_ENDPOINT")
-	vSphereUsername   = os.Getenv("TEST_VSPHERE_USERNAME")
-	vSpherePassword   = os.Getenv("TEST_VSPHERE_PASSWORD")
+	vSphereDatacenter = os.Getenv("VSPHERE_E2E_TEST_DATACENTER")
+	vSphereEndpoint   = os.Getenv("VSPHERE_E2E_ADDRESS")
+	vSphereUsername   = os.Getenv("VSPHERE_E2E_USERNAME")
+	vSpherePassword   = os.Getenv("VSPHERE_E2E_PASSWORD")
 )
 
 func TestProvider_GetVMFolders(t *testing.T) {
