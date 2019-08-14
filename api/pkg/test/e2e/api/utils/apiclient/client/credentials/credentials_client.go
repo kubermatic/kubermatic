@@ -39,7 +39,7 @@ func (a *Client) ListCredentials(params *ListCredentialsParams, authInfo runtime
 		PathPattern:        "/api/v1/providers/{provider_name}/presets/credentials",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
+		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &ListCredentialsReader{formats: a.formats},
 		AuthInfo:           authInfo,

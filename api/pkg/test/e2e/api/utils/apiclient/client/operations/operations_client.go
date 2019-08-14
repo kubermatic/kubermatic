@@ -40,7 +40,7 @@ func (a *Client) CreateOIDCKubeconfig(params *CreateOIDCKubeconfigParams, authIn
 		PathPattern:        "/api/v1/kubeconfig",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
+		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &CreateOIDCKubeconfigReader{formats: a.formats},
 		AuthInfo:           authInfo,
