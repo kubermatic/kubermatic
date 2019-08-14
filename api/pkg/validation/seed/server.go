@@ -46,6 +46,10 @@ func (opts *WebhookOpts) Server(
 	}
 	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}
 
+	if opts.certFile == "" || opts.keyFile == "" {
+		return nil, fmt.Errorf("seed-admissionwebhook-cert-file or seed-admissionwebhook-key-file cannot be empty")
+	}
+
 	server := &Server{
 		Server: &http.Server{
 			Addr: opts.listenAddress,
