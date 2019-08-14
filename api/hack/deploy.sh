@@ -37,18 +37,31 @@ function deploy {
   local path=$3
   local timeout=${4:-300}
 
+  TEST_NAME="[Helm] Deploy chart ${name}"
+
+  inital_revision="$(retry 5 helm list --tiller-namespace=${TILLER_NAMESPACE} ${name} --output=json|jq '.Releases[0].Revision')"
+
   echodate "Upgrading ${name}..."
   retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --atomic --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
+
+  if [ "${CANARY_DEPLOYMENT:-}" = "true" ]; then
+    TEST_NAME="[Helm] Roll back chart ${name}"
+    echodate "Rolling back ${name} to revision ${inital_revision} as this was only a canary deployment"
+    retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} rollback --wait --timeout $timeout ${name} ${inital_revision}
+  fi
+
+  unset TEST_NAME
 }
 
 function initTiller() {
+  TEST_NAME="[Helm] Init Tiller"
   echodate "Initializing Tiller in namespace ${TILLER_NAMESPACE}"
-  # In clusters which have not been initialized yet, this will fail
-  helm version --tiller-namespace ${TILLER_NAMESPACE} || true
-  kubectl create serviceaccount -n ${TILLER_NAMESPACE} tiller-sa || true
-  kubectl create clusterrolebinding tiller-cluster-role --clusterrole=cluster-admin --serviceaccount=${TILLER_NAMESPACE}:tiller-sa  || true
+  helm version --client
+  kubectl create serviceaccount -n ${TILLER_NAMESPACE} tiller-sa --dry-run -oyaml|kubectl apply -f -
+  kubectl create clusterrolebinding tiller-cluster-role --clusterrole=cluster-admin --serviceaccount=${TILLER_NAMESPACE}:tiller-sa  --dry-run -oyaml|kubectl apply -f -
   retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} init --service-account tiller-sa --replicas 3 --history-max 10 --upgrade --force-upgrade --wait ${HELM_INIT_ARGS}
   echodate "Tiller initialized successfully"
+  unset TEST_NAME
 }
 
 sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic/Chart.yaml
@@ -90,7 +103,13 @@ case "${DEPLOY_STACK}" in
       deploy "certs" "default" ./config/certs/
       deploy "oauth" "oauth" ./config/oauth/
       # We might have not configured IAP which results in nothing being deployed. This triggers https://github.com/helm/helm/issues/4295 and marks this as failed
-      deploy "iap" "iap" ./config/iap/ || true
+      # We hack around this by grepping for a string that is mandatory in the values file of IAP
+      # to determine if its configured, because am empty chart leads to Helm doing weird things
+      if grep -q discovery_url ${VALUES_FILE}; then
+        deploy "iap" "iap" ./config/iap/
+      else
+        echodate "Skipping IAP deployment because discovery_url is unset in values file"
+      fi
     fi
 
     # CI has its own Minio deployment as a proxy for GCS, so we do not install the default Helm chart here.
