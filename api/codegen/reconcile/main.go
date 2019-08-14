@@ -30,6 +30,11 @@ func main() {
 				ResourceImportPath: "k8s.io/api/core/v1",
 			},
 			{
+				ResourceName: "Endpoints",
+				ImportAlias:  "corev1",
+				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
 				ResourceName: "Secret",
 				ImportAlias:  "corev1",
 				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
