@@ -251,7 +251,9 @@ storageConfig:
 servingInfo:
   # TODO: Use consts from resources package
   certFile: /var/run/secrets/serving-cert/apiserver-tls.crt
-  keyFile: /var/run/secrets/serving-cert/apiserver-tls.key`
+  keyFile: /var/run/secrets/serving-cert/apiserver-tls.key
+kubeClientConfig:
+  kubeConfig: /etc/origin/master/kubeconfig/kubeconfig`
 
 const openshiftKubeAPIServerConfigTemplate = `admission:
   pluginConfig:

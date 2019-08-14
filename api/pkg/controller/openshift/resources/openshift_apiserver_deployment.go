@@ -65,6 +65,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 				{Name: resources.ImagePullSecretName},
 				{Name: openshiftImagePullSecretName},
 			}
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = utilpointer.BoolPtr(false)
 			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
 					Name: resources.CASecretName,
@@ -132,6 +133,15 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{Name: openshiftAPIServerConfigMapName},
 							DefaultMode:          resources.Int32(resources.DefaultAllReadOnlyMode),
+						},
+					},
+				},
+				{
+					Name: resources.InternalUserClusterAdminKubeconfigSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName:  resources.InternalUserClusterAdminKubeconfigSecretName,
+							DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
 						},
 					},
 				},
@@ -248,6 +258,11 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 						{
 							Name:      openshiftAPIServerTLSServingCertSecretName,
 							MountPath: "/var/run/secrets/serving-cert",
+							ReadOnly:  true,
+						},
+						{
+							Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
+							MountPath: "/etc/origin/master/kubeconfig",
 							ReadOnly:  true,
 						},
 					},
