@@ -18,7 +18,8 @@ echodate "Successfully logged into Quay"
 
 TEST_NAME="Build binaries"
 echodate "Building binaries"
-time make -C api build
+# Retry is used to get the junit wrapping
+retry 1 make -C api build
 echodate "Successfully finished building binaries"
 
 TEST_NAME="Build and push docker images"
