@@ -3,7 +3,7 @@ nodePortPoxy:
   envoy:
     image:
       repository: "envoyproxy/envoy-alpine"
-      tag: "v1.10.0"
+      tag: v1.11.1
   image:
     repository: "quay.io/kubermatic/nodeport-proxy"
     tag: "v2.2.1"
