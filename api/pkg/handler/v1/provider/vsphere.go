@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"regexp"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -173,12 +172,9 @@ func getVsphereFolders(seedsGetter provider.SeedsGetter, username, password, dat
 		return nil, fmt.Errorf("failed to get folders: %v", err)
 	}
 
-	var filterVM = regexp.MustCompile(`(^\/[\w\d\-]+\/vm)`)
 	var apiFolders []apiv1.VSphereFolder
 	for _, folder := range folders {
-		if filterVM.MatchString(folder.Path) {
-			apiFolders = append(apiFolders, apiv1.VSphereFolder{Path: folder.Path})
-		}
+		apiFolders = append(apiFolders, apiv1.VSphereFolder{Path: folder.Path})
 	}
 
 	return apiFolders, nil
