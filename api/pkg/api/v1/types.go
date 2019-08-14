@@ -410,6 +410,13 @@ type VSphereNetwork struct {
 	Name string `json:"name"`
 }
 
+// VSphereFolder is the object representing a vsphere folder.
+// swagger:model VSphereFolder
+type VSphereFolder struct {
+	// Path is the path of the folder
+	Path string `json:"path"`
+}
+
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {
