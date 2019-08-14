@@ -25,11 +25,19 @@ import (
 
 // Reconcile creates, updates, or deletes Kubernetes resources to match the desired state.
 func (r *reconciler) reconcile(ctx context.Context) error {
-
 	// Must be first because of openshift
 	if err := r.ensureAPIServices(ctx); err != nil {
 		return err
 	}
+
+	if err := r.reconcileNamespaces(ctx); err != nil {
+		return err
+	}
+
+	if err := r.reconcileServices(ctx); err != nil {
+		return err
+	}
+
 	if err := r.reconcileServiceAcconts(ctx); err != nil {
 		return err
 	}
@@ -55,10 +63,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	if err := r.reconcileMutatingWebhookConfigurations(ctx); err != nil {
-		return err
-	}
-
-	if err := r.reconcileServices(ctx); err != nil {
 		return err
 	}
 
@@ -258,12 +262,17 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context)
 }
 
 func (r *reconciler) reconcileServices(ctx context.Context) error {
-	creators := []reconciling.NamedServiceCreatorGetter{
+	creatorsKubeSystem := []reconciling.NamedServiceCreatorGetter{
 		metricsserver.ExternalNameServiceCreator(r.namespace),
 	}
 
-	if err := reconciling.ReconcileServices(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileServices(ctx, creatorsKubeSystem, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Services in kube-system namespace: %v", err)
+	}
+	if r.openshift {
+		if err := reconciling.ReconcileServices(ctx, []reconciling.NamedServiceCreatorGetter{openshift.OpenshiftAPIServicecreatorGetter}, "openshift-apiserver", r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile services in the openshift-apiserver namespace: %v", err)
+		}
 	}
 	return nil
 }
@@ -294,6 +303,18 @@ func (r *reconciler) reconcileSecrets(ctx context.Context) error {
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets in kue-system Namespace: %v", err)
+	}
+
+	return nil
+}
+
+func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
+	creators := []reconciling.NamedNamespaceCreatorGetter{}
+	if r.openshift {
+		creators = append(creators, openshift.OpenshiftAPIServerNSCreatorGetter)
+	}
+	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile namespaces: %v", err)
 	}
 
 	return nil
