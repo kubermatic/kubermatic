@@ -103,7 +103,13 @@ case "${DEPLOY_STACK}" in
       deploy "certs" "default" ./config/certs/
       deploy "oauth" "oauth" ./config/oauth/
       # We might have not configured IAP which results in nothing being deployed. This triggers https://github.com/helm/helm/issues/4295 and marks this as failed
-      deploy "iap" "iap" ./config/iap/ || true
+      # We hack around this by grepping for a string that is mandatory in the values file of IAP
+      # to determine if its configured
+      if grep -q discovery_url ${VALUES_FILE}; then
+        deploy "iap" "iap" ./config/iap/
+      else
+        echodate "Skipping IAP deployment because discovery_url is unset in values file"
+      fi
     fi
 
     # CI has its own Minio deployment as a proxy for GCS, so we do not install the default Helm chart here.
