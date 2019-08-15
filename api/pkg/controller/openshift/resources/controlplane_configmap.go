@@ -184,6 +184,7 @@ spec:
 // TODO Use OpenShiftAPIServerConfig type from github.com/openshift/api/openshiftcontrolplane/v1/types.go
 const openshiftAPIServerConfigTemplate = `aggregatorConfig:
   allowedNames:
+  - apiserver-aggregator
   - kube-apiserver-proxy
   - system:kube-apiserver-proxy
   - system:openshift-aggregator
