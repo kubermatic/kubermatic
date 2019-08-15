@@ -18,7 +18,7 @@
 - Added Kubernetes `v1.15.1` [#3859](https://github.com/kubermatic/kubermatic/issues/3859) ([kubermatic-bot](https://github.com/kubermatic-bot))
 - Updated machine controller to `v1.5.1` [#3883](https://github.com/kubermatic/kubermatic/issues/3883) ([kdomanski](https://github.com/kdomanski))
 - A bug that sometimes resulted in the creation of the initial NodeDeployment failing was fixed [#3894](https://github.com/kubermatic/kubermatic/issues/3894) ([alvaroaleman](https://github.com/alvaroaleman))
-- Fixed an issue that kept clusters stuck if their creation didn't succeed and they got deleted with PV and/or PV cleanup enabled [#3973](https://github.com/kubermatic/kubermatic/issues/3973) ([alvaroaleman](https://github.com/alvaroaleman))
+- Fixed an issue that kept clusters stuck if their creation didn't succeed and they got deleted with LB and/or PV cleanup enabled [#3973](https://github.com/kubermatic/kubermatic/issues/3973) ([alvaroaleman](https://github.com/alvaroaleman))
 - Fixed joining nodes to Bring Your Own clusters running Kubernetes 1.14 [#3976](https://github.com/kubermatic/kubermatic/issues/3976) ([kubermatic-bot](https://github.com/kubermatic-bot))
 
 
