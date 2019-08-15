@@ -89,40 +89,6 @@ func ReconcileServices(ctx context.Context, namedGetters []NamedServiceCreatorGe
 	return nil
 }
 
-// EndpointsCreator defines an interface to create/update Endpointss
-type EndpointsCreator = func(existing *corev1.Endpoints) (*corev1.Endpoints, error)
-
-// NamedEndpointsCreatorGetter returns the name of the resource and the corresponding creator function
-type NamedEndpointsCreatorGetter = func() (name string, create EndpointsCreator)
-
-// EndpointsObjectWrapper adds a wrapper so the EndpointsCreator matches ObjectCreator.
-// This is needed as Go does not support function interface matching.
-func EndpointsObjectWrapper(create EndpointsCreator) ObjectCreator {
-	return func(existing runtime.Object) (runtime.Object, error) {
-		if existing != nil {
-			return create(existing.(*corev1.Endpoints))
-		}
-		return create(&corev1.Endpoints{})
-	}
-}
-
-// ReconcileEndpointss will create and update the Endpointss coming from the passed EndpointsCreator slice
-func ReconcileEndpointss(ctx context.Context, namedGetters []NamedEndpointsCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
-	for _, get := range namedGetters {
-		name, create := get()
-		createObject := EndpointsObjectWrapper(create)
-		for _, objectModifier := range objectModifiers {
-			createObject = objectModifier(createObject)
-		}
-
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.Endpoints{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Endpoints %s/%s: %v", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
 // SecretCreator defines an interface to create/update Secrets
 type SecretCreator = func(existing *corev1.Secret) (*corev1.Secret, error)
 
