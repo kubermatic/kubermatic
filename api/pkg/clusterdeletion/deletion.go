@@ -151,31 +151,36 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, cluster *kuber
 		if len(pdbs.Items) > 0 {
 			return nil
 		}
-		// Delete all Pods that use PVs. We must keep the remaining pods, otherwise
-		// we end up in a deadlock when CSI is used
-		if err := d.cleanupPVCUsingPods(ctx); err != nil {
-			return fmt.Errorf("failed to clean up PV using pod from user cluster: %v", err)
-		}
 
-		// Delete PVC's
 		pvcList := &corev1.PersistentVolumeClaimList{}
 		if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvcList); err != nil {
 			return fmt.Errorf("failed to list PVCs from user cluster: %v", err)
 		}
 
+		pvList := &corev1.PersistentVolumeList{}
+		if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvList); err != nil {
+			return fmt.Errorf("failed to list PVs from user cluster: %v", err)
+		}
+
+		// Do not attempt to delete any pods when there are no PVs and PVCs. A pod may have a PVC that does
+		// not exist referenced, thats how it possible that we try to delete pods even when there are no PVCs.
+		if len(pvcList.Items) != 0 || len(pvList.Items) != 0 {
+			// Delete all Pods that use PVs. We must keep the remaining pods, otherwise
+			// we end up in a deadlock when CSI is used
+			if err := d.cleanupPVCUsingPods(ctx); err != nil {
+				return fmt.Errorf("failed to clean up PV using pod from user cluster: %v", err)
+			}
+		}
+
+		// Delete PVC's
 		for _, pvc := range pvcList.Items {
-			if err := d.userClusterClient.Delete(ctx, &pvc); err != nil {
+			if err := d.userClusterClient.Delete(ctx, &pvc); err != nil && !kerrors.IsNotFound(err) {
 				return fmt.Errorf("failed to delete PVC '%s/%s' from user cluster: %v", pvc.Namespace, pvc.Name, err)
 			}
 			deletedSomeResource = true
 		}
 
 		// Delete PV's
-		pvList := &corev1.PersistentVolumeList{}
-		if err := d.userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvList); err != nil {
-			return fmt.Errorf("failed to list PVs from user cluster: %v", err)
-		}
-
 		for _, pv := range pvList.Items {
 			if err := d.userClusterClient.Delete(ctx, &pv); err != nil {
 				return fmt.Errorf("failed to delete PV '%s' from user cluster: %v", pv.Name, err)
@@ -377,7 +382,7 @@ func (d *Deletion) cleanupPVCUsingPods(ctx context.Context) error {
 
 	for _, pod := range pvUsingPods {
 		namespace, name := pod.Namespace, pod.Name
-		if err := d.userClusterClient.Delete(ctx, pod); err != nil {
+		if err := d.userClusterClient.Delete(ctx, pod); err != nil && !kerrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete pod %s/%s: %v", namespace, name, err)
 		}
 	}
