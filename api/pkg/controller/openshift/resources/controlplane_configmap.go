@@ -253,8 +253,9 @@ servingInfo:
   # TODO: Use consts from resources package
   certFile: /var/run/secrets/serving-cert/apiserver-tls.crt
   keyFile: /var/run/secrets/serving-cert/apiserver-tls.key
+  bindAddress: 127.0.0.1:443
 kubeClientConfig:
-  kubeConfig: /etc/origin/master/kubeconfig/kubeconfig`
+  kubeConfig: /etc/origin/master/loopback-kubeconfig/kubeconfig`
 
 const openshiftKubeAPIServerConfigTemplate = `admission:
   pluginConfig:

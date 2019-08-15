@@ -295,13 +295,3 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 		}
 	}
 }
-
-func openshiftAPIServerImage(openshiftVersion string) (string, error) {
-	switch openshiftVersion {
-	case "4.1.9":
-		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:86255c4efe6bbc141a0f41444f863bbd5cd832ffca21d2b737a4f9c225ed00ad", nil
-	default:
-		return "", fmt.Errorf("no image available for openshift version %q", openshiftVersion)
-	}
-
-}

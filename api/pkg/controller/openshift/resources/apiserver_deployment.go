@@ -141,7 +141,11 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				return nil, err
 			}
 
-			image, err := openshiftKubeAPIServerImage(data.Cluster().Spec.Version.String())
+			openshiftKubeAPIServerImage, err := openshiftKubeAPIServerImage(data.Cluster().Spec.Version.String())
+			if err != nil {
+				return nil, err
+			}
+			openshiftAPIServerImage, err := openshiftAPIServerImage(data.Cluster().Spec.Version.String())
 			if err != nil {
 				return nil, err
 			}
@@ -150,8 +154,8 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				*openvpnSidecar,
 				*dnatControllerSidecar,
 				{
-					Name:      ApiserverDeploymentName,
-					Image:     image,
+					Name:      "kube-apiserver",
+					Image:     openshiftKubeAPIServerImage,
 					Command:   []string{"hypershift", "openshift-kube-apiserver"},
 					Args:      []string{"--config=/etc/origin/master/master-config.yaml"},
 					Env:       envVars,
@@ -190,6 +194,72 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 						TimeoutSeconds:      15,
 					},
 					VolumeMounts: getVolumeMounts(),
+				},
+				{
+					Name:      "openshift-apiserver",
+					Image:     openshiftAPIServerImage,
+					Command:   []string{"hypershift", "openshift-apiserver"},
+					Args:      []string{"--config=/etc/origin/master/master-config.yaml"},
+					Resources: *resourceRequirements,
+					ReadinessProbe: &corev1.Probe{
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/healthz",
+								Port:   intstr.FromInt(443),
+								Scheme: "HTTPS",
+							},
+						},
+						FailureThreshold: 10,
+						PeriodSeconds:    10,
+						SuccessThreshold: 1,
+						TimeoutSeconds:   1,
+					},
+					LivenessProbe: &corev1.Probe{
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/healthz",
+								Port:   intstr.FromInt(443),
+								Scheme: "HTTPS",
+							},
+						},
+						FailureThreshold: 10,
+						PeriodSeconds:    10,
+						SuccessThreshold: 1,
+						TimeoutSeconds:   1,
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      resources.ApiserverEtcdClientCertificateSecretName,
+							MountPath: "/etc/etcd/pki/client",
+							ReadOnly:  true,
+						},
+						{
+							Name:      resources.FrontProxyCASecretName,
+							MountPath: "/var/run/configmaps/aggregator-client-ca",
+							ReadOnly:  true,
+						},
+						{
+							Name:      openshiftAPIServerConfigMapName,
+							MountPath: "/etc/origin/master",
+							ReadOnly:  true,
+						},
+						{
+							Name:      resources.CASecretName,
+							MountPath: "/var/run/configmaps/client-ca/ca-bundle.crt",
+							SubPath:   "ca.crt",
+							ReadOnly:  true,
+						},
+						{
+							Name:      openshiftAPIServerTLSServingCertSecretName,
+							MountPath: "/var/run/secrets/serving-cert",
+							ReadOnly:  true,
+						},
+						{
+							Name:      apiserverLoopbackKubeconfigName,
+							MountPath: "/etc/origin/master/loopback-kubeconfig",
+							ReadOnly:  true,
+						},
+					},
 				},
 			}
 
@@ -399,6 +469,24 @@ func getAPIServerVolumes() []corev1.Volume {
 				},
 			},
 		},
+		{
+			Name: openshiftAPIServerConfigMapName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{Name: openshiftAPIServerConfigMapName},
+					DefaultMode:          resources.Int32(resources.DefaultAllReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: openshiftAPIServerTLSServingCertSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  openshiftAPIServerTLSServingCertSecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
 	}
 }
 
@@ -418,6 +506,7 @@ func getAPIServerEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error
 	return vars, nil
 }
 
+// TODO: Can we safely assume they will always be the same?
 func openshiftKubeAPIServerImage(openshiftVersion string) (string, error) {
 	switch openshiftVersion {
 	case "4.1.9":
@@ -425,4 +514,14 @@ func openshiftKubeAPIServerImage(openshiftVersion string) (string, error) {
 	default:
 		return "", fmt.Errorf("no image available for openshift version %q", openshiftVersion)
 	}
+}
+
+func openshiftAPIServerImage(openshiftVersion string) (string, error) {
+	switch openshiftVersion {
+	case "4.1.9":
+		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:86255c4efe6bbc141a0f41444f863bbd5cd832ffca21d2b737a4f9c225ed00ad", nil
+	default:
+		return "", fmt.Errorf("no image available for openshift version %q", openshiftVersion)
+	}
+
 }
