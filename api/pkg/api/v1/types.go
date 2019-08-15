@@ -137,6 +137,30 @@ type AWSZone struct {
 // swagger:model AWSZoneList
 type AWSZoneList []AWSZone
 
+// AWSSubnetList represents an array of AWS availability subnets.
+// swagger:model AWSSubnetList
+type AWSSubnetList []AWSSubnet
+
+// AWSSubnet represents a object of AWS availability subnet.
+// swagger:model AWSSubnet
+type AWSSubnet struct {
+	Name                    string         `json:"name"`
+	ID                      string         `json:"id"`
+	AvailabilityZone        string         `json:"availability_zone"`
+	AvailabilityZoneID      string         `json:"availability_zone_id"`
+	IPv4CIDR                string         `json:"ipv4cidr"`
+	IPv6CIDR                string         `json:"ipv6cidr"`
+	Tags                    []AWSSubnetTag `json:"tags"`
+	State                   string         `json:"state"`
+	AvailableIPAddressCount int64          `json:"available_ip_address_count"`
+	DefaultForAz            bool           `json:"default"`
+}
+
+type AWSSubnetTag struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 // GCPDiskTypeList represents an array of GCP disk types.
 // swagger:model GCPDiskTypeList
 type GCPDiskTypeList []GCPDiskType

@@ -1989,6 +1989,32 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets": {
+      "get": {
+        "description": "Lists available AWS subnets",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aws"
+        ],
+        "operationId": "listAWSSubnetsNoCredentials",
+        "responses": {
+          "200": {
+            "description": "AWSSubnetList",
+            "schema": {
+              "$ref": "#/definitions/AWSSubnetList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/zones": {
       "get": {
         "description": "Lists available AWS zones",
@@ -3776,6 +3802,62 @@
         }
       }
     },
+    "/api/v1/providers/aws/{dc}/subnets": {
+      "get": {
+        "description": "Lists available AWS subnets",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aws"
+        ],
+        "operationId": "listAWSSubnets",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "VPC",
+            "name": "vpc",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AWSSubnetList",
+            "schema": {
+              "$ref": "#/definitions/AWSSubnetList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/aws/{dc}/zones": {
       "get": {
         "description": "Lists available AWS zones",
@@ -4600,6 +4682,79 @@
           "type": "string",
           "x-go-name": "VolumeType",
           "example": "gp2, io1, st1, sc1, standard"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AWSSubnet": {
+      "type": "object",
+      "title": "AWSSubnet represents a object of AWS availability subnet.",
+      "properties": {
+        "availability_zone": {
+          "type": "string",
+          "x-go-name": "AvailabilityZone"
+        },
+        "availability_zone_id": {
+          "type": "string",
+          "x-go-name": "AvailabilityZoneID"
+        },
+        "available_ip_address_count": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "AvailableIPAddressCount"
+        },
+        "default": {
+          "type": "boolean",
+          "x-go-name": "DefaultForAz"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "ipv4cidr": {
+          "type": "string",
+          "x-go-name": "IPv4CIDR"
+        },
+        "ipv6cidr": {
+          "type": "string",
+          "x-go-name": "IPv6CIDR"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "state": {
+          "type": "string",
+          "x-go-name": "State"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AWSSubnetTag"
+          },
+          "x-go-name": "Tags"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AWSSubnetList": {
+      "type": "array",
+      "title": "AWSSubnetList represents an array of AWS availability subnets.",
+      "items": {
+        "$ref": "#/definitions/AWSSubnet"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AWSSubnetTag": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "x-go-name": "Key"
+        },
+        "value": {
+          "type": "string",
+          "x-go-name": "Value"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
