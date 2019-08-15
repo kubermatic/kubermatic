@@ -156,6 +156,8 @@ type AWSSubnet struct {
 	DefaultForAz            bool           `json:"default"`
 }
 
+// AWSSubnetTag represents a object of AWS subnet tags.
+// swagger:model AWSSubnetTag
 type AWSSubnetTag struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`

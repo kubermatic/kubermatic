@@ -17,7 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-// AWSCommonReq represent a request with common parameters for GCP.
+// AWSCommonReq represent a request with common parameters for AWS.
 type AWSCommonReq struct {
 	// in: header
 	// name: AccessKeyID
@@ -39,13 +39,15 @@ type AWSZoneReq struct {
 	DC string `json:"dc"`
 }
 
-// AWSSubnetReq represent a request for AWS zones.
+// AWSSubnetReq represent a request for AWS subnets.
 // swagger:parameters listAWSSubnets
 type AWSSubnetReq struct {
 	AWSCommonReq
 	// in: path
 	// required: true
-	DC  string `json:"dc"`
+	DC string `json:"dc"`
+	// in: header
+	// name: VPC
 	VPC string `json:"vpc"`
 }
 
@@ -185,7 +187,7 @@ func listAWSZones(ctx context.Context, keyID, keySecret, datacenterName string, 
 	return zones, err
 }
 
-// AWSSubnetEndpoint handles the request to list AWS availability subnets in a given region, using provided credentials
+// AWSSubnetEndpoint handles the request to list AWS availability subnets in a given vpc, using provided credentials
 func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSSubnetReq)
@@ -207,7 +209,7 @@ func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter prov
 	}
 }
 
-// AWSSubnetNoCredentialsEndpoint handles the request to list AWS availability subnets in a given region, using credentials from a given datacenter
+// AWSSubnetNoCredentialsEndpoint handles the request to list AWS availability subnets in a given vpc, using credentials
 func AWSSubnetNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)

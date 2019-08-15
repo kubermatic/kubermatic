@@ -1999,6 +1999,29 @@
           "aws"
         ],
         "operationId": "listAWSSubnetsNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "AWSSubnetList",
@@ -3839,7 +3862,7 @@
             "type": "string",
             "x-go-name": "VPC",
             "name": "vpc",
-            "in": "query"
+            "in": "header"
           }
         ],
         "responses": {
@@ -4747,6 +4770,7 @@
     },
     "AWSSubnetTag": {
       "type": "object",
+      "title": "AWSSubnetTag represents a object of AWS subnet tags.",
       "properties": {
         "key": {
           "type": "string",
