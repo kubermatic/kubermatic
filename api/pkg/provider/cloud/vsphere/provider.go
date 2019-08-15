@@ -8,7 +8,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/vim25/types"
@@ -84,13 +83,9 @@ func (v *Provider) getVMRootPath(cloud kubermaticv1.CloudSpec) string {
 	return rootPath
 }
 
-// createVMFolderForCluster adds a vm folder beneath the rootpath set in the datacenter.yamls with the name of the cluster.
-func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	// Don't add the finalizer if the folder is passed in
-	if cluster.Spec.Cloud.VSphere.Folder != "" {
-		return cluster, nil
-	}
-
+// InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
+func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
+	v.clusterUpdater = update
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -100,30 +95,23 @@ func (v *Provider) createVMFolderForCluster(cluster *kubermaticv1.Cluster, updat
 	}
 	defer logout(client)
 
-	finder := find.NewFinder(client.Client, true)
-	dcRootPath := v.getVMRootPath(cluster.Spec.Cloud)
-	rootFolder, err := finder.Folder(ctx, dcRootPath)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't find rootpath, see: %v", err)
-	}
-	_, err = finder.Folder(ctx, cluster.Name)
-	if err != nil {
-		if _, ok := err.(*find.NotFoundError); !ok {
-			return nil, fmt.Errorf("Failed to get cluster folder: %v", err)
-		}
-		if _, err = rootFolder.CreateFolder(ctx, cluster.Name); err != nil {
-			return nil, fmt.Errorf("failed to create cluster folder %s/%s: %v", rootFolder, cluster.Name, err)
-		}
-	}
+	rootPath := v.getVMRootPath(cluster.Spec.Cloud)
 
-	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		if !kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
-			cluster.Finalizers = append(cluster.Finalizers, folderCleanupFinalizer)
+	if cluster.Spec.Cloud.VSphere.Folder == "" {
+		// If the user did not specify a folder, we create a own folder for this cluster to improve
+		// the VM management in vCenter
+		clusterFolder := path.Join(rootPath, cluster.Name)
+		if err := createVMFolder(ctx, client, clusterFolder); err != nil {
+			return nil, fmt.Errorf("failed to create the VM folder %q: %v", clusterFolder, err)
 		}
-		cluster.Spec.Cloud.VSphere.Folder = fmt.Sprintf("%s/%s", dcRootPath, cluster.Name)
-	})
-	if err != nil {
-		return nil, err
+
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
+			cluster.Spec.Cloud.VSphere.Folder = clusterFolder
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return cluster, nil
@@ -262,12 +250,6 @@ func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
-func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
-	v.clusterUpdater = update
-	return v.createVMFolderForCluster(cluster, update)
-}
-
 // CleanUpCloudProvider we always check if the folder is there and remove it if yes because we know its absolute path
 // This covers cases where the finalizer was not added
 // We also remove the finalizer if either the folder is not present or we successfully deleted it
@@ -283,39 +265,18 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	}
 	defer logout(client)
 
-	finder := find.NewFinder(client.Client, true)
-	vmRootPath := v.getVMRootPath(cluster.Spec.Cloud)
-	folder, err := finder.Folder(ctx, fmt.Sprintf("%s/%s", vmRootPath, cluster.Name))
-	if err != nil {
-		if _, ok := err.(*find.NotFoundError); !ok {
-			return nil, fmt.Errorf("failed to get folder: %v", err)
+	if kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
+		if err := deleteVMFolder(ctx, client, cluster.Spec.Cloud.VSphere.Folder); err != nil {
+			return nil, err
 		}
-		// Folder is not there anymore, maybe someone deleted it manually
 		cluster, err = v.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
 		}
-
-		return cluster, nil
-	}
-	task, err := folder.Destroy(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to delete folder: %v", err)
-	}
-	if err := task.Wait(ctx); err != nil {
-		return nil, fmt.Errorf("failed to wait for deletion of folder: %v", err)
 	}
 
-	cluster, err = v.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	glog.V(2).Infof("Successfully deleted vsphere folder %s/%s for cluster %s", vmRootPath, cluster.Name, cluster.Name)
 	return cluster, nil
 }
 
