@@ -530,7 +530,7 @@ func (r *Reconciler) statefulSets(ctx context.Context, osData *openshiftData) er
 func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedConfigMapCreatorGetter {
 	return []reconciling.NamedConfigMapCreatorGetter{
 		cloudconfig.ConfigMapCreator(osData),
-		openshiftresources.OpenshiftAPIServerConfigMapCreator(ctx, osData),
+		openshiftresources.OpenshiftAPIServerConfigMapCreator(osData),
 		openshiftresources.OpenshiftKubeAPIServerConfigMapCreator(osData),
 		openshiftresources.OpenshiftControllerMangerConfigMapCreator(ctx, osData),
 		openvpn.ServerClientConfigsConfigMapCreator(osData),

@@ -32,7 +32,11 @@ type masterConfigData interface {
 	OIDCClientSecret() string
 }
 
-func OpenshiftAPIServerConfigMapCreator(ctx context.Context, data masterConfigData) reconciling.NamedConfigMapCreatorGetter {
+type openshiftAPIServerCreatorData interface {
+	Cluster() *kubermaticv1.Cluster
+}
+
+func OpenshiftAPIServerConfigMapCreator(data openshiftAPIServerCreatorData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return openshiftAPIServerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
@@ -238,7 +242,7 @@ imagePolicyConfig:
   internalRegistryHostname: image-registry.openshift-image-registry.svc:5000
 kind: OpenShiftAPIServerConfig
 projectConfig:
-  projectRequestMessage: ''
+  projectRequestMessage: ""
 routingConfig:
   # TODO: Fix
   subdomain: apps.openshift-test.aws.k8c.io
@@ -246,11 +250,11 @@ storageConfig:
   ca: /etc/etcd/pki/client/ca.crt
   certFile: /etc/etcd/pki/client/apiserver-etcd-client.crt
   keyFile: /etc/etcd/pki/client/apiserver-etcd-client.key
-  urls: {{ range .ETCDEndpoints }}
+  urls:{{ range .ETCDEndpoints }}
   - "{{ . }}"
 {{- end }}
 servingInfo:
-  # TODO: Use consts from resources package
+  {{- /* TODO: Use consts from resources package */}}
   certFile: /var/run/secrets/serving-cert/apiserver-tls.crt
   keyFile: /var/run/secrets/serving-cert/apiserver-tls.key
 kubeClientConfig:
