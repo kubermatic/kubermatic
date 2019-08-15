@@ -716,6 +716,7 @@ func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCrea
 	creators := []reconciling.NamedServiceCreatorGetter{
 		apiserver.InternalServiceCreator(),
 		apiserver.ExternalServiceCreator(osData.Cluster().Spec.ExposeStrategy),
+		openshiftresources.OpenshiftAPIServiceCreator,
 		openvpn.ServiceCreator(osData.Cluster().Spec.ExposeStrategy),
 		etcd.ServiceCreator(osData),
 		dns.ServiceCreator(),

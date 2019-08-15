@@ -331,7 +331,7 @@ func (r *reconciler) reconcileEndpoints(ctx context.Context) error {
 		return nil
 	}
 	creators := []reconciling.NamedEndpointsCreatorGetter{
-		openshift.OpenshiftAPIEndpointsCreatorGetterFactory("1.2.3.4")}
+		openshift.OpenshiftAPIEndpointsCreatorGetterFactory("10.47.242.135")}
 	if err := reconciling.ReconcileEndpointss(ctx, creators, "openshift-apiserver", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile endpoints: %v", err)
 	}

@@ -16,7 +16,7 @@ func OpenshiftAPIServicecreatorGetter() (string, reconciling.ServiceCreator) {
 				Name:       "openshift-apiserver",
 				Protocol:   corev1.ProtocolTCP,
 				Port:       443,
-				TargetPort: intstr.FromInt(8443),
+				TargetPort: intstr.FromInt(443),
 			},
 		}
 		return s, nil
@@ -28,7 +28,7 @@ func OpenshiftAPIEndpointsCreatorGetterFactory(targetVIP string) reconciling.Nam
 		return "api", func(ep *corev1.Endpoints) (*corev1.Endpoints, error) {
 			ep.Subsets = []corev1.EndpointSubset{{
 				Addresses: []corev1.EndpointAddress{{IP: targetVIP}},
-				Ports:     []corev1.EndpointPort{{Port: 8443}},
+				Ports:     []corev1.EndpointPort{{Port: 443, Protocol: corev1.ProtocolTCP}},
 			}}
 			return ep, nil
 		}

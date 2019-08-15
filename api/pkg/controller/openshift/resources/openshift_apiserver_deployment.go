@@ -35,6 +35,20 @@ const (
 	OpenshiftAPIServerDeploymentName = "openshift-apiserver"
 )
 
+func OpenshiftAPIServiceCreator() (string, reconciling.ServiceCreator) {
+	return OpenshiftAPIServerDeploymentName, func(svc *corev1.Service) (*corev1.Service, error) {
+		svc.Spec.Type = corev1.ServiceTypeClusterIP
+		svc.Spec.Ports = []corev1.ServicePort{{
+			Protocol:   corev1.ProtocolTCP,
+			Port:       443,
+			TargetPort: intstr.FromInt(8443),
+		}}
+		svc.Spec.Selector = resources.BaseAppLabel(OpenshiftAPIServerDeploymentName, nil)
+
+		return svc, nil
+	}
+}
+
 func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return OpenshiftAPIServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {

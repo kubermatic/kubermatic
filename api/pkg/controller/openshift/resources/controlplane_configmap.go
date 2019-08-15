@@ -273,7 +273,7 @@ apiServerArguments:
   # TODO: Re-Enable
   # - aws
   enable-aggregator-routing:
-  - 'true'
+  - 'false'
   feature-gates:
   - ExperimentalCriticalPodAnnotation=true
   - RotateKubeletServerCertificate=true
