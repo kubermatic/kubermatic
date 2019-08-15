@@ -1,16 +1,16 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 set -euo pipefail
-export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
-cd $(dirname $0)/../../..
+cd "$(git rev-parse --show-toplevel)"
 
-source ./api/hack/lib.sh
+. ./api/hack/lib.sh
 
+GIT_HEAD_HASH="$(git rev-parse HEAD)"
 TAGS="$GIT_HEAD_HASH $(git tag -l --points-at HEAD)"
 
 echodate "Logging into Quay"
-docker ps &>/dev/null || start-docker.sh
-retry 5 docker login -u ${QUAY_IO_USERNAME} -p ${QUAY_IO_PASSWORD} quay.io
+docker ps > /dev/null 2>&1 || start-docker.sh
+retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
 echodate "Successfully logged into Quay"
 
 echodate "Building binaries"
@@ -18,30 +18,20 @@ time make -C api build
 echodate "Successfully finished building binaries"
 
 echodate "Building and pushing quay images"
+set -f # prevent globbing, do word splitting
+# shellcheck disable=SC2086
 retry 5 ./api/hack/push_image.sh $TAGS
 echodate "Sucessfully finished building and pushing quay images"
 
 echodate "Building addons"
-time docker build -t quay.io/kubermatic/addons:${GIT_HEAD_HASH} ./addons
-for TAG in $TAGS
-do
-    if [ -z "$TAG" ]; then
-      continue
-    fi
-
-    if [ "$TAG" = "$GIT_HEAD_HASH" ]; then
-      continue
-    fi
+time docker build -t "quay.io/kubermatic/addons:$GIT_HEAD_HASH" ./addons
+for TAG in $TAGS; do
+    [ -z "$TAG" ] && continue
+    [ "$TAG" = "$GIT_HEAD_HASH" ] && continue
 
     echo "Tagging ${TAG}"
-    docker tag quay.io/kubermatic/addons:${GIT_HEAD_HASH} quay.io/kubermatic/addons:${TAG}
+    docker tag "quay.io/kubermatic/addons:$GIT_HEAD_HASH" "quay.io/kubermatic/addons:$TAG"
+    echo "Pushing ${TAG}"
+    retry 5 docker push "quay.io/kubermatic/addons:$TAG"
 done
-echodate "Successfully finished building addon image"
-
-echodate "Pushing addon images"
-for TAG in $TAGS
-do
-    echo "Pusing ${TAG}"
-    retry 5 docker push quay.io/kubermatic/addons:${TAG}
-done
-echodate "Successfully finished pusing addon images"
+echodate "Successfully finished building and pushing addon image"
