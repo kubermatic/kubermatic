@@ -13,8 +13,7 @@ func OpenshiftAPIServicecreatorGetterFactory(clusterNS string) reconciling.Named
 			s.Spec.Selector = nil
 			s.Spec.Type = corev1.ServiceTypeExternalName
 			s.Spec.Ports = nil
-			//s.Spec.ExternalName = openshiftresources.OpenshiftAPIServerServiceName + "." + clusterNS + ".svc.cluster.local"
-			s.Spec.ExternalName = "127.0.0.1"
+			s.Spec.ExternalName = openshiftresources.OpenshiftAPIServerServiceName + "." + clusterNS + ".svc.cluster.local"
 			return s, nil
 		}
 	}
