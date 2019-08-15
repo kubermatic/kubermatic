@@ -2,6 +2,7 @@ package openshift
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -173,8 +174,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, nil
 	}
 	if cluster.Spec.Openshift == nil {
-		log.Error("cluster has Openshift annotaiton but .Spec.Openshift is unset")
-		return reconcile.Result{}, nil
+		return reconcile.Result{}, errors.New("openshift cluster but .Spec.Openshift is unset")
 	}
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
