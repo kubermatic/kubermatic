@@ -1,6 +1,5 @@
 export CGO_ENABLED?=0
 REPO=quay.io/kubermatic/api
-GO?=go
 CMD=$(filter-out OWNERS nodeport-proxy kubeletdnat-controller, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS?=-v
 GITTAG=$(shell git describe --tags --always)
@@ -23,26 +22,26 @@ all: check vendor build test
 build: $(CMD)
 
 $(CMD):
-	$(GO) build $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/$@
+	go build $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/$@
 
 install:
-	$(GO) install $(GOTOOLFLAGS) ./cmd/...
+	go install $(GOTOOLFLAGS) ./cmd/...
 
 showenv:
-	@$(GO) env
+	@go env
 
 check: gofmt lint
 
 test:
-	CGO_ENABLED=1 $(GO) test -tags=unit -race ./...
+	CGO_ENABLED=1 go test -tags=unit -race ./...
 	@# Make sure all e2e tests compile with their individual build tag
 	@# without actually running them by using `-run` with a non-existing test.
 	@# **Imortant:** Do not replace this with one `go test` with multiple tags,
 	@# as that doesn't properly reflect if each individual tag still builds
-	$(GO) test -tags cloud -run nope ./pkg/test/e2e/api/...
-	$(GO) test -tags create -run nope ./pkg/test/e2e/api/...
-	$(GO) test -tags e2e -run nope ./pkg/test/e2e/api/...
-	$(GO) test -tags integration -run nope ./...
+	go test -tags cloud -run nope ./pkg/test/e2e/api/...
+	go test -tags create -run nope ./pkg/test/e2e/api/...
+	go test -tags e2e -run nope ./pkg/test/e2e/api/...
+	go test -tags integration -run nope ./...
 
 test-integration : CGO_ENABLED = 1
 test-integration:
@@ -55,7 +54,7 @@ test-integration:
 		|xargs --max-args=1 -I ^ go test -tags integration  -race ./^
 
 test-update:
-	-$(GO) test ./... -update
+	-go test ./... -update
 
 clean:
 	rm -f $(TARGET)
