@@ -1,8 +1,8 @@
 // Kubermatic API.
 // Kubermatic API. This describes possible operations which can be made against the Kubermatic API.
 //
-//     Schemes: https, http
-//     Host: localhost
+//     Schemes: https
+//     Host: cloud.kubermatic.io
 //
 //     Security:
 //     - api_key:
@@ -26,6 +26,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	v1 "github.com/kubermatic/kubermatic/api/pkg/handler/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/addon"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
@@ -110,6 +111,14 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/vsphere/networks").
 		Handler(r.listVSphereNetworks())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/packet/sizes").
+		Handler(r.listPacketSizes())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/hetzner/sizes").
+		Handler(r.listHetznerSizes())
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/presets/credentials").
@@ -249,6 +258,26 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}").
 		Handler(r.deleteNodeDeployment())
 
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons").
+		Handler(r.createAddon())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons").
+		Handler(r.listAddons())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}").
+		Handler(r.getAddon())
+
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}").
+		Handler(r.patchAddon())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}").
+		Handler(r.deleteAddon())
+
 	//
 	// Defines a set of HTTP endpoints for various cloud providers
 	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
@@ -299,6 +328,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks").
 		Handler(r.listVSphereNetworksNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes").
+		Handler(r.listPacketSizesNoCredentials())
 
 	//
 	// Defines set of HTTP endpoints for Users of the given project
@@ -648,6 +681,50 @@ func (r Routing) listVSphereNetworks() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v1/providers/packet/sizes packet listPacketSizes
+//
+// Lists sizes from packet
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []PacketSizeList
+func (r Routing) listPacketSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.PacketSizesEndpoint(r.presetsManager)),
+		provider.DecodePacketSizesReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes packet listPacketSizesNoCredentials
+//
+// Lists sizes from packet
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []PacketSizeList
+func (r Routing) listPacketSizesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.PacketSizesNoCredentialsEndpoint(r.projectProvider)),
+		provider.DecodePacketSizesNoCredentialsReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v1/providers/openstack/tenants openstack listOpenstackTenants
 //
 // Lists tenants from openstack
@@ -731,6 +808,28 @@ func (r Routing) listOpenstackSecurityGroups() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackSecurityGroupEndpoint(r.seedsGetter, r.presetsManager)),
 		provider.DecodeOpenstackReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/hetzner/sizes hetzner listHetznerSizes
+//
+// Lists sizes from hetzner
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: HetznerSizeList
+func (r Routing) listHetznerSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.HetznerSizeEndpoint(r.presetsManager)),
+		provider.DecodeHetznerSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1236,7 +1335,7 @@ func (r Routing) getClusterHealth() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: empty
+//       201: SSHKey
 //       401: empty
 //       403: empty
 func (r Routing) assignSSHKeyToCluster() http.Handler {
@@ -2100,7 +2199,7 @@ func (r Routing) createNodeDeployment() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(node.CreateNodeDeployment(r.sshKeyProvider, r.projectProvider, r.seedsGetter)),
+		)(node.CreateNodeDeployment(r.sshKeyProvider, r.projectProvider, r.credentialsProvider, r.seedsGetter)),
 		node.DecodeCreateNodeDeployment,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -2235,7 +2334,7 @@ func (r Routing) patchNodeDeployment() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(node.PatchNodeDeployment(r.sshKeyProvider, r.projectProvider, r.seedsGetter)),
+		)(node.PatchNodeDeployment(r.sshKeyProvider, r.projectProvider, r.credentialsProvider, r.seedsGetter)),
 		node.DecodePatchNodeDeployment,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2263,6 +2362,148 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.DeleteNodeDeployment(r.projectProvider)),
 		node.DecodeDeleteNodeDeployment,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons addon createAddon
+//
+//     Creates an addon that will belong to the given cluster
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: Addon
+//       401: empty
+//       403: empty
+func (r Routing) createAddon() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(addon.CreateAddonEndpoint(r.projectProvider)),
+		addon.DecodeCreateAddon,
+		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons addon listAddons
+//
+//     Lists addons that belong to the given cluster
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Addon
+//       401: empty
+//       403: empty
+func (r Routing) listAddons() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(addon.ListAddonEndpoint(r.projectProvider)),
+		addon.DecodeListAddons,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id} addon getAddon
+//
+//     Gets an addon that is assigned to the given cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Addon
+//       401: empty
+//       403: empty
+func (r Routing) getAddon() http.Handler {
+
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(addon.GetAddonEndpoint(r.projectProvider)),
+		addon.DecodeGetAddon,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id} addon patchAddon
+//
+//     Patches an addon that is assigned to the given cluster.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Addon
+//       401: empty
+//       403: empty
+func (r Routing) patchAddon() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(addon.PatchAddonEndpoint(r.projectProvider)),
+		addon.DecodePatchAddon,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id} addon deleteAddon
+//
+//    Deletes the given addon that belongs to the cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteAddon() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(addon.DeleteAddonEndpoint(r.projectProvider)),
+		addon.DecodeGetAddon,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

@@ -47,6 +47,6 @@ func (k *kubevirt) CleanUpCloudProvider(c *v1.Cluster, p provider.ClusterUpdater
 	return c, nil
 }
 
-func (h *kubevirt) ValidateCloudSpecUpdate(oldSpec v1.CloudSpec, newSpec v1.CloudSpec) error {
+func (k *kubevirt) ValidateCloudSpecUpdate(oldSpec v1.CloudSpec, newSpec v1.CloudSpec) error {
 	return nil
 }
