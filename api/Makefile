@@ -49,7 +49,7 @@ test-integration:
 	@# * Finding all files that contain the build tag via grep
 	@# * Extracting the dirname as the `go test` command doesn't play well with individual files as args
 	@# * Prefixing them with `./` as thats needed by `go test` as well
-	grep --files-with-matches --recursive --extended-regexp '\+build.+integration' cmd/ pkg/ \
+	@grep --files-with-matches --recursive --extended-regexp '\+build.+integration' cmd/ pkg/ \
 		|xargs dirname \
 		|xargs --max-args=1 -I ^ go test -tags integration  -race ./^
 
