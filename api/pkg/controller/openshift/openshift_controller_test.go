@@ -8,9 +8,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	"go.uber.org/zap"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
-	"go.uber.org/zap"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -110,6 +112,8 @@ func TestResources(t *testing.T) {
 							DatacenterName: "alias-europe-west3-c",
 						},
 						ExposeStrategy: corev1.ServiceTypeNodePort,
+						Openshift:      &kubermaticv1.Openshift{},
+						Version:        *semver.NewSemverOrDie("4.1.9"),
 					},
 					Status: kubermaticv1.ClusterStatus{
 						NamespaceName: "test-cluster-ns",
