@@ -62,21 +62,21 @@ type datacentersMeta struct {
 func loadSeeds(path string) (map[string]*kubermaticv1.Seed, error) {
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read datacenter.yaml: %v", err)
 	}
 
 	dcMetas := datacentersMeta{}
 	if err := yaml.UnmarshalStrict(bytes, &dcMetas); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse datacenters.yaml: %v", err)
 	}
 
 	if err := validateDatacenters(dcMetas.Datacenters); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to validate datacenters.yaml: %v", err)
 	}
 
 	dcs, err := DatacenterMetasToSeeds(dcMetas.Datacenters)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to convert datacenters.yaml: %v", err)
 	}
 
 	return dcs, nil
