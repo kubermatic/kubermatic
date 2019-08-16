@@ -6,6 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // OwnerRefWrapper is responsible for wrapping a ObjectCreator function, solely to set the OwnerReference to the cluster object
@@ -84,6 +85,23 @@ func DefaultDeployment(creator DeploymentCreator) DeploymentCreator {
 		d, err := creator(d)
 		if err != nil {
 			return nil, err
+		}
+
+		if d.Spec.Strategy.Type == "" {
+			d.Spec.Strategy.Type = appsv1.RollingUpdateDeploymentStrategyType
+
+			if d.Spec.Strategy.RollingUpdate == nil {
+				d.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
+					MaxSurge: &intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 1,
+					},
+					MaxUnavailable: &intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 0,
+					},
+				}
+			}
 		}
 
 		d.Spec.Template.Spec, err = DefaultPodSpec(old.Spec.Template.Spec, d.Spec.Template.Spec)

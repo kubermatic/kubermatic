@@ -2,6 +2,8 @@ package reconciling
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -13,6 +15,7 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestDefaultPodSpec(t *testing.T) {
@@ -289,6 +292,19 @@ func TestDefaultDeployment(t *testing.T) {
 	expectedObject := &appsv1.Deployment{
 		ObjectMeta: existingObject.ObjectMeta,
 		Spec: appsv1.DeploymentSpec{
+			Strategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
+					MaxSurge: &intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 1,
+					},
+					MaxUnavailable: &intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 0,
+					},
+				},
+			},
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -530,4 +546,113 @@ func TestDefaultCronJob(t *testing.T) {
 	if diff := deep.Equal(actualCronJob, expectedObject); diff != nil {
 		t.Errorf("The CronJob from the client does not match the expected CronJob. Diff: \n%v", diff)
 	}
+}
+
+func TestDeploymentStrategyDefaulting(t *testing.T) {
+	testCases := []struct {
+		name   string
+		in     *appsv1.Deployment
+		verify func(*appsv1.Deployment) error
+	}{
+		{
+			name: "Strategy and strategysettings get defaulted",
+			in:   &appsv1.Deployment{},
+			verify: func(d *appsv1.Deployment) error {
+				if d.Spec.Strategy.Type != appsv1.RollingUpdateDeploymentStrategyType {
+					return fmt.Errorf("expected strategy to be %q, was %q",
+						appsv1.RollingUpdateStatefulSetStrategyType, d.Spec.Strategy.Type)
+				}
+				if d.Spec.Strategy.RollingUpdate == nil {
+					return errors.New("expected .Spec.Strategy.RollingUpdate to get defaulted, was nil")
+				}
+				if d.Spec.Strategy.RollingUpdate.MaxSurge == nil {
+					return errors.New("expected .Spec.Strategy.RollingUpdate.MaxSurge to get dafaulted, was nil")
+				}
+				if d.Spec.Strategy.RollingUpdate.MaxSurge.IntVal != 1 {
+					return fmt.Errorf("expected .Spec.Strategy.RollingUpdate.MaxSurge to be 1, was %d",
+						d.Spec.Strategy.RollingUpdate.MaxSurge.IntVal)
+				}
+				if d.Spec.Strategy.RollingUpdate.MaxUnavailable == nil {
+					return errors.New("expected .Spec.Strategy.RollingUpdate.MaxUnavailable to get defaulted, was nil")
+				}
+				if d.Spec.Strategy.RollingUpdate.MaxUnavailable.IntVal != 0 {
+					return fmt.Errorf("expected .Spec.Strategy.RollingUpdate.MaxUnavailable to be 0, was %d",
+						d.Spec.Strategy.RollingUpdate.MaxUnavailable.IntVal)
+				}
+				return nil
+			},
+		},
+		{
+			name: "Strategysettings dont get defaulted when already set",
+			in: &appsv1.Deployment{
+				Spec: appsv1.DeploymentSpec{
+					Strategy: appsv1.DeploymentStrategy{
+						RollingUpdate: &appsv1.RollingUpdateDeployment{
+							MaxSurge: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 10,
+							},
+							MaxUnavailable: &intstr.IntOrString{
+								Type:   intstr.Int,
+								IntVal: 2,
+							},
+						},
+					},
+				},
+			},
+			verify: func(d *appsv1.Deployment) error {
+				if d.Spec.Strategy.Type != appsv1.RollingUpdateDeploymentStrategyType {
+					return fmt.Errorf("expected strategy to get defaulted to %q, was %q",
+						appsv1.RollingUpdateDeploymentStrategyType, d.Spec.Strategy)
+				}
+				if d.Spec.Strategy.RollingUpdate.MaxSurge.IntVal != 10 {
+					return fmt.Errorf("expected .Spec.Strategy.RollingUpdate.MaxSurge.IntVal to be 10, was %d",
+						d.Spec.Strategy.RollingUpdate.MaxSurge.IntVal)
+				}
+				if d.Spec.Strategy.RollingUpdate.MaxUnavailable.IntVal != 2 {
+					return fmt.Errorf("expected .Spec.Strategy.RollingUpdate.MaxUnavailable to be 2, was %d",
+						d.Spec.Strategy.RollingUpdate.MaxUnavailable.IntVal)
+				}
+				return nil
+			},
+		},
+		{
+			name: "Both strategy and strategysettings dont get defaulted when strategy is set",
+			in: &appsv1.Deployment{
+				Spec: appsv1.DeploymentSpec{
+					Strategy: appsv1.DeploymentStrategy{
+						Type: appsv1.RecreateDeploymentStrategyType,
+					},
+				},
+			},
+			verify: func(d *appsv1.Deployment) error {
+				if d.Spec.Strategy.Type != appsv1.RecreateDeploymentStrategyType {
+					return fmt.Errorf("expected strategy to remain %q, was updated to %q",
+						appsv1.RecreateDeploymentStrategyType, d.Spec.Strategy)
+				}
+				if d.Spec.Strategy.RollingUpdate != nil {
+					return errors.New("expected .Spec.Strategy.RollingUpdate to remain nil, got set")
+				}
+				return nil
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			creator := func(_ *appsv1.Deployment) (*appsv1.Deployment, error) {
+				return tc.in, nil
+			}
+			creator = DefaultDeployment(creator)
+			deployment, err := creator(&appsv1.Deployment{})
+			if err != nil {
+				t.Fatalf("error when calling creator: %v", err)
+			}
+
+			if err := tc.verify(deployment); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+
 }
