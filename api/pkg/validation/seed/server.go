@@ -27,7 +27,7 @@ type WebhookOpts struct {
 }
 
 func (opts *WebhookOpts) AddFlags(fs *flag.FlagSet) {
-	fs.StringVar(&opts.ListenAddress, "seed-admisisonwebhook-listen-address", ":8100", "The listen address for the seed amission webhook")
+	fs.StringVar(&opts.ListenAddress, "seed-admissionwebhook-listen-address", ":8100", "The listen address for the seed amission webhook")
 	fs.StringVar(&opts.CertFile, "seed-admissionwebhook-cert-file", "", "The location of the certificate file")
 	fs.StringVar(&opts.KeyFile, "seed-admissionwebhook-key-file", "", "The location of the certificate key file")
 }
