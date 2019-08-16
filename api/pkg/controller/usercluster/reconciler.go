@@ -272,7 +272,7 @@ func (r *reconciler) reconcileServices(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile Services in kube-system namespace: %v", err)
 	}
 	if r.openshift {
-		if err := reconciling.ReconcileServices(ctx, []reconciling.NamedServiceCreatorGetter{openshift.OpenshiftAPIServicecreatorGetterFactory(r.namespace)}, "openshift-apiserver", r.Client); err != nil {
+		if err := reconciling.ReconcileServices(ctx, []reconciling.NamedServiceCreatorGetter{openshift.APIServicecreatorGetterFactory(r.namespace)}, "openshift-apiserver", r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile services in the openshift-apiserver namespace: %v", err)
 		}
 	}
@@ -314,7 +314,7 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 	if !r.openshift {
 		return nil
 	}
-	creators := []reconciling.NamedNamespaceCreatorGetter{openshift.OpenshiftAPIServerNSCreatorGetter}
+	creators := []reconciling.NamedNamespaceCreatorGetter{openshift.APIServerNSCreatorGetter}
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile namespaces: %v", err)
 	}

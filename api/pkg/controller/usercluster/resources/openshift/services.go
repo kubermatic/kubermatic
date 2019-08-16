@@ -7,7 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func OpenshiftAPIServicecreatorGetterFactory(clusterNS string) reconciling.NamedServiceCreatorGetter {
+func APIServicecreatorGetterFactory(clusterNS string) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return "api", func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Selector = nil

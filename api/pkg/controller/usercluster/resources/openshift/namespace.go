@@ -6,7 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func OpenshiftAPIServerNSCreatorGetter() (string, reconciling.NamespaceCreator) {
+func APIServerNSCreatorGetter() (string, reconciling.NamespaceCreator) {
 	return "openshift-apiserver", func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 		if ns.Annotations == nil {
 			ns.Annotations = map[string]string{}
