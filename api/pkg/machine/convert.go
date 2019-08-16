@@ -168,7 +168,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 	case providerconfig.CloudProviderKubeVirt:
 		config := &kubevirt.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse gcp config: %v", err)
+			return nil, fmt.Errorf("failed to parse kubevirt config: %v", err)
 		}
 
 		cloudSpec.Kubevirt = &apiv1.KubevirtNodeSpec{

@@ -3,8 +3,10 @@ package kubevirt
 import (
 	"encoding/base64"
 	"fmt"
+
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
 	"k8s.io/client-go/tools/clientcmd"
 )
 

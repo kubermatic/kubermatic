@@ -385,7 +385,7 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 		scenarios = append(scenarios, getGCPScenarios(opts.versions)...)
 	}
 	if opts.providers.Has("kubevirt") {
-		log.Info("Adding GCP scenarios")
+		log.Info("Adding Kubevirt scenarios")
 		scenarios = append(scenarios, getKubevirtScenarios(opts.versions)...)
 	}
 
