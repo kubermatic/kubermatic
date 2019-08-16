@@ -2,7 +2,6 @@ package cloud
 
 import (
 	"errors"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/kubevirt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -13,6 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/fake"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/gcp"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/hetzner"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/kubevirt"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/packet"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/vsphere"
