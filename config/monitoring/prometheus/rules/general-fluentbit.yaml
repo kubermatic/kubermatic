@@ -8,7 +8,7 @@ groups:
         an elevated retry rate.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-fluentbitmanyretries
     expr: |
-      sum by (namespace, pod) (kube_pod_info) *
+      sum by (namespace, pod, node) (kube_pod_info) *
         on (namespace, pod)
         group_right (node)
         rate(fluentbit_output_retries_total[1m]) > 0
@@ -21,7 +21,7 @@ groups:
         an elevated output error rate.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-fluentbitmanyoutputerrors
     expr: |
-      sum by (namespace, pod) (kube_pod_info) *
+      sum by (namespace, pod, node) (kube_pod_info) *
         on (namespace, pod)
         group_right (node)
         rate(fluentbit_output_errors_total[1m]) > 0
@@ -34,7 +34,7 @@ groups:
         any new logs for the last 30 minutes.
       runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-fluentbitnotprocessingnewlogs
     expr: |
-      sum by (namespace, pod) (kube_pod_info) *
+      sum by (namespace, pod, node) (kube_pod_info) *
         on (namespace, pod)
         group_right (node)
         rate(fluentbit_output_proc_records_total[1m]) == 0
