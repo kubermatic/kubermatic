@@ -116,59 +116,57 @@ datacenters:
 	assert.Equal(t, expectedSeeds, resultDatacenters)
 }
 
-func TestValidateDataCenters(t *testing.T) {
+func TestValidateSeed(t *testing.T) {
 	testCases := []struct {
 		name        string
-		datacenters map[string]DatacenterMeta
+		seed        *kubermaticv1.Seed
 		errExpected bool
 	}{
 		{
 			name: "Invalid name, error",
-			datacenters: map[string]DatacenterMeta{
-				"&invalid": {
-					IsSeed: true,
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "&invalid",
 				},
 			},
 			errExpected: true,
 		},
 		{
 			name: "Valid name succeeds",
-			datacenters: map[string]DatacenterMeta{
-				"valid": {
-					IsSeed: true,
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "valid-name",
 				},
 			},
 		},
 		{
 			name: "Invalid name, valid seed dns override",
-			datacenters: map[string]DatacenterMeta{
-				"&invalid": {
-					IsSeed:           true,
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "&invalid",
+				},
+				Spec: kubermaticv1.SeedSpec{
 					SeedDNSOverwrite: utilpointer.StringPtr("valid"),
 				},
 			},
 		},
 		{
 			name: "Valid name, invalid seed dns override",
-			datacenters: map[string]DatacenterMeta{
-				"valid": {
-					IsSeed:           true,
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "valid-name",
+				},
+				Spec: kubermaticv1.SeedSpec{
 					SeedDNSOverwrite: utilpointer.StringPtr("&invalid"),
 				},
 			},
 			errExpected: true,
 		},
-		{
-			name: "Invalid name, but is not a seed",
-			datacenters: map[string]DatacenterMeta{
-				"&invalid": {},
-			},
-		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			if err := validateDatacenters(tc.datacenters); (err != nil) != tc.errExpected {
+			if err := ValidateSeed(tc.seed); (err != nil) != tc.errExpected {
 				t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
 			}
 		})
