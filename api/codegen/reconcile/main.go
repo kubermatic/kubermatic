@@ -120,6 +120,11 @@ func main() {
 				ImportAlias:        "extensionsv1beta1",
 				ResourceImportPath: "k8s.io/api/extensions/v1beta1",
 			},
+			{
+				ResourceName:       "Seed",
+				ImportAlias:        "kubermaticv1",
+				ResourceImportPath: "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1",
+			},
 		},
 	}
 
