@@ -146,7 +146,7 @@ func main() {
 		sugarLog.Info("the validatingAdmissionWebhook server can not be started because seed-admissionwebhook-cert-file and seed-admissionwebhook-key-file are empty")
 	}
 
-	if err := createAllControllers(ctrlCtx); err != nil {
+	if err := createAllControllers(ctrlCtx, sugarLog); err != nil {
 		sugarLog.Fatalw("could not create all controllers", zap.Error(err))
 	}
 
