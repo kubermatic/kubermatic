@@ -58,6 +58,7 @@ func (opts *WebhookOpts) Server(
 		listenAddress: opts.ListenAddress,
 		certFile:      opts.CertFile,
 		keyFile:       opts.KeyFile,
+		workerName:    workerName,
 		validator:     newValidator(ctx, seedsGetter, seedClientGetter, listOpts),
 	}
 	mux := http.NewServeMux()
@@ -73,6 +74,7 @@ type Server struct {
 	listenAddress string
 	certFile      string
 	keyFile       string
+	workerName    string
 	validator     *seedValidator
 }
 
@@ -138,6 +140,11 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 		if err := json.Unmarshal(admissionReview.Request.Object.Raw, seed); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal object from request into a Seed: %v", err)
 		}
+	}
+
+	// ignore requests for non-matcher worker names
+	if seed.Labels[kubermaticv1.WorkerNameLabelKey] != s.workerName {
+		return admissionReview.Request, nil
 	}
 
 	validationErr := s.validator.Validate(seed, admissionReview.Request.Operation == admissionv1beta1.Delete)
