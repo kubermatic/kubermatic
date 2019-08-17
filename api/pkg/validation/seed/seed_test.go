@@ -247,7 +247,7 @@ func TestValidate(t *testing.T) {
 				},
 			},
 			existingClusters: map[string][]runtime.Object{
-				"existing-seed": []runtime.Object{
+				"existing-seed": {
 					&kubermaticv1.Cluster{
 						Spec: kubermaticv1.ClusterSpec{
 							Cloud: kubermaticv1.CloudSpec{
@@ -298,7 +298,7 @@ func TestValidate(t *testing.T) {
 				},
 			},
 			existingClusters: map[string][]runtime.Object{
-				"other-seed": []runtime.Object{
+				"other-seed": {
 					&kubermaticv1.Cluster{
 						Spec: kubermaticv1.ClusterSpec{
 							Cloud: kubermaticv1.CloudSpec{
@@ -323,7 +323,7 @@ func TestValidate(t *testing.T) {
 				},
 			},
 			existingClusters: map[string][]runtime.Object{
-				"myseed": []runtime.Object{&kubermaticv1.Cluster{}},
+				"myseed": {&kubermaticv1.Cluster{}},
 			},
 			isDelete:    true,
 			errExpected: true,

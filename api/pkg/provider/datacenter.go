@@ -136,7 +136,7 @@ func validateDatacenters(datacenters map[string]DatacenterMeta) error {
 			continue
 		}
 		if errs := validation.IsDNS1123Subdomain(datacenterName); errs != nil {
-			return fmt.Errorf("Datacentername %q is not a valid DNS name: %v", datacenterName, errs)
+			return fmt.Errorf("Datacenter name %q is not a valid DNS name: %v", datacenterName, errs)
 		}
 	}
 
