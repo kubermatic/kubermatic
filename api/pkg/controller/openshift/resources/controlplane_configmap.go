@@ -24,6 +24,11 @@ const (
 	openshiftContolPlaneConfigKeyName      = "master-config.yaml"
 )
 
+var (
+	openshiftKubeAPIServerTemplate = template.Must(template.New("base").Funcs(sprig.TxtFuncMap()).Parse(openshiftKubeAPIServerConfigTemplate))
+	openshiftAPIServerTemplate     = template.Must(template.New("base").Funcs(sprig.TxtFuncMap()).Parse(openshiftAPIServerConfigTemplate))
+)
+
 type masterConfigData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetApiserverExternalNodePort(context.Context) (int32, error)
@@ -43,14 +48,12 @@ func OpenshiftAPIServerConfigMapCreator(data openshiftAPIServerCreatorData) reco
 				cm.Data = map[string]string{}
 			}
 			apiServerConfigBuffer := bytes.Buffer{}
-			tmpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(openshiftAPIServerConfigTemplate)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse openshiftControlPlaneConfigTemplate: %v", err)
-			}
-			templateInput := openshiftConfigInput{
+			templateInput := struct {
+				ETCDEndpoints []string
+			}{
 				ETCDEndpoints: etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
 			}
-			if err := tmpl.Execute(&apiServerConfigBuffer, templateInput); err != nil {
+			if err := openshiftAPIServerTemplate.Execute(&apiServerConfigBuffer, templateInput); err != nil {
 				return nil, fmt.Errorf("failed to execute template: %v", err)
 			}
 			cm.Data[openshiftContolPlaneConfigKeyName] = apiServerConfigBuffer.String()
@@ -65,16 +68,28 @@ func OpenshiftKubeAPIServerConfigMapCreator(data masterConfigData) reconciling.N
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
-			apiServerConfigBuffer := bytes.Buffer{}
-			tmpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(openshiftKubeAPIServerConfigTemplate)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse config template for openshift Kube apiserverr: %v", err)
+
+			var podCIDR, serviceCIDR string
+			if len(data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks) > 0 {
+				podCIDR = data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0]
 			}
-			templateInput := openshiftConfigInput{
+			if len(data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks) > 0 {
+				serviceCIDR = data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0]
+			}
+
+			apiServerConfigBuffer := bytes.Buffer{}
+			templateInput := struct {
+				PodCIDR       string
+				ServiceCIDR   string
+				ListenPort    string
+				ETCDEndpoints []string
+			}{
+				PodCIDR:       podCIDR,
+				ServiceCIDR:   serviceCIDR,
 				ListenPort:    fmt.Sprint(data.Cluster().Address.Port),
 				ETCDEndpoints: etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
 			}
-			if err := tmpl.Execute(&apiServerConfigBuffer, templateInput); err != nil {
+			if err := openshiftKubeAPIServerTemplate.Execute(&apiServerConfigBuffer, templateInput); err != nil {
 				return nil, fmt.Errorf("failed to execute template: %v", err)
 			}
 			cm.Data[openshiftContolPlaneConfigKeyName] = apiServerConfigBuffer.String()
@@ -267,8 +282,8 @@ const openshiftKubeAPIServerConfigTemplate = `admission:
         apiVersion: network.openshift.io/v1
         kind: RestrictedEndpointsAdmissionConfig
         restrictedCIDRs:
-        - 10.128.0.0/14
-        - 172.30.0.0/16
+        - {{ .PodCIDR }}
+        - {{ .ServiceCIDR }}
 aggregatorConfig:
   proxyClientInfo:
     certFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.crt
@@ -365,7 +380,7 @@ projectConfig:
 serviceAccountPublicKeyFiles:
 - /etc/kubernetes/service-account-key/sa.pub
 servicesNodePortRange: 30000-32767
-servicesSubnet: 172.30.0.0/16
+servicesSubnet: {{ .ServiceCIDR }}
 servingInfo:
   bindAddress: 0.0.0.0:{{ .ListenPort }}
   bindNetwork: tcp4
