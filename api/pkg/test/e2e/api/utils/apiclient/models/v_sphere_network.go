@@ -15,8 +15,14 @@ import (
 // swagger:model VSphereNetwork
 type VSphereNetwork struct {
 
+	// AbsolutePath is the absolute path inside vCenter
+	AbsolutePath string `json:"absolutePath,omitempty"`
+
 	// Name is the name of the network
 	Name string `json:"name,omitempty"`
+
+	// Type defines the type of network
+	Type string `json:"type,omitempty"`
 }
 
 // Validate validates this v sphere network

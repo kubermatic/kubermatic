@@ -434,6 +434,10 @@ type OpenstackSecurityGroup struct {
 type VSphereNetwork struct {
 	// Name is the name of the network
 	Name string `json:"name"`
+	// AbsolutePath is the absolute path inside vCenter
+	AbsolutePath string `json:"absolutePath"`
+	// Type defines the type of network
+	Type string `json:"type"`
 }
 
 // VSphereFolder is the object representing a vsphere folder.

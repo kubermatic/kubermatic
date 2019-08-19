@@ -92,7 +92,11 @@ func getVsphereNetworks(seedsGetter provider.SeedsGetter, username, password, da
 
 	var apiNetworks []apiv1.VSphereNetwork
 	for _, net := range networks {
-		apiNetworks = append(apiNetworks, apiv1.VSphereNetwork{Name: net.Name})
+		apiNetworks = append(apiNetworks, apiv1.VSphereNetwork{
+			Name:         net.Name,
+			Type:         net.Type,
+			AbsolutePath: net.AbsolutePath,
+		})
 	}
 
 	return apiNetworks, nil
