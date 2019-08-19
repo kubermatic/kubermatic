@@ -83,6 +83,35 @@ func (a *Client) ListAWSSubnetsNoCredentials(params *ListAWSSubnetsNoCredentials
 }
 
 /*
+ListAWSVPCS Lists available AWS vpc's
+*/
+func (a *Client) ListAWSVPCS(params *ListAWSVPCSParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSVPCSOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAWSVPCSParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAWSVPCS",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/aws/{dc}/vpcs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAWSVPCSReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListAWSVPCSOK), nil
+
+}
+
+/*
 ListAWSZones Lists available AWS zones
 */
 func (a *Client) ListAWSZones(params *ListAWSZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSZonesOK, error) {

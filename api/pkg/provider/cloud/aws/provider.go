@@ -660,3 +660,19 @@ func (a *AmazonEC2) GetSubnets(spec kubermaticv1.CloudSpec, vpcID string) ([]*ec
 
 	return out.Subnets, nil
 }
+
+// GetVPCS returns the list of AWS VPC's.
+func (a *AmazonEC2) GetVPCS(spec kubermaticv1.CloudSpec) ([]*ec2.Vpc, error) {
+	client, err := a.getClientSet(spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get API client: %v", err)
+	}
+
+	vpcOut, err := client.EC2.DescribeVpcs(&ec2.DescribeVpcsInput{})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to list vpc's: %v", err)
+	}
+
+	return vpcOut.Vpcs, nil
+}
