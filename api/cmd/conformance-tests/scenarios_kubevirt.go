@@ -52,7 +52,7 @@ func (s *kubevirtScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
 					Kubevirt: &apimodels.KubevirtCloudSpec{
-						Config: secrets.Kubevirt.Config,
+						Kubeconfig: secrets.Kubevirt.Config,
 					},
 					DatacenterName: "kubevirt-ewr1",
 				},
@@ -71,8 +71,7 @@ func (s *kubevirtScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeD
 	case s.nodeOsSpec.Centos != nil:
 		sourceURL = "http://10.109.79.210/centos.img"
 	default:
-		s.logger.Error("node deployment os is not supported, using ubuntu as a default image")
-		sourceURL = "http://10.109.79.210/ubuntu.img"
+		s.logger.Error("coreos operating system is not supported")
 	}
 
 	return []apimodels.NodeDeployment{

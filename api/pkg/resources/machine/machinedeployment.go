@@ -220,7 +220,7 @@ func getProviderOS(config *providerconfig.Config, nd *apiv1.NodeDeployment) erro
 			return err
 		}
 	default:
-		return errors.New("unknown OS")
+		return errors.New("no machine os was provided")
 	}
 	config.OperatingSystemSpec = *osExt
 
