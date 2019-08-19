@@ -110,6 +110,7 @@ func TestResources(t *testing.T) {
 							DatacenterName: "alias-europe-west3-c",
 						},
 						ExposeStrategy: corev1.ServiceTypeNodePort,
+						Openshift:      &kubermaticv1.Openshift{},
 					},
 					Status: kubermaticv1.ClusterStatus{
 						NamespaceName: "test-cluster-ns",
