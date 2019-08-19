@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -45,17 +44,6 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Replicas = resources.Int32(2)
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabel(name, nil),
-			}
-			dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
-			dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
-				MaxSurge: &intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 1,
-				},
-				MaxUnavailable: &intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 0,
-				},
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
