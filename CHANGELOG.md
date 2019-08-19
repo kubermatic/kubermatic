@@ -1,3 +1,14 @@
+### [v2.11.2]()
+
+
+- Fixed an issue where deleted project owners would come back after a while [#4020](https://github.com/kubermatic/kubermatic/issues/4020) ([mrIncompetent](https://github.com/mrIncompetent))
+- Kubernetes versions affected by CVE-2019-11247 and CVE-2019-11249 have been dropped [#4066](https://github.com/kubermatic/kubermatic/issues/4066) ([kdomanski](https://github.com/kdomanski))
+- Kubernetes 1.11 which is end-of-life has been removed. [#4030](https://github.com/kubermatic/kubermatic/issues/4030) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Kubernetes 1.12 which is end-of-life has been removed. [#4067](https://github.com/kubermatic/kubermatic/issues/4067) ([kubermatic-bot](https://github.com/kubermatic-bot))
+
+
+
+
 ### [v2.11.1]()
 
 
@@ -7,7 +18,7 @@
 - Added Kubernetes `v1.15.1` [#3859](https://github.com/kubermatic/kubermatic/issues/3859) ([kubermatic-bot](https://github.com/kubermatic-bot))
 - Updated machine controller to `v1.5.1` [#3883](https://github.com/kubermatic/kubermatic/issues/3883) ([kdomanski](https://github.com/kdomanski))
 - A bug that sometimes resulted in the creation of the initial NodeDeployment failing was fixed [#3894](https://github.com/kubermatic/kubermatic/issues/3894) ([alvaroaleman](https://github.com/alvaroaleman))
-- Fixed an issue that kept clusters stuck if their creation didn't succeed and they got deleted with PV and/or PV cleanup enabled [#3973](https://github.com/kubermatic/kubermatic/issues/3973) ([alvaroaleman](https://github.com/alvaroaleman))
+- Fixed an issue that kept clusters stuck if their creation didn't succeed and they got deleted with LB and/or PV cleanup enabled [#3973](https://github.com/kubermatic/kubermatic/issues/3973) ([alvaroaleman](https://github.com/alvaroaleman))
 - Fixed joining nodes to Bring Your Own clusters running Kubernetes 1.14 [#3976](https://github.com/kubermatic/kubermatic/issues/3976) ([kubermatic-bot](https://github.com/kubermatic-bot))
 
 

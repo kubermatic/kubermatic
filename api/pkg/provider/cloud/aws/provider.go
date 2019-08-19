@@ -641,3 +641,22 @@ func (a *AmazonEC2) GetAvailabilityZonesInRegion(spec kubermaticv1.CloudSpec, re
 
 	return out.AvailabilityZones, nil
 }
+
+// GetSubnets returns the list of subnets for a selected AWS vpc.
+func (a *AmazonEC2) GetSubnets(spec kubermaticv1.CloudSpec, vpcID string) ([]*ec2.Subnet, error) {
+	client, err := a.getClientSet(spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get API client: %v", err)
+	}
+
+	filters := []*ec2.Filter{
+		{Name: aws.String("vpc-id"), Values: []*string{aws.String(vpcID)}},
+	}
+	subnetsInput := &ec2.DescribeSubnetsInput{Filters: filters}
+	out, err := client.EC2.DescribeSubnets(subnetsInput)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list subnets: %v", err)
+	}
+
+	return out.Subnets, nil
+}

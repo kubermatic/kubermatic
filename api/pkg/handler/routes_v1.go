@@ -49,6 +49,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAWSZones())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/aws/{dc}/subnets").
+		Handler(r.listAWSSubnets())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/gcp/disktypes").
 		Handler(r.listGCPDiskTypes())
 
@@ -95,6 +99,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/vsphere/networks").
 		Handler(r.listVSphereNetworks())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/vsphere/folders").
+		Handler(r.listVSphereFolders())
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/packet/sizes").
@@ -270,6 +278,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAWSZonesNoCredentials())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets").
+		Handler(r.listAWSSubnetsNoCredentials())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/disktypes").
 		Handler(r.listGCPDiskTypesNoCredentials())
 
@@ -312,6 +324,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks").
 		Handler(r.listVSphereNetworksNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/folders").
+		Handler(r.listVSphereFoldersNoCredentials())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes").
@@ -511,6 +527,28 @@ func (r Routing) listAWSZones() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v1/providers/aws/{dc}/subnets aws listAWSSubnets
+//
+// Lists available AWS subnets
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AWSSubnetList
+func (r Routing) listAWSSubnets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AWSSubnetEndpoint(r.presetsManager, r.seedsGetter)),
+		provider.DecodeAWSSubnetReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v1/providers/gcp/disktypes gcp listGCPDiskTypes
 //
 // Lists disk types from GCP
@@ -660,6 +698,28 @@ func (r Routing) listVSphereNetworks() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.VsphereNetworksEndpoint(r.seedsGetter, r.presetsManager)),
 		provider.DecodeVSphereNetworksReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/vsphere/folders vsphere listVSphereFolders
+//
+// Lists folders from vsphere datacenter
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []VSphereFolder
+func (r Routing) listVSphereFolders() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.VsphereFoldersEndpoint(r.seedsGetter, r.presetsManager)),
+		provider.DecodeVSphereFoldersReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1897,6 +1957,30 @@ func (r Routing) listAWSZonesNoCredentials() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets aws listAWSSubnetsNoCredentials
+//
+// Lists available AWS subnets
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AWSSubnetList
+func (r Routing) listAWSSubnetsNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(provider.AWSSubnetNoCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		common.DecodeGetClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/sizes gcp listGCPSizesNoCredentials
 //
 // Lists machine sizes from GCP
@@ -2156,6 +2240,30 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.VsphereNetworksNoCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
 		provider.DecodeVSphereNetworksNoCredentialsReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/folders vsphere listVSphereFoldersNoCredentials
+//
+// Lists folders from vsphere datacenter
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []VSphereFolder
+func (r Routing) listVSphereFoldersNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(provider.VsphereFoldersNoCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		provider.DecodeVSphereFoldersNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

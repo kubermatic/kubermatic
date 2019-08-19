@@ -3,7 +3,6 @@
 set -o errexit
 set -o nounset
 set -o pipefail
-set -x
 
 function cleanup() {
     rm -f $TMP_SWAGGER
@@ -16,8 +15,8 @@ trap cleanup EXIT SIGINT SIGTERM
 SWAGGER_META="// Kubermatic API.
 // Kubermatic API. This describes possible operations which can be made against the Kubermatic API.
 //
-//     Schemes: https, http
-//     Host: localhost
+//     Schemes: https
+//     Host: cloud.kubermatic.io
 //
 //     Security:
 //     - api_key:
@@ -34,8 +33,13 @@ API_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api"
 SWAGGER_FILE="swagger.json"
 TMP_SWAGGER="${SWAGGER_FILE}.tmp"
 
+# install swagger to temp dir
+TMP_DIR=$(mktemp -d)
+mkdir -p "${TMP_DIR}/bin"
+
 cd ${API_DIR}/vendor/github.com/go-swagger/go-swagger/cmd/swagger
-go install
+env "GOBIN=${TMP_DIR}/bin" go install
+export PATH="${TMP_DIR}/bin:${PATH}"
 cd ${API_DIR}/cmd/kubermatic-api/
 
 echo "${SWAGGER_META}$(cat ../../pkg/handler/routes_v1.go)" > ../../pkg/handler/routes_v1.go

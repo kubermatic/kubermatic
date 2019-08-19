@@ -17,7 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-// AWSCommonReq represent a request with common parameters for GCP.
+// AWSCommonReq represent a request with common parameters for AWS.
 type AWSCommonReq struct {
 	// in: header
 	// name: AccessKeyID
@@ -37,6 +37,18 @@ type AWSZoneReq struct {
 	// in: path
 	// required: true
 	DC string `json:"dc"`
+}
+
+// AWSSubnetReq represent a request for AWS subnets.
+// swagger:parameters listAWSSubnets
+type AWSSubnetReq struct {
+	AWSCommonReq
+	// in: path
+	// required: true
+	DC string `json:"dc"`
+	// in: header
+	// name: VPC
+	VPC string `json:"vpc"`
 }
 
 // DecodeAWSCommonReq decodes the base type for a AWS special endpoint request
@@ -65,6 +77,27 @@ func DecodeAWSZoneReq(c context.Context, r *http.Request) (interface{}, error) {
 		return req, fmt.Errorf("'dc' parameter is required")
 	}
 	req.DC = dc
+
+	return req, nil
+}
+
+// DecodeAWSSubnetReq decodes a request for a list of AWS subnets
+func DecodeAWSSubnetReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AWSSubnetReq
+
+	commonReq, err := DecodeAWSCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.AWSCommonReq = commonReq.(AWSCommonReq)
+
+	dc, ok := mux.Vars(r)["dc"]
+	if !ok {
+		return req, fmt.Errorf("'dc' parameter is required")
+	}
+	req.DC = dc
+
+	req.VPC = r.Header.Get("VPC")
 
 	return req, nil
 }
@@ -152,4 +185,122 @@ func listAWSZones(ctx context.Context, keyID, keySecret, datacenterName string, 
 	}
 
 	return zones, err
+}
+
+// AWSSubnetEndpoint handles the request to list AWS availability subnets in a given vpc, using provided credentials
+func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AWSSubnetReq)
+
+		keyID := req.AccessKeyID
+		keySecret := req.SecretAccessKey
+
+		if len(req.Credential) > 0 && credentialManager.GetPresets().AWS.Credentials != nil {
+			for _, credential := range credentialManager.GetPresets().AWS.Credentials {
+				if credential.Name == req.Credential {
+					keyID = credential.AccessKeyID
+					keySecret = credential.SecretAccessKey
+					break
+				}
+			}
+		}
+
+		return listAWSSubnets(ctx, keyID, keySecret, req.DC, req.VPC, seedsGetter)
+	}
+}
+
+// AWSSubnetNoCredentialsEndpoint handles the request to list AWS availability subnets in a given vpc, using credentials
+func AWSSubnetNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(common.GetClusterReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if cluster.Spec.Cloud.AWS == nil {
+			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
+		}
+
+		keyID := cluster.Spec.Cloud.AWS.AccessKeyID
+		keySecret := cluster.Spec.Cloud.AWS.SecretAccessKey
+		return listAWSSubnets(ctx, keyID, keySecret, cluster.Spec.Cloud.DatacenterName, cluster.Spec.Cloud.AWS.VPCID, seedsGetter)
+	}
+}
+
+func listAWSSubnets(ctx context.Context, keyID, keySecret, datacenterName string, vpcID string, seedsGetter provider.SeedsGetter) (apiv1.AWSSubnetList, error) {
+	subnets := apiv1.AWSSubnetList{}
+
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
+	datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+	if err != nil {
+		return nil, errors.NewBadRequest("%v", err)
+	}
+
+	if datacenter.Spec.AWS == nil {
+		return nil, errors.NewBadRequest("the %s is not AWS datacenter", datacenterName)
+	}
+
+	ec2, err := awsProvider.NewCloudProvider(datacenter)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't create cloud provider: %v", err)
+	}
+
+	subnetResults, err := ec2.GetSubnets(kubermaticv1.CloudSpec{
+		DatacenterName: datacenterName,
+		AWS: &kubermaticv1.AWSCloudSpec{
+			AccessKeyID:     keyID,
+			SecretAccessKey: keySecret,
+		},
+	}, vpcID)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get subnets: %v", err)
+	}
+
+	for _, s := range subnetResults {
+		subnetTags := []apiv1.AWSSubnetTag{}
+		var subnetName string
+		for _, v := range s.Tags {
+			subnetTags = append(subnetTags, apiv1.AWSSubnetTag{Key: *v.Key, Value: *v.Value})
+			if *v.Key == "Name" {
+				subnetName = *v.Value
+			}
+		}
+
+		// Even though Ipv6CidrBlockAssociationSet is defined as []*VpcIpv6CidrBlockAssociation in AWS,
+		// it is currently not possible to use more than one cidr block.
+		// In case there are blocks with state != associated, we check for it and use the first entry
+		// that matches condition.
+		var subnetIpv6 string
+		for _, v := range s.Ipv6CidrBlockAssociationSet {
+			if *v.Ipv6CidrBlockState.State == "associated" {
+				subnetIpv6 = *v.Ipv6CidrBlock
+				break
+			}
+		}
+
+		subnets = append(subnets, apiv1.AWSSubnet{
+			Name:                    subnetName,
+			ID:                      *s.SubnetId,
+			AvailabilityZone:        *s.AvailabilityZone,
+			AvailabilityZoneID:      *s.AvailabilityZoneId,
+			IPv4CIDR:                *s.CidrBlock,
+			IPv6CIDR:                subnetIpv6,
+			Tags:                    subnetTags,
+			State:                   *s.State,
+			AvailableIPAddressCount: *s.AvailableIpAddressCount,
+			DefaultForAz:            *s.DefaultForAz,
+		})
+
+	}
+
+	return subnets, err
 }

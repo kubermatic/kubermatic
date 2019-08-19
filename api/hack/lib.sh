@@ -20,10 +20,10 @@ actual_retry() {
     rc=$?
     count=$(( count + 1 ))
     if [ $count -lt "$retries" ]; then
-      echo "Retry $count/$retries exited $rc, retrying in $delay seconds..."
+      echo "Retry $count/$retries exited $rc, retrying in $delay seconds..." >/dev/stderr
       sleep $delay
     else
-      echo "Retry $count/$retries exited $rc, no more retries left."
+      echo "Retry $count/$retries exited $rc, no more retries left." >/dev/stderr
       return $rc
     fi
     delay=$(( delay * 2 ))
