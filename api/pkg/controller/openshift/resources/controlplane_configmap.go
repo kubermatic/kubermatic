@@ -282,13 +282,8 @@ const openshiftKubeAPIServerConfigTemplate = `admission:
         apiVersion: network.openshift.io/v1
         kind: RestrictedEndpointsAdmissionConfig
         restrictedCIDRs:
-<<<<<<< HEAD
-        - 10.128.0.0/14
-        - 172.30.0.0/16
-=======
         - {{ .PodCIDR }}
         - {{ .ServiceCIDR }}
->>>>>>> master
 aggregatorConfig:
   proxyClientInfo:
     certFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.crt
@@ -385,7 +380,7 @@ projectConfig:
 serviceAccountPublicKeyFiles:
 - /etc/kubernetes/service-account-key/sa.pub
 servicesNodePortRange: 30000-32767
-servicesSubnet: 172.30.0.0/16
+servicesSubnet: {{ .ServiceCIDR }}
 servingInfo:
   bindAddress: 0.0.0.0:{{ .ListenPort }}
   bindNetwork: tcp4
