@@ -146,8 +146,8 @@ type GCPCredentials struct {
 
 // KubevirtCredentials specifies access data to Kubevirt.
 type KubevirtCredentials struct {
-	Name   string `json:"name,omitempty"`
-	Config string `json:"config,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Kubeconfig string `json:"kubeconfig,omitempty"`
 }
 
 // FakeCredentials defines fake credential for tests
@@ -196,10 +196,9 @@ func NewWithPresets(presets *Presets) *Manager {
 
 // NewFromFile returns a instance of manager with the credentials loaded from the given paths
 func NewFromFile(credentialsFilename string) (*Manager, error) {
-	var (
-		presets *Presets
-		err     error
-	)
+	var presets *Presets
+	var err error
+
 	if len(credentialsFilename) > 0 {
 		presets, err = loadPresets(credentialsFilename)
 		if err != nil {
@@ -291,7 +290,7 @@ func (m *Manager) setKubevirtCredentials(credentialName string, cloud kubermatic
 	for _, credential := range m.presets.Kubevirt.Credentials {
 		if credentialName == credential.Name {
 
-			cloud.Kubevirt.Config = credential.Config
+			cloud.Kubevirt.Kubeconfig = credential.Kubeconfig
 			return &cloud, nil
 		}
 	}

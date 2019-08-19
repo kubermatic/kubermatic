@@ -22,11 +22,11 @@ func (k *kubevirt) DefaultCloudSpec(spec *v1.CloudSpec) error {
 }
 
 func (k *kubevirt) ValidateCloudSpec(spec v1.CloudSpec) error {
-	if spec.Kubevirt.Config == "" {
+	if spec.Kubevirt.Kubeconfig == "" {
 		return fmt.Errorf("config cannot be empty")
 	}
 
-	config, err := base64.StdEncoding.DecodeString(spec.Kubevirt.Config)
+	config, err := base64.StdEncoding.DecodeString(spec.Kubevirt.Kubeconfig)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func (k *kubevirt) ValidateCloudSpec(spec v1.CloudSpec) error {
 		return err
 	}
 
-	spec.Kubevirt.Config = fmt.Sprintf("%s", config)
+	spec.Kubevirt.Kubeconfig = string(config)
 
 	return nil
 }

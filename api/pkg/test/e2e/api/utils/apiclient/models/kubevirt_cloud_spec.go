@@ -15,8 +15,8 @@ import (
 // swagger:model KubevirtCloudSpec
 type KubevirtCloudSpec struct {
 
-	// config
-	Config string `json:"config,omitempty"`
+	// kubeconfig
+	Kubeconfig string `json:"kubeconfig,omitempty"`
 }
 
 // Validate validates this kubevirt cloud spec

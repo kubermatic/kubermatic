@@ -6571,9 +6571,9 @@
       "type": "object",
       "title": "KubevirtCloudSpec specifies the access data to Kubevirt.",
       "properties": {
-        "config": {
+        "kubeconfig": {
           "type": "string",
-          "x-go-name": "Config"
+          "x-go-name": "Kubeconfig"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"

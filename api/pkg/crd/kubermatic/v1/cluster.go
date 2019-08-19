@@ -384,7 +384,7 @@ type GCPCloudSpec struct {
 
 // KubevirtCloudSpec specifies the access data to Kubevirt.
 type KubevirtCloudSpec struct {
-	Config string `json:"config"`
+	Kubeconfig string `json:"kubeconfig"`
 }
 
 type HealthStatus int
