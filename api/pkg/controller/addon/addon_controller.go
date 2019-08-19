@@ -408,21 +408,13 @@ func (r *Reconciler) setupManifestInteraction(log *zap.SugaredLogger, addon *kub
 }
 
 func (r *Reconciler) getDeleteCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, openshift bool) *exec.Cmd {
-	binary := "kubectl"
-	if openshift {
-		binary = "oc"
-	}
-	cmd := exec.CommandContext(ctx, binary, "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename)
+	cmd := exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename)
 	return cmd
 }
 
 func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, openshift bool) *exec.Cmd {
 	//kubectl apply --prune -f manifest.yaml -l app=nginx
-	binary := "kubectl"
-	if openshift {
-		binary = "oc"
-	}
-	cmd := exec.CommandContext(ctx, binary, "--kubeconfig", kubeconfigFilename, "apply", "--prune", "-f", manifestFilename, "-l", selector.String())
+	cmd := exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFilename, "apply", "--prune", "-f", manifestFilename, "-l", selector.String())
 	return cmd
 }
 

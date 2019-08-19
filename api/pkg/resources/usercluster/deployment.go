@@ -110,6 +110,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 						"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
 						"-overwrite-registry", data.ImageRegistry(""),
 						fmt.Sprintf("-openshift=%t", openshift),
+						"-version", data.Cluster().Spec.Version.String(),
 						fmt.Sprintf("-openvpn-ca-cert-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCACertKey),
 						fmt.Sprintf("-openvpn-ca-key-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCAKeyKey),
 						"-logtostderr",

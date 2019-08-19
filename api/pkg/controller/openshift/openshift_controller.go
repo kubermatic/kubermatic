@@ -468,6 +468,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		openvpn.CACreator(),
 		apiserver.DexCACertificateCreator(osData.GetDexCA),
 		certificates.FrontProxyCACreator(),
+		openshiftresources.OpenShiftTLSServingCertificateCreator(osData),
 		openshiftresources.ServiceSignerCA(),
 		resources.ImagePullSecretCreator(r.dockerPullConfigJSON),
 		apiserver.FrontProxyClientCertificateCreator(osData),
@@ -522,25 +523,15 @@ func GetStatefulSetCreators(osData *openshiftData, enableDataCorruptionChecks bo
 }
 
 func (r *Reconciler) statefulSets(ctx context.Context, osData *openshiftData) error {
-	for _, namedStatefulSetCreator := range GetStatefulSetCreators(osData, r.features.EtcdDataCorruptionChecks) {
-		statefulSetName, statefulSetCreator := namedStatefulSetCreator()
-		if err := reconciling.EnsureNamedObject(ctx,
-			nn(osData.Cluster().Status.NamespaceName, statefulSetName),
-			reconciling.StatefulSetObjectWrapper(statefulSetCreator),
-			r.Client,
-			&appsv1.StatefulSet{},
-			false); err != nil {
-			return fmt.Errorf("failed to ensure StatefulSet %q: %v", statefulSetName, err)
-		}
-	}
-
-	return nil
+	creators := GetStatefulSetCreators(osData, r.features.EtcdDataCorruptionChecks)
+	return reconciling.ReconcileStatefulSets(ctx, creators, osData.Cluster().Status.NamespaceName, r.Client)
 }
 
 func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedConfigMapCreatorGetter {
 	return []reconciling.NamedConfigMapCreatorGetter{
 		cloudconfig.ConfigMapCreator(osData),
-		openshiftresources.OpenshiftAPIServerConfigMapCreator(ctx, osData),
+		openshiftresources.OpenshiftAPIServerConfigMapCreator(osData),
+		openshiftresources.OpenshiftKubeAPIServerConfigMapCreator(osData),
 		openshiftresources.OpenshiftControllerMangerConfigMapCreator(ctx, osData),
 		openvpn.ServerClientConfigsConfigMapCreator(osData),
 		dns.ConfigMapCreator(osData),
@@ -559,7 +550,9 @@ func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) erro
 }
 
 func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedDeploymentCreatorGetter {
-	creators := []reconciling.NamedDeploymentCreatorGetter{openshiftresources.APIDeploymentCreator(ctx, osData),
+	creators := []reconciling.NamedDeploymentCreatorGetter{
+		openshiftresources.OpenshiftAPIServerDeploymentCreator(ctx, osData),
+		openshiftresources.APIDeploymentCreator(ctx, osData),
 		openshiftresources.ControllerManagerDeploymentCreator(ctx, osData),
 		openshiftresources.MachineController(osData),
 		openvpn.DeploymentCreator(osData),
@@ -585,12 +578,9 @@ func GetCronJobCreators(osData *openshiftData) []reconciling.NamedCronJobCreator
 }
 
 func (r *Reconciler) cronJobs(ctx context.Context, osData *openshiftData) error {
-	for _, cronJobCreator := range GetCronJobCreators(osData) {
-		cronJobName, cronJobCreator := cronJobCreator()
-		if err := reconciling.EnsureNamedObject(ctx,
-			nn(osData.Cluster().Status.NamespaceName, cronJobName), reconciling.CronJobObjectWrapper(cronJobCreator), r.Client, &batchv1beta1.CronJob{}, false); err != nil {
-			return fmt.Errorf("failed to ensure CronJob %q: %v", cronJobName, err)
-		}
+	creators := GetCronJobCreators(osData)
+	if err := reconciling.ReconcileCronJobs(ctx, creators, osData.Cluster().Status.NamespaceName, r.Client); err != nil {
+		return fmt.Errorf("failed to ensure that the CronJobs exists: %v", err)
 	}
 	return nil
 }
@@ -726,6 +716,7 @@ func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCrea
 	creators := []reconciling.NamedServiceCreatorGetter{
 		apiserver.InternalServiceCreator(),
 		apiserver.ExternalServiceCreator(osData.Cluster().Spec.ExposeStrategy),
+		openshiftresources.OpenshiftAPIServiceCreator,
 		openvpn.ServiceCreator(osData.Cluster().Spec.ExposeStrategy),
 		etcd.ServiceCreator(osData),
 		dns.ServiceCreator(),
