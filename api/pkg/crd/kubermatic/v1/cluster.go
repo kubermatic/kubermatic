@@ -85,6 +85,13 @@ type ClusterSpec struct {
 	ComponentsOverride ComponentSettings `json:"componentsOverride"`
 
 	OIDC OIDCSettings `json:"oidc,omitempty"`
+
+	// Openshift holds all openshift-specific settings
+	Openshift *Openshift `json:"openshift,omitempty"`
+}
+
+type Openshift struct {
+	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 }
 
 type OIDCSettings struct {
