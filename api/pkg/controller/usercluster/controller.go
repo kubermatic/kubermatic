@@ -37,6 +37,7 @@ const (
 func Add(
 	mgr manager.Manager,
 	openshift bool,
+	version string,
 	namespace string,
 	caCert *x509.Certificate,
 	clusterURL *url.URL,
@@ -47,6 +48,7 @@ func Add(
 		Client:            mgr.GetClient(),
 		cache:             mgr.GetCache(),
 		openshift:         openshift,
+		version:           version,
 		rLock:             &sync.Mutex{},
 		namespace:         namespace,
 		caCert:            caCert,
@@ -105,6 +107,7 @@ func Add(
 type reconciler struct {
 	client.Client
 	openshift         bool
+	version           string
 	cache             cache.Cache
 	namespace         string
 	caCert            *x509.Certificate

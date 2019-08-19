@@ -11,6 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/kube-state-metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/metrics-server"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/openshift"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/scheduler"
@@ -19,10 +20,16 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	certutil "k8s.io/client-go/util/cert"
 )
 
 // Reconcile creates, updates, or deletes Kubernetes resources to match the desired state.
 func (r *reconciler) reconcile(ctx context.Context) error {
+	// Must be first because of openshift
+	if err := r.ensureAPIServices(ctx); err != nil {
+		return err
+	}
+
 	if err := r.reconcileServiceAcconts(ctx); err != nil {
 		return err
 	}
@@ -63,16 +70,19 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.ensureAPIServices(ctx); err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func (r *reconciler) ensureAPIServices(ctx context.Context) error {
-	creators := []reconciling.NamedAPIServiceCreatorGetter{
-		metricsserver.APIServiceCreator(),
+	creators := []reconciling.NamedAPIServiceCreatorGetter{}
+	if r.openshift {
+		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion(r.version, certutil.EncodeCertPEM(r.caCert))
+		if err != nil {
+			return fmt.Errorf("failed to get openshift apiservice creators: %v", err)
+		}
+		creators = append(creators, openshiftAPIServiceCreators...)
+	} else {
+		creators = append(creators, metricsserver.APIServiceCreator())
 	}
 
 	if err := reconciling.ReconcileAPIServices(ctx, creators, metav1.NamespaceNone, r.Client); err != nil {
