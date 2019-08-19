@@ -386,7 +386,7 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 	}
 	if opts.providers.Has("kubevirt") {
 		log.Info("Adding Kubevirt scenarios")
-		scenarios = append(scenarios, getKubevirtScenarios(opts.versions)...)
+		scenarios = append(scenarios, getKubevirtScenarios(opts.versions, log)...)
 	}
 
 	var filteredScenarios []testScenario

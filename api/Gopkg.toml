@@ -129,7 +129,7 @@ required = [
 
 [[override]]
   name = "sigs.k8s.io/controller-runtime"
-  version = "v0.1.11"
+  version = "v0.1.10"
 
 [[override]]
   name = "github.com/prometheus/client_golang"
