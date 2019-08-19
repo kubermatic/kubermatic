@@ -1,0 +1,43 @@
+# This file has been generated, do not edit.
+groups:
+- name: fluentbit
+  rules:
+  - alert: FluentbitManyRetries
+    annotations:
+      message: Fluentbit pod `{{ $labels.pod }}` on `{{ $labels.node }}` is experiencing
+        an elevated retry rate.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-fluentbitmanyretries
+    expr: |
+      sum by (namespace, pod, node) (kube_pod_info) *
+        on (namespace, pod)
+        group_right (node)
+        rate(fluentbit_output_retries_total[1m]) > 0
+    for: 10m
+    labels:
+      severity: warning
+  - alert: FluentbitManyOutputErrors
+    annotations:
+      message: Fluentbit pod `{{ $labels.pod }}` on `{{ $labels.node }}` is experiencing
+        an elevated output error rate.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-fluentbitmanyoutputerrors
+    expr: |
+      sum by (namespace, pod, node) (kube_pod_info) *
+        on (namespace, pod)
+        group_right (node)
+        rate(fluentbit_output_errors_total[1m]) > 0
+    for: 10m
+    labels:
+      severity: warning
+  - alert: FluentbitNotProcessingNewLogs
+    annotations:
+      message: Fluentbit pod `{{ $labels.pod }}` on `{{ $labels.node }}` has not processed
+        any new logs for the last 30 minutes.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-fluentbitnotprocessingnewlogs
+    expr: |
+      sum by (namespace, pod, node) (kube_pod_info) *
+        on (namespace, pod)
+        group_right (node)
+        rate(fluentbit_output_proc_records_total[1m]) == 0
+    for: 30m
+    labels:
+      severity: warning

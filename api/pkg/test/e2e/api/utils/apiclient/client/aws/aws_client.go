@@ -25,6 +25,64 @@ type Client struct {
 }
 
 /*
+ListAWSSubnets Lists available AWS subnets
+*/
+func (a *Client) ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAWSSubnetsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAWSSubnets",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/aws/{dc}/subnets",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAWSSubnetsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListAWSSubnetsOK), nil
+
+}
+
+/*
+ListAWSSubnetsNoCredentials Lists available AWS subnets
+*/
+func (a *Client) ListAWSSubnetsNoCredentials(params *ListAWSSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAWSSubnetsNoCredentialsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAWSSubnetsNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAWSSubnetsNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListAWSSubnetsNoCredentialsOK), nil
+
+}
+
+/*
 ListAWSZones Lists available AWS zones
 */
 func (a *Client) ListAWSZones(params *ListAWSZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSZonesOK, error) {
@@ -39,7 +97,7 @@ func (a *Client) ListAWSZones(params *ListAWSZonesParams, authInfo runtime.Clien
 		PathPattern:        "/api/v1/providers/aws/{dc}/zones",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
+		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &ListAWSZonesReader{formats: a.formats},
 		AuthInfo:           authInfo,
@@ -68,7 +126,7 @@ func (a *Client) ListAWSZonesNoCredentials(params *ListAWSZonesNoCredentialsPara
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/zones",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
+		Schemes:            []string{"https"},
 		Params:             params,
 		Reader:             &ListAWSZonesNoCredentialsReader{formats: a.formats},
 		AuthInfo:           authInfo,

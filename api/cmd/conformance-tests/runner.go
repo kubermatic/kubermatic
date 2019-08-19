@@ -375,7 +375,22 @@ func (r *testRunner) testCluster(
 	var err error
 	totalStart := time.Now()
 	log.Info("Starting to test cluster...")
-	defer log.Infof("Finished testing cluster after %s", time.Since(totalStart))
+
+	// We need the closure to defer the evaluation of the time.Since(totalStart) call
+	defer func() { log.Infof("Finished testing cluster after %s", time.Since(totalStart)) }()
+
+	// Always write junit to disk
+	defer func() {
+		report.Time = time.Since(totalStart).Seconds()
+		b, err := xml.Marshal(report)
+		if err != nil {
+			log.Errorw("failed to marshal junit", zap.Error(err))
+			return
+		}
+		if err := ioutil.WriteFile(path.Join(r.reportsRoot, fmt.Sprintf("junit.%s.xml", scenarioName)), b, 0644); err != nil {
+			log.Errorw("failed to write junit", zap.Error(err))
+		}
+	}()
 
 	// We'll store the report there and all kinds of logs
 	scenarioFolder := path.Join(r.reportsRoot, scenarioName)
@@ -450,16 +465,6 @@ func (r *testRunner) testCluster(
 				})
 		}); err != nil {
 		log.Errorf("Failed to verify that user cluster RBAC controller work: %v", err)
-	}
-
-	report.Time = time.Since(totalStart).Seconds()
-	b, err := xml.Marshal(report)
-	if err != nil {
-		return fmt.Errorf("failed to marshal combined report file: %v", err)
-	}
-
-	if err := ioutil.WriteFile(path.Join(r.reportsRoot, fmt.Sprintf("junit.%s.xml", scenarioName)), b, 0644); err != nil {
-		return fmt.Errorf("failed to write combined report file: %v", err)
 	}
 
 	return nil

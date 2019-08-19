@@ -121,11 +121,15 @@ type DatacenterSpecVSphere struct {
 	Endpoint      string `json:"endpoint"`
 	AllowInsecure bool   `json:"allow_insecure"`
 
-	Datastore  string    `json:"datastore"`
-	Datacenter string    `json:"datacenter"`
-	Cluster    string    `json:"cluster"`
-	RootPath   string    `json:"root_path"`
-	Templates  ImageList `json:"templates"`
+	Datastore  string `json:"datastore"`
+	Datacenter string `json:"datacenter"`
+	Cluster    string `json:"cluster"`
+	// Optional root path for cluster specific VM folders.
+	// Each cluster gets a own folder below the root folder.
+	// Must be the FQDN (example: /datacenter-1/vm/all-kubermatic-vms-in-here )
+	// Defaults to the root VM folder: /datacenter-1/vm
+	RootPath  string    `json:"root_path"`
+	Templates ImageList `json:"templates"`
 
 	// Infra management user is an optional user that will be used only
 	// for everything except the cloud provider functionality which will

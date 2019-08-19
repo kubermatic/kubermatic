@@ -46,6 +46,10 @@ func (opts *WebhookOpts) Server(
 	}
 	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}
 
+	if opts.certFile == "" || opts.keyFile == "" {
+		return nil, fmt.Errorf("seed-admissionwebhook-cert-file or seed-admissionwebhook-key-file cannot be empty")
+	}
+
 	server := &Server{
 		Server: &http.Server{
 			Addr: opts.listenAddress,
@@ -119,8 +123,21 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 	}
 
 	seed := &kubermaticv1.Seed{}
-	if err := json.Unmarshal(admissionReview.Request.Object.Raw, seed); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal object from request into a Seed: %v", err)
+	// On DELETE, the admissionReview.Request.Object is unset
+	// Ref: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#webhook-request-and-response
+	if admissionReview.Request.Operation == admissionv1beta1.Delete {
+		seeds, err := s.validator.seedsGetter()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get seeds: %v", err)
+		}
+		if _, exists := seeds[admissionReview.Request.Name]; !exists {
+			return admissionReview.Request, nil
+		}
+		seed = seeds[admissionReview.Request.Name]
+	} else {
+		if err := json.Unmarshal(admissionReview.Request.Object.Raw, seed); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal object from request into a Seed: %v", err)
+		}
 	}
 
 	validationErr := s.validator.Validate(seed, admissionReview.Request.Operation == admissionv1beta1.Delete)

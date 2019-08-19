@@ -16,6 +16,8 @@ logging:
         Host            ${FLUENT_ELASTICSEARCH_HOST}
         Port            ${FLUENT_ELASTICSEARCH_PORT}
         Logstash_Format On
+        Replace_Dots    On
+        Generate_ID     On
         Retry_Limit     False
     resources:
       requests:

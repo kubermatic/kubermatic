@@ -1,3 +1,4 @@
+# Generated via `kubectl get crd -o json|jq '.items[]|{metadata: {name: .metadata.name}, apiVersion: .apiVersion, kind: .kind, spec: .spec}'  > crds.yaml `ßw
 {
   "metadata": {
     "name": "alertmanagers.monitoring.coreos.com"

@@ -8,11 +8,7 @@ spec:
   selector:
     matchLabels:
       app: metrics-server
-  strategy:
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-    type: RollingUpdate
+  strategy: {}
   template:
     metadata:
       creationTimestamp: null
