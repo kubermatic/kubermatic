@@ -5,11 +5,13 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+
+	"go.uber.org/zap"
 	utilpointer "k8s.io/utils/pointer"
 )
 
 // Returns a matrix of (version x operating system)
-func getKubevirtScenarios(versions []*semver.Semver) []testScenario {
+func getKubevirtScenarios(versions []*semver.Semver, log *zap.SugaredLogger) []testScenario {
 	var scenarios []testScenario
 	for _, v := range versions {
 		// Ubuntu
@@ -18,16 +20,7 @@ func getKubevirtScenarios(versions []*semver.Semver) []testScenario {
 			nodeOsSpec: &apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
-		})
-		// CoreOS
-		scenarios = append(scenarios, &kubevirtScenario{
-			version: v,
-			nodeOsSpec: &apimodels.OperatingSystemSpec{
-				ContainerLinux: &apimodels.ContainerLinuxSpec{
-					// Otherwise the nodes restart directly after creation - bad for tests
-					DisableAutoUpdate: true,
-				},
-			},
+			logger: log,
 		})
 		// CentOS
 		scenarios = append(scenarios, &kubevirtScenario{
@@ -35,6 +28,7 @@ func getKubevirtScenarios(versions []*semver.Semver) []testScenario {
 			nodeOsSpec: &apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
+			logger: log,
 		})
 	}
 
@@ -44,6 +38,7 @@ func getKubevirtScenarios(versions []*semver.Semver) []testScenario {
 type kubevirtScenario struct {
 	version    *semver.Semver
 	nodeOsSpec *apimodels.OperatingSystemSpec
+	logger     *zap.SugaredLogger
 }
 
 func (s *kubevirtScenario) Name() string {
@@ -68,6 +63,18 @@ func (s *kubevirtScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec
 }
 
 func (s *kubevirtScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDeployment {
+	var sourceURL string
+
+	switch {
+	case s.nodeOsSpec.Ubuntu != nil:
+		sourceURL = "http://10.109.79.210/ubuntu.img"
+	case s.nodeOsSpec.Centos != nil:
+		sourceURL = "http://10.109.79.210/centos.img"
+	default:
+		s.logger.Error("node deployment os is not supported, using ubuntu as a default image")
+		sourceURL = "http://10.109.79.210/ubuntu.img"
+	}
+
 	return []apimodels.NodeDeployment{
 		{
 			Spec: &apimodels.NodeDeploymentSpec{
@@ -77,7 +84,7 @@ func (s *kubevirtScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeD
 						Kubevirt: &apimodels.KubevirtNodeSpec{
 							Memory:           utilpointer.StringPtr("1024M"),
 							Namespace:        utilpointer.StringPtr("kube-system"),
-							SourceURL:        utilpointer.StringPtr("http://10.109.79.210/<< OS_NAME >>.img"),
+							SourceURL:        utilpointer.StringPtr(sourceURL),
 							StorageClassName: utilpointer.StringPtr("kubermatic-fast"),
 							PVCSize:          utilpointer.StringPtr("10Gi"),
 							Cpus:             utilpointer.StringPtr("1"),
