@@ -30,7 +30,7 @@ func TestValidate(t *testing.T) {
 		name             string
 		existingSeeds    map[string]*kubermaticv1.Seed
 		seedToValidate   *kubermaticv1.Seed
-		existingClusters map[string][]runtime.Object
+		existingClusters []runtime.Object
 		isDelete         bool
 		errExpected      bool
 	}{
@@ -132,7 +132,7 @@ func TestValidate(t *testing.T) {
 			},
 			seedToValidate: &kubermaticv1.Seed{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "new-seed",
+					Name: "existing-seed",
 				},
 				Spec: kubermaticv1.SeedSpec{
 					Datacenters: map[string]kubermaticv1.Datacenter{},
@@ -194,7 +194,11 @@ func TestValidate(t *testing.T) {
 				},
 				Spec: kubermaticv1.SeedSpec{
 					Datacenters: map[string]kubermaticv1.Datacenter{
-						"dc1": {},
+						"dc1": {
+							Spec: kubermaticv1.DatacenterSpec{
+								AWS: &kubermaticv1.DatacenterSpecAWS{},
+							},
+						},
 					},
 				},
 			},
@@ -246,13 +250,11 @@ func TestValidate(t *testing.T) {
 					},
 				},
 			},
-			existingClusters: map[string][]runtime.Object{
-				"existing-seed": {
-					&kubermaticv1.Cluster{
-						Spec: kubermaticv1.ClusterSpec{
-							Cloud: kubermaticv1.CloudSpec{
-								DatacenterName: "dc1",
-							},
+			existingClusters: []runtime.Object{
+				&kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "dc1",
 						},
 					},
 				},
@@ -284,33 +286,17 @@ func TestValidate(t *testing.T) {
 						},
 					},
 				},
-				"other-seed": {
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "other-seed",
-					},
-					Spec: kubermaticv1.SeedSpec{
-						Datacenters: map[string]kubermaticv1.Datacenter{
-							"other-dc": {
-								Spec: fakeProviderSpec,
-							},
-						},
-					},
-				},
-			},
-			existingClusters: map[string][]runtime.Object{
-				"other-seed": {
-					&kubermaticv1.Cluster{
-						Spec: kubermaticv1.ClusterSpec{
-							Cloud: kubermaticv1.CloudSpec{
-								DatacenterName: "other-dc",
-							},
-						},
-					},
-				},
 			},
 			seedToValidate: &kubermaticv1.Seed{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "existing-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					Datacenters: map[string]kubermaticv1.Datacenter{
+						"dc1": {
+							Spec: fakeProviderSpec,
+						},
+					},
 				},
 			},
 			isDelete: true,
@@ -322,8 +308,8 @@ func TestValidate(t *testing.T) {
 					Name: "myseed",
 				},
 			},
-			existingClusters: map[string][]runtime.Object{
-				"myseed": {&kubermaticv1.Cluster{}},
+			existingClusters: []runtime.Object{
+				&kubermaticv1.Cluster{},
 			},
 			isDelete:    true,
 			errExpected: true,
@@ -336,10 +322,8 @@ func TestValidate(t *testing.T) {
 				listOpts: &ctrlruntimeclient.ListOptions{},
 			}
 
-			existingClusters := tc.existingClusters[tc.seedToValidate.Name]
-
 			err := sv.validate(tc.seedToValidate,
-				fakectrlruntimeclient.NewFakeClient(existingClusters...),
+				fakectrlruntimeclient.NewFakeClient(tc.existingClusters...),
 				tc.existingSeeds, tc.isDelete)
 
 			if (err != nil) != tc.errExpected {

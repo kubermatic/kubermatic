@@ -126,6 +126,8 @@ func ValidateSeed(seed *kubermaticv1.Seed) error {
 		}
 	}
 
+	// invalid DNS overwrites can happen when a seed was freshly converted from
+	// the datacenters.yaml and has not yet been validated
 	if seed.Spec.SeedDNSOverwrite != nil && *seed.Spec.SeedDNSOverwrite != "" {
 		if errs := validation.IsDNS1123Subdomain(*seed.Spec.SeedDNSOverwrite); errs != nil {
 			return fmt.Errorf("DNS overwrite %q is not a valid DNS name: %v", *seed.Spec.SeedDNSOverwrite, errs)

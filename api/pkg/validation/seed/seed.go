@@ -61,27 +61,27 @@ func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntim
 	// remove the seed itself from the list, so uniqueness checks won't fail
 	delete(seeds, seed.Name)
 
-	affectedDatacenters := sets.NewString()
+	ourDatacenters := sets.NewString()
 	for datacenter := range seed.Spec.Datacenters {
-		affectedDatacenters.Insert(datacenter)
+		ourDatacenters.Insert(datacenter)
 	}
 
 	// list of datacenters that remain after the operation we validate would be completed
-	finalDatacenters := sets.NewString()
+	allDatacenters := sets.NewString()
 	for _, s := range seeds {
 		for dc := range s.Spec.Datacenters {
-			finalDatacenters.Insert(dc)
+			allDatacenters.Insert(dc)
 		}
 	}
 
 	if !isDelete {
-		finalDatacenters = finalDatacenters.Union(affectedDatacenters)
+		allDatacenters = allDatacenters.Union(ourDatacenters)
 	}
 
 	// check if all the DCs in the seed are unique
 	for _, s := range seeds {
 		for dc := range s.Spec.Datacenters {
-			if affectedDatacenters.Has(dc) {
+			if ourDatacenters.Has(dc) {
 				return fmt.Errorf("datacenter %q already exists in seed %q, can only have one datacenter with a given name", dc, s.Name)
 			}
 		}
@@ -98,13 +98,18 @@ func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntim
 			return fmt.Errorf("datacenter %q has no provider defined", dcName)
 		}
 
-		if existingSeed != nil {
-			if existingDC, ok := existingSeed.Spec.Datacenters[dcName]; ok {
-				existingProvider, _ := provider.DatacenterCloudProviderName(&existingDC.Spec)
-				if providerName != existingProvider {
-					return fmt.Errorf("cannot change datacenter %q provider from %q", dcName, existingProvider)
-				}
-			}
+		if existingSeed == nil {
+			continue
+		}
+
+		existingDC, ok := existingSeed.Spec.Datacenters[dcName]
+		if !ok {
+			continue
+		}
+
+		existingProvider, _ := provider.DatacenterCloudProviderName(&existingDC.Spec)
+		if providerName != existingProvider {
+			return fmt.Errorf("cannot change datacenter %q provider from %q", dcName, existingProvider)
 		}
 	}
 
@@ -115,7 +120,7 @@ func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntim
 	}
 
 	for _, cluster := range clusters.Items {
-		if !affectedDatacenters.Has(cluster.Spec.Cloud.DatacenterName) {
+		if !ourDatacenters.Has(cluster.Spec.Cloud.DatacenterName) {
 			return fmt.Errorf("datacenter %q is still in use, cannot delete it", cluster.Spec.Cloud.DatacenterName)
 		}
 	}

@@ -142,11 +142,6 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 		}
 	}
 
-	// ignore requests for non-matcher worker names
-	if seed.Labels[kubermaticv1.WorkerNameLabelKey] != s.workerName {
-		return admissionReview.Request, nil
-	}
-
 	validationErr := s.validator.Validate(seed, admissionReview.Request.Operation == admissionv1beta1.Delete)
 	if validationErr != nil {
 		s.log.Errorw("Seed failed validation", "seed", seed.Name, "validationError", validationErr.Error())
