@@ -66,17 +66,6 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil),
 			}
-			dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
-			dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
-				MaxSurge: &intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 1,
-				},
-				MaxUnavailable: &intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 0,
-				},
-			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 			volumes := getVolumes()
