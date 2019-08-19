@@ -3,41 +3,48 @@
 set -o errexit
 set -o nounset
 set -o pipefail
-set -x
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 make user-cluster-controller-manager
 
-KUBECONFIG_USERCLUSTER_CONTROLLER=$(mktemp)
-# TODO: append -n cluster-$CLUSTER_NAME here
-kubectl get secret admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' \
-  | base64 -d > ${KUBECONFIG_USERCLUSTER_CONTROLLER}
+# Getting everything we need from the api
+# TODO: append -n cluster-$CLUSTER_NAME here or switch to the namespace before
+ADMIN_KUBECONFIG_RAW="$(kubectl get secret admin-kubeconfig -o json)"
+OPENVPN_CA_SECRET_RAW="$(kubectl get secret openvpn-ca -o json)"
+CLUSTER_RAW="$(kubectl get cluster $(echo $ADMIN_KUBECONFIG_RAW|jq -r '.metadata.namespace'|sed 's/cluster-//') -o json)"
+OPENVPN_SERVER_SERVICE_RAW="$(kubectl get service openvpn-server -o json )"
 
-CA_CERT_USERCLUSTER_CONTROLLER=$(mktemp)
-OPENVPN_CA_CERT=$(mktemp)
-OPENVPN_CA_KEY=$(mktemp)
-kubectl get secret ca -o json | jq -r '.data["ca.crt"]' | base64 -d > ${CA_CERT_USERCLUSTER_CONTROLLER}
-kubectl get secret openvpn-ca -o json|jq -r '.data["ca.crt"]'|base64 -d > ${OPENVPN_CA_CERT}
-kubectl get secret openvpn-ca -o json|jq -r '.data["ca.key"]'|base64 -d > ${OPENVPN_CA_KEY}
+CA_CERT_USERCLUSTER_CONTROLLER_FILE=$(mktemp)
+OPENVPN_CA_CERT_FILE=$(mktemp)
+OPENVPN_CA_KEY_FILE=$(mktemp)
+KUBECONFIG_USERCLUSTER_CONTROLLER_FILE=$(mktemp)
 
-CLUSTER_NAME=$(kubectl get secret admin-kubeconfig -o go-template='{{ .metadata.namespace }}'|sed 's/cluster-//g')
+kubectl get secret ca -o json | jq -r '.data["ca.crt"]' | base64 -d > ${CA_CERT_USERCLUSTER_CONTROLLER_FILE}
+echo ${OPENVPN_CA_SECRET_RAW}|jq -r '.data["ca.crt"]'|base64 -d > ${OPENVPN_CA_CERT_FILE}
+echo ${OPENVPN_CA_SECRET_RAW}|jq -r '.data["ca.key"]'|base64 -d > ${OPENVPN_CA_KEY_FILE}
+echo ${ADMIN_KUBECONFIG_RAW}|jq -r '.data.kubeconfig' |base64 -d > ${KUBECONFIG_USERCLUSTER_CONTROLLER_FILE}
+
+CLUSTER_VERSION="$(echo $CLUSTER_RAW|jq -r '.spec.version')"
+CLUSTER_NAMESPACE="$(echo $ADMIN_KUBECONFIG_RAW|jq -r '.metadata.namespace')"
+CLUSTER_URL="$(echo $CLUSTER_RAW | jq -r .address.url)"
+OPENVPN_SERVER_NODEPORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r .spec.ports[0].nodePort)"
+
 ARGS=""
-
-kubectl get secret admin-kubeconfig -o go-template='{{ .metadata.namespace }}'
-if kubectl get cluster ${CLUSTER_NAME} -o yaml |grep openshift -q; then
+if echo $CLUSTER_RAW |grep openshift -q; then
   ARGS="-openshift=true"
 fi
 
 ./_build/user-cluster-controller-manager \
-    -kubeconfig=$KUBECONFIG_USERCLUSTER_CONTROLLER \
+    -kubeconfig=${KUBECONFIG_USERCLUSTER_CONTROLLER_FILE} \
     -logtostderr \
     -metrics-listen-address=127.0.0.1:8087 \
     -health-listen-address=127.0.0.1:8088 \
     -v=4 \
-    -namespace=$(kubectl get cluster ${CLUSTER_NAME} -o json | jq -r .status.namespaceName) \
-    -openvpn-server-port=$(kubectl get service openvpn-server -o json | jq -r .spec.ports[0].nodePort) \
-    -openvpn-ca-cert-file=${OPENVPN_CA_CERT} \
-    -openvpn-ca-key-file=${OPENVPN_CA_KEY} \
-    -cluster-url=$(kubectl get cluster ${CLUSTER_NAME} -o json | jq -r .address.url) \
-    -ca-cert=${CA_CERT_USERCLUSTER_CONTROLLER} \
+    -namespace=${CLUSTER_NAMESPACE} \
+    -openvpn-server-port=${OPENVPN_SERVER_NODEPORT} \
+    -openvpn-ca-cert-file=${OPENVPN_CA_CERT_FILE} \
+    -openvpn-ca-key-file=${OPENVPN_CA_KEY_FILE} \
+    -cluster-url=${CLUSTER_URL} \
+    -ca-cert=${CA_CERT_USERCLUSTER_CONTROLLER_FILE} \
+    -version=${CLUSTER_VERSION} \
     ${ARGS}
