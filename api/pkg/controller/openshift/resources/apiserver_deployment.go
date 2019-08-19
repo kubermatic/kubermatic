@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd/etcdrunning"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	utilpointer "k8s.io/utils/pointer"
 )
 
 var (
@@ -65,7 +66,10 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 					IntVal: 0,
 				},
 			}
-			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
+				{Name: resources.ImagePullSecretName},
+				{Name: openshiftImagePullSecretName},
+			}
 
 			volumes := getAPIServerVolumes()
 
@@ -95,24 +99,11 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 			if err != nil {
 				return nil, err
 			}
+
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = utilpointer.BoolPtr(false)
 			dep.Spec.Template.Spec.Volumes = volumes
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
-				{
-					Name:  "etcd-running",
-					Image: data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + etcd.ImageTag,
-					Command: []string{
-						"/bin/sh",
-						"-ec",
-						fmt.Sprintf("until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key --dial-timeout=2s --endpoints='%s' endpoint health; do echo waiting for etcd; sleep 2; done;", strings.Join(etcdEndpoints, ",")),
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      resources.ApiserverEtcdClientCertificateSecretName,
-							MountPath: "/etc/etcd/pki/client",
-							ReadOnly:  true,
-						},
-					},
-				},
+				etcdrunning.Container(etcdEndpoints, data),
 			}
 
 			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
@@ -135,13 +126,18 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				return nil, err
 			}
 
+			image, err := openshiftKubeAPIServerImage(data.Cluster().Spec.Version.String())
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				*dnatControllerSidecar,
 				{
 					Name:      ApiserverDeploymentName,
-					Image:     data.ImageRegistry(resources.RegistryDocker) + "/openshift/origin-control-plane:v3.11",
-					Command:   []string{"/usr/bin/openshift", "start", "master", "api"},
+					Image:     image,
+					Command:   []string{"hypershift", "openshift-kube-apiserver"},
 					Args:      []string{"--config=/etc/origin/master/master-config.yaml"},
 					Env:       envVars,
 					Resources: *resourceRequirements,
@@ -232,7 +228,7 @@ func getVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 		{
-			Name:      openshiftAPIServerConfigMapName,
+			Name:      openshiftKubeAPIServerConfigMapName,
 			MountPath: "/etc/origin/master",
 		},
 		{
@@ -353,10 +349,10 @@ func getAPIServerVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: openshiftAPIServerConfigMapName,
+			Name: openshiftKubeAPIServerConfigMapName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: openshiftAPIServerConfigMapName},
+					LocalObjectReference: corev1.LocalObjectReference{Name: openshiftKubeAPIServerConfigMapName},
 					DefaultMode:          resources.Int32(420),
 				},
 			},
@@ -405,4 +401,13 @@ func getAPIServerEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 	}
 	return vars, nil
+}
+
+func openshiftKubeAPIServerImage(openshiftVersion string) (string, error) {
+	switch openshiftVersion {
+	case "4.1.9":
+		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:86255c4efe6bbc141a0f41444f863bbd5cd832ffca21d2b737a4f9c225ed00ad", nil
+	default:
+		return "", fmt.Errorf("no image available for openshift version %q", openshiftVersion)
+	}
 }
