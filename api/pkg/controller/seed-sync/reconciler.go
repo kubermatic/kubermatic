@@ -15,6 +15,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+// Reconciler copies seed CRs into their respective clusters,
+// assuming that Kubermatic and the seed CRD have already been
+// installed.
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
@@ -50,14 +53,6 @@ func (r *Reconciler) reconcile(seed *kubermaticv1.Seed, logger *zap.SugaredLogge
 	client, err := ctrlruntimeclient.New(kubeconfig, ctrlruntimeclient.Options{})
 	if err != nil {
 		return fmt.Errorf("failed to create client for seed: %v", err)
-	}
-
-	namespaceCreators := []reconciling.NamedNamespaceCreatorGetter{
-		namespaceCreator(seed.Namespace),
-	}
-
-	if err := reconciling.ReconcileNamespaces(r.ctx, namespaceCreators, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile namespace: %v", err)
 	}
 
 	seedCreators := []reconciling.NamedSeedCreatorGetter{
