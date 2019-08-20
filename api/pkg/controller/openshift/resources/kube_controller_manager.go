@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"text/template"
 
+	"github.com/Masterminds/sprig"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
@@ -20,10 +22,14 @@ import (
 	utilpointer "k8s.io/utils/pointer"
 )
 
+var (
+	kubeControllerManagerConfigTemplate = template.Must(template.New("base").Funcs(sprig.TxtFuncMap()).Parse(kubeControllerManagerConfigTemplateRaw))
+)
+
 const (
 	kubeControllerManagerOpenshiftConfigConfigmapName = "openshift-kube-controller-manager-config"
 	kubeControllerManagerOpenshiftConfigConfigMapKey  = "config.yaml"
-	kubeControllerManagerConfigTemplate               = `
+	kubeControllerManagerConfigTemplateRaw            = `
 apiVersion: kubecontrolplane.config.openshift.io/v1
 kind: KubeControllerManagerConfig
 serviceServingCert:
@@ -100,14 +106,6 @@ var (
 	}
 )
 
-type kubeControllerManagerConfigVariables struct {
-	CACertPath            string
-	CAKeyPath             string
-	ClusterCIDR           string
-	ServiceAccountKeyFile string
-	ServiceCIDR           string
-}
-
 type kubeControllerManagerConfigData interface {
 	Cluster() *kubermaticv1.Cluster
 }
@@ -128,7 +126,13 @@ func KubeControllerManagerConfigMapCreatorFactory(data kubeControllerManagerConf
 				if len(data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks) > 0 {
 					serviceCIDR = data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0]
 				}
-				vars := kubeControllerManagerConfigVariables{
+				vars := struct {
+					CACertPath            string
+					CAKeyPath             string
+					ClusterCIDR           string
+					ServiceAccountKeyFile string
+					ServiceCIDR           string
+				}{
 					CACertPath:            "/etc/kubernetes/pki/ca/ca.crt",
 					CAKeyPath:             "/etc/kubernetes/pki/ca/ca.key",
 					ClusterCIDR:           podCIDR,
@@ -137,11 +141,7 @@ func KubeControllerManagerConfigMapCreatorFactory(data kubeControllerManagerConf
 				}
 
 				templateBuffer := &bytes.Buffer{}
-				tmpl, err := template.New("base").Parse(kubeControllerManagerConfigTemplate)
-				if err != nil {
-					return nil, fmt.Errorf("failed to parse template for kubeControllerManagerConfig: %v", err)
-				}
-				if err := tmpl.Execute(templateBuffer, vars); err != nil {
+				if err := kubeControllerManagerConfigTemplate.Execute(templateBuffer, vars); err != nil {
 					return nil, fmt.Errorf("failed to execute template: %v", err)
 				}
 				cm.Data[kubeControllerManagerOpenshiftConfigConfigMapKey] = templateBuffer.String()
