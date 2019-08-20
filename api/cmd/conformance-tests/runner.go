@@ -252,19 +252,19 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		cluster = &clusterList.Items[0]
 	}
 
+	// We must store the name here because the cluster object may be nil on error
+	clusterName := cluster.Name
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for controlplane",
 		report,
 		func() error {
-			cluster, err = r.waitForControlPlane(log, cluster.Name)
+			cluster, err = r.waitForControlPlane(log, clusterName)
 			return err
 		},
-		func() string { return r.controlplaneWaitFailureStdout(cluster.Name) }); err != nil {
+		func() string { return r.controlplaneWaitFailureStdout(clusterName) }); err != nil {
 		return report, fmt.Errorf("failed waiting for control plane to become ready: %v", err)
 	}
 
-	// We must store the name here because the cluster object may be nil on error
-	clusterName := cluster.Name
 	if err := junitReporterWrapper(
 		"[Kubermatic] Add LB and PV Finalizers",
 		report,
