@@ -216,7 +216,7 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 
 	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 	if !ok {
-		errors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create secret")
+		return errors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create secret")
 	}
 	data := common.CredentialsData{
 		Ctx:               ctx,
