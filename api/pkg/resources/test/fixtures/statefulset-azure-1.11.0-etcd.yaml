@@ -131,18 +131,15 @@ spec:
       volumes:
       - name: etcd-tls-certificate
         secret:
-          defaultMode: 256
           secretName: etcd-tls-certificate
       - name: ca
         secret:
-          defaultMode: 256
           items:
           - key: ca.crt
             path: ca.crt
           secretName: ca
       - name: apiserver-etcd-client-certificate
         secret:
-          defaultMode: 256
           secretName: apiserver-etcd-client-certificate
   updateStrategy:
     type: RollingUpdate

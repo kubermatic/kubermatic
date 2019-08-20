@@ -208,8 +208,7 @@ func getVolumes() []corev1.Volume {
 			Name: resources.EtcdTLSCertificateSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.EtcdTLSCertificateSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.EtcdTLSCertificateSecretName,
 				},
 			},
 		},
@@ -217,8 +216,7 @@ func getVolumes() []corev1.Volume {
 			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CASecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.CASecretName,
 					Items: []corev1.KeyToPath{
 						{
 							Path: resources.CACertSecretKey,
@@ -232,8 +230,7 @@ func getVolumes() []corev1.Volume {
 			Name: resources.ApiserverEtcdClientCertificateSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.ApiserverEtcdClientCertificateSecretName,
 				},
 			},
 		},

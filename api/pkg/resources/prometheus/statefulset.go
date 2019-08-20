@@ -172,7 +172,6 @@ func getVolumes() []corev1.Volume {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.PrometheusConfigConfigMapName,
 					},
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
 		},
@@ -186,8 +185,7 @@ func getVolumes() []corev1.Volume {
 			Name: resources.ApiserverEtcdClientCertificateSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.ApiserverEtcdClientCertificateSecretName,
 				},
 			},
 		},
@@ -195,8 +193,7 @@ func getVolumes() []corev1.Volume {
 			Name: resources.PrometheusApiserverClientCertificateSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.PrometheusApiserverClientCertificateSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.PrometheusApiserverClientCertificateSecretName,
 				},
 			},
 		},

@@ -199,8 +199,7 @@ func getControllerManagerVolumes() []corev1.Volume {
 			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CASecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.CASecretName,
 				},
 			},
 		},
@@ -208,8 +207,7 @@ func getControllerManagerVolumes() []corev1.Volume {
 			Name: resources.ServiceAccountKeySecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ServiceAccountKeySecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.ServiceAccountKeySecretName,
 				},
 			},
 		},
@@ -220,7 +218,6 @@ func getControllerManagerVolumes() []corev1.Volume {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.CloudConfigConfigMapName,
 					},
-					DefaultMode: resources.Int32(420),
 				},
 			},
 		},
@@ -228,8 +225,7 @@ func getControllerManagerVolumes() []corev1.Volume {
 			Name: resources.OpenVPNClientCertificatesSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.OpenVPNClientCertificatesSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.OpenVPNClientCertificatesSecretName,
 				},
 			},
 		},
@@ -237,8 +233,7 @@ func getControllerManagerVolumes() []corev1.Volume {
 			Name: resources.InternalUserClusterAdminKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.InternalUserClusterAdminKubeconfigSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
 				},
 			},
 		},
@@ -247,7 +242,6 @@ func getControllerManagerVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: openshiftControllerMangerConfigMapName},
-					DefaultMode:          resources.Int32(420),
 				},
 			},
 		},
@@ -255,8 +249,7 @@ func getControllerManagerVolumes() []corev1.Volume {
 			Name: ServiceSignerCASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  ServiceSignerCASecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: ServiceSignerCASecretName,
 				},
 			},
 		},
@@ -266,8 +259,7 @@ func getControllerManagerVolumes() []corev1.Volume {
 			Name: resources.ApiserverTLSSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ApiserverTLSSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.ApiserverTLSSecretName,
 				},
 			},
 		},

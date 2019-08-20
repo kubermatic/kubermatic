@@ -184,23 +184,18 @@ spec:
       volumes:
       - name: ca
         secret:
-          defaultMode: 256
           secretName: ca
       - name: service-account-key
         secret:
-          defaultMode: 256
           secretName: service-account-key
       - configMap:
-          defaultMode: 420
           name: cloud-config
         name: cloud-config
       - name: openvpn-client-certificates
         secret:
-          defaultMode: 256
           secretName: openvpn-client-certificates
       - name: controllermanager-kubeconfig
         secret:
-          defaultMode: 256
           secretName: controllermanager-kubeconfig
       - emptyDir: {}
         name: http-prober-bin

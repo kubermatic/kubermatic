@@ -89,11 +89,9 @@ spec:
       volumes:
       - name: machinecontroller-kubeconfig
         secret:
-          defaultMode: 292
           secretName: machinecontroller-kubeconfig
       - name: machinecontroller-webhook-serving-cert
         secret:
-          defaultMode: 292
           secretName: machinecontroller-webhook-serving-cert
       - emptyDir: {}
         name: http-prober-bin

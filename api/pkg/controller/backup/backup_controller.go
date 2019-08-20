@@ -410,8 +410,7 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) reconciling.NamedCro
 					Name: r.getEtcdSecretName(cluster),
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  r.getEtcdSecretName(cluster),
-							DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+							SecretName: r.getEtcdSecretName(cluster),
 						},
 					},
 				},

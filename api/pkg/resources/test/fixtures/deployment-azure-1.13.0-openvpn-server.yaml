@@ -178,17 +178,14 @@ spec:
       volumes:
       - name: ca
         secret:
-          defaultMode: 256
           items:
           - key: ca.crt
             path: ca.crt
           secretName: openvpn-ca
       - name: openvpn-server-certificates
         secret:
-          defaultMode: 256
           secretName: openvpn-server-certificates
       - configMap:
-          defaultMode: 256
           name: openvpn-client-configs
         name: openvpn-client-configs
 status: {}

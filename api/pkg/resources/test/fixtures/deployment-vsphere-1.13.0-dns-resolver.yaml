@@ -124,16 +124,13 @@ spec:
       - name: dockercfg
       volumes:
       - configMap:
-          defaultMode: 256
           name: dns-resolver
         name: dns-resolver
       - name: openvpn-client-certificates
         secret:
-          defaultMode: 256
           secretName: openvpn-client-certificates
       - name: ca
         secret:
-          defaultMode: 256
           items:
           - key: ca.crt
             path: ca.crt
