@@ -133,13 +133,15 @@ func main() {
 		sugarLog.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
 
-	seedValidationWebhookServer, err := runOpts.seedvalidationHook.Server(
-		ctx, sugarLog, runOpts.workerName, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter)
-	if err != nil {
-		sugarLog.Fatalw("failed to create validatingAdmissionWebhook server for seeds", zap.Error(err))
-	}
-	if err := mgr.Add(seedValidationWebhookServer); err != nil {
-		sugarLog.Fatalf("failed to add validatingAdmissionWebhook server to mgr", zap.Error(err))
+	if runOpts.seedvalidationHook.CertFile != "" || runOpts.seedvalidationHook.KeyFile != "" {
+		seedValidationWebhookServer, err := runOpts.seedvalidationHook.Server(
+			ctx, sugarLog, runOpts.workerName, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter)
+		if err != nil {
+			sugarLog.Fatalw("failed to create validatingAdmissionWebhook server for seeds", zap.Error(err))
+		}
+		if err := mgr.Add(seedValidationWebhookServer); err != nil {
+			sugarLog.Fatalf("failed to add validatingAdmissionWebhook server to mgr", zap.Error(err))
+		}
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {
