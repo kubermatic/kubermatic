@@ -8,6 +8,8 @@ cd "$(git rev-parse --show-toplevel)"
 GIT_HEAD_HASH="$(git rev-parse HEAD)"
 TAGS="$GIT_HEAD_HASH $(git tag -l --points-at HEAD)"
 
+apt install time -y
+
 echodate "Logging into Quay"
 docker ps > /dev/null 2>&1 || start-docker.sh
 retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
@@ -27,10 +29,12 @@ echodate "Building addons"
 time docker build -t "quay.io/kubermatic/addons:$GIT_HEAD_HASH" ./addons
 for TAG in $TAGS; do
     [ -z "$TAG" ] && continue
-    [ "$TAG" = "$GIT_HEAD_HASH" ] && continue
 
-    echo "Tagging ${TAG}"
-    docker tag "quay.io/kubermatic/addons:$GIT_HEAD_HASH" "quay.io/kubermatic/addons:$TAG"
+    if  [ "$TAG" != "$GIT_HEAD_HASH" ]; then
+      echo "Tagging ${TAG}"
+      docker tag "quay.io/kubermatic/addons:$GIT_HEAD_HASH" "quay.io/kubermatic/addons:$TAG"
+    fi
+
     echo "Pushing ${TAG}"
     retry 5 docker push "quay.io/kubermatic/addons:$TAG"
 done
