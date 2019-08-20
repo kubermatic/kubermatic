@@ -21,15 +21,15 @@ import (
 )
 
 type WebhookOpts struct {
-	listenAddress string
-	certFile      string
-	keyFile       string
+	ListenAddress string
+	CertFile      string
+	KeyFile       string
 }
 
 func (opts *WebhookOpts) AddFlags(fs *flag.FlagSet) {
-	fs.StringVar(&opts.listenAddress, "seed-admisisonwebhook-listen-address", ":8100", "The listen address for the seed amission webhook")
-	fs.StringVar(&opts.certFile, "seed-admissionwebhook-cert-file", "", "The location of the certificate file")
-	fs.StringVar(&opts.keyFile, "seed-admissionwebhook-key-file", "", "The location of the certificate key file")
+	fs.StringVar(&opts.ListenAddress, "seed-admisisonwebhook-listen-address", ":8100", "The listen address for the seed amission webhook")
+	fs.StringVar(&opts.CertFile, "seed-admissionwebhook-cert-file", "", "The location of the certificate file")
+	fs.StringVar(&opts.KeyFile, "seed-admissionwebhook-key-file", "", "The location of the certificate key file")
 }
 
 // Server returns a Server that validates AdmissionRequests for Seed CRs
@@ -46,18 +46,18 @@ func (opts *WebhookOpts) Server(
 	}
 	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}
 
-	if opts.certFile == "" || opts.keyFile == "" {
+	if opts.CertFile == "" || opts.KeyFile == "" {
 		return nil, fmt.Errorf("seed-admissionwebhook-cert-file or seed-admissionwebhook-key-file cannot be empty")
 	}
 
 	server := &Server{
 		Server: &http.Server{
-			Addr: opts.listenAddress,
+			Addr: opts.ListenAddress,
 		},
 		log:           log.Named("seed-webhook-server"),
-		listenAddress: opts.listenAddress,
-		certFile:      opts.certFile,
-		keyFile:       opts.keyFile,
+		listenAddress: opts.ListenAddress,
+		certFile:      opts.CertFile,
+		keyFile:       opts.KeyFile,
 		validator:     newValidator(ctx, seedsGetter, seedKubeconfigGetter, listOpts),
 	}
 	mux := http.NewServeMux()
