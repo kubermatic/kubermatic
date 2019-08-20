@@ -18,11 +18,13 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 			expectedNetworkInfos: []NetworkInfo{
 				{
 					AbsolutePath: "/kubermatic-e2e/network/e2e-networks/subfolder/e2e-distributed-port-group",
+					RelativePath: "e2e-networks/subfolder/e2e-distributed-port-group",
 					Type:         "DistributedVirtualPortgroup",
 					Name:         "e2e-distributed-port-group",
 				},
 				{
 					AbsolutePath: "/kubermatic-e2e/network/e2e-networks/subfolder/e2e-distributed-switch-uplinks",
+					RelativePath: "e2e-networks/subfolder/e2e-distributed-switch-uplinks",
 					Type:         "DistributedVirtualPortgroup",
 					Name:         "e2e-distributed-switch-uplinks",
 				},

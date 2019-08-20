@@ -436,6 +436,8 @@ type VSphereNetwork struct {
 	Name string `json:"name"`
 	// AbsolutePath is the absolute path inside vCenter
 	AbsolutePath string `json:"absolutePath"`
+	// RelativePath is the relative path inside the datacenter
+	RelativePath string `json:"relativePath"`
 	// Type defines the type of network
 	Type string `json:"type"`
 }
@@ -443,7 +445,7 @@ type VSphereNetwork struct {
 // VSphereFolder is the object representing a vsphere folder.
 // swagger:model VSphereFolder
 type VSphereFolder struct {
-	// Path is the path of the folder
+	// RelativePath is the path of the folder
 	Path string `json:"path"`
 }
 

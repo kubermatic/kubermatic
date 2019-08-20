@@ -21,6 +21,9 @@ type VSphereNetwork struct {
 	// Name is the name of the network
 	Name string `json:"name,omitempty"`
 
+	// RelativePath is the relative path inside the datacenter
+	RelativePath string `json:"relativePath,omitempty"`
+
 	// Type defines the type of network
 	Type string `json:"type,omitempty"`
 }

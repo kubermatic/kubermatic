@@ -15,7 +15,7 @@ import (
 // swagger:model VSphereFolder
 type VSphereFolder struct {
 
-	// Path is the path of the folder
+	// RelativePath is the path of the folder
 	Path string `json:"path,omitempty"`
 }
 

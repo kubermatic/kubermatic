@@ -7609,7 +7609,7 @@
       "title": "VSphereFolder is the object representing a vsphere folder.",
       "properties": {
         "path": {
-          "description": "Path is the path of the folder",
+          "description": "RelativePath is the path of the folder",
           "type": "string",
           "x-go-name": "Path"
         }
@@ -7629,6 +7629,11 @@
           "description": "Name is the name of the network",
           "type": "string",
           "x-go-name": "Name"
+        },
+        "relativePath": {
+          "description": "RelativePath is the relative path inside the datacenter",
+          "type": "string",
+          "x-go-name": "RelativePath"
         },
         "type": {
           "description": "Type defines the type of network",

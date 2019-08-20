@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"strings"
 
 	"github.com/vmware/govmomi/object"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -11,12 +12,18 @@ import (
 
 type NetworkInfo struct {
 	Name         string
+	RelativePath string
 	AbsolutePath string
 	Type         string
 }
 
 func getPossibleVMNetworks(ctx context.Context, session *Session) ([]NetworkInfo, error) {
 	var infos []NetworkInfo
+
+	datacenterFolders, err := session.Datacenter.Folders(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load the datacenter folders: %v", err)
+	}
 
 	networks, err := session.Finder.NetworkList(ctx, "*")
 	if err != nil {
@@ -43,6 +50,7 @@ func getPossibleVMNetworks(ctx context.Context, session *Session) ([]NetworkInfo
 
 		info := NetworkInfo{
 			AbsolutePath: element.Path,
+			RelativePath: strings.TrimPrefix(element.Path, datacenterFolders.NetworkFolder.InventoryPath+"/"),
 			Type:         network.Reference().Type,
 			Name:         path.Base(element.Path),
 		}
