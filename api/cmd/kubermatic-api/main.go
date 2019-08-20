@@ -190,11 +190,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	}
 	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, userMasterLister, options.domain)
 
-	credentialsProvider, err := kubernetesprovider.NewCredentialsProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, kubeMasterInformerFactory.Core().V1().Secrets().Lister())
-	if err != nil {
-		return providers{}, fmt.Errorf("failed to create credentials provider due to %v", err)
-	}
-
 	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userMasterLister, kubernetesprovider.IsServiceAccount)
 	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
@@ -228,7 +223,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		eventRecorderProvider:                 eventRecorderProvider,
 		clusterProviderGetter:                 clusterProviderGetter,
 		seedsGetter:                           seedsGetter,
-		credentialsProvider:                   credentialsProvider,
 		addons:                                addonProviderGetter}, nil
 }
 
@@ -301,7 +295,6 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.serviceAccountTokenProvider,
 		prov.project,
 		prov.privilegedProject,
-		prov.credentialsProvider,
 		oidcIssuerVerifier,
 		tokenVerifiers,
 		tokenExtractors,

@@ -8,7 +8,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/features"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -142,7 +141,6 @@ type providers struct {
 	serviceAccountProvider                provider.ServiceAccountProvider
 	serviceAccountTokenProvider           provider.ServiceAccountTokenProvider
 	privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider
-	credentialsProvider                   *kubernetes.CredentialsProvider
 	project                               provider.ProjectProvider
 	privilegedProject                     provider.PrivilegedProjectProvider
 	projectMember                         provider.ProjectMemberProvider
