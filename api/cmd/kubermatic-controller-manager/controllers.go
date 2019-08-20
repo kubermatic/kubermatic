@@ -141,8 +141,9 @@ func createClusterController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.dnatControllerImage,
 		cluster.Features{
-			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
-			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
+			VPA:                          ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
+			EtcdDataCorruptionChecks:     ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
+			KubernetesOIDCAuthentication: ctrlCtx.runOptions.featureGates.Enabled(OpenIDAuthPlugin),
 		},
 	)
 }
