@@ -126,8 +126,7 @@ func getVolumes() []corev1.Volume {
 			Name: resources.KubeStateMetricsKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.KubeStateMetricsKubeconfigSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.KubeStateMetricsKubeconfigSecretName,
 				},
 			},
 		},

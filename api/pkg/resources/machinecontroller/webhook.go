@@ -151,8 +151,7 @@ func getServingCertVolume() corev1.Volume {
 		Name: resources.MachineControllerWebhookServingCertSecretName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName:  resources.MachineControllerWebhookServingCertSecretName,
-				DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
+				SecretName: resources.MachineControllerWebhookServingCertSecretName,
 			},
 		},
 	}

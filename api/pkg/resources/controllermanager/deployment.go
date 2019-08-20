@@ -64,8 +64,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					Name: resources.GoogleServiceAccountVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  resources.GoogleServiceAccountSecretName,
-							DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+							SecretName: resources.GoogleServiceAccountSecretName,
 						},
 					},
 				}
@@ -287,8 +286,7 @@ func getVolumes() []corev1.Volume {
 			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CASecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.CASecretName,
 				},
 			},
 		},
@@ -296,8 +294,7 @@ func getVolumes() []corev1.Volume {
 			Name: resources.ServiceAccountKeySecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ServiceAccountKeySecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.ServiceAccountKeySecretName,
 				},
 			},
 		},
@@ -308,7 +305,6 @@ func getVolumes() []corev1.Volume {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.CloudConfigConfigMapName,
 					},
-					DefaultMode: resources.Int32(420),
 				},
 			},
 		},
@@ -316,8 +312,7 @@ func getVolumes() []corev1.Volume {
 			Name: resources.OpenVPNClientCertificatesSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.OpenVPNClientCertificatesSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.OpenVPNClientCertificatesSecretName,
 				},
 			},
 		},
@@ -325,8 +320,7 @@ func getVolumes() []corev1.Volume {
 			Name: resources.ControllerManagerKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ControllerManagerKubeconfigSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.ControllerManagerKubeconfigSecretName,
 				},
 			},
 		},

@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	utilpointer "k8s.io/utils/pointer"
 )
 
 // OwnerRefWrapper is responsible for wrapping a ObjectCreator function, solely to set the OwnerReference to the cluster object
@@ -72,6 +73,15 @@ func DefaultPodSpec(old, new corev1.PodSpec) (corev1.PodSpec, error) {
 
 	for idx, container := range new.Containers {
 		DefaultContainer(&new.Containers[idx], containerProcMountType[container.Name])
+	}
+
+	for idx, vol := range new.Volumes {
+		if vol.VolumeSource.Secret != nil && vol.VolumeSource.Secret.DefaultMode == nil {
+			new.Volumes[idx].Secret.DefaultMode = utilpointer.Int32Ptr(corev1.SecretVolumeSourceDefaultMode)
+		}
+		if vol.VolumeSource.ConfigMap != nil && vol.VolumeSource.ConfigMap.DefaultMode == nil {
+			new.Volumes[idx].ConfigMap.DefaultMode = utilpointer.Int32Ptr(corev1.ConfigMapVolumeSourceDefaultMode)
+		}
 	}
 
 	return new, nil

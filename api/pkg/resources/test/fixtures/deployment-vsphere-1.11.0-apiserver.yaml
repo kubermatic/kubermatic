@@ -311,53 +311,41 @@ spec:
       volumes:
       - name: apiserver-tls
         secret:
-          defaultMode: 256
           secretName: apiserver-tls
       - name: tokens
         secret:
-          defaultMode: 256
           secretName: tokens
       - name: openvpn-client-certificates
         secret:
-          defaultMode: 256
           secretName: openvpn-client-certificates
       - name: kubelet-client-certificates
         secret:
-          defaultMode: 256
           secretName: kubelet-client-certificates
       - name: ca
         secret:
-          defaultMode: 256
           items:
           - key: ca.crt
             path: ca.crt
           secretName: ca
       - name: service-account-key
         secret:
-          defaultMode: 256
           secretName: service-account-key
       - configMap:
-          defaultMode: 420
           name: cloud-config
         name: cloud-config
       - name: apiserver-etcd-client-certificate
         secret:
-          defaultMode: 256
           secretName: apiserver-etcd-client-certificate
       - name: apiserver-proxy-client-certificate
         secret:
-          defaultMode: 256
           secretName: apiserver-proxy-client-certificate
       - name: front-proxy-ca
         secret:
-          defaultMode: 256
           secretName: front-proxy-ca
       - name: kubeletdnatcontroller-kubeconfig
         secret:
-          defaultMode: 292
           secretName: kubeletdnatcontroller-kubeconfig
       - name: dex-ca
         secret:
-          defaultMode: 256
           secretName: dex-ca
 status: {}

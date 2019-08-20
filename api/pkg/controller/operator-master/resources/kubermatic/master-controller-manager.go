@@ -56,8 +56,7 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 					Name: "kubeconfig",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: pointer.Int32Ptr(420),
-							SecretName:  kubeconfigSecretName,
+							SecretName: kubeconfigSecretName,
 						},
 					},
 				},
@@ -78,8 +77,7 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 					Name: "datacenters",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: pointer.Int32Ptr(420),
-							SecretName:  datacentersSecretName,
+							SecretName: datacentersSecretName,
 						},
 					},
 				})

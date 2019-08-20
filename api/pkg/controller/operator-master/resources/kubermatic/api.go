@@ -89,8 +89,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 					Name: "kubeconfig",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: pointer.Int32Ptr(420),
-							SecretName:  kubeconfigSecretName,
+							SecretName: kubeconfigSecretName,
 						},
 					},
 				},
@@ -116,8 +115,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 					Name: "master-files",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: pointer.Int32Ptr(420),
-							SecretName:  masterFilesSecretName,
+							SecretName: masterFilesSecretName,
 						},
 					},
 				})
@@ -136,8 +134,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 					Name: "presets",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: pointer.Int32Ptr(420),
-							SecretName:  presetsSecretName,
+							SecretName: presetsSecretName,
 						},
 					},
 				})
@@ -156,8 +153,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 					Name: "datacenters",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: pointer.Int32Ptr(420),
-							SecretName:  datacentersSecretName,
+							SecretName: datacentersSecretName,
 						},
 					},
 				})

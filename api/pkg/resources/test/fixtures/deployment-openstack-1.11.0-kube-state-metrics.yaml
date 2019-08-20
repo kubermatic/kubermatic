@@ -81,7 +81,6 @@ spec:
       volumes:
       - name: kube-state-metrics-kubeconfig
         secret:
-          defaultMode: 256
           secretName: kube-state-metrics-kubeconfig
       - emptyDir: {}
         name: http-prober-bin

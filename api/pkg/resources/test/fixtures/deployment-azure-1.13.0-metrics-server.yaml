@@ -164,15 +164,12 @@ spec:
       volumes:
       - name: metrics-server
         secret:
-          defaultMode: 292
           secretName: metrics-server
       - name: openvpn-client-certificates
         secret:
-          defaultMode: 256
           secretName: openvpn-client-certificates
       - name: kubeletdnatcontroller-kubeconfig
         secret:
-          defaultMode: 292
           secretName: kubeletdnatcontroller-kubeconfig
       - emptyDir: {}
         name: http-prober-bin
