@@ -200,7 +200,7 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "proxy",
-					Image:   "quay.io/kubermatic/util:1.0.0-5",
+					Image:   "quay.io/kubermatic/util:1.1.2",
 					Command: []string{"/bin/bash"},
 					Args:    []string{"-c", strings.TrimSpace(proxyScript)},
 					Env: []corev1.EnvVar{
