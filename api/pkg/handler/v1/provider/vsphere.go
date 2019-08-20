@@ -95,6 +95,7 @@ func getVsphereNetworks(seedsGetter provider.SeedsGetter, username, password, da
 		apiNetworks = append(apiNetworks, apiv1.VSphereNetwork{
 			Name:         net.Name,
 			Type:         net.Type,
+			RelativePath: net.RelativePath,
 			AbsolutePath: net.AbsolutePath,
 		})
 	}

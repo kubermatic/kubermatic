@@ -52,7 +52,7 @@ func TestVsphereEndpoint(t *testing.T) {
 		{
 			Name:             "test networks endpoint",
 			URL:              "/api/v1/providers/vsphere/networks",
-			ExpectedResponse: `[{"absolutePath":"/ha-datacenter/network/VM Network","name":"VM Network","relativePath":"","type":"Network"}]`,
+			ExpectedResponse: `[{"absolutePath":"/ha-datacenter/network/VM Network","name":"VM Network","relativePath":"VM Network","type":"Network"}]`,
 		},
 		{
 			Name:             "test folders endpoint",
