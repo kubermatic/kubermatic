@@ -53,6 +53,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAWSSubnets())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/aws/{dc}/vpcs").
+		Handler(r.listAWSVPCS())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/gcp/disktypes").
 		Handler(r.listGCPDiskTypes())
 
@@ -544,6 +548,28 @@ func (r Routing) listAWSSubnets() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AWSSubnetEndpoint(r.presetsManager, r.seedsGetter)),
 		provider.DecodeAWSSubnetReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/aws/{dc}/vpcs aws listAWSVPCS
+//
+// Lists available AWS vpc's
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AWSVPCList
+func (r Routing) listAWSVPCS() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AWSVPCEndpoint(r.presetsManager, r.seedsGetter)),
+		provider.DecodeAWSVPCReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
