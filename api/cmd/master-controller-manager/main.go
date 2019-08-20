@@ -142,6 +142,8 @@ func main() {
 		if err := mgr.Add(seedValidationWebhookServer); err != nil {
 			sugarLog.Fatalf("failed to add validatingAdmissionWebhook server to mgr", zap.Error(err))
 		}
+	} else {
+		sugarLog.Info("the validatingAdmissionWebhook server can not be started because seed-admissionwebhook-cert-file and seed-admissionwebhook-key-file are empty")
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {
