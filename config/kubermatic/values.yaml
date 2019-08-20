@@ -50,7 +50,7 @@ kubermatic:
       helmVersion: "v2.11.0"
       image:
         repository: "quay.io/kubermatic/util"
-        tag: "1.1.1"
+        tag: "1.1.2"
 
   etcd:
     # PV size for the etcd StatefulSet of new clusters
