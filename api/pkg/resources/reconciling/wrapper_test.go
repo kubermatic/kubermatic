@@ -16,6 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	utilpointer "k8s.io/utils/pointer"
 )
 
 func TestDefaultPodSpec(t *testing.T) {
@@ -241,6 +242,86 @@ func TestDefaultPodSpec(t *testing.T) {
 						SecurityContext:          &corev1.SecurityContext{},
 					},
 				},
+			},
+		},
+		{
+			name: "Default mode for secret volume gets defaulted",
+			newObject: corev1.PodSpec{
+				Volumes: []corev1.Volume{{
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{},
+					},
+				},
+				}},
+			expectedObject: corev1.PodSpec{
+				Volumes: []corev1.Volume{{
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							DefaultMode: utilpointer.Int32Ptr(0644),
+						},
+					},
+				}},
+			},
+		},
+		{
+			name: "Default mode for secret volume doesnt get overwritten",
+			newObject: corev1.PodSpec{
+				Volumes: []corev1.Volume{{
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							DefaultMode: utilpointer.Int32Ptr(0600),
+						},
+					},
+				},
+				}},
+			expectedObject: corev1.PodSpec{
+				Volumes: []corev1.Volume{{
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							DefaultMode: utilpointer.Int32Ptr(0600),
+						},
+					},
+				}},
+			},
+		},
+		{
+			name: "Default mode for configmap volume gets defaulted",
+			newObject: corev1.PodSpec{
+				Volumes: []corev1.Volume{{
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{},
+					},
+				},
+				}},
+			expectedObject: corev1.PodSpec{
+				Volumes: []corev1.Volume{{
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							DefaultMode: utilpointer.Int32Ptr(0644),
+						},
+					},
+				}},
+			},
+		},
+		{
+			name: "Default mode for configmap volume doesnt get overwritten",
+			newObject: corev1.PodSpec{
+				Volumes: []corev1.Volume{{
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							DefaultMode: utilpointer.Int32Ptr(0600),
+						},
+					},
+				},
+				}},
+			expectedObject: corev1.PodSpec{
+				Volumes: []corev1.Volume{{
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							DefaultMode: utilpointer.Int32Ptr(0600),
+						},
+					},
+				}},
 			},
 		},
 	}
