@@ -96,7 +96,7 @@ kubermatic:
       openshift:
         # list of Addons to install into every user-cluster. All need to exist in the addons image
         defaultAddons:
-        - networking
+        - crd
         - openvpn
         - rbac
         image:
