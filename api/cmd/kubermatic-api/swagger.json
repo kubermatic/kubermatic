@@ -7650,10 +7650,6 @@
         "template": {
           "type": "string",
           "x-go-name": "Template"
-        },
-        "templateNetName": {
-          "type": "string",
-          "x-go-name": "TemplateNetName"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

@@ -26,9 +26,6 @@ type VSphereNodeSpec struct {
 
 	// template
 	Template string `json:"template,omitempty"`
-
-	// template net name
-	TemplateNetName string `json:"templateNetName,omitempty"`
 }
 
 // Validate validates this v sphere node spec
