@@ -33,8 +33,9 @@ extendedArguments:
   - 'true'
   cert-dir:
   - /var/run/kubernetes
-  cloud-provider:
-  - aws
+  # Must be an explicit empty slice, else the controller-manager panics
+  cloud-provider: []
+  #- aws
   cluster-cidr:
   - {{ .ClusterCIDR }}
   cluster-signing-cert-file:
@@ -66,7 +67,9 @@ extendedArguments:
   leader-elect:
   - 'true'
   leader-elect-resource-lock:
-  - configmaps
+  # - configmaps
+  # For some reason updating results in a 403 and upstream Openshift doesn't have extra bindings either?
+  - endpoints
   leader-elect-retry-period:
   - 3s
   port:
@@ -239,6 +242,11 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 								MountPath: "/etc/origin",
 								ReadOnly:  true,
 							},
+							{
+								Name:      resources.FrontProxyCASecretName,
+								MountPath: "/etc/kubernetes/pki/front-proxy/ca",
+								ReadOnly:  true,
+							},
 						},
 					},
 				}
@@ -328,6 +336,16 @@ func kubeControllerManagerVolumes() []corev1.Volume {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: kubeControllerManagerOpenshiftConfigConfigmapName,
 					},
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.FrontProxyCASecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.FrontProxyCASecretName,
+					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},
 			},
 		},
