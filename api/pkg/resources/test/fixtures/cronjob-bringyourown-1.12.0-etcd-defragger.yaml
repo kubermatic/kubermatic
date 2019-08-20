@@ -57,7 +57,6 @@ spec:
           volumes:
           - name: apiserver-etcd-client-certificate
             secret:
-              defaultMode: 256
               secretName: apiserver-etcd-client-certificate
   schedule: '@every 3h'
   successfulJobsHistoryLimit: 0

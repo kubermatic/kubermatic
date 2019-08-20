@@ -172,18 +172,15 @@ spec:
       volumes:
       - name: openvpn-client-certificates
         secret:
-          defaultMode: 256
           secretName: openvpn-client-certificates
       - name: ca
         secret:
-          defaultMode: 256
           items:
           - key: ca.crt
             path: ca.crt
           secretName: ca
       - name: scheduler-kubeconfig
         secret:
-          defaultMode: 256
           secretName: scheduler-kubeconfig
       - emptyDir: {}
         name: http-prober-bin

@@ -94,18 +94,15 @@ spec:
       terminationGracePeriodSeconds: 0
       volumes:
       - configMap:
-          defaultMode: 256
           name: prometheus
         name: config
       - emptyDir: {}
         name: data
       - name: apiserver-etcd-client-certificate
         secret:
-          defaultMode: 256
           secretName: apiserver-etcd-client-certificate
       - name: prometheus-apiserver-certificate
         secret:
-          defaultMode: 256
           secretName: prometheus-apiserver-certificate
   updateStrategy:
     type: RollingUpdate

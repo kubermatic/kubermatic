@@ -101,18 +101,18 @@ spec:
       volumes:
       - name: internal-admin-kubeconfig
         secret:
-          defaultMode: 292
+          defaultMode: 420
           secretName: internal-admin-kubeconfig
       - name: ca
         secret:
-          defaultMode: 292
+          defaultMode: 420
           items:
           - key: ca.crt
             path: ca.crt
           secretName: ca
       - name: openvpn-ca
         secret:
-          defaultMode: 292
+          defaultMode: 420
           secretName: openvpn-ca
       - emptyDir: {}
         name: http-prober-bin
