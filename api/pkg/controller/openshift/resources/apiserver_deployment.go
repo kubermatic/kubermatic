@@ -254,8 +254,7 @@ func getAPIServerVolumes() []corev1.Volume {
 			Name: resources.ApiserverTLSSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ApiserverTLSSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.ApiserverTLSSecretName,
 				},
 			},
 		},
@@ -263,8 +262,7 @@ func getAPIServerVolumes() []corev1.Volume {
 			Name: resources.OpenVPNClientCertificatesSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.OpenVPNClientCertificatesSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.OpenVPNClientCertificatesSecretName,
 				},
 			},
 		},
@@ -272,8 +270,7 @@ func getAPIServerVolumes() []corev1.Volume {
 			Name: resources.KubeletClientCertificatesSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.KubeletClientCertificatesSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.KubeletClientCertificatesSecretName,
 				},
 			},
 		},
@@ -281,8 +278,7 @@ func getAPIServerVolumes() []corev1.Volume {
 			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.CASecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.CASecretName,
 					Items: []corev1.KeyToPath{
 						{
 							Path: resources.CACertSecretKey,
@@ -296,8 +292,7 @@ func getAPIServerVolumes() []corev1.Volume {
 			Name: resources.ServiceAccountKeySecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ServiceAccountKeySecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.ServiceAccountKeySecretName,
 				},
 			},
 		},
@@ -308,7 +303,6 @@ func getAPIServerVolumes() []corev1.Volume {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.CloudConfigConfigMapName,
 					},
-					DefaultMode: resources.Int32(420),
 				},
 			},
 		},
@@ -316,8 +310,7 @@ func getAPIServerVolumes() []corev1.Volume {
 			Name: resources.ApiserverEtcdClientCertificateSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.ApiserverEtcdClientCertificateSecretName,
 				},
 			},
 		},
@@ -325,8 +318,7 @@ func getAPIServerVolumes() []corev1.Volume {
 			Name: resources.ApiserverFrontProxyClientCertificateSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.ApiserverFrontProxyClientCertificateSecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.ApiserverFrontProxyClientCertificateSecretName,
 				},
 			},
 		},
@@ -334,8 +326,7 @@ func getAPIServerVolumes() []corev1.Volume {
 			Name: resources.FrontProxyCASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.FrontProxyCASecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.FrontProxyCASecretName,
 				},
 			},
 		},
@@ -343,8 +334,7 @@ func getAPIServerVolumes() []corev1.Volume {
 			Name: resources.KubeletDnatControllerKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.KubeletDnatControllerKubeconfigSecretName,
-					DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
+					SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
 				},
 			},
 		},
@@ -353,7 +343,6 @@ func getAPIServerVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{Name: openshiftKubeAPIServerConfigMapName},
-					DefaultMode:          resources.Int32(420),
 				},
 			},
 		},
@@ -361,8 +350,7 @@ func getAPIServerVolumes() []corev1.Volume {
 			Name: apiserverLoopbackKubeconfigName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  apiserverLoopbackKubeconfigName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: apiserverLoopbackKubeconfigName,
 				},
 			},
 		},
@@ -370,8 +358,7 @@ func getAPIServerVolumes() []corev1.Volume {
 			Name: ServiceSignerCASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  ServiceSignerCASecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: ServiceSignerCASecretName,
 				},
 			},
 		},
@@ -379,8 +366,7 @@ func getAPIServerVolumes() []corev1.Volume {
 			Name: resources.DexCASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  resources.DexCASecretName,
-					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+					SecretName: resources.DexCASecretName,
 				},
 			},
 		},

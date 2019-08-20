@@ -250,8 +250,7 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 					Name: "kubeconfig",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: i32ptr(420),
-							SecretName:  secret.Name,
+							SecretName: secret.Name,
 						},
 					},
 				},

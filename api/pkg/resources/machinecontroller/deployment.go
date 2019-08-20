@@ -141,9 +141,6 @@ func getKubeconfigVolume() corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: resources.MachineControllerKubeconfigSecretName,
-				// We have to make the secret readable for all for now because owner/group cannot be changed.
-				// ( upstream proposal: https://github.com/kubernetes/kubernetes/pull/28733 )
-				DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
 			},
 		},
 	}

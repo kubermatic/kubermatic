@@ -90,8 +90,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 					Name: resources.CASecretName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  resources.CASecretName,
-							DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+							SecretName: resources.CASecretName,
 							Items: []corev1.KeyToPath{
 								{
 									Path: "ca-bundle.crt",
@@ -105,8 +104,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 					Name: openshiftAPIServerTLSServingCertSecretName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  openshiftAPIServerTLSServingCertSecretName,
-							DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+							SecretName: openshiftAPIServerTLSServingCertSecretName,
 						},
 					},
 				},
@@ -114,8 +112,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 					Name: resources.FrontProxyCASecretName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  resources.FrontProxyCASecretName,
-							DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+							SecretName: resources.FrontProxyCASecretName,
 						},
 					},
 				},
@@ -123,8 +120,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 					Name: resources.ApiserverEtcdClientCertificateSecretName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
-							DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+							SecretName: resources.ApiserverEtcdClientCertificateSecretName,
 						},
 					},
 				},
@@ -132,8 +128,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 					Name: resources.OpenVPNClientCertificatesSecretName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  resources.OpenVPNClientCertificatesSecretName,
-							DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+							SecretName: resources.OpenVPNClientCertificatesSecretName,
 						},
 					},
 				},
@@ -141,8 +136,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 					Name: resources.KubeletDnatControllerKubeconfigSecretName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  resources.KubeletDnatControllerKubeconfigSecretName,
-							DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
+							SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
 						},
 					},
 				},
@@ -151,7 +145,6 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{Name: openshiftAPIServerConfigMapName},
-							DefaultMode:          resources.Int32(resources.DefaultAllReadOnlyMode),
 						},
 					},
 				},
@@ -159,8 +152,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 					Name: resources.InternalUserClusterAdminKubeconfigSecretName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  resources.InternalUserClusterAdminKubeconfigSecretName,
-							DefaultMode: resources.Int32(resources.DefaultAllReadOnlyMode),
+							SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
 						},
 					},
 				},

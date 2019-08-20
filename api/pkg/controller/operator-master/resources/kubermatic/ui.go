@@ -71,7 +71,6 @@ func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcil
 					Name: "config",
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode:          pointer.Int32Ptr(420),
 							LocalObjectReference: corev1.LocalObjectReference{Name: uiConfigConfigMapName},
 						},
 					},

@@ -59,8 +59,7 @@ func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGett
 					Name: resources.ApiserverEtcdClientCertificateSecretName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  resources.ApiserverEtcdClientCertificateSecretName,
-							DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+							SecretName: resources.ApiserverEtcdClientCertificateSecretName,
 						},
 					},
 				},
