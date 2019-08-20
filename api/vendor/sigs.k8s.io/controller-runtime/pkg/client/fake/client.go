@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -32,7 +31,6 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	"sigs.k8s.io/controller-runtime/pkg/internal/objectutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -112,30 +110,7 @@ func (c *fakeClient) List(ctx context.Context, opts *client.ListOptions, list ru
 	}
 	decoder := scheme.Codecs.UniversalDecoder()
 	_, _, err = decoder.Decode(j, nil, list)
-	if err != nil {
-		return err
-	}
-
-	if opts.LabelSelector != nil {
-		return filterListItems(list, opts.LabelSelector)
-	}
-	return nil
-}
-
-func filterListItems(list runtime.Object, labSel labels.Selector) error {
-	objs, err := meta.ExtractList(list)
-	if err != nil {
-		return err
-	}
-	filteredObjs, err := objectutil.FilterWithLabels(objs, labSel)
-	if err != nil {
-		return err
-	}
-	err = meta.SetList(list, filteredObjs)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (c *fakeClient) Create(ctx context.Context, obj runtime.Object) error {

@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/internal/objectutil"
 )
 
 // CacheReader is a CacheReader
@@ -116,30 +115,33 @@ func (c *CacheReader) List(_ context.Context, opts *client.ListOptions, out runt
 		labelSel = opts.LabelSelector
 	}
 
-	filteredItems, err := c.filterListItems(objs, labelSel)
+	outItems, err := c.getListItems(objs, labelSel)
 	if err != nil {
 		return err
 	}
-
-	return apimeta.SetList(out, filteredItems)
+	return apimeta.SetList(out, outItems)
 }
 
-func (c *CacheReader) filterListItems(objs []interface{}, labelSel labels.Selector) ([]runtime.Object, error) {
-	runtimeObjs := make([]runtime.Object, 0, len(objs))
+func (c *CacheReader) getListItems(objs []interface{}, labelSel labels.Selector) ([]runtime.Object, error) {
+	outItems := make([]runtime.Object, 0, len(objs))
 	for _, item := range objs {
 		obj, isObj := item.(runtime.Object)
 		if !isObj {
 			return nil, fmt.Errorf("cache contained %T, which is not an Object", obj)
 		}
-		runtimeObjs = append(runtimeObjs, obj)
+		meta, err := apimeta.Accessor(obj)
+		if err != nil {
+			return nil, err
+		}
+		if labelSel != nil {
+			lbls := labels.Set(meta.GetLabels())
+			if !labelSel.Matches(lbls) {
+				continue
+			}
+		}
+		outItems = append(outItems, obj.DeepCopyObject())
 	}
-
-	filteredItems, err := objectutil.FilterWithLabels(runtimeObjs, labelSel)
-	if err != nil {
-		return nil, err
-	}
-
-	return filteredItems, nil
+	return outItems, nil
 }
 
 // objectKeyToStorageKey converts an object key to store key.
