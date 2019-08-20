@@ -56,17 +56,17 @@ func New(configVarResolver *providerconfig.ConfigVarResolver) cloudprovidertypes
 }
 
 type RawConfig struct {
-	Config           providerconfig.ConfigVarString `json:"config,omitempty"`
-	CPUs             providerconfig.ConfigVarString `json:"cpus"`
-	Memory           providerconfig.ConfigVarString `json:"memory"`
-	Namespace        providerconfig.ConfigVarString `json:"namespace"`
-	SourceURL        providerconfig.ConfigVarString `json:"sourceURL"`
-	PVCSize          providerconfig.ConfigVarString `json:"pvcSize"`
-	StorageClassName providerconfig.ConfigVarString `json:"storageClassName"`
+	Kubeconfig       providerconfig.ConfigVarString `json:"kubeconfig,omitempty"`
+	CPUs             providerconfig.ConfigVarString `json:"cpus,omitempty"`
+	Memory           providerconfig.ConfigVarString `json:"memory,omitempty"`
+	Namespace        providerconfig.ConfigVarString `json:"namespace,omitempty"`
+	SourceURL        providerconfig.ConfigVarString `json:"sourceURL,omitempty"`
+	PVCSize          providerconfig.ConfigVarString `json:"pvcSize,omitempty"`
+	StorageClassName providerconfig.ConfigVarString `json:"storageClassName,omitempty"`
 }
 
 type Config struct {
-	Config           rest.Config
+	Kubeconfig       rest.Config
 	CPUs             string
 	Memory           string
 	Namespace        string
@@ -122,7 +122,7 @@ func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*Config, *providerconfig.
 		return nil, nil, err
 	}
 	config := Config{}
-	configString, err := p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Config, "KUBEVIRT_KUBECONFIG")
+	configString, err := p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Kubeconfig, "KUBEVIRT_KUBECONFIG")
 	if err != nil {
 		return nil, nil, fmt.Errorf(`failed to get value of "config" field: %v`, err)
 	}
@@ -157,7 +157,7 @@ func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*Config, *providerconfig.
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to decode kubeconfig: %v", err)
 	}
-	config.Config = *restConfig
+	config.Kubeconfig = *restConfig
 
 	return &config, &pconfig, nil
 }
@@ -170,7 +170,7 @@ func (p *provider) Get(machine *v1alpha1.Machine, _ *cloudprovidertypes.Provider
 			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
 		}
 	}
-	sigClient, err := client.New(&c.Config, client.Options{})
+	sigClient, err := client.New(&c.Kubeconfig, client.Options{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get kubevirt client: %v", err)
 	}
@@ -234,7 +234,7 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	if pc.OperatingSystem == providerconfig.OperatingSystemCoreos {
 		return fmt.Errorf("CoreOS is not supported")
 	}
-	sigClient, err := client.New(&c.Config, client.Options{})
+	sigClient, err := client.New(&c.Kubeconfig, client.Options{})
 	if err != nil {
 		return fmt.Errorf("failed to get kubevirt client: %v", err)
 	}
@@ -385,7 +385,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, _ *cloudprovidertypes.Provi
 		},
 	}
 
-	sigClient, err := client.New(&c.Config, client.Options{})
+	sigClient, err := client.New(&c.Kubeconfig, client.Options{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get kubevirt client: %v", err)
 	}
@@ -418,7 +418,7 @@ func (p *provider) Cleanup(machine *v1alpha1.Machine, _ *cloudprovidertypes.Prov
 			Message: fmt.Sprintf("Failed to parse MachineSpec, due to %v", err),
 		}
 	}
-	sigClient, err := client.New(&c.Config, client.Options{})
+	sigClient, err := client.New(&c.Kubeconfig, client.Options{})
 	if err != nil {
 		return false, fmt.Errorf("failed to get kubevirt client: %v", err)
 	}

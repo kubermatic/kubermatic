@@ -322,6 +322,17 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:6dd2b549cc43ec65eb4c2a66364a76aa947f20dbf8bf59440b837d4546be9448"
+  name = "github.com/emicklei/go-restful"
+  packages = [
+    ".",
+    "log",
+  ]
+  pruneopts = "NUT"
+  revision = "6ac3b8eb89d325e5c750d77f344a6870464d03c3"
+  version = "v2.9.6"
+
+[[projects]]
   digest = "1:662e3fdfe37512e20258e01c60aac10d8b60f1ae501dbc6291930d5448c16ead"
   name = "github.com/envoyproxy/go-control-plane"
   packages = [
