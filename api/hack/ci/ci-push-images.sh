@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -euo pipefail
+set -eu
 cd "$(git rev-parse --show-toplevel)"
 
 . ./api/hack/lib.sh
