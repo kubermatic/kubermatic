@@ -122,7 +122,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		// generate the name here so that it can be used in the secretName below
 		partialCluster.Name = rand.String(10)
 
-		if err := kubernetesprovider.NewCredentialsProvider(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()).Create(partialCluster, req.ProjectID); err != nil {
+		if err := kubernetesprovider.CreateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster, req.ProjectID); err != nil {
 			return nil, err
 		}
 

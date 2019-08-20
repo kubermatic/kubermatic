@@ -12,32 +12,18 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NewCredentialsProvider returns a credentials provider
-func NewCredentialsProvider(ctx context.Context, client ctrlruntimeclient.Client) *CredentialsProvider {
-	return &CredentialsProvider{
-		ctx:    ctx,
-		client: client,
-	}
-}
-
-// CredentialsProvider manages secrets for credentials
-type CredentialsProvider struct {
-	ctx    context.Context
-	client ctrlruntimeclient.Client
-}
-
-// Create creates a new secret for a credential
-func (p *CredentialsProvider) Create(cluster *kubermaticv1.Cluster, projectID string) error {
+// CreateCredentialSecretForCluster creates a new secret for a credential
+func CreateCredentialSecretForCluster(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
 	if cluster.Spec.Cloud.AWS != nil {
-		return p.createAWSSecret(cluster, projectID)
+		return createAWSSecret(ctx, seedClient, cluster, projectID)
 	}
 	if cluster.Spec.Cloud.Packet != nil {
-		return p.createPacketSecret(cluster, projectID)
+		return createPacketSecret(ctx, seedClient, cluster, projectID)
 	}
 	return nil
 }
 
-func (p *CredentialsProvider) createAWSSecret(cluster *kubermaticv1.Cluster, projectID string) error {
+func createAWSSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
 	// create secret for storing credentials
 	name := cluster.GetSecretName()
 	secret := &corev1.Secret{
@@ -56,7 +42,7 @@ func (p *CredentialsProvider) createAWSSecret(cluster *kubermaticv1.Cluster, pro
 		},
 	}
 
-	if err := p.client.Create(p.ctx, secret); err != nil {
+	if err := seedClient.Create(ctx, secret); err != nil {
 		return err
 	}
 
@@ -75,7 +61,7 @@ func (p *CredentialsProvider) createAWSSecret(cluster *kubermaticv1.Cluster, pro
 	return nil
 }
 
-func (p *CredentialsProvider) createPacketSecret(cluster *kubermaticv1.Cluster, projectID string) error {
+func createPacketSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
 	// create secret for storing credentials
 	name := cluster.GetSecretName()
 	secret := &corev1.Secret{
@@ -94,7 +80,7 @@ func (p *CredentialsProvider) createPacketSecret(cluster *kubermaticv1.Cluster, 
 		},
 	}
 
-	if err := p.client.Create(p.ctx, secret); err != nil {
+	if err := seedClient.Create(ctx, secret); err != nil {
 		return err
 	}
 
