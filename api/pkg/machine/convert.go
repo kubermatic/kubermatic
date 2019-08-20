@@ -132,11 +132,10 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			return nil, fmt.Errorf("failed to parse vsphere config: %v", err)
 		}
 		cloudSpec.VSphere = &apiv1.VSphereNodeSpec{
-			CPUs:            int(config.CPUs),
-			Memory:          int(config.MemoryMB),
-			DiskSizeGB:      config.DiskSizeGB,
-			Template:        config.TemplateVMName.Value,
-			TemplateNetName: config.TemplateNetName.Value,
+			CPUs:       int(config.CPUs),
+			Memory:     int(config.MemoryMB),
+			DiskSizeGB: config.DiskSizeGB,
+			Template:   config.TemplateVMName.Value,
 		}
 	case providerconfig.CloudProviderPacket:
 		config := &packet.RawConfig{}

@@ -819,11 +819,10 @@ type AzureNodeSpec struct {
 // VSphereNodeSpec VSphere node settings
 // swagger:model VSphereNodeSpec
 type VSphereNodeSpec struct {
-	CPUs            int    `json:"cpus"`
-	Memory          int    `json:"memory"`
-	DiskSizeGB      *int64 `json:"diskSizeGB,omitempty"`
-	Template        string `json:"template"`
-	TemplateNetName string `json:"templateNetName"`
+	CPUs       int    `json:"cpus"`
+	Memory     int    `json:"memory"`
+	DiskSizeGB *int64 `json:"diskSizeGB,omitempty"`
+	Template   string `json:"template"`
 }
 
 // OpenstackNodeSpec openstack node settings
