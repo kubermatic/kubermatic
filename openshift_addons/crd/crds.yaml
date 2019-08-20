@@ -1,4 +1,6 @@
-# Generated via `kubectl get crd -o json|jq '.items[]|{metadata: {name: .metadata.name}, apiVersion: .apiVersion, kind: .kind, spec: .spec}'  > crds.yaml `ßw
+
+---
+
 {
   "metadata": {
     "name": "alertmanagers.monitoring.coreos.com"
@@ -2154,6 +2156,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "apiservers.config.openshift.io"
@@ -2262,6 +2267,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "authentications.config.openshift.io"
@@ -2369,6 +2377,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "authentications.operator.openshift.io"
@@ -2569,6 +2580,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "builds.config.openshift.io"
@@ -2737,6 +2751,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "catalogsourceconfigs.operators.coreos.com"
@@ -2823,6 +2840,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "catalogsources.operators.coreos.com"
@@ -2994,6 +3014,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "clusterautoscalers.autoscaling.openshift.io"
@@ -3156,6 +3179,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "clusternetworks.network.openshift.io"
@@ -3248,6 +3274,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "clusteroperators.config.openshift.io"
@@ -3421,6 +3450,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "clusterresourcequotas.quota.openshift.io"
@@ -3524,6 +3556,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "clusterserviceversions.operators.coreos.com"
@@ -4565,6 +4600,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "clusterversions.config.openshift.io"
@@ -4829,6 +4867,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "configs.imageregistry.operator.openshift.io"
@@ -4860,6 +4901,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "configs.samples.operator.openshift.io"
@@ -4891,6 +4935,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "consoles.config.openshift.io"
@@ -4969,6 +5016,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "consoles.operator.openshift.io"
@@ -5029,6 +5079,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "containerruntimeconfigs.machineconfiguration.openshift.io"
@@ -5063,6 +5116,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "controllerconfigs.machineconfiguration.openshift.io"
@@ -5094,6 +5150,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "credentialsrequests.cloudcredential.openshift.io"
@@ -5227,6 +5286,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "dnses.config.openshift.io"
@@ -5318,6 +5380,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "dnses.operator.openshift.io"
@@ -5409,6 +5474,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "egressnetworkpolicies.network.openshift.io"
@@ -5476,6 +5544,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "featuregates.config.openshift.io"
@@ -5539,6 +5610,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "hostsubnets.network.openshift.io"
@@ -5619,6 +5693,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "images.config.openshift.io"
@@ -5755,6 +5832,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "infrastructures.config.openshift.io"
@@ -5845,6 +5925,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "ingresscontrollers.operator.openshift.io"
@@ -6006,6 +6089,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "ingresses.config.openshift.io"
@@ -6069,6 +6155,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "installplans.operators.coreos.com"
@@ -6189,6 +6278,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "kubeapiservers.operator.openshift.io"
@@ -6400,6 +6492,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "kubecontrollermanagers.operator.openshift.io"
@@ -6614,6 +6709,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "kubeletconfigs.machineconfiguration.openshift.io"
@@ -6645,6 +6743,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "kubeschedulers.operator.openshift.io"
@@ -6859,6 +6960,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "machineautoscalers.autoscaling.openshift.io"
@@ -7001,6 +7105,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "machineconfigpools.machineconfiguration.openshift.io"
@@ -7057,6 +7164,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "machineconfigs.machineconfiguration.openshift.io"
@@ -7104,6 +7214,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "machinehealthchecks.healthchecking.openshift.io"
@@ -7166,6 +7279,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "machines.machine.openshift.io"
@@ -7345,6 +7461,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "machinesets.machine.openshift.io"
@@ -7536,6 +7655,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "mcoconfigs.machineconfiguration.openshift.io"
@@ -7564,6 +7686,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "netnamespaces.network.openshift.io"
@@ -7622,6 +7747,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "network-attachment-definitions.k8s.cni.cncf.io"
@@ -7653,6 +7781,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "networks.config.openshift.io"
@@ -7777,6 +7908,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "networks.operator.openshift.io"
@@ -7942,6 +8076,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "oauths.config.openshift.io"
@@ -8483,6 +8620,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "openshiftapiservers.operator.openshift.io"
@@ -8643,6 +8783,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "openshiftcontrollermanagers.operator.openshift.io"
@@ -8803,6 +8946,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "operatorgroups.operators.coreos.com"
@@ -8954,6 +9100,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "operatorsources.operators.coreos.com"
@@ -9086,6 +9235,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "projects.config.openshift.io"
@@ -9159,6 +9311,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "prometheuses.monitoring.coreos.com"
@@ -12138,6 +12293,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "prometheusrules.monitoring.coreos.com"
@@ -12465,6 +12623,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "rolebindingrestrictions.authorization.openshift.io"
@@ -12601,6 +12762,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "schedulers.config.openshift.io"
@@ -12674,6 +12838,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "securitycontextconstraints.security.openshift.io"
@@ -12951,6 +13118,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "servicecas.operator.openshift.io"
@@ -13151,6 +13321,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "servicecatalogapiservers.operator.openshift.io"
@@ -13311,6 +13484,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "servicecatalogcontrollermanagers.operator.openshift.io"
@@ -13471,6 +13647,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "servicemonitors.monitoring.coreos.com"
@@ -13805,6 +13984,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "subscriptions.operators.coreos.com"
@@ -13908,6 +14090,9 @@
     ]
   }
 }
+
+---
+
 {
   "metadata": {
     "name": "tuneds.tuned.openshift.io"
