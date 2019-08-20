@@ -17,7 +17,6 @@ spec:
         folder: ""
         memoryMB: 2048
         password: ""
-        templateNetName: ""
         templateVMName: ""
         username: ""
         vmNetName: ""
