@@ -101,7 +101,7 @@ kubermatic:
         - rbac
         image:
           repository: "quay.io/kubermatic/openshift-addons"
-          tag: "v0.9"
+          tag: "__KUBERMATIC_TAG__"
           pullPolicy: "IfNotPresent"
     # Specify a custom docker registry which will be used for all images (user cluster control plane + addons)
     overwriteRegistry: ""
