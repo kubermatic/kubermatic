@@ -144,23 +144,86 @@ type AWSSubnetList []AWSSubnet
 // AWSSubnet represents a object of AWS availability subnet.
 // swagger:model AWSSubnet
 type AWSSubnet struct {
-	Name                    string         `json:"name"`
-	ID                      string         `json:"id"`
-	AvailabilityZone        string         `json:"availability_zone"`
-	AvailabilityZoneID      string         `json:"availability_zone_id"`
-	IPv4CIDR                string         `json:"ipv4cidr"`
-	IPv6CIDR                string         `json:"ipv6cidr"`
-	Tags                    []AWSSubnetTag `json:"tags"`
-	State                   string         `json:"state"`
-	AvailableIPAddressCount int64          `json:"available_ip_address_count"`
-	DefaultForAz            bool           `json:"default"`
+	Name                    string   `json:"name"`
+	ID                      string   `json:"id"`
+	AvailabilityZone        string   `json:"availability_zone"`
+	AvailabilityZoneID      string   `json:"availability_zone_id"`
+	IPv4CIDR                string   `json:"ipv4cidr"`
+	IPv6CIDR                string   `json:"ipv6cidr"`
+	Tags                    []AWSTag `json:"tags,omitempty"`
+	State                   string   `json:"state"`
+	AvailableIPAddressCount int64    `json:"available_ip_address_count"`
+	DefaultForAz            bool     `json:"default"`
 }
 
-// AWSSubnetTag represents a object of AWS subnet tags.
-// swagger:model AWSSubnetTag
-type AWSSubnetTag struct {
+// AWSTag represents a object of AWS tags.
+// swagger:model AWSTag
+type AWSTag struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+}
+
+// AWSVPCList represents an array of AWS VPC's.
+// swagger:model AWSVPCList
+type AWSVPCList []AWSVPC
+
+// AWSVPC represents a object of AWS VPC.
+// swagger:model AWSVPC
+type AWSVPC struct {
+	// The primary IPv4 CIDR block for the VPC.
+	CidrBlock string `json:"cidrBlock"`
+
+	// Information about the IPv4 CIDR blocks associated with the VPC.
+	CidrBlockAssociationSet []AWSVpcCidrBlockAssociation `json:"cidrBlockAssociationSet,omitempty"`
+
+	// The ID of the set of DHCP options you've associated with the VPC (or default
+	// if the default options are associated with the VPC).
+	DhcpOptionsID string `json:"dhcpOptionsId"`
+
+	// The allowed tenancy of instances launched into the VPC.
+	InstanceTenancy string `json:"instanceTenancy"`
+
+	// Information about the IPv6 CIDR blocks associated with the VPC.
+	Ipv6CidrBlockAssociationSet []AWSVpcIpv6CidrBlockAssociation `json:"ipv6CidrBlockAssociationSet,omitempty"`
+
+	// Indicates whether the VPC is the default VPC.
+	IsDefault bool `json:"isDefault"`
+
+	// The ID of the AWS account that owns the VPC.
+	OwnerID string `json:"ownerId"`
+
+	// The current state of the VPC.
+	State string `json:"state"`
+
+	// Any tags assigned to the VPC.
+	Tags []AWSTag `json:"tags,omitempty"`
+
+	Name string `json:"name"`
+
+	// The ID of the VPC.
+	VpcID string `json:"vpcId"`
+}
+
+// AWSVpcCidrBlockAssociation describes an IPv4 CIDR block associated with a VPC.
+// swagger:model AWSVpcCidrBlockAssociation
+type AWSVpcCidrBlockAssociation struct {
+	// The association ID for the IPv4 CIDR block.
+	AssociationID string `json:"associationId"`
+
+	// The IPv4 CIDR block.
+	CidrBlock string `json:"cidrBlock"`
+
+	// The state of the CIDR block.
+	State string `json:"state"`
+
+	// A message about the status of the CIDR block, if applicable.
+	StatusMessage string `json:"statusMessage"`
+}
+
+// AWSVpcIpv6CidrBlockAssociation describes an IPv6 CIDR block associated with a VPC.
+// swagger:model AWSVpcIpv6CidrBlockAssociation
+type AWSVpcIpv6CidrBlockAssociation struct {
+	AWSVpcCidrBlockAssociation
 }
 
 // GCPDiskTypeList represents an array of GCP disk types.

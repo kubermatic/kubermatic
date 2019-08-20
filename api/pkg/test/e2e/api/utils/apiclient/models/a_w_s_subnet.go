@@ -46,7 +46,7 @@ type AWSSubnet struct {
 	State string `json:"state,omitempty"`
 
 	// tags
-	Tags []*AWSSubnetTag `json:"tags"`
+	Tags []*AWSTag `json:"tags"`
 }
 
 // Validate validates this a w s subnet
