@@ -52,6 +52,7 @@ spec:
         {{- if .Values.kubermatic.credentials }}
         - -credentials=/opt/credentials/credentials.yaml
         {{- end }}
+        - -swagger=/opt/swagger.json
         {{- if .Values.kubermatic.exposeStrategy }}
         - -expose-strategy={{ .Values.kubermatic.exposeStrategy }}
         {{- end }}

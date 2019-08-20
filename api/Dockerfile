@@ -11,5 +11,6 @@ RUN chmod +x /usr/local/bin/kubectl && \
   mv openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit/oc /usr/local/bin
 
 COPY ./_build/* /usr/local/bin/
+COPY ./cmd/kubermatic-api/swagger.json /opt/swagger.json
 
 USER nobody

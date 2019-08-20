@@ -10,7 +10,7 @@
 //
 //     Schemes: https
 //     Host: cloud.kubermatic.io
-//     Version: 2.8
+//     Version: 2.11
 //
 //     Consumes:
 //     - application/json
@@ -321,6 +321,12 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		},
 		mainRouter)
 	r.RegisterV1Alpha(v1AlphaRouter)
+
+	mainRouter.Methods(http.MethodGet).
+		Path("/api/swagger.json").
+		HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, options.swaggerFile)
+		})
 
 	lookupRoute := func(r *http.Request) string {
 		var match mux.RouteMatch
