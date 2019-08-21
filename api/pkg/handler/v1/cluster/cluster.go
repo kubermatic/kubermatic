@@ -97,7 +97,8 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		}
 
 		// Create the cluster.
-		spec, err := cluster.Spec(req.Body.Cluster, dc)
+		secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		spec, err := cluster.Spec(req.Body.Cluster, dc, secretKeyGetter)
 		if err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
@@ -322,7 +323,11 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
 
-		if err := validation.ValidateUpdateCluster(patchedCluster, existingCluster, dc); err != nil {
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+		if err := validation.ValidateUpdateCluster(ctx, patchedCluster, existingCluster, dc, assertedClusterProvider); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 

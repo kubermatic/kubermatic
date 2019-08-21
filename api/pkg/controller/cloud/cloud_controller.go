@@ -122,7 +122,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if !found {
 		return nil, fmt.Errorf("couldn't find datacentrer %q for cluster %q", cluster.Spec.Cloud.DatacenterName, cluster.Name)
 	}
-	prov, err := cloud.Provider(datacenter.DeepCopy())
+	prov, err := cloud.Provider(datacenter.DeepCopy(), r.getGlobalSecretKeySelectorValue)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			finalizers.Has(kubermaticapiv1.NodeDeletionFinalizer) {
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
-		_, err := prov.CleanUpCloudProvider(cluster, r.updateCluster, r.getGlobalSecretKeySelectorValue)
+		_, err := prov.CleanUpCloudProvider(cluster, r.updateCluster)
 		return nil, err
 	}
 
@@ -154,7 +154,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
-	_, err = prov.InitializeCloudProvider(cluster, r.updateCluster, r.getGlobalSecretKeySelectorValue)
+	_, err = prov.InitializeCloudProvider(cluster, r.updateCluster)
 	return nil, err
 }
 

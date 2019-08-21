@@ -17,7 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/vsphere"
 )
 
-func Provider(datacenter *kubermaticv1.Datacenter) (provider.CloudProvider, error) {
+func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (provider.CloudProvider, error) {
 	if datacenter.Spec.Digitalocean != nil {
 		return digitalocean.NewCloudProvider(), nil
 	}
@@ -25,7 +25,7 @@ func Provider(datacenter *kubermaticv1.Datacenter) (provider.CloudProvider, erro
 		return bringyourown.NewCloudProvider(), nil
 	}
 	if datacenter.Spec.AWS != nil {
-		return aws.NewCloudProvider(datacenter)
+		return aws.NewCloudProvider(datacenter, secretKeyGetter)
 	}
 	if datacenter.Spec.Azure != nil {
 		return azure.New(datacenter)

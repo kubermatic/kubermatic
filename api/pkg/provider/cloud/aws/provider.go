@@ -8,7 +8,6 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"github.com/golang/glog"
 
@@ -182,7 +181,7 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 }
 
 // NewCloudProvider returns a new AmazonEC2 provider.
-func NewCloudProvider(dc *kubermaticv1.Datacenter) (*AmazonEC2, error) {
+func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*AmazonEC2, error) {
 	if dc.Spec.AWS == nil {
 		return nil, errors.New("datacenter is not an AWS datacenter")
 	}
@@ -192,9 +191,7 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter) (*AmazonEC2, error) {
 		clusterUpdater: func(string, func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
 			return nil, errors.New("NPD when calling clusterUpdater")
 		},
-		secretKeySelector: func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
-			return "", errors.New("NPD when calling secretKeySelector")
-		},
+		secretKeySelector: secretKeyGetter,
 	}, nil
 }
 
@@ -397,9 +394,8 @@ func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (str
 	return sgid, nil
 }
 
-func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
+func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	a.clusterUpdater = update
-	a.secretKeySelector = secretKeySelector
 
 	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
@@ -500,7 +496,7 @@ func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, erro
 
 	if cloud.AWS.AccessKeyID != "" {
 		accessKeyID = cloud.AWS.AccessKeyID
-	} else if a.secretKeySelector != nil {
+	} else {
 		accessKeyID, err = a.secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSAccessKeyID)
 		if err != nil {
 			return nil, err
@@ -509,7 +505,7 @@ func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, erro
 
 	if cloud.AWS.SecretAccessKey != "" {
 		secretAccessKey = cloud.AWS.SecretAccessKey
-	} else if a.secretKeySelector != nil {
+	} else {
 		secretAccessKey, err = a.secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSSecretAccessKey)
 		if err != nil {
 			return nil, err
@@ -519,8 +515,7 @@ func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, erro
 	return GetClientSet(accessKeyID, secretAccessKey, a.dc.Region)
 }
 
-func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
-	a.secretKeySelector = secretKeySelector
+func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	a.clusterUpdater = updater
 
 	client, err := a.getClientSet(cluster.Spec.Cloud)

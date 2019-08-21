@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -8,7 +9,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
-	apicorev1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -42,8 +43,8 @@ const (
 
 // CloudProvider declares a set of methods for interacting with a cloud provider
 type CloudProvider interface {
-	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater, SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error)
-	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater, SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error)
+	InitializeCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
+	CleanUpCloudProvider(*kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 	DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error
 	ValidateCloudSpec(spec kubermaticv1.CloudSpec) error
 	ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error
@@ -66,6 +67,32 @@ type ClusterGetOptions struct {
 }
 
 type SecretKeySelectorValueFunc func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+
+func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimeclient.Client) SecretKeySelectorValueFunc {
+	return func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+		if configVar.Name == "" {
+			return "", errors.New("configVar.Name is empty")
+		}
+		if configVar.Namespace == "" {
+			return "", errors.New("configVar.Namspace is empty")
+		}
+		if key == "" {
+			return "", errors.New("key is empty")
+		}
+
+		secret := &corev1.Secret{}
+		namespacedName := types.NamespacedName{Namespace: configVar.Namespace, Name: configVar.Name}
+		if err := client.Get(ctx, namespacedName, secret); err != nil {
+			return "", fmt.Errorf("failed to get secret %q: %v", namespacedName.String(), err)
+		}
+
+		if _, ok := secret.Data[key]; !ok {
+			return "", fmt.Errorf("secret %q has no key %q", namespacedName.String(), key)
+		}
+
+		return string(secret.Data[key]), nil
+	}
+}
 
 // ProjectGetOptions allows to check the status of the Project
 type ProjectGetOptions struct {
@@ -385,10 +412,10 @@ type ServiceAccountListOptions struct {
 
 // ServiceAccountTokenProvider declares the set of methods for interacting with kubermatic service account token
 type ServiceAccountTokenProvider interface {
-	Create(userInfo *UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*apicorev1.Secret, error)
-	List(userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*apicorev1.Secret, error)
-	Get(userInfo *UserInfo, name string) (*apicorev1.Secret, error)
-	Update(userInfo *UserInfo, secret *apicorev1.Secret) (*apicorev1.Secret, error)
+	Create(userInfo *UserInfo, sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*corev1.Secret, error)
+	List(userInfo *UserInfo, project *kubermaticv1.Project, sa *kubermaticv1.User, options *ServiceAccountTokenListOptions) ([]*corev1.Secret, error)
+	Get(userInfo *UserInfo, name string) (*corev1.Secret, error)
+	Update(userInfo *UserInfo, secret *corev1.Secret) (*corev1.Secret, error)
 	Delete(userInfo *UserInfo, name string) error
 }
 
@@ -405,7 +432,7 @@ type PrivilegedServiceAccountTokenProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
 	// gets resources from the cache
-	ListUnsecured(*ServiceAccountTokenListOptions) ([]*apicorev1.Secret, error)
+	ListUnsecured(*ServiceAccountTokenListOptions) ([]*corev1.Secret, error)
 }
 
 // EventRecorderProvider allows to record events for objects that can be read using K8S API.
