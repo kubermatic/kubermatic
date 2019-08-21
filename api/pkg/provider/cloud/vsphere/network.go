@@ -36,7 +36,9 @@ func getPossibleVMNetworks(ctx context.Context, session *Session) ([]NetworkInfo
 				continue
 			}
 
-			// Just log the error. We do not want a single weird network to break the entire listing.
+			// Just log the error. If we cannot create a backing info, that network device is not suitable for VM's.
+			// Normally we should cover unsupported network devices with the ErrNotSupported above.
+			// This is just a fallback to prevent that a single network device breaks the list operation
 			runtime.HandleError(fmt.Errorf("failed to get network backing info for %q: %v", network.Reference().String(), err))
 			continue
 		}
