@@ -165,6 +165,12 @@ EOF
       time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1" .
     )
     (
+      echodate "Building openshift addons image"
+      TEST_NAME="Build openshift Docker image"
+      cd openshift_addons
+      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/openshift_addons:$1" .
+    )
+    (
       echodate "Building dnatcontroller image"
       TEST_NAME="Build dnatcontroller Docker image"
       cd api/cmd/kubeletdnat-controller
@@ -174,9 +180,12 @@ EOF
     echodate "Pushing docker image"
     TEST_NAME="Push Kubermatic Docker image"
     time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/api:$1"
-    TEST_NAME="Push addon Docker image"
+    TEST_NAME="Push addons Docker image"
     echodate "Pushing addons image"
     time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1"
+    TEST_NAME="Push openshift addons Docker image"
+    echodate "Pushing openshift addons image"
+    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/openshift_addons:$1"
     TEST_NAME="Push dnatcontroller Docker image"
     echodate "Pushing dnatcontroller image"
     time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/kubeletdnat-controller:$1"
@@ -266,6 +275,8 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.controller.addons.kubernetes.image.repository=127.0.0.1:5000/kubermatic/addons \
   --set-string=kubermatic.controller.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.controller.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.controller.addons.openshift.image.tag=${GIT_HEAD_HASH} \
+  --set-string=kubermatic.controller.addons.openshift.image.repository=127.0.0.1:5000/kubermatic/openshift_addons \
   --set-string=kubermatic.api.image.repository=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.api.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.masterController.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
@@ -446,6 +457,8 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set=kubermatic.isMaster=true \
   --set-string=kubermatic.controller.addons.kubernetes.image.tag=${GIT_HEAD_HASH} \
   --set-string=kubermatic.controller.addons.kubernetes.image.repository=127.0.0.1:5000/kubermatic/addons \
+  --set-string=kubermatic.controller.addons.openshift.image.tag=${GIT_HEAD_HASH} \
+  --set-string=kubermatic.controller.addons.openshift.image.repository=127.0.0.1:5000/kubermatic/openshift_addons \
   --set-string=kubermatic.controller.image.tag=${GIT_HEAD_HASH} \
   --set-string=kubermatic.controller.image.repository=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.api.image.repository=127.0.0.1:5000/kubermatic/api \

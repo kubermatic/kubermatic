@@ -18,6 +18,7 @@ docker build -t quay.io/kubermatic/api:${1} .
 cd cmd/nodeport-proxy && export TAG=${1} && make docker && unset TAG && cd -
 cd cmd/kubeletdnat-controller && export TAG=${1} && make docker && unset TAG && cd -
 docker build -t "quay.io/kubermatic/addons:${1}" ../addons
+docker build -t "quay.io/kubermatic/openshift-addons:${1}" ../openshift_addons
 
 for TAG in "$@"
 do
@@ -30,9 +31,11 @@ do
     docker tag quay.io/kubermatic/nodeport-proxy:${1} quay.io/kubermatic/nodeport-proxy:${TAG}
     docker tag quay.io/kubermatic/kubeletdnat-controller:${1}  quay.io/kubermatic/kubeletdnat-controller:${TAG}
     docker tag quay.io/kubermatic/addons:${1} quay.io/kubermatic/addons:${TAG}
+    docker tag quay.io/kubermatic/openshift-addons:${1} quay.io/kubermatic/openshift-addons:${TAG}
 
     docker push quay.io/kubermatic/api:${TAG}
     docker push quay.io/kubermatic/nodeport-proxy:${TAG}
     docker push quay.io/kubermatic/kubeletdnat-controller:${TAG}
     docker push quay.io/kubermatic/addons:${TAG}
+    docker push quay.io/kubermatic/openshift-addons:${TAG}
 done
