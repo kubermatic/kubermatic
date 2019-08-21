@@ -13,7 +13,7 @@ import (
 )
 
 // Spec builds ClusterSpec kubermatic Custom Resource from API Cluster
-func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter) (*kubermaticv1.ClusterSpec, error) {
+func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*kubermaticv1.ClusterSpec, error) {
 	spec := &kubermaticv1.ClusterSpec{
 		HumanReadableName: apiCluster.Name,
 		Cloud:             apiCluster.Spec.Cloud,
@@ -29,7 +29,7 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter) (*kubermaticv1.
 	if providerName == "" {
 		return nil, errors.New("cluster has no cloudprovider")
 	}
-	cloudProvider, err := cloud.Provider(dc)
+	cloudProvider, err := cloud.Provider(dc, secretKeyGetter)
 	if err != nil {
 		return nil, err
 	}

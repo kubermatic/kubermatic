@@ -275,7 +275,10 @@ func createUserInfo(user *kubermaticapiv1.User, projectID string, userProjectMap
 }
 
 func getClusterProvider(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter) (provider.ClusterProvider, context.Context, error) {
-	getter := request.(dCGetter)
+	getter, ok := request.(dCGetter)
+	if !ok {
+		return nil, nil, fmt.Errorf("request is no dcGetter")
+	}
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, ctx, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))

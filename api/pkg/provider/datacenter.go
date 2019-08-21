@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
@@ -35,6 +36,9 @@ type SeedsGetter = func() (map[string]*kubermaticv1.Seed, error)
 
 // SeedKubeconfigGetter is used to fetch the kubeconfig for a given seed
 type SeedKubeconfigGetter = func(seed *kubermaticv1.Seed) (*rest.Config, error)
+
+// SeedClientGetter is used to get a ctrlruntimeclient for a given seed
+type SeedClientGetter = func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error)
 
 // ClusterProviderGetter is used to get a clusterProvider
 type ClusterProviderGetter = func(seed *kubermaticv1.Seed) (ClusterProvider, error)
@@ -264,4 +268,17 @@ func SeedKubeconfigGetterFactory(
 		}
 		return cfg, nil
 	}, nil
+}
+
+// SeedClientGetterFactory returns a SeedClientGetter. It uses a RestMapperCache to cache
+// the discovery data, which considerably speeds up client creation.
+func SeedClientGetterFactory(kubeconfigGetter SeedKubeconfigGetter) SeedClientGetter {
+	cache := restmapper.New()
+	return func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+		cfg, err := kubeconfigGetter(seed)
+		if err != nil {
+			return nil, err
+		}
+		return cache.Client(cfg)
+	}
 }

@@ -68,7 +68,7 @@ func getVsphereNetworks(seedsGetter provider.SeedsGetter, username, password, da
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
-	datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+	_, datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
@@ -155,7 +155,7 @@ func getVsphereFolders(seedsGetter provider.SeedsGetter, username, password, dat
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
-	datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+	_, datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}

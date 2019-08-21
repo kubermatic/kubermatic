@@ -29,7 +29,7 @@ func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, credentialManager c
 		}
 
 		datacenterName := req.DatacenterName
-		datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
@@ -55,7 +55,7 @@ func OpenstackSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 
-		datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
@@ -512,7 +512,7 @@ func getOpenstackCredentials(credentialName, username, password, domain, tenant,
 }
 
 func getOpenstackCloudProvider(seeds map[string]*kubermaticv1.Seed, datacenterName string) (*openstack.Provider, error) {
-	dc, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+	_, dc, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find datacenter %q: %v", datacenterName, err)
 	}

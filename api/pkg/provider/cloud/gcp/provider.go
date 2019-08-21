@@ -34,7 +34,7 @@ func NewCloudProvider() provider.CloudProvider {
 
 // TODO: update behaviour of all these methods
 // InitializeCloudProvider initializes a cluster.
-func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
+func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	g.clusterUpdater = update
 
 	var err error
@@ -68,7 +68,7 @@ func (g *gcp) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 }
 
 // CleanUpCloudProvider removes firewall rules and related finalizer.
-func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
+func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	g.clusterUpdater = update
 
 	svc, projectID, err := ConnectToComputeService(cluster.Spec.Cloud.GCP.ServiceAccount)
