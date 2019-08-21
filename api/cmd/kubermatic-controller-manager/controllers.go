@@ -135,6 +135,7 @@ func createClusterController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		ctrlCtx.dockerPullConfigJSON,
 		strings.Contains(ctrlCtx.runOptions.kubernetesAddonsList, "nodelocal-dns-cache"),
+		ctrlCtx.runOptions.concurrentClusterUpdate,
 		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,

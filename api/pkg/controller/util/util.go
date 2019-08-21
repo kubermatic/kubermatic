@@ -7,6 +7,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
+	"k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -69,4 +70,71 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 	}
 
 	return len(nodeList.Items) != 0, nil
+}
+
+
+// LimitConcurrentUpdates checks all the clusters inside the seed cluster and checks for
+// ClusterControllerUpdateInProgressCondition. If the count condition true for each cluster was greater than
+// the limit, it should return false to skip the current cluster update.
+func LimitConcurrentUpdates(ctx context.Context, client ctrlruntimeclient.Client, limit int) (bool, error) {
+	clusters := &kubermaticv1.ClusterList{}
+	if err := client.List(ctx, nil, clusters); err != nil {
+		return false, fmt.Errorf("failed to list clusters: %v", err)
+	}
+
+	conditionsCount := 0
+	for _, cluster := range clusters.Items {
+		for _, condition := range cluster.Status.Conditions {
+			if condition.Type == kubermaticv1.ClusterControllerUpdateInProgressCondition &&
+				condition.Status == corev1.ConditionTrue {
+				conditionsCount++
+			}
+		}
+	}
+
+	if conditionsCount < limit {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// CheckClusterResourcesUpdatingStatus checks the status of the clusters StatefulSet or Deployments. If those resources
+// are not in a ready state the, it will return True to indicate that, the cluster resources are still in an updating phase
+// otherwise it returns false which means the cluster has finished updating those resources.
+func CheckClusterResourcesUpdatingStatus(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
+	var (
+		statefulSets = &v1.StatefulSetList{}
+		opts         = &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
+		deployments  = &v1.DeploymentList{}
+	)
+
+	if err := client.List(ctx, opts, statefulSets); err != nil {
+		return fmt.Errorf("failed to list statefulSets: %v", err)
+	}
+
+	for _, statefulSet := range statefulSets.Items {
+		if statefulSet.Status.Replicas != statefulSet.Status.ReadyReplicas {
+			cluster.Status.SetClusterUpdateInProgressConditionTrue(fmt.Sprintf("cluster %v resources updates are in progress",
+				cluster.Name))
+			return client.Update(ctx, cluster)
+		}
+	}
+
+	if err := client.List(ctx, opts, deployments); err != nil {
+		return fmt.Errorf("failed to list deployments: %v", err)
+	}
+
+	for _, deployment := range deployments.Items {
+		if deployment.Status.Replicas != deployment.Status.ReadyReplicas {
+			cluster.Status.SetClusterUpdateInProgressConditionTrue(fmt.Sprintf("cluster %v resources updates are in progress",
+				cluster.Name))
+			return client.Update(ctx, cluster)
+		}
+	}
+
+	cluster.Status.SetClusterUpdateInProgressConditionFalse(fmt.Sprintf("%v resources are updated",
+		cluster.Name))
+
+	return client.Update(ctx, cluster)
 }
