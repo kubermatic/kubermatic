@@ -1,48 +1,29 @@
 package kubernetes
 
 import (
+	"context"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	kubev1 "k8s.io/client-go/listers/core/v1"
-	"k8s.io/client-go/rest"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NewCredentialsProvider returns a credentials provider
-func NewCredentialsProvider(kubernetesImpersonationClient kubernetesImpersonationClient, secretLister kubev1.SecretLister) (*CredentialsProvider, error) {
-	kubernetesClient, err := kubernetesImpersonationClient(rest.ImpersonationConfig{})
-	if err != nil {
-		return nil, err
-	}
-
-	return &CredentialsProvider{
-		SecretLister:               secretLister,
-		KubernetesClientPrivileged: kubernetesClient,
-	}, nil
-}
-
-// CredentialsProvider manages secrets for credentials
-type CredentialsProvider struct {
-	SecretLister               kubev1.SecretLister
-	KubernetesClientPrivileged kubernetes.Interface
-}
-
-// Create creates a new secret for a credential
-func (p *CredentialsProvider) Create(cluster *kubermaticv1.Cluster, projectID string) (*corev1.Secret, error) {
+// CreateCredentialSecretForCluster creates a new secret for a credential
+func CreateCredentialSecretForCluster(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
 	if cluster.Spec.Cloud.AWS != nil {
-		return p.createAWSSecret(cluster, projectID)
+		return createAWSSecret(ctx, seedClient, cluster, projectID)
 	}
 	if cluster.Spec.Cloud.Packet != nil {
-		return p.createPacketSecret(cluster, projectID)
+		return createPacketSecret(ctx, seedClient, cluster, projectID)
 	}
-	return nil, nil
+	return nil
 }
 
-func (p *CredentialsProvider) createAWSSecret(cluster *kubermaticv1.Cluster, projectID string) (*corev1.Secret, error) {
+func createAWSSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
 	// create secret for storing credentials
 	name := cluster.GetSecretName()
 	secret := &corev1.Secret{
@@ -61,9 +42,8 @@ func (p *CredentialsProvider) createAWSSecret(cluster *kubermaticv1.Cluster, pro
 		},
 	}
 
-	createdSecret, err := p.KubernetesClientPrivileged.CoreV1().Secrets(resources.KubermaticNamespace).Create(secret)
-	if err != nil {
-		return nil, err
+	if err := seedClient.Create(ctx, secret); err != nil {
+		return err
 	}
 
 	// add secret key selectors to cluster object
@@ -78,10 +58,10 @@ func (p *CredentialsProvider) createAWSSecret(cluster *kubermaticv1.Cluster, pro
 	cluster.Spec.Cloud.AWS.AccessKeyID = ""
 	cluster.Spec.Cloud.AWS.SecretAccessKey = ""
 
-	return createdSecret, nil
+	return nil
 }
 
-func (p *CredentialsProvider) createPacketSecret(cluster *kubermaticv1.Cluster, projectID string) (*corev1.Secret, error) {
+func createPacketSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
 	// create secret for storing credentials
 	name := cluster.GetSecretName()
 	secret := &corev1.Secret{
@@ -100,9 +80,8 @@ func (p *CredentialsProvider) createPacketSecret(cluster *kubermaticv1.Cluster, 
 		},
 	}
 
-	createdSecret, err := p.KubernetesClientPrivileged.CoreV1().Secrets(resources.KubermaticNamespace).Create(secret)
-	if err != nil {
-		return nil, err
+	if err := seedClient.Create(ctx, secret); err != nil {
+		return err
 	}
 
 	// add secret key selectors to cluster object
@@ -117,5 +96,5 @@ func (p *CredentialsProvider) createPacketSecret(cluster *kubermaticv1.Cluster, 
 	cluster.Spec.Cloud.Packet.APIKey = ""
 	cluster.Spec.Cloud.Packet.ProjectID = ""
 
-	return createdSecret, nil
+	return nil
 }
