@@ -410,6 +410,11 @@ fi
 setup_elasped_time=$((${SECONDS:-} - $setup_start_time))
 TEST_NAME="Setup Kubermatic total" write_junit "0" "$setup_elasped_time"
 
+kubermatic_delete_cluster="true"
+if [ -n "${UPGRADE_TEST_BASE_HASH:-}" ]; then
+	kubermatic_delete_cluster="false"
+fi
+
 timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
   -debug \
   -worker-name=$BUILD_ID \
@@ -425,7 +430,7 @@ timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
   -providers=$provider \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   ${OPENSHIFT_ARG:-} \
-  -kubermatic-delete-cluster=false \
+  -kubermatic-delete-cluster=${kubermatic_delete_cluster} \
   -print-ginkgo-logs=true \
   -default-timeout-minutes=${DEFAULT_TIMEOUT_MINUTES}
 
@@ -482,6 +487,5 @@ timeout -s 9 60m ./conformance-tests $EXTRA_ARGS \
   -providers=$provider \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   ${OPENSHIFT_ARG:-} \
-  -kubermatic-delete-cluster=false \
   -print-ginkgo-logs=true \
   -default-timeout-minutes=${DEFAULT_TIMEOUT_MINUTES}
