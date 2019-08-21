@@ -164,6 +164,10 @@ type ClusterAddress struct {
 
 type ClusterConditionType string
 
+const (
+	ClusterControllerUpdateInProgressCondition ClusterConditionType = "ClusterControllerUpdateInProgress"
+)
+
 type ClusterCondition struct {
 	// Type of cluster condition.
 	Type ClusterConditionType `json:"type"`
