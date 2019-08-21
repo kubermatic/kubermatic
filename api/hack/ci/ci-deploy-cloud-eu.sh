@@ -19,10 +19,6 @@ retry 5 vault write \
 export VAULT_TOKEN="$(cat /tmp/vault-token-response.json| jq .auth.client_token -r)"
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
-export HELM_EXTRA_ARGS="--set=kubermatic.controller.image.tag=${GIT_HEAD_HASH} \
-    --set=kubermatic.api.image.tag=${GIT_HEAD_HASH} \
-    --set=kubermatic.masterController.image.tag=${GIT_HEAD_HASH} \
-    --set=kubermatic.controller.addons.kubernetes.image.tag=${GIT_HEAD_HASH}"
 
 # deploy to cloud-eu
 vault kv get -field=kubeconfig dev/seed-clusters/cloud.kubermatic.io > ${KUBECONFIG}
@@ -31,5 +27,5 @@ kubectl config use-context europe-west3-c-1
 echodate "Successfully got secrets for cloud-eu from Vault"
 
 echodate "Deploying ${DEPLOY_STACK} stack to cloud-eu"
-TILLER_NAMESPACE=kubermatic-installer ./api/hack/deploy.sh master ${VALUES_FILE} ${HELM_EXTRA_ARGS}
+TILLER_NAMESPACE=kubermatic-installer ./api/hack/deploy.sh master ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to cloud-eu"
