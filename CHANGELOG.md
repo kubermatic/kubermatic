@@ -1,3 +1,15 @@
+### [v2.10.3]()
+
+
+- Kubernetes 1.11 which is end-of-life has been removed. [#4031](https://github.com/kubermatic/kubermatic/issues/4031) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Kubernetes 1.12 which is end-of-life has been removed. [#4065](https://github.com/kubermatic/kubermatic/issues/4065) ([kdomanski](https://github.com/kdomanski))
+- Kubernetes versions affected by CVE-2019-11247 and CVE-2019-11249 have been dropped [#4066](https://github.com/kubermatic/kubermatic/issues/4066) ([kdomanski](https://github.com/kdomanski))
+- Kubernetes versions affected by CVE-2019-9512 and CVE-2019-9514 have been dropped [#4113](https://github.com/kubermatic/kubermatic/issues/4113) ([kdomanski](https://github.com/kdomanski))
+- updated Envoy to 1.11.1 [#4075](https://github.com/kubermatic/kubermatic/issues/4075) ([xrstf](https://github.com/xrstf))
+
+
+
+
 ### [v2.11.2]()
 
 
