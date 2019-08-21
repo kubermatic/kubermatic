@@ -152,7 +152,7 @@ func (v *Provider) GetNetworks(cloud kubermaticv1.CloudSpec) ([]NetworkInfo, err
 
 // GetVMFolders returns a slice of VSphereFolders of the datacenter from the passed cloudspec.
 func (v *Provider) GetVMFolders(cloud kubermaticv1.CloudSpec) ([]Folder, error) {
-	ctx := context.Background()
+	ctx := context.TODO()
 
 	session, err := v.newSession(ctx, cloud)
 	if err != nil {
@@ -202,7 +202,7 @@ func (v *Provider) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 
 // ValidateCloudSpec validates whether a vsphere client can be constructued for the passed cloudspec.
 func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
-	session, err := v.newSession(context.Background(), spec)
+	session, err := v.newSession(context.TODO(), spec)
 	if err != nil {
 		return fmt.Errorf("failed to create vCenter session: %v", err)
 	}
@@ -215,7 +215,7 @@ func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 // We also remove the finalizer if either the folder is not present or we successfully deleted it
 func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	v.clusterUpdater = update
-	ctx := context.Background()
+	ctx := context.TODO()
 
 	session, err := v.newSession(ctx, cluster.Spec.Cloud)
 	if err != nil {
