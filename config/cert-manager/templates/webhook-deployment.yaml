@@ -2,23 +2,15 @@ apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: webhook
-  labels:
-    app: webhook
-    app.kubernetes.io/name: webhook
-    app.kubernetes.io/instance:  {{ .Release.Name }}
 spec:
   replicas: {{ .Values.certManager.webhook.replicas }}
   selector:
     matchLabels:
       app: webhook
-      app.kubernetes.io/name: webhook
-      app.kubernetes.io/instance:  {{ .Release.Name }}
   template:
     metadata:
       labels:
         app: webhook
-        app.kubernetes.io/name: webhook
-        app.kubernetes.io/instance:  {{ .Release.Name }}
       annotations:
         fluentbit.io/parser: glog
     spec:
