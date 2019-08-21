@@ -65,6 +65,7 @@ function initTiller() {
 }
 
 sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic/Chart.yaml
+sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic/values.yaml
 sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic-operator/*
 
 echodate "Deploying ${DEPLOY_STACK} stack..."
