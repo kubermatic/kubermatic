@@ -73,6 +73,7 @@ type Reconciler struct {
 	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
 	dnatControllerImage                              string
+	concurrentClusterUpdates                         int
 
 	oidcCAFile         string
 	oidcIssuerURL      string
@@ -101,6 +102,7 @@ func Add(
 	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
 	nodeLocalDNSCacheEnabled bool,
+	concurrentClusterUpdates int,
 
 	oidcCAFile string,
 	oidcIssuerURL string,
@@ -130,6 +132,7 @@ func Add(
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,
 		dnatControllerImage:                              dnatControllerImage,
+		concurrentClusterUpdates:                         concurrentClusterUpdates,
 
 		externalURL: externalURL,
 		seedGetter:  seedGetter,
@@ -173,6 +176,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
+	if process, err := controllerutil.LimitConcurrentUpdates(ctx, r, r.concurrentClusterUpdates); !process && err != nil {
+		return reconcile.Result{
+			Requeue: true,
+		}, err
+	}
+
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kubeapierrors.IsNotFound(err) {
@@ -207,9 +216,15 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
+
 	if result == nil {
 		result = &reconcile.Result{}
 	}
+
+	if err := controllerutil.CheckClusterResourcesUpdatingStatus(ctx, cluster, r); err != nil {
+		log.Errorw("Unable to check clusters resources", zap.Error(err))
+	}
+
 	return *result, err
 }
 
