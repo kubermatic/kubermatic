@@ -29,6 +29,7 @@ type UpdateManager interface {
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
 	seedsGetter                 provider.SeedsGetter
+	privilegedSeedClientGetter  provider.SeedClientGetter
 	sshKeyProvider              provider.SSHKeyProvider
 	userProvider                provider.UserProvider
 	serviceAccountProvider      provider.ServiceAccountProvider
@@ -55,6 +56,7 @@ type Routing struct {
 // NewRouting creates a new Routing.
 func NewRouting(
 	seedsGetter provider.SeedsGetter,
+	seedClientGetter provider.SeedClientGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
 	newSSHKeyProvider provider.SSHKeyProvider,
@@ -78,6 +80,7 @@ func NewRouting(
 ) Routing {
 	return Routing{
 		seedsGetter:                 seedsGetter,
+		privilegedSeedClientGetter:  seedClientGetter,
 		clusterProviderGetter:       clusterProviderGetter,
 		addonProviderGetter:         addonProviderGetter,
 		sshKeyProvider:              newSSHKeyProvider,

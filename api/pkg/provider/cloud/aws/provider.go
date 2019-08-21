@@ -484,21 +484,24 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 }
 
 func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, error) {
-	var accessKeyID, secretAccessKey string
+	accessKeyID := cloud.AWS.AccessKeyID
+	secretAccessKey := cloud.AWS.SecretAccessKey
 	var err error
 
-	if cloud.AWS.AccessKeyID != "" {
-		accessKeyID = cloud.AWS.AccessKeyID
-	} else {
+	if accessKeyID == "" {
+		if cloud.AWS.CredentialsReference == nil {
+			return nil, errors.New("no credentials provided")
+		}
 		accessKeyID, err = a.secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSAccessKeyID)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if cloud.AWS.SecretAccessKey != "" {
-		secretAccessKey = cloud.AWS.SecretAccessKey
-	} else {
+	if secretAccessKey == "" {
+		if cloud.AWS.CredentialsReference == nil {
+			return nil, errors.New("no credentials provided")
+		}
 		secretAccessKey, err = a.secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSSecretAccessKey)
 		if err != nil {
 			return nil, err
