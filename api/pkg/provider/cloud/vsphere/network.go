@@ -37,7 +37,7 @@ func getPossibleVMNetworks(ctx context.Context, session *Session) ([]NetworkInfo
 			}
 
 			// Just log the error. We do not want a single weird network to break the entire listing.
-			runtime.HandleError(fmt.Errorf("Failed to get network backing info for %q: %v", network.Reference().String(), err))
+			runtime.HandleError(fmt.Errorf("failed to get network backing info for %q: %v", network.Reference().String(), err))
 			continue
 		}
 
