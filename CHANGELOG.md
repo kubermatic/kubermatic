@@ -1,3 +1,14 @@
+### [v2.11.3]()
+
+
+- Kubermatic Swagger API Spec is now exposed over its API server [#3890](https://github.com/kubermatic/kubermatic/issues/3890) ([bashofmann](https://github.com/bashofmann))
+- updated Envoy to 1.11.1 [#4075](https://github.com/kubermatic/kubermatic/issues/4075) ([xrstf](https://github.com/xrstf))
+- Kubernetes versions affected by CVE-2019-9512 and CVE-2019-9514 have been dropped [#4118](https://github.com/kubermatic/kubermatic/issues/4118) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Enabling the OIDC feature flag in clusters has been fixed. [#4136](https://github.com/kubermatic/kubermatic/issues/4136) ([kubermatic-bot](https://github.com/kubermatic-bot))
+
+
+
+
 ### [v2.10.3]()
 
 
