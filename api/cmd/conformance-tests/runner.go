@@ -479,7 +479,8 @@ func (r *testRunner) testCluster(
 				clusterList := &kubermaticv1.ClusterList{}
 				listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
 				if err := r.seedClusterClient.List(r.ctx, listOpts, clusterList); err != nil {
-					return false, fmt.Errorf("failed to list clusters: %v", err)
+					log.Errorw("listing clusters failed", zap.Error(err))
+					return false, nil
 				}
 				// Success!
 				if len(clusterList.Items) == 0 {
