@@ -14,7 +14,6 @@ import (
 	"os/user"
 	"path"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-openapi/runtime"
@@ -58,7 +57,6 @@ type Opts struct {
 	clusterClientProvider        clusterclient.UserClusterConnectionProvider
 	repoRoot                     string
 	seed                         *kubermaticv1.Seed
-	cleanupOnStart               bool
 	clusterParallelCount         int
 	workerName                   string
 	homeDir                      string
@@ -162,9 +160,9 @@ func main() {
 	flag.IntVar(&opts.clusterParallelCount, "kubermatic-parallel-clusters", 5, "number of clusters to test in parallel")
 	_ = flag.String("datacenters", "", "No-Op flag kept for compatibility reasons")
 	flag.StringVar(&opts.reportsRoot, "reports-root", "/opt/reports", "Root for reports")
-	flag.BoolVar(&opts.cleanupOnStart, "cleanup-on-start", false, "Cleans up all clusters on start and exit afterwards - must be used with name-prefix.")
+	_ = flag.Bool("cleanup-on-start", false, "No-Op kept for compatibility reasons")
 	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", defaultTimeout, "cluster creation timeout")
-	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster at the exit")
+	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
 	flag.StringVar(&sversions, "versions", "v1.10.11,v1.11.6,v1.12.4,v1.13.1", "a comma-separated list of versions to test")
@@ -325,12 +323,6 @@ func main() {
 	}
 	opts.clusterClientProvider = clusterClientProvider
 
-	if opts.cleanupOnStart {
-		if err := cleanupClusters(opts, log, seedClusterClient, clusterClientProvider); err != nil {
-			log.Fatalf("failed to cleanup old clusters: %v", err)
-		}
-	}
-
 	log.Info("Starting E2E tests...")
 	runner := newRunner(getScenarios(opts, log), &opts, log)
 
@@ -339,33 +331,6 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Infof("Whole suite took: %.2f seconds", time.Since(start).Seconds())
-}
-
-func cleanupClusters(opts Opts, log *zap.SugaredLogger, seedClusterClient ctrlruntimeclient.Client, clusterClientProvider clusterclient.UserClusterConnectionProvider) error {
-	if opts.namePrefix == "" {
-		log.Fatalf("cleanup-on-start was specified but name-prefix is empty")
-	}
-	clusterList := &kubermaticv1.ClusterList{}
-	if err := seedClusterClient.List(context.Background(), &ctrlruntimeclient.ListOptions{}, clusterList); err != nil {
-		return err
-	}
-
-	var wg sync.WaitGroup
-	for _, cluster := range clusterList.Items {
-		if strings.HasPrefix(cluster.Name, opts.namePrefix) {
-			wg.Add(1)
-			go func(cluster kubermaticv1.Cluster) {
-				clusterDeleteLog := log.With("cluster", cluster.Name)
-				defer wg.Done()
-				if err := tryToDeleteClusterWithRetries(clusterDeleteLog, &cluster, clusterClientProvider, seedClusterClient); err != nil {
-					clusterDeleteLog.Errorf("failed to delete cluster: %v", err)
-				}
-			}(cluster)
-		}
-	}
-	wg.Wait()
-	log.Info("Cleaned up all old clusters")
-	return nil
 }
 
 func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {

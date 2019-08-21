@@ -293,15 +293,6 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		return nil, fmt.Errorf("Datacenter %q doesn't exist", cluster.Spec.Cloud.DatacenterName)
 	}
 
-	if r.deleteClusterAfterTests {
-		defer func() {
-			if err := tryToDeleteClusterWithRetries(log, cluster, r.clusterClientProvider, r.seedClusterClient); err != nil {
-				log.Errorf("failed to delete cluster: %v", err)
-				log.Errorf("Please manually cleanup the cluster. Either by restarting with `-cleanup-on-start=true` or by doing the cleanup by hand: %v", err)
-			}
-		}()
-	}
-
 	kubeconfigFilename, err := r.getKubeconfig(log, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get kubeconfig: %v", err)
@@ -465,6 +456,55 @@ func (r *testRunner) testCluster(
 				})
 		}); err != nil {
 		log.Errorf("Failed to verify that user cluster RBAC controller work: %v", err)
+	}
+
+	if !r.deleteClusterAfterTests {
+		return nil
+	}
+
+	deleteParms := &projectclient.DeleteClusterParams{
+		ProjectID: r.kubermatcProjectID,
+		Dc:        r.seed.Name,
+	}
+	deleteParms.SetTimeout(15 * time.Second)
+	if err := junitReporterWrapper(
+		"[Kubermatic] Delete cluster",
+		report,
+		func() error {
+			selector, err := labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
+			if err != nil {
+				return fmt.Errorf("failed to parse selector: %v", err)
+			}
+			return wait.PollImmediate(5*time.Second, 5*time.Minute, func() (bool, error) {
+				clusterList := &kubermaticv1.ClusterList{}
+				listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
+				if err := r.seedClusterClient.List(r.ctx, listOpts, clusterList); err != nil {
+					log.Errorw("listing clusters failed", zap.Error(err))
+					return false, nil
+				}
+				// Success!
+				if len(clusterList.Items) == 0 {
+					return true, nil
+				}
+				// Should never happen
+				if len(clusterList.Items) > 1 {
+					return false, fmt.Errorf("expected to find zero or one cluster, got %d", len(clusterList.Items))
+				}
+				// Cluster is currently being deleted
+				if clusterList.Items[0].DeletionTimestamp != nil {
+					return false, nil
+				}
+				// Issue Delete call
+				log.With("cluster", clusterList.Items[0].Name).Info("Issuing DELETE call for cluster")
+				deleteParms.ClusterID = clusterList.Items[0].Name
+				_, err := r.kubermaticClient.Project.DeleteCluster(deleteParms, r.kubermaticAuthenticator)
+				log.Errorw("cluster delete call returned error", zap.Error(errors.New(fmtSwaggerError(err))))
+				return false, nil
+			})
+		},
+	); err != nil {
+		log.Errorw("failed to delete cluster", zap.Error(err))
+		return err
 	}
 
 	return nil
