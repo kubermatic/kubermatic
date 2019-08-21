@@ -190,7 +190,7 @@ func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cl
 
 func (r *Reconciler) migrateAWSMultiAZ(ctx context.Context, cluster *kubermaticv1.Cluster, cloudProvider provider.CloudProvider) error {
 	if prov, ok := cloudProvider.(*aws.AmazonEC2); ok {
-		if err := prov.MigrateToMultiAZ(cluster); err != nil {
+		if err := prov.MigrateToMultiAZ(cluster, r.updateCluster); err != nil {
 			return fmt.Errorf("failed to migrate AWS cluster %q to multi-AZ: %q", cluster.Name, err)
 		}
 	}
