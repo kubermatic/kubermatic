@@ -10,12 +10,11 @@ import (
 
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
-	"github.com/vmware/govmomi/vim25/types"
+	"github.com/vmware/govmomi/object"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-
 	kruntime "k8s.io/apimachinery/pkg/util/runtime"
 )
 
@@ -27,11 +26,6 @@ const (
 type Provider struct {
 	dc             *kubermaticv1.DatacenterSpecVSphere
 	clusterUpdater provider.ClusterUpdater
-}
-
-// Network represents a vsphere network backing.
-type Network struct {
-	Name string
 }
 
 // Folder represents a vsphere folder.
@@ -49,26 +43,51 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter) (*Provider, error) {
 	}, nil
 }
 
-func (v *Provider) getClient(cloud kubermaticv1.CloudSpec) (*govmomi.Client, error) {
+type Session struct {
+	Client     *govmomi.Client
+	Finder     *find.Finder
+	Datacenter *object.Datacenter
+}
+
+// Logout closes the idling vCenter connections
+func (s *Session) Logout() {
+	if err := s.Client.Logout(context.Background()); err != nil {
+		kruntime.HandleError(fmt.Errorf("vSphere client failed to logout: %s", err))
+	}
+}
+
+func (v *Provider) newSession(ctx context.Context, cloud kubermaticv1.CloudSpec) (*Session, error) {
 	u, err := url.Parse(fmt.Sprintf("%s/sdk", v.dc.Endpoint))
 	if err != nil {
 		return nil, err
 	}
 
-	c, err := govmomi.NewClient(context.Background(), u, v.dc.AllowInsecure)
+	client, err := govmomi.NewClient(context.Background(), u, v.dc.AllowInsecure)
 	if err != nil {
 		return nil, err
 	}
 
-	user := url.UserPassword(
-		cloud.VSphere.InfraManagementUser.Username,
-		cloud.VSphere.InfraManagementUser.Password)
-	err = c.Login(context.Background(), user)
-	if err != nil {
+	user := url.UserPassword(cloud.VSphere.InfraManagementUser.Username, cloud.VSphere.InfraManagementUser.Password)
+	if v.dc.InfraManagementUser != nil {
+		user = url.UserPassword(v.dc.InfraManagementUser.Username, v.dc.InfraManagementUser.Password)
+	}
+
+	if err = client.Login(ctx, user); err != nil {
 		return nil, err
 	}
 
-	return c, nil
+	finder := find.NewFinder(client.Client, true)
+	datacenter, err := finder.Datacenter(ctx, v.dc.Datacenter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get vSphere datacenter %q: %v", v.dc.Datacenter, err)
+	}
+	finder.SetDatacenter(datacenter)
+
+	return &Session{
+		Datacenter: datacenter,
+		Finder:     finder,
+		Client:     client,
+	}, nil
 }
 
 // getVMRootPath is a helper func to get the root path for VM's
@@ -86,22 +105,20 @@ func (v *Provider) getVMRootPath(cloud kubermaticv1.CloudSpec) string {
 // InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
 func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	v.clusterUpdater = update
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
 
-	client, err := v.getClient(cluster.Spec.Cloud)
+	session, err := v.newSession(ctx, cluster.Spec.Cloud)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
 	}
-	defer logout(client)
+	defer session.Logout()
 
 	rootPath := v.getVMRootPath(cluster.Spec.Cloud)
-
 	if cluster.Spec.Cloud.VSphere.Folder == "" {
 		// If the user did not specify a folder, we create a own folder for this cluster to improve
 		// the VM management in vCenter
 		clusterFolder := path.Join(rootPath, cluster.Name)
-		if err := createVMFolder(ctx, client, clusterFolder); err != nil {
+		if err := createVMFolder(ctx, session, clusterFolder); err != nil {
 			return nil, fmt.Errorf("failed to create the VM folder %q: %v", clusterFolder, err)
 		}
 
@@ -118,92 +135,35 @@ func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update
 }
 
 // GetNetworks returns a slice of VSphereNetworks of the datacenter from the passed cloudspec.
-func (v *Provider) GetNetworks(cloud kubermaticv1.CloudSpec) ([]Network, error) {
-
+func (v *Provider) GetNetworks(cloud kubermaticv1.CloudSpec) ([]NetworkInfo, error) {
+	ctx := context.Background()
 	// For the GetNetworks request we use dc.Spec.VSphere.InfraManagementUser
 	// if set because that is the user which will ultimatively configure
 	// the networks - But it means users in the UI can see vsphere
 	// networks without entering credentials
-	if v.dc.InfraManagementUser != nil {
-		cloud.VSphere.InfraManagementUser.Username = v.dc.InfraManagementUser.Username
-		cloud.VSphere.InfraManagementUser.Password = v.dc.InfraManagementUser.Password
-	}
-
-	client, err := v.getClient(cloud)
+	session, err := v.newSession(ctx, cloud)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize vsphere client: %v", err)
+		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
 	}
-	defer logout(client)
+	defer session.Logout()
 
-	finder := find.NewFinder(client.Client, true)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	vsphereDC, err := finder.Datacenter(ctx, v.dc.Datacenter)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get vsphere datacenter: %v", err)
-	}
-	finder.SetDatacenter(vsphereDC)
-
-	// finder is relative to datacenter, so * is fine for us.
-	netRefs, err := finder.NetworkList(ctx, "*")
-	if err != nil {
-		return nil, fmt.Errorf("couldn't retrieve network list: %v", err)
-	}
-
-	var networks []Network
-	for _, netRef := range netRefs {
-		backing, err := netRef.EthernetCardBackingInfo(ctx)
-		if err != nil {
-			// So, there are some netRefs (for example VmwareDistributedVirtualSwitch) which don't implement a BackingInfo.
-			// And since the error isn't typed, we can't check for it.
-			// And since the vsphere documentation is glorious, we dont know all netRef-types affected by this.
-			// so instead of checking type for ignoring that special error, we have to ignore all of it.
-			// return nil, fmt.Errorf("couldn't get network backing: %v (%s)", err, netRef.Reference().Type)
-			continue
-		}
-		netBacking, ok := backing.(*types.VirtualEthernetCardNetworkBackingInfo)
-		if !ok {
-			// ignore virtual networks
-			continue
-		}
-
-		network := Network{Name: netBacking.DeviceName}
-		networks = append(networks, network)
-	}
-
-	return networks, nil
+	return getPossibleVMNetworks(ctx, session)
 }
 
 // GetVMFolders returns a slice of VSphereFolders of the datacenter from the passed cloudspec.
 func (v *Provider) GetVMFolders(cloud kubermaticv1.CloudSpec) ([]Folder, error) {
-	if v.dc.InfraManagementUser != nil {
-		cloud.VSphere.InfraManagementUser.Username = v.dc.InfraManagementUser.Username
-		cloud.VSphere.InfraManagementUser.Password = v.dc.InfraManagementUser.Password
-	}
+	ctx := context.TODO()
 
-	client, err := v.getClient(cloud)
+	session, err := v.newSession(ctx, cloud)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialize vsphere client: %v", err)
+		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
 	}
-	defer logout(client)
-
-	finder := find.NewFinder(client.Client, true)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	vsphereDC, err := finder.Datacenter(ctx, v.dc.Datacenter)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get vsphere datacenter: %v", err)
-	}
-	finder.SetDatacenter(vsphereDC)
+	defer session.Logout()
 
 	// We simply list all folders & filter out afterwards.
 	// Filtering here is not possible as vCenter only lists the first level when giving a path.
 	// vCenter only lists folders recursively if you just specify "*".
-	folderRefs, err := finder.FolderList(ctx, "*")
+	folderRefs, err := session.Finder.FolderList(ctx, "*")
 	if err != nil {
 		return nil, fmt.Errorf("couldn't retrieve folder list: %v", err)
 	}
@@ -242,11 +202,11 @@ func (v *Provider) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 
 // ValidateCloudSpec validates whether a vsphere client can be constructued for the passed cloudspec.
 func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
-	client, err := v.getClient(spec)
+	session, err := v.newSession(context.TODO(), spec)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create vCenter session: %v", err)
 	}
-	logout(client)
+	defer session.Logout()
 	return nil
 }
 
@@ -255,18 +215,16 @@ func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 // We also remove the finalizer if either the folder is not present or we successfully deleted it
 func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, _ provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
 	v.clusterUpdater = update
+	ctx := context.TODO()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	client, err := v.getClient(cluster.Spec.Cloud)
+	session, err := v.newSession(ctx, cluster.Spec.Cloud)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
 	}
-	defer logout(client)
+	defer session.Logout()
 
 	if kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
-		if err := deleteVMFolder(ctx, client, cluster.Spec.Cloud.VSphere.Folder); err != nil {
+		if err := deleteVMFolder(ctx, session, cluster.Spec.Cloud.VSphere.Folder); err != nil {
 			return nil, err
 		}
 		cluster, err = v.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -278,12 +236,6 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 	}
 
 	return cluster, nil
-}
-
-func logout(client *govmomi.Client) {
-	if err := client.Logout(context.Background()); err != nil {
-		kruntime.HandleError(fmt.Errorf("Failed to logout from vsphere: %v", err))
-	}
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted

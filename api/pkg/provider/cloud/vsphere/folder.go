@@ -4,22 +4,18 @@ import (
 	"context"
 	"fmt"
 	"path"
-
-	"github.com/vmware/govmomi"
-	"github.com/vmware/govmomi/find"
 )
 
 // createVMFolder creates the specified vm folder if it does not exist yet.
-func createVMFolder(ctx context.Context, client *govmomi.Client, fullPath string) error {
-	finder := find.NewFinder(client.Client, true)
+func createVMFolder(ctx context.Context, session *Session, fullPath string) error {
 	rootPath, newFolder := path.Split(fullPath)
 
-	rootFolder, err := finder.Folder(ctx, rootPath)
+	rootFolder, err := session.Finder.Folder(ctx, rootPath)
 	if err != nil {
 		return fmt.Errorf("couldn't find rootpath, see: %v", err)
 	}
 
-	if _, err = finder.Folder(ctx, newFolder); err != nil {
+	if _, err = session.Finder.Folder(ctx, newFolder); err != nil {
 		if !isNotFound(err) {
 			return fmt.Errorf("failed to get folder %s: %v", fullPath, err)
 		}
@@ -33,10 +29,8 @@ func createVMFolder(ctx context.Context, client *govmomi.Client, fullPath string
 }
 
 // deleteVMFolder deletes the specified folder.
-func deleteVMFolder(ctx context.Context, client *govmomi.Client, path string) error {
-	finder := find.NewFinder(client.Client, true)
-
-	folder, err := finder.Folder(ctx, path)
+func deleteVMFolder(ctx context.Context, session *Session, path string) error {
+	folder, err := session.Finder.Folder(ctx, path)
 	if err != nil {
 		if isNotFound(err) {
 			return nil

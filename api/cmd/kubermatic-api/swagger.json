@@ -7802,10 +7802,25 @@
       "type": "object",
       "title": "VSphereNetwork is the object representing a vsphere network.",
       "properties": {
+        "absolutePath": {
+          "description": "AbsolutePath is the absolute path inside vCenter",
+          "type": "string",
+          "x-go-name": "AbsolutePath"
+        },
         "name": {
           "description": "Name is the name of the network",
           "type": "string",
           "x-go-name": "Name"
+        },
+        "relativePath": {
+          "description": "RelativePath is the relative path inside the datacenter",
+          "type": "string",
+          "x-go-name": "RelativePath"
+        },
+        "type": {
+          "description": "Type defines the type of network",
+          "type": "string",
+          "x-go-name": "Type"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
