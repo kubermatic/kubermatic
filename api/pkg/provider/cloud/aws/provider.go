@@ -8,7 +8,6 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"github.com/golang/glog"
 
@@ -32,7 +31,6 @@ const (
 
 type AmazonEC2 struct {
 	dc                *kubermaticv1.DatacenterSpecAWS
-	clusterUpdater    provider.ClusterUpdater
 	secretKeySelector provider.SecretKeySelectorValueFunc
 }
 
@@ -70,7 +68,7 @@ func (a *AmazonEC2) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 }
 
 // MigrateToMultiAZ migrates an AWS cluster from the old AZ-hardcoded spec to multi-AZ spec
-func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster) error {
+func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster, clusterUpdater provider.ClusterUpdater) error {
 	// If not even the role name is set, then the cluster is not fully
 	// initialized and we don't need to worry about this migration just yet.
 	if cluster.Spec.Cloud.AWS.RoleName == "" {
@@ -89,7 +87,7 @@ func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster) error {
 			return fmt.Errorf("failed to get already existing aws IAM role %s: %v", cluster.Spec.Cloud.AWS.RoleName, err)
 		}
 
-		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.AWS.ControlPlaneRoleARN = *getRoleOut.Role.Arn
 		})
 		if err != nil {
@@ -182,19 +180,13 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 }
 
 // NewCloudProvider returns a new AmazonEC2 provider.
-func NewCloudProvider(dc *kubermaticv1.Datacenter) (*AmazonEC2, error) {
+func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*AmazonEC2, error) {
 	if dc.Spec.AWS == nil {
 		return nil, errors.New("datacenter is not an AWS datacenter")
 	}
 	return &AmazonEC2{
-		dc: dc.Spec.AWS,
-		// This is hacky at best, but dodge a couple of NPDs this way and trade them for errors
-		clusterUpdater: func(string, func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
-			return nil, errors.New("NPD when calling clusterUpdater")
-		},
-		secretKeySelector: func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
-			return "", errors.New("NPD when calling secretKeySelector")
-		},
+		dc:                dc.Spec.AWS,
+		secretKeySelector: secretKeyGetter,
 	}, nil
 }
 
@@ -397,10 +389,7 @@ func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (str
 	return sgid, nil
 }
 
-func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
-	a.clusterUpdater = update
-	a.secretKeySelector = secretKeySelector
-
+func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get API client: %v", err)
@@ -495,21 +484,24 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 }
 
 func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, error) {
-	var accessKeyID, secretAccessKey string
+	accessKeyID := cloud.AWS.AccessKeyID
+	secretAccessKey := cloud.AWS.SecretAccessKey
 	var err error
 
-	if cloud.AWS.AccessKeyID != "" {
-		accessKeyID = cloud.AWS.AccessKeyID
-	} else if a.secretKeySelector != nil {
+	if accessKeyID == "" {
+		if cloud.AWS.CredentialsReference == nil {
+			return nil, errors.New("no credentials provided")
+		}
 		accessKeyID, err = a.secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSAccessKeyID)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if cloud.AWS.SecretAccessKey != "" {
-		secretAccessKey = cloud.AWS.SecretAccessKey
-	} else if a.secretKeySelector != nil {
+	if secretAccessKey == "" {
+		if cloud.AWS.CredentialsReference == nil {
+			return nil, errors.New("no credentials provided")
+		}
 		secretAccessKey, err = a.secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSSecretAccessKey)
 		if err != nil {
 			return nil, err
@@ -519,10 +511,7 @@ func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, erro
 	return GetClientSet(accessKeyID, secretAccessKey, a.dc.Region)
 }
 
-func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater, secretKeySelector provider.SecretKeySelectorValueFunc) (*kubermaticv1.Cluster, error) {
-	a.secretKeySelector = secretKeySelector
-	a.clusterUpdater = updater
-
+func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	client, err := a.getClientSet(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get API client: %v", err)
@@ -538,7 +527,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 				return nil, fmt.Errorf("failed to delete security group %s: %s", cluster.Spec.Cloud.AWS.SecurityGroupID, err.(awserr.Error).Message())
 			}
 		}
-		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, securityGroupCleanupFinalizer)
 		})
 		if err != nil {
@@ -565,7 +554,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 			}
 		}
 
-		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, instanceProfileCleanupFinalizer)
 		})
 		if err != nil {
@@ -578,7 +567,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 		if err := deleteRole(client.IAM, roleName); err != nil {
 			return nil, fmt.Errorf("failed to delete role %q: %v", roleName, err)
 		}
-		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, controlPlaneRoleCleanupFinalizer)
 		})
 		if err != nil {
@@ -590,7 +579,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 		if err := removeTags(cluster, client.EC2); err != nil {
 			return nil, err
 		}
-		cluster, err = a.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinalizer)
 		})
 		if err != nil {

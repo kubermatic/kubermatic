@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -51,15 +50,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
-	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -163,7 +159,9 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	if synced := mgr.GetCache().WaitForCacheSync(mgrSyncCtx.Done()); !synced {
 		kubermaticlog.Logger.Fatal("failed to sync mgr cache")
 	}
-	clusterProviderGetter := clusterProviderFactory(seedKubeconfigGetter, options.workerName, options.featureGates.Enabled(OIDCKubeCfgEndpoint))
+
+	seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
+	clusterProviderGetter := clusterProviderFactory(seedKubeconfigGetter, seedClientGetter, options.workerName, options.featureGates.Enabled(OIDCKubeCfgEndpoint))
 
 	// Warm up the restMapper cache. Log but ignore errors encountered here, maybe there are stale seeds
 	go func() {
@@ -223,6 +221,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		eventRecorderProvider:                 eventRecorderProvider,
 		clusterProviderGetter:                 clusterProviderGetter,
 		seedsGetter:                           seedsGetter,
+		seedClientGetter:                      seedClientGetter,
 		addons:                                addonProviderGetter}, nil
 }
 
@@ -287,6 +286,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 
 	r := handler.NewRouting(
 		prov.seedsGetter,
+		prov.seedClientGetter,
 		prov.clusterProviderGetter,
 		prov.addons,
 		prov.sshKey,
@@ -358,11 +358,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	return instrumentHandler(mainRouter, lookupRoute), nil
 }
 
-func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, workerName string, oidcKubeCfgEndpointEnabled bool) provider.ClusterProviderGetter {
-	// Discovery can take very long when the cluster is not physically close, so cache the discovery info
-	// use a sync.Map as we read a lot from this map but almost never write to it
-	restMapperCache := &sync.Map{}
-
+func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, seedClientGetter provider.SeedClientGetter, workerName string, oidcKubeCfgEndpointEnabled bool) provider.ClusterProviderGetter {
 	return func(seed *kubermaticv1.Seed) (provider.ClusterProvider, error) {
 		cfg, err := seedKubeconfigGetter(seed)
 		if err != nil {
@@ -374,28 +370,7 @@ func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, 
 		}
 		defaultImpersonationClientForSeed := kubernetesprovider.NewKubermaticImpersonationClient(cfg)
 
-		var mapper meta.RESTMapper
-		// Make sure the key changes if someone creates a new seed with the same name
-		mapperKey := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s/%s/%s/%s",
-			seed.Name, cfg.Host, cfg.APIPath, cfg.Username, cfg.Password, cfg.BearerToken, cfg.BearerTokenFile,
-			string(cfg.CertData), string(cfg.KeyData), string(cfg.CAData))
-		rawMapper, exists := restMapperCache.Load(mapperKey)
-		if !exists {
-			mapper, err = restmapper.NewDynamicRESTMapper(cfg)
-			if err != nil {
-				kubermaticlog.Logger.With("error", err).With("seed", seed.Name).Error("failed to create restMapper")
-				return nil, fmt.Errorf("failed to create restMapper for seed %q: %v", seed.Name, err)
-			}
-			kubermaticlog.Logger.With("seed", seed.Name).Info("Created restMapper")
-			restMapperCache.Store(mapperKey, mapper)
-		} else {
-			var ok bool
-			mapper, ok = rawMapper.(meta.RESTMapper)
-			if !ok {
-				return nil, fmt.Errorf("didn't get a restMapper from the cache")
-			}
-		}
-		seedCtrlruntimeClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Mapper: mapper})
+		seedCtrlruntimeClient, err := seedClientGetter(seed)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create dynamic seed client: %v", err)
 		}

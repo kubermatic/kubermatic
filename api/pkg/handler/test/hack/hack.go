@@ -23,6 +23,7 @@ import (
 // for example handler package uses v1/dc and v1/dc needs handler for testing
 func NewTestRouting(
 	seedsGetter provider.SeedsGetter,
+	seedClientGetter provider.SeedClientGetter,
 	clusterProvidersGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
 	sshKeyProvider provider.SSHKeyProvider,
@@ -46,6 +47,7 @@ func NewTestRouting(
 	updateManager := version.New(versions, updates)
 	r := handler.NewRouting(
 		seedsGetter,
+		seedClientGetter,
 		clusterProvidersGetter,
 		addonProviderGetter,
 		sshKeyProvider,

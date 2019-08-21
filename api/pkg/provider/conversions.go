@@ -78,21 +78,23 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 // once we support datacenters as CRDs.
 // TODO: Find a way to lift the current requirement of unique nodeDatacenter names. It is needed
 // only because we put the nodeDatacenter name on the cluster but not the seed
-func DatacenterFromSeedMap(seeds map[string]*kubermaticv1.Seed, datacenterName string) (*kubermaticv1.Datacenter, error) {
+func DatacenterFromSeedMap(seeds map[string]*kubermaticv1.Seed, datacenterName string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
 
-	var results []kubermaticv1.Datacenter
+	var foundDatacenters []kubermaticv1.Datacenter
+	var foundSeeds []*kubermaticv1.Seed
 	for _, seed := range seeds {
 		datacenter, exists := seed.Spec.Datacenters[datacenterName]
 		if !exists {
 			continue
 		}
 
-		results = append(results, datacenter)
+		foundSeeds = append(foundSeeds, seed)
+		foundDatacenters = append(foundDatacenters, datacenter)
 	}
 
-	if n := len(results); n != 1 {
-		return nil, fmt.Errorf("expected to find exactly one datacenter with name %q, got %d", datacenterName, n)
+	if n := len(foundDatacenters); n != 1 {
+		return nil, nil, fmt.Errorf("expected to find exactly one datacenter with name %q, got %d", datacenterName, n)
 	}
 
-	return &results[0], nil
+	return foundSeeds[0], &foundDatacenters[0], nil
 }
