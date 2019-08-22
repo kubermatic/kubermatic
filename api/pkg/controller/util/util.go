@@ -51,7 +51,7 @@ func EnqueueConst(queueKey string) *handler.EnqueueRequestsFromMapFunc {
 }
 
 // LimitConcurrentUpdates checks all the clusters inside the seed cluster and checks for
-// ClusterControllerUpdateInProgressCondition. If the count condition true for each cluster was greater than
+// ClusterConditionControllerUpdateInProgress. If the count condition true for each cluster was greater than
 // the limit, it should return false to skip the current cluster update.
 func LimitConcurrentUpdates(ctx context.Context, client ctrlruntimeclient.Client, limit int) (bool, error) {
 	clusters := &kubermaticv1.ClusterList{}
@@ -62,7 +62,7 @@ func LimitConcurrentUpdates(ctx context.Context, client ctrlruntimeclient.Client
 	conditionsCount := 0
 	for _, cluster := range clusters.Items {
 		for _, condition := range cluster.Status.Conditions {
-			if condition.Type == kubermaticv1.ClusterControllerUpdateInProgressCondition &&
+			if condition.Type == kubermaticv1.ClusterConditionControllerUpdateInProgress &&
 				condition.Status == corev1.ConditionTrue {
 				conditionsCount++
 			}
@@ -91,7 +91,8 @@ func CheckClusterResourcesUpdatingStatus(ctx context.Context, cluster *kubermati
 	}
 
 	for _, statefulSet := range statefulSets.Items {
-		if statefulSet.Status.Replicas != statefulSet.Status.ReadyReplicas {
+		if statefulSet.Status.Replicas != statefulSet.Status.UpdatedReplicas ||
+			statefulSet.Status.Replicas != statefulSet.Status.ReadyReplicas {
 			cluster.Status.SetClusterUpdateInProgressConditionTrue(fmt.Sprintf("cluster %v resources updates are in progress",
 				cluster.Name))
 			return client.Update(ctx, cluster)
@@ -103,15 +104,15 @@ func CheckClusterResourcesUpdatingStatus(ctx context.Context, cluster *kubermati
 	}
 
 	for _, deployment := range deployments.Items {
-		if deployment.Status.Replicas != deployment.Status.ReadyReplicas {
+		if deployment.Status.Replicas != deployment.Status.UpdatedReplicas ||
+			deployment.Status.Replicas != deployment.Status.ReadyReplicas {
 			cluster.Status.SetClusterUpdateInProgressConditionTrue(fmt.Sprintf("cluster %v resources updates are in progress",
 				cluster.Name))
 			return client.Update(ctx, cluster)
 		}
 	}
 
-	cluster.Status.SetClusterUpdateInProgressConditionFalse(fmt.Sprintf("%v resources are updated",
-		cluster.Name))
+	cluster.Status.ClearCondition(kubermaticv1.ClusterConditionControllerUpdateInProgress)
 
 	return client.Update(ctx, cluster)
 }

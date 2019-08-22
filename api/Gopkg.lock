@@ -890,7 +890,7 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:242fb60d11fc9c22ce7d45627b548d712002629eedf3181700054a06ffe98e47"
+  digest = "1:04bfe37565a5eb9ef3586202778391ac9efbc2487034bb78664ecf8f3770068f"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/plugin",
@@ -1984,9 +1984,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:03a96603922fc1f6895ae083e1e16d943b55ef0656b56965351bd87e7d90485f"
+  digest = "1:0728020defbd5d26e88ec5f6a9e844b6f2982998bad1356b649ccc9469e0aa89"
   name = "k8s.io/kube-openapi"
-  packages = ["pkg/util/proto"]
+  packages = [
+    "pkg/common",
+    "pkg/util/proto",
+  ]
   pruneopts = "NUT"
   revision = "0317810137be915b9cf888946c6e115c1bfac693"
 

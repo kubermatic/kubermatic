@@ -3,6 +3,8 @@ package v1
 import (
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -10,10 +12,9 @@ import (
 type ClusterConditionType string
 
 const (
-	ClusterControllerUpdateInProgressCondition ClusterConditionType = "ClusterControllerUpdateInProgress"
+	ClusterConditionControllerUpdateInProgress ClusterConditionType = "ClusterControllerUpdateInProgress"
 
 	ClusterUpdateInProgressReason = "Current Cluster is updating its resources"
-	ClusterUpdateFinishedReason   = "Current Cluster has finished updating its resources"
 )
 
 type ClusterCondition struct {
@@ -21,6 +22,8 @@ type ClusterCondition struct {
 	Type ClusterConditionType `json:"type"`
 	// Status of the condition, one of True, False, Unknown.
 	Status corev1.ConditionStatus `json:"status"`
+	// KubermaticVersion is the current kubermatic version in a cluster.
+	KubermaticVersion string `json:"kubermatic_version"`
 	// Last time we got an update on a given condition.
 	// +optional
 	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty"`
@@ -43,6 +46,7 @@ func newClusterCondition(condType ClusterConditionType, status corev1.ConditionS
 	return &ClusterCondition{
 		Type:               condType,
 		Status:             status,
+		KubermaticVersion:  resources.KUBERMATICCOMMIT,
 		LastHeartbeatTime:  now,
 		LastTransitionTime: now,
 		Reason:             reason,
@@ -90,14 +94,8 @@ type ClusterStatus struct {
 }
 
 func (cs *ClusterStatus) SetClusterUpdateInProgressConditionTrue(message string) {
-	condition := newClusterCondition(ClusterControllerUpdateInProgressCondition, corev1.ConditionTrue,
+	condition := newClusterCondition(ClusterConditionControllerUpdateInProgress, corev1.ConditionTrue,
 		ClusterUpdateInProgressReason, message)
-	cs.setClusterCondition(*condition)
-}
-
-func (cs *ClusterStatus) SetClusterUpdateInProgressConditionFalse(message string) {
-	condition := newClusterCondition(ClusterControllerUpdateInProgressCondition, corev1.ConditionFalse,
-		ClusterUpdateFinishedReason, message)
 	cs.setClusterCondition(*condition)
 }
 
