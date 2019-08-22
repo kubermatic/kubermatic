@@ -6195,6 +6195,9 @@
       "type": "object",
       "title": "HetznerCloudSpec specifies access data to hetzner cloud.",
       "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "token": {
           "type": "string",
           "x-go-name": "Token"
