@@ -121,7 +121,7 @@ required = [
 
 [[override]]
   name = "github.com/kubermatic/machine-controller"
-  version = "v1.5.2"
+  version = "v1.5.3"
 
 [[override]]
   name = "sigs.k8s.io/controller-runtime"

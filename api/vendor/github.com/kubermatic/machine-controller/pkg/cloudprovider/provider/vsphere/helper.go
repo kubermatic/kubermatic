@@ -45,16 +45,9 @@ const (
 )
 
 func createClonedVM(ctx context.Context, vmName string, config *Config, session *Session, containerLinuxUserdata string) (*object.VirtualMachine, error) {
-	templateVM, err := session.Finder.VirtualMachine(ctx, config.TemplateVMName)
+	tpl, err := session.Finder.VirtualMachine(ctx, config.TemplateVMName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get template vm: %v", err)
-	}
-
-	glog.V(3).Infof("Template VM ref is %+v", templateVM)
-
-	vmDevices, err := templateVM.Device(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list devices of template VM: %v", err)
 	}
 
 	// Find the target folder, if its included in the provider config.
@@ -78,6 +71,52 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, session 
 		targetVMFolder = datacenterFolders.VmFolder
 	}
 
+	datastore, err := session.Finder.Datastore(ctx, config.Datastore)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get datastore: %v", err)
+	}
+
+	// Create a cloned VM from the template VM's snapshot.
+	// We split the cloning from the reconfiguring as those actions differ on the permission side.
+	// It's nicer to tell which specific action failed due to lacking permissions.
+	clonedVMTask, err := tpl.Clone(ctx, targetVMFolder, vmName, types.VirtualMachineCloneSpec{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to clone template vm: %v", err)
+	}
+
+	if err := clonedVMTask.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("error when waiting for result of clone task: %v", err)
+	}
+
+	virtualMachine, err := session.Finder.VirtualMachine(ctx, vmName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get virtual machine object after cloning: %v", err)
+	}
+
+	relocateSpec := types.VirtualMachineRelocateSpec{
+		Datastore:    types.NewReference(datastore.Reference()),
+		DiskMoveType: string(types.VirtualMachineRelocateDiskMoveOptionsMoveAllDiskBackingsAndConsolidate),
+		Folder:       types.NewReference(targetVMFolder.Reference()),
+		Disk:         []types.VirtualMachineRelocateSpecDiskLocator{},
+	}
+	relocateTask, err := virtualMachine.Relocate(ctx, relocateSpec, types.VirtualMachineMovePriorityDefaultPriority)
+	if err != nil {
+		return nil, fmt.Errorf("failed to relocate: %v", err)
+	}
+	if err := relocateTask.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("failed waiting for relocation to finish: %v", err)
+	}
+
+	virtualMachine, err = session.Finder.VirtualMachine(ctx, vmName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get virtual machine object after relocating: %v", err)
+	}
+
+	vmDevices, err := virtualMachine.Device(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list devices of template VM: %v", err)
+	}
+
 	var vAppAconfig *types.VmConfigSpec
 	if containerLinuxUserdata != "" {
 		userdataBase64 := base64.StdEncoding.EncodeToString([]byte(containerLinuxUserdata))
@@ -86,7 +125,7 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, session 
 		// In order to overwrite them, we need to specify their numeric Key values,
 		// which we'll extract from that template.
 		var mvm mo.VirtualMachine
-		if err := templateVM.Properties(ctx, templateVM.Reference(), []string{"config", "config.vAppConfig", "config.vAppConfig.property"}, &mvm); err != nil {
+		if err := virtualMachine.Properties(ctx, virtualMachine.Reference(), []string{"config", "config.vAppConfig", "config.vAppConfig.property"}, &mvm); err != nil {
 			return nil, fmt.Errorf("failed to extract vapp properties for coreos: %v", err)
 		}
 
@@ -127,9 +166,9 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, session 
 
 	diskUUIDEnabled := true
 
-	deviceSpecs := []types.BaseVirtualDeviceConfigSpec{}
+	var deviceSpecs []types.BaseVirtualDeviceConfigSpec
 	if config.DiskSizeGB != nil {
-		disks, err := getDisksFromVM(ctx, templateVM)
+		disks, err := getDisksFromVM(ctx, virtualMachine)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get disks from VM: %v", err)
 		}
@@ -152,23 +191,6 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, session 
 			return nil, fmt.Errorf("failed to get network specifications: %v", err)
 		}
 		deviceSpecs = append(deviceSpecs, networkSpecs...)
-	}
-
-	// Create a cloned VM from the template VM's snapshot.
-	// We split the cloning from the reconfiguring as those actions differ on the permission side.
-	// It's nicer to tell which specific action failed due to lacking permissions.
-	clonedVMTask, err := templateVM.Clone(ctx, targetVMFolder, vmName, types.VirtualMachineCloneSpec{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to clone template vm: %v", err)
-	}
-
-	if err := clonedVMTask.Wait(ctx); err != nil {
-		return nil, fmt.Errorf("error when waiting for result of clone task: %v", err)
-	}
-
-	virtualMachine, err := session.Finder.VirtualMachine(ctx, vmName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get virtual machine object after cloning: %v", err)
 	}
 
 	vmConfig := types.VirtualMachineConfigSpec{

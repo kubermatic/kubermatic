@@ -234,6 +234,7 @@ systemd:
         ExecStartPre=/bin/mkdir -p /opt/cni/bin
         ExecStartPre=-/usr/bin/rkt rm --uuid-file=/var/cache/kubelet-pod.uuid
         ExecStartPre=-/bin/rm -rf /var/lib/rkt/cas/tmp/
+        ExecStartPre=/bin/bash /opt/load-kernel-modules.sh
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
 {{ kubeletFlags .KubeletVersion .CloudProviderName .MachineSpec.Name .DNSIPs .ExternalCloudProvider .PauseImage | indent 10 }}
         ExecStop=-/usr/bin/rkt stop --uuid-file=/var/cache/kubelet-pod.uuid
@@ -268,12 +269,12 @@ storage:
         inline: |
 {{ journalDConfig | indent 10 }}
 
-    - path: /etc/modules-load.d/k8s.conf
+    - path: /opt/load-kernel-modules.sh
       filesystem: root
-      mode: 0644
+      mode: 0755
       contents:
         inline: |
-{{ kernelModules | indent 10 }}
+{{ kernelModulesScript | indent 10 }}
 
     - path: /etc/sysctl.d/k8s.conf
       filesystem: root
