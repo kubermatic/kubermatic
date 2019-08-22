@@ -18,6 +18,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/serviceaccounts"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/tokens"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/users"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 
 	"github.com/Masterminds/semver"
@@ -653,4 +654,61 @@ func cleanUpCluster(t *testing.T, apiRunner *APIRunner, projectID, dc, clusterID
 	if err == nil {
 		t.Fatalf("can not delete the cluster after %d attempts", maxAttempts)
 	}
+}
+
+func (r *APIRunner) DeleteUserFromProject(projectID, userID string) error {
+	params := &users.DeleteUserFromProjectParams{ProjectID: projectID, UserID: userID}
+	params.WithTimeout(timeout)
+	if _, err := r.client.Users.DeleteUserFromProject(params, r.bearerToken); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *APIRunner) GetProjectUsers(projectID string) ([]apiv1.User, error) {
+	params := &users.GetUsersForProjectParams{ProjectID: projectID}
+	params.WithTimeout(timeout)
+	responseUsers, err := r.client.Users.GetUsersForProject(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	users := make([]apiv1.User, 0)
+	for _, user := range responseUsers.Payload {
+		usr := apiv1.User{
+			Email: user.Email,
+			ObjectMeta: apiv1.ObjectMeta{
+				ID:   user.ID,
+				Name: user.Name,
+			},
+		}
+		users = append(users, usr)
+	}
+
+	return users, nil
+}
+
+func (r *APIRunner) AddProjectUser(projectID, email, name, group string) (*apiv1.User, error) {
+	params := &users.AddUserToProjectParams{ProjectID: projectID, Body: &models.User{
+		Email: email,
+		Name:  name,
+		Projects: []*models.ProjectGroup{
+			{ID: projectID,
+				GroupPrefix: group,
+			},
+		},
+	}}
+	params.WithTimeout(timeout)
+	responseUser, err := r.client.Users.AddUserToProject(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	usr := &apiv1.User{
+		Email: responseUser.Payload.Email,
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:   responseUser.Payload.ID,
+			Name: responseUser.Payload.Name,
+		},
+	}
+	return usr, nil
 }
