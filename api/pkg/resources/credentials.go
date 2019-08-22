@@ -6,13 +6,18 @@ import (
 )
 
 type Credentials struct {
-	AWS    AWSCredentials
-	Packet PacketCredentials
+	AWS     AWSCredentials
+	Hetzner HetznerCredentials
+	Packet  PacketCredentials
 }
 
 type AWSCredentials struct {
 	AccessKeyID     string
 	SecretAccessKey string
+}
+
+type HetznerCredentials struct {
+	Token string
 }
 
 type PacketCredentials struct {
@@ -31,6 +36,11 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 
 	if data.Cluster().Spec.Cloud.AWS != nil {
 		if credentials.AWS, err = GetAWSCredentials(data); err != nil {
+			return Credentials{}, err
+		}
+	}
+	if data.Cluster().Spec.Cloud.Hetzner != nil {
+		if credentials.Hetzner, err = GetHetznerCredentials(data); err != nil {
 			return Credentials{}, err
 		}
 	}
@@ -65,6 +75,22 @@ func GetAWSCredentials(data CredentialsData) (AWSCredentials, error) {
 	}
 
 	return awsCredentials, nil
+}
+
+func GetHetznerCredentials(data CredentialsData) (HetznerCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.Hetzner
+	hetznerCredentials := HetznerCredentials{}
+	var err error
+
+	if spec.Token != "" {
+		hetznerCredentials.Token = spec.Token
+	} else {
+		if hetznerCredentials.Token, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, HetznerToken); err != nil {
+			return HetznerCredentials{}, err
+		}
+	}
+
+	return hetznerCredentials, nil
 }
 
 func GetPacketCredentials(data CredentialsData) (PacketCredentials, error) {

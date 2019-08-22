@@ -166,7 +166,7 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "OS_TENANT_ID", Value: data.Cluster().Spec.Cloud.Openstack.TenantID})
 	}
 	if data.Cluster().Spec.Cloud.Hetzner != nil {
-		vars = append(vars, corev1.EnvVar{Name: "HZ_TOKEN", Value: data.Cluster().Spec.Cloud.Hetzner.Token})
+		vars = append(vars, corev1.EnvVar{Name: "HZ_TOKEN", Value: credentials.Hetzner.Token})
 	}
 	if data.Cluster().Spec.Cloud.Digitalocean != nil {
 		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", Value: data.Cluster().Spec.Cloud.Digitalocean.Token})

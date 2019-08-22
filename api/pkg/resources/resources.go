@@ -364,6 +364,8 @@ const (
 	AWSAccessKeyID     = "accessKeyId"
 	AWSSecretAccessKey = "secretAccessKey"
 
+	HetznerToken = "hetzner"
+
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"
 )
