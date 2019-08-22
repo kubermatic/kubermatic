@@ -78,6 +78,7 @@ MemoryAccounting=true
 Environment="PATH=/opt/bin:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin/"
 EnvironmentFile=-/etc/environment
 
+ExecStartPre=/bin/bash /opt/load-kernel-modules.sh
 ExecStart=/opt/bin/kubelet $KUBELET_EXTRA_ARGS \
 {{ kubeletFlags .KubeletVersion .CloudProvider .Hostname .ClusterDNSIPs .IsExternal .PauseImage | indent 2 }}
 
