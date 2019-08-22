@@ -4,6 +4,10 @@ apiVersion: certmanager.k8s.io/v1alpha1
 kind: Issuer
 metadata:
   name: webhook-selfsign
+  labels:
+    app: webhook
+    app.kubernetes.io/name: webhook
+    app.kubernetes.io/instance:  {{ .Release.Name }}
 spec:
   selfSigned: {}
 
@@ -13,6 +17,10 @@ apiVersion: certmanager.k8s.io/v1alpha1
 kind: Certificate
 metadata:
   name: webhook-ca
+  labels:
+    app: webhook
+    app.kubernetes.io/name: webhook
+    app.kubernetes.io/instance:  {{ .Release.Name }}
 spec:
   secretName: webhook-ca
   duration: 43800h # 5y
@@ -27,6 +35,10 @@ apiVersion: certmanager.k8s.io/v1alpha1
 kind: Issuer
 metadata:
   name: webhook-ca
+  labels:
+    app: webhook
+    app.kubernetes.io/name: webhook
+    app.kubernetes.io/instance:  {{ .Release.Name }}
 spec:
   ca:
     secretName: webhook-ca
@@ -37,6 +49,10 @@ apiVersion: certmanager.k8s.io/v1alpha1
 kind: Certificate
 metadata:
   name: webhook-tls
+  labels:
+    app: webhook
+    app.kubernetes.io/name: webhook
+    app.kubernetes.io/instance:  {{ .Release.Name }}
 spec:
   secretName: webhook-tls
   duration: 8760h # 1y
