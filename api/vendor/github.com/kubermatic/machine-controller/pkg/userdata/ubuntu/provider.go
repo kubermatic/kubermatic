@@ -135,9 +135,10 @@ write_files:
   content: |
 {{ journalDConfig | indent 4 }}
 
-- path: "/etc/modules-load.d/k8s.conf"
+- path: "/opt/load-kernel-modules.sh"
+  permissions: "0755"
   content: |
-{{ kernelModules | indent 4 }}
+{{ kernelModulesScript | indent 4 }}
 
 - path: "/etc/sysctl.d/k8s.conf"
   content: |
