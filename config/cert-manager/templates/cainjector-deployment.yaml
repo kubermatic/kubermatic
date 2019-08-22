@@ -1,16 +1,24 @@
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cainjector
+  labels:
+    app: cainjector
+    app.kubernetes.io/name: cainjector
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.certManager.cainjector.replicas }}
   selector:
     matchLabels:
       app: cainjector
+      app.kubernetes.io/name: cainjector
+      app.kubernetes.io/instance:  {{ .Release.Name }}
   template:
     metadata:
       labels:
         app: cainjector
+        app.kubernetes.io/name: cainjector
+        app.kubernetes.io/instance:  {{ .Release.Name }}
       annotations:
         fluentbit.io/parser: glog
     spec:
