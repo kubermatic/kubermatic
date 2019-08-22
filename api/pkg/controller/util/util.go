@@ -72,41 +72,41 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 	return len(nodeList.Items) != 0, nil
 }
 
-
-// LimitConcurrentUpdates checks all the clusters inside the seed cluster and checks for
-// ClusterControllerUpdateInProgressCondition. If the count condition true for each cluster was greater than
-// the limit, it should return false to skip the current cluster update.
-func LimitConcurrentUpdates(ctx context.Context, client ctrlruntimeclient.Client, limit int) (bool, error) {
+// ConcurrencyLimitReached checks all the clusters inside the seed cluster and checks for
+// ClusterConditionControllerFinishedUpdatingSuccessfully. If the count of clusters which doesn't have that condition
+// is more than the limit, then it will return true, which means the concurrency limit has reached.
+func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Client, limit int) (bool, error) {
 	clusters := &kubermaticv1.ClusterList{}
 	if err := client.List(ctx, nil, clusters); err != nil {
-		return false, fmt.Errorf("failed to list clusters: %v", err)
+		return true, fmt.Errorf("failed to list clusters: %v", err)
 	}
 
-	conditionsCount := 0
+	finishedUpdatingClustersCount := 0
 	for _, cluster := range clusters.Items {
-		for _, condition := range cluster.Status.Conditions {
-			if condition.Type == kubermaticv1.ClusterControllerUpdateInProgressCondition &&
-				condition.Status == corev1.ConditionTrue {
-				conditionsCount++
-			}
+		if hasConditionValue(cluster, kubermaticv1.ClusterConditionControllerFinishedUpdatingSuccessfully, corev1.ConditionTrue) {
+			finishedUpdatingClustersCount++
 		}
 	}
 
-	if conditionsCount < limit {
-		return true, nil
+	clustersUpdatingInProgressCount := len(clusters.Items) - finishedUpdatingClustersCount
+	if clustersUpdatingInProgressCount < limit {
+		return false, nil
 	}
 
-	return false, nil
+	return true, nil
 }
 
-// CheckClusterResourcesUpdatingStatus checks the status of the clusters StatefulSet or Deployments. If those resources
-// are not in a ready state the, it will return True to indicate that, the cluster resources are still in an updating phase
-// otherwise it returns false which means the cluster has finished updating those resources.
-func CheckClusterResourcesUpdatingStatus(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
+// SetClusterUpdatedSuccessfullyCondition updates the cluster status condition based on the deployment and statefulSet
+// replicas. if both statefulSet and deployment spec replica are equal to all replicas in the status object, then the
+// ClusterControllerFinishedUpdatingSuccessfully will be added to the cluster status.
+func SetClusterUpdatedSuccessfullyCondition(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
 	var (
 		statefulSets = &v1.StatefulSetList{}
 		opts         = &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
 		deployments  = &v1.DeploymentList{}
+
+		statefulSetHasUnfinishedUpdates bool
+		deploymentHasUnfinishedUpdates  bool
 	)
 
 	if err := client.List(ctx, opts, statefulSets); err != nil {
@@ -114,10 +114,10 @@ func CheckClusterResourcesUpdatingStatus(ctx context.Context, cluster *kubermati
 	}
 
 	for _, statefulSet := range statefulSets.Items {
-		if statefulSet.Status.Replicas != statefulSet.Status.ReadyReplicas {
-			cluster.Status.SetClusterUpdateInProgressConditionTrue(fmt.Sprintf("cluster %v resources updates are in progress",
-				cluster.Name))
-			return client.Update(ctx, cluster)
+		if *statefulSet.Spec.Replicas != statefulSet.Status.UpdatedReplicas ||
+			*statefulSet.Spec.Replicas != statefulSet.Status.CurrentReplicas ||
+			*statefulSet.Spec.Replicas != statefulSet.Status.ReadyReplicas {
+			statefulSetHasUnfinishedUpdates = true
 		}
 	}
 
@@ -126,15 +126,31 @@ func CheckClusterResourcesUpdatingStatus(ctx context.Context, cluster *kubermati
 	}
 
 	for _, deployment := range deployments.Items {
-		if deployment.Status.Replicas != deployment.Status.ReadyReplicas {
-			cluster.Status.SetClusterUpdateInProgressConditionTrue(fmt.Sprintf("cluster %v resources updates are in progress",
-				cluster.Name))
-			return client.Update(ctx, cluster)
+		if *deployment.Spec.Replicas != deployment.Status.UpdatedReplicas ||
+			*deployment.Spec.Replicas != deployment.Status.AvailableReplicas ||
+			*deployment.Spec.Replicas != deployment.Status.ReadyReplicas {
+			deploymentHasUnfinishedUpdates = true
 		}
 	}
 
-	cluster.Status.SetClusterUpdateInProgressConditionFalse(fmt.Sprintf("%v resources are updated",
-		cluster.Name))
+	if !statefulSetHasUnfinishedUpdates && !deploymentHasUnfinishedUpdates {
+		cluster.Status.
+			SetClusterFinishedUpdatingSuccessfullyCondition(fmt.Sprintf("cluster %v has finished updating resources successfully",
+				cluster.Name))
+		return client.Update(ctx, cluster)
+	}
 
+	cluster.Status.ClearCondition(kubermaticv1.ClusterConditionControllerFinishedUpdatingSuccessfully)
 	return client.Update(ctx, cluster)
+}
+
+func hasConditionValue(cluster kubermaticv1.Cluster, conditionType kubermaticv1.ClusterConditionType, conditionStatus corev1.ConditionStatus) bool {
+	for _, clusterCondition := range cluster.Status.Conditions {
+		if clusterCondition.Type == conditionType &&
+			clusterCondition.Status == conditionStatus {
+			return true
+		}
+	}
+
+	return false
 }

@@ -176,7 +176,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
-	if process, err := controllerutil.LimitConcurrentUpdates(ctx, r, r.concurrentClusterUpdates); !process && err != nil {
+	if limitReached, err := controllerutil.ConcurrencyLimitReached(ctx, r, r.concurrentClusterUpdates); limitReached || err != nil {
 		return reconcile.Result{
 			Requeue: true,
 		}, err
@@ -215,14 +215,14 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+	} else {
+		if err = controllerutil.SetClusterUpdatedSuccessfullyCondition(ctx, cluster, r); err != nil {
+			log.Errorw("Unable to update clusters status conditions", zap.Error(err))
+		}
 	}
 
 	if result == nil {
 		result = &reconcile.Result{}
-	}
-
-	if err := controllerutil.CheckClusterResourcesUpdatingStatus(ctx, cluster, r); err != nil {
-		log.Errorw("Unable to check clusters resources", zap.Error(err))
 	}
 
 	return *result, err

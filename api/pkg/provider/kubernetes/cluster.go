@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -112,6 +113,7 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 			UserEmail:              userInfo.Email,
 			NamespaceName:          NamespaceName(name),
 			CloudMigrationRevision: cloud.CurrentMigrationRevision,
+			KubermaticVersion:      resources.KUBERMATICCOMMIT,
 		},
 		Address: kubermaticv1.ClusterAddress{},
 	}
@@ -200,6 +202,7 @@ func (p *ClusterProvider) Update(userInfo *provider.UserInfo, newCluster *kuberm
 		return nil, err
 	}
 
+	newCluster.Status.KubermaticVersion = resources.KUBERMATICCOMMIT
 	return seedImpersonatedClient.Clusters().Update(newCluster)
 }
 

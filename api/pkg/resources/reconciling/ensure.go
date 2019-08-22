@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/glog"
 
+	"k8s.io/api/apps/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -92,6 +93,13 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 	}
 
 	if !requiresRecreate {
+		switch v := obj.(type) {
+		case *v1.StatefulSet:
+			v.Status.Reset()
+		case *v1.Deployment:
+			v.Status.Reset()
+		}
+
 		if err := client.Update(ctx, obj); err != nil {
 			return fmt.Errorf("failed to update object %T '%s': %v", obj, namespacedName.String(), err)
 		}

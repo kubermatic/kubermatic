@@ -37,6 +37,7 @@ kubermatic:
   apiserverDefaultReplicas: "2"
   controllerManagerDefaultReplicas: "1"
   schedulerDefaultReplicas: "1"
+  maxParallelReconcile: "10"
 
   # Whether to load the datacenters from CRDs dynamically during runtime
   dynamicDatacenters: false

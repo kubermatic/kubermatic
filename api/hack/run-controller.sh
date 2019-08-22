@@ -36,4 +36,4 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
   -log-format=Console \
   -logtostderr=1 \
   -v=4 $@ 2>&1|tee /tmp/kubermatic-controller-manager.log
-  -concurrent-cluster-update=10
+  -max-parallel-reconcile=10

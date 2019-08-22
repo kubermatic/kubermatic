@@ -124,7 +124,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "The default number of replicas for usercluster api servers")
 	flag.IntVar(&c.controllerManagerDefaultReplicas, "controller-manager-default-replicas", 1, "The default number of replicas for usercluster controller managers")
 	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")
-	flag.IntVar(&c.concurrentClusterUpdate, "concurrent-cluster-update", 10, "The default number of resources updates per cluster")
+	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
 	c.seedValidationHook.AddFlags(flag.CommandLine)
 	flag.Parse()
 
@@ -201,7 +201,7 @@ func (o controllerRunOptions) validate() error {
 		return fmt.Errorf("--scheduler-default-replicas must be > 0 (was %d)", o.schedulerDefaultReplicas)
 	}
 	if o.concurrentClusterUpdate < 1 {
-		return fmt.Errorf("--concurrent-cluster-update must be > 0 (was %d)", o.concurrentClusterUpdate)
+		return fmt.Errorf("--max-parallel-reconcile must be > 0 (was %d)", o.concurrentClusterUpdate)
 	}
 	// Validate OIDC CA file
 	if err := o.validateCABundle(); err != nil {
