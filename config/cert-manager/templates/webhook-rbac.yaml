@@ -4,6 +4,10 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-webhook:auth-delegator
+  labels:
+    app: webhook
+    app.kubernetes.io/name: webhook
+    app.kubernetes.io/instance:  {{ .Release.Name }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -23,6 +27,10 @@ kind: RoleBinding
 metadata:
   name: cert-manager-webhook:webhook-authentication-reader
   namespace: kube-system
+  labels:
+    app: webhook
+    app.kubernetes.io/name: webhook
+    app.kubernetes.io/instance:  {{ .Release.Name }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -38,11 +46,16 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-webhook:webhook-requester
+  labels:
+    app: webhook
+    app.kubernetes.io/name: webhook
+    app.kubernetes.io/instance:  {{ .Release.Name }}
 rules:
 - apiGroups:
   - admission.certmanager.k8s.io
   resources:
   - certificates
+  - certificaterequests
   - issuers
   - clusterissuers
   verbs:
