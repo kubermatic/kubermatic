@@ -7011,6 +7011,12 @@
         "image"
       ],
       "properties": {
+        "diskSize": {
+          "description": "if set, the rootDisk will be a volume. If not, the rootDisk will be on ephemeral storage and its size will be derived from the flavor",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "RootDiskSizeGB"
+        },
         "flavor": {
           "description": "instance flavor",
           "type": "string",
