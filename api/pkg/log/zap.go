@@ -17,7 +17,7 @@ func init() {
 
 var Logger *zap.SugaredLogger
 
-// Options exports a options struct to be used by cmd's
+// Options exports a options struct to be used by cmd's.
 type Options struct {
 	// Enable debug logs
 	Debug bool
