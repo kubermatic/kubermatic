@@ -28,7 +28,9 @@ func (k *kubevirt) ValidateCloudSpec(spec v1.CloudSpec) error {
 
 	config, err := base64.StdEncoding.DecodeString(spec.Kubevirt.Kubeconfig)
 	if err != nil {
-		return err
+		// if the decoding failed, the kubeconfig is sent already decoded without the need of decoding it,
+		// for example the value has been read from Vault during the ci tests, which is saved as json format.
+		config = []byte(spec.Kubevirt.Kubeconfig)
 	}
 
 	_, err = clientcmd.RESTConfigFromKubeConfig(config)
@@ -41,11 +43,11 @@ func (k *kubevirt) ValidateCloudSpec(spec v1.CloudSpec) error {
 	return nil
 }
 
-func (k *kubevirt) InitializeCloudProvider(c *v1.Cluster, p provider.ClusterUpdater, s provider.SecretKeySelectorValueFunc) (*v1.Cluster, error) {
+func (k *kubevirt) InitializeCloudProvider(c *v1.Cluster, p provider.ClusterUpdater) (*v1.Cluster, error) {
 	return c, nil
 }
 
-func (k *kubevirt) CleanUpCloudProvider(c *v1.Cluster, p provider.ClusterUpdater, s provider.SecretKeySelectorValueFunc) (*v1.Cluster, error) {
+func (k *kubevirt) CleanUpCloudProvider(c *v1.Cluster, p provider.ClusterUpdater) (*v1.Cluster, error) {
 	return c, nil
 }
 

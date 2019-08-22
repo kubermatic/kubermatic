@@ -890,7 +890,7 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:242fb60d11fc9c22ce7d45627b548d712002629eedf3181700054a06ffe98e47"
+  digest = "1:04bfe37565a5eb9ef3586202778391ac9efbc2487034bb78664ecf8f3770068f"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/plugin",

@@ -52,9 +52,9 @@ func (s *kubevirtScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
 					Kubevirt: &apimodels.KubevirtCloudSpec{
-						Kubeconfig: secrets.Kubevirt.Config,
+						Kubeconfig: secrets.Kubevirt.Kubeconfig,
 					},
-					DatacenterName: "kubevirt-ewr1",
+					DatacenterName: "kubevirt-europe-west3-c",
 				},
 				Version: s.version.String(),
 			},

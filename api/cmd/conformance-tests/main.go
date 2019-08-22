@@ -113,7 +113,7 @@ type secrets struct {
 		Zone           string
 	}
 	Kubevirt struct {
-		Config string
+		Kubeconfig string
 	}
 }
 
@@ -198,6 +198,7 @@ func main() {
 	flag.StringVar(&opts.secrets.GCP.Zone, "gcp-zone", "europe-west3-c", "GCP: Zone")
 	flag.StringVar(&opts.secrets.GCP.Network, "gcp-network", "", "GCP: Network")
 	flag.StringVar(&opts.secrets.GCP.Subnetwork, "gcp-subnetwork", "", "GCP: Subnetwork")
+	flag.StringVar(&opts.secrets.Kubevirt.Kubeconfig, "kubevirt-kubeconfig", "", "Kubevirt: Cluster Kubeconfig")
 	flag.Parse()
 
 	defaultTimeout = time.Duration(defaultTimeoutMinutes) * time.Minute
