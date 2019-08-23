@@ -158,6 +158,8 @@ const (
 	GoogleServiceAccountSecretName = "google-service-account"
 	// GoogleServiceAccountVolumeName is the name of the volume containing the Google Service Account secret.
 	GoogleServiceAccountVolumeName = "google-service-account-volume"
+	// AuditLogVolumeName is the name of the volume that hold the audit log of the apiserver.
+	AuditLogVolumeName = "audit-log"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
@@ -169,6 +171,8 @@ const (
 	ClusterInfoConfigMapName = "cluster-info"
 	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
 	PrometheusConfigConfigMapName = "prometheus"
+	//AuditConfigMapName is the name for the configmap that contains the content of the file that will be passed to the apiserver with the flag "--audit-policy-file".
+	AuditConfigMapName = "audit-config"
 
 	//PrometheusServiceAccountName is the name for the Prometheus serviceaccount
 	PrometheusServiceAccountName = "prometheus"
