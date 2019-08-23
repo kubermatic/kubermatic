@@ -91,6 +91,9 @@ extendedArguments:
   use-service-account-credentials:
   - 'true'
 `
+	kubeControllerManagerCACertPath            = "/etc/kubernetes/pki/ca/ca.crt"
+	kubeControllerManagerCAKeyPath             = "/etc/kubernetes/pki/ca/ca.key"
+	kubeControllerManagerServiceAccountKeyPath = "/etc/kubernetes/service-account-key/sa.key"
 )
 
 var (
@@ -133,10 +136,10 @@ func KubeControllerManagerConfigMapCreatorFactory(data kubeControllerManagerConf
 					ServiceAccountKeyFile string
 					ServiceCIDR           string
 				}{
-					CACertPath:            "/etc/kubernetes/pki/ca/ca.crt",
-					CAKeyPath:             "/etc/kubernetes/pki/ca/ca.key",
+					CACertPath:            kubeControllerManagerCACertPath,
+					CAKeyPath:             kubeControllerManagerCAKeyPath,
 					ClusterCIDR:           podCIDR,
-					ServiceAccountKeyFile: "/etc/kubernetes/service-account-key/sa.key",
+					ServiceAccountKeyFile: kubeControllerManagerServiceAccountKeyPath,
 					ServiceCIDR:           serviceCIDR,
 				}
 
@@ -204,7 +207,7 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 						Args: kubeControllerManagerArgs(
 							"/etc/origin/config.yaml",
 							"/etc/kubernetes/kubeconfig/kubeconfig",
-							"/etc/kubernetes/pki/ca/ca.crt",
+							kubeControllerManagerCACertPath,
 							"/etc/kubernetes/pki/front-proxy/ca/ca.crt",
 						),
 						Resources: resourceRequirements,
