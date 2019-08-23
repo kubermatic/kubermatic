@@ -82,7 +82,7 @@ func PacketSizesEndpoint(credentialManager common.PresetsManager) endpoint.Endpo
 	}
 }
 
-func PacketSizesNoCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func PacketSizesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PacketSizesNoCredentialsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
