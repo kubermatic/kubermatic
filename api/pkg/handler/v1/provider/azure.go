@@ -114,7 +114,7 @@ func isValidVM(sku compute.ResourceSku, location string) bool {
 	return true
 }
 
-func AzureSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeNoCredentialsReq)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)

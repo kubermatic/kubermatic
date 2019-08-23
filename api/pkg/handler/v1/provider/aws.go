@@ -168,8 +168,8 @@ func AWSZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provid
 	}
 }
 
-// AWSZoneNoCredentialsEndpoint handles the request to list AWS availability zones in a given region, using credentials from a given datacenter
-func AWSZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+// AWSZoneWithClusterCredentialsEndpoint handles the request to list AWS availability zones in a given region, using credentials from a given datacenter
+func AWSZoneWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -271,8 +271,8 @@ func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter prov
 	}
 }
 
-// AWSSubnetNoCredentialsEndpoint handles the request to list AWS availability subnets in a given vpc, using credentials
-func AWSSubnetNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+// AWSSubnetWithClusterCredentialsEndpoint handles the request to list AWS availability subnets in a given vpc, using credentials
+func AWSSubnetWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
