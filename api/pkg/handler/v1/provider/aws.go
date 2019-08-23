@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/cristim/ec2-instances-info"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
@@ -133,6 +134,22 @@ func DecodeAWSVPCReq(c context.Context, r *http.Request) (interface{}, error) {
 
 	return req, nil
 }
+
+//// AWSZoneEndpoint handles the request to list AWS availability zones in a given region, using provided credentials
+//func AWSSizeEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter, privilegedSeedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+//	return func(ctx context.Context, request interface{}) (interface{}, error) {
+//
+//		data, err := ec2instancesinfo.Data() // only needed once
+//
+//		// This would print all the available instance type names:
+//		for _, i := range *data {
+//			fmt.Println("Instance type", i.InstanceType)
+//		}
+//
+//
+//		return listAWSZones(ctx, keyID, keySecret, datacenter, privilegedSeedClient, nil)
+//	}
+//}
 
 // AWSZoneEndpoint handles the request to list AWS availability zones in a given region, using provided credentials
 func AWSZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter, privilegedSeedClientGetter provider.SeedClientGetter) endpoint.Endpoint {

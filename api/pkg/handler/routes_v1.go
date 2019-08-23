@@ -45,6 +45,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
 	mux.Methods(http.MethodGet).
+		Path("/providers/aws/sizes").
+		Handler(r.listAWSSizes())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/aws/{dc}/zones").
 		Handler(r.listAWSZones())
 
@@ -504,6 +508,28 @@ func (r Routing) listCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(presets.CredentialEndpoint(r.presetsManager)),
 		presets.DecodeProviderReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/aws/sizes aws listAWSSizes
+//
+// Lists available AWS zones
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AWSZoneList
+func (r Routing) listAWSSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AWSZoneEndpoint(r.presetsManager, r.seedsGetter, r.privilegedSeedClientGetter)),
+		provider.DecodeAWSZoneReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
