@@ -330,11 +330,11 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 	}
 
 	healthMapping := map[string]*depInfo{
-		openshiftresources.ApiserverDeploymentName:         {healthStatus: &currentHealth.Apiserver, minReady: 1},
-		openshiftresources.ControllerManagerDeploymentName: {healthStatus: &currentHealth.Controller, minReady: 1},
-		resources.MachineControllerDeploymentName:          {healthStatus: &currentHealth.MachineController, minReady: 1},
-		resources.OpenVPNServerDeploymentName:              {healthStatus: &currentHealth.OpenVPN, minReady: 1},
-		resources.UserClusterControllerDeploymentName:      {healthStatus: &currentHealth.UserClusterControllerManager, minReady: 1},
+		resources.ApiserverDeploymentName:             {healthStatus: &currentHealth.Apiserver, minReady: 1},
+		resources.ControllerManagerDeploymentName:     {healthStatus: &currentHealth.Controller, minReady: 1},
+		resources.MachineControllerDeploymentName:     {healthStatus: &currentHealth.MachineController, minReady: 1},
+		resources.OpenVPNServerDeploymentName:         {healthStatus: &currentHealth.OpenVPN, minReady: 1},
+		resources.UserClusterControllerDeploymentName: {healthStatus: &currentHealth.UserClusterControllerManager, minReady: 1},
 	}
 
 	for name := range healthMapping {
@@ -616,7 +616,7 @@ func (r *Reconciler) verticalPodAutoscalers(ctx context.Context, osData *openshi
 		resources.MachineControllerDeploymentName,
 		resources.MachineControllerWebhookDeploymentName,
 		resources.OpenVPNServerDeploymentName,
-		openshiftresources.ApiserverDeploymentName,
+		resources.ApiserverDeploymentName,
 		openshiftresources.ControllerManagerDeploymentName}
 
 	creatorGetters, err := resources.GetVerticalPodAutoscalersForAll(ctx, r.Client, controlPlaneDeploymentNames, []string{resources.EtcdStatefulSetName}, osData.Cluster().Status.NamespaceName, r.features.VPA)
