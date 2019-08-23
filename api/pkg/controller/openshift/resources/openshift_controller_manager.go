@@ -10,6 +10,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/servingcerthelper"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
@@ -37,10 +38,11 @@ var (
 )
 
 const (
-	OpenshiftControllerManagerDeploymentName    = "openshift-controller-manager"
-	openshiftControllerManagerConfigMapName     = "openshift-controller-manager-config"
-	openshiftControllerManagerConfigMapKey      = "config.yaml"
-	openshiftControllerManagerConfigTemplateRaw = `
+	OpenshiftControllerManagerDeploymentName        = "openshift-controller-manager"
+	openshiftControllerManagerConfigMapName         = "openshift-controller-manager-config"
+	openshiftControllerManagerServingCertSecretName = "openshift-controller-manager-serving-cert"
+	openshiftControllerManagerConfigMapKey          = "config.yaml"
+	openshiftControllerManagerConfigTemplateRaw     = `
 apiVersion: openshiftcontrolplane.config.openshift.io/v1
 kind: OpenShiftControllerManagerConfig
 build:
@@ -53,6 +55,10 @@ dockerPullSecret:
   internalRegistryHostname: image-registry.openshift-image-registry.svc:5000
 kubeClientConfig:
   kubeConfig: /etc/kubernetes/kubeconfig/kubeconfig
+servingInfo:
+  certFile: /etc/openshift/pki/serving/serving.crt
+  keyFile: /etc/openshift/pki/serving/serving.key
+  clientCA: /etc/openshift/pki/ca/ca.crt
 `
 )
 
@@ -85,7 +91,16 @@ func OpenshiftControllerManagerConfigMapCreator(openshiftVersion string) reconci
 	}
 }
 
-// DeploymentCreator returns the function to create and update the controller manager deployment
+// OpenshiftControllerManagerServingCertSecretCreator returns the function to create and update the serving cert for the openshift controller manager
+func OpenshiftControllerManagerServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretCreatorGetter {
+	return servingcerthelper.ServingCertSecretCreator(caGetter,
+		openshiftControllerManagerServingCertSecretName,
+		"controller-manager.openshift-controller-manager.svc",
+		[]string{"controller-manager.openshift-controller-manager.svc", "controller-manager.openshift-controller-manager.svc.cluster.local"},
+		nil)
+}
+
+// OpenshiftControllerManagerDeploymentCreator returns the function to create and update the controller manager deployment
 func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data openshiftData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return OpenshiftControllerManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -160,12 +175,15 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 							MountPath: "/etc/origin/master",
 						},
 						{
-							MountPath: "/var/run/configmaps/client-ca/ca-bundle.crt",
+							MountPath: "/etc/openshift/pki/ca/ca.crt",
 							Name:      resources.CASecretName,
-							// The `OpenShiftControllerManagerConfig` type doesn't seem to have a config
-							// option for this, so we just mount it to the same place as upstream
-							SubPath:  "ca.crt",
-							ReadOnly: true,
+							SubPath:   "ca.crt",
+							ReadOnly:  true,
+						},
+						{
+							MountPath: "/etc/openshift/pki/serving",
+							Name:      openshiftControllerManagerServingCertSecretName,
+							ReadOnly:  true,
 						},
 					},
 				},
@@ -226,7 +244,14 @@ func getControllerManagerVolumes() []corev1.Volume {
 				},
 			},
 		},
-		//TODO: Generate a valid serving cert
+		{
+			Name: openshiftControllerManagerServingCertSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: openshiftControllerManagerServingCertSecretName,
+				},
+			},
+		},
 	}
 }
 
