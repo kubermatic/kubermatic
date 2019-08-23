@@ -295,7 +295,7 @@ apiServerArguments:
   enable-aggregator-routing:
   # Thist _must_ stay false, if its true, the kube-apiserver will try to resolve endpoints for
   # the services that service the extension apis and error out because they are of type
- 	# ExternalName
+  # ExternalName
   - 'false'
   feature-gates:
   - ExperimentalCriticalPodAnnotation=true
