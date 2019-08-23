@@ -9,7 +9,6 @@ import (
 	"github.com/Masterminds/sprig"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -18,10 +17,9 @@ import (
 )
 
 const (
-	openshiftAPIServerConfigMapName        = "openshift-config-apiserver"
-	openshiftKubeAPIServerConfigMapName    = "openshift-config-kube-apiserver"
-	openshiftControllerMangerConfigMapName = "openshift-config-controller-manager"
-	openshiftContolPlaneConfigKeyName      = "master-config.yaml"
+	openshiftAPIServerConfigMapName     = "openshift-config-apiserver"
+	openshiftKubeAPIServerConfigMapName = "openshift-config-kube-apiserver"
+	openshiftContolPlaneConfigKeyName   = "master-config.yaml"
 )
 
 var (
@@ -95,27 +93,6 @@ func OpenshiftKubeAPIServerConfigMapCreator(data masterConfigData) reconciling.N
 			cm.Data[openshiftContolPlaneConfigKeyName] = apiServerConfigBuffer.String()
 			return cm, nil
 
-		}
-	}
-}
-
-func OpenshiftControllerMangerConfigMapCreator(ctx context.Context, data masterConfigData) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
-		return openshiftControllerMangerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			if cm.Data == nil {
-				cm.Data = map[string]string{}
-			}
-			masterConfig, err := getMasterConfig(ctx, data, "controller-manager")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get master config :%v", err)
-			}
-			cm.Labels = resources.BaseAppLabel(openshiftControllerMangerConfigMapName, nil)
-			cm.Data[openshiftContolPlaneConfigKeyName] = masterConfig
-			cm.Data["policy.json"] = policyJSON
-			cm.Data["scheduler.json"] = schedulerJSON
-			cm.Data["recycler_pod.yaml"] = recyclerPod
-
-			return cm, nil
 		}
 	}
 }
