@@ -1,3 +1,11 @@
+### [v2.11.4]()
+
+
+- `kubeadm join` has been fixed for v1.15 clusters [#4162](https://github.com/kubermatic/kubermatic/issues/4162) ([kubermatic-bot](https://github.com/kubermatic-bot))
+
+
+
+
 ### [v2.11.3]()
 
 
