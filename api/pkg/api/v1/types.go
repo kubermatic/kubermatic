@@ -127,6 +127,19 @@ type Datacenter struct {
 	Seed     bool             `json:"seed,omitempty"`
 }
 
+// AWSSize represents a object of AWS size.
+// swagger:model AWSSize
+type AWSSize struct {
+	Name       string  `json:"name"`
+	PrettyName string  `json:"pretty_name"`
+	Memory     float32 `json:"memory"`
+	VCPUs      int     `json:"vcpus"`
+}
+
+// AWSSizeList represents an array of AWS sizes.
+// swagger:model AWSSizeList
+type AWSSizeList []AWSSize
+
 // AWSZone represents a object of AWS availability zone.
 // swagger:model AWSZone
 type AWSZone struct {

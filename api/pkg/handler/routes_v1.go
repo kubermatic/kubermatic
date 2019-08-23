@@ -515,7 +515,7 @@ func (r Routing) listCredentials() http.Handler {
 
 // swagger:route GET /api/v1/providers/aws/sizes aws listAWSSizes
 //
-// Lists available AWS zones
+// Lists available AWS sizes.
 //
 //     Produces:
 //     - application/json
@@ -528,8 +528,8 @@ func (r Routing) listAWSSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AWSZoneEndpoint(r.presetsManager, r.seedsGetter, r.privilegedSeedClientGetter)),
-		provider.DecodeAWSZoneReq,
+		)(provider.AWSSizeEndpoint()),
+		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

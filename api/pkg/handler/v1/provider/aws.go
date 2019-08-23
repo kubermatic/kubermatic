@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/cristim/ec2-instances-info"
+	ec2 "github.com/cristim/ec2-instances-info"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
@@ -135,21 +135,38 @@ func DecodeAWSVPCReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-//// AWSZoneEndpoint handles the request to list AWS availability zones in a given region, using provided credentials
-//func AWSSizeEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter, privilegedSeedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
-//	return func(ctx context.Context, request interface{}) (interface{}, error) {
-//
-//		data, err := ec2instancesinfo.Data() // only needed once
-//
-//		// This would print all the available instance type names:
-//		for _, i := range *data {
-//			fmt.Println("Instance type", i.InstanceType)
-//		}
-//
-//
-//		return listAWSZones(ctx, keyID, keySecret, datacenter, privilegedSeedClient, nil)
-//	}
-//}
+// AWSSizeEndpoint handles the request to list available AWS sizes.
+func AWSSizeEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		data, err := ec2.Data()
+		if err != nil {
+			return nil, err
+		}
+
+		sizes := apiv1.AWSSizeList{}
+		for _, i := range *data {
+			// TODO: Make the check below more generic, working for all the providers. It is needed as the pods
+			//  with memory under 2 GB will be full with required pods like kube-proxy, CNI etc.
+			if i.Memory > 2 {
+				// The code below filters out too expensive instance types (>2$ per hour).
+				// TODO: Use correct datacenter to get the pricing and enable changing 2$ price limit.
+				price, ok := i.Pricing["eu-west-1"]
+				if ok && price.Linux.OnDemand > 2 {
+					continue
+				}
+
+				sizes = append(sizes, apiv1.AWSSize{
+					Name:       i.InstanceType,
+					PrettyName: i.PrettyName,
+					Memory:     i.Memory,
+					VCPUs:      i.VCPU,
+				})
+			}
+		}
+
+		return sizes, nil
+	}
+}
 
 // AWSZoneEndpoint handles the request to list AWS availability zones in a given region, using provided credentials
 func AWSZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter, privilegedSeedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
