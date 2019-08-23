@@ -40,7 +40,7 @@ func TestDeleteProjectOwner(t *testing.T) {
 			}
 
 			if len(projectUsers) != len(tc.expectedUsers) {
-				t.Fatalf("the number of user is diffrent than expected")
+				t.Fatalf("the number of user is different than expected")
 			}
 
 			for _, user := range projectUsers {
@@ -101,7 +101,7 @@ func TestAddUserToProject(t *testing.T) {
 			}
 
 			if len(projectUsers) != len(tc.expectedUsers) {
-				t.Fatalf("the number of user is diffrent than expected")
+				t.Fatalf("the number of user is different than expected")
 			}
 
 			for _, user := range projectUsers {
