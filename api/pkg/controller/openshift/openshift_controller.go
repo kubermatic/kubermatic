@@ -481,6 +481,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		openvpn.TLSServingCertificateCreator(osData),
 		openvpn.InternalClientCertificateCreator(osData),
 		machinecontroller.TLSServingCertificateCreator(osData),
+		openshiftresources.KubeSchedulerServingCertCreator(osData.GetRootCA),
 
 		// Kubeconfigs
 		resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, osData),
@@ -536,6 +537,7 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 		openshiftresources.KubeControllerManagerConfigMapCreatorFactory(osData),
 		openshiftresources.OpenshiftControllerManagerConfigMapCreator(osData.Cluster().Spec.Version.String()),
 		openvpn.ServerClientConfigsConfigMapCreator(osData),
+		openshiftresources.KubeSchedulerConfigMapCreator,
 		dns.ConfigMapCreator(osData),
 	}
 }
@@ -552,6 +554,7 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 		openshiftresources.KubeControllerManagerDeploymentCreatorFactory(osData),
 		openshiftresources.OpenshiftControllerManagerDeploymentCreator(ctx, osData),
 		openshiftresources.MachineController(osData),
+		openshiftresources.KubeSchedulerDeploymentCreator(osData),
 		openvpn.DeploymentCreator(osData),
 		dns.DeploymentCreator(osData),
 		machinecontroller.WebhookDeploymentCreator(osData),
