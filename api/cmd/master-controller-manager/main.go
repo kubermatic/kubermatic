@@ -135,7 +135,7 @@ func main() {
 
 	if runOpts.seedvalidationHook.CertFile != "" || runOpts.seedvalidationHook.KeyFile != "" {
 		seedValidationWebhookServer, err := runOpts.seedvalidationHook.Server(
-			ctx, sugarLog, runOpts.workerName, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter)
+			ctx, sugarLog, runOpts.workerName, ctrlCtx.seedsGetter, provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter))
 		if err != nil {
 			sugarLog.Fatalw("failed to create validatingAdmissionWebhook server for seeds", zap.Error(err))
 		}

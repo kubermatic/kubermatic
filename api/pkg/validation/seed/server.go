@@ -38,7 +38,7 @@ func (opts *WebhookOpts) Server(
 	log *zap.SugaredLogger,
 	workerName string,
 	seedsGetter provider.SeedsGetter,
-	seedKubeconfigGetter provider.SeedKubeconfigGetter) (*Server, error) {
+	seedClientGetter provider.SeedClientGetter) (*Server, error) {
 
 	labelSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
@@ -58,7 +58,7 @@ func (opts *WebhookOpts) Server(
 		listenAddress: opts.ListenAddress,
 		certFile:      opts.CertFile,
 		keyFile:       opts.KeyFile,
-		validator:     newValidator(ctx, seedsGetter, seedKubeconfigGetter, listOpts),
+		validator:     newValidator(ctx, seedsGetter, seedClientGetter, listOpts),
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", server.handleSeedValidationRequests)
