@@ -171,9 +171,8 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 		config.FloatingIPPool = providerconfig.ConfigVarString{Value: c.Spec.Cloud.Openstack.FloatingIPPool}
 	}
 
-	if nodeSpec.Cloud.Openstack.RootDiskSizeGB > 0 {
-		rootDiskSizeGB := int(nodeSpec.Cloud.Openstack.RootDiskSizeGB)
-		config.RootDiskSizeGB = &rootDiskSizeGB
+	if nodeSpec.Cloud.Openstack.RootDiskSizeGB != nil && *nodeSpec.Cloud.Openstack.RootDiskSizeGB > 0 {
+		config.RootDiskSizeGB = nodeSpec.Cloud.Openstack.RootDiskSizeGB
 	}
 
 	if dc.Spec.Openstack.TrustDevicePath != nil {
