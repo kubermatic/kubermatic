@@ -37,6 +37,22 @@ const (
 	defaultNodePortRange = "30000-32767"
 )
 
+func AuditConfigMapCreator() reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return resources.AuditConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			if cm.Data == nil {
+				cm.Data = map[string]string{
+					"policy.yaml": `apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+- level: Metadata
+`}
+			}
+			return cm, nil
+		}
+	}
+}
+
 // DeploymentCreator returns the function to create and update the API server deployment
 func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
@@ -162,6 +178,32 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				},
 			}
 
+			dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
+				corev1.Container{
+					Name:    "audit-logs",
+					Image:   "docker.io/fluent/fluent-bit:1.2.2",
+					Command: []string{"/fluent-bit/bin/fluent-bit"},
+					Args:    []string{"-i", "tail", "-p", "path=/var/log/kubernetes/audit/audit.log", "-p", "db=/var/log/kubernetes/audit/fluentbit.db", "-o", "stdout"},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      resources.AuditLogVolumeName,
+							MountPath: "/var/log/kubernetes/audit",
+							ReadOnly:  false,
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("10Mi"),
+							corev1.ResourceCPU:    resource.MustParse("5m"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("60Mi"),
+							corev1.ResourceCPU:    resource.MustParse("50m"),
+						},
+					},
+				},
+			)
+
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
 			return dep, nil
@@ -212,7 +254,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--audit-log-maxage", "30",
 		"--audit-log-maxbackup", "3",
 		"--audit-log-maxsize", "100",
-		"--audit-log-path", "/var/log/audit.log",
+		"--audit-log-path", "/var/log/kubernetes/audit/audit.log",
 		"--tls-cert-file", "/etc/kubernetes/tls/apiserver-tls.crt",
 		"--tls-private-key-file", "/etc/kubernetes/tls/apiserver-tls.key",
 		"--proxy-client-cert-file", "/etc/kubernetes/pki/front-proxy/client/" + resources.ApiserverProxyClientCertificateCertSecretKey,
@@ -225,6 +267,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
+		"--audit-policy-file", "/etc/kubernetes/audit/policy.yaml",
 	}
 
 	if data.Cluster().Spec.Cloud.GCP != nil {
@@ -337,6 +380,16 @@ func getVolumeMounts(enableDexCA bool) []corev1.VolumeMount {
 			MountPath: "/etc/kubernetes/pki/front-proxy/ca",
 			ReadOnly:  true,
 		},
+		{
+			Name:      resources.AuditConfigMapName,
+			MountPath: "/etc/kubernetes/audit",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.AuditLogVolumeName,
+			MountPath: "/var/log/kubernetes/audit",
+			ReadOnly:  false,
+		},
 	}
 
 	if enableDexCA {
@@ -446,6 +499,23 @@ func getVolumes() []corev1.Volume {
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
 				},
+			},
+		},
+		{
+			Name: resources.AuditConfigMapName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: resources.AuditConfigMapName,
+					},
+					Optional: new(bool),
+				},
+			},
+		},
+		{
+			Name: resources.AuditLogVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
 	}
