@@ -243,6 +243,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listNodeDeploymentNodes())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/metrics").
+		Handler(r.listNodeDeploymentMetrics())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events").
 		Handler(r.listNodeDeploymentNodesEvents())
 
@@ -2397,6 +2401,32 @@ func (r Routing) listNodeDeploymentNodes() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.ListNodeDeploymentNodes(r.projectProvider)),
 		node.DecodeListNodeDeploymentNodes,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/metrics metric listNodeDeploymentMetrics
+//
+//     Lists metrics that belong to the given node deployment.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []NodeMetric
+//       401: empty
+//       403: empty
+func (r Routing) listNodeDeploymentMetrics() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(node.ListNodeDeploymentMetrics(r.projectProvider)),
+		node.DecodeListNodeDeploymentMetrics,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

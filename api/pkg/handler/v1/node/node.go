@@ -29,6 +29,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -455,6 +457,136 @@ func ListNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.
 
 		return nodesV1, nil
 	}
+}
+
+// nodeDeploymentMetricsReq defines HTTP request for listNodeDeploymentMetrics
+// swagger:parameters listNodeDeploymentMetrics
+type nodeDeploymentMetricsReq struct {
+	common.GetClusterReq
+	// in: path
+	NodeDeploymentID string `json:"nodedeployment_id"`
+}
+
+func DecodeListNodeDeploymentMetrics(c context.Context, r *http.Request) (interface{}, error) {
+	var req nodeDeploymentMetricsReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeDeploymentID, err := decodeNodeDeploymentID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+	req.NodeDeploymentID = nodeDeploymentID
+	req.DCReq = dcr.(common.DCReq)
+
+	return req, nil
+}
+
+type resourceMetricsInfo struct {
+	Name      string
+	Metrics   corev1.ResourceList
+	Available corev1.ResourceList
+}
+
+func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(nodeDeploymentMetricsReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// check if logged user has privileges to list node deployments. If yes then we can use privileged client to
+		// get metrics
+		_, err = getMachinesForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		nodeList, err := getNodeList(ctx, cluster, clusterProvider)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		availableResources := make(map[string]corev1.ResourceList)
+		for _, n := range nodeList.Items {
+			availableResources[n.Name] = n.Status.Allocatable
+		}
+
+		dynamicCLient, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		nodeMetricsList := &v1beta1.NodeMetricsList{}
+		if err := dynamicCLient.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeMetricsList); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertNodeMetrics(nodeMetricsList, availableResources)
+	}
+}
+
+func convertNodeMetrics(metrics *v1beta1.NodeMetricsList, availableResources map[string]corev1.ResourceList) ([]apiv1.NodeMetric, error) {
+	nodeMetrics := make([]apiv1.NodeMetric, 0)
+	var usage corev1.ResourceList
+
+	if metrics == nil {
+		return nil, fmt.Errorf("metric list can not be nil")
+	}
+
+	for _, m := range metrics.Items {
+		nodeMetric := apiv1.NodeMetric{
+			Name: m.Name,
+		}
+		err := scheme.Scheme.Convert(&m.Usage, &usage, nil)
+		if err != nil {
+			return nil, err
+		}
+		resourceMetricsInfo := resourceMetricsInfo{
+			Name:      m.Name,
+			Metrics:   usage,
+			Available: availableResources[m.Name],
+		}
+
+		if available, found := resourceMetricsInfo.Available[corev1.ResourceCPU]; found {
+			quantityCPU := resourceMetricsInfo.Metrics[corev1.ResourceCPU]
+			// cpu in mili cores
+			nodeMetric.CPU = quantityCPU.MilliValue()
+			fraction := float64(quantityCPU.MilliValue()) / float64(available.MilliValue()) * 100
+			nodeMetric.CPUUsage = int64(fraction)
+		}
+
+		if available, found := resourceMetricsInfo.Available[corev1.ResourceMemory]; found {
+			quantityM := resourceMetricsInfo.Metrics[corev1.ResourceMemory]
+			// memory in bytes
+			nodeMetric.Memory = quantityM.Value() / (1024 * 1024)
+			fraction := float64(quantityM.MilliValue()) / float64(available.MilliValue()) * 100
+			nodeMetric.MemoryUsage = int64(fraction)
+		}
+
+		nodeMetrics = append(nodeMetrics, nodeMetric)
+	}
+
+	return nodeMetrics, nil
 }
 
 // patchNodeDeploymentReq defines HTTP request for patchNodeDeployment endpoint

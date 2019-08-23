@@ -1018,6 +1018,20 @@ type ClusterMetric struct {
 	Values []float64 `json:"values,omitempty"`
 }
 
+// NodeMetric defines a metric for the given node
+// swagger:model NodeMetric
+type NodeMetric struct {
+	Name string `json:"name"`
+	// Memory in bytes
+	Memory int64 `json:"memory,omitempty"`
+	// MemoryUsage in percentage
+	MemoryUsage int64 `json:"memoryUsage,omitempty"`
+	// CPU in m cores
+	CPU int64 `json:"cpu,omitempty"`
+	// CPUUsage in percentage
+	CPUUsage int64 `json:"cpuUsage,omitempty"`
+}
+
 // NodeDeployment represents a set of worker nodes that is part of a cluster
 // swagger:model NodeDeployment
 type NodeDeployment struct {
