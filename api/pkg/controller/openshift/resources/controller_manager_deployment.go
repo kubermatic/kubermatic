@@ -1,8 +1,12 @@
 package resources
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"text/template"
+
+	"github.com/Masterminds/sprig"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
@@ -29,11 +33,53 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("2"),
 		},
 	}
+	openshiftControllerManagerConfigTemplate = template.Must(template.New("base").Funcs(sprig.TxtFuncMap()).Parse(openshiftControllerManagerConfigTemplateRaw))
 )
 
 const (
-	ControllerManagerDeploymentName = "openshift-controller-manager"
+	ControllerManagerDeploymentName             = "openshift-controller-manager"
+	openshiftControllerManagerConfigMapName     = "openshift-controller-manager-config"
+	openshiftControllerManagerConfigMapKey      = "config.yaml"
+	openshiftControllerManagerConfigTemplateRaw = `
+apiVersion: openshiftcontrolplane.config.openshift.io/v1
+kind: OpenShiftControllerManagerConfig
+build:
+  imageTemplateFormat:
+    format: {{ .BuildImageTemplateFormatImage }}
+deployer:
+  imageTemplateFormat:
+    format: {{ .DeployerImageTemplateFormatImage }}
+dockerPullSecret:
+  internalRegistryHostname: image-registry.openshift-image-registry.svc:5000
+`
 )
+
+func OpenshiftControllerManagerConfigMapCreator(openshiftVersion string) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return openshiftControllerManagerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
+			buildImageTemplateFormatImage, deployerImageTemplateFormatImage, err := buildAndDeployerImageTemplateFormatImage(openshiftVersion)
+			return nil, err
+
+			vars := struct {
+				BuildImageTemplateFormatImage    string
+				DeployerImageTemplateFormatImage string
+			}{
+				BuildImageTemplateFormatImage:    buildImageTemplateFormatImage,
+				DeployerImageTemplateFormatImage: deployerImageTemplateFormatImage,
+			}
+			templateBuffer := &bytes.Buffer{}
+			if err := openshiftControllerManagerConfigTemplate.Execute(templateBuffer, vars); err != nil {
+				return nil, fmt.Errorf("failed to execute template: %v", err)
+			}
+
+			cm.Data[openshiftControllerManagerConfigMapKey] = templateBuffer.String()
+			return cm, nil
+		}
+	}
+}
 
 // DeploymentCreator returns the function to create and update the controller manager deployment
 func ControllerManagerDeploymentCreator(ctx context.Context, data openshiftData) reconciling.NamedDeploymentCreatorGetter {
@@ -287,5 +333,14 @@ func getHealthGetAction() *corev1.HTTPGetAction {
 		Path:   "/healthz",
 		Scheme: corev1.URISchemeHTTPS,
 		Port:   intstr.FromInt(8444),
+	}
+}
+
+func buildAndDeployerImageTemplateFormatImage(openshiftVersion string) (string, string, error) {
+	switch openshiftVersion {
+	case "4.1.9":
+		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:f4d2df04a0ac1b689bc275c060e5520781f48f007dabf849d92cf1519f16ea82", "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:8b946a142a8ba328ffe04195bb3fc4beeff26aaa4d8d0e99528340e8880eba7e", nil
+	default:
+		return "", "", fmt.Errorf("no build and deploymer imageFormatImage available for openshift version %q", openshiftVersion)
 	}
 }
