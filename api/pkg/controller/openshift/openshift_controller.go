@@ -532,6 +532,7 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 		cloudconfig.ConfigMapCreator(osData),
 		openshiftresources.OpenshiftAPIServerConfigMapCreator(osData),
 		openshiftresources.OpenshiftKubeAPIServerConfigMapCreator(osData),
+		openshiftresources.KubeControllerManagerConfigMapCreatorFactory(osData),
 		openshiftresources.OpenshiftControllerMangerConfigMapCreator(ctx, osData),
 		openvpn.ServerClientConfigsConfigMapCreator(osData),
 		dns.ConfigMapCreator(osData),
@@ -553,6 +554,7 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		openshiftresources.OpenshiftAPIServerDeploymentCreator(ctx, osData),
 		openshiftresources.APIDeploymentCreator(ctx, osData),
+		openshiftresources.KubeControllerManagerDeploymentCreatorFactory(osData),
 		openshiftresources.ControllerManagerDeploymentCreator(ctx, osData),
 		openshiftresources.MachineController(osData),
 		openvpn.DeploymentCreator(osData),
