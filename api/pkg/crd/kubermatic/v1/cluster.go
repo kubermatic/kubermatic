@@ -274,6 +274,8 @@ type FakeCloudSpec struct {
 
 // DigitaloceanCloudSpec specifies access data to DigitalOcean.
 type DigitaloceanCloudSpec struct {
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
 	Token string `json:"token"` // Token is used to authenticate with the DigitalOcean API.
 }
 
@@ -455,6 +457,9 @@ func NewBytes(b64 string) Bytes {
 func (cluster *Cluster) GetSecretName() string {
 	if cluster.Spec.Cloud.AWS != nil {
 		return fmt.Sprintf("%s-aws-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.Digitalocean != nil {
+		return fmt.Sprintf("%s-digitalocean-%s", CredentialPrefix, cluster.Name)
 	}
 	if cluster.Spec.Cloud.Hetzner != nil {
 		return fmt.Sprintf("%s-hetzner-%s", CredentialPrefix, cluster.Name)
