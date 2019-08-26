@@ -3877,6 +3877,32 @@
         }
       }
     },
+    "/api/v1/providers/aws/sizes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aws"
+        ],
+        "summary": "Lists available AWS sizes.",
+        "operationId": "listAWSSizes",
+        "responses": {
+          "200": {
+            "description": "AWSSizeList",
+            "schema": {
+              "$ref": "#/definitions/AWSSizeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/aws/{dc}/subnets": {
       "get": {
         "description": "Lists available AWS subnets",
@@ -4837,6 +4863,39 @@
           "x-go-name": "VolumeType",
           "example": "gp2, io1, st1, sc1, standard"
         }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AWSSize": {
+      "type": "object",
+      "title": "AWSSize represents a object of AWS size.",
+      "properties": {
+        "memory": {
+          "type": "number",
+          "format": "float",
+          "x-go-name": "Memory"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "pretty_name": {
+          "type": "string",
+          "x-go-name": "PrettyName"
+        },
+        "vcpus": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "VCPUs"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AWSSizeList": {
+      "type": "array",
+      "title": "AWSSizeList represents an array of AWS sizes.",
+      "items": {
+        "$ref": "#/definitions/AWSSize"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
