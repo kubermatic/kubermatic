@@ -25,6 +25,35 @@ type Client struct {
 }
 
 /*
+ListAWSSizes lists available a w s sizes
+*/
+func (a *Client) ListAWSSizes(params *ListAWSSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAWSSizesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAWSSizes",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/aws/sizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAWSSizesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListAWSSizesOK), nil
+
+}
+
+/*
 ListAWSSubnets Lists available AWS subnets
 */
 func (a *Client) ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsOK, error) {
