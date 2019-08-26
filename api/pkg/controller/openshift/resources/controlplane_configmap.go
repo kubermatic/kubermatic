@@ -250,7 +250,8 @@ servingInfo:
   certFile: /var/run/secrets/serving-cert/apiserver-tls.crt
   keyFile: /var/run/secrets/serving-cert/apiserver-tls.key
 kubeClientConfig:
-  kubeConfig: /etc/origin/master/kubeconfig/kubeconfig`
+  kubeConfig: /etc/origin/master/kubeconfig/kubeconfig
+`
 
 const openshiftKubeAPIServerConfigTemplate = `admission:
   pluginConfig:
@@ -287,6 +288,8 @@ apiServerArguments:
   - etcd3
   storage-media-type:
   - application/vnd.kubernetes.protobuf
+  enable-bootstrap-token-auth:
+  - "true"
 apiVersion: kubecontrolplane.config.openshift.io/v1
 auditConfig:
   # TODO: Doesn't make much sense in a production setup, but useful for debugging
