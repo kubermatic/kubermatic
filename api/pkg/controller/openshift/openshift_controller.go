@@ -614,7 +614,7 @@ func (r *Reconciler) verticalPodAutoscalers(ctx context.Context, osData *openshi
 		resources.MachineControllerDeploymentName,
 		resources.MachineControllerWebhookDeploymentName,
 		resources.OpenVPNServerDeploymentName,
-		openshiftresources.ApiserverDeploymentName,
+		resources.ApiserverDeploymentName,
 		openshiftresources.OpenshiftControllerManagerDeploymentName}
 
 	creatorGetters, err := resources.GetVerticalPodAutoscalersForAll(ctx, r.Client, controlPlaneDeploymentNames, []string{resources.EtcdStatefulSetName}, osData.Cluster().Status.NamespaceName, r.features.VPA)

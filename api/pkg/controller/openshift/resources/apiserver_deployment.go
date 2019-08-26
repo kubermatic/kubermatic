@@ -42,7 +42,7 @@ const (
 // DeploymentCreator returns the function to create and update the API server deployment
 func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 
 			dep.Name = ApiserverDeploymentName
 			dep.Labels = resources.BaseAppLabel(legacyAppLabelValue, nil)
