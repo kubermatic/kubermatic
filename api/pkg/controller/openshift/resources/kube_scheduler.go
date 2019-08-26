@@ -166,7 +166,7 @@ func KubeSchedulerDeploymentCreator(data openshiftData) reconciling.NamedDeploym
 						},
 						{
 							Name:      resources.ApiserverFrontProxyClientCertificateSecretName,
-							MountPath: "/etc/openshift/front-proxy-ca",
+							MountPath: "/etc/openshift/front-proxy-ca/ca.crt",
 							SubPath:   "ca.crt",
 							ReadOnly:  true,
 						},
