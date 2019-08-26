@@ -150,6 +150,11 @@ case "${DEPLOY_STACK}" in
     deploy "kubermatic" "kubermatic" ./kubermatic/
     ;;
 
+  kubermatic-deployment-only)
+    # Kubermatic only without other components
+    deploy "kubermatic" "kubermatic" ./kubermatic/
+    ;;
+
   kubermatic-operator)
     kubectl create namespace kubermatic-operator || true
     kubectl apply -f ./kubermatic-operator/
