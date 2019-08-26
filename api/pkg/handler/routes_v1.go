@@ -522,7 +522,7 @@ func (r Routing) listCredentials() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: AWSZoneList
+//       200: AWSSizeList
 func (r Routing) listAWSSizes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
