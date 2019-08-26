@@ -19,3 +19,4 @@ exceptions:
   - bitbucket.org/ww/goautoneg
   - github.com/ajeddeloh/go-json
   - github.com/opencontainers/go-digest # Cannot detect the license for some reason. Its Apache 2.0
+  - github.com/cristim/ec2-instances-info # Public domain and MIT. See: https://github.com/cristim/ec2-instances-info/blob/master/LICENSE and https://github.com/powdahound/ec2instances.info/blob/master/LICENSE.
