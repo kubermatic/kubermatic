@@ -358,6 +358,11 @@ const (
 	PrometheusClientCertificateCertSecretKey = "prometheus-client.crt"
 	// PrometheusClientCertificateKeySecretKey prometheus-client.key
 	PrometheusClientCertificateKeySecretKey = "prometheus-client.key"
+
+	// ServingCertSecretKey is the secret key for a generic serving cert
+	ServingCertSecretKey = "serving.crt"
+	// ServingCertKeySecretKey is the secret key for the key of a generic serving cert
+	ServingCertKeySecretKey = "serving.key"
 )
 
 const (

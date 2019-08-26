@@ -470,6 +470,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		certificates.FrontProxyCACreator(),
 		openshiftresources.OpenShiftTLSServingCertificateCreator(osData),
 		openshiftresources.ServiceSignerCA(),
+		openshiftresources.OpenshiftControllerManagerServingCertSecretCreator(osData.GetRootCA),
 		resources.ImagePullSecretCreator(r.dockerPullConfigJSON),
 		apiserver.FrontProxyClientCertificateCreator(osData),
 		etcd.TLSCertificateCreator(osData),
@@ -533,21 +534,15 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 		openshiftresources.OpenshiftAPIServerConfigMapCreator(osData),
 		openshiftresources.OpenshiftKubeAPIServerConfigMapCreator(osData),
 		openshiftresources.KubeControllerManagerConfigMapCreatorFactory(osData),
-		openshiftresources.OpenshiftControllerMangerConfigMapCreator(ctx, osData),
+		openshiftresources.OpenshiftControllerManagerConfigMapCreator(osData.Cluster().Spec.Version.String()),
 		openvpn.ServerClientConfigsConfigMapCreator(osData),
 		dns.ConfigMapCreator(osData),
 	}
 }
 
 func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) error {
-	for _, namedConfigmapCreator := range r.getAllConfigmapCreators(ctx, osData) {
-		configMapName, configMapCreator := namedConfigmapCreator()
-		if err := reconciling.EnsureNamedObject(ctx,
-			nn(osData.Cluster().Status.NamespaceName, configMapName), reconciling.ConfigMapObjectWrapper(configMapCreator), r.Client, &corev1.ConfigMap{}, false); err != nil {
-			return fmt.Errorf("failed to ensure ConfigMap %s: %v", configMapName, err)
-		}
-	}
-	return nil
+	creators := r.getAllConfigmapCreators(ctx, osData)
+	return reconciling.ReconcileConfigMaps(ctx, creators, osData.Cluster().Status.NamespaceName, r.Client)
 }
 
 func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedDeploymentCreatorGetter {
@@ -555,7 +550,7 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 		openshiftresources.OpenshiftAPIServerDeploymentCreator(ctx, osData),
 		openshiftresources.APIDeploymentCreator(ctx, osData),
 		openshiftresources.KubeControllerManagerDeploymentCreatorFactory(osData),
-		openshiftresources.ControllerManagerDeploymentCreator(ctx, osData),
+		openshiftresources.OpenshiftControllerManagerDeploymentCreator(ctx, osData),
 		openshiftresources.MachineController(osData),
 		openvpn.DeploymentCreator(osData),
 		dns.DeploymentCreator(osData),
@@ -617,7 +612,9 @@ func (r *Reconciler) verticalPodAutoscalers(ctx context.Context, osData *openshi
 		resources.MachineControllerWebhookDeploymentName,
 		resources.OpenVPNServerDeploymentName,
 		resources.ApiserverDeploymentName,
-		openshiftresources.ControllerManagerDeploymentName}
+		resources.ControllerManagerDeploymentName,
+		openshiftresources.OpenshiftAPIServerDeploymentName,
+		openshiftresources.OpenshiftControllerManagerDeploymentName}
 
 	creatorGetters, err := resources.GetVerticalPodAutoscalersForAll(ctx, r.Client, controlPlaneDeploymentNames, []string{resources.EtcdStatefulSetName}, osData.Cluster().Status.NamespaceName, r.features.VPA)
 	if err != nil {
