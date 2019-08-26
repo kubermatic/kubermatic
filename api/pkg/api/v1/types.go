@@ -914,6 +914,9 @@ type OpenstackNodeSpec struct {
 	// Defines whether floating ip should be used
 	// required: false
 	UseFloatingIP bool `json:"useFloatingIP,omitempty"`
+	// if set, the rootDisk will be a volume. If not, the rootDisk will be on ephemeral storage and its size will be derived from the flavor
+	// required: false
+	RootDiskSizeGB *int `json:"diskSize"`
 }
 
 // AWSNodeSpec aws specific node settings
