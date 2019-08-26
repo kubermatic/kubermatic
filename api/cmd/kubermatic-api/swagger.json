@@ -5534,6 +5534,11 @@
         "oidc": {
           "$ref": "#/definitions/OIDCSettings"
         },
+        "usePodSecurityPolicyAdmissionPlugin": {
+          "description": "If active the PodSecurityPolicy admission plugin is configured at the apiserver",
+          "type": "boolean",
+          "x-go-name": "UsePodSecurityPolicyAdmissionPlugin"
+        },
         "version": {
           "$ref": "#/definitions/Semver"
         }
@@ -6195,6 +6200,9 @@
       "type": "object",
       "title": "HetznerCloudSpec specifies access data to hetzner cloud.",
       "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "token": {
           "type": "string",
           "x-go-name": "Token"

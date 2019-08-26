@@ -129,7 +129,7 @@ func GCPDiskTypesEndpoint(credentialManager common.PresetsManager) endpoint.Endp
 	}
 }
 
-func GCPDiskTypesNoCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func GCPDiskTypesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesNoCredentialReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -197,7 +197,7 @@ func GCPSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint 
 	}
 }
 
-func GCPSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func GCPSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesNoCredentialReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -268,7 +268,7 @@ func GCPZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provid
 	}
 }
 
-func GCPZoneNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+func GCPZoneWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)

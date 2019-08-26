@@ -293,7 +293,9 @@ func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec) error {
 
 func validateHetznerCloudSpec(spec *kubermaticv1.HetznerCloudSpec) error {
 	if spec.Token == "" {
-		return errors.New("no token specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.HetznerToken); err != nil {
+			return err
+		}
 	}
 
 	return nil

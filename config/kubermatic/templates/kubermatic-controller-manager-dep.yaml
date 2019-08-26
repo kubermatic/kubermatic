@@ -1,9 +1,13 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controller-manager-v1
 spec:
   replicas: {{ .Values.kubermatic.controller.replicas }}
+  selector:
+    matchLabels:
+      role: controller-manager
+      version: v1
   template:
     metadata:
       labels:
