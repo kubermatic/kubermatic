@@ -32,8 +32,6 @@ import (
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
-	"github.com/vmware/govmomi"
-	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/soap"
@@ -46,13 +44,11 @@ const (
 	local-hostname: {{ .Hostname }}`
 )
 
-func createClonedVM(ctx context.Context, vmName string, config *Config, dc *object.Datacenter, f *find.Finder, containerLinuxUserdata string) (*object.VirtualMachine, error) {
-	templateVM, err := f.VirtualMachine(ctx, config.TemplateVMName)
+func createClonedVM(ctx context.Context, vmName string, config *Config, session *Session, containerLinuxUserdata string) (*object.VirtualMachine, error) {
+	tpl, err := session.Finder.VirtualMachine(ctx, config.TemplateVMName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get template vm: %v", err)
 	}
-
-	glog.V(3).Infof("Template VM ref is %+v", templateVM)
 
 	// Find the target folder, if its included in the provider config.
 	var targetVMFolder *object.Folder
@@ -62,17 +58,63 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, dc *obje
 		// a different datacenter. It is therefore preferable to use absolute folder
 		// paths, e.g. '/Datacenter/vm/nested/folder'.
 		// The target folder must already exist.
-		targetVMFolder, err = f.Folder(ctx, config.Folder)
+		targetVMFolder, err = session.Finder.Folder(ctx, config.Folder)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get target folder: %v", err)
 		}
 	} else {
 		// Do not query datacenter folders unless required
-		datacenterFolders, err := dc.Folders(ctx)
+		datacenterFolders, err := session.Datacenter.Folders(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get datacenter folders: %v", err)
 		}
 		targetVMFolder = datacenterFolders.VmFolder
+	}
+
+	datastore, err := session.Finder.Datastore(ctx, config.Datastore)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get datastore: %v", err)
+	}
+
+	// Create a cloned VM from the template VM's snapshot.
+	// We split the cloning from the reconfiguring as those actions differ on the permission side.
+	// It's nicer to tell which specific action failed due to lacking permissions.
+	clonedVMTask, err := tpl.Clone(ctx, targetVMFolder, vmName, types.VirtualMachineCloneSpec{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to clone template vm: %v", err)
+	}
+
+	if err := clonedVMTask.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("error when waiting for result of clone task: %v", err)
+	}
+
+	virtualMachine, err := session.Finder.VirtualMachine(ctx, vmName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get virtual machine object after cloning: %v", err)
+	}
+
+	relocateSpec := types.VirtualMachineRelocateSpec{
+		Datastore:    types.NewReference(datastore.Reference()),
+		DiskMoveType: string(types.VirtualMachineRelocateDiskMoveOptionsMoveAllDiskBackingsAndConsolidate),
+		Folder:       types.NewReference(targetVMFolder.Reference()),
+		Disk:         []types.VirtualMachineRelocateSpecDiskLocator{},
+	}
+	relocateTask, err := virtualMachine.Relocate(ctx, relocateSpec, types.VirtualMachineMovePriorityDefaultPriority)
+	if err != nil {
+		return nil, fmt.Errorf("failed to relocate: %v", err)
+	}
+	if err := relocateTask.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("failed waiting for relocation to finish: %v", err)
+	}
+
+	virtualMachine, err = session.Finder.VirtualMachine(ctx, vmName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get virtual machine object after relocating: %v", err)
+	}
+
+	vmDevices, err := virtualMachine.Device(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list devices of template VM: %v", err)
 	}
 
 	var vAppAconfig *types.VmConfigSpec
@@ -83,7 +125,7 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, dc *obje
 		// In order to overwrite them, we need to specify their numeric Key values,
 		// which we'll extract from that template.
 		var mvm mo.VirtualMachine
-		if err := templateVM.Properties(ctx, templateVM.Reference(), []string{"config", "config.vAppConfig", "config.vAppConfig.property"}, &mvm); err != nil {
+		if err := virtualMachine.Properties(ctx, virtualMachine.Reference(), []string{"config", "config.vAppConfig", "config.vAppConfig.property"}, &mvm); err != nil {
 			return nil, fmt.Errorf("failed to extract vapp properties for coreos: %v", err)
 		}
 
@@ -124,9 +166,9 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, dc *obje
 
 	diskUUIDEnabled := true
 
-	deviceSpecs := []types.BaseVirtualDeviceConfigSpec{}
+	var deviceSpecs []types.BaseVirtualDeviceConfigSpec
 	if config.DiskSizeGB != nil {
-		disks, err := getDisksFromVM(ctx, templateVM)
+		disks, err := getDisksFromVM(ctx, virtualMachine)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get disks from VM: %v", err)
 		}
@@ -143,7 +185,16 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, dc *obje
 		deviceSpecs = append(deviceSpecs, diskspec)
 	}
 
-	desiredConfig := types.VirtualMachineConfigSpec{
+	if config.VMNetName != "" {
+		networkSpecs, err := GetNetworkSpecs(ctx, session, vmDevices, config.VMNetName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get network specifications: %v", err)
+		}
+		deviceSpecs = append(deviceSpecs, networkSpecs...)
+	}
+
+	vmConfig := types.VirtualMachineConfigSpec{
+		DeviceChange: deviceSpecs,
 		Flags: &types.VirtualMachineFlagInfo{
 			DiskUuidEnabled: &diskUUIDEnabled,
 		},
@@ -151,37 +202,12 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, dc *obje
 		MemoryMB:   config.MemoryMB,
 		VAppConfig: vAppAconfig,
 	}
-
-	// Create a cloned VM from the template VM's snapshot
-	clonedVMTask, err := templateVM.Clone(ctx, targetVMFolder, vmName, types.VirtualMachineCloneSpec{
-		Config: &types.VirtualMachineConfigSpec{DeviceChange: deviceSpecs}})
+	reconfigureTask, err := virtualMachine.Reconfigure(ctx, vmConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to clone template vm: %v", err)
+		return nil, fmt.Errorf("failed to reconfigure the VM: %v", err)
 	}
-
-	if err := clonedVMTask.Wait(ctx); err != nil {
-		return nil, fmt.Errorf("error when waiting for result of clone task: %v", err)
-	}
-
-	virtualMachine, err := f.VirtualMachine(ctx, vmName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get virtual machine object after cloning: %v", err)
-	}
-
-	reconfigureTask, err := virtualMachine.Reconfigure(ctx, desiredConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to reconfigure vm: %v", err)
-	}
-
 	if err := reconfigureTask.Wait(ctx); err != nil {
-		return nil, fmt.Errorf("error waiting for reconfigure task to finish: %v", err)
-	}
-
-	// Update network if requested
-	if config.VMNetName != "" {
-		if err := updateNetworkForVM(ctx, virtualMachine, config.TemplateNetName, config.VMNetName); err != nil {
-			return nil, fmt.Errorf("couldn't set network for vm: %v", err)
-		}
+		return nil, fmt.Errorf("error when waiting for result of the reconfigure task: %v", err)
 	}
 
 	// Ubuntu wont boot with attached floppy device, because it tries to write to it
@@ -194,76 +220,8 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, dc *obje
 	return virtualMachine, nil
 }
 
-func updateNetworkForVM(ctx context.Context, vm *object.VirtualMachine, currentNetName string, newNetName string) error {
-	newNet, err := getNetworkFromVM(ctx, vm, newNetName)
-	if err != nil {
-		return fmt.Errorf("failed to get network from vm: %v", err)
-	}
-
-	availableData, err := getNetworkDevicesAndBackingsFromVM(ctx, vm, currentNetName)
-	if err != nil {
-		return fmt.Errorf("failed to get network devices for vm: %v", err)
-	}
-	if len(availableData) == 0 {
-		return errors.New("found no matching network adapter")
-	}
-
-	netDev := availableData[0].device
-	currentBacking := availableData[0].backingInfo
-
-	glog.V(6).Infof("changing network `%s` to `%s` for vm `%s`", currentBacking.DeviceName, newNetName, vm.Name())
-	currentBacking.DeviceName = newNetName
-	currentBacking.Network = newNet
-
-	return vm.EditDevice(ctx, *netDev)
-}
-
-func getNetworkDevicesAndBackingsFromVM(ctx context.Context, vm *object.VirtualMachine, netNameFilter string) ([]netDeviceAndBackingInfo, error) {
-	devices, err := vm.Device(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get devices for vm, see: %s", err)
-	}
-
-	var availableData []netDeviceAndBackingInfo
-
-	for i, device := range devices {
-		ethDevice, ok := device.(types.BaseVirtualEthernetCard)
-		if !ok {
-			continue
-		}
-
-		ethCard := ethDevice.GetVirtualEthernetCard()
-		ethBacking := ethCard.Backing.(*types.VirtualEthernetCardNetworkBackingInfo)
-
-		if netNameFilter == "" || ethBacking.DeviceName == netNameFilter {
-			data := netDeviceAndBackingInfo{device: &devices[i], backingInfo: ethBacking}
-			availableData = append(availableData, data)
-		}
-	}
-
-	return availableData, nil
-}
-
-func getNetworkFromVM(ctx context.Context, vm *object.VirtualMachine, netName string) (*types.ManagedObjectReference, error) {
-	cfg, err := vm.QueryConfigTarget(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get query config for vm, see: %v", err)
-	}
-
-	for _, net := range cfg.Network {
-		summary := net.Network.GetNetworkSummary()
-
-		if summary.Accessible && summary.Name == netName {
-			return summary.Network, nil
-		}
-	}
-
-	return nil, fmt.Errorf("no accessible network with the name %s found", netName)
-}
-
-func uploadAndAttachISO(ctx context.Context, f *find.Finder, vmRef *object.VirtualMachine, localIsoFilePath, datastoreName string) error {
-
-	datastore, err := f.Datastore(ctx, datastoreName)
+func uploadAndAttachISO(ctx context.Context, session *Session, vmRef *object.VirtualMachine, localIsoFilePath, datastoreName string) error {
+	datastore, err := session.Finder.Datastore(ctx, datastoreName)
 	if err != nil {
 		return fmt.Errorf("failed to get datastore: %v", err)
 	}
@@ -289,16 +247,6 @@ func uploadAndAttachISO(ctx context.Context, f *find.Finder, vmRef *object.Virtu
 	cdrom.Connectable.StartConnected = true
 	iso := datastore.Path(remoteIsoFilePath)
 	return vmRef.EditDevice(ctx, devices.InsertIso(cdrom, iso))
-}
-
-func getDatacenterFinder(datacenter string, client *govmomi.Client) (*find.Finder, error) {
-	finder := find.NewFinder(client.Client, true)
-	dc, err := finder.Datacenter(context.TODO(), datacenter)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get vsphere datacenter: %v", err)
-	}
-	finder.SetDatacenter(dc)
-	return finder, nil
 }
 
 func generateLocalUserdataISO(userdata, name string) (string, error) {
