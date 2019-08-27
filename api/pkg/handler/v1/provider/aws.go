@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	ec2 "github.com/cristim/ec2-instances-info"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
@@ -12,6 +13,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	awsProvider "github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -62,6 +64,19 @@ type AWSVPCReq struct {
 	// in: path
 	// required: true
 	DC string `json:"dc"`
+}
+
+// AWSSizeReq represent a request for AWS VM sizes.
+// swagger:parameters listAWSSizesNoCredentials
+type AWSSizeReq struct {
+	Region string
+}
+
+// DecodeAWSSizesReq decodes the base type for a AWS special endpoint request
+func DecodeAWSSizesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AWSSizeReq
+	req.Region = r.Header.Get("Region")
+	return req, nil
 }
 
 // DecodeAWSCommonReq decodes the base type for a AWS special endpoint request
@@ -132,6 +147,75 @@ func DecodeAWSVPCReq(c context.Context, r *http.Request) (interface{}, error) {
 	req.DC = dc
 
 	return req, nil
+}
+
+// AWSSizeEndpoint handles the request to list available AWS sizes.
+func AWSSizeEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AWSSizeReq)
+		return awsSizes(req.Region)
+	}
+}
+
+// AWSSizeNoCredentialsEndpoint handles the request to list available AWS sizes.
+func AWSSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(common.GetClusterReq)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if cluster.Spec.Cloud.AWS == nil {
+			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
+		}
+
+		dc, err := dc.GetDatacenter(seedsGetter, cluster.Spec.Cloud.DatacenterName)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		if dc.Spec.AWS == nil {
+			return nil, errors.NewNotFound("cloud spec (dc) for ", req.ClusterID)
+		}
+
+		return awsSizes(dc.Spec.AWS.Region)
+	}
+}
+
+func awsSizes(region string) (apiv1.AWSSizeList, error) {
+	data, err := ec2.Data()
+	if err != nil {
+		return nil, err
+	}
+
+	sizes := apiv1.AWSSizeList{}
+	for _, i := range *data {
+		// TODO: Make the check below more generic, working for all the providers. It is needed as the pods
+		//  with memory under 2 GB will be full with required pods like kube-proxy, CNI etc.
+		if i.Memory > 2 {
+			// The code below filters out too expensive instance types (>2$ per hour). TODO: Parametrize cost?
+			price, ok := i.Pricing[region]
+			if ok && price.Linux.OnDemand > 2 {
+				continue
+			}
+
+			sizes = append(sizes, apiv1.AWSSize{
+				Name:       i.InstanceType,
+				PrettyName: i.PrettyName,
+				Memory:     i.Memory,
+				VCPUs:      i.VCPU,
+				Price:      price.Linux.OnDemand,
+			})
+		}
+	}
+
+	return sizes, nil
 }
 
 // AWSZoneEndpoint handles the request to list AWS availability zones in a given region, using provided credentials
