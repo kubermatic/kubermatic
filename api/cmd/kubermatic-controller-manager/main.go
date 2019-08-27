@@ -22,6 +22,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
+	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
@@ -30,6 +31,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
@@ -124,6 +126,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	if options.dynamicDatacenters {
+		restMapperCache := restmapper.New()
 		seedValidationWebhookServer, err := options.seedValidationHook.Server(
 			rootCtx,
 			log,
@@ -140,11 +143,11 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			// This controler doesn't necessarily have an explicit kubeconfig, most of the time it
 			// runs with in-cluster config. Just return the config from the manager and only allow
 			// our own seed
-			func(seed *kubermaticv1.Seed) (*rest.Config, error) {
+			func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 				if seed.Name != options.dc {
 					return nil, fmt.Errorf("can only return kubeconfig for our own seed(%q), got request for %q", options.dc, seed.Name)
 				}
-				return mgr.GetConfig(), nil
+				return restMapperCache.Client(mgr.GetConfig())
 			})
 		if err != nil {
 			log.Fatalw("Failed to get seedValidationWebhookServer", zap.Error(err))

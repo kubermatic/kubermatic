@@ -19,7 +19,7 @@ import (
 var reStandardSize = regexp.MustCompile("(^cx)")
 var reDedicatedSize = regexp.MustCompile("(^ccx)")
 
-func HetznerSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func HetznerSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(HetznerSizesNoCredentialsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)

@@ -88,6 +88,8 @@ type ClusterSpec struct {
 
 	// Openshift holds all openshift-specific settings
 	Openshift *Openshift `json:"openshift,omitempty"`
+
+	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 }
 
 type Openshift struct {
@@ -277,6 +279,8 @@ type DigitaloceanCloudSpec struct {
 
 // HetznerCloudSpec specifies access data to hetzner cloud.
 type HetznerCloudSpec struct {
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
 	Token string `json:"token"` // Token is used to authenticate with the Hetzner cloud API.
 }
 
@@ -451,6 +455,9 @@ func NewBytes(b64 string) Bytes {
 func (cluster *Cluster) GetSecretName() string {
 	if cluster.Spec.Cloud.AWS != nil {
 		return fmt.Sprintf("%s-aws-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.Hetzner != nil {
+		return fmt.Sprintf("%s-hetzner-%s", CredentialPrefix, cluster.Name)
 	}
 	if cluster.Spec.Cloud.Packet != nil {
 		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, cluster.Name)

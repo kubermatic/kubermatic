@@ -21,6 +21,7 @@ echodate "Testing versions: ${VERSIONS}"
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
 export DEFAULT_TIMEOUT_MINUTES=${DEFAULT_TIMEOUT_MINUTES:-10}
+export ONLY_TEST_CREATION=${ONLY_TEST_CREATION:-false}
 
 # if no provider argument has been specified, default to aws
 provider=${PROVIDER:-"aws"}
@@ -423,7 +424,7 @@ TEST_NAME="Setup Kubermatic total" write_junit "0" "$setup_elasped_time"
 
 kubermatic_delete_cluster="true"
 if [ -n "${UPGRADE_TEST_BASE_HASH:-}" ]; then
-	kubermatic_delete_cluster="false"
+  kubermatic_delete_cluster="false"
 fi
 
 timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
@@ -439,6 +440,7 @@ timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
   -run-kubermatic-controller-manager=false \
   -versions="$VERSIONS" \
   -providers=$provider \
+  -only-test-creation="${ONLY_TEST_CREATION}" \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   ${OPENSHIFT_ARG:-} \
   -kubermatic-delete-cluster=${kubermatic_delete_cluster} \
@@ -498,6 +500,7 @@ timeout -s 9 60m ./conformance-tests $EXTRA_ARGS \
   -cleanup-on-start=false \
   -versions="$VERSIONS" \
   -providers=$provider \
+  -only-test-creation="${ONLY_TEST_CREATION}" \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   ${OPENSHIFT_ARG:-} \
   -print-ginkgo-logs=true \

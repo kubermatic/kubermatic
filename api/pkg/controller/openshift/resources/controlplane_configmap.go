@@ -9,7 +9,6 @@ import (
 	"github.com/Masterminds/sprig"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -18,10 +17,9 @@ import (
 )
 
 const (
-	openshiftAPIServerConfigMapName        = "openshift-config-apiserver"
-	openshiftKubeAPIServerConfigMapName    = "openshift-config-kube-apiserver"
-	openshiftControllerMangerConfigMapName = "openshift-config-controller-manager"
-	openshiftContolPlaneConfigKeyName      = "master-config.yaml"
+	openshiftAPIServerConfigMapName     = "openshift-config-apiserver"
+	openshiftKubeAPIServerConfigMapName = "openshift-config-kube-apiserver"
+	openshiftContolPlaneConfigKeyName   = "master-config.yaml"
 )
 
 var (
@@ -99,27 +97,6 @@ func OpenshiftKubeAPIServerConfigMapCreator(data masterConfigData) reconciling.N
 	}
 }
 
-func OpenshiftControllerMangerConfigMapCreator(ctx context.Context, data masterConfigData) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
-		return openshiftControllerMangerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			if cm.Data == nil {
-				cm.Data = map[string]string{}
-			}
-			masterConfig, err := getMasterConfig(ctx, data, "controller-manager")
-			if err != nil {
-				return nil, fmt.Errorf("failed to get master config :%v", err)
-			}
-			cm.Labels = resources.BaseAppLabel(openshiftControllerMangerConfigMapName, nil)
-			cm.Data[openshiftContolPlaneConfigKeyName] = masterConfig
-			cm.Data["policy.json"] = policyJSON
-			cm.Data["scheduler.json"] = schedulerJSON
-			cm.Data["recycler_pod.yaml"] = recyclerPod
-
-			return cm, nil
-		}
-	}
-}
-
 type oidcData struct {
 	IssuerURL    string
 	ClientID     string
@@ -170,35 +147,6 @@ func getMasterConfig(ctx context.Context, data masterConfigData, controlPlaneTyp
 	}
 	return controlPlaneConfigBuffer.String(), nil
 }
-
-const schedulerJSON = `
-{"apiVersion":"v1","kind":"Policy","predicates":[{"name":"NoVolumeZoneConflict"},{"name":"MaxEBSVolumeCount"},{"name":"MaxGCEPDVolumeCount"},{"name":"MaxAzureDiskVolumeCount"},{"name":"MatchInterPodAffinity"},{"name":"NoDiskConflict"},{"name":"GeneralPredicates"},{"name":"PodToleratesNodeTaints"},{"name":"CheckNodeMemoryPressure"},{"name":"CheckNodeDiskPressure"},{"name":"CheckVolumeBinding"},{"argument":{"serviceAffinity":{"labels":["region"]}},"name":"Region"}],"priorities":[{"name":"SelectorSpreadPriority","weight":1},{"name":"InterPodAffinityPriority","weight":1},{"name":"LeastRequestedPriority","weight":1},{"name":"BalancedResourceAllocation","weight":1},{"name":"NodePreferAvoidPodsPriority","weight":10000},{"name":"NodeAffinityPriority","weight":1},{"name":"TaintTolerationPriority","weight":1},{"argument":{"serviceAntiAffinity":{"label":"zone"}},"name":"Zone","weight":2}]}`
-
-const recyclerPod = `
-apiVersion: v1
-kind: Pod
-metadata:
-  name: recyler-pod-
-  namespace: openshift-infra
-spec:
-  activeDeadlineSeconds: 60
-  containers:
-  - args:
-    - /scrub
-    command:
-    - /usr/bin/openshift-recycle
-    image: docker.io/openshift/origin-recycler:v3.11
-    name: recyler-container
-    securityContext:
-      runAsUser: 0
-    volumeMounts:
-    - mountPath: /scrub
-      name: vol
-  restartPolicy: Never
-  serviceAccountName: pv-recycler-controller
-  volumes:
-  - name: vol
-`
 
 // TODO Use OpenShiftAPIServerConfig type from github.com/openshift/api/openshiftcontrolplane/v1/types.go
 const openshiftAPIServerConfigTemplate = `aggregatorConfig:

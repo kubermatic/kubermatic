@@ -5652,6 +5652,11 @@
         "oidc": {
           "$ref": "#/definitions/OIDCSettings"
         },
+        "usePodSecurityPolicyAdmissionPlugin": {
+          "description": "If active the PodSecurityPolicy admission plugin is configured at the apiserver",
+          "type": "boolean",
+          "x-go-name": "UsePodSecurityPolicyAdmissionPlugin"
+        },
         "version": {
           "$ref": "#/definitions/Semver"
         }
@@ -6313,6 +6318,9 @@
       "type": "object",
       "title": "HetznerCloudSpec specifies access data to hetzner cloud.",
       "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "token": {
           "type": "string",
           "x-go-name": "Token"
@@ -7129,6 +7137,12 @@
         "image"
       ],
       "properties": {
+        "diskSize": {
+          "description": "if set, the rootDisk will be a volume. If not, the rootDisk will be on ephemeral storage and its size will be derived from the flavor",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "RootDiskSizeGB"
+        },
         "flavor": {
           "description": "instance flavor",
           "type": "string",

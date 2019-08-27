@@ -149,6 +149,13 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 			false); err != nil {
 			return fmt.Errorf("failed to reconcile Role %q: %v", namespacedName.String(), err)
 		}
+
+		// openshift-kube-scheduler
+		creators := []reconciling.NamedRoleCreatorGetter{openshift.KubeSchedulerRoleCreatorGetter}
+		if err := reconciling.ReconcileRoles(ctx, creators, "openshift-kube-scheduler", r.Client); err != nil {
+			return err
+		}
+
 	}
 
 	return nil
@@ -195,6 +202,13 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 			false); err != nil {
 			return fmt.Errorf("failed to reconcile RoleBinding %q: %v", namespacedName.String(), err)
 		}
+
+		// openshift-kube-scheduler
+		creators := []reconciling.NamedRoleBindingCreatorGetter{openshift.KubeSchedulerRoleBindingCreatorGetter}
+		if err := reconciling.ReconcileRoleBindings(ctx, creators, "openshift-kube-scheduler", r.Client); err != nil {
+			return err
+		}
+
 	}
 
 	return nil
@@ -314,7 +328,10 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 	if !r.openshift {
 		return nil
 	}
-	creators := []reconciling.NamedNamespaceCreatorGetter{openshift.APIServerNSCreatorGetter}
+	creators := []reconciling.NamedNamespaceCreatorGetter{openshift.APIServerNSCreatorGetter,
+		openshift.ControllerManagerNSCreatorGetter,
+		openshift.KubeSchedulerNSCreatorGetter,
+	}
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile namespaces: %v", err)
 	}

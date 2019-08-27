@@ -21,6 +21,7 @@ spec:
         apiserver-proxy-client-certificate-secret-revision: "123456"
         apiserver-tls-secret-revision: "123456"
         app: apiserver
+        audit-config-configmap-revision: "123456"
         ca-secret-revision: "123456"
         cloud-config-configmap-revision: "123456"
         cluster: de-test-01
@@ -175,7 +176,7 @@ spec:
         - --audit-log-maxsize
         - "100"
         - --audit-log-path
-        - /var/log/audit.log
+        - /var/log/kubernetes/audit/audit.log
         - --tls-cert-file
         - /etc/kubernetes/tls/apiserver-tls.crt
         - --tls-private-key-file
@@ -200,6 +201,8 @@ spec:
         - X-Remote-Group
         - --requestheader-username-headers
         - X-Remote-User
+        - --audit-policy-file
+        - /etc/kubernetes/audit/policy.yaml
         - --kubelet-preferred-address-types
         - ExternalIP,InternalIP
         - --cloud-provider
@@ -276,9 +279,37 @@ spec:
         - mountPath: /etc/kubernetes/pki/front-proxy/ca
           name: front-proxy-ca
           readOnly: true
+        - mountPath: /etc/kubernetes/audit
+          name: audit-config
+          readOnly: true
+        - mountPath: /var/log/kubernetes/audit
+          name: audit-log
         - mountPath: /etc/kubernetes/dex/ca
           name: dex-ca
           readOnly: true
+      - args:
+        - -i
+        - tail
+        - -p
+        - path=/var/log/kubernetes/audit/audit.log
+        - -p
+        - db=/var/log/kubernetes/audit/fluentbit.db
+        - -o
+        - stdout
+        command:
+        - /fluent-bit/bin/fluent-bit
+        image: docker.io/fluent/fluent-bit:1.2.2
+        name: audit-logs
+        resources:
+          limits:
+            cpu: 50m
+            memory: 60Mi
+          requests:
+            cpu: 5m
+            memory: 10Mi
+        volumeMounts:
+        - mountPath: /var/log/kubernetes/audit
+          name: audit-log
       dnsConfig:
         nameservers:
         - 192.0.2.14
@@ -345,6 +376,12 @@ spec:
       - name: kubeletdnatcontroller-kubeconfig
         secret:
           secretName: kubeletdnatcontroller-kubeconfig
+      - configMap:
+          name: audit-config
+          optional: false
+        name: audit-config
+      - emptyDir: {}
+        name: audit-log
       - name: dex-ca
         secret:
           secretName: dex-ca

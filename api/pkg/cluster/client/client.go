@@ -3,15 +3,12 @@ package client
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -32,7 +29,7 @@ func NewInternal(seedClient ctrlruntimeclient.Client) (UserClusterConnectionProv
 	return &provider{
 		seedClient:         seedClient,
 		useExternalAddress: false,
-		clusterRESTMapper:  map[string]meta.RESTMapper{},
+		restMapperCache:    restmapper.New(),
 	}, nil
 }
 
@@ -43,7 +40,7 @@ func NewExternal(seedClient ctrlruntimeclient.Client) (UserClusterConnectionProv
 	return &provider{
 		seedClient:         seedClient,
 		useExternalAddress: true,
-		clusterRESTMapper:  map[string]meta.RESTMapper{},
+		restMapperCache:    restmapper.New(),
 	}, nil
 }
 
@@ -51,27 +48,8 @@ type provider struct {
 	seedClient         ctrlruntimeclient.Client
 	useExternalAddress bool
 
-	mapperLock sync.Mutex
 	// We keep the existing cluster mappings to avoid the discovery on each call to the API server
-	clusterRESTMapper map[string]meta.RESTMapper
-}
-
-func (p *provider) mapper(c *kubermaticv1.Cluster, config *restclient.Config) (meta.RESTMapper, error) {
-	p.mapperLock.Lock()
-	defer p.mapperLock.Unlock()
-
-	if mapper, found := p.clusterRESTMapper[c.Name]; found {
-		return mapper, nil
-	}
-
-	mapper, err := restmapper.NewDynamicRESTMapper(config)
-	if err != nil {
-		return nil, err
-	}
-	log.Logger.Infow("mapper created", "cluster", c.Name)
-	p.clusterRESTMapper[c.Name] = mapper
-
-	return mapper, nil
+	restMapperCache *restmapper.Cache
 }
 
 // GetAdminKubeconfig returns the admin kubeconfig for the given cluster
@@ -141,15 +119,5 @@ func (p *provider) GetClient(c *kubermaticv1.Cluster, options ...ConfigOption) (
 		return nil, err
 	}
 
-	mapper, err := p.mapper(c, config)
-	if err != nil {
-		log.Logger.Errorf("failed to get the REST mapper for the client: %v", err)
-		return ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
-	}
-
-	dynamicClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Mapper: mapper})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create dynamic client: %v", err)
-	}
-	return dynamicClient, nil
+	return p.restMapperCache.Client(config)
 }
