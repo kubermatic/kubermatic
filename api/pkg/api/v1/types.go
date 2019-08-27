@@ -134,6 +134,7 @@ type AWSSize struct {
 	PrettyName string  `json:"pretty_name"`
 	Memory     float32 `json:"memory"`
 	VCPUs      int     `json:"vcpus"`
+	Price      float64 `json:"price"`
 }
 
 // AWSSizeList represents an array of AWS sizes.

@@ -282,6 +282,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines a set of HTTP endpoints for various cloud providers
 	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes").
+		Handler(r.listAWSSizesNoCredentials())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/zones").
 		Handler(r.listAWSZonesNoCredentials())
 
@@ -529,7 +533,7 @@ func (r Routing) listAWSSizes() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 		)(provider.AWSSizeEndpoint()),
-		decodeEmptyReq,
+		provider.DecodeAWSSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1980,6 +1984,30 @@ func (r Routing) deleteServiceAccountToken() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(serviceaccount.DeleteTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider)),
 		serviceaccount.DecodeDeleteTokenReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes aws listAWSSizesNoCredentials
+//
+// Lists available AWS sizes
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AWSSizeList
+func (r Routing) listAWSSizesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(provider.AWSSizeNoCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
