@@ -54,6 +54,35 @@ func (a *Client) ListAWSSizes(params *ListAWSSizesParams, authInfo runtime.Clien
 }
 
 /*
+ListAWSSizesNoCredentials Lists available AWS sizes
+*/
+func (a *Client) ListAWSSizesNoCredentials(params *ListAWSSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAWSSizesNoCredentialsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAWSSizesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAWSSizesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListAWSSizesNoCredentialsOK), nil
+
+}
+
+/*
 ListAWSSubnets Lists available AWS subnets
 */
 func (a *Client) ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsOK, error) {

@@ -24,6 +24,9 @@ type AWSSize struct {
 	// pretty name
 	PrettyName string `json:"pretty_name,omitempty"`
 
+	// price
+	Price float64 `json:"price,omitempty"`
+
 	// v cpus
 	VCpus int64 `json:"vcpus,omitempty"`
 }

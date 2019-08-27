@@ -1989,6 +1989,60 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes": {
+      "get": {
+        "description": "Lists available AWS sizes",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aws"
+        ],
+        "operationId": "listAWSSizesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AWSSizeList",
+            "schema": {
+              "$ref": "#/definitions/AWSSizeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets": {
       "get": {
         "description": "Lists available AWS subnets",
@@ -4882,6 +4936,11 @@
         "pretty_name": {
           "type": "string",
           "x-go-name": "PrettyName"
+        },
+        "price": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Price"
         },
         "vcpus": {
           "type": "integer",
