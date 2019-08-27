@@ -194,6 +194,10 @@ required = [
   branch = "master"
 
 [[constraint]]
+  name = "github.com/cristim/ec2-instances-info"
+  branch = "master"
+
+[[constraint]]
   name = "google.golang.org/api"
   version = "0.1.0"
 
