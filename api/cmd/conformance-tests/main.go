@@ -67,6 +67,7 @@ type Opts struct {
 	openshift                    bool
 	printGinkoLogs               bool
 	onlyTestCreation             bool
+	pspEnabled                   bool
 	kubermatcProjectID           string
 	kubermaticClient             *apiclient.Kubermatic
 	kubermaticAuthenticator      runtime.ClientAuthInfoWriter
@@ -240,6 +241,11 @@ func main() {
 	}
 	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{"http"}), nil)
 	opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
+
+	if val := os.Getenv("KUBERMATIC_PSP_ENABLED"); val == "true" {
+		opts.pspEnabled = true
+		log.Info("Enabling PSPs")
+	}
 
 	// We use environment variables instead of flags for compatibility reasons, because during upgrade tests we
 	// run two versions of the conformance tester with the same set of flags, which breaks if the older version

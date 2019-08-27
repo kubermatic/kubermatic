@@ -81,6 +81,7 @@ func newRunner(scenarios []testScenario, opts *Opts, log *zap.SugaredLogger) *te
 		openshift:                    opts.openshift,
 		printGinkoLogs:               opts.printGinkoLogs,
 		onlyTestCreation:             opts.onlyTestCreation,
+		pspEnabled:                   opts.pspEnabled,
 		kubermatcProjectID:           opts.kubermatcProjectID,
 		kubermaticClient:             opts.kubermaticClient,
 		kubermaticAuthenticator:      opts.kubermaticAuthenticator,
@@ -101,6 +102,7 @@ type testRunner struct {
 	openshift        bool
 	printGinkoLogs   bool
 	onlyTestCreation bool
+	pspEnabled       bool
 
 	controlPlaneReadyWaitTimeout time.Duration
 	deleteClusterAfterTests      bool
@@ -633,6 +635,8 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 	}
 	cluster.Cluster.Name += scenario.Name() + "-"
 	cluster.Cluster.Name += rand.String(8)
+
+	cluster.Cluster.Spec.UsePodSecurityPolicyAdmissionPlugin = r.pspEnabled
 
 	params := &projectclient.CreateClusterParams{
 		ProjectID: r.kubermatcProjectID,
