@@ -66,12 +66,13 @@ type AWSVPCReq struct {
 	DC string `json:"dc"`
 }
 
-// AzureSizeReq represent a request for Azure VM sizes
+// AWSSizeReq represent a request for AWS VM sizes.
 // swagger:parameters listAWSSizesNoCredentials
 type AWSSizeReq struct {
 	Region string
 }
 
+// DecodeAWSSizesReq decodes the base type for a AWS special endpoint request
 func DecodeAWSSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSSizeReq
 	req.Region = r.Header.Get("Region")
