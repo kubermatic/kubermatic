@@ -1474,6 +1474,71 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/metrics": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "metric"
+        ],
+        "summary": "Lists metrics that belong to the given node deployment.",
+        "operationId": "listNodeDeploymentMetrics",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeDeploymentID",
+            "name": "nodedeployment_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeMetric",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NodeMetric"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes": {
       "get": {
         "produces": [
@@ -6810,6 +6875,41 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "NodeMetric": {
+      "description": "NodeMetric defines a metric for the given node",
+      "type": "object",
+      "properties": {
+        "cpu": {
+          "description": "CPUTotalMillicores in m cores",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUTotalMillicores"
+        },
+        "cpuUsage": {
+          "description": "CPUUsedPercentage in percentage",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUUsedPercentage"
+        },
+        "memory": {
+          "description": "MemoryTotalBytes in bytes",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryTotalBytes"
+        },
+        "memoryUsage": {
+          "description": "MemoryUsedPercentage in percentage",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryUsedPercentage"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "NodeResources": {
       "description": "NodeResources cpu and memory of a node",
       "type": "object",
@@ -7202,7 +7302,7 @@
           "x-go-name": "IsPublic"
         },
         "memory": {
-          "description": "Memory is the amount of memory, measured in MB",
+          "description": "MemoryTotalBytes is the amount of memory, measured in MB",
           "type": "integer",
           "format": "int64",
           "x-go-name": "Memory"
