@@ -43,6 +43,7 @@ func ControllerManagerNSCreatorGetter() (string, reconciling.NamespaceCreator) {
 		return ns, nil
 	}
 }
+
 func KubeSchedulerNSCreatorGetter() (string, reconciling.NamespaceCreator) {
 	return "openshift-kube-scheduler", func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 		if ns.Annotations == nil {

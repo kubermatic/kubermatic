@@ -52,6 +52,27 @@ type machinecontrollerData interface {
 // DeploymentCreator returns the function to create and update the machine controller deployment
 func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
+		return resources.MachineControllerDeploymentName, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
+			_, creator := DeploymentCreatorWithoutInitWrapper(data)()
+			deployment, err := creator(in)
+			if err != nil {
+				return nil, err
+			}
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.NewString(Name))
+			if err != nil {
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+			}
+			deployment.Spec.Template.Spec = *wrappedPodSpec
+
+			return deployment, nil
+		}
+	}
+}
+
+// DeploymentCreator returns the function to create and update the machine controller deployment without the
+// wrapper that checks for apiserver availabiltiy. This allows to adjust the command.
+func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
+	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MachineControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MachineControllerDeploymentName
 			dep.Labels = resources.BaseAppLabel(Name, nil)
@@ -123,12 +144,9 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 					},
 				},
 			}
-
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(Name))
-			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
-			}
-			dep.Spec.Template.Spec = *wrappedPodSpec
+			// Must be set in order to avoid infinite loops because the IsRunningWrapper
+			// and the openshift controller append to the initContainer
+			dep.Spec.Template.Spec.InitContainers = nil
 
 			return dep, nil
 		}

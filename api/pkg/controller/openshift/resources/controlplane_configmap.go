@@ -221,7 +221,8 @@ servingInfo:
   certFile: /var/run/secrets/serving-cert/apiserver-tls.crt
   keyFile: /var/run/secrets/serving-cert/apiserver-tls.key
 kubeClientConfig:
-  kubeConfig: /etc/origin/master/kubeconfig/kubeconfig`
+  kubeConfig: /etc/origin/master/kubeconfig/kubeconfig
+`
 
 const openshiftKubeAPIServerConfigTemplate = `admission:
   pluginConfig:
