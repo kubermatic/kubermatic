@@ -259,8 +259,6 @@ apiServerArguments:
   - etcd3
   storage-media-type:
   - application/vnd.kubernetes.protobuf
-  enable-bootstrap-token-auth:
-  - "true"
 apiVersion: kubecontrolplane.config.openshift.io/v1
 auditConfig:
   # TODO: Doesn't make much sense in a production setup, but useful for debugging
