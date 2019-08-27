@@ -30,7 +30,7 @@ write_files:
     #!/bin/bash
     set -xeuo pipefail
 
-    # TODO: Figure out why the hyperkube binary installation does not work with selinux enabled 
+    # TODO: Figure out why the hyperkube binary installation does not work with selinux enabled
     setenforce 0 || true
 
     systemctl daemon-reload
@@ -189,7 +189,7 @@ write_files:
     [Unit]
     Description=Kubernetes Kubelet
     Wants=rpc-statd.service
-  
+
     [Service]
     Type=notify
     ExecStartPre=/bin/mkdir --parents /etc/kubernetes/manifests
@@ -197,7 +197,7 @@ write_files:
     EnvironmentFile=/etc/os-release
     EnvironmentFile=-/etc/kubernetes/kubelet-workaround
     EnvironmentFile=-/etc/kubernetes/kubelet-env
-  
+
     ExecStart=/usr/bin/hyperkube \
         kubelet \
           --config=/etc/kubernetes/kubelet.conf \
@@ -213,10 +213,10 @@ write_files:
           --cloud-config=/etc/kubernetes/cloud-config \
           --anonymous-auth=false \
           --v=3 \
-  
+
     Restart=always
     RestartSec=10
-  
+
     [Install]
     WantedBy=multi-user.target
 
@@ -257,6 +257,10 @@ write_files:
     size = ""
     override_kernel_check = "true"
     [storage.options.thinpool]
+
+- path: /var/lib/kubelet/config.json
+  content: |
+    {"registry": {"user": "user", "pass": "pss"}}
 
 - path: "/etc/kubernetes/ca.crt"
   content: |

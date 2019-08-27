@@ -7,6 +7,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	openshiftuserdata "github.com/kubermatic/kubermatic/api/pkg/userdata/openshift"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -50,6 +51,8 @@ func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorG
 					Name: "userdata-plugins", MountPath: "/userdata-plugins"})
 				d.Spec.Template.Spec.Containers[idx].Env = append(d.Spec.Template.Spec.Containers[idx].Env,
 					corev1.EnvVar{Name: "MACHINE_CONTROLLER_USERDATA_PLUGIN_DIR", Value: "/userdata-plugins"})
+				d.Spec.Template.Spec.Containers[idx].Env = append(d.Spec.Template.Spec.Containers[idx].Env,
+					corev1.EnvVar{Name: openshiftuserdata.DockerCFGEnvKey, Value: osData.Cluster().Spec.Openshift.ImagePullSecret})
 			}
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(osData, d.Spec.Template.Spec, sets.NewString(name))
