@@ -454,7 +454,7 @@ type Kubeconfig struct {
 type OpenstackSize struct {
 	// Slug holds  the name of the size
 	Slug string `json:"slug"`
-	// Memory is the amount of memory, measured in MB
+	// MemoryTotalBytes is the amount of memory, measured in MB
 	Memory int `json:"memory"`
 	// VCPUs indicates how many (virtual) CPUs are available for this flavor
 	VCPUs int `json:"vcpus"`
@@ -1035,6 +1035,20 @@ type NodeSystemInfo struct {
 type ClusterMetric struct {
 	Name   string    `json:"name"`
 	Values []float64 `json:"values,omitempty"`
+}
+
+// NodeMetric defines a metric for the given node
+// swagger:model NodeMetric
+type NodeMetric struct {
+	Name string `json:"name"`
+	// MemoryTotalBytes in bytes
+	MemoryTotalBytes int64 `json:"memory,omitempty"`
+	// MemoryUsedPercentage in percentage
+	MemoryUsedPercentage int64 `json:"memoryUsage,omitempty"`
+	// CPUTotalMillicores in m cores
+	CPUTotalMillicores int64 `json:"cpu,omitempty"`
+	// CPUUsedPercentage in percentage
+	CPUUsedPercentage int64 `json:"cpuUsage,omitempty"`
 }
 
 // NodeDeployment represents a set of worker nodes that is part of a cluster
