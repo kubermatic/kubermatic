@@ -115,8 +115,8 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 			if err != nil {
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 			}
-
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableDexCA)
+			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
+			flags, err := getApiserverFlags(data, etcdEndpoints, enableDexCA, auditLogEnabled)
 			if err != nil {
 				return nil, err
 			}
@@ -178,31 +178,33 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				},
 			}
 
-			dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
-				corev1.Container{
-					Name:    "audit-logs",
-					Image:   "docker.io/fluent/fluent-bit:1.2.2",
-					Command: []string{"/fluent-bit/bin/fluent-bit"},
-					Args:    []string{"-i", "tail", "-p", "path=/var/log/kubernetes/audit/audit.log", "-p", "db=/var/log/kubernetes/audit/fluentbit.db", "-o", "stdout"},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      resources.AuditLogVolumeName,
-							MountPath: "/var/log/kubernetes/audit",
-							ReadOnly:  false,
+			if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled {
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
+					corev1.Container{
+						Name:    "audit-logs",
+						Image:   "docker.io/fluent/fluent-bit:1.2.2",
+						Command: []string{"/fluent-bit/bin/fluent-bit"},
+						Args:    []string{"-i", "tail", "-p", "path=/var/log/kubernetes/audit/audit.log", "-p", "db=/var/log/kubernetes/audit/fluentbit.db", "-o", "stdout"},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      resources.AuditLogVolumeName,
+								MountPath: "/var/log/kubernetes/audit",
+								ReadOnly:  false,
+							},
+						},
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("10Mi"),
+								corev1.ResourceCPU:    resource.MustParse("5m"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("60Mi"),
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+							},
 						},
 					},
-					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("10Mi"),
-							corev1.ResourceCPU:    resource.MustParse("5m"),
-						},
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("60Mi"),
-							corev1.ResourceCPU:    resource.MustParse("50m"),
-						},
-					},
-				},
-			)
+				)
+			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
@@ -211,7 +213,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableDexCA bool) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableDexCA, auditLogEnabled bool) ([]string, error) {
 	nodePortRange := data.NodePortRange()
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
@@ -267,7 +269,10 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
-		"--audit-policy-file", "/etc/kubernetes/audit/policy.yaml",
+	}
+
+	if auditLogEnabled {
+		flags = append(flags, "--audit-policy-file", "/etc/kubernetes/audit/policy.yaml")
 	}
 
 	if data.Cluster().Spec.Cloud.GCP != nil {
