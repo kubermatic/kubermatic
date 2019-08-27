@@ -91,8 +91,7 @@ type ClusterSpec struct {
 
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 
-	// AuditLogging holds auditlogging settings
-	AuditLogging *AuditLoggingSettings `json:"auditlogging,omitempty"`
+	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 }
 
 type Openshift struct {
