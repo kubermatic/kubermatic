@@ -1,5 +1,5 @@
 data:
-  master-config.yaml: |-
+  master-config.yaml: |
     aggregatorConfig:
       allowedNames:
       - apiserver-aggregator
