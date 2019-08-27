@@ -33,9 +33,6 @@ var (
 )
 
 const (
-	ApiserverDeploymentName = "apiserver-openshift"
-	// TODO: Change this to `apiserver-openshift`. Requires to mange the service
-	// with this controller first as we need to adapt its label selector
 	legacyAppLabelValue = "apiserver"
 )
 
@@ -44,7 +41,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 
-			dep.Name = ApiserverDeploymentName
+			dep.Name = resources.ApiserverDeploymentName
 			dep.Labels = resources.BaseAppLabel(legacyAppLabelValue, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
@@ -135,7 +132,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				*openvpnSidecar,
 				*dnatControllerSidecar,
 				{
-					Name:      ApiserverDeploymentName,
+					Name:      resources.ApiserverDeploymentName,
 					Image:     image,
 					Command:   []string{"hypershift", "openshift-kube-apiserver"},
 					Args:      []string{"--config=/etc/origin/master/master-config.yaml"},
@@ -178,7 +175,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				},
 			}
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(ApiserverDeploymentName, data.Cluster().Name)
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.ApiserverDeploymentName, data.Cluster().Name)
 
 			return dep, nil
 		}

@@ -18,7 +18,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	utilpointer "k8s.io/utils/pointer"
 )
@@ -199,14 +198,6 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 
 			return dep, nil
 		}
-	}
-}
-
-func getHealthGetAction() *corev1.HTTPGetAction {
-	return &corev1.HTTPGetAction{
-		Path:   "/healthz",
-		Scheme: corev1.URISchemeHTTPS,
-		Port:   intstr.FromInt(8443),
 	}
 }
 

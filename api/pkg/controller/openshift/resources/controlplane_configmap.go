@@ -148,35 +148,6 @@ func getMasterConfig(ctx context.Context, data masterConfigData, controlPlaneTyp
 	return controlPlaneConfigBuffer.String(), nil
 }
 
-const schedulerJSON = `
-{"apiVersion":"v1","kind":"Policy","predicates":[{"name":"NoVolumeZoneConflict"},{"name":"MaxEBSVolumeCount"},{"name":"MaxGCEPDVolumeCount"},{"name":"MaxAzureDiskVolumeCount"},{"name":"MatchInterPodAffinity"},{"name":"NoDiskConflict"},{"name":"GeneralPredicates"},{"name":"PodToleratesNodeTaints"},{"name":"CheckNodeMemoryPressure"},{"name":"CheckNodeDiskPressure"},{"name":"CheckVolumeBinding"},{"argument":{"serviceAffinity":{"labels":["region"]}},"name":"Region"}],"priorities":[{"name":"SelectorSpreadPriority","weight":1},{"name":"InterPodAffinityPriority","weight":1},{"name":"LeastRequestedPriority","weight":1},{"name":"BalancedResourceAllocation","weight":1},{"name":"NodePreferAvoidPodsPriority","weight":10000},{"name":"NodeAffinityPriority","weight":1},{"name":"TaintTolerationPriority","weight":1},{"argument":{"serviceAntiAffinity":{"label":"zone"}},"name":"Zone","weight":2}]}`
-
-const recyclerPod = `
-apiVersion: v1
-kind: Pod
-metadata:
-  name: recyler-pod-
-  namespace: openshift-infra
-spec:
-  activeDeadlineSeconds: 60
-  containers:
-  - args:
-    - /scrub
-    command:
-    - /usr/bin/openshift-recycle
-    image: docker.io/openshift/origin-recycler:v3.11
-    name: recyler-container
-    securityContext:
-      runAsUser: 0
-    volumeMounts:
-    - mountPath: /scrub
-      name: vol
-  restartPolicy: Never
-  serviceAccountName: pv-recycler-controller
-  volumes:
-  - name: vol
-`
-
 // TODO Use OpenShiftAPIServerConfig type from github.com/openshift/api/openshiftcontrolplane/v1/types.go
 const openshiftAPIServerConfigTemplate = `aggregatorConfig:
   allowedNames:
