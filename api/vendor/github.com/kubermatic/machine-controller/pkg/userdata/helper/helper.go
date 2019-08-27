@@ -60,13 +60,22 @@ func StringifyKubeconfig(kubeconfig *clientcmdapi.Config) (string, error) {
 	return string(kubeconfigBytes), nil
 }
 
-// KernelModules returns the list of kernel modules required for a kubernetes worker node
-func KernelModules() string {
-	return `ip_vs
-ip_vs_rr
-ip_vs_wrr
-ip_vs_sh
-nf_conntrack_ipv4
+// LoadKernelModules returns a script which is responsible for loading all required kernel modules
+// The nf_conntrack_ipv4 module get removed in newer kernel versions
+func LoadKernelModulesScript() string {
+	return `#!/usr/bin/env bash
+set -euo pipefail
+
+modprobe ip_vs
+modprobe ip_vs_rr
+modprobe ip_vs_wrr
+modprobe ip_vs_sh
+
+if modinfo nf_conntrack_ipv4 &> /dev/null; then
+  modprobe nf_conntrack_ipv4
+else
+  modprobe nf_conntrack
+fi
 `
 }
 
