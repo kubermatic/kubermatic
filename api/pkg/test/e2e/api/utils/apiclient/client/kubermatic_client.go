@@ -19,6 +19,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/digitalocean"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/gcp"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/hetzner"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/metric"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/operations"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/packet"
@@ -88,6 +89,8 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Gcp = gcp.New(transport, formats)
 
 	cli.Hetzner = hetzner.New(transport, formats)
+
+	cli.Metric = metric.New(transport, formats)
 
 	cli.Openstack = openstack.New(transport, formats)
 
@@ -167,6 +170,8 @@ type Kubermatic struct {
 
 	Hetzner *hetzner.Client
 
+	Metric *metric.Client
+
 	Openstack *openstack.Client
 
 	Operations *operations.Client
@@ -207,6 +212,8 @@ func (c *Kubermatic) SetTransport(transport runtime.ClientTransport) {
 	c.Gcp.SetTransport(transport)
 
 	c.Hetzner.SetTransport(transport)
+
+	c.Metric.SetTransport(transport)
 
 	c.Openstack.SetTransport(transport)
 

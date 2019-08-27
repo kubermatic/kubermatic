@@ -1979,6 +1979,17 @@
   revision = "0317810137be915b9cf888946c6e115c1bfac693"
 
 [[projects]]
+  branch = "release-1.13"
+  digest = "1:479ff0aae8682b524aa119197bb9e0cf6d41befbd39bb3821e0b83fed4a21f8b"
+  name = "k8s.io/metrics"
+  packages = [
+    "pkg/apis/metrics",
+    "pkg/apis/metrics/v1beta1",
+  ]
+  pruneopts = "NUT"
+  revision = "d56ac0346839bf61a0244747b4531874f5bc477a"
+
+[[projects]]
   branch = "master"
   digest = "1:0d7ddfe00c608fe323c58050e1541c2e0e72608ca86df20ed469f2647212abf5"
   name = "k8s.io/utils"
@@ -2232,6 +2243,7 @@
     "k8s.io/code-generator/cmd/deepcopy-gen",
     "k8s.io/gengo/examples/defaulter-gen/generators",
     "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1",
+    "k8s.io/metrics/pkg/apis/metrics/v1beta1",
     "k8s.io/utils/pointer",
     "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1",
     "sigs.k8s.io/controller-runtime/pkg/cache",
