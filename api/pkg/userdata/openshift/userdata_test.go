@@ -3,6 +3,7 @@ package openshift
 import (
 	"flag"
 	"net"
+	"os"
 	"testing"
 
 	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
@@ -70,6 +71,9 @@ func TestUserdataGeneration(t *testing.T) {
 		},
 	}
 
+	if err := os.Setenv(DockerCFGEnvKey, `{"registry": {"user": "user", "pass": "pss"}}`); err != nil {
+		t.Fatalf("failed to set dockercfg: %v", err)
+	}
 	for _, test := range tests {
 		kubeconfig := &clientcmdapi.Config{
 			Clusters: map[string]*clientcmdapi.Cluster{
