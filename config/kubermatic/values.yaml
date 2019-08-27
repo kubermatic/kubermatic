@@ -89,6 +89,7 @@ kubermatic:
         - default-storage-class
         - node-exporter
         - nodelocal-dns-cache
+        - pod-security-policy
         image:
           repository: "quay.io/kubermatic/addons"
           tag: "__KUBERMATIC_TAG__"
