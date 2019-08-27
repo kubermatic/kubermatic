@@ -68,7 +68,18 @@ function cleanup {
     fi
 
     # Controller manager logs
-    kubectl logs -n $NAMESPACE  $(kubectl get pod -n $NAMESPACE -l role=controller-manager |tail -n 1|awk '{print $1}')
+    echodate "Dumping controller-manager logs"
+    for pod in $(kubectl get pods -n $NAMESPACE -l role=controller-manager -o go-template='{{ range .items }}{{.metadata.name}}{{ "\n" }}{{end}}'); do
+      echo "Pod $pod:"
+      kubectl logs -n $NAMESPACE $pod controller-manager
+    done
+
+    # Kubermatic api logs
+    echodate "Dumping kubermatic-api logs"
+    for pod in $(kubectl get pods -n $NAMESPACE -l role=kubermatic-api -o go-template='{{ range .items }}{{.metadata.name}}{{ "\n" }}{{end}}'); do
+      echo "Pod $pod:"
+      kubectl logs -n $NAMESPACE $pod api
+    done
 
     # Display machine events, we don't have to worry about secrets here as they are stored in the machine-controllers env
     # Except for vSphere
