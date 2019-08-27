@@ -269,6 +269,8 @@ const (
 
 	// TopologyKeyHostname defines the topology key for the node hostname
 	TopologyKeyHostname = "kubernetes.io/hostname"
+	// TopologyKeyFailureDomainZone defines the topology key for the node's cloud provider zone
+	TopologyKeyFailureDomainZone = "failure-domain.beta.kubernetes.io/zone"
 
 	// MachineCRDName defines the CRD name for machine objects
 	MachineCRDName = "machines.cluster.k8s.io"
