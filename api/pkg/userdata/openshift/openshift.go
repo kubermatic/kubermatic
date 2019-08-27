@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"text/template"
 
 	"github.com/Masterminds/semver"
@@ -15,6 +16,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+const DockerCFGEnvKey = "OPENSHIFT_DOCKER_CFG"
 
 func getConfig(r runtime.RawExtension) (*Config, error) {
 	p := Config{}
@@ -82,6 +85,11 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 		return "", fmt.Errorf("error extracting cacert: %v", err)
 	}
 
+	dockerPullSecret := os.Getenv(DockerCFGEnvKey)
+	if dockerPullSecret == "" {
+		return "", errors.New("dockercfg must not be empty")
+	}
+
 	// The OpenShift 4 minor release is: Kubernetes minor - 12
 	// We require it to download some tooling which follows the Kubernetes versioning
 	kubernetesMinor := openShiftVersion.Minor() + 12
@@ -95,6 +103,7 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 		ServerAddr            string
 		Kubeconfig            string
 		KubernetesCACert      string
+		DockerPullSecret      string
 		CRIORepo              string
 	}{
 		UserDataRequest:       req,
@@ -105,6 +114,7 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 		ServerAddr:            serverAddr,
 		Kubeconfig:            kubeconfigString,
 		KubernetesCACert:      kubernetesCACert,
+		DockerPullSecret:      dockerPullSecret,
 		// There is a CRI-O release for every Kubernetes release.
 		CRIORepo: fmt.Sprintf("https://cbs.centos.org/repos/paas7-crio-1%d-candidate/x86_64/os/", kubernetesMinor),
 	}
@@ -157,7 +167,7 @@ write_files:
     #!/bin/bash
     set -xeuo pipefail
 
-    # TODO: Figure out why the hyperkube binary installation does not work with selinux enabled 
+    # TODO: Figure out why the hyperkube binary installation does not work with selinux enabled
     setenforce 0 || true
 
     systemctl daemon-reload
@@ -311,7 +321,7 @@ write_files:
     [Unit]
     Description=Kubernetes Kubelet
     Wants=rpc-statd.service
-  
+
     [Service]
     Type=notify
     ExecStartPre=/bin/mkdir --parents /etc/kubernetes/manifests
@@ -319,7 +329,7 @@ write_files:
     EnvironmentFile=/etc/os-release
     EnvironmentFile=-/etc/kubernetes/kubelet-workaround
     EnvironmentFile=-/etc/kubernetes/kubelet-env
-  
+
     ExecStart=/usr/bin/hyperkube \
         kubelet \
           --config=/etc/kubernetes/kubelet.conf \
@@ -337,10 +347,10 @@ write_files:
           {{- end }}
           --anonymous-auth=false \
           --v=3 \
-  
+
     Restart=always
     RestartSec=10
-  
+
     [Install]
     WantedBy=multi-user.target
 
@@ -381,6 +391,10 @@ write_files:
     size = ""
     override_kernel_check = "true"
     [storage.options.thinpool]
+
+- path: /var/lib/kubelet/config.json
+  content: |
+{{ .DockerPullSecret | indent 4 }}
 
 - path: "/etc/kubernetes/ca.crt"
   content: |
