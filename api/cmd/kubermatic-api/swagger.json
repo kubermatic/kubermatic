@@ -6762,28 +6762,28 @@
       "type": "object",
       "properties": {
         "cpu": {
-          "description": "CPU in m cores",
+          "description": "CPUTotalMillicores in m cores",
           "type": "integer",
           "format": "int64",
-          "x-go-name": "CPU"
+          "x-go-name": "CPUTotalMillicores"
         },
         "cpuUsage": {
-          "description": "CPUUsage in percentage",
+          "description": "CPUUsedPercentage in percentage",
           "type": "integer",
           "format": "int64",
-          "x-go-name": "CPUUsage"
+          "x-go-name": "CPUUsedPercentage"
         },
         "memory": {
-          "description": "Memory in bytes",
+          "description": "MemoryTotalBytes in bytes",
           "type": "integer",
           "format": "int64",
-          "x-go-name": "Memory"
+          "x-go-name": "MemoryTotalBytes"
         },
         "memoryUsage": {
-          "description": "MemoryUsage in percentage",
+          "description": "MemoryUsedPercentage in percentage",
           "type": "integer",
           "format": "int64",
-          "x-go-name": "MemoryUsage"
+          "x-go-name": "MemoryUsedPercentage"
         },
         "name": {
           "type": "string",
@@ -7184,7 +7184,7 @@
           "x-go-name": "IsPublic"
         },
         "memory": {
-          "description": "Memory is the amount of memory, measured in MB",
+          "description": "MemoryTotalBytes is the amount of memory, measured in MB",
           "type": "integer",
           "format": "int64",
           "x-go-name": "Memory"

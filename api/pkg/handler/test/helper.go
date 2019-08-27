@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"net/http"
 	"net/http/httptest"
 	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/kubermatic/kubermatic/api/pkg/presets"
 
@@ -47,6 +48,7 @@ import (
 	kubernetesclientset "k8s.io/client-go/kubernetes"
 	fakerestclient "k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,6 +64,9 @@ func init() {
 	}
 	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to add kubermaticv1 scheme to scheme.Scheme", "error", err)
+	}
+	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
+		kubermaticlog.Logger.Fatalw("failed to register scheme v1beta1", "error", err)
 	}
 }
 

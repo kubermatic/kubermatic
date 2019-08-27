@@ -570,17 +570,17 @@ func convertNodeMetrics(metrics *v1beta1.NodeMetricsList, availableResources map
 		if available, found := resourceMetricsInfo.Available[corev1.ResourceCPU]; found {
 			quantityCPU := resourceMetricsInfo.Metrics[corev1.ResourceCPU]
 			// cpu in mili cores
-			nodeMetric.CPU = quantityCPU.MilliValue()
+			nodeMetric.CPUTotalMillicores = quantityCPU.MilliValue()
 			fraction := float64(quantityCPU.MilliValue()) / float64(available.MilliValue()) * 100
-			nodeMetric.CPUUsage = int64(fraction)
+			nodeMetric.CPUUsedPercentage = int64(fraction)
 		}
 
 		if available, found := resourceMetricsInfo.Available[corev1.ResourceMemory]; found {
 			quantityM := resourceMetricsInfo.Metrics[corev1.ResourceMemory]
 			// memory in bytes
-			nodeMetric.Memory = quantityM.Value() / (1024 * 1024)
+			nodeMetric.MemoryTotalBytes = quantityM.Value() / (1024 * 1024)
 			fraction := float64(quantityM.MilliValue()) / float64(available.MilliValue()) * 100
-			nodeMetric.MemoryUsage = int64(fraction)
+			nodeMetric.MemoryUsedPercentage = int64(fraction)
 		}
 
 		nodeMetrics = append(nodeMetrics, nodeMetric)

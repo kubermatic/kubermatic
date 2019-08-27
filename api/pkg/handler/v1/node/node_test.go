@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	"github.com/go-test/deep"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -23,6 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -1246,6 +1249,101 @@ func TestDeleteNodeDeployment(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusOnGet, res.Code, res.Body.String())
 			}
 			test.CompareWithResult(t, res, tc.ExpectedResponseOnGet)
+		})
+	}
+}
+
+func TestNodeDeploymentMetrics(t *testing.T) {
+	t.Parallel()
+
+	cpuQuantity, err := resource.ParseQuantity("290104582")
+	if err != nil {
+		t.Fatal(err)
+	}
+	memoryQuantity, err := resource.ParseQuantity("687202304")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testcases := []struct {
+		Name                       string
+		ExpectedResponse           string
+		HTTPStatus                 int
+		ProjectIDToSync            string
+		ClusterIDToSync            string
+		ExistingProject            *kubermaticv1.Project
+		ExistingKubermaticUser     *kubermaticv1.User
+		ExistingAPIUser            *apiv1.User
+		ExistingCluster            *kubermaticv1.Cluster
+		ExistingNodes              []*corev1.Node
+		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
+		ExistingMachines           []*clusterv1alpha1.Machine
+		ExistingKubermaticObjs     []runtime.Object
+		ExistingMetrics            []*v1beta1.NodeMetrics
+		NodeDeploymentID           string
+	}{
+		// scenario 1
+		{
+			Name:                   "scenario 1: list nodes that belong to the given node deployment",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}, Status: corev1.NodeStatus{Allocatable: map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity}}},
+			},
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}),
+				genTestMachineDeployment("mars", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil),
+			},
+			NodeDeploymentID: "venus",
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil),
+			},
+			ExistingMetrics: []*v1beta1.NodeMetrics{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "venus"},
+					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
+				},
+			},
+			ExpectedResponse: `[{"name":"venus","memory":655,"memoryUsage":100,"cpu":290104582000,"cpuUsage":100}]`,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodedeployments/%s/metrics", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeDeploymentID), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			machineObj := []runtime.Object{}
+			kubernetesObj := []runtime.Object{}
+			for _, existingNode := range tc.ExistingNodes {
+				kubernetesObj = append(kubernetesObj, existingNode)
+			}
+			for _, existingMetric := range tc.ExistingMetrics {
+				machineObj = append(machineObj, existingMetric)
+			}
+			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
+				machineObj = append(machineObj, existingMachineDeployment)
+			}
+			for _, existingMachine := range tc.ExistingMachines {
+				machineObj = append(machineObj, existingMachine)
+			}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+
 		})
 	}
 }
