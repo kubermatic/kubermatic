@@ -225,6 +225,22 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 	report := &reporters.JUnitTestSuite{
 		Name: scenario.Name(),
 	}
+	totalStart := time.Now()
+
+	// We need the closure to defer the evaluation of the time.Since(totalStart) call
+	defer func() { log.Infof("Finished testing cluster after %s", time.Since(totalStart)) }()
+	// Always write junit to disk
+	defer func() {
+		report.Time = time.Since(totalStart).Seconds()
+		b, err := xml.Marshal(report)
+		if err != nil {
+			log.Errorw("failed to marshal junit", zap.Error(err))
+			return
+		}
+		if err := ioutil.WriteFile(path.Join(r.reportsRoot, fmt.Sprintf("junit.%s.xml", scenario.Name())), b, 0644); err != nil {
+			log.Errorw("failed to write junit", zap.Error(err))
+		}
+	}()
 
 	if r.existingClusterLabel == "" {
 		if err := junitReporterWrapper(
@@ -364,24 +380,7 @@ func (r *testRunner) testCluster(
 ) error {
 	const maxTestAttempts = 3
 	var err error
-	totalStart := time.Now()
 	log.Info("Starting to test cluster...")
-
-	// We need the closure to defer the evaluation of the time.Since(totalStart) call
-	defer func() { log.Infof("Finished testing cluster after %s", time.Since(totalStart)) }()
-
-	// Always write junit to disk
-	defer func() {
-		report.Time = time.Since(totalStart).Seconds()
-		b, err := xml.Marshal(report)
-		if err != nil {
-			log.Errorw("failed to marshal junit", zap.Error(err))
-			return
-		}
-		if err := ioutil.WriteFile(path.Join(r.reportsRoot, fmt.Sprintf("junit.%s.xml", scenarioName)), b, 0644); err != nil {
-			log.Errorw("failed to write junit", zap.Error(err))
-		}
-	}()
 
 	// We'll store the report there and all kinds of logs
 	scenarioFolder := path.Join(r.reportsRoot, scenarioName)
