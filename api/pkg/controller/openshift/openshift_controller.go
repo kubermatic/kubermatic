@@ -558,7 +558,8 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 		openvpn.DeploymentCreator(osData),
 		dns.DeploymentCreator(osData),
 		machinecontroller.WebhookDeploymentCreator(osData),
-		usercluster.DeploymentCreator(osData, true)}
+		usercluster.DeploymentCreator(osData, true),
+		openshiftresources.OpenshiftNetworkOperatorCreatorFactory(osData)}
 
 	if osData.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" {
 		creators = append(creators, clusterautoscaler.DeploymentCreator(osData))
