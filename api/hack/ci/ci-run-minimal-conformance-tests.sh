@@ -302,6 +302,8 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   kubermatic-$BUILD_ID ./config/kubermatic/
 echodate "Finished installing Kubermatic"
 
+false
+
 echodate "Installing seed"
 SEED_MANIFEST="$(mktemp)"
 cat <<EOF >$SEED_MANIFEST
