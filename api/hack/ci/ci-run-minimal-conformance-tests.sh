@@ -67,8 +67,16 @@ function cleanup {
       exit 1
     fi
 
-    # Controller manager logs
-    kubectl logs -n $NAMESPACE  $(kubectl get pod -n $NAMESPACE -l role=controller-manager |tail -n 1|awk '{print $1}')
+    # Control plane logs
+    echodate "Dumping all conntrol plane logs"
+    local GOTEMPLATE='{{ range $pod := .items }}{{ range $container := .spec.containers }}{{ printf "%s,%s\n" $pod.metadata.name $container.name }}{{end}}{{end}}'
+    for i in $(kubectl get pods -n $NAMESPACE -o go-template="$GOTEMPLATE"); do
+      local POD="${i%,*}"
+      local CONTAINER="${i#*,}"
+
+      echo " [*] Pod $POD, container $CONTAINER:"
+      kubectl logs -n $NAMESPACE "$POD" "$CONTAINER"
+    done
 
     # Display machine events, we don't have to worry about secrets here as they are stored in the machine-controllers env
     # Except for vSphere
