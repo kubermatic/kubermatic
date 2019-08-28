@@ -1,0 +1,12 @@
+apiVersion: operator.openshift.io/v1
+kind: Network
+metadata:
+  name: cluster
+spec:
+  clusterNetwork:{{ range .Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks }}
+  - cidr: {{ . }}
+    hostPrefix: 23{{ end }}
+  defaultNetwork:
+    type: OpenShiftSDN
+  serviceNetwork:{{ range .Cluster.Spec.ClusterNetwork.Services.CIDRBlocks }}
+  - {{ . }}{{ end }}
