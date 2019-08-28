@@ -61,8 +61,6 @@ for the list a w s sizes no credentials operation typically these are written to
 */
 type ListAWSSizesNoCredentialsParams struct {
 
-	/*Region*/
-	Region *string
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
@@ -108,17 +106,6 @@ func (o *ListAWSSizesNoCredentialsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithRegion adds the region to the list a w s sizes no credentials params
-func (o *ListAWSSizesNoCredentialsParams) WithRegion(region *string) *ListAWSSizesNoCredentialsParams {
-	o.SetRegion(region)
-	return o
-}
-
-// SetRegion adds the region to the list a w s sizes no credentials params
-func (o *ListAWSSizesNoCredentialsParams) SetRegion(region *string) {
-	o.Region = region
-}
-
 // WithClusterID adds the clusterID to the list a w s sizes no credentials params
 func (o *ListAWSSizesNoCredentialsParams) WithClusterID(clusterID string) *ListAWSSizesNoCredentialsParams {
 	o.SetClusterID(clusterID)
@@ -159,22 +146,6 @@ func (o *ListAWSSizesNoCredentialsParams) WriteToRequest(r runtime.ClientRequest
 		return err
 	}
 	var res []error
-
-	if o.Region != nil {
-
-		// query param Region
-		var qrRegion string
-		if o.Region != nil {
-			qrRegion = *o.Region
-		}
-		qRegion := qrRegion
-		if qRegion != "" {
-			if err := r.SetQueryParam("Region", qRegion); err != nil {
-				return err
-			}
-		}
-
-	}
 
 	// path param cluster_id
 	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
