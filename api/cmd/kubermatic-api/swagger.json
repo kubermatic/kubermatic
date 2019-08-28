@@ -2085,11 +2085,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "Region",
-            "in": "query"
           }
         ],
         "responses": {
@@ -4006,6 +4001,13 @@
         ],
         "summary": "Lists available AWS sizes.",
         "operationId": "listAWSSizes",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "AWSSizeList",
