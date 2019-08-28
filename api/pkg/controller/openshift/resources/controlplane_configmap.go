@@ -77,15 +77,17 @@ func OpenshiftKubeAPIServerConfigMapCreator(data masterConfigData) reconciling.N
 
 			apiServerConfigBuffer := bytes.Buffer{}
 			templateInput := struct {
-				PodCIDR       string
-				ServiceCIDR   string
-				ListenPort    string
-				ETCDEndpoints []string
+				PodCIDR          string
+				ServiceCIDR      string
+				ListenPort       string
+				ETCDEndpoints    []string
+				AdvertiseAddress string
 			}{
-				PodCIDR:       podCIDR,
-				ServiceCIDR:   serviceCIDR,
-				ListenPort:    fmt.Sprint(data.Cluster().Address.Port),
-				ETCDEndpoints: etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
+				PodCIDR:          podCIDR,
+				ServiceCIDR:      serviceCIDR,
+				ListenPort:       fmt.Sprint(data.Cluster().Address.Port),
+				ETCDEndpoints:    etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
+				AdvertiseAddress: data.Cluster().Address.IP,
 			}
 			if err := openshiftKubeAPIServerTemplate.Execute(&apiServerConfigBuffer, templateInput); err != nil {
 				return nil, fmt.Errorf("failed to execute template: %v", err)
@@ -259,6 +261,8 @@ apiServerArguments:
   - etcd3
   storage-media-type:
   - application/vnd.kubernetes.protobuf
+  advertise-address:
+  - {{ .AdvertiseAddress }}
 apiVersion: kubecontrolplane.config.openshift.io/v1
 auditConfig:
   # TODO: Doesn't make much sense in a production setup, but useful for debugging
@@ -352,7 +356,7 @@ storageConfig:
   ca: /etc/etcd/pki/client/ca.crt
   certFile: /etc/etcd/pki/client/apiserver-etcd-client.crt
   keyFile: /etc/etcd/pki/client/apiserver-etcd-client.key
-  urls: {{ range .ETCDEndpoints }}
+  urls:{{ range .ETCDEndpoints }}
   - "{{ . }}"
 {{- end }}
 userAgentMatchingConfig:
