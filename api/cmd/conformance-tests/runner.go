@@ -229,6 +229,12 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 	}
 	totalStart := time.Now()
 
+	// We'll store the report there and all kinds of logs
+	scenarioFolder := path.Join(r.reportsRoot, scenario.Name())
+	if err := os.MkdirAll(scenarioFolder, os.ModePerm); err != nil {
+		return nil, fmt.Errorf("failed to create the scenario folder '%s': %v", scenarioFolder, err)
+	}
+
 	// We need the closure to defer the evaluation of the time.Since(totalStart) call
 	defer func() { log.Infof("Finished testing cluster after %s", time.Since(totalStart)) }()
 	// Always write junit to disk
@@ -383,12 +389,6 @@ func (r *testRunner) testCluster(
 	const maxTestAttempts = 3
 	var err error
 	log.Info("Starting to test cluster...")
-
-	// We'll store the report there and all kinds of logs
-	scenarioFolder := path.Join(r.reportsRoot, scenarioName)
-	if err := os.MkdirAll(scenarioFolder, os.ModePerm); err != nil {
-		return fmt.Errorf("failed to create the scenario folder '%s': %v", scenarioFolder, err)
-	}
 
 	if r.openshift {
 		// Openshift supports neither the conformance tests nor PVs/LBs yet :/
