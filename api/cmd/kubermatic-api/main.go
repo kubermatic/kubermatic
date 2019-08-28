@@ -317,7 +317,6 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
-	v1AlphaRouter := mainRouter.PathPrefix("/api/v1alpha").Subrouter()
 	r.RegisterV1(v1Router, metrics)
 	r.RegisterV1Legacy(v1Router)
 	r.RegisterV1Optional(v1Router,
@@ -331,7 +330,6 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 			OfflineAccessAsScope: options.oidcIssuerOfflineAccessAsScope,
 		},
 		mainRouter)
-	r.RegisterV1Alpha(v1AlphaRouter)
 
 	mainRouter.Methods(http.MethodGet).
 		Path("/api/swagger.json").

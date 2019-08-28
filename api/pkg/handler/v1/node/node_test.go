@@ -1284,7 +1284,7 @@ func TestNodeDeploymentMetrics(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:                   "scenario 1: list nodes that belong to the given node deployment",
+			Name:                   "scenario 1: get metrics for the node deployment nodes",
 			HTTPStatus:             http.StatusOK,
 			ClusterIDToSync:        test.GenDefaultCluster().Name,
 			ProjectIDToSync:        test.GenDefaultProject().Name,
@@ -1308,7 +1308,7 @@ func TestNodeDeploymentMetrics(t *testing.T) {
 					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
 				},
 			},
-			ExpectedResponse: `[{"name":"venus","memory":655,"memoryUsage":100,"cpu":290104582000,"cpuUsage":100}]`,
+			ExpectedResponse: `[{"name":"venus","memoryTotalBytes":655,"memoryAvailableBytes":655,"memoryUsedPercentage":100,"cpuTotalMillicores":290104582000,"cpuAvailableMillicores":290104582000,"cpuUsedPercentage":100}]`,
 		},
 	}
 
