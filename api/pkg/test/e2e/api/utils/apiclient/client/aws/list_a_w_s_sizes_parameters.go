@@ -20,7 +20,7 @@ import (
 // NewListAWSSizesParams creates a new ListAWSSizesParams object
 // with the default values initialized.
 func NewListAWSSizesParams() *ListAWSSizesParams {
-
+	var ()
 	return &ListAWSSizesParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +30,7 @@ func NewListAWSSizesParams() *ListAWSSizesParams {
 // NewListAWSSizesParamsWithTimeout creates a new ListAWSSizesParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListAWSSizesParamsWithTimeout(timeout time.Duration) *ListAWSSizesParams {
-
+	var ()
 	return &ListAWSSizesParams{
 
 		timeout: timeout,
@@ -40,7 +40,7 @@ func NewListAWSSizesParamsWithTimeout(timeout time.Duration) *ListAWSSizesParams
 // NewListAWSSizesParamsWithContext creates a new ListAWSSizesParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListAWSSizesParamsWithContext(ctx context.Context) *ListAWSSizesParams {
-
+	var ()
 	return &ListAWSSizesParams{
 
 		Context: ctx,
@@ -50,7 +50,7 @@ func NewListAWSSizesParamsWithContext(ctx context.Context) *ListAWSSizesParams {
 // NewListAWSSizesParamsWithHTTPClient creates a new ListAWSSizesParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListAWSSizesParamsWithHTTPClient(client *http.Client) *ListAWSSizesParams {
-
+	var ()
 	return &ListAWSSizesParams{
 		HTTPClient: client,
 	}
@@ -60,6 +60,10 @@ func NewListAWSSizesParamsWithHTTPClient(client *http.Client) *ListAWSSizesParam
 for the list a w s sizes operation typically these are written to a http.Request
 */
 type ListAWSSizesParams struct {
+
+	/*Region*/
+	Region *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -98,6 +102,17 @@ func (o *ListAWSSizesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithRegion adds the region to the list a w s sizes params
+func (o *ListAWSSizesParams) WithRegion(region *string) *ListAWSSizesParams {
+	o.SetRegion(region)
+	return o
+}
+
+// SetRegion adds the region to the list a w s sizes params
+func (o *ListAWSSizesParams) SetRegion(region *string) {
+	o.Region = region
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListAWSSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -105,6 +120,22 @@ func (o *ListAWSSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 	var res []error
+
+	if o.Region != nil {
+
+		// query param Region
+		var qrRegion string
+		if o.Region != nil {
+			qrRegion = *o.Region
+		}
+		qRegion := qrRegion
+		if qRegion != "" {
+			if err := r.SetQueryParam("Region", qRegion); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

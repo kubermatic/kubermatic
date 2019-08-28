@@ -67,7 +67,7 @@ type AWSVPCReq struct {
 }
 
 // AWSSizeReq represent a request for AWS VM sizes.
-// swagger:parameters listAWSSizesNoCredentials
+// swagger:parameters listAWSSizes
 type AWSSizeReq struct {
 	Region string
 }
