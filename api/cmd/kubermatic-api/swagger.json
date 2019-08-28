@@ -2067,6 +2067,11 @@
         "parameters": [
           {
             "type": "string",
+            "name": "Region",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -2085,11 +2090,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "Region",
-            "in": "query"
           }
         ],
         "responses": {
