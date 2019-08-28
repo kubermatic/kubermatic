@@ -360,7 +360,15 @@ func getFlavors(authClient *gophercloud.ProviderClient, region string) ([]osflav
 func getTenants(authClient *gophercloud.ProviderClient, region string) ([]osprojects.Project, error) {
 	sc, err := goopenstack.NewIdentityV3(authClient, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get identity endpoint: %v", err)
+		// this is special case for  services that span only one region.
+		if _, ok := err.(*gophercloud.ErrEndpointNotFound); ok {
+			sc, err = goopenstack.NewIdentityV3(authClient, gophercloud.EndpointOpts{})
+			if err != nil {
+				return nil, fmt.Errorf("couldn't get identity endpoint: %v", err)
+			}
+		} else {
+			return nil, fmt.Errorf("couldn't get identity endpoint: %v", err)
+		}
 	}
 
 	// We need to fetch the token to get more details - here we're just fetching the user object from the token response

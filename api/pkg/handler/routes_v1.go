@@ -45,6 +45,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
 	mux.Methods(http.MethodGet).
+		Path("/providers/aws/sizes").
+		Handler(r.listAWSSizes())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/aws/{dc}/zones").
 		Handler(r.listAWSZones())
 
@@ -243,6 +247,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listNodeDeploymentNodes())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/metrics").
+		Handler(r.listNodeDeploymentMetrics())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events").
 		Handler(r.listNodeDeploymentNodesEvents())
 
@@ -277,6 +285,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	//
 	// Defines a set of HTTP endpoints for various cloud providers
 	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes").
+		Handler(r.listAWSSizesNoCredentials())
+
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/zones").
 		Handler(r.listAWSZonesNoCredentials())
@@ -504,6 +516,28 @@ func (r Routing) listCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(presets.CredentialEndpoint(r.presetsManager)),
 		presets.DecodeProviderReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/aws/sizes aws listAWSSizes
+//
+// Lists available AWS sizes.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AWSSizeList
+func (r Routing) listAWSSizes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AWSSizeEndpoint()),
+		provider.DecodeAWSSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1959,6 +1993,30 @@ func (r Routing) deleteServiceAccountToken() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes aws listAWSSizesNoCredentials
+//
+// Lists available AWS sizes
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AWSSizeList
+func (r Routing) listAWSSizesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(provider.AWSSizeNoCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		common.DecodeGetClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/zones aws listAWSZonesNoCredentials
 //
 // Lists available AWS zones
@@ -2397,6 +2455,32 @@ func (r Routing) listNodeDeploymentNodes() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(node.ListNodeDeploymentNodes(r.projectProvider)),
 		node.DecodeListNodeDeploymentNodes,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/metrics metric listNodeDeploymentMetrics
+//
+//     Lists metrics that belong to the given node deployment.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []NodeMetric
+//       401: empty
+//       403: empty
+func (r Routing) listNodeDeploymentMetrics() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(node.ListNodeDeploymentMetrics(r.projectProvider)),
+		node.DecodeListNodeDeploymentMetrics,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

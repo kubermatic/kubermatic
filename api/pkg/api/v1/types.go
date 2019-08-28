@@ -127,6 +127,20 @@ type Datacenter struct {
 	Seed     bool             `json:"seed,omitempty"`
 }
 
+// AWSSize represents a object of AWS size.
+// swagger:model AWSSize
+type AWSSize struct {
+	Name       string  `json:"name"`
+	PrettyName string  `json:"pretty_name"`
+	Memory     float32 `json:"memory"`
+	VCPUs      int     `json:"vcpus"`
+	Price      float64 `json:"price"`
+}
+
+// AWSSizeList represents an array of AWS sizes.
+// swagger:model AWSSizeList
+type AWSSizeList []AWSSize
+
 // AWSZone represents a object of AWS availability zone.
 // swagger:model AWSZone
 type AWSZone struct {
@@ -440,7 +454,7 @@ type Kubeconfig struct {
 type OpenstackSize struct {
 	// Slug holds  the name of the size
 	Slug string `json:"slug"`
-	// Memory is the amount of memory, measured in MB
+	// MemoryTotalBytes is the amount of memory, measured in MB
 	Memory int `json:"memory"`
 	// VCPUs indicates how many (virtual) CPUs are available for this flavor
 	VCPUs int `json:"vcpus"`
@@ -1016,6 +1030,20 @@ type NodeSystemInfo struct {
 type ClusterMetric struct {
 	Name   string    `json:"name"`
 	Values []float64 `json:"values,omitempty"`
+}
+
+// NodeMetric defines a metric for the given node
+// swagger:model NodeMetric
+type NodeMetric struct {
+	Name string `json:"name"`
+	// MemoryTotalBytes in bytes
+	MemoryTotalBytes int64 `json:"memory,omitempty"`
+	// MemoryUsedPercentage in percentage
+	MemoryUsedPercentage int64 `json:"memoryUsage,omitempty"`
+	// CPUTotalMillicores in m cores
+	CPUTotalMillicores int64 `json:"cpu,omitempty"`
+	// CPUUsedPercentage in percentage
+	CPUUsedPercentage int64 `json:"cpuUsage,omitempty"`
 }
 
 // NodeDeployment represents a set of worker nodes that is part of a cluster
