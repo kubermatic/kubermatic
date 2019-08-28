@@ -70,7 +70,7 @@ function cleanup {
       local POD="${i%,*}"
       local CONTAINER="${i#*,}"
 
-      echo "Pod $POD, container $CONTAINER:"
+      echo " [*] Pod $POD, container $CONTAINER:"
       kubectl logs -n $NAMESPACE "$POD" "$CONTAINER"
     done
 
