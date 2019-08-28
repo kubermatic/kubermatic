@@ -198,7 +198,7 @@ func awsSizes(region string) (apiv1.AWSSizeList, error) {
 	for _, i := range *data {
 		// TODO: Make the check below more generic, working for all the providers. It is needed as the pods
 		//  with memory under 2 GB will be full with required pods like kube-proxy, CNI etc.
-		if i.Memory > 2 {
+		if i.Memory >= 2 {
 			pricing, ok := i.Pricing[region]
 			if !ok {
 				continue
