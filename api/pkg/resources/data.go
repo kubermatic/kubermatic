@@ -43,6 +43,7 @@ type TemplateData struct {
 	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
 	dnatControllerImage                              string
+	supportsFailureDomainZoneAntiAffinity            bool
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -66,7 +67,8 @@ func NewTemplateData(
 	oidcIssuerClientID string,
 	nodeLocalDNSCacheEnabled bool,
 	kubermaticImage string,
-	dnatControllerImage string) *TemplateData {
+	dnatControllerImage string,
+	supportsFailureDomainZoneAntiAffinity bool) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
 		client:                                 client,
@@ -88,6 +90,7 @@ func NewTemplateData(
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,
 		dnatControllerImage:                              dnatControllerImage,
+		supportsFailureDomainZoneAntiAffinity:            supportsFailureDomainZoneAntiAffinity,
 	}
 }
 
@@ -284,6 +287,10 @@ func (d *TemplateData) DNATControllerImage() string {
 		imageWithoutRegistry = strings.Join(dnatControllerImageSplit[1:], "/")
 	}
 	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
+}
+
+func (d *TemplateData) SupportsFailureDomainZoneAntiAffinity() bool {
+	return d.supportsFailureDomainZoneAntiAffinity
 }
 
 func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {

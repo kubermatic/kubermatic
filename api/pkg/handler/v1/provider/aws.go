@@ -67,7 +67,7 @@ type AWSVPCReq struct {
 }
 
 // AWSSizeReq represent a request for AWS VM sizes.
-// swagger:parameters listAWSSizesNoCredentials
+// swagger:parameters listAWSSizes
 type AWSSizeReq struct {
 	Region string
 }
@@ -198,10 +198,15 @@ func awsSizes(region string) (apiv1.AWSSizeList, error) {
 	for _, i := range *data {
 		// TODO: Make the check below more generic, working for all the providers. It is needed as the pods
 		//  with memory under 2 GB will be full with required pods like kube-proxy, CNI etc.
-		if i.Memory > 2 {
-			// The code below filters out too expensive instance types (>2$ per hour). TODO: Parametrize cost?
-			price, ok := i.Pricing[region]
-			if ok && price.Linux.OnDemand > 2 {
+		if i.Memory >= 2 {
+			pricing, ok := i.Pricing[region]
+			if !ok {
+				continue
+			}
+
+			// Filter out unavailable or too expensive instance types (>1.5$ per hour). TODO: Parametrize cost?
+			price := pricing.Linux.OnDemand
+			if price == 0 || price > 1.5 {
 				continue
 			}
 
@@ -210,7 +215,7 @@ func awsSizes(region string) (apiv1.AWSSizeList, error) {
 				PrettyName: i.PrettyName,
 				Memory:     i.Memory,
 				VCPUs:      i.VCPU,
-				Price:      price.Linux.OnDemand,
+				Price:      price,
 			})
 		}
 	}

@@ -24,6 +24,9 @@ type ClusterSpec struct {
 	// If active the PodSecurityPolicy admission plugin is configured at the apiserver
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 
+	// audit logging
+	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
+
 	// cloud
 	Cloud *CloudSpec `json:"cloud,omitempty"`
 
@@ -39,6 +42,10 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateMachineNetworks(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateAuditLogging(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -76,6 +83,24 @@ func (m *ClusterSpec) validateMachineNetworks(formats strfmt.Registry) error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) validateAuditLogging(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.AuditLogging) { // not required
+		return nil
+	}
+
+	if m.AuditLogging != nil {
+		if err := m.AuditLogging.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("auditLogging")
+			}
+			return err
+		}
 	}
 
 	return nil

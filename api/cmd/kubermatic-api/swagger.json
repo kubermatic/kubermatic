@@ -2085,11 +2085,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "name": "Region",
-            "in": "query"
           }
         ],
         "responses": {
@@ -4006,6 +4001,13 @@
         ],
         "summary": "Lists available AWS sizes.",
         "operationId": "listAWSSizes",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "AWSSizeList",
@@ -5295,6 +5297,16 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "AuditLoggingSettings": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "AuthInfo": {
       "type": "object",
       "title": "AuthInfo contains information that describes identity information.  This is use to tell the kubernetes cluster who you are.",
@@ -5703,6 +5715,9 @@
       "description": "ClusterSpec defines the cluster specification",
       "type": "object",
       "properties": {
+        "auditLogging": {
+          "$ref": "#/definitions/AuditLoggingSettings"
+        },
         "cloud": {
           "$ref": "#/definitions/CloudSpec"
         },
@@ -5891,6 +5906,9 @@
       "type": "object",
       "title": "DigitaloceanCloudSpec specifies access data to DigitalOcean.",
       "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "token": {
           "type": "string",
           "x-go-name": "Token"

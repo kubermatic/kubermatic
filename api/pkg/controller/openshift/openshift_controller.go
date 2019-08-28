@@ -228,16 +228,22 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if !found {
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
+	supportsFailureDomainZoneAntiAffinity, err := controllerutil.SupportsFailureDomainZoneAntiAffinity(ctx, r.Client)
+	if err != nil {
+		return nil, err
+	}
+
 	osData := &openshiftData{
-		cluster:             cluster,
-		client:              r.Client,
-		dc:                  &datacenter,
-		overwriteRegistry:   r.overwriteRegistry,
-		nodeAccessNetwork:   r.nodeAccessNetwork,
-		oidc:                r.oidc,
-		etcdDiskSize:        r.etcdDiskSize,
-		kubermaticImage:     r.kubermaticImage,
-		dnatControllerImage: r.dnatControllerImage,
+		cluster:                               cluster,
+		client:                                r.Client,
+		dc:                                    &datacenter,
+		overwriteRegistry:                     r.overwriteRegistry,
+		nodeAccessNetwork:                     r.nodeAccessNetwork,
+		oidc:                                  r.oidc,
+		etcdDiskSize:                          r.etcdDiskSize,
+		kubermaticImage:                       r.kubermaticImage,
+		dnatControllerImage:                   r.dnatControllerImage,
+		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
 	}
 
 	if err := r.networkDefaults(ctx, cluster); err != nil {

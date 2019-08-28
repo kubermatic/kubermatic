@@ -17,6 +17,9 @@ func CreateCredentialSecretForCluster(ctx context.Context, seedClient ctrlruntim
 	if cluster.Spec.Cloud.AWS != nil {
 		return createAWSSecret(ctx, seedClient, cluster, projectID)
 	}
+	if cluster.Spec.Cloud.Digitalocean != nil {
+		return createDigitaloceanSecret(ctx, seedClient, cluster, projectID)
+	}
 	if cluster.Spec.Cloud.Hetzner != nil {
 		return createHetznerSecret(ctx, seedClient, cluster, projectID)
 	}
@@ -60,6 +63,41 @@ func createAWSSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, c
 	// remove credentials from cluster object
 	cluster.Spec.Cloud.AWS.AccessKeyID = ""
 	cluster.Spec.Cloud.AWS.SecretAccessKey = ""
+
+	return nil
+}
+
+func createDigitaloceanSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
+	name := cluster.GetSecretName()
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: resources.KubermaticNamespace,
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: projectID,
+				"name":                         name,
+			},
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			resources.DigitaloceanToken: []byte(cluster.Spec.Cloud.Digitalocean.Token),
+		},
+	}
+
+	if err := seedClient.Create(ctx, secret); err != nil {
+		return err
+	}
+
+	// add secret key selectors to cluster object
+	cluster.Spec.Cloud.Digitalocean.CredentialsReference = &providerconfig.GlobalSecretKeySelector{
+		ObjectReference: corev1.ObjectReference{
+			Name:      secret.Name,
+			Namespace: secret.Namespace,
+		},
+	}
+
+	// remove credentials from cluster object
+	cluster.Spec.Cloud.Digitalocean.Token = ""
 
 	return nil
 }
