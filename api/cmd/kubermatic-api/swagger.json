@@ -5891,6 +5891,9 @@
       "type": "object",
       "title": "DigitaloceanCloudSpec specifies access data to DigitalOcean.",
       "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "token": {
           "type": "string",
           "x-go-name": "Token"

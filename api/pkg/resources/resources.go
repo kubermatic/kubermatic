@@ -373,6 +373,8 @@ const (
 	AWSAccessKeyID     = "accessKeyId"
 	AWSSecretAccessKey = "secretAccessKey"
 
+	DigitaloceanToken = "token"
+
 	HetznerToken = "token"
 
 	PacketAPIKey    = "apiKey"
