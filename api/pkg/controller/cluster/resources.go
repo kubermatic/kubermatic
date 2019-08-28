@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
@@ -112,6 +113,11 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, fmt.Errorf("failed to get datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
 
+	supportsFailureDomainZoneAntiAffinity, err := controllerutil.SupportsFailureDomainZoneAntiAffinity(ctx, r.Client)
+	if err != nil {
+		return nil, err
+	}
+
 	return resources.NewTemplateData(
 		ctx,
 		r,
@@ -133,6 +139,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		r.nodeLocalDNSCacheEnabled,
 		r.kubermaticImage,
 		r.dnatControllerImage,
+		supportsFailureDomainZoneAntiAffinity,
 	), nil
 }
 
