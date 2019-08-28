@@ -90,6 +90,8 @@ type ClusterSpec struct {
 	Openshift *Openshift `json:"openshift,omitempty"`
 
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
+
+	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 }
 
 type Openshift struct {
@@ -104,6 +106,10 @@ type OIDCSettings struct {
 	GroupsClaim   string `json:"groupsClaim,omitempty"`
 	RequiredClaim string `json:"requiredClaim,omitempty"`
 	ExtraScopes   string `json:"extraScopes,omitempty"`
+}
+
+type AuditLoggingSettings struct {
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 type ComponentSettings struct {
