@@ -5,7 +5,10 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,4 +49,24 @@ func EnqueueConst(queueKey string) *handler.EnqueueRequestsFromMapFunc {
 				Namespace: "",
 			}}}
 	})}
+}
+
+// SupportsFailureDomainZoneAntiAffinity checks if there are any nodes with the
+// TopologyKeyFailureDomainZone label.
+func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlruntimeclient.Client) (bool, error) {
+	opts := &ctrlruntimeclient.ListOptions{
+		Raw: &metav1.ListOptions{
+			Limit: 1,
+		},
+	}
+	if err := opts.SetLabelSelector(resources.TopologyKeyFailureDomainZone); err != nil {
+		return false, fmt.Errorf("failed to set label selector: %v", err)
+	}
+
+	nodeList := &corev1.NodeList{}
+	if err := client.List(ctx, opts, nodeList); err != nil {
+		return false, fmt.Errorf("failed to list nodes having the %s label: %v", resources.TopologyKeyFailureDomainZone, err)
+	}
+
+	return len(nodeList.Items) != 0, nil
 }

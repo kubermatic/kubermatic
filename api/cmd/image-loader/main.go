@@ -368,6 +368,7 @@ func getTemplateData(version *kubermaticversion.MasterVersion) (*resources.Templ
 		// Since this is the image-loader we hardcode the default image for pulling.
 		resources.DefaultKubermaticImage,
 		resources.DefaultDNATControllerImage,
+		false,
 	), nil
 }
 
