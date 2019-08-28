@@ -201,8 +201,6 @@ spec:
         - X-Remote-Group
         - --requestheader-username-headers
         - X-Remote-User
-        - --audit-policy-file
-        - /etc/kubernetes/audit/policy.yaml
         - --kubelet-preferred-address-types
         - ExternalIP,InternalIP
         - --feature-gates
@@ -289,29 +287,6 @@ spec:
         - mountPath: /etc/kubernetes/dex/ca
           name: dex-ca
           readOnly: true
-      - args:
-        - -i
-        - tail
-        - -p
-        - path=/var/log/kubernetes/audit/audit.log
-        - -p
-        - db=/var/log/kubernetes/audit/fluentbit.db
-        - -o
-        - stdout
-        command:
-        - /fluent-bit/bin/fluent-bit
-        image: docker.io/fluent/fluent-bit:1.2.2
-        name: audit-logs
-        resources:
-          limits:
-            cpu: 50m
-            memory: 60Mi
-          requests:
-            cpu: 5m
-            memory: 10Mi
-        volumeMounts:
-        - mountPath: /var/log/kubernetes/audit
-          name: audit-log
       dnsConfig:
         nameservers:
         - 192.0.2.14

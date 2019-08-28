@@ -582,6 +582,9 @@ type ClusterSpec struct {
 
 	// If active the PodSecurityPolicy admission plugin is configured at the apiserver
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
+
+	// AuditLogging
+	AuditLogging *kubermaticv1.AuditLoggingSettings `json:"auditLogging,omitempty"`
 }
 
 // MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
@@ -593,6 +596,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		Version                             ksemver.Semver                         `json:"version"`
 		OIDC                                kubermaticv1.OIDCSettings              `json:"oidc"`
 		UsePodSecurityPolicyAdmissionPlugin bool                                   `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
+		AuditLogging                        *kubermaticv1.AuditLoggingSettings     `json:"auditLogging,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
@@ -611,6 +615,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		MachineNetworks:                     cs.MachineNetworks,
 		OIDC:                                cs.OIDC,
 		UsePodSecurityPolicyAdmissionPlugin: cs.UsePodSecurityPolicyAdmissionPlugin,
+		AuditLogging:                        cs.AuditLogging,
 	})
 
 	return ret, err
