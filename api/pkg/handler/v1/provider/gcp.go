@@ -232,7 +232,7 @@ func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachine
 		for _, machineType := range page.Items {
 			// TODO: Make the check below more generic, working for all the providers. It is needed as the pods
 			//  with memory under 2 GB will be full with required pods like kube-proxy, CNI etc.
-			if machineType.MemoryMb > 2048 {
+			if machineType.MemoryMb >= 2048 {
 				mt := apiv1.GCPMachineSize{
 					Name:        machineType.Name,
 					Description: machineType.Description,
