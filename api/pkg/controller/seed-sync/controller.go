@@ -2,17 +2,16 @@ package seedsync
 
 import (
 	"fmt"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/util"
 
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -42,24 +41,8 @@ func Add(
 		return err
 	}
 
-	eventHandler := &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
-			if a.Meta.GetNamespace() != namespace {
-				return nil
-			}
-
-			return []reconcile.Request{
-				{
-					NamespacedName: types.NamespacedName{
-						Namespace: a.Meta.GetNamespace(),
-						Name:      a.Meta.GetName(),
-					},
-				},
-			}
-		}),
-	}
-
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Seed{}}, eventHandler); err != nil {
+	// watch all seeds in the given namespace
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Seed{}}, &handler.EnqueueRequestForObject{}, util.NamespacePredicate(namespace)); err != nil {
 		return fmt.Errorf("failed to create watcher: %v", err)
 	}
 

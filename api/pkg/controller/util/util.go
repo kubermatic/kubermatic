@@ -37,7 +37,7 @@ func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) *handler
 
 // EnqueueConst enqueues a constant. It is meant for controllers that don't have a parent object
 // they could enc and instead reconcile everything at once.
-// The queueKey will be defaulted if empty
+// The queueKey will be defaulted if empty xx
 func EnqueueConst(queueKey string) *handler.EnqueueRequestsFromMapFunc {
 	if queueKey == "" {
 		queueKey = "const"
