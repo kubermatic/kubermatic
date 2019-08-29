@@ -3,7 +3,7 @@ package workerlabel
 import (
 	"fmt"
 
-	ctrlutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
+	kubermaticpred "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,7 +35,7 @@ func LabelSelector(workerName string) (labels.Selector, error) {
 // Once https://github.com/kubernetes-sigs/controller-runtime/issues/244 is fixed we wont
 // need this anymore
 func Predicates(workerName string) predicate.Funcs {
-	return ctrlutil.PredicateFactory(func(m metav1.Object, r runtime.Object) bool {
+	return kubermaticpred.Factory(func(m metav1.Object, r runtime.Object) bool {
 		return m.GetLabels()[kubermaticv1.WorkerNameLabelKey] == workerName
 	})
 }

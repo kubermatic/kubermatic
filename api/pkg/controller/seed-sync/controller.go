@@ -5,7 +5,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/util"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
@@ -42,7 +42,7 @@ func Add(
 	}
 
 	// watch all seeds in the given namespace
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Seed{}}, &handler.EnqueueRequestForObject{}, util.NamespacePredicate(namespace)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Seed{}}, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(namespace)); err != nil {
 		return fmt.Errorf("failed to create watcher: %v", err)
 	}
 

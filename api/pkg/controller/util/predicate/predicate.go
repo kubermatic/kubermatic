@@ -1,4 +1,4 @@
-package util
+package predicate
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -7,10 +7,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// PredicateFactory returns a predicate func that applies the given filter function
+// Factory returns a predicate func that applies the given filter function
 // on CREATE, UPDATE and DELETE events. For UPDATE events, the the filter is applied
 // to both the old and new object and OR's the result.
-func PredicateFactory(filter func(m metav1.Object, r runtime.Object) bool) predicate.Funcs {
+func Factory(filter func(m metav1.Object, r runtime.Object) bool) predicate.Funcs {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
 			return filter(e.Meta, e.Object)
@@ -24,9 +24,9 @@ func PredicateFactory(filter func(m metav1.Object, r runtime.Object) bool) predi
 	}
 }
 
-// NamespacePredicate returns a predicate func that only includes objects in the given namespace
-func NamespacePredicate(namespace string) predicate.Funcs {
-	return PredicateFactory(func(m metav1.Object, r runtime.Object) bool {
+// ByNamespace returns a predicate func that only includes objects in the given namespace
+func ByNamespace(namespace string) predicate.Funcs {
+	return Factory(func(m metav1.Object, r runtime.Object) bool {
 		return m.GetNamespace() == namespace
 	})
 }
