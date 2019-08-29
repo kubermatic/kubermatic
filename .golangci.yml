@@ -27,7 +27,7 @@ issues:
   - cyclomatic complexity 32 of func `main` is high
   - cyclomatic complexity 37 of func `migrateToProject` is high
   - cyclomatic complexity 33 of func `ValidateCloudSpec` is high
-  - cyclomatic complexity 32 of func `\(\*Deletion\)\.cleanupInClusterResources` is high
+  - cyclomatic complexity 35 of func `\(\*Deletion\)\.cleanupInClusterResources` is high
   - 'CleanUpCloudProvider` is high'
   - string `get` has 6 occurrences, make it a constant
   - struct of size 536 bytes could be of size 520 bytes
