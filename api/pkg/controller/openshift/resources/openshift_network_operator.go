@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
@@ -49,7 +50,7 @@ func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.Name
 				},
 				corev1.EnvVar{
 					Name:  "KUBERNETES_SERVICE_PORT",
-					Value: string(data.Cluster().Address.Port),
+					Value: strconv.Itoa(int(data.Cluster().Address.Port)),
 				})
 
 			d.Spec.Selector = &metav1.LabelSelector{

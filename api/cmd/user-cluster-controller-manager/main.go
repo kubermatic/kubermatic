@@ -19,8 +19,10 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/nodecsrapprover"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
+	openshiftmasternodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-master-node-labeler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
 	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -198,6 +200,9 @@ func main() {
 	if runOp.openshift {
 		if err := nodecsrapprover.Add(mgr, 4, cfg); err != nil {
 			glog.Fatalf("failed to add nodecsrapprover controller: %v", err)
+		}
+		if err := openshiftmasternodelabeler.Add(context.Background(), kubermaticlog.Logger, mgr); err != nil {
+			glog.Fatalf("failed to add openshiftmasternodelabeler contorller: %v", err)
 		}
 		glog.Infof("Registered nodecsrapprover controller")
 	}
