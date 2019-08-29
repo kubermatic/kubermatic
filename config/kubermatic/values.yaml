@@ -100,6 +100,7 @@ kubermatic:
         - crd
         - openvpn
         - rbac
+        - network
         image:
           repository: "quay.io/kubermatic/openshift-addons"
           tag: "__KUBERMATIC_TAG__"
