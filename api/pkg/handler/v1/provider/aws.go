@@ -332,12 +332,14 @@ func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter prov
 
 		keyID := req.AccessKeyID
 		keySecret := req.SecretAccessKey
+		vpcID := req.VPC
 
 		if len(req.Credential) > 0 && credentialManager.GetPresets().AWS.Credentials != nil {
 			for _, credential := range credentialManager.GetPresets().AWS.Credentials {
 				if credential.Name == req.Credential {
 					keyID = credential.AccessKeyID
 					keySecret = credential.SecretAccessKey
+					vpcID = credential.VPCID
 					break
 				}
 			}
@@ -356,7 +358,7 @@ func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter prov
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get client for seed: %v", err))
 		}
 
-		return listAWSSubnets(ctx, keyID, keySecret, req.VPC, dc, privilegedSeedClient, nil)
+		return listAWSSubnets(ctx, keyID, keySecret, vpcID, dc, privilegedSeedClient, nil)
 	}
 }
 
