@@ -15,17 +15,23 @@ import (
 // swagger:model NodeMetric
 type NodeMetric struct {
 
+	// CPU available millicores
+	CPUAvailableMillicores int64 `json:"cpuAvailableMillicores,omitempty"`
+
 	// CPUTotalMillicores in m cores
-	CPUTotalMillicores int64 `json:"cpu,omitempty"`
+	CPUTotalMillicores int64 `json:"cpuTotalMillicores,omitempty"`
 
 	// CPUUsedPercentage in percentage
-	CPUUsedPercentage int64 `json:"cpuUsage,omitempty"`
+	CPUUsedPercentage int64 `json:"cpuUsedPercentage,omitempty"`
 
-	// MemoryTotalBytes in bytes
-	MemoryTotalBytes int64 `json:"memory,omitempty"`
+	// MemoryAvailableBytes available memory for node
+	MemoryAvailableBytes int64 `json:"memoryAvailableBytes,omitempty"`
+
+	// MemoryTotalBytes current memory usage in bytes
+	MemoryTotalBytes int64 `json:"memoryTotalBytes,omitempty"`
 
 	// MemoryUsedPercentage in percentage
-	MemoryUsedPercentage int64 `json:"memoryUsage,omitempty"`
+	MemoryUsedPercentage int64 `json:"memoryUsedPercentage,omitempty"`
 
 	// name
 	Name string `json:"name,omitempty"`
