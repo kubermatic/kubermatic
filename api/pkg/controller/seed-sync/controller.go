@@ -2,10 +2,10 @@ package seedsync
 
 import (
 	"fmt"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/util"
 
 	"go.uber.org/zap"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
@@ -29,10 +29,10 @@ func Add(
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 ) error {
 	reconciler := &Reconciler{
-		Client:               mgr.GetClient(),
-		recorder:             mgr.GetRecorder(ControllerName),
-		log:                  log.Named(ControllerName),
-		seedKubeconfigGetter: seedKubeconfigGetter,
+		Client:           mgr.GetClient(),
+		recorder:         mgr.GetRecorder(ControllerName),
+		log:              log.Named(ControllerName),
+		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}

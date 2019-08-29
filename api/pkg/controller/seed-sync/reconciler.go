@@ -22,10 +22,10 @@ import (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	seedKubeconfigGetter provider.SeedKubeconfigGetter
-	log                  *zap.SugaredLogger
-	ctx                  context.Context
-	recorder             record.EventRecorder
+	seedClientGetter provider.SeedClientGetter
+	log              *zap.SugaredLogger
+	ctx              context.Context
+	recorder         record.EventRecorder
 }
 
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -47,12 +47,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcile(seed *kubermaticv1.Seed, logger *zap.SugaredLogger) error {
-	kubeconfig, err := r.seedKubeconfigGetter(seed)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve kubeconfig: %v", err)
-	}
-
-	client, err := ctrlruntimeclient.New(kubeconfig, ctrlruntimeclient.Options{})
+	client, err := r.seedClientGetter(seed)
 	if err != nil {
 		return fmt.Errorf("failed to create client for seed: %v", err)
 	}
