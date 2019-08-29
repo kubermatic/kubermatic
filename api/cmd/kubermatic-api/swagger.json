@@ -1160,6 +1160,61 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics": {
+      "get": {
+        "description": "Gets cluster metrics",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "getClusterMetrics",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterMetrics",
+            "schema": {
+              "$ref": "#/definitions/ClusterMetrics"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments": {
       "get": {
         "description": "Lists node deployments that belong to the given cluster",
@@ -4820,64 +4875,6 @@
           }
         }
       }
-    },
-    "/api/v1alpha/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics": {
-      "get": {
-        "description": "Gets cluster metrics",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "operationId": "getClusterMetrics",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterMetric",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ClusterMetric"
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
     }
   },
   "definitions": {
@@ -5692,23 +5689,24 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "ClusterMetric": {
-      "description": "ClusterMetric defines a metric for the given cluster",
+    "ClusterMetrics": {
+      "description": "ControlPlaneMetrics defines a metric for the user cluster control plane resources",
       "type": "object",
       "properties": {
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
+        "cpuTotalMillicores": {
+          "description": "CPUTotalMillicores in m cores",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUTotalMillicores"
         },
-        "values": {
-          "type": "array",
-          "items": {
-            "type": "number",
-            "format": "double"
-          },
-          "x-go-name": "Values"
+        "memoryTotalBytes": {
+          "description": "MemoryTotalBytes in bytes",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryTotalBytes"
         }
       },
+      "x-go-name": "ControlPlaneMetrics",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "ClusterSpec": {
@@ -6897,25 +6895,36 @@
       "description": "NodeMetric defines a metric for the given node",
       "type": "object",
       "properties": {
-        "cpu": {
+        "cpuAvailableMillicores": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUAvailableMillicores"
+        },
+        "cpuTotalMillicores": {
           "description": "CPUTotalMillicores in m cores",
           "type": "integer",
           "format": "int64",
           "x-go-name": "CPUTotalMillicores"
         },
-        "cpuUsage": {
+        "cpuUsedPercentage": {
           "description": "CPUUsedPercentage in percentage",
           "type": "integer",
           "format": "int64",
           "x-go-name": "CPUUsedPercentage"
         },
-        "memory": {
-          "description": "MemoryTotalBytes in bytes",
+        "memoryAvailableBytes": {
+          "description": "MemoryAvailableBytes available memory for node",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryAvailableBytes"
+        },
+        "memoryTotalBytes": {
+          "description": "MemoryTotalBytes current memory usage in bytes",
           "type": "integer",
           "format": "int64",
           "x-go-name": "MemoryTotalBytes"
         },
-        "memoryUsage": {
+        "memoryUsedPercentage": {
           "description": "MemoryUsedPercentage in percentage",
           "type": "integer",
           "format": "int64",

@@ -507,7 +507,7 @@ func (a *Client) GetClusterMetrics(params *GetClusterMetricsParams, authInfo run
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getClusterMetrics",
 		Method:             "GET",
-		PathPattern:        "/api/v1alpha/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

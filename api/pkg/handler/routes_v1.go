@@ -210,6 +210,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades").
 		Handler(r.upgradeClusterNodeDeployments())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics").
+		Handler(r.getClusterMetrics())
+
 	//
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
 	mux.Methods(http.MethodPut).
@@ -2706,6 +2710,33 @@ func (r Routing) deleteAddon() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(addon.DeleteAddonEndpoint(r.projectProvider)),
 		addon.DecodeGetAddon,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics project getClusterMetrics
+//
+//    Gets cluster metrics
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterMetrics
+//       401: empty
+//       403: empty
+func (r Routing) getClusterMetrics() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(cluster.GetMetricsEndpoint(r.projectProvider)),
+		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

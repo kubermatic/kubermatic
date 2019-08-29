@@ -1030,25 +1030,37 @@ type NodeSystemInfo struct {
 	Architecture            string `json:"architecture"`
 }
 
-// ClusterMetric defines a metric for the given cluster
-// swagger:model ClusterMetric
-type ClusterMetric struct {
-	Name   string    `json:"name"`
-	Values []float64 `json:"values,omitempty"`
+// ClusterMetrics defines a metric for the given cluster
+// swagger:model ClusterMetrics
+type ClusterMetrics struct {
+	Name                string              `json:"name"`
+	ControlPlaneMetrics ControlPlaneMetrics `json:"controlPlane"`
+}
+
+// ControlPlaneMetrics defines a metric for the user cluster control plane resources
+// swagger:model ClusterMetrics
+type ControlPlaneMetrics struct {
+	// MemoryTotalBytes in bytes
+	MemoryTotalBytes int64 `json:"memoryTotalBytes,omitempty"`
+	// CPUTotalMillicores in m cores
+	CPUTotalMillicores int64 `json:"cpuTotalMillicores,omitempty"`
 }
 
 // NodeMetric defines a metric for the given node
 // swagger:model NodeMetric
 type NodeMetric struct {
 	Name string `json:"name"`
-	// MemoryTotalBytes in bytes
-	MemoryTotalBytes int64 `json:"memory,omitempty"`
+	// MemoryTotalBytes current memory usage in bytes
+	MemoryTotalBytes int64 `json:"memoryTotalBytes,omitempty"`
+	// MemoryAvailableBytes available memory for node
+	MemoryAvailableBytes int64 `json:"memoryAvailableBytes,omitempty"`
 	// MemoryUsedPercentage in percentage
-	MemoryUsedPercentage int64 `json:"memoryUsage,omitempty"`
+	MemoryUsedPercentage int64 `json:"memoryUsedPercentage,omitempty"`
 	// CPUTotalMillicores in m cores
-	CPUTotalMillicores int64 `json:"cpu,omitempty"`
+	CPUTotalMillicores     int64 `json:"cpuTotalMillicores,omitempty"`
+	CPUAvailableMillicores int64 `json:"cpuAvailableMillicores,omitempty"`
 	// CPUUsedPercentage in percentage
-	CPUUsedPercentage int64 `json:"cpuUsage,omitempty"`
+	CPUUsedPercentage int64 `json:"cpuUsedPercentage,omitempty"`
 }
 
 // NodeDeployment represents a set of worker nodes that is part of a cluster

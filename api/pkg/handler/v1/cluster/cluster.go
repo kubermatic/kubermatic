@@ -14,11 +14,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
-	prometheusapi "github.com/prometheus/client_golang/api"
-	prometheusv1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/model"
-	"k8s.io/client-go/tools/record"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -38,6 +34,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NodeDeploymentEvent represents type of events related to Node Deployment
@@ -243,31 +244,40 @@ func getNodeDeploymentDisplayName(nd *apiv1.NodeDeployment) string {
 func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
 
-			// Request came from the specified user. Instead `Not found` error status the `Forbidden` is returned.
-			// Next request with privileged user checks if the cluster doesn't exist or some other error occurred.
-			if !isStatus(err, http.StatusForbidden) {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-			// Check if cluster really doesn't exist or some other error occurred.
-			if _, errGetUnsecured := privilegedClusterProvider.GetUnsecured(project, req.ClusterID); errGetUnsecured != nil {
-				return nil, common.KubernetesErrorToHTTPError(errGetUnsecured)
-			}
-			// Cluster is not ready yet, return original error
-			return nil, common.KubernetesErrorToHTTPError(err)
+		cluster, err := getCluster(ctx, req, projectProvider)
+		if err != nil {
+			return nil, err
 		}
 
 		return convertInternalClusterToExternal(cluster), nil
 	}
+}
+
+func getCluster(ctx context.Context, req common.GetClusterReq, projectProvider provider.ProjectProvider) (*kubermaticv1.Cluster, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+	userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+	project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+	if err != nil {
+
+		// Request came from the specified user. Instead `Not found` error status the `Forbidden` is returned.
+		// Next request with privileged user checks if the cluster doesn't exist or some other error occurred.
+		if !isStatus(err, http.StatusForbidden) {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		// Check if cluster really doesn't exist or some other error occurred.
+		if _, errGetUnsecured := privilegedClusterProvider.GetUnsecured(project, req.ClusterID); errGetUnsecured != nil {
+			return nil, common.KubernetesErrorToHTTPError(errGetUnsecured)
+		}
+		// Cluster is not ready yet, return original error
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	return cluster, nil
 }
 
 func isStatus(err error, status int32) bool {
@@ -677,96 +687,54 @@ func DetachSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvide
 	}
 }
 
-func GetMetricsEndpoint(projectProvider provider.ProjectProvider, prometheusClient prometheusapi.Client) endpoint.Endpoint {
-	if prometheusClient == nil {
-		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			return nil, fmt.Errorf("metrics endpoint disabled")
-		}
-	}
-
-	promAPI := prometheusv1.NewAPI(prometheusClient)
-
+func GetMetricsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		c, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
+		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-
-		var resp []apiv1.ClusterMetric
-
-		val, err := prometheusQuery(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
+		cluster, err := getCluster(ctx, req, projectProvider)
 		if err != nil {
 			return nil, err
 		}
-		resp = append(resp, apiv1.ClusterMetric{
-			Name:   "Machines",
-			Values: []float64{val},
-		})
 
-		vals, err := prometheusQueryRange(ctx, promAPI, fmt.Sprintf(`sum(machine_controller_machines{cluster="%s"})`, c.Name))
-		if err != nil {
-			return nil, err
+		seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
+		podMetricsList := &v1beta1.PodMetricsList{}
+		if err := seedAdminClient.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: fmt.Sprintf("cluster-%s", cluster.Name)}, podMetricsList); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		resp = append(resp, apiv1.ClusterMetric{
-			Name:   "Machines (1h)",
-			Values: vals,
-		})
-
-		return resp, nil
+		return convertClusterMetrics(podMetricsList, cluster)
 	}
 }
 
-func prometheusQuery(ctx context.Context, api prometheusv1.API, query string) (float64, error) {
-	now := time.Now()
-	val, err := api.Query(ctx, query, now)
-	if err != nil {
-		return 0, nil
+func convertClusterMetrics(metrics *v1beta1.PodMetricsList, cluster *kubermaticv1.Cluster) (*apiv1.ClusterMetrics, error) {
+
+	if metrics == nil {
+		return nil, fmt.Errorf("metric list can not be nil")
 	}
-	if val.Type() != model.ValVector {
-		return 0, fmt.Errorf("failed to retrieve correct value type")
+	if cluster == nil {
+		return nil, fmt.Errorf("cluster object can not be nil")
+	}
+	clusterMetrics := &apiv1.ClusterMetrics{
+		Name:                cluster.Name,
+		ControlPlaneMetrics: apiv1.ControlPlaneMetrics{},
 	}
 
-	vec := val.(model.Vector)
-	for _, sample := range vec {
-		return float64(sample.Value), nil
-	}
-
-	return 0, nil
-}
-
-func prometheusQueryRange(ctx context.Context, api prometheusv1.API, query string) ([]float64, error) {
-	now := time.Now()
-	val, err := api.QueryRange(ctx, query, prometheusv1.Range{
-		Start: now.Add(-1 * time.Hour),
-		End:   now,
-		Step:  30 * time.Second,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if val.Type() != model.ValMatrix {
-		return nil, fmt.Errorf("failed to retrieve correct value type")
-	}
-
-	var vals []float64
-	matrix := val.(model.Matrix)
-	for _, sample := range matrix {
-		for _, v := range sample.Values {
-			vals = append(vals, float64(v.Value))
+	for _, podMetrics := range metrics.Items {
+		for _, container := range podMetrics.Containers {
+			usage := corev1.ResourceList{}
+			err := scheme.Scheme.Convert(&container.Usage, &usage, nil)
+			if err != nil {
+				return nil, err
+			}
+			quantityCPU := usage[corev1.ResourceCPU]
+			clusterMetrics.ControlPlaneMetrics.CPUTotalMillicores += quantityCPU.MilliValue()
+			quantityM := usage[corev1.ResourceMemory]
+			clusterMetrics.ControlPlaneMetrics.MemoryTotalBytes += quantityM.Value() / (1024 * 1024)
 		}
+
 	}
 
-	return vals, nil
+	return clusterMetrics, nil
 }
 
 // AssignSSHKeysReq defines HTTP request data for assignSSHKeyToCluster  endpoint
