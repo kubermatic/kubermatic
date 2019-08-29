@@ -23,6 +23,13 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var data *ec2.InstanceData
+
+// Due to big amount of data we are loading AWS instance types only once. Do not edit it.
+func init() {
+	data, _ = ec2.Data()
+}
+
 // AWSCommonReq represent a request with common parameters for AWS.
 type AWSCommonReq struct {
 	// in: header
@@ -189,9 +196,8 @@ func AWSSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seed
 }
 
 func awsSizes(region string) (apiv1.AWSSizeList, error) {
-	data, err := ec2.Data()
-	if err != nil {
-		return nil, err
+	if data == nil {
+		return nil, fmt.Errorf("AWS instance type data not initialized")
 	}
 
 	sizes := apiv1.AWSSizeList{}
@@ -204,9 +210,9 @@ func awsSizes(region string) (apiv1.AWSSizeList, error) {
 				continue
 			}
 
-			// Filter out unavailable or too expensive instance types (>1.5$ per hour). TODO: Parametrize cost?
+			// Filter out unavailable or too expensive instance types (>1$ per hour).
 			price := pricing.Linux.OnDemand
-			if price == 0 || price > 1.5 {
+			if price == 0 || price > 1 {
 				continue
 			}
 
