@@ -85,6 +85,11 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 		return nil, err
 	}
 
+	err = getProviderOS(config, nd)
+	if err != nil {
+		return nil, err
+	}
+
 	b, err := json.Marshal(config)
 	if err != nil {
 		return nil, err
@@ -102,8 +107,10 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		config.SSHPublicKeys[i] = key.Spec.PublicKey
 	}
 
-	var cloudExt *runtime.RawExtension
-	var err error
+	var (
+		cloudExt *runtime.RawExtension
+		err      error
+	)
 
 	credentials, err := resources.GetCredentials(data)
 	if err != nil {
@@ -172,12 +179,25 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		if err != nil {
 			return nil, err
 		}
+	case nd.Spec.Template.Cloud.Kubevirt != nil:
+		config.CloudProvider = providerconfig.CloudProviderKubeVirt
+		cloudExt, err = getKubevirtProviderSpec(nd.Spec.Template)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, errors.New("unknown cloud provider")
 	}
 	config.CloudProviderSpec = *cloudExt
 
-	var osExt *runtime.RawExtension
+	return &config, nil
+}
+
+func getProviderOS(config *providerconfig.Config, nd *apiv1.NodeDeployment) error {
+	var (
+		err   error
+		osExt *runtime.RawExtension
+	)
 
 	// OS specifics
 	switch {
@@ -185,27 +205,26 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		config.OperatingSystem = providerconfig.OperatingSystemCoreos
 		osExt, err = getCoreosOperatingSystemSpec(nd.Spec.Template)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	case nd.Spec.Template.OperatingSystem.Ubuntu != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemUbuntu
 		osExt, err = getUbuntuOperatingSystemSpec(nd.Spec.Template)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	case nd.Spec.Template.OperatingSystem.CentOS != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemCentOS
 		osExt, err = getCentOSOperatingSystemSpec(nd.Spec.Template)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	default:
-
-		return nil, errors.New("unknown OS")
+		return errors.New("no machine os was provided")
 	}
-
 	config.OperatingSystemSpec = *osExt
-	return &config, nil
+
+	return nil
 }
 
 // Validate if the node deployment structure fulfills certain requirements. It returns node deployment with updated
@@ -218,7 +237,8 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*a
 		nd.Spec.Template.Cloud.VSphere == nil &&
 		nd.Spec.Template.Cloud.Azure == nil &&
 		nd.Spec.Template.Cloud.Packet == nil &&
-		nd.Spec.Template.Cloud.GCP == nil {
+		nd.Spec.Template.Cloud.GCP == nil &&
+		nd.Spec.Template.Cloud.Kubevirt == nil {
 		return nil, fmt.Errorf("node deployment needs to have cloud provider data")
 	}
 

@@ -40,6 +40,9 @@ type CloudSpec struct {
 	// hetzner
 	Hetzner *HetznerCloudSpec `json:"hetzner,omitempty"`
 
+	// kubevirt
+	Kubevirt *KubevirtCloudSpec `json:"kubevirt,omitempty"`
+
 	// openstack
 	Openstack *OpenstackCloudSpec `json:"openstack,omitempty"`
 
@@ -75,6 +78,10 @@ func (m *CloudSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateHetzner(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateKubevirt(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -196,6 +203,24 @@ func (m *CloudSpec) validateHetzner(formats strfmt.Registry) error {
 		if err := m.Hetzner.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("hetzner")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *CloudSpec) validateKubevirt(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Kubevirt) { // not required
+		return nil
+	}
+
+	if m.Kubevirt != nil {
+		if err := m.Kubevirt.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubevirt")
 			}
 			return err
 		}

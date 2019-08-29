@@ -93,6 +93,12 @@ func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc *kubermaticv1.Datacen
 		if err != nil {
 			return nil, err
 		}
+	case node.Spec.Cloud.Kubevirt != nil:
+		config.CloudProvider = providerconfig.CloudProviderKubeVirt
+		cloudExt, err = getKubevirtProviderSpec(node.Spec)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, errors.New("unknown cloud provider")
 	}

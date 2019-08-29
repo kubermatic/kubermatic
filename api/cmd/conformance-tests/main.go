@@ -112,6 +112,9 @@ type secrets struct {
 		Subnetwork     string
 		Zone           string
 	}
+	Kubevirt struct {
+		Kubeconfig string
+	}
 }
 
 const (
@@ -195,7 +198,7 @@ func main() {
 	flag.StringVar(&opts.secrets.GCP.Zone, "gcp-zone", "europe-west3-c", "GCP: Zone")
 	flag.StringVar(&opts.secrets.GCP.Network, "gcp-network", "", "GCP: Network")
 	flag.StringVar(&opts.secrets.GCP.Subnetwork, "gcp-subnetwork", "", "GCP: Subnetwork")
-
+	flag.StringVar(&opts.secrets.Kubevirt.Kubeconfig, "kubevirt-kubeconfig", "", "Kubevirt: Cluster Kubeconfig")
 	flag.Parse()
 
 	defaultTimeout = time.Duration(defaultTimeoutMinutes) * time.Minute
@@ -381,6 +384,10 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 	if opts.providers.Has("gcp") {
 		log.Info("Adding GCP scenarios")
 		scenarios = append(scenarios, getGCPScenarios(opts.versions)...)
+	}
+	if opts.providers.Has("kubevirt") {
+		log.Info("Adding Kubevirt scenarios")
+		scenarios = append(scenarios, getKubevirtScenarios(opts.versions, log)...)
 	}
 
 	var filteredScenarios []testScenario

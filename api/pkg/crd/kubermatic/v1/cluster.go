@@ -257,6 +257,7 @@ type CloudSpec struct {
 	Hetzner      *HetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereCloudSpec      `json:"vsphere,omitempty"`
 	GCP          *GCPCloudSpec          `json:"gcp,omitempty"`
+	Kubevirt     *KubevirtCloudSpec     `json:"kubevirt,omitempty"`
 }
 
 // KeyCert is a pair of key and cert.
@@ -385,6 +386,11 @@ type GCPCloudSpec struct {
 	ServiceAccount string `json:"serviceAccount"`
 	Network        string `json:"network"`
 	Subnetwork     string `json:"subnetwork"`
+}
+
+// KubevirtCloudSpec specifies the access data to Kubevirt.
+type KubevirtCloudSpec struct {
+	Kubeconfig string `json:"kubeconfig"`
 }
 
 type HealthStatus int

@@ -46,6 +46,9 @@ type DatacenterSpec struct {
 	// hetzner
 	Hetzner *HetznerDatacenterSpec `json:"hetzner,omitempty"`
 
+	// kubevirt
+	Kubevirt KubevirtDatacenterSpec `json:"kubevirt,omitempty"`
+
 	// openstack
 	Openstack *OpenstackDatacenterSpec `json:"openstack,omitempty"`
 
