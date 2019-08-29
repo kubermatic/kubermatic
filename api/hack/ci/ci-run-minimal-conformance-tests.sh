@@ -119,6 +119,11 @@ export VAULT_TOKEN=$(vault write \
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 export DATACENTERS_FILE=/tmp/datacenters.yaml
+OS_AUTH_URL="$(retry 5 vault kv get -field=OS_AUTH_URL dev/e2e-openstack)"
+OS_REGION_NAME="$(retry 5 vault kv get -field=OS_REGION_NAME dev/e2e-openstack)"
+OS_AVAILABILITY_ZONE="$(retry 5 vault kv get -field=OS_AVAILABILITY_ZONE dev/e2e-openstack)"
+OS_DNS_1="$(retry 5 vault kv get -field=dns-1 dev/e2e-openstack)"
+OS_DNS_2="$(retry 5 vault kv get -field=dns-2 dev/e2e-openstack)"
 cat <<EOF > $DATACENTERS_FILE
 datacenters:
 #==================================
@@ -395,6 +400,26 @@ datacenters:
       packet:
         facilities:
         - ams1
+#==================================
+#============OpenStack=============
+#==================================
+  syseleven-dbl1:
+    location: Syseleven - $OS_REGION_NAME
+    seed: europe-west3-c
+    country: DE
+    spec:
+      openstack:
+        auth_url: $OS_AUTH_URL
+        availability_zone: $OS_AVAILABILITY_ZONE
+        region: $OS_REGION_NAME
+        dns_servers:
+        - $OS_DNS_1
+        - $OS_DNS_2
+        images:
+          ubuntu: "kubermatic-e2e-ubuntu"
+          centos: "kubermatic-e2e-centos"
+          coreos: "kubermatic-e2e-coreos"
+        enforce_floating_ip: true
 EOF
 retry 5 vault kv get -field=kubeconfig \
   dev/seed-clusters/ci.kubermatic.io > $KUBECONFIG
