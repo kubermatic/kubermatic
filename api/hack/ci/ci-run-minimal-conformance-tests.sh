@@ -62,6 +62,8 @@ function cleanup {
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Domain|Tenant|Username|Password'
     elif [[ $provider == "vsphere" ]]; then
       kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Username|Password'
+    elif [[ $provider == "kubevirt" ]]; then
+      kubectl describe cluster -l worker-name=$BUILD_ID|grep Events: -A 100
     else
       echo "Provider $provider is not yet supported."
       exit 1
@@ -381,6 +383,11 @@ spec:
       spec:
         digitalocean:
           region: ams3
+    kubevirt-europe-west3-c:
+      location: Frankfurt
+      country: DE
+      spec:
+        kubevirt: {}
 $(cat $OPENSTACK_DATACENTER_FILE)
 EOF
 TEST_NAME="Deploy Seed Manifest"
@@ -424,6 +431,8 @@ elif [[ $provider == "openstack" ]]; then
 elif [[ $provider == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}"
+elif [[ $provider == "kubevirt" ]]; then
+  EXTRA_ARGS="-kubevirt-kubeconfig=${KUBEVIRT_E2E_TESTS_KUBECONFIG}"
 fi
 
 # Gather the total time it takes between starting this sscript and staring the conformance tester
@@ -435,7 +444,7 @@ if [ -n "${UPGRADE_TEST_BASE_HASH:-}" ]; then
   kubermatic_delete_cluster="false"
 fi
 
-timeout -s 9 90m ./conformance-tests $EXTRA_ARGS \
+timeout -s 9 90m ./conformance-tests ${EXTRA_ARGS:-} \
   -debug \
   -worker-name=$BUILD_ID \
   -kubeconfig=$KUBECONFIG \

@@ -115,6 +115,9 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 	if newSpec.Azure == nil && oldSpec.Azure != nil {
 		return ErrCloudChangeNotAllowed
 	}
+	if newSpec.Kubevirt == nil && oldSpec.Kubevirt != nil {
+		return ErrCloudChangeNotAllowed
+	}
 	if newSpec.DatacenterName != oldSpec.DatacenterName {
 		return errors.New("changing the datacenter is not allowed")
 	}
@@ -244,6 +247,11 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter)
 	case spec.BringYourOwn != nil:
 		if dc.Spec.BringYourOwn == nil {
 			return fmt.Errorf("datacenter %q is not a bringyourown datacenter", spec.DatacenterName)
+		}
+		return nil
+	case spec.Kubevirt != nil:
+		if dc.Spec.Kubevirt == nil {
+			return fmt.Errorf("datacenter %q is not a kubevirt datacenter", spec.DatacenterName)
 		}
 		return nil
 	default:

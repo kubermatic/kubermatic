@@ -64,6 +64,10 @@ type VSphereDatacenterSpec struct {
 	Templates  ImageList `json:"templates"`
 }
 
+// KubevirtDatacenterSpec specifies a datacenter of Kubevirt.
+type KubevirtDatacenterSpec struct {
+}
+
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
 type BringYourOwnDatacenterSpec struct{}
 
@@ -113,6 +117,7 @@ type DatacenterSpec struct {
 	GCP          *GCPDatacenterSpec           `json:"gcp,omitempty"`
 	Hetzner      *HetznerDatacenterSpec       `json:"hetzner,omitempty"`
 	VSphere      *VSphereDatacenterSpec       `json:"vsphere,omitempty"`
+	Kubevirt     *KubevirtDatacenterSpec      `json:"kubevirt,omitempty"`
 }
 
 // DatacenterList represents a list of datacenters
@@ -610,6 +615,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			Hetzner:        newPublicHetznerCloudSpec(cs.Cloud.Hetzner),
 			VSphere:        newPublicVSphereCloudSpec(cs.Cloud.VSphere),
 			GCP:            newPublicGCPCloudSpec(cs.Cloud.GCP),
+			Kubevirt:       newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
 		},
 		Version:                             cs.Version,
 		MachineNetworks:                     cs.MachineNetworks,
@@ -634,6 +640,7 @@ type PublicCloudSpec struct {
 	Hetzner        *PublicHetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere        *PublicVSphereCloudSpec      `json:"vsphere,omitempty"`
 	GCP            *PublicGCPCloudSpec          `json:"gcp,omitempty"`
+	Kubevirt       *PublicKubevirtCloudSpec     `json:"kubevirt,omitempty"`
 }
 
 // PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.
@@ -750,6 +757,17 @@ func newPublicGCPCloudSpec(internal *kubermaticv1.GCPCloudSpec) (public *PublicG
 	return &PublicGCPCloudSpec{}
 }
 
+// PublicKubevirtCloudSpec is a public counterpart of apiv1.KubevirtCloudSpec.
+type PublicKubevirtCloudSpec struct{}
+
+func newPublicKubevirtCloudSpec(internal *kubermaticv1.KubevirtCloudSpec) (public *PublicKubevirtCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicKubevirtCloudSpec{}
+}
+
 // ClusterStatus defines the cluster status
 type ClusterStatus struct {
 	// Version actual version of the kubernetes master components
@@ -809,6 +827,7 @@ type NodeCloudSpec struct {
 	Hetzner      *HetznerNodeSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
 	GCP          *GCPNodeSpec          `json:"gcp,omitempty"`
+	Kubevirt     *KubevirtNodeSpec     `json:"kubevirt,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -981,6 +1000,29 @@ type GCPNodeSpec struct {
 	Preemptible bool              `json:"preemptible"`
 	Labels      map[string]string `json:"labels"`
 	Tags        []string          `json:"tags"`
+}
+
+// KubevirtNodeSpec kubevirt specific node settings
+// swagger:model KubevirtNodeSpec
+type KubevirtNodeSpec struct {
+	// CPUs states how many cpus the kubevirt node will have.
+	// required: true
+	CPUs string
+	// Memory states the memory that kubevirt node will have.
+	// required: true
+	Memory string
+	// Namespace states in which namespace kubevirt node will be provisioned.
+	// required: true
+	Namespace string
+	// SourceURL states the url from which the imported image will be downloaded.
+	// required: true
+	SourceURL string
+	// StorageClassName states the storage class name for the provisioned PVCs.
+	// required: true
+	StorageClassName string
+	// PVCSize states the size of the provisioned pvc per node.
+	// required: true
+	PVCSize string
 }
 
 // NodeResources cpu and memory of a node

@@ -5597,6 +5597,9 @@
         "hetzner": {
           "$ref": "#/definitions/HetznerCloudSpec"
         },
+        "kubevirt": {
+          "$ref": "#/definitions/KubevirtCloudSpec"
+        },
         "openstack": {
           "$ref": "#/definitions/OpenstackCloudSpec"
         },
@@ -5875,6 +5878,9 @@
         },
         "hetzner": {
           "$ref": "#/definitions/HetznerDatacenterSpec"
+        },
+        "kubevirt": {
+          "$ref": "#/definitions/KubevirtDatacenterSpec"
         },
         "location": {
           "type": "string",
@@ -6572,6 +6578,61 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "KubevirtCloudSpec": {
+      "type": "object",
+      "title": "KubevirtCloudSpec specifies the access data to Kubevirt.",
+      "properties": {
+        "kubeconfig": {
+          "type": "string",
+          "x-go-name": "Kubeconfig"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "KubevirtDatacenterSpec": {
+      "type": "object",
+      "title": "KubevirtDatacenterSpec specifies a datacenter of Kubevirt.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "KubevirtNodeSpec": {
+      "description": "KubevirtNodeSpec kubevirt specific node settings",
+      "type": "object",
+      "required": [
+        "CPUs",
+        "Memory",
+        "Namespace",
+        "SourceURL",
+        "StorageClassName",
+        "PVCSize"
+      ],
+      "properties": {
+        "CPUs": {
+          "description": "CPUs states how many cpus the kubevirt node will have.",
+          "type": "string"
+        },
+        "Memory": {
+          "description": "Memory states the memory that kubevirt node will have.",
+          "type": "string"
+        },
+        "Namespace": {
+          "description": "Namespace states in which namespace kubevirt node will be provisioned.",
+          "type": "string"
+        },
+        "PVCSize": {
+          "description": "PVCSize states the size of the provisioned pvc per node.",
+          "type": "string"
+        },
+        "SourceURL": {
+          "description": "SourceURL states the url from which the imported image will be downloaded.",
+          "type": "string"
+        },
+        "StorageClassName": {
+          "description": "StorageClassName states the storage class name for the provisioned PVCs.",
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "LegacyObjectMeta": {
       "description": "Deprecated: LegacyObjectMeta is deprecated use ObjectMeta instead.",
       "type": "object",
@@ -6820,6 +6881,9 @@
         },
         "hetzner": {
           "$ref": "#/definitions/HetznerNodeSpec"
+        },
+        "kubevirt": {
+          "$ref": "#/definitions/KubevirtNodeSpec"
         },
         "openstack": {
           "$ref": "#/definitions/OpenstackNodeSpec"
@@ -7660,6 +7724,9 @@
         "hetzner": {
           "$ref": "#/definitions/PublicHetznerCloudSpec"
         },
+        "kubevirt": {
+          "$ref": "#/definitions/PublicKubevirtCloudSpec"
+        },
         "openstack": {
           "$ref": "#/definitions/PublicOpenstackCloudSpec"
         },
@@ -7690,6 +7757,11 @@
     "PublicHetznerCloudSpec": {
       "type": "object",
       "title": "PublicHetznerCloudSpec is a public counterpart of apiv1.HetznerCloudSpec.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PublicKubevirtCloudSpec": {
+      "type": "object",
+      "title": "PublicKubevirtCloudSpec is a public counterpart of apiv1.KubevirtCloudSpec.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicOpenstackCloudSpec": {

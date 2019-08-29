@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/packet"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
@@ -303,6 +304,26 @@ func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 	config.Labels = map[string]string{}
 	for key, value := range nodeSpec.Cloud.GCP.Labels {
 		config.Labels[key] = value
+	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getKubevirtProviderSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
+	config := kubevirt.RawConfig{
+		CPUs:             providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.CPUs},
+		PVCSize:          providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PVCSize},
+		StorageClassName: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.StorageClassName},
+		SourceURL:        providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.SourceURL},
+		Namespace:        providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.Namespace},
+		Memory:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.Memory},
 	}
 
 	ext := &runtime.RawExtension{}

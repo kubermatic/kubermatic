@@ -259,6 +259,7 @@ ssh ${SSH_OPTS} root@${PROXY_EXTERNAL_ADDR} << EOF
     -gcp-service-account="${GOOGLE_SERVICE_ACCOUNT}" \
     -gcp-zone="europe-west3-a" \
     -gcp-network="global/networks/offline-network" \
+    -kubevirt-kubeconfig="${KUBEVIRT_E2E_TESTS_KUBECONFIG}" \
     -gcp-subnetwork="regions/europe-west3/subnetworks/offline-subnet";
 EOF
 
