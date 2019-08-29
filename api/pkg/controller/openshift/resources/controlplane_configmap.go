@@ -263,6 +263,8 @@ apiServerArguments:
   - application/vnd.kubernetes.protobuf
   advertise-address:
   - {{ .AdvertiseAddress }}
+  kubelet-preferred-address-types:
+  - InternalIP
 apiVersion: kubecontrolplane.config.openshift.io/v1
 auditConfig:
   # TODO: Doesn't make much sense in a production setup, but useful for debugging
