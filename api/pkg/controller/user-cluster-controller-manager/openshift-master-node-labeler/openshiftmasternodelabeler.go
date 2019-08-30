@@ -23,7 +23,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const controllerName = "kubermatic_openshift_master_node_labeler"
+const (
+	controllerName = "kubermatic_openshift_master_node_labeler"
+	minMasterNodes = 3
+)
 
 type reconciler struct {
 	ctx    context.Context
@@ -72,7 +75,7 @@ func (r *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 	r.log.Info("Reconciling")
 	result, err := r.reconcile()
 	if err != nil {
-		r.log.Errorw("failed to reconcile", zap.Error(err))
+		r.log.Errorw("Failed to reconcile", zap.Error(err))
 	}
 	if result == nil {
 		result = &reconcile.Result{}
@@ -97,11 +100,11 @@ func (r *reconciler) reconcile() (*reconcile.Result, error) {
 		}
 	}
 
-	if numNodesWithMasterLabel >= 3 {
+	if numNodesWithMasterLabel >= minMasterNodes {
 		return nil, nil
 	}
 
-	for i := 0; i < 3-numNodesWithMasterLabel; i++ {
+	for i := 0; i < minMasterNodes-numNodesWithMasterLabel; i++ {
 		nodeToLabel, hasNode := nodesWithoutMasterLabel.PopAny()
 		// Try again later
 		if !hasNode {
