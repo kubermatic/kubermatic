@@ -123,7 +123,7 @@ func TestValidate(t *testing.T) {
 					},
 					Spec: kubermaticv1.SeedSpec{
 						Datacenters: map[string]kubermaticv1.Datacenter{
-							"in-use": {
+							"dc1": {
 								Spec: fakeProviderSpec,
 							},
 						},

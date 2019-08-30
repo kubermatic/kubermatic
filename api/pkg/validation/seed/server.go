@@ -58,7 +58,6 @@ func (opts *WebhookOpts) Server(
 		listenAddress: opts.ListenAddress,
 		certFile:      opts.CertFile,
 		keyFile:       opts.KeyFile,
-		workerName:    workerName,
 		validator:     newValidator(ctx, seedsGetter, seedClientGetter, listOpts),
 	}
 	mux := http.NewServeMux()
@@ -74,7 +73,6 @@ type Server struct {
 	listenAddress string
 	certFile      string
 	keyFile       string
-	workerName    string
 	validator     *seedValidator
 }
 

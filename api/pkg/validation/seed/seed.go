@@ -55,11 +55,11 @@ func (sv *seedValidator) Validate(seed *kubermaticv1.Seed, isDelete bool) error 
 	return sv.validate(seed, client, seeds, isDelete)
 }
 
-func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, seeds map[string]*kubermaticv1.Seed, isDelete bool) error {
-	existingSeed := seeds[seed.Name]
+func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, existingSeeds map[string]*kubermaticv1.Seed, isDelete bool) error {
+	existingSeed := existingSeeds[seed.Name]
 
 	// remove the seed itself from the list, so uniqueness checks won't fail
-	delete(seeds, seed.Name)
+	delete(existingSeeds, seed.Name)
 
 	ourDatacenters := sets.NewString()
 	for datacenter := range seed.Spec.Datacenters {
@@ -68,7 +68,7 @@ func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntim
 
 	// list of datacenters that remain after the operation we validate would be completed
 	allDatacenters := sets.NewString()
-	for _, s := range seeds {
+	for _, s := range existingSeeds {
 		for dc := range s.Spec.Datacenters {
 			allDatacenters.Insert(dc)
 		}
@@ -79,7 +79,7 @@ func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntim
 	}
 
 	// check if all the DCs in the seed are unique
-	for _, s := range seeds {
+	for _, s := range existingSeeds {
 		for dc := range s.Spec.Datacenters {
 			if ourDatacenters.Has(dc) {
 				return fmt.Errorf("datacenter %q already exists in seed %q, can only have one datacenter with a given name", dc, s.Name)
@@ -109,7 +109,7 @@ func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntim
 
 		existingProvider, _ := provider.DatacenterCloudProviderName(&existingDC.Spec)
 		if providerName != existingProvider {
-			return fmt.Errorf("cannot change datacenter %q provider from %q", dcName, existingProvider)
+			return fmt.Errorf("cannot change datacenter %q provider from %q to %q", dcName, existingProvider, providerName)
 		}
 	}
 
