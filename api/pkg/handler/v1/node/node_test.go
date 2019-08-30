@@ -10,7 +10,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-	"time"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -30,11 +29,6 @@ import (
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-func init() {
-	// Mock timezone to keep creation timestamp always the same.
-	time.Local = time.UTC
-}
 
 func TestDeleteNodeForCluster(t *testing.T) {
 	t.Parallel()

@@ -28,11 +28,6 @@ import (
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
-func init() {
-	// Mock timezone to keep creation timestamp always the same.
-	time.Local = time.UTC
-}
-
 func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
