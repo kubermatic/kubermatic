@@ -19,8 +19,10 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/nodecsrapprover"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
+	openshiftmasternodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-master-node-labeler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
 	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -92,31 +94,31 @@ func main() {
 		glog.Fatal(err)
 	}
 	if len(certs) != 1 {
-		glog.Fatalf("did not find exactly one but %d certificates in the given CA", len(certs))
+		glog.Fatalf("Did not find exactly one but %d certificates in the given CA", len(certs))
 	}
 
 	openVPNCACertBytes, err := ioutil.ReadFile(runOp.openvpnCACertFilePath)
 	if err != nil {
-		glog.Fatalf("failed to read openvpn-ca-cert-file: %v", err)
+		glog.Fatalf("Failed to read openvpn-ca-cert-file: %v", err)
 	}
 	openVPNCACerts, err := certutil.ParseCertsPEM(openVPNCACertBytes)
 	if err != nil {
-		glog.Fatalf("failed to parse openVPN CA file: %v", err)
+		glog.Fatalf("Failed to parse openVPN CA file: %v", err)
 	}
 	if certsLen := len(openVPNCACerts); certsLen != 1 {
-		glog.Fatalf("did not find exactly one but %v certificates in the openVPN CA file", certsLen)
+		glog.Fatalf("Did not find exactly one but %v certificates in the openVPN CA file", certsLen)
 	}
 	openVPNCAKeyBytes, err := ioutil.ReadFile(runOp.openvpnCAKeyFilePath)
 	if err != nil {
-		glog.Fatalf("failed to read openvpn-ca-key-file: %v", err)
+		glog.Fatalf("Failed to read openvpn-ca-key-file: %v", err)
 	}
 	openVPNCAKey, err := certutil.ParsePrivateKeyPEM(openVPNCAKeyBytes)
 	if err != nil {
-		glog.Fatalf("failed to parse openVPN CA key file: %v", err)
+		glog.Fatalf("Failed to parse openVPN CA key file: %v", err)
 	}
 	openVPNECSDAKey, isECDSAKey := openVPNCAKey.(*ecdsa.PrivateKey)
 	if !isECDSAKey {
-		glog.Fatal("the openVPN private key is not an ECDSA key")
+		glog.Fatal("The openVPN private key is not an ECDSA key")
 	}
 	openVPNCACert := &resources.ECDSAKeyPair{Cert: openVPNCACerts[0], Key: openVPNECSDAKey}
 
@@ -166,12 +168,12 @@ func main() {
 		runOp.openvpnServerPort,
 		healthHandler.AddReadinessCheck,
 		openVPNCACert); err != nil {
-		glog.Fatalf("failed to register user cluster controller: %v", err)
+		glog.Fatalf("Failed to register user cluster controller: %v", err)
 	}
 
 	if len(runOp.networks) > 0 {
 		if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-			glog.Fatalf("failed to add clusterv1alpha1 scheme: %v", err)
+			glog.Fatalf("Failed to add clusterv1alpha1 scheme: %v", err)
 		}
 		// We need to add the machine CRDs once here, because otherwise the IPAM
 		// controller keeps the manager from starting as it can not establish a
@@ -182,28 +184,31 @@ func main() {
 		if err := reconciling.ReconcileCustomResourceDefinitions(context.Background(), creators, "", mgr.GetClient()); err != nil {
 			// The mgr.Client is uninitianlized here and hence always returns a 404, regardless of the object existing or not
 			if !strings.Contains(err.Error(), `customresourcedefinitions.apiextensions.k8s.io "machines.cluster.k8s.io" already exists`) {
-				glog.Fatalf("failed to initially create the Machine CR: %v", err)
+				glog.Fatalf("Failed to initially create the Machine CR: %v", err)
 			}
 		}
 		if err := ipam.Add(mgr, runOp.networks); err != nil {
-			glog.Fatalf("failed to add IPAM controller to mgr: %v", err)
+			glog.Fatalf("Failed to add IPAM controller to mgr: %v", err)
 		}
 		glog.Infof("Added IPAM controller to mgr")
 	}
 
 	if err := rbacusercluster.Add(mgr, healthHandler.AddReadinessCheck); err != nil {
-		glog.Fatalf("failed to add user RBAC controller to mgr: %v", err)
+		glog.Fatalf("Failed to add user RBAC controller to mgr: %v", err)
 	}
 
 	if runOp.openshift {
 		if err := nodecsrapprover.Add(mgr, 4, cfg); err != nil {
-			glog.Fatalf("failed to add nodecsrapprover controller: %v", err)
+			glog.Fatalf("Failed to add nodecsrapprover controller: %v", err)
+		}
+		if err := openshiftmasternodelabeler.Add(context.Background(), kubermaticlog.Logger, mgr); err != nil {
+			glog.Fatalf("Failed to add openshiftmasternodelabeler contorller: %v", err)
 		}
 		glog.Infof("Registered nodecsrapprover controller")
 	}
 
 	if err := containerlinux.Add(mgr, runOp.overwriteRegistry); err != nil {
-		glog.Fatalf("failed to register the ContainerLinux controller: %v", err)
+		glog.Fatalf("Failed to register the ContainerLinux controller: %v", err)
 	}
 
 	// This group is forever waiting in a goroutine for signals to stop
