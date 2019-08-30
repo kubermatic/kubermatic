@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/go-test/deep"
 	"github.com/golang/glog"
 
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
@@ -138,17 +139,15 @@ func (u *LBUpdater) syncLB(s string) error {
 				continue
 			}
 			wantLBPorts = append(wantLBPorts, corev1.ServicePort{
-				Name:       fmt.Sprintf("%s-%s-%d-%d", service.Namespace, service.Name, servicePort.Port, servicePort.NodePort),
+				Name:       fmt.Sprintf("%s-%s", service.Namespace, service.Name),
 				Port:       servicePort.NodePort,
 				TargetPort: intstr.FromInt(int(servicePort.NodePort)),
 				Protocol:   corev1.ProtocolTCP,
+				// Not a mistake. We must know the original Port for name comparison and this is the only
+				// field left in which we can put it.
+				NodePort: servicePort.Port,
 			})
 		}
-	}
-
-	if len(wantLBPorts) == 0 {
-		// Nothing to do
-		return nil
 	}
 
 	lb := &corev1.Service{}
@@ -166,10 +165,11 @@ func (u *LBUpdater) syncLB(s string) error {
 		return lb.Spec.Ports[i].Name < lb.Spec.Ports[j].Name
 	})
 
-	wantLBPorts = fillWithNodePorts(wantLBPorts, lb.Spec.Ports)
+	wantLBPorts = fillNodePortsAndNames(wantLBPorts, lb.Spec.Ports)
 
 	if !equality.Semantic.DeepEqual(wantLBPorts, lb.Spec.Ports) {
-		glog.Infof("Updating LB ports...")
+		diff := deep.Equal(wantLBPorts, lb.Spec.Ports)
+		glog.Infof("Updating LB ports, diff: %v", diff)
 		lb.Spec.Ports = wantLBPorts
 		if err := u.client.Update(u.ctx, lb); err != nil {
 			return fmt.Errorf("failed to update LB service %s/%s: %v", u.lbNamespace, u.lbName, err)
@@ -181,23 +181,46 @@ func (u *LBUpdater) syncLB(s string) error {
 		for _, p := range lb.Spec.Ports {
 			buf.WriteString(fmt.Sprintf("Name: %s\n", p.Name))
 			buf.WriteString(fmt.Sprintf("Port: %d\n", p.Port))
+			buf.WriteString(fmt.Sprintf("NodePort: %d\n", p.NodePort))
 			buf.WriteString("\n")
 		}
 		buf.WriteString("======================\n")
 		glog.Infof("%s\n", buf.String())
+	} else {
+		glog.V(4).Infof("LB service already up to date, nothing to do")
 	}
 
 	return nil
 }
 
-func fillWithNodePorts(wantPorts, lbPorts []corev1.ServicePort) []corev1.ServicePort {
+func fillNodePortsAndNames(wantPorts, lbPorts []corev1.ServicePort) []corev1.ServicePort {
 	for wi := range wantPorts {
-		for _, lp := range lbPorts {
-			if wantPorts[wi].Name == lp.Name {
-				wantPorts[wi].NodePort = lp.NodePort
-			}
-		}
+		setNodePortAndName(&wantPorts[wi], lbPorts)
 	}
 
 	return wantPorts
+}
+
+func setNodePortAndName(portToSet *corev1.ServicePort, lbPorts []corev1.ServicePort) {
+	// We must support both the old name schema that included the port and resulted in a change
+	// when the port was changed and the new one, where we only include the node port. This is
+	// needed because some LB implementations can not cope with a config change where only the
+	// nodeport differs.
+	// Additionally we have to compare the name directly, because in the case of the healthCheckPort
+	// the NodePort or Port is not part of the name.
+	oldSchemaName := fmt.Sprintf("%s-%d-%d", portToSet.Name, portToSet.NodePort, portToSet.Port)
+	newSchemaName := fmt.Sprintf("%s-%d", portToSet.Name, portToSet.Port)
+	for _, lbPort := range lbPorts {
+		if oldSchemaName == lbPort.Name || newSchemaName == lbPort.Name || portToSet.Name == lbPort.Name {
+			portToSet.Name = lbPort.Name
+			portToSet.NodePort = lbPort.NodePort
+			return
+		}
+	}
+	if portToSet.Name != "healthz" {
+		portToSet.Name = fmt.Sprintf("%s-%d", portToSet.Name, portToSet.Port)
+	}
+	// We must reset the NodePort, it is being abused to carry over the port of the target service
+	// which is in all cases not a valid NodePort
+	portToSet.NodePort = 0
 }

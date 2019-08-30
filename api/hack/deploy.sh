@@ -64,9 +64,9 @@ function initTiller() {
   unset TEST_NAME
 }
 
-sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic/Chart.yaml
-sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic/values.yaml
-sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic-operator/*
+sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic/*.yaml
+sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic-operator/*.yaml
+sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/nodeport-proxy/*.yaml
 
 echodate "Deploying ${DEPLOY_STACK} stack..."
 case "${DEPLOY_STACK}" in
