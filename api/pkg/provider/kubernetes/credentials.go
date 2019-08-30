@@ -12,6 +12,14 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func GetCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, secretName string) (*corev1.Secret, error) {
+	secret := &corev1.Secret{}
+	if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: secretName, Namespace: resources.KubermaticNamespace}, secret); err != nil {
+		return nil, err
+	}
+	return secret, nil
+}
+
 // CreateCredentialSecretForCluster creates a new secret for a credential
 func CreateCredentialSecretForCluster(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
 	if cluster.Spec.Cloud.AWS != nil {
