@@ -173,9 +173,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		log.Debug("Skipping because the cluster is an Kubernetes cluster")
 		return reconcile.Result{}, nil
 	}
-	if cluster.Spec.Openshift == nil {
-		return reconcile.Result{}, errors.New("openshift cluster but .Spec.Openshift is unset")
-	}
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
 		log.Debugw(
@@ -213,6 +210,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 		// Always requeue a cluster after we executed the cleanup.
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClientGetter).CleanupCluster(ctx, log, cluster)
+	}
+
+	if cluster.Spec.Openshift == nil {
+		return nil, errors.New("openshift cluster but .Spec.Openshift is unset")
 	}
 
 	// Ensure Namespace
