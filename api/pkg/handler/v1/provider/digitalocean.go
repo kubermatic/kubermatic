@@ -14,8 +14,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	doprovider "github.com/kubermatic/kubermatic/api/pkg/provider/cloud/digitalocean"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -26,7 +26,6 @@ func DigitaloceanSizeWithClusterCredentialsEndpoint(projectProvider provider.Pro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DoSizesNoCredentialsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
@@ -40,15 +39,18 @@ func DigitaloceanSizeWithClusterCredentialsEndpoint(projectProvider provider.Pro
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		secret, err := kubernetesprovider.GetCredentialSecret(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), cluster.Spec.Cloud.Digitalocean.CredentialsReference.Name)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		doToken, ok := secret.Data[resources.DigitaloceanToken]
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 		if !ok {
-			return nil, errors.NewNotFound("token for ", req.ClusterID)
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 		}
-		return digitaloceanSize(ctx, string(doToken))
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		accessToken, err := doprovider.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+
+		return digitaloceanSize(ctx, accessToken)
 	}
 }
 
