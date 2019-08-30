@@ -395,6 +395,26 @@ datacenters:
       packet:
         facilities:
         - ams1
+#==================================
+#============OpenStack=============
+#==================================
+  syseleven-dbl1:
+    location: Syseleven - dbl1
+    seed: europe-west3-c
+    country: DE
+    spec:
+      openstack:
+        auth_url: https://keystone.cloud.syseleven.net:5000/v3
+        availability_zone: dbl1
+        region: dbl
+        dns_servers:
+        - 37.123.105.116
+        - 37.123.105.117
+        images:
+          ubuntu: "kubermatic-e2e-ubuntu"
+          centos: "kubermatic-e2e-centos"
+          coreos: "kubermatic-e2e-coreos"
+        enforce_floating_ip: true
 EOF
 retry 5 vault kv get -field=kubeconfig \
   dev/seed-clusters/ci.kubermatic.io > $KUBECONFIG
