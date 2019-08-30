@@ -175,6 +175,12 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 	}
+	if data.Cluster().Spec.Cloud.Azure != nil {
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_ID", Value: data.Cluster().Spec.Cloud.Azure.ClientID})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_SECRET", Value: data.Cluster().Spec.Cloud.Azure.ClientSecret})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_TENANT_ID", Value: data.Cluster().Spec.Cloud.Azure.TenantID})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_SUBSCRIPTION_ID", Value: data.Cluster().Spec.Cloud.Azure.SubscriptionID})
+	}
 	if data.Cluster().Spec.Cloud.Openstack != nil {
 		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC().Spec.Openstack.AuthURL})
 		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", Value: data.Cluster().Spec.Cloud.Openstack.Username})
