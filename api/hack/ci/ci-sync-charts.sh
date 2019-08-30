@@ -144,7 +144,8 @@ cd ${TARGET_DIR}
 git add .
 if ! git status|grep 'nothing to commit'; then
   git commit -m "Syncing charts from release ${LATEST_VERSION}"
-  git push origin ${INSTALLER_BRANCH}
+  git tag $LATEST_VERSION
+  git push --tags origin ${INSTALLER_BRANCH}
 fi
 
 cd ..
