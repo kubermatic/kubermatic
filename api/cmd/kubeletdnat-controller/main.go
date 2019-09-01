@@ -29,10 +29,11 @@ func main() {
 
 	log.SetLogger(log.ZapLogger(false))
 
-	nodeAccessNetwork, _, err := net.ParseCIDR(*networkFlag)
+	_, network, err := net.ParseCIDR(*networkFlag)
 	if err != nil {
 		glog.Fatalf("node-access-network invalid or missing: %v", err)
 	}
+	nodeAccessNetwork := network.IP
 
 	config, err := clientcmd.BuildConfigFromFlags(*master, *kubeconfigFlag)
 	if err != nil {

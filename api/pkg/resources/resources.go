@@ -439,10 +439,11 @@ func UserClusterDNSResolverIP(cluster *kubermaticv1.Cluster) (string, error) {
 		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: empty CIDRBlocks", cluster.Name)
 	}
 	block := cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0]
-	ip, _, err := net.ParseCIDR(block)
+	_, ipnet, err := net.ParseCIDR(block)
 	if err != nil {
 		return "", fmt.Errorf("failed to get cluster dns ip for cluster `%s`: %v'", block, err)
 	}
+	ip := ipnet.IP
 	ip[len(ip)-1] = ip[len(ip)-1] + 10
 	return ip.String(), nil
 }
@@ -455,10 +456,11 @@ func InClusterApiserverIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
 	}
 
 	block := cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0]
-	ip, _, err := net.ParseCIDR(block)
+	_, ipnet, err := net.ParseCIDR(block)
 	if err != nil {
 		return nil, fmt.Errorf("invalid service cidr %s", block)
 	}
+	ip := ipnet.IP
 	ip[len(ip)-1] = ip[len(ip)-1] + 1
 	return &ip, nil
 }
