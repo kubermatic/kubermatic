@@ -69,10 +69,10 @@ spec:
         - 172.25.0.0
         - 255.255.0.0
         - --push
-        - route 10.10.10.0 255.255.255.0
+        - route 10.240.16.0 255.255.240.0
         - --route
-        - 10.10.10.0
-        - 255.255.255.0
+        - 10.240.16.0
+        - 255.255.240.0
         - --push
         - route 192.0.2.0 255.255.255.0
         - --route
@@ -153,7 +153,7 @@ spec:
           iptables -P FORWARD DROP
           iptables -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
           iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d 172.25.0.0/16 -j ACCEPT
-          iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d 10.10.10.0/24 -j ACCEPT
+          iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d 10.240.16.0/20 -j ACCEPT
           iptables -A FORWARD -i tun0 -o tun0 -s 10.20.0.0/24 -d 192.0.2.0/24 -j ACCEPT
 
           iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
