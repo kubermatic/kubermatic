@@ -483,29 +483,38 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	return cluster, nil
 }
 
-func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, error) {
-	accessKeyID := cloud.AWS.AccessKeyID
-	secretAccessKey := cloud.AWS.SecretAccessKey
-	var err error
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (accessKeyID, secretAccessKey string, err error) {
+	accessKeyID = cloud.AWS.AccessKeyID
+	secretAccessKey = cloud.AWS.SecretAccessKey
 
 	if accessKeyID == "" {
 		if cloud.AWS.CredentialsReference == nil {
-			return nil, errors.New("no credentials provided")
+			return "", "", errors.New("no credentials provided")
 		}
-		accessKeyID, err = a.secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSAccessKeyID)
+		accessKeyID, err = secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSAccessKeyID)
 		if err != nil {
-			return nil, err
+			return "", "", err
 		}
 	}
 
 	if secretAccessKey == "" {
 		if cloud.AWS.CredentialsReference == nil {
-			return nil, errors.New("no credentials provided")
+			return "", "", errors.New("no credentials provided")
 		}
-		secretAccessKey, err = a.secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSSecretAccessKey)
+		secretAccessKey, err = secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSSecretAccessKey)
 		if err != nil {
-			return nil, err
+			return "", "", err
 		}
+	}
+
+	return accessKeyID, secretAccessKey, nil
+}
+
+func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, error) {
+	accessKeyID, secretAccessKey, err := GetCredentialsForCluster(cloud, a.secretKeySelector)
+	if err != nil {
+		return nil, err
 	}
 
 	return GetClientSet(accessKeyID, secretAccessKey, a.dc.Region)
@@ -613,14 +622,14 @@ func (a *AmazonEC2) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newS
 }
 
 // GetAvailabilityZonesInRegion returns the list of availability zones in the selected AWS region.
-func (a *AmazonEC2) GetAvailabilityZonesInRegion(spec kubermaticv1.CloudSpec, regionName string) ([]*ec2.AvailabilityZone, error) {
-	client, err := a.getClientSet(spec)
+func GetAvailabilityZonesInRegion(accessKeyID, secretAccessKey, region string) ([]*ec2.AvailabilityZone, error) {
+	client, err := GetClientSet(accessKeyID, secretAccessKey, region)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get API client: %v", err)
+		return nil, err
 	}
 
 	filters := []*ec2.Filter{
-		{Name: aws.String("region-name"), Values: []*string{aws.String(regionName)}},
+		{Name: aws.String("region-name"), Values: []*string{aws.String(region)}},
 	}
 	azinput := &ec2.DescribeAvailabilityZonesInput{Filters: filters}
 	out, err := client.EC2.DescribeAvailabilityZones(azinput)
@@ -632,10 +641,10 @@ func (a *AmazonEC2) GetAvailabilityZonesInRegion(spec kubermaticv1.CloudSpec, re
 }
 
 // GetSubnets returns the list of subnets for a selected AWS vpc.
-func (a *AmazonEC2) GetSubnets(spec kubermaticv1.CloudSpec, vpcID string) ([]*ec2.Subnet, error) {
-	client, err := a.getClientSet(spec)
+func GetSubnets(accessKeyID, secretAccessKey, region, vpcID string) ([]*ec2.Subnet, error) {
+	client, err := GetClientSet(accessKeyID, secretAccessKey, region)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get API client: %v", err)
+		return nil, err
 	}
 
 	filters := []*ec2.Filter{
@@ -651,10 +660,10 @@ func (a *AmazonEC2) GetSubnets(spec kubermaticv1.CloudSpec, vpcID string) ([]*ec
 }
 
 // GetVPCS returns the list of AWS VPC's.
-func (a *AmazonEC2) GetVPCS(spec kubermaticv1.CloudSpec) ([]*ec2.Vpc, error) {
-	client, err := a.getClientSet(spec)
+func GetVPCS(accessKeyID, secretAccessKey, region string) ([]*ec2.Vpc, error) {
+	client, err := GetClientSet(accessKeyID, secretAccessKey, region)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get API client: %v", err)
+		return nil, err
 	}
 
 	vpcOut, err := client.EC2.DescribeVpcs(&ec2.DescribeVpcsInput{})
