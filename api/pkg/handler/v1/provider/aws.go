@@ -227,7 +227,7 @@ func awsSizes(region string) (apiv1.AWSSizeList, error) {
 }
 
 // AWSZoneEndpoint handles the request to list AWS availability zones in a given region, using provided credentials
-func AWSZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter, privilegedSeedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+func AWSZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSZoneReq)
 
@@ -317,7 +317,7 @@ func listAWSZones(accessKeyID, secretAccessKey string, datacenter *kubermaticv1.
 }
 
 // AWSSubnetEndpoint handles the request to list AWS availability subnets in a given vpc, using provided credentials
-func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter, privilegedSeedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSSubnetReq)
 
@@ -443,7 +443,7 @@ func listAWSSubnets(accessKeyID, secretAccessKey, vpcID string, datacenter *kube
 }
 
 // AWSVPCEndpoint handles the request to list AWS VPC's, using provided credentials
-func AWSVPCEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter, privilegedSeedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+func AWSVPCEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSVPCReq)
 
