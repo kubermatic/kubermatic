@@ -25,7 +25,6 @@ import (
 	"os"
 	"strconv"
 
-	"k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -92,8 +91,8 @@ type Config struct {
 // GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector
 // because it is not cross namespace
 type GlobalObjectKeySelector struct {
-	v1.ObjectReference `json:",inline"`
-	Key                string `json:"key,omitempty"`
+	corev1.ObjectReference `json:",inline"`
+	Key                    string `json:"key,omitempty"`
 }
 
 type GlobalSecretKeySelector GlobalObjectKeySelector
