@@ -25,6 +25,8 @@ spec:
       annotations:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '10254'
+        # All non-access.log lines are parsed by the default glog parser fallback.
+        fluentbit.io/parser: nginx_ingress_controller
     spec:
       hostNetwork: {{ .Values.nginx.hostNetwork }}
       serviceAccountName: nginx-ingress-serviceaccount
