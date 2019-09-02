@@ -11,6 +11,7 @@ spec:
       cloudProviderSpec:
         datacenter: hetzner-datacenter
         location: hetzner-location
+        networks: null
         serverType: hetzner-type
         token: ""
       operatingSystem: ubuntu
