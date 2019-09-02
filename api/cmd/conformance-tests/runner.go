@@ -476,7 +476,7 @@ func (r *testRunner) testCluster(
 			if err != nil {
 				return fmt.Errorf("failed to parse selector: %v", err)
 			}
-			return wait.PollImmediate(5*time.Second, 5*time.Minute, func() (bool, error) {
+			return wait.PollImmediate(5*time.Second, 15*time.Minute, func() (bool, error) {
 				clusterList := &kubermaticv1.ClusterList{}
 				listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
 				if err := r.seedClusterClient.List(r.ctx, listOpts, clusterList); err != nil {
