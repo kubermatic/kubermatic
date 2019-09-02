@@ -1,34 +1,31 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: fluent-bit
+  name: '{{ .Release.Name }}'
   labels:
     app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
     app.kubernetes.io/version: '{{ .Values.logging.fluentbit.image.tag }}'
     app.kubernetes.io/managed-by: helm
 spec:
   selector:
     matchLabels:
-      k8s-app: fluent-bit-logging
-      version: v1
-      kubernetes.io/cluster-service: "true"
+      app.kubernetes.io/name: fluent-bit
+      app.kubernetes.io/instance: '{{ .Release.Name }}'
+      kubernetes.io/cluster-service: 'true'
   updateStrategy:
     type: RollingUpdate
   template:
     metadata:
       labels:
-        # TODO: Be bold at some point and adjust these labels to the same
-        # labels used by the DaemonSet. It's not possible without re-creating
-        # the entire DaemonSet, so it's a somewhat breaking change for little
-        # wins, but still worth it for the cleanup itself.
-        k8s-app: fluent-bit-logging
-        version: v1
-        kubernetes.io/cluster-service: "true"
+        app.kubernetes.io/name: fluent-bit
+        app.kubernetes.io/instance: '{{ .Release.Name }}'
+        kubernetes.io/cluster-service: 'true'
       annotations:
         kubermatic/metric_path: /api/v1/metrics/prometheus
-        kubermatic/scrape: "true"
-        kubermatic/scrape_port: "2020"
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '2020'
+        checksum/config: '{{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}'
     spec:
       serviceAccountName: fluent-bit
       containers:
@@ -43,10 +40,6 @@ spec:
         ports:
         - containerPort: 2020
         env:
-        - name: FLUENT_ELASTICSEARCH_HOST
-          value: es-data
-        - name: FLUENT_ELASTICSEARCH_PORT
-          value: '9200'
         # We attach the node name to each log line
         - name: NODE_NAME
           valueFrom:
