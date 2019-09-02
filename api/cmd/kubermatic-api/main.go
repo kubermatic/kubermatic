@@ -225,7 +225,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		eventRecorderProvider:                 eventRecorderProvider,
 		clusterProviderGetter:                 clusterProviderGetter,
 		seedsGetter:                           seedsGetter,
-		seedClientGetter:                      seedClientGetter,
 		addons:                                addonProviderGetter}, nil
 }
 
@@ -290,7 +289,6 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 
 	r := handler.NewRouting(
 		prov.seedsGetter,
-		prov.seedClientGetter,
 		prov.clusterProviderGetter,
 		prov.addons,
 		prov.sshKey,

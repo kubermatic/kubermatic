@@ -562,7 +562,7 @@ func (r Routing) listAWSZones() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AWSZoneEndpoint(r.presetsManager, r.seedsGetter, r.privilegedSeedClientGetter)),
+		)(provider.AWSZoneEndpoint(r.presetsManager, r.seedsGetter)),
 		provider.DecodeAWSZoneReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -584,7 +584,7 @@ func (r Routing) listAWSSubnets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AWSSubnetEndpoint(r.presetsManager, r.seedsGetter, r.privilegedSeedClientGetter)),
+		)(provider.AWSSubnetEndpoint(r.presetsManager, r.seedsGetter)),
 		provider.DecodeAWSSubnetReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -606,7 +606,7 @@ func (r Routing) listAWSVPCS() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AWSVPCEndpoint(r.presetsManager, r.seedsGetter, r.privilegedSeedClientGetter)),
+		)(provider.AWSVPCEndpoint(r.presetsManager, r.seedsGetter)),
 		provider.DecodeAWSVPCReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
