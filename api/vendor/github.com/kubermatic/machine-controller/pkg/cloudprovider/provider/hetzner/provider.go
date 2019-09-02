@@ -53,11 +53,12 @@ func New(configVarResolver *providerconfig.ConfigVarResolver) cloudprovidertypes
 }
 
 type RawConfig struct {
-	Token      providerconfig.ConfigVarString `json:"token,omitempty"`
-	ServerType providerconfig.ConfigVarString `json:"serverType"`
-	Datacenter providerconfig.ConfigVarString `json:"datacenter"`
-	Location   providerconfig.ConfigVarString `json:"location"`
-	Labels     map[string]string              `json:"labels,omitempty"`
+	Token      providerconfig.ConfigVarString   `json:"token,omitempty"`
+	ServerType providerconfig.ConfigVarString   `json:"serverType"`
+	Datacenter providerconfig.ConfigVarString   `json:"datacenter"`
+	Location   providerconfig.ConfigVarString   `json:"location"`
+	Networks   []providerconfig.ConfigVarString `json:"networks"`
+	Labels     map[string]string                `json:"labels,omitempty"`
 }
 
 type Config struct {
@@ -65,6 +66,7 @@ type Config struct {
 	ServerType string
 	Datacenter string
 	Location   string
+	Networks   []string
 	Labels     map[string]string
 }
 
@@ -114,6 +116,13 @@ func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*Config, *providerconfig.
 	if err != nil {
 		return nil, nil, err
 	}
+	for _, network := range rawConfig.Networks {
+		networkValue, err := p.configVarResolver.GetConfigVarStringValue(network)
+		if err != nil {
+			return nil, nil, err
+		}
+		c.Networks = append(c.Networks, networkValue)
+	}
 	c.Labels = rawConfig.Labels
 	return &c, &pconfig, err
 }
@@ -149,6 +158,14 @@ func (p *provider) Validate(spec v1alpha1.MachineSpec) error {
 	if c.Datacenter != "" {
 		if _, _, err = client.Datacenter.Get(ctx, c.Datacenter); err != nil {
 			return fmt.Errorf("failed to get datacenter: %v", err)
+		}
+	}
+
+	if len(c.Networks) != 0 {
+		for _, network := range c.Networks {
+			if _, _, err = client.Network.Get(ctx, network); err != nil {
+				return fmt.Errorf("failed to get network %q: %v", network, err)
+			}
 		}
 	}
 
@@ -200,6 +217,17 @@ func (p *provider) Create(machine *v1alpha1.Machine, _ *cloudprovidertypes.Provi
 		serverCreateOpts.Location, _, err = client.Location.Get(ctx, c.Location)
 		if err != nil {
 			return nil, hzErrorToTerminalError(err, "failed to get location")
+		}
+	}
+
+	if len(c.Networks) != 0 {
+		serverCreateOpts.Networks = []*hcloud.Network{}
+		for _, network := range c.Networks {
+			n, _, err := client.Network.Get(ctx, network)
+			if err != nil {
+				return nil, hzErrorToTerminalError(err, "failed to get network")
+			}
+			serverCreateOpts.Networks = append(serverCreateOpts.Networks, n)
 		}
 	}
 
@@ -385,6 +413,9 @@ func (s *hetznerServer) Addresses() []string {
 	var addresses []string
 	for _, fips := range s.server.PublicNet.FloatingIPs {
 		addresses = append(addresses, fips.IP.String())
+	}
+	for _, privateNetwork := range s.server.PrivateNet {
+		addresses = append(addresses, privateNetwork.IP.String())
 	}
 
 	return append(addresses, s.server.PublicNet.IPv4.IP.String(), s.server.PublicNet.IPv6.IP.String())

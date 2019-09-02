@@ -800,15 +800,15 @@
   revision = "6ff867650f40c632367411120275478876202233"
 
 [[projects]]
-  digest = "1:0e6ba0b7d6e399fcfd307379c02fc5cb703a72632dd3f4f219e8a0b6301a1625"
+  digest = "1:abd07caf39a97ff567f78f84ba45d1b6950d420bbf6a182e3ee64e385a7e715a"
   name = "github.com/hetznercloud/hcloud-go"
   packages = [
     "hcloud",
     "hcloud/schema",
   ]
   pruneopts = "NUT"
-  revision = "9eed550ed0443662c55546b521e0b4cb6e718df7"
-  version = "v1.11.0"
+  revision = "70b166c92266125ee6a621dcc6089023a5f8d055"
+  version = "v1.15.1"
 
 [[projects]]
   digest = "1:dc54242755f5b6721dd880843de6e45fe234838ea9149ec8249951880fd5802f"
@@ -890,7 +890,7 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:04bfe37565a5eb9ef3586202778391ac9efbc2487034bb78664ecf8f3770068f"
+  digest = "1:1d559286b71dd1b652ee0e079203302d0e31edbb66a7d4890c8c6ba87ab80f17"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/plugin",
@@ -919,8 +919,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "6c87346673c4818092b8831d7ff32ea74cba758c"
-  version = "v1.5.4"
+  revision = "92b67a8398f05be883a6e20492a93e87510cff95"
+  version = "v1.5.5"
 
 [[projects]]
   digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"
