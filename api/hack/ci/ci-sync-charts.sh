@@ -30,11 +30,12 @@ fi
 cd "$(mktemp -d)"
 git clone git@github.com:kubermatic/kubermatic-installer.git .
 MINOR_VERSION="${INSTALLER_BRANCH##release/}"
-if ! FOUND_TAGS="$(git for-each-ref refs/tags --sort=-authordate --format='%(refname)' | grep $MINOR_VERSION)"; then
+FOUND_TAG="$(git for-each-ref "refs/tags/$MINOR_VERSION*" --sort=-authordate --format='%(refname)' --count=1)"
+if [ -z "$FOUND_TAG" ]; then
   echo "Error, no Dashboard tags contain $MINOR_VERSION"
   exit 1
 fi
-LATEST_DASHBOARD="$(head -n1 <<< "$FOUND_TAGS" | sed 's:refs/tags/::')"
+LATEST_DASHBOARD="${FOUND_TAG##refs/tags/}"
 cd -
 
 sed -i "s/__DASHBOARD_TAG__/$LATEST_DASHBOARD/g" config/*/*.yaml
