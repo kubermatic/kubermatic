@@ -29,7 +29,7 @@ fi
 # create fresh clone of the dashboard repository
 cd "$(mktemp -d)"
 git clone git@github.com:kubermatic/kubermatic-installer.git .
-MINOR_VERSION="$(sed 's:release/::' <<< "$INSTALLER_BRANCH")"
+MINOR_VERSION="${INSTALLER_BRANCH##release/}"
 if ! FOUND_TAGS="$(git for-each-ref refs/tags --sort=-authordate --format='%(refname)' | grep $MINOR_VERSION)"; then
   echo "Error, no Dashboard tags contain $MINOR_VERSION"
   exit 1
