@@ -164,7 +164,7 @@ func setupTestAddon(name string) *kubermaticv1.Addon {
 }
 
 func TestController_getAddonKubeDNStManifests(t *testing.T) {
-	cluster := setupTestCluster("10.10.10.0/24")
+	cluster := setupTestCluster("10.240.16.0/20")
 	addon := setupTestAddon("kube-dns")
 
 	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
@@ -194,7 +194,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 		t.Fatalf("invalid number of manifests returned. Expected 1, Got %d", len(manifests))
 	}
 	fmt.Println(manifests)
-	expectedIP := "10.10.10.10"
+	expectedIP := "10.240.16.10"
 	if !strings.Contains(string(manifests[0].Raw), expectedIP) {
 		t.Fatalf("invalid IP returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].String())
 	}
@@ -218,7 +218,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 }
 
 func TestController_getAddonDeploymentManifests(t *testing.T) {
-	cluster := setupTestCluster("10.10.10.0/24")
+	cluster := setupTestCluster("10.240.16.0/20")
 	addon := setupTestAddon("test")
 
 	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
@@ -257,7 +257,7 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 }
 
 func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
-	cluster := setupTestCluster("10.10.10.0/24")
+	cluster := setupTestCluster("10.240.16.0/20")
 	addon := setupTestAddon("test")
 
 	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
@@ -295,7 +295,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 }
 
 func TestController_getAddonManifests(t *testing.T) {
-	cluster := setupTestCluster("10.10.10.0/24")
+	cluster := setupTestCluster("10.240.16.0/20")
 	addon := setupTestAddon("test")
 	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
 	if err != nil {
@@ -441,7 +441,7 @@ Error from server (NotFound): error when stopping "/tmp/cluster-rwhxp9j5j-metric
 
 func TestHugeManifest(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
-	cluster := setupTestCluster("10.10.10.0/24")
+	cluster := setupTestCluster("10.240.16.0/20")
 	addon := setupTestAddon("istio")
 	r := &Reconciler{
 		kubernetesAddonDir: "./testdata",

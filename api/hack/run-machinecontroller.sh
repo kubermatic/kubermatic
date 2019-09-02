@@ -16,5 +16,5 @@ make machine-controller
   -kubeconfig=$KUBECONFIG_MACHINE_CONTROLLER \
   -logtostderr \
   -v=4 \
-  -cluster-dns=10.10.10.10 \
+  -cluster-dns=10.240.16.10 \
   -internal-listen-address=0.0.0.0:8085

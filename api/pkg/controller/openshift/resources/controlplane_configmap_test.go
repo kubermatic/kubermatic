@@ -68,7 +68,7 @@ func TestGetMasterConfig(t *testing.T) {
 				Spec: kubermaticv1.ClusterSpec{
 					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 						Services: kubermaticv1.NetworkRanges{
-							CIDRBlocks: []string{"10.10.10.0/24"},
+							CIDRBlocks: []string{"10.240.16.0/24"},
 						},
 						Pods: kubermaticv1.NetworkRanges{
 							CIDRBlocks: []string{"172.25.0.0/16"},
@@ -102,7 +102,7 @@ func TestGetMasterConfig(t *testing.T) {
 				Spec: kubermaticv1.ClusterSpec{
 					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 						Services: kubermaticv1.NetworkRanges{
-							CIDRBlocks: []string{"10.10.10.0/24"},
+							CIDRBlocks: []string{"10.240.16.0/20"},
 						},
 						Pods: kubermaticv1.NetworkRanges{
 							CIDRBlocks: []string{"172.25.0.0/16"},
