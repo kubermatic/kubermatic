@@ -2,10 +2,13 @@ package digitalocean
 
 import (
 	"context"
+	"errors"
 
-	"github.com/digitalocean/godo"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
+	"github.com/digitalocean/godo"
 	"golang.org/x/oauth2"
 )
 
@@ -40,4 +43,21 @@ func (do *digitalocean) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ pr
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
 func (do *digitalocean) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
+}
+
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (accessToken string, err error) {
+	accessToken = cloud.Digitalocean.Token
+
+	if accessToken == "" {
+		if cloud.Digitalocean.CredentialsReference == nil {
+			return "", errors.New("no credentials provided")
+		}
+		accessToken, err = secretKeySelector(cloud.Digitalocean.CredentialsReference, resources.DigitaloceanToken)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return accessToken, nil
 }

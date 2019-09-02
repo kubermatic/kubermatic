@@ -14,6 +14,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	doprovider "github.com/kubermatic/kubermatic/api/pkg/provider/cloud/digitalocean"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -37,8 +39,18 @@ func DigitaloceanSizeWithClusterCredentialsEndpoint(projectProvider provider.Pro
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		doToken := cluster.Spec.Cloud.Digitalocean.Token
-		return digitaloceanSize(ctx, doToken)
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		accessToken, err := doprovider.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+
+		return digitaloceanSize(ctx, accessToken)
 	}
 }
 
