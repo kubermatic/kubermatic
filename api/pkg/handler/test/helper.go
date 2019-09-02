@@ -120,7 +120,6 @@ func GetUser(email, id, name string, admin bool) apiv1.User {
 // it is meant to be used by legacy handler.createTestEndpointAndGetClients function
 type newRoutingFunc func(
 	seedsGetter provider.SeedsGetter,
-	privilgedClientGetter provider.SeedClientGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
 	newSSHKeyProvider provider.SSHKeyProvider,
@@ -149,9 +148,6 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	allObjects = append(allObjects, machineObjects...)
 	allObjects = append(allObjects, kubermaticObjects...)
 	fakeClient := fakectrlruntimeclient.NewFakeClient(allObjects...)
-	seedClientGetter := func(_ *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
-		return fakeClient, nil
-	}
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 	kubernetesClient := fakerestclient.NewSimpleClientset(kubeObjects...)
@@ -257,7 +253,6 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	mainRouter := routingFunc(
 		seedsGetter,
-		seedClientGetter,
 		clusterProviderGetter,
 		addonProviderGetter,
 		sshKeyProvider,

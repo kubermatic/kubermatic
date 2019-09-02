@@ -150,6 +150,5 @@ type providers struct {
 	eventRecorderProvider                 provider.EventRecorderProvider
 	clusterProviderGetter                 provider.ClusterProviderGetter
 	seedsGetter                           provider.SeedsGetter
-	seedClientGetter                      provider.SeedClientGetter
 	addons                                provider.AddonProviderGetter
 }

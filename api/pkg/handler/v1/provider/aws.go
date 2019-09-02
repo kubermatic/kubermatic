@@ -15,12 +15,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	awsProvider "github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
+	awsprovider "github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
-
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var data *ec2.InstanceData
@@ -230,18 +227,18 @@ func awsSizes(region string) (apiv1.AWSSizeList, error) {
 }
 
 // AWSZoneEndpoint handles the request to list AWS availability zones in a given region, using provided credentials
-func AWSZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter, privilegedSeedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+func AWSZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSZoneReq)
 
-		keyID := req.AccessKeyID
-		keySecret := req.SecretAccessKey
+		accessKeyID := req.AccessKeyID
+		secretAccessKey := req.SecretAccessKey
 
 		if len(req.Credential) > 0 && credentialManager.GetPresets().AWS.Credentials != nil {
 			for _, credential := range credentialManager.GetPresets().AWS.Credentials {
 				if credential.Name == req.Credential {
-					keyID = credential.AccessKeyID
-					keySecret = credential.SecretAccessKey
+					accessKeyID = credential.AccessKeyID
+					secretAccessKey = credential.SecretAccessKey
 					break
 				}
 			}
@@ -251,15 +248,11 @@ func AWSZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provid
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
-		seed, datacenter, err := provider.DatacenterFromSeedMap(seeds, req.DC)
+		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, req.DC)
 		if err != nil {
 			return nil, errors.NewBadRequest("%v", err)
 		}
-		privilegedSeedClient, err := privilegedSeedClientGetter(seed)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get client for seed: %v", err))
-		}
-		return listAWSZones(ctx, keyID, keySecret, datacenter, privilegedSeedClient, nil)
+		return listAWSZones(accessKeyID, secretAccessKey, datacenter)
 	}
 }
 
@@ -295,31 +288,23 @@ func AWSZoneWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvi
 			return nil, errors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider")
 		}
 
-		keyID := cluster.Spec.Cloud.AWS.AccessKeyID
-		keySecret := cluster.Spec.Cloud.AWS.SecretAccessKey
-		return listAWSZones(ctx, keyID, keySecret, datacenter, assertedClusterProvider.GetSeedClusterAdminRuntimeClient(), cluster.Spec.Cloud.AWS.CredentialsReference)
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		accessKeyID, secretAccessKey, err := awsprovider.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+		return listAWSZones(accessKeyID, secretAccessKey, datacenter)
 	}
 }
 
-func listAWSZones(ctx context.Context, keyID, keySecret string, datacenter *kubermaticv1.Datacenter, privilegedSeedClient ctrlruntimeclient.Client, credRef *providerconfig.GlobalSecretKeySelector) (apiv1.AWSZoneList, error) {
+func listAWSZones(accessKeyID, secretAccessKey string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSZoneList, error) {
 	zones := apiv1.AWSZoneList{}
 
 	if datacenter.Spec.AWS == nil {
 		return nil, errors.NewBadRequest("cluster is not in an AWS Datacenter")
 	}
 
-	ec2, err := awsProvider.NewCloudProvider(datacenter, provider.SecretKeySelectorValueFuncFactory(ctx, privilegedSeedClient))
-	if err != nil {
-		return nil, err
-	}
-
-	zoneResults, err := ec2.GetAvailabilityZonesInRegion(kubermaticv1.CloudSpec{
-		AWS: &kubermaticv1.AWSCloudSpec{
-			AccessKeyID:          keyID,
-			SecretAccessKey:      keySecret,
-			CredentialsReference: credRef,
-		},
-	}, datacenter.Spec.AWS.Region)
+	zoneResults, err := awsprovider.GetAvailabilityZonesInRegion(accessKeyID, secretAccessKey, datacenter.Spec.AWS.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -332,19 +317,19 @@ func listAWSZones(ctx context.Context, keyID, keySecret string, datacenter *kube
 }
 
 // AWSSubnetEndpoint handles the request to list AWS availability subnets in a given vpc, using provided credentials
-func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter, privilegedSeedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSSubnetReq)
 
-		keyID := req.AccessKeyID
-		keySecret := req.SecretAccessKey
+		accessKeyID := req.AccessKeyID
+		secretAccessKey := req.SecretAccessKey
 		vpcID := req.VPC
 
 		if len(req.Credential) > 0 && credentialManager.GetPresets().AWS.Credentials != nil {
 			for _, credential := range credentialManager.GetPresets().AWS.Credentials {
 				if credential.Name == req.Credential {
-					keyID = credential.AccessKeyID
-					keySecret = credential.SecretAccessKey
+					accessKeyID = credential.AccessKeyID
+					secretAccessKey = credential.SecretAccessKey
 					vpcID = credential.VPCID
 					break
 				}
@@ -355,16 +340,12 @@ func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter prov
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
-		seed, dc, err := provider.DatacenterFromSeedMap(seeds, req.DC)
+		_, dc, err := provider.DatacenterFromSeedMap(seeds, req.DC)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		privilegedSeedClient, err := privilegedSeedClientGetter(seed)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get client for seed: %v", err))
-		}
 
-		return listAWSSubnets(ctx, keyID, keySecret, vpcID, dc, privilegedSeedClient, nil)
+		return listAWSSubnets(accessKeyID, secretAccessKey, vpcID, dc)
 	}
 }
 
@@ -399,35 +380,28 @@ func AWSSubnetWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 		}
 
-		keyID := cluster.Spec.Cloud.AWS.AccessKeyID
-		keySecret := cluster.Spec.Cloud.AWS.SecretAccessKey
-		return listAWSSubnets(ctx, keyID, keySecret, cluster.Spec.Cloud.AWS.VPCID, dc, assertedClusterProvider.GetSeedClusterAdminRuntimeClient(), cluster.Spec.Cloud.AWS.CredentialsReference)
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		accessKeyID, secretAccessKey, err := awsprovider.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+
+		return listAWSSubnets(accessKeyID, secretAccessKey, cluster.Spec.Cloud.AWS.VPCID, dc)
 	}
 }
 
-func listAWSSubnets(ctx context.Context, keyID, keySecret, vpcID string, datacenter *kubermaticv1.Datacenter, privilegedSeedClient ctrlruntimeclient.Client, credRef *providerconfig.GlobalSecretKeySelector) (apiv1.AWSSubnetList, error) {
-	subnets := apiv1.AWSSubnetList{}
+func listAWSSubnets(accessKeyID, secretAccessKey, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
 
 	if datacenter.Spec.AWS == nil {
 		return nil, errors.NewBadRequest("datacenter is not an AWS datacenter")
 	}
 
-	ec2, err := awsProvider.NewCloudProvider(datacenter, provider.SecretKeySelectorValueFuncFactory(ctx, privilegedSeedClient))
-	if err != nil {
-		return nil, fmt.Errorf("couldn't create cloud provider: %v", err)
-	}
-
-	subnetResults, err := ec2.GetSubnets(kubermaticv1.CloudSpec{
-		AWS: &kubermaticv1.AWSCloudSpec{
-			AccessKeyID:          keyID,
-			SecretAccessKey:      keySecret,
-			CredentialsReference: credRef,
-		},
-	}, vpcID)
+	subnetResults, err := awsprovider.GetSubnets(accessKeyID, secretAccessKey, datacenter.Spec.AWS.Region, vpcID)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get subnets: %v", err)
 	}
 
+	subnets := apiv1.AWSSubnetList{}
 	for _, s := range subnetResults {
 		subnetTags := []apiv1.AWSTag{}
 		var subnetName string
@@ -465,22 +439,22 @@ func listAWSSubnets(ctx context.Context, keyID, keySecret, vpcID string, datacen
 
 	}
 
-	return subnets, err
+	return subnets, nil
 }
 
 // AWSVPCEndpoint handles the request to list AWS VPC's, using provided credentials
-func AWSVPCEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter, privilegedSeedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+func AWSVPCEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AWSVPCReq)
 
-		keyID := req.AccessKeyID
-		keySecret := req.SecretAccessKey
+		accessKeyID := req.AccessKeyID
+		secretAccessKey := req.SecretAccessKey
 
 		if len(req.Credential) > 0 && credentialManager.GetPresets().AWS.Credentials != nil {
 			for _, credential := range credentialManager.GetPresets().AWS.Credentials {
 				if credential.Name == req.Credential {
-					keyID = credential.AccessKeyID
-					keySecret = credential.SecretAccessKey
+					accessKeyID = credential.AccessKeyID
+					secretAccessKey = credential.SecretAccessKey
 					break
 				}
 			}
@@ -490,41 +464,27 @@ func AWSVPCEndpoint(credentialManager common.PresetsManager, seedsGetter provide
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
-		seed, datacenter, err := provider.DatacenterFromSeedMap(seeds, req.DC)
+		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, req.DC)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		privilegedSeedClient, err := privilegedSeedClientGetter(seed)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get client for seed: %v", err))
-		}
 
-		return listAWSVPCS(ctx, keyID, keySecret, datacenter, privilegedSeedClient)
+		return listAWSVPCS(accessKeyID, secretAccessKey, datacenter)
 	}
 }
 
-func listAWSVPCS(ctx context.Context, keyID, keySecret string, datacenter *kubermaticv1.Datacenter, privilegedSeedClient ctrlruntimeclient.Client) (apiv1.AWSVPCList, error) {
-	vpcs := apiv1.AWSVPCList{}
+func listAWSVPCS(accessKeyID, secretAccessKey string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSVPCList, error) {
 
 	if datacenter.Spec.AWS == nil {
 		return nil, errors.NewBadRequest("datacenter is not an AWS datacenter")
 	}
 
-	ec2, err := awsProvider.NewCloudProvider(datacenter, provider.SecretKeySelectorValueFuncFactory(ctx, privilegedSeedClient))
-	if err != nil {
-		return nil, fmt.Errorf("couldn't create cloud provider: %v", err)
-	}
-
-	vpcsResults, err := ec2.GetVPCS(kubermaticv1.CloudSpec{
-		AWS: &kubermaticv1.AWSCloudSpec{
-			AccessKeyID:     keyID,
-			SecretAccessKey: keySecret,
-		},
-	})
+	vpcsResults, err := awsprovider.GetVPCS(accessKeyID, secretAccessKey, datacenter.Spec.AWS.Region)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get vpc's: %v", err)
 	}
 
+	vpcs := apiv1.AWSVPCList{}
 	for _, vpc := range vpcsResults {
 		var tags []apiv1.AWSTag
 		var cidrBlockList []apiv1.AWSVpcCidrBlockAssociation
