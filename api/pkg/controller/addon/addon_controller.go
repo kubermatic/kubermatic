@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"go.uber.org/zap"
@@ -141,7 +142,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log = r.log.With("cluster", addon.Spec.Cluster.Name)
 
 	// Add a wrapping here so we can emit an event on error
-	err := r.reconcile(ctx, log, addon)
+	result, err := r.reconcile(ctx, log, addon)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Eventf(addon, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
@@ -155,39 +156,42 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 				"failed to reconcile Addon %q: %v", addon.Name, reconcilingError)
 		}
 	}
-	return reconcile.Result{}, err
+	if result == nil {
+		result = &reconcile.Result{}
+	}
+	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) (*reconcile.Result, error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
 		// If its not a NotFound return it
 		if !kerrors.IsNotFound(err) {
-			return err
+			return nil, err
 		}
 
 		// Cluster does not exist - If the addon has the deletion timestamp - we shall delete it
 		if addon.DeletionTimestamp != nil {
 			if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-				return fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
+				return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
 			}
 		}
-		return nil
+		return nil, nil
 	}
 
 	if cluster.DeletionTimestamp != nil {
 		log.Debug("Skipping addon because cluster is deleted")
-		return nil
+		return nil, nil
 	}
 
 	if cluster.Spec.Pause {
 		log.Debug("Skipping because the cluster is paused")
-		return nil
+		return nil, nil
 	}
 
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
 		log.Debug("Skipping because the cluster has a different worker name set")
-		return nil
+		return nil, nil
 	}
 
 	// When a cluster gets deleted - we can skip it - not worth the effort.
@@ -195,35 +199,45 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	// The correct way of handling it though should be a optional cleanup routine in the cluster controller, which will delete all PV's and LB's inside the cluster cluster.
 	if cluster.DeletionTimestamp != nil {
 		log.Debug("Skipping because the cluster is being deleted")
-		return nil
+		return nil, nil
 	}
 
 	// When the apiserver is not healthy, we must skip it
 	if kubermaticv1.HealthStatusDown == cluster.Status.ExtendedHealth.Apiserver {
 		log.Debug("Skipping because the API server is not running")
-		return nil
+		return nil, nil
+	}
+
+	// Openshift needs some time to create this, so avoid getting into the backoff
+	// while the admin-kubeconfig secret doesn't exist yet
+	if _, err := r.KubeconfigProvider.GetAdminKubeconfig(cluster); err != nil {
+		if kerrors.IsNotFound(err) {
+			log.Debug("Kubeconfig wasn't found, trying again in 10 seconds")
+			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+		}
+		return nil, err
 	}
 
 	// Addon got deleted - remove all manifests
 	if addon.DeletionTimestamp != nil {
 		if err := r.cleanupManifests(ctx, log, addon, cluster); err != nil {
-			return fmt.Errorf("failed to delete manifests from cluster: %v", err)
+			return nil, fmt.Errorf("failed to delete manifests from cluster: %v", err)
 		}
 		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-			return fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
+			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
 		}
-		return nil
+		return nil, nil
 	}
 
 	// Reconciling
 	if err := r.ensureIsInstalled(ctx, log, addon, cluster); err != nil {
-		return fmt.Errorf("failed to deploy the addon manifests into the cluster: %v", err)
+		return nil, fmt.Errorf("failed to deploy the addon manifests into the cluster: %v", err)
 	}
 	if err := r.ensureFinalizerIsSet(ctx, addon); err != nil {
-		return fmt.Errorf("failed to ensure that the cleanup finalizer existis on the addon: %v", err)
+		return nil, fmt.Errorf("failed to ensure that the cleanup finalizer existis on the addon: %v", err)
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {
