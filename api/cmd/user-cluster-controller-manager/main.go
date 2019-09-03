@@ -202,7 +202,7 @@ func main() {
 			glog.Fatalf("Failed to add nodecsrapprover controller: %v", err)
 		}
 		if err := openshiftmasternodelabeler.Add(context.Background(), kubermaticlog.Logger, mgr); err != nil {
-			glog.Fatalf("Failed to add openshiftmasternodelabeler contorller: %v", err)
+			glog.Fatalf("Failed to add openshiftmasternodelabeler controller: %v", err)
 		}
 		glog.Infof("Registered nodecsrapprover controller")
 	}
