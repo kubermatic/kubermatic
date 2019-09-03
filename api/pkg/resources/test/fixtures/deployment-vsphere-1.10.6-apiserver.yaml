@@ -215,6 +215,10 @@ spec:
         - kubermaticIssuer
         - --oidc-username-claim
         - email
+        - --oidc-groups-prefix
+        - 'oidc:'
+        - --oidc-groups-claim
+        - groups
         - --oidc-ca-file
         - /etc/kubernetes/dex/ca/caBundle.pem
         command:
