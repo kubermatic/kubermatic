@@ -54,7 +54,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error
 	// Ignore update events that don't touch the metadata
 	metadataChangedPredicate := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return apiequality.Semantic.DeepEqual(e.MetaOld, e.MetaNew)
+			return !apiequality.Semantic.DeepEqual(e.MetaOld, e.MetaNew)
 		},
 	}
 	if err := c.Watch(

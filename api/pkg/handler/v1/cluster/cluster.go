@@ -688,10 +688,36 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
 		cluster, err := getCluster(ctx, req, projectProvider)
 		if err != nil {
 			return nil, err
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		nodeList := &corev1.NodeList{}
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+			return nil, err
+		}
+		availableResources := make(map[string]corev1.ResourceList)
+		for _, n := range nodeList.Items {
+			availableResources[n.Name] = n.Status.Allocatable
+		}
+
+		dynamicCLient, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		allNodeMetricsList := &v1beta1.NodeMetricsList{}
+		if err := dynamicCLient.List(ctx, &ctrlruntimeclient.ListOptions{}, allNodeMetricsList); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
@@ -699,13 +725,13 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 		if err := seedAdminClient.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: fmt.Sprintf("cluster-%s", cluster.Name)}, podMetricsList); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return convertClusterMetrics(podMetricsList, cluster)
+		return convertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster)
 	}
 }
 
-func convertClusterMetrics(metrics *v1beta1.PodMetricsList, cluster *kubermaticv1.Cluster) (*apiv1.ClusterMetrics, error) {
+func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1beta1.NodeMetrics, availableNodesResources map[string]corev1.ResourceList, cluster *kubermaticv1.Cluster) (*apiv1.ClusterMetrics, error) {
 
-	if metrics == nil {
+	if podMetrics == nil {
 		return nil, fmt.Errorf("metric list can not be nil")
 	}
 	if cluster == nil {
@@ -714,9 +740,43 @@ func convertClusterMetrics(metrics *v1beta1.PodMetricsList, cluster *kubermaticv
 	clusterMetrics := &apiv1.ClusterMetrics{
 		Name:                cluster.Name,
 		ControlPlaneMetrics: apiv1.ControlPlaneMetrics{},
+		NodesMetrics:        make([]apiv1.NodeMetric, 0),
 	}
 
-	for _, podMetrics := range metrics.Items {
+	for _, m := range nodeMetrics {
+		usage := corev1.ResourceList{}
+		nodeMetric := apiv1.NodeMetric{
+			Name: m.Name,
+		}
+		err := scheme.Scheme.Convert(&m.Usage, &usage, nil)
+		if err != nil {
+			return nil, err
+		}
+		resourceMetricsInfo := common.ResourceMetricsInfo{
+			Name:      m.Name,
+			Metrics:   usage,
+			Available: availableNodesResources[m.Name],
+		}
+
+		if available, found := resourceMetricsInfo.Available[corev1.ResourceCPU]; found {
+			quantityCPU := resourceMetricsInfo.Metrics[corev1.ResourceCPU]
+			nodeMetric.CPUTotalMillicores = quantityCPU.MilliValue()
+			nodeMetric.CPUAvailableMillicores = available.MilliValue()
+			fraction := float64(quantityCPU.MilliValue()) / float64(available.MilliValue()) * 100
+			nodeMetric.CPUUsedPercentage = int64(fraction)
+		}
+
+		if available, found := resourceMetricsInfo.Available[corev1.ResourceMemory]; found {
+			quantityM := resourceMetricsInfo.Metrics[corev1.ResourceMemory]
+			nodeMetric.MemoryTotalBytes = quantityM.Value() / (1024 * 1024)
+			nodeMetric.MemoryAvailableBytes = available.Value() / (1024 * 1024)
+			fraction := float64(quantityM.MilliValue()) / float64(available.MilliValue()) * 100
+			nodeMetric.MemoryUsedPercentage = int64(fraction)
+		}
+		clusterMetrics.NodesMetrics = append(clusterMetrics.NodesMetrics, nodeMetric)
+	}
+
+	for _, podMetrics := range podMetrics.Items {
 		for _, container := range podMetrics.Containers {
 			usage := corev1.ResourceList{}
 			err := scheme.Scheme.Convert(&container.Usage, &usage, nil)

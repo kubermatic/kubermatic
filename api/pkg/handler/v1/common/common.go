@@ -17,6 +17,13 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// ResourceMetricsInfo is a struct that holds the node metrics
+type ResourceMetricsInfo struct {
+	Name      string
+	Metrics   corev1.ResourceList
+	Available corev1.ResourceList
+}
+
 // OIDCConfiguration is a struct that holds
 // OIDC provider configuration data, read from command line arguments
 type OIDCConfiguration struct {
