@@ -404,6 +404,7 @@ func (r *testRunner) testCluster(
 			"[Ginkgo] Run ginkgo tests",
 			report,
 			func() error {
+				return nil
 				ginkgoRes, err := r.executeGinkgoRunWithRetries(log, run, userClusterClient)
 				if ginkgoRes != nil {
 					// We append the report from Ginkgo to our scenario wide report
@@ -421,7 +422,7 @@ func (r *testRunner) testCluster(
 	// Do a simple PVC test - with retries
 	if supportsStorage(cluster) {
 		if err := junitReporterWrapper(
-			"[Kubermatic] [CloudProvider] Test PersistentVolumes",
+			"[Kubermatic] Test PersistentVolumes",
 			report,
 			func() error {
 				return retryNAttempts(maxTestAttempts,
@@ -435,7 +436,7 @@ func (r *testRunner) testCluster(
 	// Do a simple LB test - with retries
 	if supportsLBs(cluster) {
 		if err := junitReporterWrapper(
-			"[Kubermatic] [CloudProvider] Test LoadBalancers",
+			"[Kubermatic] Test LoadBalancers",
 			report,
 			func() error {
 				return retryNAttempts(maxTestAttempts,
