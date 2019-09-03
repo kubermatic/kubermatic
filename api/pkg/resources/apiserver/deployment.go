@@ -310,9 +310,13 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 			flags = append(flags, "--oidc-required-claim", data.Cluster().Spec.OIDC.RequiredClaim)
 		}
 	} else if enableDexCA {
-		flags = append(flags, "--oidc-issuer-url", data.OIDCIssuerURL())
-		flags = append(flags, "--oidc-client-id", data.OIDCIssuerClientID())
-		flags = append(flags, "--oidc-username-claim", "email")
+		flags = append(flags,
+			"--oidc-issuer-url", data.OIDCIssuerURL(),
+			"--oidc-client-id", data.OIDCIssuerClientID(),
+			"--oidc-username-claim", "email",
+			"--oidc-groups-prefix", "oidc:",
+			"--oidc-groups-claim", "groups",
+		)
 		if len(data.OIDCCAFile()) > 0 {
 			flags = append(flags, "--oidc-ca-file", "/etc/kubernetes/dex/ca/caBundle.pem")
 		}
