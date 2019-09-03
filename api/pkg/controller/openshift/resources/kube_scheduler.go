@@ -277,7 +277,7 @@ func getSchedulerHealthGetAction() *corev1.HTTPGetAction {
 
 func getKubeSchedulerImage(openshiftVersion string) (string, error) {
 	switch openshiftVersion {
-	case "4.1.9":
+	case openshiftVersion419:
 		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:155ef40a64608c946ca9ca0310bbf88f5a4664b2925502b3acac86847bc158e6", nil
 	default:
 		return "", fmt.Errorf("no scheduler available for openshift version %q", openshiftVersion)
