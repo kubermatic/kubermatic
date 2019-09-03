@@ -25,7 +25,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			cloudProvider: &apiv1.NodeCloudSpec{
 				AWS: &apiv1.AWSNodeSpec{},
 			},
-			expectedResult: "",
+			expectedResult: "ubuntu",
 		},
 		{
 			name: "test SSH login name for VSphere:ContainerLinux",
@@ -36,7 +36,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			cloudProvider: &apiv1.NodeCloudSpec{
 				VSphere: &apiv1.VSphereNodeSpec{},
 			},
-			expectedResult: "",
+			expectedResult: "core",
 		},
 		{
 			name: "test SSH login name for Openstack:CentOS",
@@ -47,7 +47,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			cloudProvider: &apiv1.NodeCloudSpec{
 				Openstack: &apiv1.OpenstackNodeSpec{},
 			},
-			expectedResult: "",
+			expectedResult: "centos",
 		},
 	}
 
