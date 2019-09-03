@@ -118,6 +118,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			Image:  config.Image.Value,
 			Tags:   config.Tags,
 		}
+		cloudSpec.Openstack.UseFloatingIP = config.FloatingIPPool.Value != ""
 		if config.RootDiskSizeGB != nil && *config.RootDiskSizeGB > 0 {
 			cloudSpec.Openstack.RootDiskSizeGB = config.RootDiskSizeGB
 		}
