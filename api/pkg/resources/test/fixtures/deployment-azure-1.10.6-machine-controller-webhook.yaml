@@ -33,6 +33,15 @@ spec:
         - '{"command":"/usr/local/bin/webhook","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-logtostderr","-v","4","-listen-address","0.0.0.0:9876"]}'
         command:
         - /http-prober-bin/http-prober
+        env:
+        - name: AZURE_CLIENT_ID
+          value: az-client-id
+        - name: AZURE_CLIENT_SECRET
+          value: az-client-secret
+        - name: AZURE_TENANT_ID
+          value: az-tenant-id
+        - name: AZURE_SUBSCRIPTION_ID
+          value: az-subscription-id
         image: docker.io/kubermatic/machine-controller:v1.5.5
         livenessProbe:
           failureThreshold: 8
