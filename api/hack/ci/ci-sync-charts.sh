@@ -26,18 +26,8 @@ if [[ -z ${INSTALLER_BRANCH} ]]; then
   exit 1
 fi
 
-# create fresh clone of the dashboard repository
-cd "$(mktemp -d)"
-git clone git@github.com:kubermatic/kubermatic-installer.git .
-MINOR_VERSION="${INSTALLER_BRANCH##release/}"
-FOUND_TAG="$(git for-each-ref "refs/tags/$MINOR_VERSION*" --sort=-authordate --format='%(refname)' --count=1)"
-if [ -z "$FOUND_TAG" ]; then
-  echo "Error, no Dashboard tags contain $MINOR_VERSION"
-  exit 1
-fi
-LATEST_DASHBOARD="${FOUND_TAG##refs/tags/}"
-cd -
 
+LATEST_DASHBOARD="$(get_latest_dashboard_tag "$INSTALLER_BRANCH")"
 sed -i "s/__DASHBOARD_TAG__/$LATEST_DASHBOARD/g" config/*/*.yaml
 
 export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio iap s3-exporter'
