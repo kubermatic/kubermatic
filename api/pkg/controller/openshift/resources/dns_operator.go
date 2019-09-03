@@ -108,7 +108,7 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 
 func openshiftDNSOperatorEnv(openshiftVersion string) ([]corev1.EnvVar, error) {
 	switch openshiftVersion {
-	case "4.1.9":
+	case openshiftVersion419:
 		return []corev1.EnvVar{
 			{Name: "RELEASE_VERSION", Value: "4.1.9"},
 			{Name: "IMAGE", Value: "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:390cc1784aba986fad6315142d1d2524b2707a91eea3705d448367b51a112438"},
@@ -121,7 +121,7 @@ func openshiftDNSOperatorEnv(openshiftVersion string) ([]corev1.EnvVar, error) {
 
 func openshiftDNSOperatorImage(openshiftVersion string) (string, error) {
 	switch openshiftVersion {
-	case "4.1.9":
+	case openshiftVersion419:
 		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:2aca09bcf2d705c8fe457e21507319550d4363fd07012db6403f59c314ecc7e0", nil
 	default:
 		return "", fmt.Errorf("no image available for openshift version %q", openshiftVersion)

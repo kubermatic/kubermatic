@@ -272,7 +272,7 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 
 func kubeControllerManagerImage(version string) (string, error) {
 	switch version {
-	case "4.1.9":
+	case openshiftVersion419:
 		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:155ef40a64608c946ca9ca0310bbf88f5a4664b2925502b3acac86847bc158e6", nil
 	default:
 		return "", fmt.Errorf("no kube-controller-image available for version %q", version)

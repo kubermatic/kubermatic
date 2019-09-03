@@ -248,7 +248,7 @@ func getControllerManagerVolumes() []corev1.Volume {
 
 func buildAndDeployerImageTemplateFormatImage(openshiftVersion string) (string, string, error) {
 	switch openshiftVersion {
-	case "4.1.9":
+	case openshiftVersion419:
 		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:f4d2df04a0ac1b689bc275c060e5520781f48f007dabf849d92cf1519f16ea82", "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:8b946a142a8ba328ffe04195bb3fc4beeff26aaa4d8d0e99528340e8880eba7e", nil
 	default:
 		return "", "", fmt.Errorf("no build and deploymer imageFormatImage available for openshift version %q", openshiftVersion)
@@ -257,7 +257,7 @@ func buildAndDeployerImageTemplateFormatImage(openshiftVersion string) (string, 
 
 func getOpenshiftControllerManagerImage(version string) (string, error) {
 	switch version {
-	case "4.1.9":
+	case openshiftVersion419:
 		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:86255c4efe6bbc141a0f41444f863bbd5cd832ffca21d2b737a4f9c225ed00ad", nil
 	default:
 		return "", fmt.Errorf("no openshit controller manager image available for version %q", version)
