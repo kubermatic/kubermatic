@@ -79,6 +79,7 @@ func newRunner(scenarios []testScenario, opts *Opts, log *zap.SugaredLogger) *te
 		log:                          log,
 		existingClusterLabel:         opts.existingClusterLabel,
 		openshift:                    opts.openshift,
+		openshiftPullSecret:          opts.openshiftPullSecret,
 		printGinkoLogs:               opts.printGinkoLogs,
 		onlyTestCreation:             opts.onlyTestCreation,
 		pspEnabled:                   opts.pspEnabled,
@@ -89,20 +90,21 @@ func newRunner(scenarios []testScenario, opts *Opts, log *zap.SugaredLogger) *te
 }
 
 type testRunner struct {
-	ctx              context.Context
-	scenarios        []testScenario
-	secrets          secrets
-	namePrefix       string
-	repoRoot         string
-	reportsRoot      string
-	PublicKeys       [][]byte
-	workerName       string
-	homeDir          string
-	log              *zap.SugaredLogger
-	openshift        bool
-	printGinkoLogs   bool
-	onlyTestCreation bool
-	pspEnabled       bool
+	ctx                 context.Context
+	scenarios           []testScenario
+	secrets             secrets
+	namePrefix          string
+	repoRoot            string
+	reportsRoot         string
+	PublicKeys          [][]byte
+	workerName          string
+	homeDir             string
+	log                 *zap.SugaredLogger
+	openshift           bool
+	openshiftPullSecret string
+	printGinkoLogs      bool
+	onlyTestCreation    bool
+	pspEnabled          bool
 
 	controlPlaneReadyWaitTimeout time.Duration
 	deleteClusterAfterTests      bool
@@ -357,8 +359,59 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		return report, nil
 	}
 
-	if err := r.testCluster(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, kubeconfigFilename, cloudConfigFilename, report); err != nil {
-		return report, fmt.Errorf("failed to test cluster: %v", err)
+	if !r.onlyTestCreation {
+		if err := r.testCluster(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, kubeconfigFilename, cloudConfigFilename, report); err != nil {
+			return report, fmt.Errorf("failed to test cluster: %v", err)
+		}
+	}
+
+	if !r.deleteClusterAfterTests {
+		return report, nil
+	}
+
+	deleteParms := &projectclient.DeleteClusterParams{
+		ProjectID: r.kubermatcProjectID,
+		Dc:        r.seed.Name,
+	}
+	deleteParms.SetTimeout(15 * time.Second)
+	if err := junitReporterWrapper(
+		"[Kubermatic] Delete cluster",
+		report,
+		func() error {
+			selector, err := labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
+			if err != nil {
+				return fmt.Errorf("failed to parse selector: %v", err)
+			}
+			return wait.PollImmediate(5*time.Second, 15*time.Minute, func() (bool, error) {
+				clusterList := &kubermaticv1.ClusterList{}
+				listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
+				if err := r.seedClusterClient.List(r.ctx, listOpts, clusterList); err != nil {
+					log.Errorw("listing clusters failed", zap.Error(err))
+					return false, nil
+				}
+				// Success!
+				if len(clusterList.Items) == 0 {
+					return true, nil
+				}
+				// Should never happen
+				if len(clusterList.Items) > 1 {
+					return false, fmt.Errorf("expected to find zero or one cluster, got %d", len(clusterList.Items))
+				}
+				// Cluster is currently being deleted
+				if clusterList.Items[0].DeletionTimestamp != nil {
+					return false, nil
+				}
+				// Issue Delete call
+				log.With("cluster", clusterList.Items[0].Name).Info("Issuing DELETE call for cluster")
+				deleteParms.ClusterID = clusterList.Items[0].Name
+				_, err := r.kubermaticClient.Project.DeleteCluster(deleteParms, r.kubermaticAuthenticator)
+				log.Errorw("cluster delete call returned error", zap.Error(errors.New(fmtSwaggerError(err))))
+				return false, nil
+			})
+		},
+	); err != nil {
+		log.Errorw("failed to delete cluster", zap.Error(err))
+		return report, err
 	}
 
 	return report, nil
@@ -457,55 +510,6 @@ func (r *testRunner) testCluster(
 				})
 		}); err != nil {
 		log.Errorf("Failed to verify that user cluster RBAC controller work: %v", err)
-	}
-
-	if !r.deleteClusterAfterTests {
-		return nil
-	}
-
-	deleteParms := &projectclient.DeleteClusterParams{
-		ProjectID: r.kubermatcProjectID,
-		Dc:        r.seed.Name,
-	}
-	deleteParms.SetTimeout(15 * time.Second)
-	if err := junitReporterWrapper(
-		"[Kubermatic] Delete cluster",
-		report,
-		func() error {
-			selector, err := labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
-			if err != nil {
-				return fmt.Errorf("failed to parse selector: %v", err)
-			}
-			return wait.PollImmediate(5*time.Second, 15*time.Minute, func() (bool, error) {
-				clusterList := &kubermaticv1.ClusterList{}
-				listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
-				if err := r.seedClusterClient.List(r.ctx, listOpts, clusterList); err != nil {
-					log.Errorw("listing clusters failed", zap.Error(err))
-					return false, nil
-				}
-				// Success!
-				if len(clusterList.Items) == 0 {
-					return true, nil
-				}
-				// Should never happen
-				if len(clusterList.Items) > 1 {
-					return false, fmt.Errorf("expected to find zero or one cluster, got %d", len(clusterList.Items))
-				}
-				// Cluster is currently being deleted
-				if clusterList.Items[0].DeletionTimestamp != nil {
-					return false, nil
-				}
-				// Issue Delete call
-				log.With("cluster", clusterList.Items[0].Name).Info("Issuing DELETE call for cluster")
-				deleteParms.ClusterID = clusterList.Items[0].Name
-				_, err := r.kubermaticClient.Project.DeleteCluster(deleteParms, r.kubermaticAuthenticator)
-				log.Errorw("cluster delete call returned error", zap.Error(errors.New(fmtSwaggerError(err))))
-				return false, nil
-			})
-		},
-	); err != nil {
-		log.Errorw("failed to delete cluster", zap.Error(err))
-		return err
 	}
 
 	return nil
@@ -622,6 +626,9 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 	cluster := scenario.Cluster(r.secrets)
 	if r.openshift {
 		cluster.Cluster.Type = "openshift"
+		cluster.Cluster.Spec.Openshift = &apimodels.Openshift{
+			ImagePullSecret: r.openshiftPullSecret,
+		}
 	}
 	// The cluster name must be unique per project.
 	// We build up a understandable name with the various cli parameters & add a random string in the end to ensure

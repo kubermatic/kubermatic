@@ -65,6 +65,7 @@ type Opts struct {
 	excludeSelectorRaw           string
 	existingClusterLabel         string
 	openshift                    bool
+	openshiftPullSecret          string
 	printGinkoLogs               bool
 	onlyTestCreation             bool
 	pspEnabled                   bool
@@ -244,6 +245,13 @@ func main() {
 	}
 	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{"http"}), nil)
 	opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
+
+	if opts.openshift {
+		opts.openshiftPullSecret = os.Getenv("OPENSHIFT_IMAGE_PULL_SECRET")
+		if opts.openshiftPullSecret == "" {
+			log.Fatal("testing openshift requires the `OPENSHIFT_IMAGE_PULL_SECRET` env var to be set")
+		}
+	}
 
 	if val := os.Getenv("KUBERMATIC_PSP_ENABLED"); val == "true" {
 		opts.pspEnabled = true
