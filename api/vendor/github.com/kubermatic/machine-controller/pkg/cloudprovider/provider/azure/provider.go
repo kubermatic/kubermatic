@@ -44,7 +44,6 @@ import (
 
 const (
 	machineUIDTag = "Machine-UID"
-	adminUserName = "kubermatic"
 
 	finalizerPublicIP = "kubermatic.io/cleanup-azure-public-ip"
 	finalizerNIC      = "kubermatic.io/cleanup-azure-nic"
@@ -408,6 +407,12 @@ func (p *provider) Create(machine *v1alpha1.Machine, data *cloudprovidertypes.Pr
 		tags[k] = to.StringPtr(v)
 	}
 	tags[machineUIDTag] = to.StringPtr(string(machine.UID))
+
+	adminUserName := string(providerCfg.OperatingSystem)
+	if adminUserName == "coreos" {
+		// CoreOS uses core by default everywhere, so we adhere to that
+		adminUserName = "core"
+	}
 
 	vmSpec := compute.VirtualMachine{
 		Location: &config.Location,
