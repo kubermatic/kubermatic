@@ -386,7 +386,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 				clusterList := &kubermaticv1.ClusterList{}
 				listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
 				if err := r.seedClusterClient.List(r.ctx, listOpts, clusterList); err != nil {
-					log.Errorw("listing clusters failed", zap.Error(err))
+					log.Errorw("Listing clusters failed", zap.Error(err))
 					return false, nil
 				}
 				// Success!

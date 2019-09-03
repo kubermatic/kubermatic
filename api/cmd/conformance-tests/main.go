@@ -249,7 +249,7 @@ func main() {
 	if opts.openshift {
 		opts.openshiftPullSecret = os.Getenv("OPENSHIFT_IMAGE_PULL_SECRET")
 		if opts.openshiftPullSecret == "" {
-			log.Fatal("testing openshift requires the `OPENSHIFT_IMAGE_PULL_SECRET` env var to be set")
+			log.Fatal("Testing openshift requires the `OPENSHIFT_IMAGE_PULL_SECRET` env var to be set")
 		}
 	}
 
