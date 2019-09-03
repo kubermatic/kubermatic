@@ -22,6 +22,7 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
   -master-resources=../config/kubermatic/static/master \
   -kubernetes-addons-path=../addons \
   -openshift-addons-path=../openshift_addons \
+  -feature-gates=OpenIDAuthPlugin=true \
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
   -external-url=dev.kubermatic.io \
   -backup-container=../config/kubermatic/static/backup-container.yaml \
