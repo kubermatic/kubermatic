@@ -11,19 +11,19 @@ spec:
       cloudProviderSpec:
         assignPublicIP: true
         availabilitySet: ""
-        clientID: 32hrf23oh89f32
-        clientSecret: rbyughv438oh32f23v2
+        clientID: ""
+        clientSecret: ""
         location: westeurope
         resourceGroup: cluster-azurecluster-1a2b3c4d5e
         routeTableName: cluster-azurecluster-1a2b3c4d5e
         securityGroupName: ""
         subnetName: cluster-azurecluster-1a2b3c4d5e
-        subscriptionID: 32h9q8r8xqp3h9
+        subscriptionID: ""
         tags:
           KubernetesCluster: azurecluster-1a2b3c4d5e
           foo: bar
           system-cluster: azurecluster-1a2b3c4d5e
-        tenantID: 38w7giefb32fhifw3q
+        tenantID: ""
         vmSize: Standard_B1ms
         vnetName: cluster-azurecluster-1a2b3c4d5e
       operatingSystem: coreos
