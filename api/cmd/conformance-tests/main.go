@@ -356,8 +356,6 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] = true
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] = true
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] = false
-		// We only support one version of openshift
-		opts.versions = []*semver.Semver{semver.NewSemverOrDie("3.11.0")}
 	}
 
 	var scenarios []testScenario
