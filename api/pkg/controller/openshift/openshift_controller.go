@@ -695,7 +695,7 @@ func (r *Reconciler) networkDefaults(ctx context.Context, cluster *kubermaticv1.
 
 	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
 		setServiceNetwork := func(c *kubermaticv1.Cluster) {
-			c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
+			c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20"}
 		}
 		modifiers = append(modifiers, setServiceNetwork)
 	}

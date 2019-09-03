@@ -22,7 +22,7 @@ func TestKubeControllerConfigMapCreation(t *testing.T) {
 				Spec: kubermaticv1.ClusterSpec{
 					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 						Pods: kubermaticv1.NetworkRanges{
-							CIDRBlocks: []string{"10.10.10.0"},
+							CIDRBlocks: []string{"10.240.16.0"},
 						},
 						Services: kubermaticv1.NetworkRanges{
 							CIDRBlocks: []string{"10.11.10.0"},

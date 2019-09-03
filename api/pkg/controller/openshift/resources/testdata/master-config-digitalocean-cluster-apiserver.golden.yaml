@@ -126,7 +126,7 @@ kubernetesMasterConfig:
   schedulerArguments: null
   schedulerConfigFile: /etc/origin/master/scheduler.json
   servicesNodePortRange: ''
-  servicesSubnet: "10.10.10.0/24"
+  servicesSubnet: "10.240.16.0/20"
 masterClients:
   externalKubernetesClientConnectionOverrides:
     acceptContentTypes: application/vnd.kubernetes.protobuf,application/json
@@ -149,7 +149,7 @@ networkConfig:
   externalIPNetworkCIDRs:
   - 0.0.0.0/0
   networkPluginName: redhat/openshift-ovs-subnet
-  serviceNetworkCIDR: "10.10.10.0/24"
+  serviceNetworkCIDR: "10.240.16.0/20"
 # TODO: Get this running with dex
 oauthConfig:
   alwaysShowProviderSelection: false

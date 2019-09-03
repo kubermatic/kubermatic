@@ -165,7 +165,7 @@ spec:
         - --service-account-key-file
         - /etc/kubernetes/service-account-key/sa.key
         - --service-cluster-ip-range
-        - 10.10.10.0/24
+        - 10.240.16.0/20
         - --service-node-port-range
         - 30000-32767
         - --allow-privileged

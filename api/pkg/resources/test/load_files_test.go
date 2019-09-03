@@ -208,7 +208,7 @@ func TestLoadFiles(t *testing.T) {
 						Version:        *ksemver.NewSemverOrDie(ver.Version.String()),
 						ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 							Services: kubermaticv1.NetworkRanges{
-								CIDRBlocks: []string{"10.10.10.0/24"},
+								CIDRBlocks: []string{"10.240.16.0/20"},
 							},
 							Pods: kubermaticv1.NetworkRanges{
 								CIDRBlocks: []string{"172.25.0.0/16"},
