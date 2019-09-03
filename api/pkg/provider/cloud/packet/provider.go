@@ -1,10 +1,12 @@
 package packet
 
 import (
+	"errors"
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 )
 
 const (
@@ -59,4 +61,31 @@ func (p *packet) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, _ provider.
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
 func (p *packet) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
+}
+
+func GetCredentialsForCluster(cloudSpec kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (apiKey, projectID string, err error) {
+	apiKey = cloudSpec.Packet.APIKey
+	projectID = cloudSpec.Packet.ProjectID
+
+	if apiKey == "" {
+		if cloudSpec.Packet.CredentialsReference == nil {
+			return "", "", errors.New("no credentials provided")
+		}
+		apiKey, err = secretKeySelector(cloudSpec.Packet.CredentialsReference, resources.PacketAPIKey)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	if projectID == "" {
+		if cloudSpec.Packet.CredentialsReference == nil {
+			return "", "", errors.New("no credentials provided")
+		}
+		projectID, err = secretKeySelector(cloudSpec.Packet.CredentialsReference, resources.PacketProjectID)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	return apiKey, projectID, nil
 }
