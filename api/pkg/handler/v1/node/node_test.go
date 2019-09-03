@@ -1290,7 +1290,7 @@ func TestNodeDeploymentMetrics(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExistingNodes: []*corev1.Node{
-				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}, Status: corev1.NodeStatus{Allocatable: map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity}}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus-1"}, Status: corev1.NodeStatus{Allocatable: map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity}}},
 			},
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
 				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}),
@@ -1303,11 +1303,11 @@ func TestNodeDeploymentMetrics(t *testing.T) {
 			},
 			ExistingMetrics: []*v1beta1.NodeMetrics{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "venus"},
+					ObjectMeta: metav1.ObjectMeta{Name: "venus-1"},
 					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
 				},
 			},
-			ExpectedResponse: `[{"name":"venus","memoryTotalBytes":655,"memoryAvailableBytes":655,"memoryUsedPercentage":100,"cpuTotalMillicores":290104582000,"cpuAvailableMillicores":290104582000,"cpuUsedPercentage":100}]`,
+			ExpectedResponse: `[{"name":"venus-1","memoryTotalBytes":655,"memoryAvailableBytes":655,"memoryUsedPercentage":100,"cpuTotalMillicores":290104582000,"cpuAvailableMillicores":290104582000,"cpuUsedPercentage":100}]`,
 		},
 	}
 
