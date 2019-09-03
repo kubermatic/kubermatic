@@ -492,12 +492,6 @@ func DecodeListNodeDeploymentMetrics(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
-type resourceMetricsInfo struct {
-	Name      string
-	Metrics   corev1.ResourceList
-	Available corev1.ResourceList
-}
-
 func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentMetricsReq)
@@ -516,7 +510,7 @@ func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider) endpoin
 
 		// check if logged user has privileges to list node deployments. If yes then we can use privileged client to
 		// get metrics
-		_, err = getMachinesForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
+		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -527,8 +521,11 @@ func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider) endpoin
 		}
 
 		availableResources := make(map[string]corev1.ResourceList)
-		for _, n := range nodeList.Items {
-			availableResources[n.Name] = n.Status.Allocatable
+		for i := range machines.Items {
+			n := getNodeForMachine(&machines.Items[i], nodeList.Items)
+			if n != nil {
+				availableResources[n.Name] = n.Status.Allocatable
+			}
 		}
 
 		dynamicCLient, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
@@ -536,16 +533,23 @@ func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider) endpoin
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		nodeMetricsList := &v1beta1.NodeMetricsList{}
-		if err := dynamicCLient.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeMetricsList); err != nil {
+		nodeDeploymentNodesMetrics := make([]v1beta1.NodeMetrics, 0)
+		allNodeMetricsList := &v1beta1.NodeMetricsList{}
+		if err := dynamicCLient.List(ctx, &ctrlruntimeclient.ListOptions{}, allNodeMetricsList); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertNodeMetrics(nodeMetricsList, availableResources)
+		for _, m := range allNodeMetricsList.Items {
+			if _, ok := availableResources[m.Name]; ok {
+				nodeDeploymentNodesMetrics = append(nodeDeploymentNodesMetrics, m)
+			}
+		}
+
+		return convertNodeMetrics(nodeDeploymentNodesMetrics, availableResources)
 	}
 }
 
-func convertNodeMetrics(metrics *v1beta1.NodeMetricsList, availableResources map[string]corev1.ResourceList) ([]apiv1.NodeMetric, error) {
+func convertNodeMetrics(metrics []v1beta1.NodeMetrics, availableResources map[string]corev1.ResourceList) ([]apiv1.NodeMetric, error) {
 	nodeMetrics := make([]apiv1.NodeMetric, 0)
 	var usage corev1.ResourceList
 
@@ -553,7 +557,7 @@ func convertNodeMetrics(metrics *v1beta1.NodeMetricsList, availableResources map
 		return nil, fmt.Errorf("metric list can not be nil")
 	}
 
-	for _, m := range metrics.Items {
+	for _, m := range metrics {
 		nodeMetric := apiv1.NodeMetric{
 			Name: m.Name,
 		}
@@ -561,7 +565,7 @@ func convertNodeMetrics(metrics *v1beta1.NodeMetricsList, availableResources map
 		if err != nil {
 			return nil, err
 		}
-		resourceMetricsInfo := resourceMetricsInfo{
+		resourceMetricsInfo := common.ResourceMetricsInfo{
 			Name:      m.Name,
 			Metrics:   usage,
 			Available: availableResources[m.Name],
