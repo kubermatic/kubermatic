@@ -422,7 +422,7 @@ func (r *testRunner) testCluster(
 	// Do a simple PVC test - with retries
 	if supportsStorage(cluster) {
 		if err := junitReporterWrapper(
-			"[Kubermatic] Test PersistentVolumes",
+			"[Kubermatic] [CloudProvider] Test PersistentVolumes",
 			report,
 			func() error {
 				return retryNAttempts(maxTestAttempts,
@@ -436,7 +436,7 @@ func (r *testRunner) testCluster(
 	// Do a simple LB test - with retries
 	if supportsLBs(cluster) {
 		if err := junitReporterWrapper(
-			"[Kubermatic] Test LoadBalancers",
+			"[Kubermatic] [CloudProvider] Test LoadBalancers",
 			report,
 			func() error {
 				return retryNAttempts(maxTestAttempts,
