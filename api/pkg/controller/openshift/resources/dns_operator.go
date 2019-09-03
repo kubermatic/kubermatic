@@ -15,7 +15,10 @@ import (
 	utilpointer "k8s.io/utils/pointer"
 )
 
-const openshiftDNSOperatorDeploymentName = "openshift-dns-operator"
+const (
+	openshiftDNSOperatorDeploymentName = "openshift-dns-operator"
+	openshiftDNSOperatorContainerName  = "dns-operator"
+)
 
 var (
 	openshiftDNSOperatorResourceRequirements = corev1.ResourceRequirements{
@@ -62,7 +65,7 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 			}
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
-				Name:    "dns-operator",
+				Name:    openshiftDNSOperatorContainerName,
 				Image:   image,
 				Env:     env,
 				Command: []string{"dns-operator"},
@@ -90,7 +93,7 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 			}
 
 			d.Spec.Template.Spec.InitContainers = nil
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString("dns-operator"))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString(openshiftDNSOperatorContainerName))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}
