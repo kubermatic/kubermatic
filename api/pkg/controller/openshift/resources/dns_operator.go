@@ -92,6 +92,8 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 				return nil, err
 			}
 
+			// The apiserver.IsRunningWrapper appends to the init containers, so to avoid having
+			// it append again on each iteration we reconcile this, we have to reset them.
 			d.Spec.Template.Spec.InitContainers = nil
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString(openshiftDNSOperatorContainerName))
 			if err != nil {
