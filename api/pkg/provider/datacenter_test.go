@@ -158,6 +158,12 @@ func TestMigrateDatacenters(t *testing.T) {
 			},
 			errExpected: true,
 		},
+		{
+			name: "Invalid name, but is not a seed",
+			datacenters: map[string]DatacenterMeta{
+				"&invalid": {},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
