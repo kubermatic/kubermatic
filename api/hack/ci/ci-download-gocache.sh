@@ -8,7 +8,7 @@ set -euo pipefail
 set -o monitor
 
 # Make sure we never error, this is always best-effort only
-exit_gracefully { exit 0 }
+exit_gracefully() { exit 0; }
 trap exit_gracefully EXIT
 
 source ./api/hack/lib.sh
