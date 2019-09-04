@@ -296,6 +296,11 @@ const (
 
 	// DefaultDNATControllerImage defines the default image containing the dnat controller
 	DefaultDNATControllerImage = "quay.io/kubermatic/kubeletdnat-controller"
+
+	// IPVSProxyMode defines the ipvs kube-proxy mode.
+	IPVSProxyMode = "ipvs"
+	// IPTablesProxyMode defines the iptables kube-proxy mode.
+	IPTablesProxyMode = "iptables"
 )
 
 const (
