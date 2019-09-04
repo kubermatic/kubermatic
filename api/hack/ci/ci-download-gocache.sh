@@ -28,6 +28,12 @@ if ls -1qA ./somedir/ | grep -q .; then
 fi
 
 CACHE_VERSION="${PULL_BASE_SHA}"
+if [ -z $PULL_NUMBER ]; then
+  # Special case: This is called in a Postubmit. Go one revision back,
+  # as there can't be a cache for the current revision
+  CACHE_VERSION=$(git rev-parse ${CACHE_VERSION}~1|tr -d '\n')
+fi
+
 TEST_NAME="Download and extract gocache"
 retry 5 curl --fail
     --progress-bar\
