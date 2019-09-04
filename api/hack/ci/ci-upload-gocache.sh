@@ -37,7 +37,7 @@ retry 2 make build
 
 echodate "Building tests"
 TEST_NAME="Build tests"
-retry 2 go test -tags=cloud,create,e2e,integration ./... -run nope
+retry 2 go test -tags"=cloud create e2e integration" ./... -run nope
 
 echodate "Creating gocache archive"
 TEST_NAME="Creating gocache archive"
