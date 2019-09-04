@@ -49,7 +49,7 @@ write_junit() {
     errors=1
     failure='<failure type="Failure">Step failed</failure>'
   fi
-  [ "${TEST_NAME#[Kubermatic\]}" = "$TEST_NAME" ] && TEST_NAME="[Kubermatic] $TEST_NAME"
+  TEST_NAME="[Kubermatic] ${TEST_NAME#\[Kubermatic\] }"
   cat <<EOF > ${ARTIFACTS}/junit.$(echo $TEST_NAME|sed 's/ /_/g').xml
 <?xml version="1.0" ?>
 <testsuites>
