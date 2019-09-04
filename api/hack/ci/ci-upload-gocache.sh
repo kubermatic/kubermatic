@@ -54,7 +54,6 @@ TEST_NAME="Uploading gocache archive"
 # in conjunction with the retry func, so we just put them in a file instead
 echo 'Content-Type: application/octet-stream' > /tmp/headers
 retry 2 curl --fail \
-  --progress-bar \
   -T ${ARCHIVE_FILE} \
   -H @/tmp/headers \
   ${GOCACHE_MINIO_ADDRESS}/${GIT_HEAD_HASH}.tar

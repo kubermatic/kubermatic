@@ -45,7 +45,6 @@ TEST_NAME="Download and extract gocache"
 # in conjunction with the retry func, so we just put them in a file instead
 echo 'Content-Type: application/octet-stream' > /tmp/headers
 retry 5 curl --fail \
-    --progress-bar \
     -H @/tmp/headers \
     ${GOCACHE_MINIO_ADDRESS}/${CACHE_VERSION}.tar \
     |tar -C $GOCACHE -xf -
