@@ -53,8 +53,11 @@ trap debug_sleep EXIT
 
 echodate "Uploading gocache archive"
 TEST_NAME="Uploading gocache archive"
+# Passing the Headers as space-separated literals doesn't seem to work
+# in conjunction with the retry func, so we just put them in a file instead
+echo 'Content-Type: application/octet-stream' > /tmp/headers
 retry 2 curl --fail \
   --progress-bar \
   -T ${ARCHIVE_FILE} \
-  -H "Content-Type: application/octet-stream" \
-  ${GOCACHE_MINIO_ADDRESS}/${ARCHIVE_FILE}
+  -H @/tmp/headers \
+  ${GOCACHE_MINIO_ADDRESS}/${GIT_HEAD_HASH}.tar
