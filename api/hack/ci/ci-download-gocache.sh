@@ -23,7 +23,7 @@ GOCACHE=$(go env GOCACHE)
 # Make sure it actually exists
 mkdir -p $GOCACHE
 
-if ls -1qA ./somedir/ | grep -q .; then
+if ls -1qA $GOCACHE | grep -q .; then
   echodate "gocache at $GOCACHE is not empty, omitting download of gocache"
   exit 0
 fi
