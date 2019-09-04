@@ -48,8 +48,8 @@ ARCHIVE_FILE=/tmp/${GIT_HEAD_HASH}.tar
 # No compression because that needs quite a bit of CPU
 retry 2 tar -C $GOCACHE -cvf $ARCHIVE_FILE .
 
-sleep() { sleep 1d; }
-trap sleep EXIT
+debug_sleep() { sleep 1d; }
+trap debug_sleep EXIT
 
 echodate "Uploading gocache archive"
 TEST_NAME="Uploading gocache archive"
