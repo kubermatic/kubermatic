@@ -177,8 +177,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log.Debug("Processing")
 
 	if limitReached, err := controllerutil.ConcurrencyLimitReached(ctx, r, r.concurrentClusterUpdates); limitReached || err != nil {
+		log.Debugf("ignore reconciling due to max parallel reconcile has reached its limit of %v", r.concurrentClusterUpdates)
 		return reconcile.Result{
-			Requeue: true,
+			RequeueAfter: 1 * time.Second,
 		}, err
 	}
 
@@ -212,22 +213,23 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	successfullyReconciled := true
 	// Add a wrapping here so we can emit an event on error
-	result, err := r.reconcile(ctx, log, cluster)
-	if err != nil {
+	result, reconcileErr := r.reconcile(ctx, log, cluster)
+	if reconcileErr != nil {
 		successfullyReconciled = false
-		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+		log.Errorw("Reconciling failed", zap.Error(reconcileErr))
+		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", reconcileErr)
 	}
 
 	if result == nil {
 		result = &reconcile.Result{}
 	}
 
-	if err = controllerutil.SetClusterUpdatedSuccessfullyCondition(ctx, cluster, r, successfullyReconciled); err != nil {
-		log.Errorw("Unable to update clusters status conditions", zap.Error(err))
+	if err := controllerutil.SetClusterUpdatedSuccessfullyCondition(ctx, cluster, r, successfullyReconciled); err != nil {
+		log.Errorw("failed to update clusters status conditions", zap.Error(err))
+		reconcileErr = fmt.Errorf("failed to set cluster status: %v after reconciliation was done with err=%v", err, reconcileErr)
 	}
 
-	return *result, err
+	return *result, reconcileErr
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {

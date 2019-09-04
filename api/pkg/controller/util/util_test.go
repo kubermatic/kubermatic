@@ -2,6 +2,7 @@ package util
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime"
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -9,346 +10,187 @@ import (
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	utilpointer "k8s.io/utils/pointer"
 
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/client-go/kubernetes/scheme"
+
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-var (
-	concurrencyLimitReachedTestCases = []struct {
-		name  string
-		wants struct {
-			ctx    context.Context
-			client *mockClient
-			limit  int
-		}
-		expects struct {
-			limitReached bool
-			err          error
-		}
-	}{
-		{
-			name: "concurrency limit has not reached",
-			wants: struct {
-				ctx    context.Context
-				client *mockClient
-				limit  int
-			}{
-				ctx:    context.Background(),
-				client: &mockClient{},
-				limit:  1,
-			},
-
-			expects: struct {
-				limitReached bool
-				err          error
-			}{
-
-				limitReached: false,
-				err:          nil,
-			},
-		},
-		{
-			name: "concurrency limit has reached",
-			wants: struct {
-				ctx    context.Context
-				client *mockClient
-				limit  int
-			}{
-				ctx: context.Background(),
-				client: &mockClient{
-					limitReached: true,
-				},
-				limit: 2,
-			},
-
-			expects: struct {
-				limitReached bool
-				err          error
-			}{
-
-				limitReached: true,
-				err:          nil,
-			},
-		},
+func init() {
+	// We call this in init because even thought it is possible to register the same
+	// scheme multiple times it is an unprotected concurrent map access and these tests
+	// are very good at making that panic
+	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		panic(err)
 	}
-
-	setClusterUpdatedSuccessfullyConditionTestCases = []struct {
-		name  string
-		wants struct {
-			ctx                    context.Context
-			client                 *mockClient
-			cluster                kubermaticv1.Cluster
-			successfullyReconciled bool
-		}
-		expects struct {
-			hasConditionValue bool
-			err               error
-		}
-	}{
-		{
-			name: "statefulSet resources are not yet updated",
-			wants: struct {
-				ctx                    context.Context
-				client                 *mockClient
-				cluster                kubermaticv1.Cluster
-				successfullyReconciled bool
-			}{
-				ctx: context.Background(),
-				client: &mockClient{
-					inProgressStatefulSet: true,
-				},
-				cluster:                kubermaticv1.Cluster{},
-				successfullyReconciled: true,
-			},
-			expects: struct {
-				hasConditionValue bool
-				err               error
-			}{
-				hasConditionValue: false,
-				err:               nil,
-			},
-		},
-		{
-			name: "deployments resources are not yet updated",
-			wants: struct {
-				ctx                    context.Context
-				client                 *mockClient
-				cluster                kubermaticv1.Cluster
-				successfullyReconciled bool
-			}{
-				ctx: context.Background(),
-				client: &mockClient{
-					inProgressDeployments: true,
-				},
-				cluster:                kubermaticv1.Cluster{},
-				successfullyReconciled: true,
-			},
-			expects: struct {
-				hasConditionValue bool
-				err               error
-			}{
-				hasConditionValue: false,
-				err:               nil,
-			},
-		},
-		{
-			name: "cluster resources have finished updating successfully",
-			wants: struct {
-				ctx                    context.Context
-				client                 *mockClient
-				cluster                kubermaticv1.Cluster
-				successfullyReconciled bool
-			}{
-				ctx:                    context.Background(),
-				client:                 &mockClient{},
-				cluster:                kubermaticv1.Cluster{},
-				successfullyReconciled: true,
-			},
-			expects: struct {
-				hasConditionValue bool
-				err               error
-			}{
-				hasConditionValue: true,
-				err:               nil,
-			},
-		},
-		{
-			name: "cluster reconcile has failed updating",
-			wants: struct {
-				ctx                    context.Context
-				client                 *mockClient
-				cluster                kubermaticv1.Cluster
-				successfullyReconciled bool
-			}{
-				ctx:    context.Background(),
-				client: &mockClient{},
-				cluster: kubermaticv1.Cluster{
-					Status: kubermaticv1.ClusterStatus{
-						Conditions: []kubermaticv1.ClusterCondition{
-							{
-								Type:   kubermaticv1.ClusterConditionControllerFinishedUpdatingSuccessfully,
-								Status: corev1.ConditionTrue,
-							},
-						},
-					},
-				},
-				successfullyReconciled: false,
-			},
-			expects: struct {
-				hasConditionValue bool
-				err               error
-			}{
-				hasConditionValue: false,
-				err:               nil,
-			},
-		},
-	}
-)
+}
 
 func TestConcurrencyLimitReached(t *testing.T) {
+	concurrencyLimitReachedTestCases := []struct {
+		name                 string
+		maxConcurrentLimit   int
+		expectedLimitReached bool
+	}{
+		{
+			name:                 "concurrency limit has not reached",
+			maxConcurrentLimit:   2,
+			expectedLimitReached: false,
+		},
+		{
+			name:                 "concurrency limit has reached",
+			maxConcurrentLimit:   1,
+			expectedLimitReached: true,
+		},
+	}
+
 	for _, testCase := range concurrencyLimitReachedTestCases {
-		reached, err := ConcurrencyLimitReached(testCase.wants.ctx, testCase.wants.client, testCase.wants.limit)
+		t.Run(testCase.name, func(t *testing.T) {
+			reached, err := ConcurrencyLimitReached(context.Background(), fake.NewFakeClient(&kubermaticv1.Cluster{}), testCase.maxConcurrentLimit)
 
-		if err != testCase.expects.err {
-			t.Fatalf("failed to run test: %v with error: %v", testCase.name, err)
-		}
+			if err != nil {
+				t.Fatalf("failed to run test: %v with error: %v", testCase.name, err)
+			}
 
-		if reached != testCase.expects.limitReached {
-			t.Fatalf("failed to run test: %v, expects: %v, got: %v", testCase.name, testCase.expects.limitReached, reached)
-		}
+			if reached != testCase.expectedLimitReached {
+				t.Fatalf("failed to run test: %v, expects: %v, got: %v", testCase.name, testCase.expectedLimitReached, reached)
+			}
+		})
 	}
 }
 
 func TestSetClusterUpdatedSuccessfullyCondition(t *testing.T) {
-	for _, testCase := range setClusterUpdatedSuccessfullyConditionTestCases {
-		err := SetClusterUpdatedSuccessfullyCondition(testCase.wants.ctx, &testCase.wants.cluster, testCase.wants.client, testCase.wants.successfullyReconciled)
-		if err != testCase.expects.err {
-			t.Fatalf("failed to run test: %v with error: %v", testCase.name, err)
+	var (
+		cluster = &kubermaticv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "testing-namespace",
+			},
 		}
-
-		clusterConditionValue := hasConditionValue(testCase.wants.cluster,
-			kubermaticv1.ClusterConditionControllerFinishedUpdatingSuccessfully,
-			corev1.ConditionTrue)
-
-		if clusterConditionValue != testCase.expects.hasConditionValue {
-			t.Fatalf("failed to run test: %v, expects: %v, got: %v", testCase.name, testCase.expects.hasConditionValue, clusterConditionValue)
+		updateFailingCluster = &kubermaticv1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "failed-cluster",
+				Namespace: "testing-namespace",
+			},
+			Status: kubermaticv1.ClusterStatus{
+				Conditions: []kubermaticv1.ClusterCondition{
+					{
+						Type:   kubermaticv1.ClusterConditionControllerFinishedUpdatingSuccessfully,
+						Status: corev1.ConditionTrue,
+					},
+				},
+			},
 		}
-	}
-}
-
-type mockClient struct {
-	ctrlruntimeclient.Client
-	limitReached          bool
-	inProgressDeployments bool
-	inProgressStatefulSet bool
-}
-
-func (m *mockClient) List(ctx context.Context, opts *ctrlruntimeclient.ListOptions, list runtime.Object) error {
-	testingData := struct {
-		readyClusters             []kubermaticv1.Cluster
-		inProgressClusters        []kubermaticv1.Cluster
-		readyStatefulSetList      []appv1.StatefulSet
-		inProgressStatefulSetList []appv1.StatefulSet
-		readyDeploymentList       []appv1.Deployment
-		inProgressDeploymentList  []appv1.Deployment
+		inProgressStatefulSet = &appv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "testing-namespace",
+			},
+			Spec: appv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(2),
+			},
+			Status: appv1.StatefulSetStatus{
+				ReadyReplicas:   1,
+				UpdatedReplicas: 2,
+				CurrentReplicas: 2,
+			},
+		}
+		inProgressDeployment = &appv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "testing-namespace",
+			},
+			Spec: appv1.DeploymentSpec{
+				Replicas: utilpointer.Int32Ptr(2),
+			},
+			Status: appv1.DeploymentStatus{
+				UpdatedReplicas:   2,
+				ReadyReplicas:     1,
+				AvailableReplicas: 2,
+			},
+		}
+		readyStatefulSet = &appv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "testing-namespace",
+			},
+			Spec: appv1.StatefulSetSpec{
+				Replicas: utilpointer.Int32Ptr(2),
+			},
+			Status: appv1.StatefulSetStatus{
+				ReadyReplicas:   2,
+				UpdatedReplicas: 2,
+				CurrentReplicas: 2,
+			},
+		}
+		readyDeployment = &appv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "testing-namespace",
+			},
+			Spec: appv1.DeploymentSpec{
+				Replicas: utilpointer.Int32Ptr(2),
+			},
+			Status: appv1.DeploymentStatus{
+				UpdatedReplicas:   2,
+				ReadyReplicas:     2,
+				AvailableReplicas: 2,
+			},
+		}
+	)
+	setClusterUpdatedSuccessfullyConditionTestCases := []struct {
+		name                      string
+		resources                 []runtime.Object
+		successfullyReconciled    bool
+		expectedHasConditionValue bool
 	}{
-		readyClusters: []kubermaticv1.Cluster{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "ready-cluster-1",
-				},
-				Status: kubermaticv1.ClusterStatus{
-					Conditions: []kubermaticv1.ClusterCondition{
-						{
-							Type:   kubermaticv1.ClusterConditionControllerFinishedUpdatingSuccessfully,
-							Status: corev1.ConditionTrue,
-						},
-					},
-				},
+		{
+			name: "statefulSet resources are not yet updated",
+			resources: []runtime.Object{
+				cluster,
+				inProgressStatefulSet,
 			},
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "ready-cluster-2",
-				},
-				Status: kubermaticv1.ClusterStatus{
-					Conditions: []kubermaticv1.ClusterCondition{
-						{
-							Type:   kubermaticv1.ClusterConditionControllerFinishedUpdatingSuccessfully,
-							Status: corev1.ConditionTrue,
-						},
-					},
-				},
-			},
+			successfullyReconciled:    true,
+			expectedHasConditionValue: false,
 		},
-		inProgressClusters: []kubermaticv1.Cluster{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "in-progress-cluster-1",
-				},
+		{
+			name: "deployments resources are not yet updated",
+			resources: []runtime.Object{
+				cluster,
+				inProgressDeployment,
 			},
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "in-progress-cluster-2",
-				},
-			},
+			successfullyReconciled:    true,
+			expectedHasConditionValue: false,
 		},
-		readyStatefulSetList: []appv1.StatefulSet{
-			{
-				Spec: appv1.StatefulSetSpec{
-					Replicas: utilpointer.Int32Ptr(2),
-				},
-				Status: appv1.StatefulSetStatus{
-					ReadyReplicas:   2,
-					UpdatedReplicas: 2,
-					CurrentReplicas: 2,
-				},
+		{
+			name: "cluster resources have finished updating successfully",
+			resources: []runtime.Object{
+				cluster,
+				readyStatefulSet,
+				readyDeployment,
 			},
+			successfullyReconciled:    true,
+			expectedHasConditionValue: true,
 		},
-		inProgressStatefulSetList: []appv1.StatefulSet{
-			{
-				Spec: appv1.StatefulSetSpec{
-					Replicas: utilpointer.Int32Ptr(2),
-				},
-				Status: appv1.StatefulSetStatus{
-					ReadyReplicas:   1,
-					UpdatedReplicas: 2,
-					CurrentReplicas: 2,
-				},
+		{
+			name: "cluster reconcile has failed updating",
+			resources: []runtime.Object{
+				updateFailingCluster,
 			},
-		},
-		readyDeploymentList: []appv1.Deployment{
-			{
-				Spec: appv1.DeploymentSpec{
-					Replicas: utilpointer.Int32Ptr(2),
-				},
-				Status: appv1.DeploymentStatus{
-					UpdatedReplicas:   2,
-					ReadyReplicas:     2,
-					AvailableReplicas: 2,
-				},
-			},
-		},
-		inProgressDeploymentList: []appv1.Deployment{
-			{
-				Spec: appv1.DeploymentSpec{
-					Replicas: utilpointer.Int32Ptr(2),
-				},
-				Status: appv1.DeploymentStatus{
-					UpdatedReplicas:   1,
-					ReadyReplicas:     2,
-					AvailableReplicas: 2,
-				},
-			},
+			successfullyReconciled:    false,
+			expectedHasConditionValue: false,
 		},
 	}
 
-	switch obj := list.(type) {
-	case *kubermaticv1.ClusterList:
-		if m.limitReached {
-			obj.Items = testingData.inProgressClusters
-		} else {
-			obj.Items = testingData.readyClusters
-		}
-	case *appv1.DeploymentList:
-		if m.inProgressDeployments {
-			obj.Items = testingData.inProgressDeploymentList
-		} else {
-			obj.Items = testingData.readyDeploymentList
-		}
+	for _, testCase := range setClusterUpdatedSuccessfullyConditionTestCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := SetClusterUpdatedSuccessfullyCondition(context.Background(), testCase.resources[0].(*kubermaticv1.Cluster), fake.NewFakeClient(testCase.resources...), testCase.successfullyReconciled)
+			if err != nil {
+				t.Fatalf("failed to run test: %v with error: %v", testCase.name, err)
+			}
 
-	case *appv1.StatefulSetList:
-		if m.inProgressStatefulSet {
-			obj.Items = testingData.inProgressStatefulSetList
-		} else {
-			obj.Items = testingData.readyStatefulSetList
-		}
+			clusterConditionValue := hasConditionValue(*testCase.resources[0].(*kubermaticv1.Cluster),
+				kubermaticv1.ClusterConditionControllerFinishedUpdatingSuccessfully,
+				corev1.ConditionTrue)
+
+			if clusterConditionValue != testCase.expectedHasConditionValue {
+				t.Fatalf("failed to run test: %v, expects: %v, got: %v", testCase.name, testCase.expectedHasConditionValue, clusterConditionValue)
+			}
+		})
 	}
-
-	return nil
-}
-
-func (m *mockClient) Update(ctx context.Context, obj runtime.Object) error {
-	return nil
 }
