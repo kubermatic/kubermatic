@@ -46,7 +46,7 @@ echodate "Creating gocache archive"
 TEST_NAME="Creating gocache archive"
 ARCHIVE_FILE=/tmp/${GIT_HEAD_HASH}.tar
 # No compression because that needs quite a bit of CPU
-retry 2 tar -C $GOCACHE -cvf $ARCHIVE_FILE .
+retry 2 tar -C $GOCACHE -cf $ARCHIVE_FILE .
 
 echodate "Uploading gocache archive"
 TEST_NAME="Uploading gocache archive"
