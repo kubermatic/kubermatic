@@ -37,7 +37,7 @@ retry 2 make build
 
 echodate "Building tests"
 TEST_NAME="Build tests"
-retry 2 go test -tags cloud e2e integration ./... -run nope
+retry 2 go test -tags cloud ./... -run nope
 retry 2 go test -tags create ./... -run nope
 retry 2 go test -tags e2e ./... -run nope
 retry 2 go test -tags integration ./... -run nope
