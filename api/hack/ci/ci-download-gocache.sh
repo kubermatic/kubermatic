@@ -35,7 +35,7 @@ if [ -z $PULL_NUMBER ]; then
   CACHE_VERSION=$(git rev-parse ${CACHE_VERSION}~1)
 fi
 # Hardcoded for testing
-CACHE_VERSION=6af928d8093bbf096986170f1496fb134f7db843
+CACHE_VERSION=cc824851648f78ea93effe97d223fd52fe16c1f3
 
 TEST_NAME="Download and extract gocache"
 # Passing the Headers as space-separated literals doesn't seem to work
@@ -47,4 +47,4 @@ retry 5 curl --fail \
     ${GOCACHE_MINIO_ADDRESS}/${CACHE_VERSION}.tar \
     |tar -C $GOCACHE -xf -
 
-echodate "Successfully fetched gocache"
+echodate "Successfully fetched gocache into $GOCACHE"
