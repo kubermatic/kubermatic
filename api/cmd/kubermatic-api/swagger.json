@@ -5,17 +5,13 @@
   "produces": [
     "application/json"
   ],
-  "schemes": [
-    "https"
-  ],
   "swagger": "2.0",
   "info": {
     "description": "Kubermatic API\n\nThis describes possible operations which can be made against the Kubermatic API.",
     "title": "Kubermatic API.",
-    "termsOfService": "there are no TOS at this moment, use at your own risk we take no responsibility",
+    "termsOfService": "There are no TOS at this moment, use at your own risk we take no responsibility",
     "version": "2.11"
   },
-  "host": "cloud.kubermatic.io",
   "paths": {
     "/api/v1/dc": {
       "get": {
