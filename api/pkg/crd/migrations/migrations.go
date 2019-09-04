@@ -8,6 +8,7 @@ import (
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
@@ -96,6 +97,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 
 	tasks := []ClusterTask{
 		setExposeStrategyIfEmpty,
+		setProxyModeIfEmpty,
 	}
 
 	w := sync.WaitGroup{}
@@ -135,6 +137,21 @@ func setExposeStrategyIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext
 		updatedCluster, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
 		if err != nil {
 			return fmt.Errorf("failed to default exposeStrategy to NodePort for cluster %q: %v", cluster.Name, err)
+		}
+		cluster = updatedCluster
+	}
+	return nil
+}
+
+// We started to offer a config option for setting the kube-proxy mode.
+// If there is none set, we default to iptables as that was initially the
+// one being used.
+func setProxyModeIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	if cluster.Spec.ClusterNetwork.ProxyMode == "" {
+		cluster.Spec.ClusterNetwork.ProxyMode = resources.IPTablesProxyMode
+		updatedCluster, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
+		if err != nil {
+			return fmt.Errorf("failed to default proxyMode to iptables for cluster %q: %v", cluster.Name, err)
 		}
 		cluster = updatedCluster
 	}

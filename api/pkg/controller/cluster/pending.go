@@ -10,6 +10,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 )
 
 const (
@@ -92,6 +93,13 @@ func (r *Reconciler) ensureClusterNetworkDefaults(ctx context.Context, cluster *
 			c.Spec.ClusterNetwork.DNSDomain = "cluster.local"
 		}
 		modifiers = append(modifiers, setDNSDomain)
+	}
+
+	if cluster.Spec.ClusterNetwork.ProxyMode == "" {
+		setProxyMode := func(c *kubermaticv1.Cluster) {
+			c.Spec.ClusterNetwork.ProxyMode = resources.IPVSProxyMode
+		}
+		modifiers = append(modifiers, setProxyMode)
 	}
 
 	return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
