@@ -65,27 +65,21 @@ EOF
 get_latest_dashboard_tag() {
   FOR_BRANCH="$1"
 
-  # subshell, so that we don't change the directory of the caller, no matter how we call or exit this function
-  (
-    cd "$(mktemp -d)"
-    git clone git@github.com:kubermatic/kubermatic-installer.git .
+  local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
 
-    if [[ "$FOR_BRANCH" == "master" ]]; then
-      # just get the tip of dashboard master
-      git show-ref refs/heads/master -s
+  if [[ "$FOR_BRANCH" == "master" ]]; then
+    # just get the tip of dashboard master
+    git ls-remote "$DASHBOARD_URL" refs/heads/master | awk '{print $1}'
 
-      return
-    fi
+    return
+  fi
 
-    cd "$(mktemp -d)"
-    git clone git@github.com:kubermatic/kubermatic-installer.git .
-    MINOR_VERSION="${FOR_BRANCH##release/}"
-    FOUND_TAG="$(git for-each-ref "refs/tags/$MINOR_VERSION*" --sort=-authordate --format='%(refname)' --count=1)"
-    if [ -z "$FOUND_TAG" ]; then
-      echo "Error, no Dashboard tags contain $MINOR_VERSION" >/dev/stderr
-      exit 1
-    fi
+  MINOR_VERSION="${FOR_BRANCH##release/}"
+  FOUND_TAG="$(git ls-remote "$DASHBOARD_URL" "refs/tags/$MINOR_VERSION*" --sort=-authordate --count=1 | awk '{print $2}')"
+  if [ -z "$FOUND_TAG" ]; then
+    echo "Error, no Dashboard tags contain $MINOR_VERSION" >/dev/stderr
+    exit 1
+  fi
 
-    echo "${FOUND_TAG##refs/tags/}"
-  )
+  echo "${FOUND_TAG##refs/tags/}"
 }
