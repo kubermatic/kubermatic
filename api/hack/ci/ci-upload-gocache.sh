@@ -21,7 +21,7 @@ export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 export CGO_ENABLED=0
 cd $(dirname $0)/../..
 
-echodata "Building binaries"
+echodate "Building binaries"
 TEST_NAME="Buil Kubermatic"
 retry 2 make build
 (
