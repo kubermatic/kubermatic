@@ -37,6 +37,7 @@ fi
 # Hardcoded for testing
 CACHE_VERSION=cc824851648f78ea93effe97d223fd52fe16c1f3
 
+echodata "Downloading and extracting gocache"
 TEST_NAME="Download and extract gocache"
 # Passing the Headers as space-separated literals doesn't seem to work
 # in conjunction with the retry func, so we just put them in a file instead
