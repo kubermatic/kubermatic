@@ -21,7 +21,7 @@ all: check vendor build test
 
 build: $(CMD)
 
-$(CMD):
+$(CMD): download-gocache
 	go build $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/$@
 
 install:
@@ -32,7 +32,10 @@ showenv:
 
 check: gofmt lint
 
-test:
+download-gocache:
+	@./hack/ci/ci-download-gocache.sh
+
+test: download-gocache
 	CGO_ENABLED=1 go test -tags=unit -race ./...
 	@# Make sure all e2e tests compile with their individual build tag
 	@# without actually running them by using `-run` with a non-existing test.
@@ -44,7 +47,7 @@ test:
 	go test -tags integration -run nope ./...
 
 test-integration : CGO_ENABLED = 1
-test-integration:
+test-integration: download-gocache
 	@# Run integration tests and only integration tests by:
 	@# * Finding all files that contain the build tag via grep
 	@# * Extracting the dirname as the `go test` command doesn't play well with individual files as args
