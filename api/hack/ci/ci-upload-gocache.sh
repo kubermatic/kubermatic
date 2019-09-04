@@ -9,7 +9,7 @@ set -o monitor
 
 source $(dirname $0)/../lib.sh
 
-if [ -z $GOCACHE_MINIO_ADDRESS ]; then
+if [ -z ${GOCACHE_MINIO_ADDRESS:-} ]; then
   echodate "Fatal: env var GOCACHE_MINIO_ADDRESS unset"
   exit 1
 fi
@@ -22,7 +22,7 @@ export CGO_ENABLED=0
 cd $(dirname $0)/../..
 
 echodate "Building binaries"
-TEST_NAME="Buil Kubermatic"
+TEST_NAME="Build Kubermatic"
 retry 2 make build
 (
   TEST_NAME="Building Nodeport proxy"
