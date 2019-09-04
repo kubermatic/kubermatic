@@ -395,9 +395,11 @@ retry 5 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing seed"
 
 # We build the CLI after deploying to make sure we fail fast if the helm deployment fails
-echodate "Building conformance-tests cli"
-time make -C api conformance-tests
-echodate "Finished building conformance-tests cli"
+if ! ./api/_build/conformance-tests &>/dev/null; then
+  echodate "Building conformance-tests cli"
+  time make -C api conformance-tests
+  echodate "Finished building conformance-tests cli"
+fi
 
 if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   echodate "Upgradetest, going back to old revision"
