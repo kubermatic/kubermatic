@@ -45,6 +45,6 @@ retry 5 curl --fail \
     --progress-bar \
     -H @/tmp/headers \
     ${GOCACHE_MINIO_ADDRESS}/${CACHE_VERSION}.tar \
-    |tar -C $GOCACHE -xvf -
+    |tar -C $GOCACHE -xf -
 
 echodate "Successfully fetched gocache"
