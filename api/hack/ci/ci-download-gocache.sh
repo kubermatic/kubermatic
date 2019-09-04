@@ -13,7 +13,6 @@ trap exit_gracefully EXIT
 
 source $(dirname $0)/../lib.sh
 
-export GOCACHE_MINIO_ADDRESS='http://minio.gocache.svc.cluster.local.:9000/gocache'
 if [ -z ${GOCACHE_MINIO_ADDRESS:-} ]; then
   echodate "env var GOCACHE_MINIO_ADDRESS unset, can not download gocache"
   exit 0
@@ -34,8 +33,6 @@ if [ -z $PULL_NUMBER ]; then
   # as there can't be a cache for the current revision
   CACHE_VERSION=$(git rev-parse ${CACHE_VERSION}~1)
 fi
-# Hardcoded for testing
-CACHE_VERSION=cc824851648f78ea93effe97d223fd52fe16c1f3
 
 echodata "Downloading and extracting gocache"
 TEST_NAME="Download and extract gocache"
