@@ -65,6 +65,7 @@ EOF
 get_latest_dashboard_tag() {
   FOR_BRANCH="$1"
 
+  git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /ssh/id_rsa'
   local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
 
   if [[ "$FOR_BRANCH" == "master" ]]; then
