@@ -401,13 +401,13 @@ func (r *testRunner) testCluster(
 	}
 	for _, run := range ginkgoRuns {
 		if err := junitReporterWrapper(
-			"[Ginkgo] Run ginkgo tests",
+			fmt.Sprintf("[Ginkgo] Run ginkgo tests %q", run.name),
 			report,
 			func() error {
 				ginkgoRes, err := r.executeGinkgoRunWithRetries(log, run, userClusterClient)
 				if ginkgoRes != nil {
 					// We append the report from Ginkgo to our scenario wide report
-					report = combineReports("Kubernetes Conformance tests", report, ginkgoRes.report)
+					appendReport(report, ginkgoRes.report)
 				}
 				return err
 			},
