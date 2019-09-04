@@ -13,7 +13,8 @@ trap exit_gracefully EXIT
 
 source $(dirname $0)/../lib.sh
 
-if [ -z $GOCACHE_MINIO_ADDRESS ]; then
+export GOCACHE_MINIO_ADDRESS='http://minio.gocache.svc.cluster.local.:9000/gocache'
+if [ -z ${GOCACHE_MINIO_ADDRESS:-} ]; then
   echodate "env var GOCACHE_MINIO_ADDRESS unset, can not download gocache"
   exit 0
 fi
