@@ -214,6 +214,7 @@ func TestLoadFiles(t *testing.T) {
 								CIDRBlocks: []string{"172.25.0.0/16"},
 							},
 							DNSDomain: "cluster.local",
+							ProxyMode: resources.IPVSProxyMode,
 						},
 						MachineNetworks: []kubermaticv1.MachineNetworkingConfig{
 							{
