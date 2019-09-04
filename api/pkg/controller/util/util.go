@@ -7,7 +7,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
-	"k8s.io/api/apps/v1"
+	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -77,7 +77,7 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 // is more than the limit, then it will return true, which means the concurrency limit has reached.
 func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Client, limit int) (bool, error) {
 	clusters := &kubermaticv1.ClusterList{}
-	if err := client.List(ctx, nil, clusters); err != nil {
+	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, clusters); err != nil {
 		return true, fmt.Errorf("failed to list clusters: %v", err)
 	}
 
@@ -102,9 +102,9 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 func SetClusterUpdatedSuccessfullyCondition(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, successfullyReconciled bool) error {
 	if successfullyReconciled {
 		var (
-			statefulSets = &v1.StatefulSetList{}
+			statefulSets = &appv1.StatefulSetList{}
 			opts         = &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
-			deployments  = &v1.DeploymentList{}
+			deployments  = &appv1.DeploymentList{}
 
 			statefulSetHasUnfinishedUpdates bool
 			deploymentHasUnfinishedUpdates  bool

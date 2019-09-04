@@ -210,11 +210,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, nil
 	}
 
-	successfullyRecunciled := true
+	successfullyReconciled := true
 	// Add a wrapping here so we can emit an event on error
 	result, err := r.reconcile(ctx, log, cluster)
 	if err != nil {
-		successfullyRecunciled = false
+		successfullyReconciled = false
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
@@ -223,7 +223,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		result = &reconcile.Result{}
 	}
 
-	if err = controllerutil.SetClusterUpdatedSuccessfullyCondition(ctx, cluster, r, successfullyRecunciled); err != nil {
+	if err = controllerutil.SetClusterUpdatedSuccessfullyCondition(ctx, cluster, r, successfullyReconciled); err != nil {
 		log.Errorw("Unable to update clusters status conditions", zap.Error(err))
 	}
 
