@@ -1,10 +1,10 @@
 default: test build
 
 lb-updater:
-	CGO_ENABLED=0 go build -o ./_build/lb-updater -a -installsuffix cgo github.com/kubermatic/kubermatic/api/cmd/nodeport-proxy/lb-updater
+	CGO_ENABLED=0 go build -o ./_build/lb-updater github.com/kubermatic/kubermatic/api/cmd/nodeport-proxy/lb-updater
 
 envoy-manager:
-	CGO_ENABLED=0 go build -o ./_build/envoy-manager -a -installsuffix cgo github.com/kubermatic/kubermatic/api/cmd/nodeport-proxy/envoy-manager
+	CGO_ENABLED=0 go build -o ./_build/envoy-manager github.com/kubermatic/kubermatic/api/cmd/nodeport-proxy/envoy-manager
 
 build: envoy-manager lb-updater
 
