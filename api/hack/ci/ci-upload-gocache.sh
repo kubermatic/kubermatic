@@ -7,7 +7,7 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
-source ./api/hack/lib.sh
+source $(dirname $0)/../lib.sh
 
 if [ -z $GOCACHE_MINIO_ADDRESS ]; then
   echodate "Fatal: env var GOCACHE_MINIO_ADDRESS unset"

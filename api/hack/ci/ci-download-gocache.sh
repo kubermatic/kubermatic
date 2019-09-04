@@ -11,7 +11,7 @@ set -o monitor
 exit_gracefully() { exit 0; }
 trap exit_gracefully EXIT
 
-source ./api/hack/lib.sh
+source $(dirname $0)/../lib.sh
 
 if [ -z $GOCACHE_MINIO_ADDRESS ]; then
   echodate "env var GOCACHE_MINIO_ADDRESS unset, can not download gocache"
@@ -45,3 +45,5 @@ retry 5 curl --fail
     -H @/tmp/headers \
     ${GOCACHE_MINIO_ADDRESS}/${CACHE_VERSION}.tar \
     |tar -C $GOCACHE -xvf -
+
+echodate "Successfully fetched gocache"
