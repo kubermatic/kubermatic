@@ -394,11 +394,6 @@ TEST_NAME="Deploy Seed Manifest"
 retry 5 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing seed"
 
-# We build the CLI after deploying to make sure we fail fast if the helm deployment fails
-echodate "Building conformance-tests cli"
-time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
-echodate "Finished building conformance-tests cli"
-
 if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   echodate "Upgradetest, going back to old revision"
   git checkout -
@@ -444,7 +439,7 @@ if [ -n "${UPGRADE_TEST_BASE_HASH:-}" ]; then
   kubermatic_delete_cluster="false"
 fi
 
-timeout -s 9 90m ./conformance-tests ${EXTRA_ARGS:-} \
+timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
   -debug \
   -worker-name=$BUILD_ID \
   -kubeconfig=$KUBECONFIG \
