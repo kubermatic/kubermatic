@@ -33,10 +33,15 @@ if [ -z $PULL_NUMBER ]; then
   # as there can't be a cache for the current revision
   CACHE_VERSION=$(git rev-parse ${CACHE_VERSION}~1)
 fi
+# Hardcoded for testing
+CACHE_VERSION=6af928d8093bbf096986170f1496fb134f7db843
 
 TEST_NAME="Download and extract gocache"
+# Passing the Headers as space-separated literals doesn't seem to work
+# in conjunction with the retry func, so we just put them in a file instead
+echo 'Content-Type: application/octet-stream' > /tmp/headers
 retry 5 curl --fail
     --progress-bar \
-    -H "Content-Type: binary/octet-stream" \
+    -H @/tmp/headers \
     ${GOCACHE_MINIO_ADDRESS}/${CACHE_VERSION}.tar \
     |tar -C $GOCACHE -xvf -
