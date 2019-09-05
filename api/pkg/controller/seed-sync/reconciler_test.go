@@ -15,23 +15,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
-
-type nopEventRecorder struct{}
-
-// These mock the record.EventRecorder interface.
-
-func (n *nopEventRecorder) Event(object runtime.Object, eventtype, reason, message string) {
-}
-func (n *nopEventRecorder) Eventf(object runtime.Object, eventtype, reason, messageFmt string, args ...interface{}) {
-}
-func (n *nopEventRecorder) PastEventf(object runtime.Object, timestamp metav1.Time, eventtype, reason, messageFmt string, args ...interface{}) {
-}
-func (n *nopEventRecorder) AnnotatedEventf(object runtime.Object, annotations map[string]string, eventtype, reason, messageFmt string, args ...interface{}) {
-}
 
 func TestReconcilingSeed(t *testing.T) {
 	tests := []struct {
@@ -110,7 +98,7 @@ func TestReconcilingSeed(t *testing.T) {
 
 			reconciler := Reconciler{
 				Client:   masterClient,
-				recorder: &nopEventRecorder{},
+				recorder: record.NewFakeRecorder(10),
 				log:      log,
 				ctx:      ctx,
 				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
