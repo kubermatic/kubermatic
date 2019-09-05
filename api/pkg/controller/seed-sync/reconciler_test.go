@@ -20,23 +20,17 @@ import (
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-type nopEventRecorder struct {
-	events int
-}
+type nopEventRecorder struct{}
 
 // These mock the record.EventRecorder interface.
 
 func (n *nopEventRecorder) Event(object runtime.Object, eventtype, reason, message string) {
-	n.events++
 }
 func (n *nopEventRecorder) Eventf(object runtime.Object, eventtype, reason, messageFmt string, args ...interface{}) {
-	n.events++
 }
 func (n *nopEventRecorder) PastEventf(object runtime.Object, timestamp metav1.Time, eventtype, reason, messageFmt string, args ...interface{}) {
-	n.events++
 }
 func (n *nopEventRecorder) AnnotatedEventf(object runtime.Object, annotations map[string]string, eventtype, reason, messageFmt string, args ...interface{}) {
-	n.events++
 }
 
 func TestReconcilingSeed(t *testing.T) {
