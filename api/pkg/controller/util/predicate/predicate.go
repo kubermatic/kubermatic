@@ -8,7 +8,7 @@ import (
 )
 
 // Factory returns a predicate func that applies the given filter function
-// on CREATE, UPDATE and DELETE events. For UPDATE events, the the filter is applied
+// on CREATE, UPDATE and DELETE events. For UPDATE events, the filter is applied
 // to both the old and new object and OR's the result.
 func Factory(filter func(m metav1.Object, r runtime.Object) bool) predicate.Funcs {
 	return predicate.Funcs{
