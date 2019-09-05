@@ -33,7 +33,7 @@ func NewInternal(seedClient ctrlruntimeclient.Client) (UserClusterConnectionProv
 	}, nil
 }
 
-// NewExternal returns a new instance of the client connection provider that
+// NewExternal returns a new instance of the client connection provider
 // that uses the external cluster address and hence works from everywhere.
 // Use NewInternal if possible
 func NewExternal(seedClient ctrlruntimeclient.Client) (UserClusterConnectionProvider, error) {
