@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -665,6 +666,40 @@ func ReconcileIngresses(ctx context.Context, namedGetters []NamedIngressCreatorG
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &extensionsv1beta1.Ingress{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Ingress %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// SeedCreator defines an interface to create/update Seeds
+type SeedCreator = func(existing *kubermaticv1.Seed) (*kubermaticv1.Seed, error)
+
+// NamedSeedCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedSeedCreatorGetter = func() (name string, create SeedCreator)
+
+// SeedObjectWrapper adds a wrapper so the SeedCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func SeedObjectWrapper(create SeedCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.Seed))
+		}
+		return create(&kubermaticv1.Seed{})
+	}
+}
+
+// ReconcileSeeds will create and update the Seeds coming from the passed SeedCreator slice
+func ReconcileSeeds(ctx context.Context, namedGetters []NamedSeedCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := SeedObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.Seed{}, false); err != nil {
+			return fmt.Errorf("failed to ensure Seed %s/%s: %v", namespace, name, err)
 		}
 	}
 

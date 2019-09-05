@@ -11,27 +11,14 @@ import (
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
-
-type nopEventRecorder struct{}
-
-// These mock the record.EventRecorder interface.
-
-func (n *nopEventRecorder) Event(object runtime.Object, eventtype, reason, message string) {
-}
-func (n *nopEventRecorder) Eventf(object runtime.Object, eventtype, reason, messageFmt string, args ...interface{}) {
-}
-func (n *nopEventRecorder) PastEventf(object runtime.Object, timestamp metav1.Time, eventtype, reason, messageFmt string, args ...interface{}) {
-}
-func (n *nopEventRecorder) AnnotatedEventf(object runtime.Object, annotations map[string]string, eventtype, reason, messageFmt string, args ...interface{}) {
-}
 
 func TestDefaultingConfigurations(t *testing.T) {
 	clientID := "foobar"
@@ -97,7 +84,7 @@ func TestDefaultingConfigurations(t *testing.T) {
 
 			reconciler := Reconciler{
 				Client:   client,
-				recorder: &nopEventRecorder{},
+				recorder: record.NewFakeRecorder(10),
 				log:      log,
 				ctx:      context.Background(),
 			}
