@@ -75,7 +75,9 @@ get_latest_dashboard_tag() {
     exit 1
   fi
 
-  echo "${FOUND_TAG##refs/tags/}"
+  local TAG="${FOUND_TAG##refs/tags/}"
+  echodate "The latest dashboard tag for $FOR_BRANCH is $TAG" >/dev/stderr
+  echo "$TAG"
 }
 
 get_latest_dashboard_hash() {
@@ -84,5 +86,7 @@ get_latest_dashboard_hash() {
   git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /ssh/id_rsa'
   local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
 
-  git ls-remote "$DASHBOARD_URL" "refs/heads/$FOR_BRANCH" | awk '{print $1}'
+  local HASH="$(git ls-remote "$DASHBOARD_URL" "refs/heads/$FOR_BRANCH" | awk '{print $1}')"
+  echodate "The latest dashboard hash for $FOR_BRANCH is $HASH" >/dev/stderr
+  echo "$HASH"
 }
