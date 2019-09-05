@@ -7,8 +7,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-lifecycle"
 	seedproxy "github.com/kubermatic/kubermatic/api/pkg/controller/seed-proxy"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
+	seedsync "github.com/kubermatic/kubermatic/api/pkg/controller/seed-sync"
+	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
+	userprojectbinding "github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
@@ -45,6 +46,9 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	}
 	if err := serviceaccount.Add(ctrlCtx.mgr); err != nil {
 		return fmt.Errorf("failed to create serviceaccount controller: %v", err)
+	}
+	if err := seedsync.Add(ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
+		return fmt.Errorf("failed to create seedsync controller: %v", err)
 	}
 	if err := seedproxy.Add(ctrlCtx.mgr, 1, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create seedproxy controller: %v", err)

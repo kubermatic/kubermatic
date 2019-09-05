@@ -41,6 +41,7 @@ type controllerRunOptions struct {
 type controllerContext struct {
 	ctx                  context.Context
 	mgr                  manager.Manager
+	log                  *zap.SugaredLogger
 	workerCount          int
 	seedsGetter          provider.SeedsGetter
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
@@ -74,6 +75,7 @@ func main() {
 		}
 	}()
 	kubermaticlog.Logger = sugarLog
+	ctrlCtx.log = sugarLog
 
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)
 	if err != nil {
