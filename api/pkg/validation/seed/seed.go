@@ -36,6 +36,7 @@ type seedValidator struct {
 	listOpts *ctrlruntimeclient.ListOptions
 }
 
+// Validate returns an error if the given seed does not pass all validation steps.
 func (sv *seedValidator) Validate(seed *kubermaticv1.Seed, isDelete bool) error {
 	// We need locking to make the validation concurrency-safe
 	sv.lock.Lock()
@@ -55,29 +56,72 @@ func (sv *seedValidator) Validate(seed *kubermaticv1.Seed, isDelete bool) error 
 }
 
 func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, existingSeeds map[string]*kubermaticv1.Seed, isDelete bool) error {
+	existingSeed := existingSeeds[seed.Name]
 
-	newDatacenters := sets.NewString()
+	// remove the seed itself from the list, so uniqueness checks won't fail
+	delete(existingSeeds, seed.Name)
+
+	ourDatacenters := sets.NewString()
 	for datacenter := range seed.Spec.Datacenters {
-		newDatacenters.Insert(datacenter)
+		ourDatacenters.Insert(datacenter)
 	}
 
-	for _, existingSeed := range existingSeeds {
-		for existingDatacenter := range existingSeed.Spec.Datacenters {
-			if newDatacenters.Has(existingDatacenter) {
-				return fmt.Errorf("datacenter %q already exists in seed %q, can only have one datacenter with a given name", existingDatacenter, existingSeed.Name)
+	// list of datacenters that remain after the operation we validate would be completed
+	allDatacenters := sets.NewString()
+	for _, s := range existingSeeds {
+		for dc := range s.Spec.Datacenters {
+			allDatacenters.Insert(dc)
+		}
+	}
+
+	if !isDelete {
+		allDatacenters = allDatacenters.Union(ourDatacenters)
+	}
+
+	// check if all the DCs in the seed are unique
+	for _, s := range existingSeeds {
+		for dc := range s.Spec.Datacenters {
+			if ourDatacenters.Has(dc) {
+				return fmt.Errorf("datacenter %q already exists in seed %q, can only have one datacenter with a given name", dc, s.Name)
 			}
 		}
 	}
 
+	// check if all DCs have exactly one provider and that the provider
+	// is never changed after it has been set once
+	for dcName, dc := range seed.Spec.Datacenters {
+		providerName, err := provider.DatacenterCloudProviderName(&dc.Spec)
+		if err != nil {
+			return fmt.Errorf("datacenter %q is invalid: %v", dcName, err)
+		}
+		if providerName == "" {
+			return fmt.Errorf("datacenter %q has no provider defined", dcName)
+		}
+
+		if existingSeed == nil {
+			continue
+		}
+
+		existingDC, ok := existingSeed.Spec.Datacenters[dcName]
+		if !ok {
+			continue
+		}
+
+		existingProvider, _ := provider.DatacenterCloudProviderName(&existingDC.Spec)
+		if providerName != existingProvider {
+			return fmt.Errorf("cannot change datacenter %q provider from %q to %q", dcName, existingProvider, providerName)
+		}
+	}
+
+	// check if there are still clusters using DCs not defined anymore
 	clusters := &kubermaticv1.ClusterList{}
 	if err := seedClient.List(sv.ctx, sv.listOpts, clusters); err != nil {
 		return fmt.Errorf("failed to list clusters: %v", err)
 	}
 
 	for _, cluster := range clusters.Items {
-		if !newDatacenters.Has(cluster.Spec.Cloud.DatacenterName) {
-			return fmt.Errorf("datacenter %q is still in use, can not delete it",
-				cluster.Spec.Cloud.DatacenterName)
+		if !ourDatacenters.Has(cluster.Spec.Cloud.DatacenterName) {
+			return fmt.Errorf("datacenter %q is still in use, cannot delete it", cluster.Spec.Cloud.DatacenterName)
 		}
 	}
 

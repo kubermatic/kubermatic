@@ -51,12 +51,12 @@ type Datacenter struct {
 	Country string `json:"country,omitempty"`
 	// Detailed location of the cluster. For informational purposes only
 	Location string `json:"location,omitempty"`
-	// Node holds node-specific settings, like e.G. HTTP proxy, insecure registrys and the like
+	// Node holds node-specific settings, like e.g. HTTP proxy, insecure registries and the like
 	Node NodeSettings   `json:"node"`
 	Spec DatacenterSpec `json:"spec"`
 }
 
-// DatacenterSpec describes mutually points to provider datacenter spec
+// DatacenterSpec mutually points to provider datacenter spec
 type DatacenterSpec struct {
 	Digitalocean *DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
 	BringYourOwn *DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
@@ -85,7 +85,7 @@ type DatacenterSpecDigitalocean struct {
 	Region string `json:"region"`
 }
 
-// DatacenterSpecOpenstack describes a open stack datacenter
+// DatacenterSpecOpenstack describes an Openstack datacenter
 type DatacenterSpecOpenstack struct {
 	AuthURL           string `json:"auth_url"`
 	AvailabilityZone  string `json:"availability_zone"`
@@ -117,7 +117,7 @@ type DatacenterSpecAzure struct {
 	Location string `json:"location"`
 }
 
-// DatacenterSpecVSphere describes a vsphere datacenter
+// DatacenterSpecVSphere describes a vSphere datacenter
 type DatacenterSpecVSphere struct {
 	Endpoint      string `json:"endpoint"`
 	AllowInsecure bool   `json:"allow_insecure"`
@@ -138,7 +138,7 @@ type DatacenterSpecVSphere struct {
 	InfraManagementUser *VSphereCredentials `json:"infra_management_user,omitempty"`
 }
 
-// DatacenterSpecAWS describes a aws datacenter
+// DatacenterSpecAWS describes an AWS datacenter
 type DatacenterSpecAWS struct {
 	Region string    `json:"region"`
 	Images ImageList `json:"images"`
@@ -148,7 +148,7 @@ type DatacenterSpecAWS struct {
 type DatacenterSpecBringYourOwn struct {
 }
 
-// DatacenterSpecPacket describes a packet datacenter
+// DatacenterSpecPacket describes a Packet datacenter
 type DatacenterSpecPacket struct {
 	Facilities []string `json:"facilities"`
 }
@@ -169,7 +169,7 @@ type DatacenterSpecFake struct {
 type DatacenterSpecKubevirt struct {
 }
 
-// NodeSettings are node specific which can be configured on datacenter level
+// NodeSettings are node specific flags which can be configured on datacenter level
 type NodeSettings struct {
 	// If set, this proxy will be configured on all nodes.
 	HTTPProxy string `json:"http_proxy,omitempty"`
