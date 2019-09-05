@@ -155,7 +155,7 @@ func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Clust
 		md.Spec.Template.Spec.Versions.Kubelet = targetVersion.Version.String()
 		// DeepCopy it so we don't get a NPD when we return an error
 		if err := client.Update(ctx, md.DeepCopy()); err != nil {
-			return fmt.Errorf("failed to update MachineDeployment %s/%s to %q: %v", md.Namespace, md.Name, md.Spec.Template.Spec.Versions.Kubelet)
+			return fmt.Errorf("failed to update MachineDeployment %s/%s to %q: %v", md.Namespace, md.Name, md.Spec.Template.Spec.Versions.Kubelet, err)
 		}
 	}
 
