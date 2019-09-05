@@ -108,6 +108,7 @@ func Add(
 		log:                  log,
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,
+		seedClientGetter:     provider.SeedClientGetterFactory(seedKubeconfigGetter),
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
