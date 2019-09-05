@@ -116,7 +116,7 @@ datacenters:
 	assert.Equal(t, expectedSeeds, resultDatacenters)
 }
 
-func TestValidateDataCenters(t *testing.T) {
+func TestMigrateDatacenters(t *testing.T) {
 	testCases := []struct {
 		name        string
 		datacenters map[string]DatacenterMeta
@@ -158,18 +158,19 @@ func TestValidateDataCenters(t *testing.T) {
 			},
 			errExpected: true,
 		},
-		{
-			name: "Invalid name, but is not a seed",
-			datacenters: map[string]DatacenterMeta{
-				"&invalid": {},
-			},
-		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			if err := validateDatacenters(tc.datacenters); (err != nil) != tc.errExpected {
-				t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
+			seeds, err := DatacenterMetasToSeeds(tc.datacenters)
+			if err != nil {
+				t.Fatalf("Failed to convert datacenters to seeds: %v", err)
+			}
+
+			for _, seed := range seeds {
+				if err := ValidateSeed(seed); (err != nil) != tc.errExpected {
+					t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
+				}
 			}
 		})
 	}

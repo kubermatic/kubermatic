@@ -17,7 +17,7 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 
 	for dcName, datacenterSpec := range dm {
 		if datacenterSpec.IsSeed && datacenterSpec.Seed != "" {
-			return nil, fmt.Errorf("datacenter %q is configured as seed but has a seed configured(%q) which is only allowed for datacenters that are not a seed", dcName, datacenterSpec.Seed)
+			return nil, fmt.Errorf("datacenter %q is configured as seed but has a seed configured (%q) which is only allowed for datacenters that are not a seed", dcName, datacenterSpec.Seed)
 		}
 		if !datacenterSpec.IsSeed && datacenterSpec.Seed == "" {
 			return nil, fmt.Errorf("datacenter %q is not configured as seed but does not have a corresponding seed configured. Configuring a seed datacenter is required for all node datacenters", dcName)
@@ -43,10 +43,10 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 
 		} else {
 			if _, exists := dm[datacenterSpec.Seed]; !exists {
-				return nil, fmt.Errorf("seedDatacenter %q used by nodeDatacenter %q does not exist", datacenterSpec.Seed, dcName)
+				return nil, fmt.Errorf("seedDatacenter %q used by node datacenter %q does not exist", datacenterSpec.Seed, dcName)
 			}
 			if !dm[datacenterSpec.Seed].IsSeed {
-				return nil, fmt.Errorf("datacenter %q referenced by nodeDatacenter %q as its seed is not configured to be a seed",
+				return nil, fmt.Errorf("datacenter %q referenced by node datacenter %q as its seed is not configured to be a seed",
 					datacenterSpec.Seed, dcName)
 
 			}

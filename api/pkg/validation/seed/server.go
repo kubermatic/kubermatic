@@ -27,7 +27,7 @@ type WebhookOpts struct {
 }
 
 func (opts *WebhookOpts) AddFlags(fs *flag.FlagSet) {
-	fs.StringVar(&opts.ListenAddress, "seed-admisisonwebhook-listen-address", ":8100", "The listen address for the seed amission webhook")
+	fs.StringVar(&opts.ListenAddress, "seed-admissionwebhook-listen-address", ":8100", "The listen address for the seed amission webhook")
 	fs.StringVar(&opts.CertFile, "seed-admissionwebhook-cert-file", "", "The location of the certificate file")
 	fs.StringVar(&opts.KeyFile, "seed-admissionwebhook-key-file", "", "The location of the certificate key file")
 }
@@ -76,7 +76,7 @@ type Server struct {
 	validator     *seedValidator
 }
 
-// This implements sigs.k8s.io/controller-runtime/pkg/manager.Runnable
+// Start implements sigs.k8s.io/controller-runtime/pkg/manager.Runnable
 func (s *Server) Start(_ <-chan struct{}) error {
 	return s.ListenAndServeTLS(s.certFile, s.keyFile)
 }
@@ -99,13 +99,13 @@ func (s *Server) handleSeedValidationRequests(resp http.ResponseWriter, req *htt
 	}
 	serializedAdmissionResponse, err := json.Marshal(response)
 	if err != nil {
-		s.log.Errorw("failed to serialize admission response", zap.Error(err))
+		s.log.Errorw("Failed to serialize admission response", zap.Error(err))
 		http.Error(resp, "failed to serialize response", http.StatusInternalServerError)
 		return
 	}
 	resp.WriteHeader(http.StatusOK)
 	if _, err := resp.Write(serializedAdmissionResponse); err != nil {
-		s.log.Errorw("failed to write response body", zap.Error(err))
+		s.log.Errorw("Failed to write response body", zap.Error(err))
 		return
 	}
 	s.log.Debug("Successfully validated seed")
@@ -142,7 +142,7 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 
 	validationErr := s.validator.Validate(seed, admissionReview.Request.Operation == admissionv1beta1.Delete)
 	if validationErr != nil {
-		s.log.Errorw("seed failed validation", "seed", seed.Name, "validationError", validationErr.Error())
+		s.log.Errorw("Seed failed validation", "seed", seed.Name, "validationError", validationErr.Error())
 	}
 
 	return admissionReview.Request, validationErr

@@ -74,16 +74,18 @@ func loadSeeds(path string) (map[string]*kubermaticv1.Seed, error) {
 		return nil, fmt.Errorf("failed to parse datacenters.yaml: %v", err)
 	}
 
-	if err := validateDatacenters(dcMetas.Datacenters); err != nil {
-		return nil, fmt.Errorf("failed to validate datacenters.yaml: %v", err)
-	}
-
-	dcs, err := DatacenterMetasToSeeds(dcMetas.Datacenters)
+	seeds, err := DatacenterMetasToSeeds(dcMetas.Datacenters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert datacenters.yaml: %v", err)
 	}
 
-	return dcs, nil
+	for seedName, seed := range seeds {
+		if err := ValidateSeed(seed); err != nil {
+			return nil, fmt.Errorf("failed to validate datacenters.yaml: seed %q is invalid: %v", seedName, err)
+		}
+	}
+
+	return seeds, nil
 }
 
 func LoadSeed(path, datacenterName string) (*kubermaticv1.Seed, error) {
@@ -110,8 +112,8 @@ func validateImageList(images kubermaticv1.ImageList) error {
 	return nil
 }
 
-func validateDatacenters(datacenters map[string]DatacenterMeta) error {
-	for name, dc := range datacenters {
+func ValidateSeed(seed *kubermaticv1.Seed) error {
+	for name, dc := range seed.Spec.Datacenters {
 		if dc.Spec.VSphere != nil {
 			if err := validateImageList(dc.Spec.VSphere.Templates); err != nil {
 				return fmt.Errorf("invalid datacenter defined '%s': %v", name, err)
@@ -124,19 +126,15 @@ func validateDatacenters(datacenters map[string]DatacenterMeta) error {
 		}
 	}
 
-	for datacenterName, datacenter := range datacenters {
-		if !datacenter.IsSeed {
-			continue
+	// invalid DNS overwrites can happen when a seed was freshly converted from
+	// the datacenters.yaml and has not yet been validated
+	if seed.Spec.SeedDNSOverwrite != nil && *seed.Spec.SeedDNSOverwrite != "" {
+		if errs := validation.IsDNS1123Subdomain(*seed.Spec.SeedDNSOverwrite); errs != nil {
+			return fmt.Errorf("DNS overwrite %q is not a valid DNS name: %v", *seed.Spec.SeedDNSOverwrite, errs)
 		}
-		if datacenter.SeedDNSOverwrite != nil && *datacenter.SeedDNSOverwrite != "" {
-			if errs := validation.IsDNS1123Subdomain(*datacenter.SeedDNSOverwrite); errs != nil {
-				return fmt.Errorf("SeedDNS overwrite %q of datacenter %q is not a valid DNS name: %v",
-					*datacenter.SeedDNSOverwrite, datacenterName, errs)
-			}
-			continue
-		}
-		if errs := validation.IsDNS1123Subdomain(datacenterName); errs != nil {
-			return fmt.Errorf("Datacentername %q is not a valid DNS name: %v", datacenterName, errs)
+	} else {
+		if errs := validation.IsDNS1123Subdomain(seed.Name); errs != nil {
+			return fmt.Errorf("seed name %q is not a valid DNS name: %v", seed.Name, errs)
 		}
 	}
 
