@@ -19,7 +19,6 @@ import (
 
 // UpdateManager specifies a set of methods to handle cluster versions & updates
 type UpdateManager interface {
-	GetVersion(from, clusterType string) (*version.Version, error)
 	GetVersions(clusterType string) ([]*version.Version, error)
 	GetDefault() (*version.Version, error)
 	GetPossibleUpdates(from, clusterType string) ([]*version.Version, error)
