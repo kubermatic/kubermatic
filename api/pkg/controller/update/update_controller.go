@@ -103,6 +103,10 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		clusterType = v1.OpenShiftClusterType
 	}
 
+	return r.controlPlaneUpgrade(ctx, cluster, clusterType)
+}
+
+func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, cluster *kubermaticv1.Cluster, clusterType string) error {
 	update, err := r.updateManager.AutomaticUpdate(cluster.Spec.Version.String(), clusterType)
 	if err != nil {
 		return fmt.Errorf("failed to get automatic update for cluster for version %s: %v", cluster.Spec.Version.String(), err)
