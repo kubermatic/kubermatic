@@ -81,7 +81,7 @@ func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider pro
 	}
 }
 
-func isRestrictedByKubeletVersions(controlPlaneVersion *version.MasterVersion, mds []clusterv1alpha1.MachineDeployment) (bool, error) {
+func isRestrictedByKubeletVersions(controlPlaneVersion *version.Version, mds []clusterv1alpha1.MachineDeployment) (bool, error) {
 	for _, md := range mds {
 		kubeletVersion, err := semver.NewVersion(md.Spec.Template.Spec.Versions.Kubelet)
 		if err != nil {
@@ -133,7 +133,7 @@ func GetNodeUpgrades(updateManager common.UpdateManager) endpoint.Endpoint {
 			return nil, fmt.Errorf("failed to parse control plane version: %v", err)
 		}
 
-		versions, err := updateManager.GetMasterVersions(req.Type)
+		versions, err := updateManager.GetVersions(req.Type)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}
@@ -147,8 +147,8 @@ func GetNodeUpgrades(updateManager common.UpdateManager) endpoint.Endpoint {
 	}
 }
 
-func filterIncompatibleVersions(possibleKubeletVersions []*version.MasterVersion, controlPlaneVersion *semver.Version) ([]*version.MasterVersion, error) {
-	var compatibleVersions []*version.MasterVersion
+func filterIncompatibleVersions(possibleKubeletVersions []*version.Version, controlPlaneVersion *semver.Version) ([]*version.Version, error) {
+	var compatibleVersions []*version.Version
 	for _, v := range possibleKubeletVersions {
 		if err := common.EnsureVersionCompatible(controlPlaneVersion, v.Version); err == nil {
 			compatibleVersions = append(compatibleVersions, v)
@@ -249,7 +249,7 @@ func GetMasterVersionsEndpoint(updateManager common.UpdateManager) endpoint.Endp
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		versions, err := updateManager.GetMasterVersions(req.Type)
+		versions, err := updateManager.GetVersions(req.Type)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}
@@ -284,7 +284,7 @@ func DecodeClusterTypeReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
-func convertVersionsToExternal(versions []*version.MasterVersion) []*apiv1.MasterVersion {
+func convertVersionsToExternal(versions []*version.Version) []*apiv1.MasterVersion {
 	sv := make([]*apiv1.MasterVersion, len(versions))
 	for v := range versions {
 		sv[v] = &apiv1.MasterVersion{

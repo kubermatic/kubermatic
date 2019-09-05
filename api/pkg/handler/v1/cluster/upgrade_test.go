@@ -35,8 +35,8 @@ func TestGetClusterUpgrades(t *testing.T) {
 		existingKubermaticObjs     []runtime.Object
 		existingMachineDeployments []*clusterv1alpha1.MachineDeployment
 		apiUser                    apiv1.User
-		versions                   []*version.MasterVersion
-		updates                    []*version.MasterUpdate
+		versions                   []*version.Version
+		updates                    []*version.Update
 		wantUpdates                []*apiv1.MasterVersion
 	}{
 		{
@@ -58,7 +58,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Version: semver.MustParse("1.7.0"),
 				},
 			},
-			versions: []*version.MasterVersion{
+			versions: []*version.Version{
 				{
 					Version: semver.MustParse("1.6.0"),
 					Type:    apiv1.KubernetesClusterType,
@@ -72,7 +72,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Type:    apiv1.KubernetesClusterType,
 				},
 			},
-			updates: []*version.MasterUpdate{
+			updates: []*version.Update{
 				{
 					From:      "1.6.0",
 					To:        "1.6.1",
@@ -113,7 +113,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 					RestrictedByKubeletVersion: true,
 				},
 			},
-			versions: []*version.MasterVersion{
+			versions: []*version.Version{
 				{
 					Version: semver.MustParse("1.6.0"),
 					Type:    apiv1.KubernetesClusterType,
@@ -127,7 +127,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Type:    apiv1.KubernetesClusterType,
 				},
 			},
-			updates: []*version.MasterUpdate{
+			updates: []*version.Update{
 				{
 					From:      "1.6.0",
 					To:        "1.6.1",
@@ -154,13 +154,13 @@ func TestGetClusterUpgrades(t *testing.T) {
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates:                []*apiv1.MasterVersion{},
-			versions: []*version.MasterVersion{
+			versions: []*version.Version{
 				{
 					Version: semver.MustParse("1.6.0"),
 					Type:    apiv1.KubernetesClusterType,
 				},
 			},
-			updates: []*version.MasterUpdate{},
+			updates: []*version.Update{},
 		},
 		{
 			name: "upgrade available for OpenShift",
@@ -179,7 +179,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Version: semver.MustParse("5.2"),
 				},
 			},
-			versions: []*version.MasterVersion{
+			versions: []*version.Version{
 				{
 					Version: semver.MustParse("1.6.0"),
 					Type:    apiv1.KubernetesClusterType,
@@ -218,7 +218,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Type:    apiv1.OpenShiftClusterType,
 				},
 			},
-			updates: []*version.MasterUpdate{
+			updates: []*version.Update{
 				{
 					From:      "1.6.0",
 					To:        "1.6.1",
@@ -252,7 +252,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates:                []*apiv1.MasterVersion{},
-			versions: []*version.MasterVersion{
+			versions: []*version.Version{
 				{
 					Version: semver.MustParse("1.7.0"),
 					Type:    apiv1.KubernetesClusterType,
@@ -283,7 +283,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 					Type:    apiv1.OpenShiftClusterType,
 				},
 			},
-			updates: []*version.MasterUpdate{
+			updates: []*version.Update{
 				{
 					From:      "3.11.0",
 					To:        "3.11.*",
@@ -420,8 +420,8 @@ func TestGetNodeUpgrades(t *testing.T) {
 		name                   string
 		controlPlaneVersion    string
 		apiUser                apiv1.User
-		existingUpdates        []*version.MasterUpdate
-		existingVersions       []*version.MasterVersion
+		existingUpdates        []*version.Update
+		existingVersions       []*version.Version
 		expectedOutput         []*apiv1.MasterVersion
 		existingKubermaticObjs []runtime.Object
 	}{
@@ -430,7 +430,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 			controlPlaneVersion:    "1.6.0",
 			apiUser:                *test.GenDefaultAPIUser(),
 			existingKubermaticObjs: []runtime.Object{test.GenDefaultUser()},
-			existingUpdates: []*version.MasterUpdate{
+			existingUpdates: []*version.Update{
 				{
 					From:      "1.6.0",
 					To:        "1.6.1",
@@ -442,7 +442,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 					Automatic: false,
 				},
 			},
-			existingVersions: []*version.MasterVersion{
+			existingVersions: []*version.Version{
 				{
 					Version: semver.MustParse("0.0.1"),
 					Type:    apiv1.KubernetesClusterType,
@@ -518,7 +518,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 			controlPlaneVersion:    "4.10.0&type=openshift",
 			apiUser:                *test.GenDefaultAPIUser(),
 			existingKubermaticObjs: []runtime.Object{test.GenDefaultUser()},
-			existingUpdates: []*version.MasterUpdate{
+			existingUpdates: []*version.Update{
 				{
 					From:      "4.10.0",
 					To:        "4.10.1",
@@ -526,7 +526,7 @@ func TestGetNodeUpgrades(t *testing.T) {
 					Type:      apiv1.OpenShiftClusterType,
 				},
 			},
-			existingVersions: []*version.MasterVersion{
+			existingVersions: []*version.Version{
 				{
 					Version: semver.MustParse("1.7.1"),
 					Type:    apiv1.KubernetesClusterType,
@@ -593,8 +593,8 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 		name                   string
 		clusterType            string
 		apiUser                apiv1.User
-		existingUpdates        []*version.MasterUpdate
-		existingVersions       []*version.MasterVersion
+		existingUpdates        []*version.Update
+		existingVersions       []*version.Version
 		expectedOutput         []*apiv1.MasterVersion
 		existingKubermaticObjs []runtime.Object
 	}{
@@ -603,8 +603,8 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 			clusterType:            apiv1.OpenShiftClusterType,
 			apiUser:                *test.GenDefaultAPIUser(),
 			existingKubermaticObjs: []runtime.Object{test.GenDefaultUser()},
-			existingUpdates:        []*version.MasterUpdate{},
-			existingVersions: []*version.MasterVersion{
+			existingUpdates:        []*version.Update{},
+			existingVersions: []*version.Version{
 				{
 					Version: semver.MustParse("1.13.5"),
 					Default: true,
@@ -660,8 +660,8 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 			clusterType:            "",
 			apiUser:                *test.GenDefaultAPIUser(),
 			existingKubermaticObjs: []runtime.Object{test.GenDefaultUser()},
-			existingUpdates:        []*version.MasterUpdate{},
-			existingVersions: []*version.MasterVersion{
+			existingUpdates:        []*version.Update{},
+			existingVersions: []*version.Version{
 				{
 					Version: semver.MustParse("1.13.5"),
 					Default: true,

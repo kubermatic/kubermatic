@@ -19,11 +19,10 @@ import (
 
 // UpdateManager specifies a set of methods to handle cluster versions & updates
 type UpdateManager interface {
-	GetVersion(from, clusterType string) (*version.MasterVersion, error)
-	GetMasterVersions(clusterType string) ([]*version.MasterVersion, error)
-	GetDefault() (*version.MasterVersion, error)
-	AutomaticUpdate(from, clusterType string) (*version.MasterVersion, error)
-	GetPossibleUpdates(from, clusterType string) ([]*version.MasterVersion, error)
+	GetVersion(from, clusterType string) (*version.Version, error)
+	GetVersions(clusterType string) ([]*version.Version, error)
+	GetDefault() (*version.Version, error)
+	GetPossibleUpdates(from, clusterType string) ([]*version.Version, error)
 }
 
 // Routing represents an object which binds endpoints to http handlers.

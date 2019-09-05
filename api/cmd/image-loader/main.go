@@ -136,7 +136,7 @@ func processImages(ctx context.Context, log *zap.Logger, dryRun bool, images []s
 	return nil
 }
 
-func getImagesForVersion(log *zap.Logger, version *kubermaticversion.MasterVersion, addonsPath string) (images []string, err error) {
+func getImagesForVersion(log *zap.Logger, version *kubermaticversion.Version, addonsPath string) (images []string, err error) {
 	templateData, err := getTemplateData(version)
 	if err != nil {
 		return nil, err
@@ -222,7 +222,7 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(version *kubermaticversion.MasterVersion) (*resources.TemplateData, error) {
+func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -386,7 +386,7 @@ func createNamedSecrets(secretNames []string) *corev1.SecretList {
 	return &secretList
 }
 
-func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kubermaticversion.MasterVersion, error) {
+func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kubermaticversion.Version, error) {
 	log = log.With(
 		zap.String("versions-file", versionsFile),
 		zap.String("versions-filter", versionFilter),
@@ -407,7 +407,7 @@ func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kuberm
 		return nil, fmt.Errorf("failed to parse version filter %q: %v", versionFilter, err)
 	}
 
-	var filteredVersions []*kubermaticversion.MasterVersion
+	var filteredVersions []*kubermaticversion.Version
 	for _, ver := range versions {
 		if constraint.Check(ver.Version) {
 			filteredVersions = append(filteredVersions, ver)
