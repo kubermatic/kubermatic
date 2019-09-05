@@ -251,7 +251,7 @@ func buildAndDeployerImageTemplateFormatImage(openshiftVersion string) (string, 
 	case openshiftVersion419:
 		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:f4d2df04a0ac1b689bc275c060e5520781f48f007dabf849d92cf1519f16ea82", "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:8b946a142a8ba328ffe04195bb3fc4beeff26aaa4d8d0e99528340e8880eba7e", nil
 	default:
-		return "", "", fmt.Errorf("no build and deploymer imageFormatImage available for openshift version %q", openshiftVersion)
+		return "", "", fmt.Errorf("no build and deployer imageFormatImage available for openshift version %q", openshiftVersion)
 	}
 }
 

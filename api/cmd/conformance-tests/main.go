@@ -65,6 +65,7 @@ type Opts struct {
 	excludeSelectorRaw           string
 	existingClusterLabel         string
 	openshift                    bool
+	openshiftPullSecret          string
 	printGinkoLogs               bool
 	onlyTestCreation             bool
 	pspEnabled                   bool
@@ -245,6 +246,13 @@ func main() {
 	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{"http"}), nil)
 	opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
 
+	if opts.openshift {
+		opts.openshiftPullSecret = os.Getenv("OPENSHIFT_IMAGE_PULL_SECRET")
+		if opts.openshiftPullSecret == "" {
+			log.Fatal("Testing openshift requires the `OPENSHIFT_IMAGE_PULL_SECRET` env var to be set")
+		}
+	}
+
 	if val := os.Getenv("KUBERMATIC_PSP_ENABLED"); val == "true" {
 		opts.pspEnabled = true
 		log.Info("Enabling PSPs")
@@ -348,8 +356,6 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] = true
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] = true
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] = false
-		// We only support one version of openshift
-		opts.versions = []*semver.Semver{semver.NewSemverOrDie("3.11.0")}
 	}
 
 	var scenarios []testScenario

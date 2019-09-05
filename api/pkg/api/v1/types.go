@@ -590,6 +590,9 @@ type ClusterSpec struct {
 
 	// AuditLogging
 	AuditLogging *kubermaticv1.AuditLoggingSettings `json:"auditLogging,omitempty"`
+
+	// Openshift holds all openshift-specific settings
+	Openshift *kubermaticv1.Openshift `json:"openshift,omitempty"`
 }
 
 // MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
