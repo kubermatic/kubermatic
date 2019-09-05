@@ -18,6 +18,10 @@ import (
 const (
 	// ControllerName is the name of this very controller.
 	ControllerName = "seed-sync-controller"
+
+	// ManagedByLabel is the label used to identify the resources
+	// created by this controller.
+	ManagedByLabel = "app.kubernetes.io/managed-by"
 )
 
 // Add creates a new Seed-Sync controller and sets up Watches
