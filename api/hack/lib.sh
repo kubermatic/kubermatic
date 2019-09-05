@@ -68,13 +68,6 @@ get_latest_dashboard_tag() {
   git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /ssh/id_rsa'
   local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
 
-  if [[ "$FOR_BRANCH" == "master" ]]; then
-    # just get the tip of dashboard master
-    git ls-remote "$DASHBOARD_URL" refs/heads/master | awk '{print $1}'
-
-    return
-  fi
-
   MINOR_VERSION="${FOR_BRANCH##release/}"
   FOUND_TAG="$(git ls-remote "$DASHBOARD_URL" "refs/tags/$MINOR_VERSION*" --sort=-authordate --count=1 | awk '{print $2}')"
   if [ -z "$FOUND_TAG" ]; then
@@ -83,4 +76,13 @@ get_latest_dashboard_tag() {
   fi
 
   echo "${FOUND_TAG##refs/tags/}"
+}
+
+get_latest_dashboard_hash() {
+  FOR_BRANCH="$1"
+
+  git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /ssh/id_rsa'
+  local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
+
+  git ls-remote "$DASHBOARD_URL" "refs/heads/$FOR_BRANCH" | awk '{print $1}'
 }

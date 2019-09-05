@@ -277,7 +277,7 @@ fi
 # or the name of the base branch in case of a PR.
 #
 # The env var is named `UPGRADE_TEST_BASE_HASH`, but we really only specify release branch heads with it.
-LATEST_DASHBOARD=$(get_latest_dashboard_tag "${UPGRADE_TEST_BASE_HASH:-$PULL_BASE_REF}")
+LATEST_DASHBOARD="$(get_latest_dashboard_hash "${UPGRADE_TEST_BASE_HASH:-$PULL_BASE_REF}")"
 
 # We must delete all templates for cluster-scoped resources
 # because those already exist because of the main Kubermatic installation
@@ -478,7 +478,9 @@ if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   exit 0
 fi
 
-LATEST_DASHBOARD=$(get_latest_dashboard_tag "${PULL_BASE_REF}")
+# PULL_BASE_REF is the name of the current branch in case of a post-submit
+# or the name of the base branch in case of a PR.
+LATEST_DASHBOARD="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
 
 echodate "Installing current version of Kubermatic"
 retry 3 helm upgrade --install --force --wait --timeout 300 \
