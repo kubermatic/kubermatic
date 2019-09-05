@@ -56,6 +56,7 @@ func (sv *seedValidator) Validate(seed *kubermaticv1.Seed, isDelete bool) error 
 }
 
 func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, existingSeeds map[string]*kubermaticv1.Seed, isDelete bool) error {
+	// this can be nil on fresh seed clusters
 	existingSeed := existingSeeds[seed.Name]
 
 	// remove the seed itself from the list, so uniqueness checks won't fail

@@ -8,12 +8,13 @@ import (
 	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -151,6 +152,10 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 		return func() (*kubermaticv1.Seed, error) {
 			seed := &kubermaticv1.Seed{}
 			if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: seedName}, seed); err != nil {
+				// allow callers to handle this gracefully
+				if kerrors.IsNotFound(err) {
+					return nil, err
+				}
 				return nil, fmt.Errorf("failed to get seed %q: %v", seedName, err)
 			}
 			return seed, nil
