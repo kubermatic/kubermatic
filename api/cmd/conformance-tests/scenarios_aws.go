@@ -28,7 +28,6 @@ func getAWSScenarios(versions []*semver.Semver) []testScenario {
 				},
 			},
 		})
-		//TODO: This doesnt work for Kubernetes, fix
 		scenarios = append(scenarios, &awsScenario{
 			version: v,
 			nodeOsSpec: apimodels.OperatingSystemSpec{

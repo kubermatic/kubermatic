@@ -5729,6 +5729,9 @@
         "oidc": {
           "$ref": "#/definitions/OIDCSettings"
         },
+        "openshift": {
+          "$ref": "#/definitions/Openshift"
+        },
         "usePodSecurityPolicyAdmissionPlugin": {
           "description": "If active the PodSecurityPolicy admission plugin is configured at the apiserver",
           "type": "boolean",
@@ -7218,6 +7221,16 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "Openshift": {
+      "type": "object",
+      "properties": {
+        "imagePullSecret": {
+          "type": "string",
+          "x-go-name": "ImagePullSecret"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "OpenstackCloudSpec": {
       "type": "object",
