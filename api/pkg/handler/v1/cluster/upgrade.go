@@ -14,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"github.com/kubermatic/kubermatic/api/pkg/validation/nodeupdate"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -88,7 +89,7 @@ func isRestrictedByKubeletVersions(controlPlaneVersion *version.Version, mds []c
 			return false, err
 		}
 
-		if err = common.EnsureVersionCompatible(controlPlaneVersion.Version, kubeletVersion); err != nil {
+		if err = nodeupdate.EnsureVersionCompatible(controlPlaneVersion.Version, kubeletVersion); err != nil {
 			return true, nil
 		}
 	}
@@ -150,10 +151,10 @@ func GetNodeUpgrades(updateManager common.UpdateManager) endpoint.Endpoint {
 func filterIncompatibleVersions(possibleKubeletVersions []*version.Version, controlPlaneVersion *semver.Version) ([]*version.Version, error) {
 	var compatibleVersions []*version.Version
 	for _, v := range possibleKubeletVersions {
-		if err := common.EnsureVersionCompatible(controlPlaneVersion, v.Version); err == nil {
+		if err := nodeupdate.EnsureVersionCompatible(controlPlaneVersion, v.Version); err == nil {
 			compatibleVersions = append(compatibleVersions, v)
 		} else {
-			_, ok := err.(common.ErrVersionSkew)
+			_, ok := err.(nodeupdate.ErrVersionSkew)
 			if !ok {
 				return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %v", v.Version, controlPlaneVersion, err)
 			}
@@ -212,7 +213,7 @@ func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider) en
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		if err = common.EnsureVersionCompatible(cluster.Spec.Version.Version, requestedKubeletVersion); err != nil {
+		if err = nodeupdate.EnsureVersionCompatible(cluster.Spec.Version.Version, requestedKubeletVersion); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
 

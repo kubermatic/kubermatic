@@ -10,10 +10,10 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
+	"github.com/kubermatic/kubermatic/api/pkg/validation/nodeupdate"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
@@ -248,7 +248,7 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*a
 			return nil, fmt.Errorf("failed to parse kubelet version: %v", err)
 		}
 
-		if err = common.EnsureVersionCompatible(controlPlaneVersion, kubeletVersion); err != nil {
+		if err = nodeupdate.EnsureVersionCompatible(controlPlaneVersion, kubeletVersion); err != nil {
 			return nil, err
 		}
 
