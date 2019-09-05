@@ -56,7 +56,7 @@ func (r *Reconciler) reconcile(seed *kubermaticv1.Seed, logger *zap.SugaredLogge
 		seedCreator(seed),
 	}
 
-	if err := reconciling.ReconcileSeeds(r.ctx, seedCreators, "", client); err != nil {
+	if err := reconciling.ReconcileSeeds(r.ctx, seedCreators, seed.Namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile seed: %v", err)
 	}
 
