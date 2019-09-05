@@ -35,7 +35,7 @@ type Update struct {
 	From                string `json:"from"`
 	To                  string `json:"to"`
 	Automatic           bool   `json:"automatic"`
-	AutomaticNodeUpdate bool   `json:"automaticNodeUpgrade"`
+	AutomaticNodeUpdate bool   `json:"automaticNodeUpdate"`
 	Type                string `json:"type"`
 }
 
