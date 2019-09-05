@@ -73,6 +73,7 @@ type Reconciler struct {
 	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
 	dnatControllerImage                              string
+	concurrentClusterUpdates                         int
 
 	oidcCAFile         string
 	oidcIssuerURL      string
@@ -101,6 +102,7 @@ func Add(
 	inClusterPrometheusScrapingConfigsFile string,
 	dockerPullConfigJSON []byte,
 	nodeLocalDNSCacheEnabled bool,
+	concurrentClusterUpdates int,
 
 	oidcCAFile string,
 	oidcIssuerURL string,
@@ -130,6 +132,7 @@ func Add(
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,
 		dnatControllerImage:                              dnatControllerImage,
+		concurrentClusterUpdates:                         concurrentClusterUpdates,
 
 		externalURL: externalURL,
 		seedGetter:  seedGetter,
@@ -173,6 +176,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
+	if limitReached, err := controllerutil.ConcurrencyLimitReached(ctx, r, r.concurrentClusterUpdates); limitReached || err != nil {
+		log.Debugf("ignore reconciling due to max parallel reconcile has reached its limit of %v", r.concurrentClusterUpdates)
+		return reconcile.Result{
+			RequeueAfter: 1 * time.Second,
+		}, err
+	}
+
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kubeapierrors.IsNotFound(err) {
@@ -201,16 +211,25 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, nil
 	}
 
+	successfullyReconciled := true
 	// Add a wrapping here so we can emit an event on error
-	result, err := r.reconcile(ctx, log, cluster)
-	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+	result, reconcileErr := r.reconcile(ctx, log, cluster)
+	if reconcileErr != nil {
+		successfullyReconciled = false
+		log.Errorw("Reconciling failed", zap.Error(reconcileErr))
+		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", reconcileErr)
 	}
+
 	if result == nil {
 		result = &reconcile.Result{}
 	}
-	return *result, err
+
+	if err := controllerutil.SetClusterUpdatedSuccessfullyCondition(ctx, cluster, r, successfullyReconciled); err != nil {
+		log.Errorw("failed to update clusters status conditions", zap.Error(err))
+		reconcileErr = fmt.Errorf("failed to set cluster status: %v after reconciliation was done with err=%v", err, reconcileErr)
+	}
+
+	return *result, reconcileErr
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
