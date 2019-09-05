@@ -65,6 +65,7 @@ type controllerRunOptions struct {
 	controllerManagerDefaultReplicas                 int
 	schedulerDefaultReplicas                         int
 	seedValidationHook                               seedvalidation.WebhookOpts
+	concurrentClusterUpdate                          int
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -123,6 +124,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "The default number of replicas for usercluster api servers")
 	flag.IntVar(&c.controllerManagerDefaultReplicas, "controller-manager-default-replicas", 1, "The default number of replicas for usercluster controller managers")
 	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")
+	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
 	c.seedValidationHook.AddFlags(flag.CommandLine)
 	flag.Parse()
 
@@ -198,7 +200,9 @@ func (o controllerRunOptions) validate() error {
 	if o.schedulerDefaultReplicas < 1 {
 		return fmt.Errorf("--scheduler-default-replicas must be > 0 (was %d)", o.schedulerDefaultReplicas)
 	}
-
+	if o.concurrentClusterUpdate < 1 {
+		return fmt.Errorf("--max-parallel-reconcile must be > 0 (was %d)", o.concurrentClusterUpdate)
+	}
 	// Validate OIDC CA file
 	if err := o.validateCABundle(); err != nil {
 		return fmt.Errorf("validation CA bundle file failed: %v", err)
