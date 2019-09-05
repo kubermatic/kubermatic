@@ -346,11 +346,18 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		return report, fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
+	podReadyTimeout := 10 * time.Minute
+	if cluster.Annotations["kubermatic.io/openshift"] == "true" {
+		// Openshift installs a lot more during node provisioning, hence this may take longer
+		podReadyTimeout = 15 * time.Minute
+	}
+	// TODO: Split this up into "Node appears", "Node got ready", "Pods got ready" to provide
+	// better feedback to the user
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for Pods inside usercluster to be ready",
 		report,
 		func() error {
-			return r.waitUntilAllPodsAreReady(log, userClusterClient)
+			return r.waitUntilAllPodsAreReady(log, userClusterClient, podReadyTimeout)
 		}); err != nil {
 		return nil, fmt.Errorf("failed to wait until all pods are running after creating the cluster: %v", err)
 	}
@@ -737,11 +744,11 @@ func (r *testRunner) waitForControlPlane(log *zap.SugaredLogger, clusterName str
 	return cluster, nil
 }
 
-func (r *testRunner) waitUntilAllPodsAreReady(log *zap.SugaredLogger, userClusterClient ctrlruntimeclient.Client) error {
+func (r *testRunner) waitUntilAllPodsAreReady(log *zap.SugaredLogger, userClusterClient ctrlruntimeclient.Client, timeout time.Duration) error {
 	log.Debug("Waiting for all pods to be ready...")
 	started := time.Now()
 
-	err := wait.Poll(defaultUserClusterPollInterval, defaultTimeout, func() (done bool, err error) {
+	err := wait.Poll(defaultUserClusterPollInterval, timeout, func() (done bool, err error) {
 		podList := &corev1.PodList{}
 		if err := userClusterClient.List(context.Background(), &ctrlruntimeclient.ListOptions{}, podList); err != nil {
 			log.Warnf("failed to load pod list while waiting until all pods are running: %v", err)
