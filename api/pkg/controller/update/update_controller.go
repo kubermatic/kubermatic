@@ -38,12 +38,7 @@ type Reconciler struct {
 }
 
 // Add creates a new update controller
-func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager *version.Manager) error {
-	userClusterConnectionProvider, err := client.NewInternal(mgr.GetClient())
-	if err != nil {
-		return fmt.Errorf("failed to get userClusterConnectionProvider: %v", err)
-	}
-
+func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager *version.Manager, userClusterConnectionProvider client.UserClusterConnectionProvider) error {
 	reconciler := &Reconciler{
 		workerName:                    workerName,
 		updateManager:                 updateManager,
