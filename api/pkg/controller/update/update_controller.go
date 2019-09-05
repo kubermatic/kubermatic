@@ -28,18 +28,13 @@ const (
 
 type Reconciler struct {
 	workerName    string
-	updateManager Manager
+	updateManager *version.Manager
 	ctrlruntimeclient.Client
 	recorder record.EventRecorder
 }
 
-// Manager specifies a set of methods to find suitable update versions for clusters
-type Manager interface {
-	AutomaticControlplaneUpdate(from, clusterType string) (*version.Version, error)
-}
-
 // Add creates a new update controller
-func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager Manager) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager *version.Manager) error {
 	reconciler := &Reconciler{
 		workerName:    workerName,
 		updateManager: updateManager,
