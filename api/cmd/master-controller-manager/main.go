@@ -41,6 +41,7 @@ type controllerRunOptions struct {
 type controllerContext struct {
 	ctx                  context.Context
 	mgr                  manager.Manager
+	log                  *zap.SugaredLogger
 	workerCount          int
 	seedsGetter          provider.SeedsGetter
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
@@ -74,6 +75,7 @@ func main() {
 		}
 	}()
 	kubermaticlog.Logger = sugarLog
+	ctrlCtx.log = sugarLog
 
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)
 	if err != nil {
@@ -146,7 +148,7 @@ func main() {
 		sugarLog.Info("the validatingAdmissionWebhook server can not be started because seed-admissionwebhook-cert-file and seed-admissionwebhook-key-file are empty")
 	}
 
-	if err := createAllControllers(ctrlCtx, sugarLog); err != nil {
+	if err := createAllControllers(ctrlCtx); err != nil {
 		sugarLog.Fatalw("could not create all controllers", zap.Error(err))
 	}
 

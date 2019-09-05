@@ -15,7 +15,6 @@ import (
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -24,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func createAllControllers(ctrlCtx *controllerContext, log *zap.SugaredLogger) error {
+func createAllControllers(ctrlCtx *controllerContext) error {
 	rbacControllerFactory := rbacControllerFactoryCreator(
 		ctrlCtx.mgr.GetConfig(),
 		ctrlCtx.seedsGetter,
@@ -48,7 +47,7 @@ func createAllControllers(ctrlCtx *controllerContext, log *zap.SugaredLogger) er
 	if err := serviceaccount.Add(ctrlCtx.mgr); err != nil {
 		return fmt.Errorf("failed to create serviceaccount controller: %v", err)
 	}
-	if err := seedsync.Add(ctrlCtx.mgr, 1, log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
+	if err := seedsync.Add(ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create seedsync controller: %v", err)
 	}
 	if err := seedproxy.Add(ctrlCtx.mgr, 1, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter); err != nil {
