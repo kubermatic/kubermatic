@@ -9,6 +9,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/api/pkg/validation/nodeupdate"
 )
 
 var (
@@ -31,10 +32,11 @@ type Version struct {
 
 // Update represents an update option for a cluster
 type Update struct {
-	From      string `json:"from"`
-	To        string `json:"to"`
-	Automatic bool   `json:"automatic"`
-	Type      string `json:"type"`
+	From                string `json:"from"`
+	To                  string `json:"to"`
+	Automatic           bool   `json:"automatic"`
+	AutomaticNodeUpdate bool   `json:"automaticNodeUpgrade"`
+	Type                string `json:"type"`
 }
 
 // New returns a instance of Manager
@@ -115,34 +117,65 @@ func (m *Manager) GetVersions(clusterType string) ([]*Version, error) {
 	return masterVersions, nil
 }
 
+// AutomaticNodeUpdate returns an automatic node update or nil
+func (m *Manager) AutomaticNodeUpdate(fromVersionRaw, clusterType, controlPlaneVersion string) (*Version, error) {
+	version, err := m.automaticUpdate(fromVersionRaw, clusterType, true)
+	if err != nil || version == nil {
+		return version, err
+	}
+	controlPlaneSemver, err := semver.NewVersion(controlPlaneVersion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse controlplane version: %v", err)
+	}
+
+	if err := nodeupdate.EnsureVersionCompatible(controlPlaneSemver, version.Version); err != nil {
+		return nil, err
+	}
+
+	return version, nil
+}
+
 // AutomaticControlplaneUpdate returns a version if an automatic update can be found for version sfrom
 func (m *Manager) AutomaticControlplaneUpdate(fromVersionRaw, clusterType string) (*Version, error) {
+	return m.automaticUpdate(fromVersionRaw, clusterType, false)
+}
+
+func (m *Manager) automaticUpdate(fromVersionRaw, clusterType string, isForNode bool) (*Version, error) {
 	from, err := semver.NewVersion(fromVersionRaw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", fromVersionRaw, err)
 	}
 
+	isAutomatic := func(u *Update) bool {
+		if isForNode {
+			return u.AutomaticNodeUpdate
+		}
+		return u.Automatic
+	}
+
 	var toVersions []string
 	for _, u := range m.updates {
-		if u.Type == clusterType {
-			if !u.Automatic {
-				continue
-			}
-
-			uFrom, err := semver.NewConstraint(u.From)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse from constraint %s: %v", u.From, err)
-			}
-			if !uFrom.Check(from) {
-				continue
-			}
-
-			// Automatic updates must not be a constraint. They must be version.
-			if _, err = semver.NewVersion(u.To); err != nil {
-				return nil, fmt.Errorf("failed to parse to version %s: %v", u.To, err)
-			}
-			toVersions = append(toVersions, u.To)
+		if u.Type != clusterType {
+			continue
 		}
+
+		if !isAutomatic(u) {
+			continue
+		}
+
+		uFrom, err := semver.NewConstraint(u.From)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse from constraint %s: %v", u.From, err)
+		}
+		if !uFrom.Check(from) {
+			continue
+		}
+
+		// Automatic updates must not be a constraint. They must be version.
+		if _, err = semver.NewVersion(u.To); err != nil {
+			return nil, fmt.Errorf("failed to parse to version %s: %v", u.To, err)
+		}
+		toVersions = append(toVersions, u.To)
 	}
 
 	if len(toVersions) == 0 {
