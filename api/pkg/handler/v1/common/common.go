@@ -7,7 +7,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
@@ -52,8 +51,8 @@ type UpdateManager interface {
 
 // PresetsManager specifies a set of methods to handle presets for specific provider
 type PresetsManager interface {
-	GetPresets() *presets.Presets
-	SetCloudCredentials(credentialName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error)
+	GetPreset(userInfo provider.UserInfo) *kubermaticv1.Preset
+	SetCloudCredentials(userInfo provider.UserInfo, credentialName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error)
 }
 
 // ServerMetrics defines metrics used by the API.

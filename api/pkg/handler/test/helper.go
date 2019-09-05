@@ -275,13 +275,23 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
 func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
-	credentialManager := presets.New()
-	credentialManager.GetPresets().Fake = presets.Fake{Credentials: []presets.FakeCredentials{
-		{Name: TestFakeCredential, Token: "dummy_pluton_token"},
-	}}
-	credentialManager.GetPresets().Openstack = presets.Openstack{Credentials: []presets.OpenstackCredentials{
-		{Name: TestOSCredential, Username: TestOSuserName, Password: TestOSuserPass, Domain: TestOSdomain},
-	}}
+	credentialManager := presets.NewWithPresets(&kubermaticv1.PresetList{
+		Items: []kubermaticv1.Preset{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: GenDefaultUser().Spec.Email},
+				},
+				Spec: kubermaticv1.PresetSpec{
+					Fake: kubermaticv1.Fake{Credentials: []kubermaticv1.FakePresetCredentials{
+						{Name: TestFakeCredential, Token: "dummy_pluton_token"},
+					}},
+					Openstack: kubermaticv1.Openstack{Credentials: []kubermaticv1.OpenstackPresetCredentials{
+						{Name: TestOSCredential, Username: TestOSuserName, Password: TestOSuserPass, Domain: TestOSdomain},
+					}},
+				},
+			},
+		},
+	})
 	return initTestEndpoint(user, seedsGetter, kubeObjects, machineObjects, kubermaticObjects, versions, updates, credentialManager, routingFunc)
 }
 

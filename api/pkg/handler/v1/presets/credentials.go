@@ -3,6 +3,8 @@ package presets
 import (
 	"context"
 	"fmt"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"net/http"
 	"reflect"
 
@@ -45,22 +47,28 @@ func CredentialEndpoint(credentialManager common.PresetsManager) endpoint.Endpoi
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
 		credentials := apiv1.CredentialList{}
 		names := make([]string, 0)
 
 		providerN := parseProvider(req.ProviderName)
-		providers := reflect.ValueOf(credentialManager.GetPresets()).Elem()
-		providerItems := providers.Field(providerN)
-		credentialItems := providerItems.FieldByName("Credentials")
-		if credentialItems.Kind() == reflect.Slice {
-			for i := 0; i < credentialItems.Len(); i++ {
-				item := credentialItems.Index(i)
-				if item.Kind() == reflect.Struct {
-					v := reflect.Indirect(item)
-					if _, ok := v.Type().FieldByName("Name"); ok {
-						rawName := v.FieldByName("Name").Interface()
-						name := rawName.(string)
-						names = append(names, name)
+		preset := credentialManager.GetPreset(*userInfo)
+		providersRaw := reflect.ValueOf(preset.Spec)
+		if providersRaw.Kind() == reflect.Struct {
+			providers := reflect.Indirect(providersRaw)
+			providerItems := providers.Field(providerN)
+			credentialItems := providerItems.FieldByName("Credentials")
+			if credentialItems.Kind() == reflect.Slice {
+				for i := 0; i < credentialItems.Len(); i++ {
+					item := credentialItems.Index(i)
+					if item.Kind() == reflect.Struct {
+						v := reflect.Indirect(item)
+						if _, ok := v.Type().FieldByName("Name"); ok {
+							rawName := v.FieldByName("Name").Interface()
+							name := rawName.(string)
+							names = append(names, name)
+						}
 					}
 				}
 			}

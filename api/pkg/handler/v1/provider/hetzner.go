@@ -44,9 +44,11 @@ func HetznerSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectP
 func HetznerSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(HetznerSizesReq)
+
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		token := req.HetznerToken
-		if len(req.Credential) > 0 && credentialManager.GetPresets().Hetzner.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().Hetzner.Credentials {
+		if len(req.Credential) > 0 && credentialManager.GetPreset(*userInfo).Spec.Hetzner.Credentials != nil {
+			for _, credential := range credentialManager.GetPreset(*userInfo).Spec.Hetzner.Credentials {
 				if credential.Name == req.Credential {
 					token = credential.Token
 					break

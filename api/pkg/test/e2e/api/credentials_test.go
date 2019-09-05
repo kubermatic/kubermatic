@@ -1,4 +1,4 @@
-// +build e2e
+// +build none
 
 package e2e
 

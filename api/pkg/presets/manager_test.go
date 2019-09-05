@@ -3,10 +3,12 @@ package presets_test
 import (
 	"testing"
 
-	"k8s.io/apimachinery/pkg/api/equality"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/presets"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
+	"k8s.io/apimachinery/pkg/api/equality"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestCredentialEndpoint(t *testing.T) {
@@ -19,16 +21,42 @@ func TestCredentialEndpoint(t *testing.T) {
 		expectedCloudSpec *kubermaticv1.CloudSpec
 		dc                *kubermaticv1.Datacenter
 		manager           *presets.Manager
+		userInfo          provider.UserInfo
 	}{
 		{
 			name:           "test 1: set credentials for Fake provider",
 			credentialName: "test",
+			userInfo:       provider.UserInfo{Email: "test@example.com"},
 			manager: func() *presets.Manager {
-				manager := presets.New()
-				manager.GetPresets().Fake.Credentials = []presets.FakeCredentials{
-					{Name: "test", Token: "abc"},
-					{Name: "pluto", Token: "def"},
-				}
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example.com"},
+							},
+							Spec: kubermaticv1.PresetSpec{
+								Fake: kubermaticv1.Fake{
+									Credentials: []kubermaticv1.FakePresetCredentials{
+										{Name: "test", Token: "abc"},
+										{Name: "pluto", Token: "def"},
+									},
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example.example.com"},
+							},
+							Spec: kubermaticv1.PresetSpec{
+								Fake: kubermaticv1.Fake{
+									Credentials: []kubermaticv1.FakePresetCredentials{
+										{Name: "test", Token: "abcd"},
+									},
+								},
+							},
+						},
+					},
+				})
 				return manager
 			}(),
 			cloudSpec:         kubermaticv1.CloudSpec{Fake: &kubermaticv1.FakeCloudSpec{}},
@@ -37,11 +65,24 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 2: set credentials for GCP provider",
 			credentialName: "test",
+			userInfo:       provider.UserInfo{Email: "test@example.com"},
 			manager: func() *presets.Manager {
-				manager := presets.New()
-				manager.GetPresets().GCP.Credentials = []presets.GCPCredentials{
-					{Name: "test", ServiceAccount: "test_service_accouont"},
-				}
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example.com"},
+							},
+							Spec: kubermaticv1.PresetSpec{
+								GCP: kubermaticv1.GCP{
+									Credentials: []kubermaticv1.GCPPresetCredentials{
+										{Name: "test", ServiceAccount: "test_service_accouont"},
+									},
+								},
+							},
+						},
+					},
+				})
 				return manager
 			}(),
 			cloudSpec:         kubermaticv1.CloudSpec{GCP: &kubermaticv1.GCPCloudSpec{}},
@@ -50,11 +91,24 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 3: set credentials for AWS provider",
 			credentialName: "test",
+			userInfo:       provider.UserInfo{Email: "test@example.com"},
 			manager: func() *presets.Manager {
-				manager := presets.New()
-				manager.GetPresets().AWS.Credentials = []presets.AWSCredentials{
-					{Name: "test", SecretAccessKey: "secret", AccessKeyID: "key"},
-				}
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example.com"},
+							},
+							Spec: kubermaticv1.PresetSpec{
+								AWS: kubermaticv1.AWS{
+									Credentials: []kubermaticv1.AWSPresetCredentials{
+										{Name: "test", SecretAccessKey: "secret", AccessKeyID: "key"},
+									},
+								},
+							},
+						},
+					},
+				})
 				return manager
 			}(),
 			cloudSpec:         kubermaticv1.CloudSpec{AWS: &kubermaticv1.AWSCloudSpec{}},
@@ -63,11 +117,24 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 4: set credentials for Hetzner provider",
 			credentialName: "test",
+			userInfo:       provider.UserInfo{Email: "test@example.com"},
 			manager: func() *presets.Manager {
-				manager := presets.New()
-				manager.GetPresets().Hetzner.Credentials = []presets.HetznerCredentials{
-					{Name: "test", Token: "secret"},
-				}
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example.com"},
+							},
+							Spec: kubermaticv1.PresetSpec{
+								Hetzner: kubermaticv1.Hetzner{
+									Credentials: []kubermaticv1.HetznerPresetCredentials{
+										{Name: "test", Token: "secret"},
+									},
+								},
+							},
+						},
+					},
+				})
 				return manager
 			}(),
 			cloudSpec:         kubermaticv1.CloudSpec{Hetzner: &kubermaticv1.HetznerCloudSpec{}},
@@ -76,11 +143,24 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 5: set credentials for Packet provider",
 			credentialName: "test",
+			userInfo:       provider.UserInfo{Email: "test@example.com"},
 			manager: func() *presets.Manager {
-				manager := presets.New()
-				manager.GetPresets().Packet.Credentials = []presets.PacketCredentials{
-					{Name: "test", APIKey: "secret", ProjectID: "project"},
-				}
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example.com"},
+							},
+							Spec: kubermaticv1.PresetSpec{
+								Packet: kubermaticv1.Packet{
+									Credentials: []kubermaticv1.PacketPresetCredentials{
+										{Name: "test", APIKey: "secret", ProjectID: "project"},
+									},
+								},
+							},
+						},
+					},
+				})
 				return manager
 			}(),
 			cloudSpec:         kubermaticv1.CloudSpec{Packet: &kubermaticv1.PacketCloudSpec{}},
@@ -89,11 +169,36 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 6: set credentials for DigitalOcean provider",
 			credentialName: "test",
+			userInfo:       provider.UserInfo{Email: "test@example.com"},
 			manager: func() *presets.Manager {
-				manager := presets.New()
-				manager.GetPresets().Digitalocean.Credentials = []presets.DigitaloceanCredentials{
-					{Name: "test", Token: "abcd"},
-				}
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example1.com"},
+							},
+							Spec: kubermaticv1.PresetSpec{
+								Digitalocean: kubermaticv1.Digitalocean{
+									Credentials: []kubermaticv1.DigitaloceanPresetCredentials{
+										{Name: "test", Token: "abcdefg"},
+									},
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example.com"},
+							},
+							Spec: kubermaticv1.PresetSpec{
+								Digitalocean: kubermaticv1.Digitalocean{
+									Credentials: []kubermaticv1.DigitaloceanPresetCredentials{
+										{Name: "test", Token: "abcd"},
+									},
+								},
+							},
+						},
+					},
+				})
 				return manager
 			}(),
 			cloudSpec:         kubermaticv1.CloudSpec{Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{}},
@@ -102,11 +207,24 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 7: set credentials for OpenStack provider",
 			credentialName: "test",
+			userInfo:       provider.UserInfo{Email: "test@example.com"},
 			manager: func() *presets.Manager {
-				manager := presets.New()
-				manager.GetPresets().Openstack.Credentials = []presets.OpenstackCredentials{
-					{Name: "test", Tenant: "a", Domain: "b", Password: "c", Username: "d"},
-				}
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example.com"},
+							},
+							Spec: kubermaticv1.PresetSpec{
+								Openstack: kubermaticv1.Openstack{
+									Credentials: []kubermaticv1.OpenstackPresetCredentials{
+										{Name: "test", Tenant: "a", Domain: "b", Password: "c", Username: "d"},
+									},
+								},
+							},
+						},
+					},
+				})
 				return manager
 			}(),
 			dc:                &kubermaticv1.Datacenter{Spec: kubermaticv1.DatacenterSpec{Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: false}}},
@@ -116,11 +234,24 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 8: set credentials for Vsphere provider",
 			credentialName: "test",
+			userInfo:       provider.UserInfo{Email: "test@example.com"},
 			manager: func() *presets.Manager {
-				manager := presets.New()
-				manager.GetPresets().VSphere.Credentials = []presets.VSphereCredentials{
-					{Name: "test", Username: "bob", Password: "secret"},
-				}
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example.com"},
+							},
+							Spec: kubermaticv1.PresetSpec{
+								VSphere: kubermaticv1.VSphere{
+									Credentials: []kubermaticv1.VSpherePresetCredentials{
+										{Name: "test", Username: "bob", Password: "secret"},
+									},
+								},
+							},
+						},
+					},
+				})
 				return manager
 			}(),
 			cloudSpec:         kubermaticv1.CloudSpec{VSphere: &kubermaticv1.VSphereCloudSpec{}},
@@ -129,11 +260,24 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 9: set credentials for Azure provider",
 			credentialName: "test",
+			userInfo:       provider.UserInfo{Email: "test@example.com"},
 			manager: func() *presets.Manager {
-				manager := presets.New()
-				manager.GetPresets().Azure.Credentials = []presets.AzureCredentials{
-					{Name: "test", SubscriptionID: "a", ClientID: "b", ClientSecret: "c", TenantID: "d"},
-				}
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example.com"},
+							},
+							Spec: kubermaticv1.PresetSpec{
+								Azure: kubermaticv1.Azure{
+									Credentials: []kubermaticv1.AzurePresetCredentials{
+										{Name: "test", SubscriptionID: "a", ClientID: "b", ClientSecret: "c", TenantID: "d"},
+									},
+								},
+							},
+						},
+					},
+				})
 				return manager
 			}(),
 			cloudSpec:         kubermaticv1.CloudSpec{Azure: &kubermaticv1.AzureCloudSpec{}},
@@ -142,8 +286,17 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 10: no credentials for Azure provider",
 			credentialName: "test",
+			userInfo:       provider.UserInfo{Email: "test@example.com"},
 			manager: func() *presets.Manager {
-				manager := presets.New()
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example.com"},
+							},
+						},
+					},
+				})
 				return manager
 			}(),
 			cloudSpec:     kubermaticv1.CloudSpec{Azure: &kubermaticv1.AzureCloudSpec{}},
@@ -152,22 +305,61 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:           "test 11: cloud provider spec is empty",
 			credentialName: "test",
+			userInfo:       provider.UserInfo{Email: "test@example.com"},
 			manager: func() *presets.Manager {
-				manager := presets.New()
-				manager.GetPresets().Openstack.Credentials = []presets.OpenstackCredentials{
-					{Name: "test", Tenant: "a", Domain: "b", Password: "c", Username: "d"},
-				}
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example.com"},
+							},
+							Spec: kubermaticv1.PresetSpec{
+								Azure: kubermaticv1.Azure{
+									Credentials: []kubermaticv1.AzurePresetCredentials{
+										{Name: "test", SubscriptionID: "a", ClientID: "b", ClientSecret: "c", TenantID: "d"},
+									},
+								},
+							},
+						},
+					},
+				})
 				return manager
 			}(),
 			cloudSpec:     kubermaticv1.CloudSpec{},
 			expectedError: "can not find provider to set credentials",
+		},
+		{
+			name:           "test 12: set credentials for Kubevirt provider",
+			credentialName: "test",
+			userInfo:       provider.UserInfo{Email: "test@example.com"},
+			manager: func() *presets.Manager {
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: "example.com"},
+							},
+							Spec: kubermaticv1.PresetSpec{
+								Kubevirt: kubermaticv1.Kubevirt{
+									Credentials: []kubermaticv1.KubevirtPresetCredentials{
+										{Name: "test", Kubeconfig: "test"},
+									},
+								},
+							},
+						},
+					},
+				})
+				return manager
+			}(),
+			cloudSpec:         kubermaticv1.CloudSpec{Kubevirt: &kubermaticv1.KubevirtCloudSpec{}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{Kubevirt: &kubermaticv1.KubevirtCloudSpec{Kubeconfig: "test"}},
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			cloudResult, err := tc.manager.SetCloudCredentials(tc.credentialName, tc.cloudSpec, tc.dc)
+			cloudResult, err := tc.manager.SetCloudCredentials(tc.userInfo, tc.credentialName, tc.cloudSpec, tc.dc)
 
 			if len(tc.expectedError) > 0 {
 				if err == nil {

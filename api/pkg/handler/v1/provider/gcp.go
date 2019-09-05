@@ -113,11 +113,12 @@ func GCPDiskTypesEndpoint(credentialManager common.PresetsManager) endpoint.Endp
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesReq)
 
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		zone := req.Zone
 		sa := req.ServiceAccount
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().GCP.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().GCP.Credentials {
+		if len(req.Credential) > 0 && credentialManager.GetPreset(*userInfo).Spec.GCP.Credentials != nil {
+			for _, credential := range credentialManager.GetPreset(*userInfo).Spec.GCP.Credentials {
 				if credential.Name == req.Credential {
 					sa = credential.ServiceAccount
 					break
@@ -181,11 +182,12 @@ func GCPSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint 
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesReq)
 
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		zone := req.Zone
 		sa := req.ServiceAccount
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().GCP.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().GCP.Credentials {
+		if len(req.Credential) > 0 && credentialManager.GetPreset(*userInfo).Spec.GCP.Credentials != nil {
+			for _, credential := range credentialManager.GetPreset(*userInfo).Spec.GCP.Credentials {
 				if credential.Name == req.Credential {
 					sa = credential.ServiceAccount
 					break
@@ -253,10 +255,11 @@ func GCPZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provid
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPZoneReq)
 
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		sa := req.ServiceAccount
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().GCP.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().GCP.Credentials {
+		if len(req.Credential) > 0 && credentialManager.GetPreset(*userInfo).Spec.GCP.Credentials != nil {
+			for _, credential := range credentialManager.GetPreset(*userInfo).Spec.GCP.Credentials {
 				if credential.Name == req.Credential {
 					sa = credential.ServiceAccount
 					break
