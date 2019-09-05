@@ -24,6 +24,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
 
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/kubernetes"
@@ -134,18 +135,28 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			// We only have a SeedGetter and not a SeedsGetter, so construct a little
 			// wrapper
 			func() (map[string]*kubermaticv1.Seed, error) {
+				seeds := make(map[string]*kubermaticv1.Seed)
+
 				seed, err := seedGetter()
 				if err != nil {
+					// ignore 404 errors so that on new seed clusters the initial
+					// seed CR creation/validation can succeed
+					if kerrors.IsNotFound(err) {
+						return seeds, nil
+					}
+
 					return nil, err
 				}
-				return map[string]*kubermaticv1.Seed{seed.Name: seed}, nil
+
+				seeds[seed.Name] = seed
+				return seeds, nil
 			},
 			// This controler doesn't necessarily have an explicit kubeconfig, most of the time it
 			// runs with in-cluster config. Just return the config from the manager and only allow
 			// our own seed
 			func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 				if seed.Name != options.dc {
-					return nil, fmt.Errorf("can only return kubeconfig for our own seed(%q), got request for %q", options.dc, seed.Name)
+					return nil, fmt.Errorf("can only return kubeconfig for our own seed (%q), got request for %q", options.dc, seed.Name)
 				}
 				return restMapperCache.Client(mgr.GetConfig())
 			})
