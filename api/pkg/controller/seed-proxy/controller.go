@@ -3,7 +3,7 @@ package seedproxy
 import (
 	"fmt"
 
-	"github.com/golang/glog"
+	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
@@ -97,12 +97,16 @@ const (
 func Add(
 	mgr manager.Manager,
 	numWorkers int,
+	log *zap.SugaredLogger,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 ) error {
+	log = log.Named(ControllerName)
+
 	reconciler := &Reconciler{
 		Client:               mgr.GetClient(),
 		recorder:             mgr.GetRecorder(ControllerName),
+		log:                  log,
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,
 	}
@@ -116,7 +120,7 @@ func Add(
 	eventHandler := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
-			glog.Errorf("Failed to get seeds: %v", err)
+			log.Errorw("failed to get seeds", zap.Error(err))
 			return nil
 		}
 

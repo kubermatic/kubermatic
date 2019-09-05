@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/golang/glog"
+	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -23,8 +23,10 @@ import (
 // seed clusters. It also takes care of creating a nice ConfigMap for
 // Grafana's provisioning mechanism.
 type Reconciler struct {
-	ctx context.Context
 	ctrlruntimeclient.Client
+
+	ctx context.Context
+	log *zap.SugaredLogger
 
 	seedsGetter          provider.SeedsGetter
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
@@ -37,39 +39,41 @@ type Reconciler struct {
 // an error if any API operation failed, otherwise will return an empty
 // dummy Result struct.
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	glog.V(4).Infof("Reconciling seed %q", request.NamespacedName.String())
+	log := r.log.With("seed", request.NamespacedName.String())
+	log.Debugw("reconciling seed")
+
 	seeds, err := r.seedsGetter()
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to get seeds: %v", err)
 	}
 
-	glog.V(4).Info("Garbage-collecting orphaned resources...")
-	if err := r.garbageCollect(seeds); err != nil {
+	log.Debug("garbage-collecting orphaned resources...")
+	if err := r.garbageCollect(seeds, log); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to garbage collect: %v", err)
 	}
 
-	glog.V(4).Infof("Reconciling seed cluster %s...", request.Name)
+	log.Debug("reconciling seed cluster...")
 	seed, found := seeds[request.Name]
 	if !found {
 		return reconcile.Result{}, fmt.Errorf("didn't find seed %q", request.Name)
 	}
-	if err := r.reconcileSeed(seed); err != nil {
+	if err := r.reconcileSeed(seed, log); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile: %v", err)
 	}
 
-	glog.V(4).Info("Reconciling Grafana provisioning...")
+	log.Debug("reconciling Grafana provisioning...")
 	if err := r.ensureMasterGrafanaProvisioning(seeds); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile Grafana: %v", err)
 	}
 
-	glog.V(4).Infof("Successfully reconciled seed %q", request.Name)
+	log.Debug("successfully reconciled seed")
 	return reconcile.Result{}, nil
 }
 
 // garbageCollect finds secrets referencing non-existing seeds and deletes
 // those. It relies on the owner references on all other master-cluster
 // resources to let the apiserver remove them automatically.
-func (r *Reconciler) garbageCollect(seeds map[string]*kubermaticv1.Seed) error {
+func (r *Reconciler) garbageCollect(seeds map[string]*kubermaticv1.Seed, log *zap.SugaredLogger) error {
 	list := &corev1.SecretList{}
 	options := &ctrlruntimeclient.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set{
@@ -78,16 +82,16 @@ func (r *Reconciler) garbageCollect(seeds map[string]*kubermaticv1.Seed) error {
 	}
 
 	if err := r.List(r.ctx, options, list); err != nil {
-		return fmt.Errorf("failed to list Secrets: %v", err)
+		return fmt.Errorf("failed to list secrets: %v", err)
 	}
 
 	for _, item := range list.Items {
 		seed := item.Labels[InstanceLabel]
 
 		if _, exists := seeds[seed]; !exists {
-			glog.V(4).Infof("Deleting orphaned Secret %s/%s referencing non-existing seed '%s'...", item.Namespace, item.Name, seed)
+			log.Debugw("deleting orphaned secret referencing non-existing seed", "secret", item, "seed", seed)
 			if err := r.Delete(r.ctx, &item); err != nil {
-				return fmt.Errorf("failed to delete Secret: %v", err)
+				return fmt.Errorf("failed to delete secret: %v", err)
 			}
 		}
 	}
@@ -95,7 +99,7 @@ func (r *Reconciler) garbageCollect(seeds map[string]*kubermaticv1.Seed) error {
 	return nil
 }
 
-func (r *Reconciler) reconcileSeed(seed *kubermaticv1.Seed) error {
+func (r *Reconciler) reconcileSeed(seed *kubermaticv1.Seed, log *zap.SugaredLogger) error {
 	cfg, err := r.seedKubeconfigGetter(seed)
 	if err != nil {
 		return err
@@ -107,30 +111,28 @@ func (r *Reconciler) reconcileSeed(seed *kubermaticv1.Seed) error {
 		return fmt.Errorf("failed to create client for seed: %v", err)
 	}
 
-	glog.V(4).Infof("Reconciling seed cluster %q", name)
-
-	glog.V(4).Info("Reconciling service accounts...")
+	log.Debug("reconciling service accounts...")
 	if err := r.ensureSeedServiceAccounts(client); err != nil {
 		return fmt.Errorf("failed to ensure service account: %v", err)
 	}
 
-	glog.V(4).Info("Reconciling roles...")
+	log.Debug("reconciling roles...")
 	if err := r.ensureSeedRoles(client); err != nil {
 		return fmt.Errorf("failed to ensure role: %v", err)
 	}
 
-	glog.V(4).Info("Reconciling role bindings...")
+	log.Debug("reconciling role bindings...")
 	if err := r.ensureSeedRoleBindings(client); err != nil {
 		return fmt.Errorf("failed to ensure role binding: %v", err)
 	}
 
-	glog.V(4).Info("Fetching service account details from seed cluster...")
+	log.Debug("fetching service account details from seed cluster...")
 	serviceAccountSecret, err := r.fetchServiceAccountSecret(client)
 	if err != nil {
 		return fmt.Errorf("failed to fetch service account: %v", err)
 	}
 
-	if err := r.reconcileMaster(name, cfg, serviceAccountSecret); err != nil {
+	if err := r.reconcileMaster(name, cfg, serviceAccountSecret, log); err != nil {
 		return fmt.Errorf("failed to reconcile master: %v", err)
 	}
 
@@ -201,19 +203,19 @@ func (r *Reconciler) fetchServiceAccountSecret(client ctrlruntimeclient.Client) 
 	return secret, nil
 }
 
-func (r *Reconciler) reconcileMaster(seedName string, kubeconfig *rest.Config, credentials *corev1.Secret) error {
-	glog.V(4).Info("Reconciling secrets...")
+func (r *Reconciler) reconcileMaster(seedName string, kubeconfig *rest.Config, credentials *corev1.Secret, log *zap.SugaredLogger) error {
+	log.Debug("reconciling secrets...")
 	secret, err := r.ensureMasterSecrets(seedName, kubeconfig, credentials)
 	if err != nil {
 		return fmt.Errorf("failed to ensure secrets: %v", err)
 	}
 
-	glog.V(4).Info("Reconciling deployments...")
+	log.Debug("reconciling deployments...")
 	if err := r.ensureMasterDeployments(seedName, secret); err != nil {
 		return fmt.Errorf("failed to ensure deployments: %v", err)
 	}
 
-	glog.V(4).Info("Reconciling services...")
+	log.Debug("reconciling services...")
 	if err := r.ensureMasterServices(seedName, secret); err != nil {
 		return fmt.Errorf("failed to ensure services: %v", err)
 	}
