@@ -184,7 +184,7 @@ kubermatic:
     replicas: 2
     image:
       repository: "quay.io/kubermatic/ui-v2"
-      tag: "v1.3.0"
+      tag: "__DASHBOARD_TAG__"
       pullPolicy: "IfNotPresent"
     # Config options for the dashboard:
     # default_node_count: Specify the default number of nodes.
