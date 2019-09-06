@@ -23,7 +23,7 @@ type Manager struct {
 	updates  []*Update
 }
 
-// Version is the object representing a Kubernetes Master version.
+// Version is the object representing a Kubernetes version.
 type Version struct {
 	Version *semver.Version `json:"version"`
 	Default bool            `json:"default"`
@@ -135,7 +135,8 @@ func (m *Manager) AutomaticNodeUpdate(fromVersionRaw, clusterType, controlPlaneV
 	return version, nil
 }
 
-// AutomaticControlplaneUpdate returns a version if an automatic update can be found for version sfrom
+// AutomaticControlplaneUpdate returns a version if an automatic update can be found for the version
+// passed in
 func (m *Manager) AutomaticControlplaneUpdate(fromVersionRaw, clusterType string) (*Version, error) {
 	return m.automaticUpdate(fromVersionRaw, clusterType, false)
 }
@@ -193,7 +194,7 @@ func (m *Manager) automaticUpdate(fromVersionRaw, clusterType string, isForNode 
 	return version, nil
 }
 
-// GetPossibleUpdates returns possible updates for the version sfrom
+// GetPossibleUpdates returns possible updates for the version passed in
 func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string) ([]*Version, error) {
 	from, err := semver.NewVersion(fromVersionRaw)
 	if err != nil {

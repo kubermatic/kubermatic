@@ -31,7 +31,7 @@ func LoadUpdates(path string) ([]*Update, error) {
 	for _, update := range s.Updates {
 		// AutomaticNodeUpdate implies automatic update, because nodes
 		// must not have a newer version than the control plane
-		if update.AutomaticNodeUpdate && !update.Automatic {
+		if update.AutomaticNodeUpdate {
 			update.Automatic = true
 		}
 	}

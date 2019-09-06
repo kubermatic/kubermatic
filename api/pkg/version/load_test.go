@@ -28,6 +28,9 @@ updates:
 	if err != nil {
 		t.Fatalf("failed to load updates file: %v", err)
 	}
+	if n := len(updates); n != 1 {
+		t.Fatalf("expected to get exactly one update, got %d", n)
+	}
 	if !updates[0].Automatic {
 		t.Fatal("Setting automaticNodeUpdate: true didn't result in automatic: true")
 	}

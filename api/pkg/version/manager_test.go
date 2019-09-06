@@ -30,7 +30,7 @@ func TestAutomaticNodeUpdate(t *testing.T) {
 			expectedVersion: &Version{Version: semver.MustParse("1.6.0")},
 		},
 		{
-			name:                "Node compatibity check fails, error",
+			name:                "Node compatibility check fails, error",
 			fromVersion:         "1.5.0",
 			controlPlaneVersion: "1.5.0",
 			updates: []*Update{{
