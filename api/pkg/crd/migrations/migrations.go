@@ -138,7 +138,7 @@ func setExposeStrategyIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext
 		if err != nil {
 			return fmt.Errorf("failed to default exposeStrategy to NodePort for cluster %q: %v", cluster.Name, err)
 		}
-		cluster = updatedCluster
+		*cluster = *updatedCluster
 	}
 	return nil
 }
@@ -153,7 +153,7 @@ func setProxyModeIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext) err
 		if err != nil {
 			return fmt.Errorf("failed to default proxyMode to iptables for cluster %q: %v", cluster.Name, err)
 		}
-		cluster = updatedCluster
+		*cluster = *updatedCluster
 	}
 	return nil
 }

@@ -26,6 +26,7 @@ linters:
     - deadcode
     - bodyclose
     - gocritic
+    - staticcheck
   disable-all: true
 
 # NOTE: Do not use commas in the exclude patterns, or else the regex will be

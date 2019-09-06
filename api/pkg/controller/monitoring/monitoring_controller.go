@@ -225,9 +225,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	log.Debug("Reconciling cluster now")
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	data, err := r.getClusterTemplateData(context.Background(), r.Client, cluster)
 	if err != nil {
 		return nil, err

@@ -214,7 +214,7 @@ func (o controllerRunOptions) validate() error {
 	// Validate the metrics-server addon is disabled, otherwise it creates conflicts with the resources
 	// we create for the metrics-server running in the seed and will render the latter unusable
 	if strings.Contains(o.kubernetesAddonsList, "metrics-server") {
-		return errors.New("The metrics-server addon must be disabled, it is now deployed inside the seed cluster")
+		return errors.New("the metrics-server addon must be disabled, it is now deployed inside the seed cluster")
 	}
 
 	if err := o.log.Validate(); err != nil {

@@ -22,7 +22,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
-	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation/nodeupdate"
 
@@ -108,7 +107,7 @@ func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 
 		seeds, err := seedsGetter()
 		if err != nil {
-			return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+			return apiv1.Datacenter{}, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 		_, dc, err := provider.DatacenterFromSeedMap(seeds, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
@@ -122,7 +121,7 @@ func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 
 		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create secret")
+			return nil, k8cerrors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create secret")
 		}
 
 		data := common.CredentialsData{
@@ -693,7 +692,7 @@ func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 
 		seeds, err := seedsGetter()
 		if err != nil {
-			return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+			return apiv1.Datacenter{}, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 		_, dc, err := provider.DatacenterFromSeedMap(seeds, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
@@ -707,7 +706,7 @@ func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 
 		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create nodeDeployment")
+			return nil, k8cerrors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create nodeDeployment")
 		}
 		data := common.CredentialsData{
 			KubermaticCluster: cluster,

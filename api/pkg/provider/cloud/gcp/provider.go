@@ -1,13 +1,13 @@
 package gcp
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 
-	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
@@ -132,7 +132,7 @@ func ConnectToComputeService(serviceAccount string) (*compute.Service, string, e
 	if err != nil {
 		return nil, "", err
 	}
-	client := conf.Client(oauth2.NoContext)
+	client := conf.Client(context.Background())
 	svc, err := compute.New(client)
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
@@ -216,12 +216,13 @@ func ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterU
 			}
 		}
 
-		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		newCluster, err := update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, firewallICMPCleanupFinalizer)
 		})
 		if err != nil {
 			return err
 		}
+		*cluster = *newCluster
 	}
 
 	return err

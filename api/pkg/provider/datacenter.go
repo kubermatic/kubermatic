@@ -97,7 +97,7 @@ func LoadSeed(path, datacenterName string) (*kubermaticv1.Seed, error) {
 
 	datacenter, exists := seeds[datacenterName]
 	if !exists {
-		return nil, fmt.Errorf("Datacenter %q is not in datacenters.yaml", datacenterName)
+		return nil, fmt.Errorf("datacenter %q is not in datacenters.yaml", datacenterName)
 	}
 
 	return datacenter, nil
