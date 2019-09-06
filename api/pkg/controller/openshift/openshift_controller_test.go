@@ -67,8 +67,9 @@ func TestResources(t *testing.T) {
 		{
 			name: "Kubermatic API image is overwritten",
 			reconciler: Reconciler{
-				kubermaticImage: "my.corp/kubermatic",
-				log:             zap.NewNop().Sugar(),
+				kubermaticImage:          "my.corp/kubermatic",
+				log:                      zap.NewNop().Sugar(),
+				concurrentClusterUpdates: 10,
 			},
 			object: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{

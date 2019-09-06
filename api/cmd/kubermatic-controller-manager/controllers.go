@@ -109,7 +109,8 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 		openshiftcontroller.Features{
 			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
 			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
-		}); err != nil {
+		},
+		ctrlCtx.runOptions.concurrentClusterUpdate); err != nil {
 		return fmt.Errorf("failed to add openshift controller to mgr: %v", err)
 	}
 	return nil
@@ -199,6 +200,7 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 		dockerPullConfigJSON,
 		strings.Contains(ctrlCtx.runOptions.kubernetesAddonsList, "nodelocal-dns-cache"),
 
+		ctrlCtx.runOptions.concurrentClusterUpdate,
 		monitoring.Features{
 			VPA: ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
 		},
