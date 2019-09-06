@@ -80,18 +80,14 @@ func GetAWSCredentials(data CredentialsData) (AWSCredentials, error) {
 
 	if spec.AccessKeyID != "" {
 		awsCredentials.AccessKeyID = spec.AccessKeyID
-	} else {
-		if awsCredentials.AccessKeyID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AWSAccessKeyID); err != nil {
-			return AWSCredentials{}, err
-		}
+	} else if awsCredentials.AccessKeyID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AWSAccessKeyID); err != nil {
+		return AWSCredentials{}, err
 	}
 
 	if spec.SecretAccessKey != "" {
 		awsCredentials.SecretAccessKey = spec.SecretAccessKey
-	} else {
-		if awsCredentials.SecretAccessKey, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AWSSecretAccessKey); err != nil {
-			return AWSCredentials{}, err
-		}
+	} else if awsCredentials.SecretAccessKey, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AWSSecretAccessKey); err != nil {
+		return AWSCredentials{}, err
 	}
 
 	return awsCredentials, nil
@@ -104,10 +100,8 @@ func GetDigitaloceanCredentials(data CredentialsData) (DigitaloceanCredentials, 
 
 	if spec.Token != "" {
 		digitaloceanCredentials.Token = spec.Token
-	} else {
-		if digitaloceanCredentials.Token, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, DigitaloceanToken); err != nil {
-			return DigitaloceanCredentials{}, err
-		}
+	} else if digitaloceanCredentials.Token, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, DigitaloceanToken); err != nil {
+		return DigitaloceanCredentials{}, err
 	}
 
 	return digitaloceanCredentials, nil
@@ -120,10 +114,8 @@ func GetHetznerCredentials(data CredentialsData) (HetznerCredentials, error) {
 
 	if spec.Token != "" {
 		hetznerCredentials.Token = spec.Token
-	} else {
-		if hetznerCredentials.Token, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, HetznerToken); err != nil {
-			return HetznerCredentials{}, err
-		}
+	} else if hetznerCredentials.Token, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, HetznerToken); err != nil {
+		return HetznerCredentials{}, err
 	}
 
 	return hetznerCredentials, nil
@@ -136,18 +128,14 @@ func GetPacketCredentials(data CredentialsData) (PacketCredentials, error) {
 
 	if spec.APIKey != "" {
 		packetCredentials.APIKey = spec.APIKey
-	} else {
-		if packetCredentials.APIKey, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, PacketAPIKey); err != nil {
-			return PacketCredentials{}, err
-		}
+	} else if packetCredentials.APIKey, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, PacketAPIKey); err != nil {
+		return PacketCredentials{}, err
 	}
 
 	if spec.ProjectID != "" {
 		packetCredentials.ProjectID = spec.ProjectID
-	} else {
-		if packetCredentials.ProjectID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, PacketProjectID); err != nil {
-			return PacketCredentials{}, err
-		}
+	} else if packetCredentials.ProjectID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, PacketProjectID); err != nil {
+		return PacketCredentials{}, err
 	}
 
 	return packetCredentials, nil

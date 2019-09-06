@@ -130,13 +130,13 @@ func (r *APIRunner) CreateProject(name string) (*apiv1.Project, error) {
 			return nil, err
 		}
 
-		if apiProject.Status == "Active" {
+		if apiProject.Status == kubermaticv1.ProjectActive {
 			break
 		}
 		time.Sleep(time.Second)
 	}
 
-	if apiProject.Status != "Active" {
+	if apiProject.Status != kubermaticv1.ProjectActive {
 		return nil, fmt.Errorf("project is not redy after %d attempts", maxAttempts)
 	}
 
@@ -218,12 +218,12 @@ func (r *APIRunner) CreateServiceAccount(name, group, projectID string) (*apiv1.
 			return nil, err
 		}
 
-		if apiServiceAccount.Status == "Active" {
+		if apiServiceAccount.Status == apiv1.ServiceAccountActive {
 			break
 		}
 		time.Sleep(time.Second)
 	}
-	if apiServiceAccount.Status != "Active" {
+	if apiServiceAccount.Status != apiv1.ServiceAccountActive {
 		return nil, fmt.Errorf("service account is not redy after %d attempts", maxAttempts)
 	}
 

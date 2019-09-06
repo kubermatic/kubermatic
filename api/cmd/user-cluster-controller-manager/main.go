@@ -15,10 +15,10 @@ import (
 	"github.com/heptiolabs/healthcheck"
 	"github.com/oklog/run"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/container-linux"
+	containerlinux "github.com/kubermatic/kubermatic/api/pkg/controller/container-linux"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/nodecsrapprover"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
+	rbacusercluster "github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
 	openshiftmasternodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-master-node-labeler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
 	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
@@ -238,9 +238,7 @@ func main() {
 	// This group starts the readiness & liveness http server
 	{
 		h := &http.Server{Addr: runOp.healthListenAddr, Handler: healthHandler}
-		g.Add(func() error {
-			return h.ListenAndServe()
-		}, func(err error) {
+		g.Add(h.ListenAndServe, func(err error) {
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 			defer cancel()
 

@@ -123,7 +123,7 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 						t.Fatalf("finalizer list %v is not the same as expected %v", finalizers, tc.ExpectedFinalizers)
 					}
 
-					validatedActions = validatedActions + 1
+					validatedActions++
 				}
 			}
 			if validatedActions != 1 {
@@ -262,7 +262,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 					}
 				}
 			}
-			validatedActions = validatedActions + 1
+			validatedActions++
 		}
 	}
 	if validatedActions != len(testcase.ExpectedSSHKeys) {
@@ -610,7 +610,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 						for _, expectedSSHKey := range tc.ExpectedSSHKeys {
 							sshKeyFromAction := updateAction.GetObject().(*kubermaticv1.UserSSHKey)
 							if sshKeyFromAction.Name == expectedSSHKey.Name {
-								validatedActions = validatedActions + 1
+								validatedActions++
 								if !equality.Semantic.DeepEqual(updateAction.GetObject().(*kubermaticv1.UserSSHKey), expectedSSHKey) {
 									t.Fatalf("%v", diff.ObjectDiff(expectedSSHKey, updateAction.GetObject().(*kubermaticv1.UserSSHKey)))
 								}

@@ -296,9 +296,9 @@ func (rule *dnatRule) GetTargetArgs() []string {
 	if len(rule.translatedAddress) > 0 {
 		target = rule.translatedAddress
 	}
-	target = target + ":"
+	target += ":"
 	if len(rule.translatedPort) > 0 {
-		target = target + rule.translatedPort
+		target += rule.translatedPort
 	}
 	if len(target) == 0 {
 		return []string{}

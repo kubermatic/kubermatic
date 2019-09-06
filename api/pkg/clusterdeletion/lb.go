@@ -70,7 +70,7 @@ func (d *Deletion) cleanupLB(ctx context.Context, log *zap.SugaredLogger, userCl
 		if cluster.Annotations == nil {
 			cluster.Annotations = map[string]string{}
 		}
-		cluster.Annotations[deletedLBAnnotationName] = cluster.Annotations[deletedLBAnnotationName] + fmt.Sprintf(",%s", string(service.UID))
+		cluster.Annotations[deletedLBAnnotationName] += fmt.Sprintf(",%s", string(service.UID))
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update cluster when trying to add UID of deleted LoadBalancer: %v", err)
