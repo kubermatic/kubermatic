@@ -100,7 +100,7 @@ type ClusterConditionType string
 const (
 	ClusterConditionControllerFinishedUpdatingSuccessfully ClusterConditionType = "ClusterControllerFinishedUpdatingSuccessfully"
 
-	ClusterUpdateInProgressReason = "Current Cluster is updating its resources"
+	ClusterUpdateInProgressReason ClusterConditionType = "Current Cluster is updating its resources"
 )
 
 type ClusterCondition struct {
