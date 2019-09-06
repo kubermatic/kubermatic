@@ -10,6 +10,7 @@ type Credentials struct {
 	Digitalocean DigitaloceanCredentials
 	Hetzner      HetznerCredentials
 	Packet       PacketCredentials
+	Kubevirt     KubevirtCredentials
 }
 
 type AWSCredentials struct {
@@ -28,6 +29,10 @@ type HetznerCredentials struct {
 type PacketCredentials struct {
 	APIKey    string
 	ProjectID string
+}
+
+type KubevirtCredentials struct {
+	KubeConfig string
 }
 
 type CredentialsData interface {
@@ -56,6 +61,11 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 	}
 	if data.Cluster().Spec.Cloud.Packet != nil {
 		if credentials.Packet, err = GetPacketCredentials(data); err != nil {
+			return Credentials{}, err
+		}
+	}
+	if data.Cluster().Spec.Cloud.Kubevirt != nil {
+		if credentials.Kubevirt, err = GetKubevirtCredentials(data); err != nil {
 			return Credentials{}, err
 		}
 	}
@@ -141,4 +151,20 @@ func GetPacketCredentials(data CredentialsData) (PacketCredentials, error) {
 	}
 
 	return packetCredentials, nil
+}
+
+func GetKubevirtCredentials(data CredentialsData) (KubevirtCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.Kubevirt
+	kubevirtCredentials := KubevirtCredentials{}
+	var err error
+
+	if spec.Kubeconfig != "" {
+		kubevirtCredentials.KubeConfig = spec.Kubeconfig
+	} else {
+		if kubevirtCredentials.KubeConfig, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, KubevirtKubeConfig); err != nil {
+			return KubevirtCredentials{}, err
+		}
+	}
+
+	return kubevirtCredentials, nil
 }
