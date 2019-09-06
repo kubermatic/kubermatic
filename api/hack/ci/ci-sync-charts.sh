@@ -26,6 +26,10 @@ if [[ -z ${INSTALLER_BRANCH} ]]; then
   exit 1
 fi
 
+
+LATEST_DASHBOARD="$(get_latest_dashboard_tag "$INSTALLER_BRANCH")"
+sed -i "s/__DASHBOARD_TAG__/$LATEST_DASHBOARD/g" config/*/*.yaml
+
 export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio iap s3-exporter'
 export MONITORING_CHARTS='alertmanager blackbox-exporter grafana kube-state-metrics node-exporter prometheus'
 export LOGGING_CHARTS='elasticsearch kibana fluentbit'

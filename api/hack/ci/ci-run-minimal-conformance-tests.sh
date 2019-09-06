@@ -273,6 +273,13 @@ if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   git checkout $UPGRADE_TEST_BASE_HASH
   build_tag_if_not_exists "$UPGRADE_TEST_BASE_HASH"
 fi
+
+# PULL_BASE_REF is the name of the current branch in case of a post-submit
+# or the name of the base branch in case of a PR.
+#
+# The env var is named `UPGRADE_TEST_BASE_HASH`, but we really only specify release branch heads with it.
+LATEST_DASHBOARD="$(get_latest_dashboard_hash "${UPGRADE_TEST_BASE_HASH:-$PULL_BASE_REF}")"
+
 # We must delete all templates for cluster-scoped resources
 # because those already exist because of the main Kubermatic installation
 # otherwise the helm upgrade --install fails
@@ -293,6 +300,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.api.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.masterController.image.tag=${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH} \
   --set-string=kubermatic.masterController.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.ui.image.tag=${LATEST_DASHBOARD} \
   --set-string=kubermatic.kubermaticImage=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.dnatcontrollerImage=127.0.0.1:5000/kubermatic/kubeletdnat-controller \
   --set-string=kubermatic.worker_name=$BUILD_ID \
@@ -473,6 +481,10 @@ if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   exit 0
 fi
 
+# PULL_BASE_REF is the name of the current branch in case of a post-submit
+# or the name of the base branch in case of a PR.
+LATEST_DASHBOARD="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
+
 echodate "Installing current version of Kubermatic"
 retry 3 helm upgrade --install --force --wait --timeout 300 \
   --tiller-namespace=$NAMESPACE \
@@ -487,6 +499,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.api.image.tag=${GIT_HEAD_HASH} \
   --set-string=kubermatic.masterController.image.tag=${GIT_HEAD_HASH} \
   --set-string=kubermatic.masterController.image.repository=127.0.0.1:5000/kubermatic/api \
+  --set-string=kubermatic.ui.image.tag=${LATEST_DASHBOARD} \
   --set-string=kubermatic.kubermaticImage=127.0.0.1:5000/kubermatic/api \
   --set-string=kubermatic.dnatcontrollerImage=127.0.0.1:5000/kubermatic/kubeletdnat-controller \
   --set-string=kubermatic.worker_name=$BUILD_ID \
