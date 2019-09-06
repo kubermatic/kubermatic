@@ -72,20 +72,21 @@ type Features struct {
 
 type Reconciler struct {
 	client.Client
-	log                  *zap.SugaredLogger
-	scheme               *runtime.Scheme
-	recorder             record.EventRecorder
-	seedGetter           provider.SeedGetter
-	overwriteRegistry    string
-	nodeAccessNetwork    string
-	etcdDiskSize         resource.Quantity
-	dockerPullConfigJSON []byte
-	workerName           string
-	externalURL          string
-	oidc                 OIDCConfig
-	kubermaticImage      string
-	dnatControllerImage  string
-	features             Features
+	log                      *zap.SugaredLogger
+	scheme                   *runtime.Scheme
+	recorder                 record.EventRecorder
+	seedGetter               provider.SeedGetter
+	overwriteRegistry        string
+	nodeAccessNetwork        string
+	etcdDiskSize             resource.Quantity
+	dockerPullConfigJSON     []byte
+	workerName               string
+	externalURL              string
+	oidc                     OIDCConfig
+	kubermaticImage          string
+	dnatControllerImage      string
+	features                 Features
+	concurrentClusterUpdates int
 }
 
 func Add(
@@ -103,23 +104,25 @@ func Add(
 	kubermaticImage string,
 	dnatControllerImage string,
 	features Features,
+	concurrentClusterUpdates int,
 ) error {
 	reconciler := &Reconciler{
-		Client:               mgr.GetClient(),
-		log:                  log.Named(ControllerName),
-		scheme:               mgr.GetScheme(),
-		recorder:             mgr.GetRecorder(ControllerName),
-		seedGetter:           seedGetter,
-		overwriteRegistry:    overwriteRegistry,
-		nodeAccessNetwork:    nodeAccessNetwork,
-		etcdDiskSize:         etcdDiskSize,
-		dockerPullConfigJSON: dockerPullConfigJSON,
-		workerName:           workerName,
-		externalURL:          externalURL,
-		oidc:                 oidcConfig,
-		kubermaticImage:      kubermaticImage,
-		dnatControllerImage:  dnatControllerImage,
-		features:             features,
+		Client:                   mgr.GetClient(),
+		log:                      log.Named(ControllerName),
+		scheme:                   mgr.GetScheme(),
+		recorder:                 mgr.GetRecorder(ControllerName),
+		seedGetter:               seedGetter,
+		overwriteRegistry:        overwriteRegistry,
+		nodeAccessNetwork:        nodeAccessNetwork,
+		etcdDiskSize:             etcdDiskSize,
+		dockerPullConfigJSON:     dockerPullConfigJSON,
+		workerName:               workerName,
+		externalURL:              externalURL,
+		oidc:                     oidcConfig,
+		kubermaticImage:          kubermaticImage,
+		dnatControllerImage:      dnatControllerImage,
+		features:                 features,
+		concurrentClusterUpdates: concurrentClusterUpdates,
 	}
 
 	c, err := controller.New(ControllerName, mgr,
@@ -155,6 +158,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
+	if limitReached, err := controllerutil.ConcurrencyLimitReached(ctx, r, r.concurrentClusterUpdates); limitReached || err != nil {
+		log.Debugf("ignore reconciling due to max parallel reconcile has reached its limit of %v", r.concurrentClusterUpdates)
+		return reconcile.Result{
+			RequeueAfter: 1 * time.Second,
+		}, err
+	}
+
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
@@ -182,17 +192,26 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, nil
 	}
 
+	successfullyReconciled := true
 	// Add a wrapping here so we can emit an event on error
-	result, err := r.reconcile(ctx, log, cluster)
+	result, reconcileErr := r.reconcile(ctx, log, cluster)
 	recorderCluster := cluster.DeepCopy()
-	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(recorderCluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+	if reconcileErr != nil {
+		successfullyReconciled = false
+		log.Errorw("Reconciling failed", zap.Error(reconcileErr))
+		r.recorder.Eventf(recorderCluster, corev1.EventTypeWarning, "ReconcilingError", "%v", reconcileErr)
 	}
+
 	if result == nil {
 		result = &reconcile.Result{}
 	}
-	return *result, err
+
+	if err := controllerutil.SetClusterUpdatedSuccessfullyCondition(ctx, cluster, r, successfullyReconciled); err != nil {
+		log.Errorw("failed to update clusters status conditions", zap.Error(err))
+		reconcileErr = fmt.Errorf("failed to set cluster status: %v after reconciliation was done with err=%v", err, reconcileErr)
+	}
+
+	return *result, reconcileErr
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
