@@ -6581,6 +6581,9 @@
       "type": "object",
       "title": "KubevirtCloudSpec specifies the access data to Kubevirt.",
       "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "kubeconfig": {
           "type": "string",
           "x-go-name": "Kubeconfig"

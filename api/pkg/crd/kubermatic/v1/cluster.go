@@ -394,7 +394,9 @@ type GCPCloudSpec struct {
 
 // KubevirtCloudSpec specifies the access data to Kubevirt.
 type KubevirtCloudSpec struct {
-	Kubeconfig string `json:"kubeconfig"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	Kubeconfig string `json:"kubeconfig,omitempty"`
 }
 
 type HealthStatus int
@@ -482,6 +484,9 @@ func (cluster *Cluster) GetSecretName() string {
 	}
 	if cluster.Spec.Cloud.Packet != nil {
 		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.Kubevirt != nil {
+		return fmt.Sprintf("%s-kubevirt-%s", CredentialPrefix, cluster.Name)
 	}
 	return ""
 }

@@ -386,6 +386,8 @@ const (
 
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"
+
+	KubevirtKubeConfig = "kubeConfig"
 )
 
 // ECDSAKeyPair is a ECDSA x509 certifcate and private key

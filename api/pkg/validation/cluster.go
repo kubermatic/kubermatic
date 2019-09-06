@@ -253,7 +253,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter)
 		if dc.Spec.Kubevirt == nil {
 			return fmt.Errorf("datacenter %q is not a kubevirt datacenter", spec.DatacenterName)
 		}
-		return nil
+		return validateKubevirtCloudSpec(spec.Kubevirt)
 	default:
 		return errors.New("no cloud provider specified")
 	}
@@ -364,6 +364,16 @@ func validateDigitaloceanCloudSpec(spec *kubermaticv1.DigitaloceanCloudSpec) err
 func validateFakeCloudSpec(spec *kubermaticv1.FakeCloudSpec) error {
 	if spec.Token == "" {
 		return errors.New("no token specified")
+	}
+
+	return nil
+}
+
+func validateKubevirtCloudSpec(spec *kubermaticv1.KubevirtCloudSpec) error {
+	if spec.Kubeconfig == "" {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.KubevirtKubeConfig); err != nil {
+			return err
+		}
 	}
 
 	return nil
