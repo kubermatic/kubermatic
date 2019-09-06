@@ -45,11 +45,9 @@ type OIDCConfiguration struct {
 
 // UpdateManager specifies a set of methods to handle cluster versions & updates
 type UpdateManager interface {
-	GetVersion(from, clusterType string) (*version.MasterVersion, error)
-	GetMasterVersions(string) ([]*version.MasterVersion, error)
-	GetDefault() (*version.MasterVersion, error)
-	AutomaticUpdate(from, clusterType string) (*version.MasterVersion, error)
-	GetPossibleUpdates(from, clusterType string) ([]*version.MasterVersion, error)
+	GetVersions(string) ([]*version.Version, error)
+	GetDefault() (*version.Version, error)
+	GetPossibleUpdates(from, clusterType string) ([]*version.Version, error)
 }
 
 // PresetsManager specifies a set of methods to handle presets for specific provider

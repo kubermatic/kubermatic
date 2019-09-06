@@ -1,3 +1,20 @@
+### Updates file
+#
+# Contains a list of allowed updated
+#
+# Each update may optionally contain `automatic: true` in which case the
+# controlplane of all clusters whose version matches the `from` directive
+# will get updated to the `to` version. If `automatic: true` is set, the
+# `to` version must be a version and not a version range.
+#
+# All `to` versions must be configured in the `versions.yaml`.
+#
+# Also, updates may contan `automaticNodeUpdate: true`, in which case
+# Nodes will get updates as well. `automaticNodeUpdate: true` sets
+# `automatic: true` as well if not yet the case, because Nodes may not have
+# a newer version than the controlplane.
+#
+####
 updates:
 # ======= 1.12 =======
 # Allow to next minor release

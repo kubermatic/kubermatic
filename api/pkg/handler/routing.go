@@ -12,19 +12,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
-	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 )
-
-// UpdateManager specifies a set of methods to handle cluster versions & updates
-type UpdateManager interface {
-	GetVersion(from, clusterType string) (*version.MasterVersion, error)
-	GetMasterVersions(clusterType string) ([]*version.MasterVersion, error)
-	GetDefault() (*version.MasterVersion, error)
-	AutomaticUpdate(from, clusterType string) (*version.MasterVersion, error)
-	GetPossibleUpdates(from, clusterType string) ([]*version.MasterVersion, error)
-}
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {

@@ -133,14 +133,14 @@ type newRoutingFunc func(
 	tokenExtractors auth.TokenExtractor,
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider *kubernetes.ProjectMemberProvider,
-	versions []*version.MasterVersion,
-	updates []*version.MasterUpdate,
+	versions []*version.Version,
+	updates []*version.Update,
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
 	credentialManager common.PresetsManager) http.Handler
 
-func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, credentialsManager common.PresetsManager, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, credentialsManager common.PresetsManager, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	if seedsGetter == nil {
 		seedsGetter = buildSeeds()
 	}
@@ -278,7 +278,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 }
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
-func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	credentialManager := presets.New()
 	credentialManager.GetPresets().Fake = presets.Fake{Credentials: []presets.FakeCredentials{
 		{Name: TestFakeCredential, Token: "dummy_pluton_token"},
@@ -296,7 +296,7 @@ func CreateCredentialTestEndpoint(credentialsManager common.PresetsManager, rout
 }
 
 // CreateTestEndpoint does exactly the same as CreateTestEndpointAndGetClients except it omits ClientsSets when returning
-func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.MasterVersion, updates []*version.MasterUpdate, routingFunc newRoutingFunc) (http.Handler, error) {
+func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, error) {
 	router, _, err := CreateTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, versions, updates, routingFunc)
 	return router, err
 }
@@ -770,7 +770,7 @@ func GenTestEvent(eventName, eventType, eventReason, eventMessage, kind, uid str
 	}
 }
 
-func sortMasterVersion(versions []*apiv1.MasterVersion) {
+func sortVersion(versions []*apiv1.MasterVersion) {
 	sort.SliceStable(versions, func(i, j int) bool {
 		mi, mj := versions[i], versions[j]
 		return mi.Version.LessThan(mj.Version)
@@ -782,8 +782,8 @@ func CompareVersions(t *testing.T, versions, expected []*apiv1.MasterVersion) {
 		t.Fatalf("got different lengths, got %d expected %d", len(versions), len(expected))
 	}
 
-	sortMasterVersion(versions)
-	sortMasterVersion(expected)
+	sortVersion(versions)
+	sortVersion(expected)
 
 	for i, version := range versions {
 		if !version.Version.Equal(expected[i].Version) {

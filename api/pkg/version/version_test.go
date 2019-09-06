@@ -25,7 +25,7 @@ func TestAutomaticUpdate(t *testing.T) {
 			versionFrom:     "1.10.0",
 			expectedVersion: "1.10.1",
 			clusterType:     apiv1.KubernetesClusterType,
-			manager: New([]*MasterVersion{
+			manager: New([]*Version{
 				{
 					Version: semver.MustParse("1.10.0"),
 					Default: false,
@@ -36,7 +36,7 @@ func TestAutomaticUpdate(t *testing.T) {
 					Default: true,
 					Type:    apiv1.KubernetesClusterType,
 				},
-			}, []*MasterUpdate{
+			}, []*Update{
 				{
 					From:      "1.10.0",
 					To:        "1.10.1",
@@ -50,7 +50,7 @@ func TestAutomaticUpdate(t *testing.T) {
 			versionFrom:     "1.10.0",
 			expectedVersion: "1.10.1",
 			clusterType:     apiv1.KubernetesClusterType,
-			manager: New([]*MasterVersion{
+			manager: New([]*Version{
 				{
 					Version: semver.MustParse("1.10.0"),
 					Default: false,
@@ -61,7 +61,7 @@ func TestAutomaticUpdate(t *testing.T) {
 					Default: true,
 					Type:    apiv1.KubernetesClusterType,
 				},
-			}, []*MasterUpdate{
+			}, []*Update{
 				{
 					From:      "1.10.*",
 					To:        "1.10.1",
@@ -73,9 +73,9 @@ func TestAutomaticUpdate(t *testing.T) {
 		{
 			name:          "test required update for kubernetes cluster type doesn't exist",
 			versionFrom:   "1.10.0",
-			expectedError: "failed to get MasterVersion for 1.10.1: version not found",
+			expectedError: "failed to get Version for 1.10.1: version not found",
 			clusterType:   apiv1.KubernetesClusterType,
-			manager: New([]*MasterVersion{
+			manager: New([]*Version{
 				{
 					Version: semver.MustParse("1.10.0"),
 					Default: false,
@@ -86,7 +86,7 @@ func TestAutomaticUpdate(t *testing.T) {
 					Default: true,
 					Type:    apiv1.OpenShiftClusterType,
 				},
-			}, []*MasterUpdate{
+			}, []*Update{
 				{
 					From:      "1.10.0",
 					To:        "1.10.1",
@@ -99,7 +99,7 @@ func TestAutomaticUpdate(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 
-			updateVersion, err := tc.manager.AutomaticUpdate(tc.versionFrom, tc.clusterType)
+			updateVersion, err := tc.manager.AutomaticControlplaneUpdate(tc.versionFrom, tc.clusterType)
 
 			if len(tc.expectedError) > 0 {
 				if err == nil {
@@ -122,17 +122,17 @@ func TestAutomaticUpdate(t *testing.T) {
 	}
 }
 
-func TestGetMasterVersions(t *testing.T) {
+func TestGetVersions(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name             string
 		manager          *Manager
-		expectedVersions []*MasterVersion
+		expectedVersions []*Version
 	}{
 		{
 			name: "test OpenShift versions without automatic updates",
-			manager: New([]*MasterVersion{
+			manager: New([]*Version{
 				{
 					Version: semver.MustParse("1.13.5"),
 					Default: true,
@@ -163,9 +163,9 @@ func TestGetMasterVersions(t *testing.T) {
 					Default: true,
 					Type:    apiv1.OpenShiftClusterType,
 				},
-			}, []*MasterUpdate{},
+			}, []*Update{},
 			),
-			expectedVersions: []*MasterVersion{
+			expectedVersions: []*Version{
 				{
 					Version: semver.MustParse("3.11"),
 					Default: false,
@@ -190,7 +190,7 @@ func TestGetMasterVersions(t *testing.T) {
 		},
 		{
 			name: "test OpenShift versions with automatic updates",
-			manager: New([]*MasterVersion{
+			manager: New([]*Version{
 				{
 					Version: semver.MustParse("1.13.5"),
 					Default: true,
@@ -221,7 +221,7 @@ func TestGetMasterVersions(t *testing.T) {
 					Default: true,
 					Type:    apiv1.OpenShiftClusterType,
 				},
-			}, []*MasterUpdate{
+			}, []*Update{
 				{
 					From:      "4.*",
 					To:        "4.1",
@@ -229,7 +229,7 @@ func TestGetMasterVersions(t *testing.T) {
 					Type:      apiv1.OpenShiftClusterType,
 				},
 			}),
-			expectedVersions: []*MasterVersion{
+			expectedVersions: []*Version{
 				{
 					Version: semver.MustParse("3.11"),
 					Default: false,
@@ -241,7 +241,7 @@ func TestGetMasterVersions(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 
-			versions, err := tc.manager.GetMasterVersions(apiv1.OpenShiftClusterType)
+			versions, err := tc.manager.GetVersions(apiv1.OpenShiftClusterType)
 			if err != nil {
 				t.Fatalf("Unexpected error: %v", err)
 			}
@@ -251,20 +251,20 @@ func TestGetMasterVersions(t *testing.T) {
 	}
 }
 
-func sortMasterVersion(versions []*MasterVersion) {
+func sortVersion(versions []*Version) {
 	sort.SliceStable(versions, func(i, j int) bool {
 		mi, mj := versions[i], versions[j]
 		return mi.Version.LessThan(mj.Version)
 	})
 }
 
-func compareVersions(t *testing.T, versions, expected []*MasterVersion) {
+func compareVersions(t *testing.T, versions, expected []*Version) {
 	if len(versions) != len(expected) {
 		t.Fatalf("got different lengths, got %d expected %d", len(versions), len(expected))
 	}
 
-	sortMasterVersion(versions)
-	sortMasterVersion(expected)
+	sortVersion(versions)
+	sortVersion(expected)
 
 	for i, version := range versions {
 		if !version.Version.Equal(expected[i].Version) {
