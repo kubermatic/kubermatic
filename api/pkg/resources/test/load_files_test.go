@@ -83,7 +83,7 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 }
 
 func TestLoadFiles(t *testing.T) {
-	versions := []*version.MasterVersion{
+	versions := []*version.Version{
 		{
 			Version: semver.MustParse("1.10.0"),
 		},

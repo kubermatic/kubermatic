@@ -24,6 +24,7 @@ import (
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"github.com/kubermatic/kubermatic/api/pkg/validation/nodeupdate"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -686,7 +687,7 @@ func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 		if err != nil {
 			return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
 		}
-		if err = common.EnsureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
+		if err = nodeupdate.EnsureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
 			return nil, k8cerrors.NewBadRequest(err.Error())
 		}
 

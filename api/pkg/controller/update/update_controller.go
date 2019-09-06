@@ -3,10 +3,12 @@ package update
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/golang/glog"
 
 	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
@@ -14,6 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -28,23 +31,20 @@ const (
 
 type Reconciler struct {
 	workerName    string
-	updateManager Manager
+	updateManager *version.Manager
 	ctrlruntimeclient.Client
-	recorder record.EventRecorder
-}
-
-// Manager specifies a set of methods to find suitable update versions for clusters
-type Manager interface {
-	AutomaticUpdate(from, clusterType string) (*version.MasterVersion, error)
+	recorder                      record.EventRecorder
+	userClusterConnectionProvider client.UserClusterConnectionProvider
 }
 
 // Add creates a new update controller
-func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager Manager) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager *version.Manager, userClusterConnectionProvider client.UserClusterConnectionProvider) error {
 	reconciler := &Reconciler{
-		workerName:    workerName,
-		updateManager: updateManager,
-		Client:        mgr.GetClient(),
-		recorder:      mgr.GetRecorder(ControllerName),
+		workerName:                    workerName,
+		updateManager:                 updateManager,
+		Client:                        mgr.GetClient(),
+		recorder:                      mgr.GetRecorder(ControllerName),
+		userClusterConnectionProvider: userClusterConnectionProvider,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{
@@ -75,27 +75,30 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	err := r.reconcile(ctx, cluster)
+	result, err := r.reconcile(ctx, cluster)
 	if err != nil {
 		glog.Errorf("Failed to reconcile cluster %q: %v", request.NamespacedName.String(), err)
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
-	return reconcile.Result{}, err
+	if result == nil {
+		result = &reconcile.Result{}
+	}
+	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
-		return nil
+		return nil, nil
 	}
 
 	if cluster.Spec.Pause {
-		return nil
+		return nil, nil
 	}
 
 	if !cluster.Status.ExtendedHealth.AllHealthy() {
 		// Cluster not healthy yet. Nothing to do.
 		// If it gets healthy we'll get notified by the event. No need to requeue
-		return nil
+		return nil, nil
 	}
 
 	clusterType := v1.KubernetesClusterType
@@ -103,12 +106,65 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		clusterType = v1.OpenShiftClusterType
 	}
 
-	update, err := r.updateManager.AutomaticUpdate(cluster.Spec.Version.String(), clusterType)
+	// NodeUpdate may need the controlplane to be updated first
+	updated, err := r.controlPlaneUpgrade(ctx, cluster, clusterType)
 	if err != nil {
-		return fmt.Errorf("failed to get automatic update for cluster for version %s: %v", cluster.Spec.Version.String(), err)
+		return nil, fmt.Errorf("failed to update the controlplane: %v", err)
+	}
+	// Give the controller time to do the update
+	// TODO: This is not really safe. We should add a `Version` to the status
+	// that gets incremented when the controller does this. Combined with a
+	// `ClusterUpdatedSuccessfully` condition, that should do the trick
+	if updated {
+		return &reconcile.Result{RequeueAfter: time.Minute}, nil
+	}
+
+	if err := r.nodeUpdate(ctx, cluster, clusterType); err != nil {
+		return nil, fmt.Errorf("failed to update machineDeployments: %v", err)
+	}
+
+	return nil, nil
+}
+
+func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Cluster, clusterType string) error {
+	client, err := r.userClusterConnectionProvider.GetClient(cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get usercluster client: %v", err)
+	}
+
+	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+	// Kubermatic only creates MachineDeployments in the kube-system namespace, everything else is essentially unsupported
+	listOpts := &ctrlruntimeclient.ListOptions{Namespace: "kube-system"}
+	if err := client.List(ctx, listOpts, machineDeployments); err != nil {
+		return fmt.Errorf("failed to list MachineDeployments: %v", err)
+	}
+
+	for _, md := range machineDeployments.Items {
+		targetVersion, err := r.updateManager.AutomaticNodeUpdate(md.Spec.Template.Spec.Versions.Kubelet, clusterType, cluster.Spec.Version.String())
+		if err != nil {
+			return fmt.Errorf("failed to get automatic update for machinedeployment %s/%s that has version %q: %v", md.Namespace, md.Name, md.Spec.Template.Spec.Versions.Kubelet, err)
+		}
+		if targetVersion == nil {
+			continue
+		}
+		md.Spec.Template.Spec.Versions.Kubelet = targetVersion.Version.String()
+		// DeepCopy it so we don't get a NPD when we return an error
+		if err := client.Update(ctx, md.DeepCopy()); err != nil {
+			return fmt.Errorf("failed to update MachineDeployment %s/%s to %q: %v", md.Namespace, md.Name, md.Spec.Template.Spec.Versions.Kubelet, err)
+		}
+		r.recorder.Eventf(cluster, corev1.EventTypeNormal, "AutoUpdateMachineDeployment", "Triggered automatic update of MachineDeployment %s/%s to version %q", md.Namespace, md.Name, targetVersion.Version.String())
+	}
+
+	return nil
+}
+
+func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, cluster *kubermaticv1.Cluster, clusterType string) (upgraded bool, err error) {
+	update, err := r.updateManager.AutomaticControlplaneUpdate(cluster.Spec.Version.String(), clusterType)
+	if err != nil {
+		return false, fmt.Errorf("failed to get automatic update for cluster for version %s: %v", cluster.Spec.Version.String(), err)
 	}
 	if update == nil {
-		return nil
+		return false, nil
 	}
 
 	cluster.Spec.Version = *semver.NewSemverOrDie(update.Version.String())
@@ -117,7 +173,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	cluster.Status.ExtendedHealth.Controller = kubermaticv1.HealthStatusDown
 	cluster.Status.ExtendedHealth.Scheduler = kubermaticv1.HealthStatusDown
 	if err := r.Update(ctx, cluster); err != nil {
-		return fmt.Errorf("failed to update cluster: %v", err)
+		return false, fmt.Errorf("failed to update cluster: %v", err)
 	}
-	return nil
+	return true, nil
 }
