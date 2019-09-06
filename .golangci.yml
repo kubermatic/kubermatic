@@ -6,6 +6,7 @@ run:
     - cloud
     - create
     - e2e
+    - integration
 
 linters:
   enable:
