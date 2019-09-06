@@ -115,10 +115,12 @@ func SetClusterUpdatedSuccessfullyCondition(ctx context.Context, cluster *kuberm
 		}
 
 		for _, statefulSet := range statefulSets.Items {
-			if *statefulSet.Spec.Replicas != statefulSet.Status.UpdatedReplicas ||
-				*statefulSet.Spec.Replicas != statefulSet.Status.CurrentReplicas ||
-				*statefulSet.Spec.Replicas != statefulSet.Status.ReadyReplicas {
-				statefulSetHasUnfinishedUpdates = true
+			if statefulSet.Spec.Replicas != nil {
+				if *statefulSet.Spec.Replicas != statefulSet.Status.UpdatedReplicas ||
+					*statefulSet.Spec.Replicas != statefulSet.Status.CurrentReplicas ||
+					*statefulSet.Spec.Replicas != statefulSet.Status.ReadyReplicas {
+					statefulSetHasUnfinishedUpdates = true
+				}
 			}
 		}
 
@@ -127,10 +129,12 @@ func SetClusterUpdatedSuccessfullyCondition(ctx context.Context, cluster *kuberm
 		}
 
 		for _, deployment := range deployments.Items {
-			if *deployment.Spec.Replicas != deployment.Status.UpdatedReplicas ||
-				*deployment.Spec.Replicas != deployment.Status.AvailableReplicas ||
-				*deployment.Spec.Replicas != deployment.Status.ReadyReplicas {
-				deploymentHasUnfinishedUpdates = true
+			if deployment.Spec.Replicas != nil {
+				if *deployment.Spec.Replicas != deployment.Status.UpdatedReplicas ||
+					*deployment.Spec.Replicas != deployment.Status.AvailableReplicas ||
+					*deployment.Spec.Replicas != deployment.Status.ReadyReplicas {
+					deploymentHasUnfinishedUpdates = true
+				}
 			}
 		}
 
