@@ -732,6 +732,7 @@ func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCrea
 		etcd.ServiceCreator(osData),
 		dns.ServiceCreator(),
 		machinecontroller.ServiceCreator(),
+		openshiftresources.OauthServiceCreator(osData.Cluster().Spec.ExposeStrategy),
 	}
 
 	if osData.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
