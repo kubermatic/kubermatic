@@ -13,6 +13,7 @@ import (
 	"github.com/Masterminds/sprig"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/servingcerthelper"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -25,9 +26,10 @@ import (
 )
 
 const (
-	OauthName                 = "openshift-oauth"
-	oauthSessionSecretName    = "openshift-oauth-session-secret"
-	oauthCLIConfigTemplateRaw = `
+	OauthName                  = "openshift-oauth"
+	oauthSessionSecretName     = "openshift-oauth-session-secret"
+	oauthServingCertSecretName = "openshift-oauth-serving-cert"
+	oauthCLIConfigTemplateRaw  = `
     {
       "admission": {},
       "apiVersion": "osin.config.openshift.io/v1",
@@ -102,8 +104,8 @@ const (
           "TLS_RSA_WITH_AES_128_CBC_SHA",
           "TLS_RSA_WITH_AES_256_CBC_SHA"
         ],
-        "certFile": "/var/config/system/secrets/v4-0-config-system-serving-cert/tls.crt",
-        "keyFile": "/var/config/system/secrets/v4-0-config-system-serving-cert/tls.key",
+        "certFile": "/etc/servingcert/serving.crt",
+        "keyFile": "/etc/servingcert/serving.key",
         "maxRequestsInFlight": 1000,
         "minTLSVersion": "VersionTLS12",
         "namedCertificates": [],
@@ -128,6 +130,15 @@ var (
 	}
 	oauthCLIConfigTemplate = template.Must(template.New("base").Funcs(sprig.TxtFuncMap()).Parse(oauthCLIConfigTemplateRaw))
 )
+
+func OauthTLSServingCertCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretCreatorGetter {
+	return servingcerthelper.ServingCertSecretCreator(caGetter,
+		oauthServingCertSecretName,
+		// TODO: Update this to use the external name
+		"oauth-openshift.apps.alvaro-test.aws.k8c.io",
+		[]string{"oauth-openshift.apps.alvaro-test.aws.k8c.io"},
+		nil)
+}
 
 func OauthConfigMapCreator(data openshiftData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
@@ -331,6 +342,14 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 						},
 					},
 				},
+				{
+					Name: oauthServingCertSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: oauthServingCertSecretName,
+						},
+					},
+				},
 			}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  OauthName,
@@ -358,6 +377,10 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 					{
 						Name:      oauthOCPBrandingSecretName,
 						MountPath: "/var/config/system/secrets/v4-0-config-system-ocp-branding-template",
+					},
+					{
+						Name:      oauthServingCertSecretName,
+						MountPath: "/etc/servingcert",
 					},
 				},
 				LivenessProbe: &corev1.Probe{
