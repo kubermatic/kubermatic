@@ -20,7 +20,7 @@ import (
 func CompareOutput(t *testing.T, name, output string, update bool, suffix string) {
 	filename := name + ".golden"
 	if suffix != "" {
-		filename = filename + suffix
+		filename += suffix
 	}
 	golden, err := filepath.Abs(filepath.Join("testdata", filename))
 	if err != nil {

@@ -198,7 +198,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter)
 		return errors.New("no node datacenter specified")
 	}
 
-	switch true {
+	switch {
 	case spec.Fake != nil:
 		if dc.Spec.Fake == nil {
 			return fmt.Errorf("datacenter %q is not a fake datacenter", spec.DatacenterName)

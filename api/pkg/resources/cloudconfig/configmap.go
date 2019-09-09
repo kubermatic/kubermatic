@@ -60,7 +60,9 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 // CloudConfig returns the cloud-config for the supplied data
 func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, credentials resources.Credentials) (cloudConfig string, err error) {
 	cloud := cluster.Spec.Cloud
-	if cloud.AWS != nil {
+
+	switch {
+	case cloud.AWS != nil:
 		awsCloudConfig := &aws.CloudConfig{
 			// Dummy AZ, so that K8S can extract the region from it.
 			// https://github.com/kubernetes/kubernetes/blob/v1.15.0/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go#L1199
@@ -79,7 +81,8 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		if err != nil {
 			return cloudConfig, err
 		}
-	} else if cloud.Azure != nil {
+
+	case cloud.Azure != nil:
 		vnetResourceGroup := cloud.Azure.ResourceGroup
 		azureCloudConfig := &azure.CloudConfig{
 			Cloud:                      "AZUREPUBLICCLOUD",
@@ -101,7 +104,8 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		if err != nil {
 			return cloudConfig, err
 		}
-	} else if cloud.Openstack != nil {
+
+	case cloud.Openstack != nil:
 		manageSecurityGroups := dc.Spec.Openstack.ManageSecurityGroups
 		trustDevicePath := dc.Spec.Openstack.TrustDevicePath
 		openstackCloudConfig := &openstack.CloudConfig{
@@ -128,7 +132,8 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		if err != nil {
 			return cloudConfig, err
 		}
-	} else if cloud.VSphere != nil {
+
+	case cloud.VSphere != nil:
 		vsphereCloudConfig := &vsphere.CloudConfig{
 			Global: vsphere.GlobalOpts{
 				User:             cloud.VSphere.Username,
@@ -160,7 +165,8 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		if err != nil {
 			return cloudConfig, err
 		}
-	} else if cloud.GCP != nil {
+
+	case cloud.GCP != nil:
 		b, err := base64.StdEncoding.DecodeString(cloud.GCP.ServiceAccount)
 		if err != nil {
 			return "", fmt.Errorf("error decoding service account: %v", err)
@@ -202,6 +208,7 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 			return cloudConfig, err
 		}
 	}
+
 	return cloudConfig, err
 }
 

@@ -31,7 +31,8 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 
 	operatingSystemSpec := &apiv1.OperatingSystemSpec{}
 
-	if decodedProviderSpec.OperatingSystem == providerconfig.OperatingSystemCoreos {
+	switch decodedProviderSpec.OperatingSystem {
+	case providerconfig.OperatingSystemCoreos:
 		config := &coreos.Config{}
 		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse coreos config: %v", err)
@@ -39,7 +40,8 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 		operatingSystemSpec.ContainerLinux = &apiv1.ContainerLinuxSpec{
 			DisableAutoUpdate: config.DisableAutoUpdate,
 		}
-	} else if decodedProviderSpec.OperatingSystem == providerconfig.OperatingSystemUbuntu {
+
+	case providerconfig.OperatingSystemUbuntu:
 		config := &ubuntu.Config{}
 		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse ubuntu config: %v", err)
@@ -47,7 +49,8 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 		operatingSystemSpec.Ubuntu = &apiv1.UbuntuSpec{
 			DistUpgradeOnBoot: config.DistUpgradeOnBoot,
 		}
-	} else if decodedProviderSpec.OperatingSystem == providerconfig.OperatingSystemCentOS {
+
+	case providerconfig.OperatingSystemCentOS:
 		config := &centos.Config{}
 		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse centos config: %v", err)

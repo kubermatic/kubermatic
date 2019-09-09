@@ -542,7 +542,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRoleBinding), test.expectedClusterRoleBindingsForMaster[createActionIndex]) {
 						t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRoleBindingsForMaster[createActionIndex], createAction.GetObject().(*rbacv1.ClusterRoleBinding)))
 					}
-					createActionIndex = createActionIndex + 1
+					createActionIndex++
 				}
 			}
 
@@ -580,7 +580,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRoleBinding), test.expectedClusterRoleBindingsForSeeds[createActionIndex]) {
 						t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRoleBindingsForSeeds[createActionIndex], createAction.GetObject().(*rbacv1.ClusterRoleBinding)))
 					}
-					createActionIndex = createActionIndex + 1
+					createActionIndex++
 				}
 			}
 		})
@@ -750,7 +750,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 					fakeProvider := NewClusterProvider(providerName, fakeKubeClient, fakeKubeInformerProvider, fakeKubermaticClient, nil)
 					fakeProvider.AddIndexerFor(clusterResourcesIndexer, schema.GroupVersionResource{Resource: kubermaticv1.ClusterResourceName})
 					seedClusterProviders[index] = fakeProvider
-					index = index + 1
+					index++
 				}
 			}
 			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
@@ -1073,7 +1073,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRoleBinding), test.expectedClusterRoleBindingsForMaster[createActionIndex]) {
 						t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRoleBindingsForMaster[createActionIndex], createAction.GetObject().(*rbacv1.ClusterRoleBinding)))
 					}
-					createActionIndex = createActionIndex + 1
+					createActionIndex++
 				}
 			}
 
@@ -1111,7 +1111,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRoleBinding), test.expectedClusterRoleBindingsForSeeds[createActionIndex]) {
 						t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRoleBindingsForSeeds[createActionIndex], createAction.GetObject().(*rbacv1.ClusterRoleBinding)))
 					}
-					createActionIndex = createActionIndex + 1
+					createActionIndex++
 				}
 			}
 		})
@@ -1325,7 +1325,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRole), test.expectedClusterRolesForMaster[createActionIndex]) {
 						t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRolesForMaster[createActionIndex], createAction.GetObject().(*rbacv1.ClusterRole)))
 					}
-					createActionIndex = createActionIndex + 1
+					createActionIndex++
 				}
 			}
 
@@ -1363,7 +1363,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRole), test.expectedClusterRolesForSeeds[createActionIndex]) {
 						t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRolesForSeeds[createActionIndex], createAction.GetObject().(*rbacv1.ClusterRole)))
 					}
-					createActionIndex = createActionIndex + 1
+					createActionIndex++
 				}
 			}
 		})
@@ -1675,7 +1675,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.Role), test.expectedRolesForMaster[createActionIndex]) {
 						t.Fatalf("%v", diff.ObjectDiff(test.expectedRolesForMaster[createActionIndex], createAction.GetObject().(*rbacv1.Role)))
 					}
-					createActionIndex = createActionIndex + 1
+					createActionIndex++
 				}
 			}
 
@@ -1713,7 +1713,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.Role), test.expectedRolesForSeeds[createActionIndex]) {
 						t.Fatalf("%v", diff.ObjectDiff(test.expectedRolesForSeeds[createActionIndex], createAction.GetObject().(*rbacv1.Role)))
 					}
-					createActionIndex = createActionIndex + 1
+					createActionIndex++
 				}
 			}
 		})
@@ -2018,7 +2018,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.RoleBinding), test.expectedRoleBindingsForMaster[createActionIndex]) {
 						t.Fatalf("%v", diff.ObjectDiff(test.expectedRoleBindingsForMaster[createActionIndex], createAction.GetObject().(*rbacv1.RoleBinding)))
 					}
-					createActionIndex = createActionIndex + 1
+					createActionIndex++
 				}
 			}
 
@@ -2056,7 +2056,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.RoleBinding), test.expectedRoleBindingsForSeeds[createActionIndex]) {
 						t.Fatalf("%v", diff.ObjectDiff(test.expectedRoleBindingsForSeeds[createActionIndex], createAction.GetObject().(*rbacv1.RoleBinding)))
 					}
-					createActionIndex = createActionIndex + 1
+					createActionIndex++
 				}
 			}
 		})
@@ -2292,7 +2292,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.RoleBinding), test.expectedRoleBindingsForMaster[createActionIndex]) {
 						t.Fatalf("%v", diff.ObjectDiff(test.expectedRoleBindingsForMaster[createActionIndex], createAction.GetObject().(*rbacv1.RoleBinding)))
 					}
-					createActionIndex = createActionIndex + 1
+					createActionIndex++
 				}
 			}
 
@@ -2330,7 +2330,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.RoleBinding), test.expectedRoleBindingsForSeeds[createActionIndex]) {
 						t.Fatalf("%v", diff.ObjectDiff(test.expectedRoleBindingsForSeeds[createActionIndex], createAction.GetObject().(*rbacv1.RoleBinding)))
 					}
-					createActionIndex = createActionIndex + 1
+					createActionIndex++
 				}
 			}
 		})
