@@ -42,7 +42,7 @@ type PresetSpec struct {
 	Kubevirt     Kubevirt     `json:"kubevirt,omitempty"`
 
 	Fake                Fake   `json:"fake,omitempty"`
-	RequiredEmailDomain string `json:"requiredEmailDomain"`
+	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
 }
 
 type Digitalocean struct {

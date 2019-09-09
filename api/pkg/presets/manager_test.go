@@ -10,6 +10,127 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 )
 
+func TestGetPreset(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		name     string
+		userInfo provider.UserInfo
+		manager  *presets.Manager
+		expected *kubermaticv1.Preset
+	}{
+		{
+			name:     "test 1: get Preset for the specific email group",
+			userInfo: provider.UserInfo{Email: "test@example.com"},
+			manager: func() *presets.Manager {
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							Spec: kubermaticv1.PresetSpec{
+								Fake: kubermaticv1.Fake{
+									Credentials: []kubermaticv1.FakePresetCredentials{
+										{Name: "test", Token: "aaaaa"},
+									},
+								},
+							},
+						},
+						{
+							Spec: kubermaticv1.PresetSpec{
+								RequiredEmailDomain: "com",
+								Fake: kubermaticv1.Fake{
+									Credentials: []kubermaticv1.FakePresetCredentials{
+										{Name: "test", Token: "bbbbb"},
+									},
+								},
+							},
+						},
+						{
+							Spec: kubermaticv1.PresetSpec{
+								RequiredEmailDomain: "example.com",
+								Fake: kubermaticv1.Fake{
+									Credentials: []kubermaticv1.FakePresetCredentials{
+										{Name: "test", Token: "abc"},
+										{Name: "pluto", Token: "def"},
+									},
+								},
+							},
+						},
+					},
+				})
+				return manager
+			}(),
+			expected: &kubermaticv1.Preset{
+				Spec: kubermaticv1.PresetSpec{
+					RequiredEmailDomain: "example.com",
+					Fake: kubermaticv1.Fake{
+						Credentials: []kubermaticv1.FakePresetCredentials{
+							{Name: "test", Token: "abc"},
+							{Name: "pluto", Token: "def"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:     "test 1: get Preset for the all users",
+			userInfo: provider.UserInfo{Email: "test@test.com"},
+			manager: func() *presets.Manager {
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							Spec: kubermaticv1.PresetSpec{
+								Fake: kubermaticv1.Fake{
+									Credentials: []kubermaticv1.FakePresetCredentials{
+										{Name: "test", Token: "aaaaa"},
+									},
+								},
+							},
+						},
+						{
+							Spec: kubermaticv1.PresetSpec{
+								RequiredEmailDomain: "acme.com",
+								Fake: kubermaticv1.Fake{
+									Credentials: []kubermaticv1.FakePresetCredentials{
+										{Name: "test", Token: "bbbbb"},
+									},
+								},
+							},
+						},
+						{
+							Spec: kubermaticv1.PresetSpec{
+								RequiredEmailDomain: "example.com",
+								Fake: kubermaticv1.Fake{
+									Credentials: []kubermaticv1.FakePresetCredentials{
+										{Name: "test", Token: "abc"},
+										{Name: "pluto", Token: "def"},
+									},
+								},
+							},
+						},
+					},
+				})
+				return manager
+			}(),
+			expected: &kubermaticv1.Preset{
+				Spec: kubermaticv1.PresetSpec{
+					Fake: kubermaticv1.Fake{
+						Credentials: []kubermaticv1.FakePresetCredentials{
+							{Name: "test", Token: "aaaaa"},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			preset := tc.manager.GetPreset(tc.userInfo)
+			if !equality.Semantic.DeepEqual(preset, tc.expected) {
+				t.Fatalf("expected: %v, got %v", tc.expected, preset)
+			}
+		})
+	}
+}
+
 func TestCredentialEndpoint(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {

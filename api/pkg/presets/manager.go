@@ -68,14 +68,24 @@ func NewFromFile(credentialsFilename string) (*Manager, error) {
 	return &Manager{presets: presets}, nil
 }
 
+// GetPreset returns preset which belong to the specific email group.
+// If there is no preset for the email domain then returns preset for all user (the RequiredEmailDomain is empty).
 func (m *Manager) GetPreset(userInfo provider.UserInfo) *kubermaticv1.Preset {
+	// find preset for specific email domain
 	for _, preset := range m.presets.Items {
-		emialDomain := preset.Spec.RequiredEmailDomain
+		emailDomain := preset.Spec.RequiredEmailDomain
 		domain := strings.Split(userInfo.Email, "@")
 		if len(domain) == 2 {
-			if strings.EqualFold(domain[1], emialDomain) {
+			if strings.EqualFold(domain[1], emailDomain) {
 				return &preset
 			}
+		}
+	}
+	// find preset for "all" without RequiredEmailDomain field
+	for _, preset := range m.presets.Items {
+		emailDomain := preset.Spec.RequiredEmailDomain
+		if len(emailDomain) == 0 {
+			return &preset
 		}
 	}
 	return emptyPreset()
