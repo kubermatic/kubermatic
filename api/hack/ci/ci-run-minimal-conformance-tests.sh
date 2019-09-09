@@ -22,6 +22,8 @@ export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
 export DEFAULT_TIMEOUT_MINUTES=${DEFAULT_TIMEOUT_MINUTES:-10}
 export ONLY_TEST_CREATION=${ONLY_TEST_CREATION:-false}
+export PULL_BASE_REF=${PULL_BASE_REF:-$(git rev-parse --abbrev-ref HEAD)}
+export PULL_BASE_SHA=${PULL_BASE_SHA:-$GIT_HEAD_HASH}
 
 # if no provider argument has been specified, default to aws
 provider=${PROVIDER:-"aws"}
@@ -275,7 +277,8 @@ if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
 fi
 
 # PULL_BASE_REF is the name of the current branch in case of a post-submit
-# or the name of the base branch in case of a PR.
+# or the name of the base branch in case of a PR. It is unset for Periodics, but
+# we default it in that case.
 #
 # The env var is named `UPGRADE_TEST_BASE_HASH`, but we really only specify release branch heads with it.
 LATEST_DASHBOARD="$(get_latest_dashboard_hash "${UPGRADE_TEST_BASE_HASH:-$PULL_BASE_REF}")"
