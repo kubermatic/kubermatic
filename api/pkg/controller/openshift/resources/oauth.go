@@ -13,6 +13,7 @@ import (
 	"github.com/Masterminds/sprig"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/servingcerthelper"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -22,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 	utilpointer "k8s.io/utils/pointer"
 )
 
@@ -419,6 +421,12 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 				return nil, err
 			}
 			dep.Spec.Template.Labels = podLabels
+
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OauthName))
+			if err != nil {
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+			}
+			dep.Spec.Template.Spec = *wrappedPodSpec
 			return dep, nil
 		}
 	}
