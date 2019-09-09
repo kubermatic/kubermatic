@@ -237,7 +237,8 @@ func createUpdateController(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to create update manager: %v", err)
 	}
 
-	return updatecontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, updateManager, ctrlCtx.clientProvider)
+	return updatecontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, updateManager,
+		ctrlCtx.clientProvider, ctrlCtx.log)
 }
 
 func createAddonController(ctrlCtx *controllerContext) error {
