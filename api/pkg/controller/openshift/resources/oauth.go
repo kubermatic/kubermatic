@@ -16,7 +16,107 @@ import (
 )
 
 const (
-	oauthName = "openshift-oauth"
+	oauthName                 = "openshift-oauth"
+	oauthCLIConfigTemplateRaw = `
+    {
+      "admission": {},
+      "apiVersion": "osin.config.openshift.io/v1",
+      "auditConfig": {
+        "auditFilePath": "",
+        "enabled": false,
+        "logFormat": "",
+        "maximumFileRetentionDays": 0,
+        "maximumFileSizeMegabytes": 0,
+        "maximumRetainedFiles": 0,
+        "policyConfiguration": null,
+        "policyFile": "",
+        "webHookKubeConfig": "",
+        "webHookMode": ""
+      },
+      "corsAllowedOrigins": null,
+      "kind": "OsinServerConfig",
+      "kubeClientConfig": {
+        "connectionOverrides": {
+          "acceptContentTypes": "",
+          "burst": 400,
+          "contentType": "",
+          "qps": 400
+        },
+        "kubeConfig": "/etc/kubernetes/kubeconfig/kubeconfig"
+      },
+      "oauthConfig": {
+        "alwaysShowProviderSelection": false,
+        "assetPublicURL": "https://console-openshift-console.apps.alvaro-test.aws.k8c.io",
+        "grantConfig": {
+          "method": "deny",
+          "serviceAccountMethod": "prompt"
+        },
+        "identityProviders": [],
+        "loginURL": "{{ .APIServerURL }}",
+        "masterCA": "/var/config/system/configmaps/v4-0-config-system-service-ca/service-ca.crt",
+        "masterPublicURL": "https://{{ .ExternalName }}:{{ .OauthPort }}",
+        # TODO: Oauth cluster service
+        "masterURL": "https://openshift-oauth.{{ .ClusterNamespace }}.svc.cluster.local.",
+        "sessionConfig": {
+          "sessionMaxAgeSeconds": 300,
+          "sessionName": "ssn",
+          "sessionSecretsFile": "/var/config/system/secrets/v4-0-config-system-session/v4-0-config-system-session"
+        },
+        "templates": {
+          "error": "/var/config/system/secrets/v4-0-config-system-ocp-branding-template/errors.html",
+          "login": "/var/config/system/secrets/v4-0-config-system-ocp-branding-template/login.html",
+          "providerSelection": "/var/config/system/secrets/v4-0-config-system-ocp-branding-template/providers.html"
+        },
+        "tokenConfig": {
+          "accessTokenMaxAgeSeconds": 86400,
+          "authorizeTokenMaxAgeSeconds": 300
+        }
+      },
+      "servingInfo": {
+        "bindAddress": "0.0.0.0:6443",
+        "bindNetwork": "tcp4",
+        "cipherSuites": [
+          "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305",
+          "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305",
+          "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+          "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+          "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+          "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+          "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+          "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+          "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+          "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
+          "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+          "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+          "TLS_RSA_WITH_AES_128_GCM_SHA256",
+          "TLS_RSA_WITH_AES_256_GCM_SHA384",
+          "TLS_RSA_WITH_AES_128_CBC_SHA",
+          "TLS_RSA_WITH_AES_256_CBC_SHA"
+        ],
+        "certFile": "/var/config/system/secrets/v4-0-config-system-serving-cert/tls.crt",
+        "keyFile": "/var/config/system/secrets/v4-0-config-system-serving-cert/tls.key",
+        "maxRequestsInFlight": 1000,
+        "minTLSVersion": "VersionTLS12",
+        # TODO: Re-Enable
+        "namedCertificates": [],
+          #          {
+          #            "certFile": "/var/config/system/secrets/v4-0-config-system-router-certs/apps.alvaro-test.aws.k8c.io",
+          #            "keyFile": "/var/config/system/secrets/v4-0-config-system-router-certs/apps.alvaro-test.aws.k8c.io",
+          #            "names": [
+          #              "*.apps.alvaro-test.aws.k8c.io"
+          #            ]
+          #          }
+          #        ],
+        "requestTimeoutSeconds": 300
+      },
+      "storageConfig": {
+        "ca": "",
+        "certFile": "",
+        "keyFile": "",
+        "storagePrefix": ""
+      }
+    }
+`
 )
 
 var oauthDeploymentResourceRequirements = corev1.ResourceRequirements{
@@ -59,6 +159,7 @@ func OauthServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedSer
 		}
 	}
 }
+
 func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return oauthName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
