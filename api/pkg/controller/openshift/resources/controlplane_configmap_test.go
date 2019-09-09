@@ -50,7 +50,7 @@ func TestOpenshiftAPIServerConfigMapCreator(t *testing.T) {
 				t.Fatalf("failed to marshal configmap: %v", err)
 			}
 
-			testhelper.CompareOutput(t, strings.Replace(tc.name, " ", "_", -1), string(serializedConfigmap), *update, ".yaml")
+			testhelper.CompareOutput(t, strings.ReplaceAll(tc.name, " ", "_"), string(serializedConfigmap), *update, ".yaml")
 		})
 	}
 }
