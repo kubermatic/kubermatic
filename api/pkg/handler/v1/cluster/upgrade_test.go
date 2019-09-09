@@ -16,7 +16,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	k8csemver "github.com/kubermatic/kubermatic/api/pkg/semver"
-	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,7 +43,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			cluster: func() *kubermaticv1.Cluster {
 				c := test.GenCluster("foo", "foo", "project", time.Now())
 				c.Labels = map[string]string{"user": test.UserName}
-				c.Spec.Version = *ksemver.NewSemverOrDie("1.6.0")
+				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
 				return c
 			}(),
 			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
@@ -92,7 +91,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			cluster: func() *kubermaticv1.Cluster {
 				c := test.GenCluster("foo", "foo", "project", time.Now())
 				c.Labels = map[string]string{"user": test.UserName}
-				c.Spec.Version = *ksemver.NewSemverOrDie("1.6.0")
+				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
 				return c
 			}(),
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),
@@ -147,7 +146,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			cluster: func() *kubermaticv1.Cluster {
 				c := test.GenCluster("foo", "foo", "project", time.Now())
 				c.Labels = map[string]string{"user": test.UserName}
-				c.Spec.Version = *ksemver.NewSemverOrDie("1.6.0")
+				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
 				return c
 			}(),
 			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
@@ -168,7 +167,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c := test.GenCluster("foo", "foo", "project", time.Now())
 				c.Labels = map[string]string{"user": test.UserName}
 				c.Annotations = map[string]string{"kubermatic.io/openshift": "true"}
-				c.Spec.Version = *ksemver.NewSemverOrDie("5.1")
+				c.Spec.Version = *k8csemver.NewSemverOrDie("5.1")
 				return c
 			}(),
 			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
@@ -245,7 +244,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c := test.GenCluster("foo", "foo", "project", time.Now())
 				c.Labels = map[string]string{"user": test.UserName}
 				c.Annotations = map[string]string{"kubermatic.io/openshift": "true"}
-				c.Spec.Version = *ksemver.NewSemverOrDie("3.11.0")
+				c.Spec.Version = *k8csemver.NewSemverOrDie("3.11.0")
 				return c
 			}(),
 			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),

@@ -198,7 +198,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 					http.SetCookie(res, &http.Cookie{Name: "csrf_token", Value: encoded})
 
 					// Copy the Cookie over to a new Request
-					req.Header.Add("Cookie", res.HeaderMap["Set-Cookie"][0])
+					req.Header.Add("Cookie", res.Header().Get("Set-Cookie"))
 				}
 
 				// act

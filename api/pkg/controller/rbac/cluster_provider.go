@@ -60,12 +60,12 @@ func (p *ClusterProvider) WaitForCachesToSync(stopCh <-chan struct{}) error {
 	infSyncStatus := p.kubermaticInformerFactory.WaitForCacheSync(stopCh)
 	for informerType, informerSynced := range infSyncStatus {
 		if !informerSynced {
-			return fmt.Errorf("Unable to sync caches for seed cluster provider %s for informer %v", p.providerName, informerType)
+			return fmt.Errorf("unable to sync caches for seed cluster provider %s for informer %v", p.providerName, informerType)
 		}
 	}
 
 	if err := p.kubeInformerProvider.WaitForCachesToSync(stopCh); err != nil {
-		return fmt.Errorf("Unable to sync caches for kubermatic provider for cluster provider %s due to %v", p.providerName, err)
+		return fmt.Errorf("unable to sync caches for kubermatic provider for cluster provider %s due to %v", p.providerName, err)
 	}
 	return nil
 }

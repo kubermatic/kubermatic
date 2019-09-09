@@ -316,7 +316,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 
 	_, exists := r.seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !exists {
-		return nil, fmt.Errorf("Datacenter %q doesn't exist", cluster.Spec.Cloud.DatacenterName)
+		return nil, fmt.Errorf("datacenter %q doesn't exist", cluster.Spec.Cloud.DatacenterName)
 	}
 
 	kubeconfigFilename, err := r.getKubeconfig(log, cluster)

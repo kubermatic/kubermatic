@@ -904,12 +904,12 @@ func TestPatchCluster(t *testing.T) {
 			HTTPStatus:       http.StatusOK,
 			project:          test.GenDefaultProject().Name,
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
-			ExistingKubermaticObjects: append(test.GenDefaultKubermaticObjects(
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud.DatacenterName = "fake-dc"
 					return cluster
-				}()),
+				}(),
 			),
 			ExistingMachines: []*clusterv1alpha1.Machine{
 				test.GenTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
@@ -925,12 +925,12 @@ func TestPatchCluster(t *testing.T) {
 			HTTPStatus:       http.StatusBadRequest,
 			project:          test.GenDefaultProject().Name,
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
-			ExistingKubermaticObjects: append(test.GenDefaultKubermaticObjects(
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud.DatacenterName = "us-central1"
 					return cluster
-				}()),
+				}(),
 			),
 			ExistingMachines: []*clusterv1alpha1.Machine{
 				test.GenTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
@@ -946,12 +946,12 @@ func TestPatchCluster(t *testing.T) {
 			HTTPStatus:       http.StatusBadRequest,
 			project:          test.GenDefaultProject().Name,
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
-			ExistingKubermaticObjects: append(test.GenDefaultKubermaticObjects(
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud.DatacenterName = "us-central1"
 					return cluster
-				}()),
+				}(),
 			),
 			ExistingMachines: []*clusterv1alpha1.Machine{
 				test.GenTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),

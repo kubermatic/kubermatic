@@ -20,7 +20,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -1029,7 +1028,7 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider) endpoint
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster.Address.AdminToken = kubernetes.GenerateToken()
+		cluster.Address.AdminToken = kuberneteshelper.GenerateToken()
 
 		_, err = clusterProvider.Update(userInfo, cluster)
 		return nil, common.KubernetesErrorToHTTPError(err)

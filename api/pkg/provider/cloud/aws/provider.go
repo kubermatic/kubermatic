@@ -87,12 +87,13 @@ func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster, clusterUpdat
 			return fmt.Errorf("failed to get already existing aws IAM role %s: %v", cluster.Spec.Cloud.AWS.RoleName, err)
 		}
 
-		cluster, err = clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		newCluster, err := clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.AWS.ControlPlaneRoleARN = *getRoleOut.Role.Arn
 		})
 		if err != nil {
 			return err
 		}
+		*cluster = *newCluster
 	}
 
 	return nil

@@ -20,7 +20,7 @@ func ImagePullSecretCreator(cluster *kubermaticv1.Cluster) reconciling.NamedSecr
 			}
 			// Should never happen
 			if cluster.Spec.Openshift == nil {
-				return nil, errors.New("Openshift spec is nil")
+				return nil, errors.New("openshift spec is nil")
 			}
 			s.Data[corev1.DockerConfigJsonKey] = []byte(cluster.Spec.Openshift.ImagePullSecret)
 			return s, nil

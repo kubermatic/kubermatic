@@ -168,8 +168,8 @@ func (r *Reconciler) cleanupJobs() {
 
 	jobs := &batchv1.JobList{}
 	if err := r.List(ctx, &ctrlruntimeclient.ListOptions{LabelSelector: selector}, jobs); err != nil {
-		log.Errorw("Failed to list jobs", "selector", selector.String(), zap.Error(err))
-		utilruntime.HandleError(fmt.Errorf("Failed to list jobs: %v", err))
+		log.Errorw("failed to list jobs", "selector", selector.String(), zap.Error(err))
+		utilruntime.HandleError(fmt.Errorf("failed to list jobs: %v", err))
 		return
 	}
 
