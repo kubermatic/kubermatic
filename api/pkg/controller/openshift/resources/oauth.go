@@ -2,6 +2,10 @@ package resources
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"text/template"
@@ -22,6 +26,7 @@ import (
 
 const (
 	OauthName                 = "openshift-oauth"
+	oauthSessionSecretName    = "openshift-oauth-session-secret"
 	oauthCLIConfigTemplateRaw = `
     {
       "admission": {},
@@ -64,7 +69,7 @@ const (
         "sessionConfig": {
           "sessionMaxAgeSeconds": 300,
           "sessionName": "ssn",
-          "sessionSecretsFile": "/var/config/system/secrets/v4-0-config-system-session/v4-0-config-system-session"
+          "sessionSecretsFile": "/etc/openshift-oauth-session-secret/openshift-oauth-session-secret"
         },
         "templates": {
           "error": "/var/config/system/secrets/v4-0-config-system-ocp-branding-template/errors.html",
@@ -190,6 +195,91 @@ func OauthServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedSer
 	}
 }
 
+func OauthSessionSecretCreator() (string, reconciling.SecretCreator) {
+	return oauthSessionSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+		if s.Data == nil {
+			s.Data = map[string][]byte{}
+		}
+		if s.Data[oauthSessionSecretName] == nil {
+			skey, err := newSessionSecretsJSON()
+			if err != nil {
+				return nil, fmt.Errorf("failed to generate sessionSecret: %v", err)
+			}
+			s.Data[oauthSessionSecretName] = skey
+		}
+		return s, nil
+	}
+}
+
+// Copied code start
+//
+// SessionSecrets list the secrets to use to sign/encrypt and authenticate/decrypt created sessions.
+type SessionSecrets struct {
+	metav1.TypeMeta `json:",inline"`
+
+	// Secrets is a list of secrets
+	// New sessions are signed and encrypted using the first secret.
+	// Existing sessions are decrypted/authenticated by each secret until one succeeds. This allows rotating secrets.
+	Secrets []SessionSecret `json:"secrets"`
+}
+
+// SessionSecret is a secret used to authenticate/decrypt cookie-based sessions
+type SessionSecret struct {
+	// Authentication is used to authenticate sessions using HMAC. Recommended to use a secret with 32 or 64 bytes.
+	Authentication string `json:"authentication"`
+	// Encryption is used to encrypt sessions. Must be 16, 24, or 32 characters long, to select AES-128, AES-
+	Encryption string `json:"encryption"`
+}
+
+// Straight copied from upstream at
+// https://github.com/openshift/cluster-authentication-operator/blob/21ada6ef0fe098e4b6ca67096b3f146c04be0b77/pkg/operator2/secret.go#L70
+func newSessionSecretsJSON() ([]byte, error) {
+	const (
+		sha256KeyLenBytes = sha256.BlockSize // max key size with HMAC SHA256
+		aes256KeyLenBytes = 32               // max key size with AES (AES-256)
+	)
+
+	secrets := &SessionSecrets{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "SessionSecrets",
+			APIVersion: "v1",
+		},
+		Secrets: []SessionSecret{
+			{
+				Authentication: randomString(sha256KeyLenBytes), // 64 chars
+				Encryption:     randomString(aes256KeyLenBytes), // 32 chars
+			},
+		},
+	}
+	secretsBytes, err := json.Marshal(secrets)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling the session secret: %v", err) // should never happen
+	}
+
+	return secretsBytes, nil
+}
+
+// randomString uses RawURLEncoding to ensure we do not get / characters or trailing ='s
+func randomString(size int) string {
+	// each byte (8 bits) gives us 4/3 base64 (6 bits) characters
+	// we account for that conversion and add one to handle truncation
+	b64size := base64.RawURLEncoding.DecodedLen(size) + 1
+	// trim down to the original requested size since we added one above
+	return base64.RawURLEncoding.EncodeToString(randomBytes(b64size))[:size]
+}
+
+// needs to be in lib-go
+func randomBytes(size int) []byte {
+	b := make([]byte, size)
+	if _, err := rand.Read(b); err != nil {
+		panic(err) // rand should never fail
+	}
+	return b
+}
+
+//
+// Copied code end
+
 func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return OauthName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -225,6 +315,14 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 						},
 					},
 				},
+				{
+					Name: oauthSessionSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: oauthSessionSecretName,
+						},
+					},
+				},
 			}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  OauthName,
@@ -244,6 +342,10 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 						Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
 						MountPath: "/etc/kubernetes/kubeconfig",
 						ReadOnly:  true,
+					},
+					{
+						Name:      oauthSessionSecretName,
+						MountPath: "/etc/" + oauthSessionSecretName,
 					},
 				},
 				LivenessProbe: &corev1.Probe{
