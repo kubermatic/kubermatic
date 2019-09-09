@@ -69,7 +69,7 @@ get_latest_dashboard_tag() {
   local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
 
   MINOR_VERSION="${FOR_BRANCH##release/}"
-  FOUND_TAG="$(git ls-remote "$DASHBOARD_URL" "refs/tags/$MINOR_VERSION*" --sort=-authordate --count=1 | awk '{print $2}')"
+  FOUND_TAG="$(retry 5 git ls-remote "$DASHBOARD_URL" "refs/tags/$MINOR_VERSION*" --sort=-authordate --count=1 | awk '{print $2}')"
   if [ -z "$FOUND_TAG" ]; then
     echo "Error, no Dashboard tags contain $MINOR_VERSION" >/dev/stderr
     exit 1
@@ -86,7 +86,10 @@ get_latest_dashboard_hash() {
   git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /ssh/id_rsa'
   local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
 
-  local HASH="$(git ls-remote "$DASHBOARD_URL" "refs/heads/$FOR_BRANCH" | awk '{print $1}')"
+  # `local` always sets the rc to 0, so declare as local _before_ doing the substitution
+  # which may fail
+  local HASH
+  HASH="$(retry 5 git ls-remote "$DASHBOARD_URL" "refs/heads/$FOR_BRANCH" | awk '{print $1}')"
   echodate "The latest dashboard hash for $FOR_BRANCH is $HASH" >/dev/stderr
   echo "$HASH"
 }
