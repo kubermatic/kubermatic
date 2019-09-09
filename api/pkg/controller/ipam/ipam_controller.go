@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
-
 	"go.uber.org/zap"
+
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -90,7 +90,7 @@ func (r *reconciler) reconcile(ctx context.Context, machine *clusterv1alpha1.Mac
 	}
 
 	if !strings.Contains(machine.Annotations[annotationMachineUninitialized], annotationValue) {
-		r.log.Infow("Machine doesn't need initialization", "machine", machine.Name)
+		r.log.Debugw("Machine doesn't need initialization", "machine", machine.Name)
 		return nil
 	}
 

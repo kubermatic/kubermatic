@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	"github.com/go-test/deep"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-
 	"go.uber.org/zap"
+
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -119,7 +119,7 @@ func (r *Reconciler) getDesiredRules(nodes []corev1.Node) []string {
 	for _, node := range nodes {
 		nodeRules, err := r.getRulesForNode(node)
 		if err != nil {
-			r.log.Errorf("could not generate rules for node %s: %v - skipping", node.Name, err)
+			r.log.Errorw("could not generate rules for node, skipping", "node", node.Name, zap.Error(err))
 			continue
 		}
 		for _, rule := range nodeRules {
@@ -152,7 +152,7 @@ func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 
 	if !equality.Semantic.DeepEqual(actualRules, desiredRules) || !haveJump || !haveMasquerade {
 		// Need to update chain in kernel.
-		r.log.Infof("Updating iptables chain in kernel (%d rules).", len(desiredRules))
+		r.log.Debugf("Updating iptables chain in kernel (%d rules).", len(desiredRules))
 		if err := r.applyDNATRules(desiredRules, haveJump, haveMasquerade); err != nil {
 			return fmt.Errorf("failed to apply iptable rules: %v", err)
 		}

@@ -63,7 +63,9 @@ var allowedUsages = []certificatesv1beta1.KeyUsage{certificatesv1beta1.UsageDigi
 	certificatesv1beta1.UsageServerAuth}
 
 func (r *reconciler) reconcile(ctx context.Context, request reconcile.Request) error {
-	r.log.Infof("Reconciling csr %q", request.NamespacedName.String())
+	log := r.log.With("csr", request.NamespacedName.String())
+	log.Debug("Reconciling")
+
 	csr := &certificatesv1beta1.CertificateSigningRequest{}
 	if err := r.Get(ctx, request.NamespacedName, csr); err != nil {
 		if kerrors.IsNotFound(err) {
@@ -73,30 +75,30 @@ func (r *reconciler) reconcile(ctx context.Context, request reconcile.Request) e
 	}
 	for _, condition := range csr.Status.Conditions {
 		if condition.Type == certificatesv1beta1.CertificateApproved {
-			r.log.Infof("CSR %q already approved, skipping", csr.Name)
+			log.Debug("already approved, skipping reconciling")
 			return nil
 		}
 	}
 
 	if !sets.NewString(csr.Spec.Groups...).Has("system:nodes") {
-		r.log.Infof("Skipping CSR %q because it 'system:nodes' is not in its groups", csr.Name)
+		log.Debug("Skipping reconciling because its 'system:nodes' is not in its groups")
 		return nil
 	}
 
 	if len(csr.Spec.Usages) != 3 {
-		r.log.Infof("Skipping CSR %q because it has not exactly three usages defined", csr.Name)
+		log.Debug("Skipping reconciling because it has not exactly three usages defined")
 		return nil
 	}
 
 	for _, usage := range csr.Spec.Usages {
 		if !isUsageInUsageList(usage, allowedUsages) {
-			r.log.Infof("Skipping CSR %q because its usage %q is not in the list of allowed usages %v",
-				csr.Name, usage, allowedUsages)
+			r.log.Debugf("Skipping reconciling because its usage %q is not in the list of allowed usages %v",
+				usage, allowedUsages)
 			return nil
 		}
 	}
 
-	r.log.Infof("Approving CSR %q", csr.Name)
+	log.Debug("Approving", csr.Name)
 	approvalCondition := certificatesv1beta1.CertificateSigningRequestCondition{
 		Type:   certificatesv1beta1.CertificateApproved,
 		Reason: "Kubermatic NodeCSRApprover controller approved node serving cert",
@@ -107,7 +109,7 @@ func (r *reconciler) reconcile(ctx context.Context, request reconcile.Request) e
 		return fmt.Errorf("failed to update approval for CSR %q: %v", csr.Name, err)
 	}
 
-	r.log.Infof("Successfully approved CSR %q", csr.Name)
+	r.log.Infof("Successfully approved")
 	return nil
 }
 

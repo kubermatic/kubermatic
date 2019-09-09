@@ -3,6 +3,8 @@ package cluster
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -17,7 +19,7 @@ func (r *Reconciler) clusterIsReachable(ctx context.Context, c *kubermaticv1.Clu
 	}
 
 	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, &corev1.NamespaceList{}); err != nil {
-		r.log.Infow("Cluster not yet reachable", "cluster", c.Name, "error", err)
+		r.log.Debugw("Cluster not yet reachable", "cluster", c.Name, zap.Error(err))
 		return false, nil
 	}
 

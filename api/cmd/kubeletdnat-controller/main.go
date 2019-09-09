@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/kubermatic/kubermatic/api/pkg/controller/kubeletdnat"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 
@@ -25,10 +27,13 @@ func main() {
 	networkFlag := flag.String("node-access-network", "", "The network in CIDR notation to translate to.")
 	chainNameFlag := flag.String("chain-name", "node-access-dnat", "Name of the chain in nat table.")
 	vpnInterfaceFlag := flag.String("vpn-interface", "tun0", "Name of the vpn interface.")
+	logDebugFlag := flag.Bool("log-debug", false, "Enables debug logging")
+	logFormatFlag := flag.String("log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 
-	var logOptions kubermaticlog.Options
-	logOptions.Debug = *flag.Bool("log-debug", false, "Enables debug logging")
-	logOptions.Format = *flag.String("log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
+	logOptions := kubermaticlog.Options{
+		Debug:  *logDebugFlag,
+		Format: *logFormatFlag,
+	}
 
 	flag.Parse()
 
@@ -42,13 +47,13 @@ func main() {
 
 	_, network, err := net.ParseCIDR(*networkFlag)
 	if err != nil {
-		log.Fatalf("node-access-network invalid or missing: %v", err)
+		log.Fatalw("node-access-network invalid or missing", zap.Error(err))
 	}
 	nodeAccessNetwork := network.IP
 
 	config, err := clientcmd.BuildConfigFromFlags(*master, *kubeconfigFlag)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalw("Failed to build configs from flags", zap.Error(err))
 	}
 
 	// Wait until the API server is actually up & the corev1 api groups is available.
@@ -68,19 +73,19 @@ func main() {
 		return true, nil
 	})
 	if err != nil {
-		log.Fatalf("Failed waiting for the API server to be alive")
+		log.Fatalw("Failed waiting for the API server to be alive", zap.Error(err))
 	}
 
 	mgr, err := manager.New(config, manager.Options{})
 	if err != nil {
-		log.Fatalf("failed to create mgr: %v", err)
+		log.Fatalw("failed to create mgr", zap.Error(err))
 	}
 
 	if err := kubeletdnat.Add(mgr, *chainNameFlag, nodeAccessNetwork, log, *vpnInterfaceFlag); err != nil {
-		log.Fatalf("failed to add the kubelet dnat controller: %v", err)
+		log.Fatalw("failed to add the kubelet dnat controller", zap.Error(err))
 	}
 
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		log.Fatal(err)
+		log.Fatalw("Failed to start kubeletdnat controller", zap.Error(err))
 	}
 }

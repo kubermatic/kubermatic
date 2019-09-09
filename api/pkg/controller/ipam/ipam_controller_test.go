@@ -3,6 +3,7 @@ package ipam
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"net"
 	"strings"
 	"testing"
@@ -24,7 +25,7 @@ func init() {
 	// are very good at making that panic
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		log.Fatalf("failed to add clusterv1alpha1 scheme to scheme.Scheme: %v", err)
+		log.Fatalw("failed to add clusterv1alpha1 scheme to scheme.Scheme", zap.Error(err))
 	}
 }
 
