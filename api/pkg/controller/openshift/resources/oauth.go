@@ -323,6 +323,14 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 						},
 					},
 				},
+				{
+					Name: oauthOCPBrandingSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: oauthOCPBrandingSecretName,
+						},
+					},
+				},
 			}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  OauthName,
@@ -346,6 +354,10 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 					{
 						Name:      oauthSessionSecretName,
 						MountPath: "/etc/" + oauthSessionSecretName,
+					},
+					{
+						Name:      oauthOCPBrandingSecretName,
+						MountPath: "/var/config/system/secrets/v4-0-config-system-ocp-branding-template",
 					},
 				},
 				LivenessProbe: &corev1.Probe{

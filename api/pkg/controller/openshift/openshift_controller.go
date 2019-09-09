@@ -501,6 +501,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		resources.GetInternalKubeconfigCreator(resources.ClusterAutoscalerKubeconfigSecretName, resources.ClusterAutoscalerCertUsername, nil, osData),
 		openshiftresources.ImagePullSecretCreator(osData.Cluster()),
 		openshiftresources.OauthSessionSecretCreator,
+		openshiftresources.OauthOCPBrandingSecretCreator,
 
 		//TODO: This is only needed because of the ServiceAccount Token needed for Openshift
 		//TODO: Streamline this by using it everywhere and use the clientprovider here or remove
