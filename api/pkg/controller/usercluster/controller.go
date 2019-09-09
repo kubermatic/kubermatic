@@ -8,7 +8,8 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/golang/glog"
+	"go.uber.org/zap"
+
 	"github.com/heptiolabs/healthcheck"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -43,7 +44,8 @@ func Add(
 	clusterURL *url.URL,
 	openvpnServerPort int,
 	registerReconciledCheck func(name string, check healthcheck.Check),
-	openVPNCA *resources.ECDSAKeyPair) error {
+	openVPNCA *resources.ECDSAKeyPair,
+	log *zap.SugaredLogger) error {
 	reconciler := &reconciler{
 		Client:            mgr.GetClient(),
 		cache:             mgr.GetCache(),
@@ -55,6 +57,7 @@ func Add(
 		clusterURL:        clusterURL,
 		openvpnServerPort: openvpnServerPort,
 		openVPNCA:         openVPNCA,
+		log:               log,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -117,12 +120,14 @@ type reconciler struct {
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
+
+	log *zap.SugaredLogger
 }
 
 // Reconcile makes changes in response to objects in the user cluster.
 func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	if err := r.reconcile(context.TODO()); err != nil {
-		glog.Errorf("Reconciling failed: %v", err)
+		r.log.Errorf("Reconciling failed: %v", err)
 		return reconcile.Result{}, err
 	}
 
