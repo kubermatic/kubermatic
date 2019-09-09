@@ -70,12 +70,12 @@ func NewFromFile(credentialsFilename string) (*Manager, error) {
 
 func (m *Manager) GetPreset(userInfo provider.UserInfo) *kubermaticv1.Preset {
 	for _, preset := range m.presets.Items {
-		emialDomain, ok := preset.Labels[kubermaticv1.PresetEmailDomainLabel]
-		if !ok {
-			return emptyPreset()
-		}
-		if strings.HasSuffix(userInfo.Email, emialDomain) {
-			return &preset
+		emialDomain := preset.Spec.RequiredEmailDomain
+		domain := strings.Split(userInfo.Email, "@")
+		if len(domain) == 2 {
+			if strings.EqualFold(domain[1], emialDomain) {
+				return &preset
+			}
 		}
 	}
 	return emptyPreset()

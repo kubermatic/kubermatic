@@ -25,6 +25,7 @@ var providerNames = []string{
 	"openstack",
 	"packet",
 	"gcp",
+	"kubevirt",
 }
 
 // providerReq represents a request for provider name

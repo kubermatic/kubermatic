@@ -11,7 +11,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/diff"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -41,10 +40,8 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: test.GenDefaultUser().Spec.Email},
-						},
 						Spec: kubermaticv1.PresetSpec{
+							RequiredEmailDomain: test.RequiredEmailDomain,
 							AWS: kubermaticv1.AWS{
 								Credentials: []kubermaticv1.AWSPresetCredentials{
 									{Name: "first"},
@@ -69,10 +66,8 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: test.GenDefaultUser().Spec.Email},
-						},
 						Spec: kubermaticv1.PresetSpec{
+							RequiredEmailDomain: test.RequiredEmailDomain,
 							Azure: kubermaticv1.Azure{Credentials: []kubermaticv1.AzurePresetCredentials{
 								{Name: "first", ClientID: "test-first", ClientSecret: "secret-first", SubscriptionID: "subscription-first", TenantID: "tenant-first"},
 								{Name: "second", ClientID: "test-second", ClientSecret: "secret-second", SubscriptionID: "subscription-second", TenantID: "tenant-second"},
@@ -96,10 +91,8 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: test.GenDefaultUser().Spec.Email},
-						},
 						Spec: kubermaticv1.PresetSpec{
+							RequiredEmailDomain: test.RequiredEmailDomain,
 							Digitalocean: kubermaticv1.Digitalocean{Credentials: []kubermaticv1.DigitaloceanPresetCredentials{
 								{Name: "digitalocean-first"},
 								{Name: "digitalocean-second"},
@@ -123,10 +116,8 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: test.GenDefaultUser().Spec.Email},
-						},
 						Spec: kubermaticv1.PresetSpec{
+							RequiredEmailDomain: test.RequiredEmailDomain,
 							GCP: kubermaticv1.GCP{Credentials: []kubermaticv1.GCPPresetCredentials{
 								{Name: "first"},
 								{Name: "second"},
@@ -150,10 +141,8 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: test.GenDefaultUser().Spec.Email},
-						},
 						Spec: kubermaticv1.PresetSpec{
+							RequiredEmailDomain: test.RequiredEmailDomain,
 							Hetzner: kubermaticv1.Hetzner{Credentials: []kubermaticv1.HetznerPresetCredentials{
 								{Name: "first"},
 								{Name: "second"},
@@ -177,10 +166,8 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: test.GenDefaultUser().Spec.Email},
-						},
 						Spec: kubermaticv1.PresetSpec{
+							RequiredEmailDomain: test.RequiredEmailDomain,
 							Openstack: kubermaticv1.Openstack{Credentials: []kubermaticv1.OpenstackPresetCredentials{
 								{Name: "first"},
 								{Name: "second"},
@@ -204,10 +191,8 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: test.GenDefaultUser().Spec.Email},
-						},
 						Spec: kubermaticv1.PresetSpec{
+							RequiredEmailDomain: test.RequiredEmailDomain,
 							Packet: kubermaticv1.Packet{Credentials: []kubermaticv1.PacketPresetCredentials{
 								{Name: "first"},
 								{Name: "second"},
@@ -231,10 +216,8 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: test.GenDefaultUser().Spec.Email},
-						},
 						Spec: kubermaticv1.PresetSpec{
+							RequiredEmailDomain: test.RequiredEmailDomain,
 							VSphere: kubermaticv1.VSphere{Credentials: []kubermaticv1.VSpherePresetCredentials{
 								{Name: "first"},
 								{Name: "second"},

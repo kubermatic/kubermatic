@@ -97,6 +97,8 @@ const (
 	TestOSCredential = "testOpenstack"
 	// TestFakeCredential Fake provider credential name
 	TestFakeCredential = "pluton"
+	// RequiredEmailDomain required domain for predefined credentials
+	RequiredEmailDomain = "acme.com"
 )
 
 // GetUser is a convenience function for generating apiv1.User
@@ -278,10 +280,8 @@ func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.Seeds
 	credentialManager := presets.NewWithPresets(&kubermaticv1.PresetList{
 		Items: []kubermaticv1.Preset{
 			{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{kubermaticv1.PresetEmailDomainLabel: GenDefaultUser().Spec.Email},
-				},
 				Spec: kubermaticv1.PresetSpec{
+					RequiredEmailDomain: RequiredEmailDomain,
 					Fake: kubermaticv1.Fake{Credentials: []kubermaticv1.FakePresetCredentials{
 						{Name: TestFakeCredential, Token: "dummy_pluton_token"},
 					}},

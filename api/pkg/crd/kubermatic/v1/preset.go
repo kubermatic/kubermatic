@@ -4,8 +4,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const PresetEmailDomainLabel = "emailDomain"
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // PresetList is the type representing a PresetList
@@ -41,8 +39,10 @@ type PresetSpec struct {
 	Openstack    Openstack    `json:"openstack,omitempty"`
 	Packet       Packet       `json:"packet,omitempty"`
 	GCP          GCP          `json:"gcp,omitempty"`
-	Fake         Fake         `json:"fake,omitempty"`
 	Kubevirt     Kubevirt     `json:"kubevirt,omitempty"`
+
+	Fake                Fake   `json:"fake,omitempty"`
+	RequiredEmailDomain string `json:"requiredEmailDomain"`
 }
 
 type Digitalocean struct {

@@ -1535,8 +1535,8 @@ func (in *PresetSpec) DeepCopyInto(out *PresetSpec) {
 	in.Openstack.DeepCopyInto(&out.Openstack)
 	in.Packet.DeepCopyInto(&out.Packet)
 	in.GCP.DeepCopyInto(&out.GCP)
-	in.Fake.DeepCopyInto(&out.Fake)
 	in.Kubevirt.DeepCopyInto(&out.Kubevirt)
+	in.Fake.DeepCopyInto(&out.Fake)
 	return
 }
 
