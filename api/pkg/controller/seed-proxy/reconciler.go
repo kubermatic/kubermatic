@@ -106,16 +106,16 @@ func (r *Reconciler) garbageCollect(seeds map[string]*kubermaticv1.Seed, log *za
 	}
 
 	if err := r.List(r.ctx, options, list); err != nil {
-		return fmt.Errorf("failed to list secrets: %v", err)
+		return fmt.Errorf("failed to list Secrets: %v", err)
 	}
 
 	for _, item := range list.Items {
 		seed := item.Labels[InstanceLabel]
 
 		if _, exists := seeds[seed]; !exists {
-			log.Debugw("deleting orphaned secret referencing non-existing seed", "secret", item, "seed", seed)
+			log.Debugw("deleting orphaned Secret referencing non-existing seed", "secret", item, "seed", seed)
 			if err := r.Delete(r.ctx, &item); err != nil {
-				return fmt.Errorf("failed to delete secret: %v", err)
+				return fmt.Errorf("failed to delete Secret: %v", err)
 			}
 		}
 	}
@@ -129,29 +129,29 @@ func (r *Reconciler) reconcileSeedProxy(seed *kubermaticv1.Seed, client ctrlrunt
 		return err
 	}
 
-	log.Debug("reconciling service accounts...")
+	log.Debug("reconciling ServiceAccounts...")
 	if err := r.ensureSeedServiceAccounts(client, log); err != nil {
-		return fmt.Errorf("failed to ensure service account: %v", err)
+		return fmt.Errorf("failed to ensure ServiceAccount: %v", err)
 	}
 
 	if r.namespaceExists(client, SeedPrometheusNamespace, log) {
 		log.Debug("reconciling roles...")
 		if err := r.ensureSeedRoles(client, log); err != nil {
-			return fmt.Errorf("failed to ensure role: %v", err)
+			return fmt.Errorf("failed to ensure Role: %v", err)
 		}
 
 		log.Debug("reconciling role bindings...")
 		if err := r.ensureSeedRoleBindings(client, log); err != nil {
-			return fmt.Errorf("failed to ensure role binding: %v", err)
+			return fmt.Errorf("failed to ensure RoleBinding: %v", err)
 		}
 	} else {
 		log.Debugw("skipping RBAC setup because Prometheus namespace does not exist in master", "namespace", SeedPrometheusNamespace)
 	}
 
-	log.Debug("fetching service account details from seed cluster...")
+	log.Debug("fetching ServiceAccount details from seed cluster...")
 	serviceAccountSecret, err := r.fetchServiceAccountSecret(client, log)
 	if err != nil {
-		return fmt.Errorf("failed to fetch service account: %v", err)
+		return fmt.Errorf("failed to fetch ServiceAccount: %v", err)
 	}
 
 	if err := r.reconcileMaster(seed.Name, cfg, serviceAccountSecret, log); err != nil {
@@ -167,7 +167,7 @@ func (r *Reconciler) ensureSeedServiceAccounts(client ctrlruntimeclient.Client, 
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, SeedServiceAccountNamespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile service accounts in the namespace %s: %v", SeedServiceAccountNamespace, err)
+		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", SeedServiceAccountNamespace, err)
 	}
 
 	return nil
@@ -205,11 +205,11 @@ func (r *Reconciler) fetchServiceAccountSecret(client ctrlruntimeclient.Client, 
 	}
 
 	if err := client.Get(r.ctx, name, sa); err != nil {
-		return nil, fmt.Errorf("could not find service account '%s'", name)
+		return nil, fmt.Errorf("could not find ServiceAccount '%s'", name)
 	}
 
 	if len(sa.Secrets) == 0 {
-		return nil, fmt.Errorf("no secret associated with service account '%s'", name)
+		return nil, fmt.Errorf("no Secret associated with ServiceAccount '%s'", name)
 	}
 
 	secret := &corev1.Secret{}
@@ -219,27 +219,27 @@ func (r *Reconciler) fetchServiceAccountSecret(client ctrlruntimeclient.Client, 
 	}
 
 	if err := r.Get(r.ctx, name, secret); err != nil {
-		return nil, fmt.Errorf("could not find secret '%s'", name)
+		return nil, fmt.Errorf("could not find Secret '%s'", name)
 	}
 
 	return secret, nil
 }
 
 func (r *Reconciler) reconcileMaster(seedName string, kubeconfig *rest.Config, credentials *corev1.Secret, log *zap.SugaredLogger) error {
-	log.Debug("reconciling secrets...")
+	log.Debug("reconciling Secrets...")
 	secret, err := r.ensureMasterSecrets(seedName, kubeconfig, credentials)
 	if err != nil {
-		return fmt.Errorf("failed to ensure secrets: %v", err)
+		return fmt.Errorf("failed to ensure Secrets: %v", err)
 	}
 
-	log.Debug("reconciling deployments...")
+	log.Debug("reconciling Deployments...")
 	if err := r.ensureMasterDeployments(seedName, secret); err != nil {
-		return fmt.Errorf("failed to ensure deployments: %v", err)
+		return fmt.Errorf("failed to ensure Deployments: %v", err)
 	}
 
-	log.Debug("reconciling services...")
+	log.Debug("reconciling Services...")
 	if err := r.ensureMasterServices(seedName, secret); err != nil {
-		return fmt.Errorf("failed to ensure services: %v", err)
+		return fmt.Errorf("failed to ensure Services: %v", err)
 	}
 
 	return nil
