@@ -208,14 +208,24 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 			if err != nil {
 				return nil, err
 			}
-			dep.Spec.Template.Spec.Volumes = []corev1.Volume{{
-				Name: "config",
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{Name: OauthName},
+			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
+				{
+					Name: "config",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{Name: OauthName},
+						},
 					},
 				},
-			}}
+				{
+					Name: resources.InternalUserClusterAdminKubeconfigSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
+						},
+					},
+				},
+			}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  OauthName,
 				Image: image,
@@ -225,10 +235,17 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 					"--config=/etc/oauth/config.yaml",
 					"--v=2",
 				},
-				VolumeMounts: []corev1.VolumeMount{{
-					Name:      "config",
-					MountPath: "/etc/oauth",
-				}},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "config",
+						MountPath: "/etc/oauth",
+					},
+					{
+						Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
+						MountPath: "/etc/kubernetes/kubeconfig",
+						ReadOnly:  true,
+					},
+				},
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						HTTPGet: &corev1.HTTPGetAction{
