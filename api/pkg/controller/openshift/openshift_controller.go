@@ -526,7 +526,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		//TODO: This is only needed because of the ServiceAccount Token needed for Openshift
 		//TODO: Streamline this by using it everywhere and use the clientprovider here or remove
 		openshiftresources.ExternalX509KubeconfigCreator(osData),
-		openshiftresources.GetLoopbackKubeconfigCreator(ctx, osData)}
+		openshiftresources.GetLoopbackKubeconfigCreator(ctx, osData, r.log)}
 
 	if osData.cluster.Spec.Cloud.GCP != nil {
 		creators = append(creators, resources.ServiceAccountSecretCreator(osData.cluster.Spec.Cloud.GCP.ServiceAccount))

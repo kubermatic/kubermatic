@@ -3,8 +3,6 @@ package cluster
 import (
 	"context"
 
-	"github.com/golang/glog"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/address"
@@ -22,7 +20,7 @@ func (r *Reconciler) syncAddress(ctx context.Context, cluster *kubermaticv1.Clus
 		if err != nil {
 			return err
 		}
-		glog.V(2).Infof("Created admin token for cluster %s", cluster.Name)
+		r.log.Infow("Created admin token for cluster", "cluster", cluster.Name)
 	}
 
 	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, seed)
