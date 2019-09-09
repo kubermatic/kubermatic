@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	"github.com/go-test/deep"
-	"github.com/golang/glog"
-
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
+	"go.uber.org/zap"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -39,6 +39,8 @@ type Reconciler struct {
 	nodeTranslationChainName string
 	nodeAccessNetwork        net.IP
 	vpnInterface             string
+
+	log *zap.SugaredLogger
 }
 
 // dnatRule stores address+port before translation (match) and
@@ -55,6 +57,7 @@ func Add(
 	mgr manager.Manager,
 	nodeTranslationChainName string,
 	nodeAccessNetwork net.IP,
+	log *zap.SugaredLogger,
 	vpnInterface string) error {
 
 	reconciler := &Reconciler{
@@ -62,6 +65,7 @@ func Add(
 		nodeTranslationChainName: nodeTranslationChainName,
 		nodeAccessNetwork:        nodeAccessNetwork,
 		vpnInterface:             vpnInterface,
+		log:                      log,
 	}
 
 	ctrlOptions := controller.Options{
@@ -80,12 +84,12 @@ func Add(
 		UpdateFunc: func(e event.UpdateEvent, queue workqueue.RateLimitingInterface) {
 			newNode, ok := e.ObjectNew.(*corev1.Node)
 			if !ok {
-				glog.Warningf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectNew)
+				log.Warnf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectNew)
 				queue.Add(reconcile.Request{})
 			}
 			oldNode, ok := e.ObjectOld.(*corev1.Node)
 			if !ok {
-				glog.Warningf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectOld)
+				log.Warnf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectOld)
 				queue.Add(reconcile.Request{})
 			}
 
@@ -105,7 +109,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Add a wrapping here so we can emit an event on error
 	err := r.syncDnatRules(ctx)
 	if err != nil {
-		glog.Errorf("Failed reconciling: %v", err)
+		r.log.Errorf("Failed reconciling: %v", err)
 	}
 	return reconcile.Result{}, err
 }
@@ -115,7 +119,7 @@ func (r *Reconciler) getDesiredRules(nodes []corev1.Node) []string {
 	for _, node := range nodes {
 		nodeRules, err := r.getRulesForNode(node)
 		if err != nil {
-			glog.Errorf("could not generate rules for node %s: %v - skipping", node.Name, err)
+			r.log.Errorf("could not generate rules for node %s: %v - skipping", node.Name, err)
 			continue
 		}
 		for _, rule := range nodeRules {
@@ -148,7 +152,7 @@ func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 
 	if !equality.Semantic.DeepEqual(actualRules, desiredRules) || !haveJump || !haveMasquerade {
 		// Need to update chain in kernel.
-		glog.V(4).Infof("Updating iptables chain in kernel (%d rules).", len(desiredRules))
+		r.log.Infof("Updating iptables chain in kernel (%d rules).", len(desiredRules))
 		if err := r.applyDNATRules(desiredRules, haveJump, haveMasquerade); err != nil {
 			return fmt.Errorf("failed to apply iptable rules: %v", err)
 		}
