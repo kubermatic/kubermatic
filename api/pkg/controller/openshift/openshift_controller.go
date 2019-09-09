@@ -567,7 +567,8 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 		machinecontroller.WebhookDeploymentCreator(osData),
 		usercluster.DeploymentCreator(osData, true),
 		openshiftresources.OpenshiftNetworkOperatorCreatorFactory(osData),
-		openshiftresources.OpenshiftDNSOperatorFactory(osData)}
+		openshiftresources.OpenshiftDNSOperatorFactory(osData),
+		openshiftresources.OauthDeploymentCreator(osData)}
 
 	if osData.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" {
 		creators = append(creators, clusterautoscaler.DeploymentCreator(osData))
