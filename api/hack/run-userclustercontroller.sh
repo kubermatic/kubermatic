@@ -47,4 +47,6 @@ fi
     -cluster-url=${CLUSTER_URL} \
     -ca-cert=${CA_CERT_USERCLUSTER_CONTROLLER_FILE} \
     -version=${CLUSTER_VERSION} \
+    -log-debug=true \
+    -log-format=Console \
     ${ARGS}
