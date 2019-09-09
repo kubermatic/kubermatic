@@ -1,7 +1,12 @@
 package resources
 
 import (
+	"bytes"
 	"fmt"
+	"strconv"
+	"text/template"
+
+	"github.com/Masterminds/sprig"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
@@ -16,7 +21,7 @@ import (
 )
 
 const (
-	oauthName                 = "openshift-oauth"
+	OauthName                 = "openshift-oauth"
 	oauthCLIConfigTemplateRaw = `
     {
       "admission": {},
@@ -55,8 +60,7 @@ const (
         "loginURL": "{{ .APIServerURL }}",
         "masterCA": "/var/config/system/configmaps/v4-0-config-system-service-ca/service-ca.crt",
         "masterPublicURL": "https://{{ .ExternalName }}:{{ .OauthPort }}",
-        # TODO: Oauth cluster service
-        "masterURL": "https://openshift-oauth.{{ .ClusterNamespace }}.svc.cluster.local.",
+        "masterURL": "https://openshift-oauth.{{ .InternalURL }}",
         "sessionConfig": {
           "sessionMaxAgeSeconds": 300,
           "sessionName": "ssn",
@@ -97,16 +101,7 @@ const (
         "keyFile": "/var/config/system/secrets/v4-0-config-system-serving-cert/tls.key",
         "maxRequestsInFlight": 1000,
         "minTLSVersion": "VersionTLS12",
-        # TODO: Re-Enable
         "namedCertificates": [],
-          #          {
-          #            "certFile": "/var/config/system/secrets/v4-0-config-system-router-certs/apps.alvaro-test.aws.k8c.io",
-          #            "keyFile": "/var/config/system/secrets/v4-0-config-system-router-certs/apps.alvaro-test.aws.k8c.io",
-          #            "names": [
-          #              "*.apps.alvaro-test.aws.k8c.io"
-          #            ]
-          #          }
-          #        ],
         "requestTimeoutSeconds": 300
       },
       "storageConfig": {
@@ -119,17 +114,52 @@ const (
 `
 )
 
-var oauthDeploymentResourceRequirements = corev1.ResourceRequirements{
-	Requests: corev1.ResourceList{
-		corev1.ResourceCPU:    resource.MustParse("10m"),
-		corev1.ResourceMemory: resource.MustParse("50Mi"),
-	},
+var (
+	oauthDeploymentResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("10m"),
+			corev1.ResourceMemory: resource.MustParse("50Mi"),
+		},
+	}
+	oauthCLIConfigTemplate = template.Must(template.New("base").Funcs(sprig.TxtFuncMap()).Parse(oauthCLIConfigTemplateRaw))
+)
+
+func OauthConfigMapCreator(data openshiftData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return OauthName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			oauthPort, err := data.GetOauthExternalNodePort()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get port for oauth service: %v", err)
+			}
+			templateData := struct {
+				ExternalName string
+				OauthPort    string
+				APIServerURL string
+				InternalURL  string
+			}{
+				ExternalName: data.Cluster().Address.ExternalName,
+				OauthPort:    strconv.Itoa(int(oauthPort)),
+				APIServerURL: data.Cluster().Address.URL,
+				InternalURL:  data.Cluster().Address.InternalName,
+			}
+			oauthConfig := bytes.NewBuffer([]byte{})
+			if err := oauthCLIConfigTemplate.Execute(oauthConfig, templateData); err != nil {
+				return nil, fmt.Errorf("failed to render oauth config template: %v", err)
+			}
+
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
+			cm.Data["config.yaml"] = oauthConfig.String()
+			return cm, nil
+		}
+	}
 }
 
 // OauthServiceCreator returns the function to reconcile the external OpenVPN service
 func OauthServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
-		return oauthName, func(se *corev1.Service) (*corev1.Service, error) {
+		return OauthName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Labels = resources.BaseAppLabel(name, nil)
 
 			if se.Annotations == nil {
@@ -143,14 +173,14 @@ func OauthServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedSer
 				delete(se.Annotations, "nodeport-proxy.k8s.io/expose")
 			}
 			se.Spec.Selector = map[string]string{
-				resources.AppLabelKey: oauthName,
+				resources.AppLabelKey: OauthName,
 			}
 			se.Spec.Type = corev1.ServiceTypeNodePort
 			if len(se.Spec.Ports) == 0 {
 				se.Spec.Ports = make([]corev1.ServicePort, 1)
 			}
 
-			se.Spec.Ports[0].Name = oauthName
+			se.Spec.Ports[0].Name = OauthName
 			se.Spec.Ports[0].Port = 443
 			se.Spec.Ports[0].Protocol = corev1.ProtocolTCP
 			se.Spec.Ports[0].TargetPort = intstr.FromInt(6443)
@@ -162,13 +192,13 @@ func OauthServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedSer
 
 func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return oauthName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+		return OauthName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 
 			dep.Spec.Replicas = utilpointer.Int32Ptr(2)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(oauthName, nil),
+				MatchLabels: resources.BaseAppLabel(OauthName, nil),
 			}
-			dep.Spec.Template.Labels = resources.BaseAppLabel(oauthName, nil)
+			dep.Spec.Template.Labels = resources.BaseAppLabel(OauthName, nil)
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 				{Name: openshiftImagePullSecretName},
@@ -178,15 +208,27 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 			if err != nil {
 				return nil, err
 			}
+			dep.Spec.Template.Spec.Volumes = []corev1.Volume{{
+				Name: "config",
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{Name: OauthName},
+					},
+				},
+			}}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{{
-				Name:  oauthName,
+				Name:  OauthName,
 				Image: image,
 				Command: []string{
 					"hypershift",
 					"openshift-osinserver",
-					"--config=/var/config/system/configmaps/v4-0-config-system-cliconfig/v4-0-config-system-cliconfig",
+					"--config=/etc/oauth/config.yaml",
 					"--v=2",
 				},
+				VolumeMounts: []corev1.VolumeMount{{
+					Name:      "config",
+					MountPath: "/etc/oauth",
+				}},
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						HTTPGet: &corev1.HTTPGetAction{
@@ -216,6 +258,13 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 				},
 				Resources: *oauthDeploymentResourceRequirements.DeepCopy(),
 			}}
+
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(OpenshiftAPIServerDeploymentName, data.Cluster().Name)
+			podLabels, err := data.GetPodTemplateLabels(OauthName, dep.Spec.Template.Spec.Volumes, nil)
+			if err != nil {
+				return nil, err
+			}
+			dep.Spec.Template.Labels = podLabels
 			return dep, nil
 		}
 	}

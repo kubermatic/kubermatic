@@ -546,6 +546,7 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 		openvpn.ServerClientConfigsConfigMapCreator(osData),
 		openshiftresources.KubeSchedulerConfigMapCreator,
 		dns.ConfigMapCreator(osData),
+		openshiftresources.OauthConfigMapCreator(osData),
 	}
 }
 
