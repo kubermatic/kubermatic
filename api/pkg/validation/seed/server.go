@@ -134,10 +134,8 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 			return admissionReview.Request, nil
 		}
 		seed = seeds[admissionReview.Request.Name]
-	} else {
-		if err := json.Unmarshal(admissionReview.Request.Object.Raw, seed); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal object from request into a Seed: %v", err)
-		}
+	} else if err := json.Unmarshal(admissionReview.Request.Object.Raw, seed); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal object from request into a Seed: %v", err)
 	}
 
 	validationErr := s.validator.Validate(seed, admissionReview.Request.Operation == admissionv1beta1.Delete)

@@ -135,13 +135,15 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 
 			// act
 			ep.ServeHTTP(res, req)
+			result := res.Result()
+			defer result.Body.Close()
 
 			// validate
 			assert.Equal(t, tc.HTTPStatusInitPhase, res.Code)
 
 			// Redirection to dex provider
 			if res.Code == http.StatusSeeOther {
-				location, err := res.Result().Location()
+				location, err := result.Location()
 				if err != nil {
 					t.Fatalf("expected url for redirection %v", err)
 				}
@@ -201,13 +203,13 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 
 				// act
 				ep.ServeHTTP(res, req)
+				defer res.Result().Body.Close()
 
 				// validate
 				assert.Equal(t, tc.ExpectedExchangeCodePhase.HTTPStatus, res.Code)
 
 				// validate
 				assert.Equal(t, tc.ExpectedExchangeCodePhase.BodyResponse, res.Body.String())
-
 			}
 		})
 	}

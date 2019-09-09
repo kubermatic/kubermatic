@@ -7,12 +7,13 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
+const (
+	roleName = "system:openshift:sa-leader-election-configmaps"
+)
+
 // KubeSystemRoleCreator returns the func to create/update the Role for the machine controller to allow reading secrets
 func KubeSchedulerRoleCreatorGetter() (string, reconciling.RoleCreator) {
-	return "system:openshift:sa-leader-election-configmaps", func(r *rbacv1.Role) (*rbacv1.Role, error) {
-		r.Name = "system:openshift:sa-leader-election-configmaps"
-		r.Namespace = "openshift-kube-scheduler"
-
+	return roleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 		r.Rules = []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
@@ -30,11 +31,8 @@ func KubeSchedulerRoleCreatorGetter() (string, reconciling.RoleCreator) {
 
 func KubeSchedulerRoleBindingCreatorGetter() (string, reconciling.RoleBindingCreator) {
 	return resources.MachineControllerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-		rb.Name = "system:openshift:sa-leader-election-configmaps"
-		rb.Namespace = "openshift-kube-scheduler"
-
 		rb.RoleRef = rbacv1.RoleRef{
-			Name:     "system:openshift:sa-leader-election-configmaps",
+			Name:     roleName,
 			Kind:     "Role",
 			APIGroup: rbacv1.GroupName,
 		}

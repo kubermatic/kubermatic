@@ -112,11 +112,10 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 				return err
 			}
 		}
-	} else {
-		if err := r.createBinding(sa, projectName); err != nil {
-			return err
-		}
+	} else if err := r.createBinding(sa, projectName); err != nil {
+		return err
 	}
+
 	// remove labelGroup from sa
 	if _, ok := sa.Labels[serviceaccount.ServiceAccountLabelGroup]; ok {
 		delete(sa.Labels, serviceaccount.ServiceAccountLabelGroup)

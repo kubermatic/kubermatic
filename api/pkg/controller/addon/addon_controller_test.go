@@ -123,7 +123,7 @@ func TestController_combineManifests(t *testing.T) {
 	}
 }
 
-func setupTestCluster(CIDRBlock string) *kubermaticv1.Cluster {
+func setupTestCluster(cidrBlock string) *kubermaticv1.Cluster {
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
@@ -133,7 +133,7 @@ func setupTestCluster(CIDRBlock string) *kubermaticv1.Cluster {
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				Services: kubermaticv1.NetworkRanges{
 					CIDRBlocks: []string{
-						CIDRBlock,
+						cidrBlock,
 					},
 				},
 				Pods: kubermaticv1.NetworkRanges{

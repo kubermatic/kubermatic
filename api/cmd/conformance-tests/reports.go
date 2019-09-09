@@ -56,9 +56,9 @@ func collectReports(name, reportsDir string) (*reporters.JUnitTestSuite, error) 
 }
 
 func appendReport(report, toAppend *reporters.JUnitTestSuite) {
-	report.Tests = report.Tests + toAppend.Tests
-	report.Errors = report.Errors + toAppend.Errors
-	report.Failures = report.Failures + toAppend.Failures
+	report.Tests += toAppend.Tests
+	report.Errors += toAppend.Errors
+	report.Failures += toAppend.Failures
 	report.TestCases = append(report.TestCases, toAppend.TestCases...)
 }
 

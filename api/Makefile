@@ -86,7 +86,8 @@ fix:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 
 lint:
-	golangci-lint run -v
+	# run with concurrency=1 to lower memory usage a bit
+	golangci-lint run -v --concurrency 1 --print-resources-usage
 
 cover:
 	./hack/cover.sh --html

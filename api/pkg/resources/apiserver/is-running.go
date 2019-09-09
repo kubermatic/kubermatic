@@ -41,19 +41,21 @@ func IsRunningWrapper(data isRunningInitContainerData, spec corev1.PodSpec, cont
 		}
 	}
 
-	var newVoumes []corev1.Volume
+	var newVolumes []corev1.Volume
 	for _, volume := range spec.Volumes {
 		if volume.Name == emptyDirVolumeName {
 			continue
 		}
-		newVoumes = append(newVoumes, volume)
+		newVolumes = append(newVolumes, volume)
 	}
-	spec.Volumes = append(newVoumes, corev1.Volume{
+	newVolumes = append(newVolumes, corev1.Volume{
 		Name: emptyDirVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 	})
+
+	spec.Volumes = newVolumes
 
 	var newInitContainers []corev1.Container
 	for _, container := range spec.InitContainers {

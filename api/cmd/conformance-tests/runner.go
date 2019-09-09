@@ -862,20 +862,19 @@ func (r *testRunner) getGinkgoRuns(
 		for i, ndi := range nd {
 			if osSpec == nil {
 				osSpec = ndi.Spec.Template.OperatingSystem
-			} else {
-				if !equality.Semantic.DeepEqual(osSpec, ndi.Spec.Template.OperatingSystem) {
-					return nil, fmt.Errorf("node deployment #%d has OS specification different from node deployment #0: %+v != %+v", i, ndi.Spec.Template.OperatingSystem, osSpec)
-				}
+			} else if !equality.Semantic.DeepEqual(osSpec, ndi.Spec.Template.OperatingSystem) {
+				return nil, fmt.Errorf("node deployment #%d has OS specification different from node deployment #0: %+v != %+v", i, ndi.Spec.Template.OperatingSystem, osSpec)
 			}
 		}
 
-		if osSpec.Ubuntu != nil {
+		switch {
+		case osSpec.Ubuntu != nil:
 			args = append(args, "--node-os-distro=ubuntu")
 			env = append(env, "KUBE_SSH_USER=ubuntu")
-		} else if osSpec.Centos != nil {
+		case osSpec.Centos != nil:
 			args = append(args, "--node-os-distro=centos")
 			env = append(env, "KUBE_SSH_USER=centos")
-		} else if osSpec.ContainerLinux != nil {
+		case osSpec.ContainerLinux != nil:
 			args = append(args, "--node-os-distro=coreos")
 			env = append(env, "KUBE_SSH_USER=core")
 		}

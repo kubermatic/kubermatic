@@ -79,12 +79,13 @@ func main() {
 			log.Println()
 		}
 
-		log.Printf("[%d/%d] Probing '%s'...\n", i, retries, req.URL.String())
+		log.Printf("[%02d/%02d] Probing '%s'...\n", i, retries, req.URL.String())
 		resp, err := client.Do(req)
 		if err != nil {
 			log.Printf(padding+"Failed executing request: %v", err)
 			continue
 		}
+		resp.Body.Close()
 
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
 			log.Printf(padding+"Failed: '%s' responded with statuscode != 2xx (%d)", req.URL.String(), resp.StatusCode)
@@ -103,7 +104,6 @@ func main() {
 			if err := syscall.Exec(commandFullPath, args, os.Environ()); err != nil {
 				log.Fatalf("failed to execute command: %v", err)
 			}
-
 		}
 		os.Exit(0)
 	}
