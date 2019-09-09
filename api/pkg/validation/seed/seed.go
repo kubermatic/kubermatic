@@ -67,18 +67,6 @@ func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntim
 		ourDatacenters.Insert(datacenter)
 	}
 
-	// list of datacenters that remain after the operation we validate would be completed
-	allDatacenters := sets.NewString()
-	for _, s := range existingSeeds {
-		for dc := range s.Spec.Datacenters {
-			allDatacenters.Insert(dc)
-		}
-	}
-
-	if !isDelete {
-		allDatacenters = allDatacenters.Union(ourDatacenters)
-	}
-
 	// check if all the DCs in the seed are unique
 	for _, s := range existingSeeds {
 		for dc := range s.Spec.Datacenters {

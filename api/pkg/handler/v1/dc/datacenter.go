@@ -57,7 +57,7 @@ func GetDatacenter(seedsGetter provider.SeedsGetter, datacenterToGet string) (ap
 	}
 
 	if n := len(foundDCs); n > 1 {
-		return apiv1.Datacenter{}, fmt.Errorf("Did not find one but %d datacenters for name %q", n, datacenterToGet)
+		return apiv1.Datacenter{}, fmt.Errorf("did not find one but %d datacenters for name %q", n, datacenterToGet)
 	}
 	if len(foundDCs) == 0 {
 		return apiv1.Datacenter{}, errors.NewNotFound("datacenter", datacenterToGet)

@@ -86,12 +86,12 @@ func (c *projectController) ensureCleanupFinalizerExists(project *kubermaticv1.P
 
 func (c *projectController) ensureProjectIsInActivePhase(project *kubermaticv1.Project) error {
 	if project.Status.Phase == kubermaticv1.ProjectInactive {
-		var err error
 		project.Status.Phase = kubermaticv1.ProjectActive
-		project, err = c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project)
+		newProject, err := c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project)
 		if err != nil {
 			return err
 		}
+		*project = *newProject
 	}
 	return nil
 }

@@ -39,7 +39,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
-	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -699,7 +698,7 @@ func GenTestAddon(name string, variables *runtime.RawExtension, cluster *kuberma
 		Spec: kubermaticv1.AddonSpec{
 			Name:      name,
 			Variables: *variables,
-			Cluster: v1.ObjectReference{
+			Cluster: corev1.ObjectReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 				Kind:       kubermaticv1.ClusterKindName,
 				Name:       cluster.Name,
@@ -718,8 +717,8 @@ func CheckStatusCode(wantStatusCode int, recorder *httptest.ResponseRecorder, t 
 	}
 }
 
-func GenDefaultSaToken(projectID, saID, name, id string) *v1.Secret {
-	secret := &v1.Secret{}
+func GenDefaultSaToken(projectID, saID, name, id string) *corev1.Secret {
+	secret := &corev1.Secret{}
 	secret.Name = fmt.Sprintf("sa-token-%s", id)
 	secret.Type = "Opaque"
 	secret.Namespace = "kubermatic"

@@ -15,7 +15,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"gopkg.in/square/go-jose.v2/jwt"
@@ -137,7 +136,7 @@ func sortTokenByName(tokens []*v1.Secret) {
 
 // genUser generates a User resource
 // note if the id is empty then it will be auto generated
-func genUser(id, name, email string) *kubermaticapiv1.User {
+func genUser(id, name, email string) *kubermaticv1.User {
 	if len(id) == 0 {
 		// the name of the object is derived from the email address and encoded as sha256
 		id = fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
@@ -153,12 +152,12 @@ func genUser(id, name, email string) *kubermaticapiv1.User {
 		specID = fmt.Sprintf("%x_KUBE", h.Sum(nil))
 	}
 
-	return &kubermaticapiv1.User{
+	return &kubermaticv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: id,
 			UID:  types.UID(fmt.Sprintf("fake-uid-%s", id)),
 		},
-		Spec: kubermaticapiv1.UserSpec{
+		Spec: kubermaticv1.UserSpec{
 			ID:    specID,
 			Name:  name,
 			Email: email,
@@ -167,28 +166,28 @@ func genUser(id, name, email string) *kubermaticapiv1.User {
 }
 
 // genDefaultUser generates a default user
-func genDefaultUser() *kubermaticapiv1.User {
+func genDefaultUser() *kubermaticv1.User {
 	userEmail := "bob@acme.com"
 	return genUser("", "Bob", userEmail)
 }
 
 // genProject generates new empty project
-func genProject(name, phase string, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticapiv1.Project {
-	return &kubermaticapiv1.Project{
+func genProject(name, phase string, creationTime time.Time, oRef ...metav1.OwnerReference) *kubermaticv1.Project {
+	return &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              fmt.Sprintf("%s-%s", name, "ID"),
 			CreationTimestamp: metav1.NewTime(creationTime),
 			OwnerReferences:   oRef,
 		},
-		Spec: kubermaticapiv1.ProjectSpec{Name: name},
-		Status: kubermaticapiv1.ProjectStatus{
+		Spec: kubermaticv1.ProjectSpec{Name: name},
+		Status: kubermaticv1.ProjectStatus{
 			Phase: phase,
 		},
 	}
 }
 
 // genDefaultProject generates a default project
-func genDefaultProject() *kubermaticapiv1.Project {
+func genDefaultProject() *kubermaticv1.Project {
 	user := genDefaultUser()
 	oRef := metav1.OwnerReference{
 		APIVersion: "kubermatic.io/v1",
@@ -196,7 +195,7 @@ func genDefaultProject() *kubermaticapiv1.Project {
 		UID:        user.UID,
 		Name:       user.Name,
 	}
-	return genProject("my-first-project", kubermaticapiv1.ProjectActive, defaultCreationTimestamp(), oRef)
+	return genProject("my-first-project", kubermaticv1.ProjectActive, defaultCreationTimestamp(), oRef)
 }
 
 // defaultCreationTimestamp returns default test timestamp
@@ -205,13 +204,13 @@ func defaultCreationTimestamp() time.Time {
 }
 
 // genServiceAccount generates a Service Account resource
-func genServiceAccount(id, name, group, projectName string) *kubermaticapiv1.User {
+func genServiceAccount(id, name, group, projectName string) *kubermaticv1.User {
 	user := genUser(id, name, fmt.Sprintf("serviceaccount-%s@sa.kubermatic.io", id))
 	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
 	user.OwnerReferences = []metav1.OwnerReference{
 		{
-			APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-			Kind:       kubermaticapiv1.ProjectKindName,
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			Kind:       kubermaticv1.ProjectKindName,
 			Name:       projectName,
 			UID:        types.UID(id),
 		},
@@ -224,19 +223,19 @@ func genServiceAccount(id, name, group, projectName string) *kubermaticapiv1.Use
 }
 
 // genBinding generates a binding
-func genBinding(projectID, email, group string) *kubermaticapiv1.UserProjectBinding {
-	return &kubermaticapiv1.UserProjectBinding{
+func genBinding(projectID, email, group string) *kubermaticv1.UserProjectBinding {
+	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("%s-%s-%s", projectID, email, group),
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticapiv1.ProjectKindName,
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.ProjectKindName,
 					Name:       projectID,
 				},
 			},
 		},
-		Spec: kubermaticapiv1.UserProjectBindingSpec{
+		Spec: kubermaticv1.UserProjectBindingSpec{
 			UserEmail: email,
 			ProjectID: projectID,
 			Group:     fmt.Sprintf("%s-%s", group, projectID),
@@ -252,13 +251,13 @@ func genSecret(projectID, saID, name, id string) *v1.Secret {
 	secret.Data = map[string][]byte{}
 	secret.Data["token"] = []byte(TestFakeToken)
 	secret.Labels = map[string]string{
-		kubermaticapiv1.ProjectIDLabelKey: projectID,
-		"name":                            name,
+		kubermaticv1.ProjectIDLabelKey: projectID,
+		"name":                         name,
 	}
 	secret.OwnerReferences = []metav1.OwnerReference{
 		{
-			APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-			Kind:       kubermaticapiv1.UserKindName,
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			Kind:       kubermaticv1.UserKindName,
 			UID:        "",
 			Name:       saID,
 		},
@@ -267,34 +266,34 @@ func genSecret(projectID, saID, name, id string) *v1.Secret {
 	return secret
 }
 
-func genClusterSpec(name string) *kubermaticapiv1.ClusterSpec {
-	return &kubermaticapiv1.ClusterSpec{
-		Cloud: kubermaticapiv1.CloudSpec{
+func genClusterSpec(name string) *kubermaticv1.ClusterSpec {
+	return &kubermaticv1.ClusterSpec{
+		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: "FakeDatacenter",
-			Fake:           &kubermaticapiv1.FakeCloudSpec{Token: "SecretToken"},
+			Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 		},
 		HumanReadableName: name,
 	}
 }
 
-func genCluster(name, clusterType, projectID, workerName, userEmail string) *kubermaticapiv1.Cluster {
-	cluster := &kubermaticapiv1.Cluster{}
+func genCluster(name, clusterType, projectID, workerName, userEmail string) *kubermaticv1.Cluster {
+	cluster := &kubermaticv1.Cluster{}
 
 	labels := map[string]string{
-		kubermaticapiv1.ProjectIDLabelKey: projectID,
+		kubermaticv1.ProjectIDLabelKey: projectID,
 	}
 	if len(workerName) > 0 {
-		labels[kubermaticapiv1.WorkerNameLabelKey] = workerName
+		labels[kubermaticv1.WorkerNameLabelKey] = workerName
 	}
 
 	cluster.Labels = labels
 	cluster.Name = name
-	cluster.Status = kubermaticapiv1.ClusterStatus{
+	cluster.Status = kubermaticv1.ClusterStatus{
 		UserEmail:              userEmail,
 		NamespaceName:          fmt.Sprintf("cluster-%s", name),
 		CloudMigrationRevision: cloud.CurrentMigrationRevision,
 	}
-	cluster.Address = kubermaticapiv1.ClusterAddress{}
+	cluster.Address = kubermaticv1.ClusterAddress{}
 
 	if clusterType == "openshift" {
 		cluster.Annotations = map[string]string{

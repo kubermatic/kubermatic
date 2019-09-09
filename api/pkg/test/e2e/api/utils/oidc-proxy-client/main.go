@@ -163,7 +163,7 @@ func cmd() *cobra.Command {
 				ScopesSupported []string `json:"scopes_supported"`
 			}
 			if err := provider.Claims(&s); err != nil {
-				return fmt.Errorf("Failed to parse provider scopes_supported: %v", err)
+				return fmt.Errorf("failed to parse provider scopes_supported: %v", err)
 			}
 
 			if len(s.ScopesSupported) == 0 {

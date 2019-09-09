@@ -361,6 +361,7 @@ func getTenants(authClient *gophercloud.ProviderClient, region string) ([]osproj
 	sc, err := goopenstack.NewIdentityV3(authClient, gophercloud.EndpointOpts{Region: region})
 	if err != nil {
 		// this is special case for  services that span only one region.
+		//lint:ignore S1020 false positive, we must do the errcheck regardless of if its an ErrEndpointNotFound
 		if _, ok := err.(*gophercloud.ErrEndpointNotFound); ok {
 			sc, err = goopenstack.NewIdentityV3(authClient, gophercloud.EndpointOpts{})
 			if err != nil {

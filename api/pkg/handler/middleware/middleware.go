@@ -14,7 +14,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/util/hash"
 
@@ -281,17 +280,17 @@ func getClusterProvider(ctx context.Context, request interface{}, seedsGetter pr
 	}
 	seeds, err := seedsGetter()
 	if err != nil {
-		return nil, ctx, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		return nil, ctx, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
 	seed, exists := seeds[getter.GetDC()]
 	if !exists {
-		return nil, ctx, errors.NewNotFound("datacenter", getter.GetDC())
+		return nil, ctx, k8cerrors.NewNotFound("datacenter", getter.GetDC())
 	}
 	ctx = context.WithValue(ctx, datacenterContextKey, seed)
 
 	clusterProvider, err := clusterProviderGetter(seed)
 	if err != nil {
-		return nil, ctx, errors.NewNotFound("cluster-provider", getter.GetDC())
+		return nil, ctx, k8cerrors.NewNotFound("cluster-provider", getter.GetDC())
 	}
 
 	return clusterProvider, ctx, nil
