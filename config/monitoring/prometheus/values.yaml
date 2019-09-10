@@ -190,11 +190,11 @@ prometheus:
     prometheus:
       resources:
         requests:
-          cpu: 150m
-          memory: 1Gi
-        limits:
-          cpu: 500m
+          cpu: 1
           memory: 3Gi
+        limits:
+          cpu: 2
+          memory: 6Gi
     backup:
       resources:
         requests:
@@ -231,10 +231,10 @@ prometheus:
       resources:
         requests:
           cpu: 100m
-          memory: 1536Mi
+          memory: 3Gi
         limits:
           cpu: 250m
-          memory: 3Gi
+          memory: 6Gi
     thanosQuery:
       resources:
         requests:
@@ -246,11 +246,11 @@ prometheus:
     thanosCompact:
       resources:
         requests:
-          cpu: 250m
-          memory: 1Gi
-        limits:
-          cpu: 1
+          cpu: 500m
           memory: 4Gi
+        limits:
+          cpu: 2
+          memory: 8Gi
 
   nodeSelector: {}
   affinity:
