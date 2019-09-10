@@ -376,9 +376,19 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		return report, nil
 	}
 
+	return report, r.deleteCluster(report, cluster, log)
+}
+
+func (r *testRunner) deleteCluster(report *reporters.JUnitTestSuite, cluster *kubermaticv1.Cluster, log *zap.SugaredLogger) error {
+
 	deleteParms := &projectclient.DeleteClusterParams{
 		ProjectID: r.kubermatcProjectID,
 		Dc:        r.seed.Name,
+	}
+	deleteTimeout := 15 * time.Minute
+	if cluster.Spec.Cloud.Azure != nil {
+		// 15 Minutes are not enough for Azure
+		deleteTimeout = 30 * time.Minute
 	}
 	deleteParms.SetTimeout(15 * time.Second)
 	if err := junitReporterWrapper(
@@ -389,7 +399,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 			if err != nil {
 				return fmt.Errorf("failed to parse selector: %v", err)
 			}
-			return wait.PollImmediate(5*time.Second, 15*time.Minute, func() (bool, error) {
+			return wait.PollImmediate(5*time.Second, deleteTimeout, func() (bool, error) {
 				clusterList := &kubermaticv1.ClusterList{}
 				listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
 				if err := r.seedClusterClient.List(r.ctx, listOpts, clusterList); err != nil {
@@ -418,10 +428,10 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		},
 	); err != nil {
 		log.Errorw("failed to delete cluster", zap.Error(err))
-		return report, err
+		return err
 	}
 
-	return report, nil
+	return nil
 }
 
 func retryNAttempts(maxAttempts int, f func(attempt int) error) error {
