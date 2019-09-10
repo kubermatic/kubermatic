@@ -9,6 +9,8 @@ cd "$(dirname "$0")/"
 source ./../lib.sh
 
 # Build and push images
+# Do not push them to quay thought, thats just a waste of time
+export SKIP_IMAGE_PUSHING=true
 ./ci-push-images.sh
 
 echodate "Getting secrets from Vault"

@@ -33,6 +33,11 @@ do
     docker tag quay.io/kubermatic/addons:${1} quay.io/kubermatic/addons:${TAG}
     docker tag quay.io/kubermatic/openshift-addons:${1} quay.io/kubermatic/openshift-addons:${TAG}
 
+    if [[ ${SKIP_IMAGE_PUSHING:-} = "true" ]]; then
+      continue
+      echo "Skipping image pushing, because \$SKIP_IMAGE_PUSHING is set to true"
+    fi
+
     docker push quay.io/kubermatic/api:${TAG}
     docker push quay.io/kubermatic/nodeport-proxy:${TAG}
     docker push quay.io/kubermatic/kubeletdnat-controller:${TAG}
