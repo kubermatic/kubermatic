@@ -451,6 +451,32 @@ func (r *APIRunner) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster,
 	return convertCluster(cluster.Payload)
 }
 
+// GetClusterEvents returns the cluster events
+func (r *APIRunner) GetClusterEvents(projectID, dc, clusterID string) ([]*models.Event, error) {
+	params := &project.GetClusterEventsParams{ProjectID: projectID, Dc: dc, ClusterID: clusterID}
+	params.WithTimeout(timeout)
+
+	events, err := r.client.Project.GetClusterEvents(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	return events.Payload, nil
+}
+
+// PrintClusterEvents prints all cluster events using its test.Logf
+func (r *APIRunner) PrintClusterEvents(projectID, dc, clusterID string) error {
+	events, err := r.GetClusterEvents(projectID, dc, clusterID)
+	if err != nil {
+		return fmt.Errorf("failed to get cluster events: %v", err)
+	}
+	encodedEvents, err := json.Marshal(events)
+	if err != nil {
+		return fmt.Errorf("failed to serialize events: %v", err)
+	}
+	r.test.Logf("Cluster events:\n%s", string(encodedEvents))
+	return nil
+}
+
 // GetClusterHealthStatus gets the cluster status
 func (r *APIRunner) GetClusterHealthStatus(projectID, dc, clusterID string) (*apiv1.ClusterHealth, error) {
 	params := &project.GetClusterHealthParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
