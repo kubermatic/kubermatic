@@ -3,6 +3,7 @@
 set -euo pipefail
 
 apk add --no-cache -U git bash openssh
+source $(dirname $0)/../lib.sh
 cd $(dirname $0)/../../..
 git fetch
 export LATEST_VERSION=$(git describe --tags --abbrev=0)
