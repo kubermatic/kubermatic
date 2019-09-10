@@ -7,6 +7,9 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
+# The gocache needs a matching go version to work, so append that to the name
+GO_VERSION="$(go version|awk '{ print $3 }'|sed 's/go//g')"
+
 # Make sure we never error, this is always best-effort only
 exit_gracefully() {
   if [ $? -ne 0 ]; then
@@ -34,6 +37,14 @@ if [ -z ${PULL_NUMBER:-} ]; then
   CACHE_VERSION=$(git rev-parse ${CACHE_VERSION}~1)
 fi
 
+ARCHIVE_NAME="${CACHE_VERSION}-${GO_VERSION}.tar"
+
+# Do not go through the retry loop when there is nothing
+if curl --head ${GOCACHE_MINIO_ADDRESS}/${ARCHIVE_NAME}|grep -q 404; then
+	echodate "Remote has no gocache ${ARCHIVE_NAME}, exitting"
+	exit 0
+fi
+
 echodate "Downloading and extracting gocache"
 TEST_NAME="Download and extract gocache"
 # Passing the Headers as space-separated literals doesn't seem to work
@@ -41,7 +52,7 @@ TEST_NAME="Download and extract gocache"
 echo 'Content-Type: application/octet-stream' > /tmp/headers
 retry 5 curl --fail \
     -H @/tmp/headers \
-    ${GOCACHE_MINIO_ADDRESS}/${CACHE_VERSION}.tar \
+    ${GOCACHE_MINIO_ADDRESS}/${ARCHIVE_NAME} \
     |tar -C $GOCACHE -xf -
 
 echodate "Successfully fetched gocache into $GOCACHE"
