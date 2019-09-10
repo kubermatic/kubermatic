@@ -79,7 +79,10 @@ func TestCreateAWSCluster(t *testing.T) {
 			}
 
 			if !clusterReady {
-				t.Fatalf("cluster is not redy after %d attempts", getAWSMaxAttempts)
+				if err := apiRunner.PrintClusterEvents(project.ID, tc.dc, cluster.ID); err != nil {
+					t.Errorf("failed to print cluster events: %v", err)
+				}
+				t.Fatalf("cluster is not ready after %d attempts", getAWSMaxAttempts)
 			}
 
 			var ndReady bool
