@@ -50,10 +50,12 @@ retry 2 tar -C $GOCACHE -cf $ARCHIVE_FILE .
 
 echodate "Uploading gocache archive"
 TEST_NAME="Uploading gocache archive"
+# The gocache needs a matching go version to work, so append that to the name
+GO_VERSION="$(go version|awk '{ print $3 }'|sed 's/go//g')"
 # Passing the Headers as space-separated literals doesn't seem to work
 # in conjunction with the retry func, so we just put them in a file instead
 echo 'Content-Type: application/octet-stream' > /tmp/headers
 retry 2 curl --fail \
   -T ${ARCHIVE_FILE} \
   -H @/tmp/headers \
-  ${GOCACHE_MINIO_ADDRESS}/${GIT_HEAD_HASH}.tar
+  ${GOCACHE_MINIO_ADDRESS}/${GIT_HEAD_HASH}-${GO_VERSION}.tar
