@@ -43,16 +43,8 @@ func runOIDCProxy(t *testing.T, cancel <-chan struct{}) error {
 	goPathSanitized := strings.Replace(string(gopathRaw), "\n", "", -1)
 	oidcProxyDir := fmt.Sprintf("%s/src/github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/oidc-proxy-client", goPathSanitized)
 
-	makePath, err := exec.LookPath("make")
-	if err != nil {
-		return fmt.Errorf("failed to look up path for `make`: %v", err)
-	}
-
-	oidProxyCommand := &exec.Cmd{
-		Path: makePath,
-		Args: []string{"run"},
-		Dir:  oidcProxyDir,
-	}
+	oidProxyCommand := exec.Command("make", "run")
+	oidProxyCommand.Dir = oidcProxyDir
 
 	errChan := make(chan error, 1)
 	go func() {
