@@ -588,9 +588,19 @@ func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario test
 
 func (r *testRunner) getKubeconfig(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (string, error) {
 	log.Debug("Getting kubeconfig...")
-	kubeconfig, err := r.clusterClientProvider.GetAdminKubeconfig(cluster)
-	if err != nil {
-		return "", fmt.Errorf("failed to load kubeconfig from cluster client provider: %v", err)
+	var kubeconfig []byte
+	// Needed for Openshift where we have to create a SA and bindings inside the cluster
+	// which can only be done after the APIServer is up and ready
+	if err := wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
+		var err error
+		kubeconfig, err = r.clusterClientProvider.GetAdminKubeconfig(cluster)
+		if err != nil {
+			log.Debugw("Failed to get Kubeconfig", zap.Error(err))
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		return "", fmt.Errorf("failed to wait for kubeconfig: %v", err)
 	}
 	filename := path.Join(r.homeDir, fmt.Sprintf("%s-kubeconfig", cluster.Name))
 	if err := ioutil.WriteFile(filename, kubeconfig, 0644); err != nil {
