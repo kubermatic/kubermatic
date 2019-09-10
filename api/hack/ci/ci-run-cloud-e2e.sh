@@ -22,7 +22,6 @@ export KUBERMATIC_HOST="cloud.kubermatic.io"
 (
 cd ${SDIR}/../../pkg/test/e2e/api/utils/oidc-proxy-client
 make build
-make run > /dev/null 2> ./_build/oidc-proxy-client-errors &
 )
 
 export KUBERMATIC_OIDC_USER=${KUBERMATIC_DEX_DEV_E2E_USERNAME:-"roxy@loodse.com"}

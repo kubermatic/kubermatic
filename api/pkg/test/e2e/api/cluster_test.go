@@ -4,7 +4,9 @@ package e2e
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
+	"os/exec"
 	"testing"
 	"time"
 
@@ -29,6 +31,38 @@ func getKubernetesVersion() string {
 	return "v1.14.2"
 }
 
+// runOIDCProxy runs the OIDC proxy. It is non-blocking. It does
+// so by shelling out which is not pretty, but better than the previous
+// approach of forking in a script and having no way of making the test
+// fail of the OIDC failed
+func runOIDCProxy(t *testing.T, cancel <-chan struct{}) error {
+	gopathRaw, err := exec.Command("go", []string{"env", "GOPATH"}).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to get gopath: %v", err)
+	}
+	oidcProxyDir := fmt.Sprintf("%s/src/github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/oidc-proxy-client", string(gopathRaw))
+
+	oidProxyCommand := &exec.Cmd{
+		Path: "make",
+		Args: []string{"run"},
+		Dir:  oidcProxyDir,
+	}
+
+	errChan := make(chan error, 1)
+	go func() {
+		if out, err := oidProxyCommand.CombinedOutput(); err != nil {
+			errChan <- fmt.Errorf("failed to run oidc proxy. Output:\n%s\nError: %v", string(out), err)
+		}
+	}()
+
+	select {
+	case err <- errChan:
+		t.Fatalf("oidc proxy failed: %v", err)
+	case <-cancel:
+		return nil
+	}
+}
+
 func TestCreateAWSCluster(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -45,6 +79,15 @@ func TestCreateAWSCluster(t *testing.T) {
 			replicas:         1,
 		},
 	}
+
+	cancel := make(chan struct{}, 1)
+	if err := runOIDCProxy(t, cancel); err != nil {
+		t.Fatalf("failed to start oidc proxy: %v", err)
+	}
+	defer func() {
+		cancel <- struct{}{}
+	}()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := GetMasterToken()
