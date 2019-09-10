@@ -41,7 +41,7 @@ func runOIDCProxy(t *testing.T, cancel <-chan struct{}) error {
 		return fmt.Errorf("failed to get gopath: %v", err)
 	}
 	goPathSanitized := strings.Replace(string(gopathRaw), "\n", "", -1)
-	oidcProxyDir := fmt.Sprintf("%s/src/github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/oidc-proxy-client", goPathSanitized)
+	oidcProxyDir := fmt.Sprintf("%s/src/github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/oidc-proxy-client", goPathSanitized)
 
 	oidProxyCommand := &exec.Cmd{
 		Path: "make",
