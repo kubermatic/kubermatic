@@ -34,6 +34,8 @@ check: gofmt lint
 
 download-gocache:
 	@./hack/ci/ci-download-gocache.sh
+	@# Prevent this from getting executed multiple times
+	@touch download-gocache
 
 test: download-gocache
 	CGO_ENABLED=1 go test -tags=unit -race ./...
