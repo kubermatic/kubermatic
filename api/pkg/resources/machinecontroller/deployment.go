@@ -144,9 +144,6 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 					},
 				},
 			}
-			// Must be set in order to avoid infinite loops because the IsRunningWrapper
-			// and the openshift controller append to the initContainer
-			dep.Spec.Template.Spec.InitContainers = nil
 
 			return dep, nil
 		}

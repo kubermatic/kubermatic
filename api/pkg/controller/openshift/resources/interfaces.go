@@ -33,4 +33,5 @@ type openshiftData interface {
 	NodeLocalDNSCacheEnabled() bool
 	KubermaticAPIImage() string
 	DNATControllerImage() string
+	GetOauthExternalNodePort() (int32, error)
 }

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubernetesresources "github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
@@ -304,4 +305,16 @@ func (od *openshiftData) DNATControllerImage() string {
 
 func (od *openshiftData) SupportsFailureDomainZoneAntiAffinity() bool {
 	return od.supportsFailureDomainZoneAntiAffinity
+}
+
+func (od *openshiftData) GetOauthExternalNodePort() (int32, error) {
+	svc := &corev1.Service{}
+	name := types.NamespacedName{Namespace: od.cluster.Status.NamespaceName, Name: resources.OauthName}
+	if err := od.client.Get(context.Background(), name, svc); err != nil {
+		return 0, fmt.Errorf("failed to get service: %v", err)
+	}
+	if n := len(svc.Spec.Ports); n != 1 {
+		return 0, fmt.Errorf("expected service to have exactly one port, had %d", n)
+	}
+	return svc.Spec.Ports[0].NodePort, nil
 }

@@ -519,6 +519,9 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		resources.GetInternalKubeconfigCreator(resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, osData),
 		resources.GetInternalKubeconfigCreator(resources.ClusterAutoscalerKubeconfigSecretName, resources.ClusterAutoscalerCertUsername, nil, osData),
 		openshiftresources.ImagePullSecretCreator(osData.Cluster()),
+		openshiftresources.OauthSessionSecretCreator,
+		openshiftresources.OauthOCPBrandingSecretCreator,
+		openshiftresources.OauthTLSServingCertCreator(osData.GetRootCA),
 
 		//TODO: This is only needed because of the ServiceAccount Token needed for Openshift
 		//TODO: Streamline this by using it everywhere and use the clientprovider here or remove
@@ -565,6 +568,7 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 		openvpn.ServerClientConfigsConfigMapCreator(osData),
 		openshiftresources.KubeSchedulerConfigMapCreator,
 		dns.ConfigMapCreator(osData),
+		openshiftresources.OauthConfigMapCreator(osData),
 	}
 }
 
@@ -586,7 +590,8 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 		machinecontroller.WebhookDeploymentCreator(osData),
 		usercluster.DeploymentCreator(osData, true),
 		openshiftresources.OpenshiftNetworkOperatorCreatorFactory(osData),
-		openshiftresources.OpenshiftDNSOperatorFactory(osData)}
+		openshiftresources.OpenshiftDNSOperatorFactory(osData),
+		openshiftresources.OauthDeploymentCreator(osData)}
 
 	if osData.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" {
 		creators = append(creators, clusterautoscaler.DeploymentCreator(osData))
@@ -751,6 +756,7 @@ func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCrea
 		etcd.ServiceCreator(osData),
 		dns.ServiceCreator(),
 		machinecontroller.ServiceCreator(),
+		openshiftresources.OauthServiceCreator(osData.Cluster().Spec.ExposeStrategy),
 	}
 
 	if osData.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
