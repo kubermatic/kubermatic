@@ -176,8 +176,8 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("10m"),
-						corev1.ResourceMemory: resource.MustParse("32Mi"),
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+						corev1.ResourceMemory: resource.MustParse("48Mi"),
 					},
 				}}, {
 				Name:  "envoy",
@@ -204,12 +204,12 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("10m"),
+						corev1.ResourceCPU:    resource.MustParse("50m"),
 						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("10m"),
-						corev1.ResourceMemory: resource.MustParse("32Mi"),
+						corev1.ResourceCPU:    resource.MustParse("100m"),
+						corev1.ResourceMemory: resource.MustParse("64Mi"),
 					},
 				},
 				ReadinessProbe: &corev1.Probe{
@@ -276,7 +276,7 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("10m"),
+						corev1.ResourceCPU:    resource.MustParse("50m"),
 						corev1.ResourceMemory: resource.MustParse("32Mi"),
 					},
 				},
