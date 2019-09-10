@@ -31,7 +31,7 @@ func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorG
 
 			d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{Name: "userdata-plugins",
 				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}})
-			d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
+			d.Spec.Template.Spec.InitContainers = []corev1.Container{{
 				Name:  "copy-userdata-plugin",
 				Image: osData.KubermaticAPIImage() + ":" + resources.KUBERMATICCOMMIT,
 				Command: []string{
@@ -40,7 +40,7 @@ func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorG
 					"/target/machine-controller-userdata-centos",
 				},
 				VolumeMounts: []corev1.VolumeMount{{Name: "userdata-plugins", MountPath: "/target"}},
-			})
+			}}
 			for idx := range d.Spec.Template.Spec.Containers {
 				if d.Spec.Template.Spec.Containers[idx].Name != "machine-controller" {
 					continue

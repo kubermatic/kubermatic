@@ -95,7 +95,6 @@ func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.Name
 				return nil, err
 			}
 
-			d.Spec.Template.Spec.InitContainers = nil
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString("network-operator"))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
