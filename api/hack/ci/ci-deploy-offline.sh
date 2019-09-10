@@ -74,7 +74,7 @@ helm template logging/kibana | ../api/hack/retag-images.sh
 
 # PULL_BASE_REF is the name of the current branch in case of a post-submit
 # or the name of the base branch in case of a PR.
-LATEST_DASHBOARD="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
+LATEST_DASHBOARD="$(get_latest_dashboard_hash master)"
 # We do not build the dashboard image ourselves so we have to pull it
 retry 5 docker pull quay.io/kubermatic/ui-v2:${LATEST_DASHBOARD}
 
