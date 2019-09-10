@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -39,7 +40,8 @@ func runOIDCProxy(t *testing.T, cancel <-chan struct{}) error {
 	if err != nil {
 		return fmt.Errorf("failed to get gopath: %v", err)
 	}
-	oidcProxyDir := fmt.Sprintf("%s/src/github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/oidc-proxy-client", string(gopathRaw))
+	goPathSanitized := strings.ReplaceAll(string(gopathRaw), "\n", "")
+	oidcProxyDir := fmt.Sprintf("%s/src/github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/oidc-proxy-client", goPathSanitized)
 
 	oidProxyCommand := &exec.Cmd{
 		Path: "make",
