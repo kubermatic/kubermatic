@@ -5,11 +5,6 @@ set -euo pipefail
 SDIR=$(dirname $0)
 
 
-function cleanup {
-    cat ${SDIR}/../../pkg/test/e2e/api/utils/oidc-proxy-client/_build/oidc-proxy-client-errors
-}
-trap cleanup EXIT
-
 export KUBERMATIC_OIDC_CLIENT_ID="kubermatic"
 export KUBERMATIC_OIDC_CLIENT_SECRET="ZXhhbXBsZS1hcHAtc2VjcmV0"
 export KUBERMATIC_OIDC_ISSUER="https://cloud.kubermatic.io/dex"

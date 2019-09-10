@@ -3,7 +3,6 @@
 package e2e
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -36,7 +35,7 @@ func getKubernetesVersion() string {
 // approach of forking in a script and having no way of making the test
 // fail of the OIDC failed
 func runOIDCProxy(t *testing.T, cancel <-chan struct{}) error {
-	gopathRaw, err := exec.Command("go", []string{"env", "GOPATH"}).CombinedOutput()
+	gopathRaw, err := exec.Command("go", "env", "GOPATH").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to get gopath: %v", err)
 	}
@@ -56,11 +55,13 @@ func runOIDCProxy(t *testing.T, cancel <-chan struct{}) error {
 	}()
 
 	select {
-	case err <- errChan:
+	case err := <-errChan:
 		t.Fatalf("oidc proxy failed: %v", err)
 	case <-cancel:
 		return nil
 	}
+
+	return nil
 }
 
 func TestCreateAWSCluster(t *testing.T) {
