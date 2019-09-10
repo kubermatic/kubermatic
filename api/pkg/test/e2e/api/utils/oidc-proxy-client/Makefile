@@ -1,4 +1,5 @@
-export CGO_ENABLED?=0
+# CGO must be enabeld, else the OIDC proxy fails
+export CGO_ENABLED = 1
 GO?=go
 GOBUILDFLAGS?=-v
 LDFLAGS += -extldflags '-static'
