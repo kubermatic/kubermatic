@@ -55,7 +55,7 @@ func runOIDCProxy(t *testing.T, cancel <-chan struct{}) error {
 	go func() {
 		select {
 		case err := <-errChan:
-			t.Fatalf("oidc proxy failed: %v", err)
+			t.Errorf("oidc proxy failed: %v", err)
 		case <-cancel:
 			return
 		}
