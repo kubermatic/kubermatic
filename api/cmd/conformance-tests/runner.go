@@ -376,6 +376,11 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		return report, nil
 	}
 
+	return report, r.deleteCluster(report, cluster, log)
+}
+
+func (r *testRunner) deleteCluster(report *reporters.JUnitTestSuite, cluster *kubermaticv1.Cluster, log *zap.SugaredLogger) error {
+
 	deleteParms := &projectclient.DeleteClusterParams{
 		ProjectID: r.kubermatcProjectID,
 		Dc:        r.seed.Name,
@@ -423,10 +428,10 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		},
 	); err != nil {
 		log.Errorw("failed to delete cluster", zap.Error(err))
-		return report, err
+		return err
 	}
 
-	return report, nil
+	return nil
 }
 
 func retryNAttempts(maxAttempts int, f func(attempt int) error) error {
