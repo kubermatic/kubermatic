@@ -158,13 +158,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
-	if limitReached, err := controllerutil.ConcurrencyLimitReached(ctx, r, r.concurrentClusterUpdates); limitReached || err != nil {
-		log.Debugf("ignore reconciling due to max parallel reconcile has reached its limit of %v", r.concurrentClusterUpdates)
-		return reconcile.Result{
-			RequeueAfter: 1 * time.Second,
-		}, err
-	}
-
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kubeapierrors.IsNotFound(err) {
@@ -199,6 +192,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if kubermaticv1.HealthStatusDown == cluster.Status.ExtendedHealth.UserClusterControllerManager {
 		log.Debug("Skipping cluster reconciling because the UserClusterControllerManager is not ready yet")
 		return reconcile.Result{RequeueAfter: healthCheckPeriod}, nil
+	}
+
+	if limitReached, err := controllerutil.ConcurrencyLimitReached(ctx, r, r.concurrentClusterUpdates); limitReached || err != nil {
+		log.Infow("Concurrency limit reached, checking again in 10 seconds", "concurrency-limit", r.concurrentClusterUpdates)
+		return reconcile.Result{
+			RequeueAfter: 10 * time.Second,
+		}, err
 	}
 
 	successfullyReconciled := true
