@@ -56,9 +56,8 @@ func runOIDCProxy(t *testing.T, cancel <-chan struct{}) error {
 
 	errChan := make(chan error, 1)
 	go func() {
-		if out, err := oidProxyCommand.CombinedOutput(); err != nil {
-			errChan <- fmt.Errorf("failed to run oidc proxy. Output:\n%s\nError: %v", string(out), err)
-		}
+		out, err := oidProxyCommand.CombinedOutput()
+		errChan <- fmt.Errorf("failed to run oidc proxy. Output:\n%s\nError: %v", string(out), err)
 	}()
 
 	select {
