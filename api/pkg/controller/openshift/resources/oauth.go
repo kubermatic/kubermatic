@@ -174,7 +174,7 @@ func OauthConfigMapCreator(data openshiftData) reconciling.NamedConfigMapCreator
 	}
 }
 
-// OauthServiceCreator returns the function to reconcile the external OpenVPN service
+// OauthServiceCreator returns the function to reconcile the external Oauth service
 func OauthServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return OauthName, func(se *corev1.Service) (*corev1.Service, error) {
