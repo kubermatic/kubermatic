@@ -90,6 +90,9 @@ fix:
 lint:
 	./hack/ci/ci-run-lint.sh
 
+shellcheck:
+	shellcheck $$(find . -name '*.sh')
+
 cover:
 	./hack/cover.sh --html
 
