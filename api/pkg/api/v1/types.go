@@ -146,16 +146,6 @@ type AWSSize struct {
 // swagger:model AWSSizeList
 type AWSSizeList []AWSSize
 
-// AWSZone represents a object of AWS availability zone.
-// swagger:model AWSZone
-type AWSZone struct {
-	Name string `json:"name"`
-}
-
-// AWSZoneList represents an array of AWS availability zones.
-// swagger:model AWSZoneList
-type AWSZoneList []AWSZone
-
 // AWSSubnetList represents an array of AWS availability subnets.
 // swagger:model AWSSubnetList
 type AWSSubnetList []AWSSubnet
