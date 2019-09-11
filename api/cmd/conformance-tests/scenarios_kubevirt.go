@@ -62,7 +62,7 @@ func (s *kubevirtScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec
 	}
 }
 
-func (s *kubevirtScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDeployment {
+func (s *kubevirtScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	var sourceURL string
 
 	switch {
@@ -96,7 +96,7 @@ func (s *kubevirtScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeD
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func (s *kubevirtScenario) OS() apimodels.OperatingSystemSpec {
