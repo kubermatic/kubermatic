@@ -25,6 +25,27 @@ export ONLY_TEST_CREATION=${ONLY_TEST_CREATION:-false}
 export PULL_BASE_REF=${PULL_BASE_REF:-$(git rev-parse --abbrev-ref HEAD)}
 export PULL_BASE_SHA=${PULL_BASE_SHA:-$GIT_HEAD_HASH}
 
+# for clarity, common arguments are presented once
+function boskosctl() {
+    boskos_server=${boskos_server:-http://boskos.boskos.svc.cluster.local.}
+    identifier=kubermatic-conformance-tests
+    boskosctl --server-url "${boskos_server}" --owner-name "${identifier}" "${@}"
+}
+
+# Using boskos is best-effort for now and should not make jobs fail
+set +e
+boskos_resource="$(boskosctl acquire --type aws-account --state free--target-state owned --timeout 10m)"
+if [[ $? -eq 0 ]]; then
+  local boskos_resource_name; boskos_resource_name="$(echo $BOSKOS_RESPONSE|jq '.name' -r)"
+  echodate "Successfully acquired boskos resource $boskos_resource_name"
+  boskosctl heartbeat --resource "${resource}" &
+  AWS_E2E_TESTS_KEY_ID="$(echo $boskos_resource|jq '.userdata["access-key-id"]' -r)"
+  AWS_E2E_TESTS_SECRET="$(echo $boskos_resource|jq '.userdata["secret-access-key"]' -r)"
+else
+  echodate "Error acquiring boskos resource"
+fi
+set -e
+
 # if no provider argument has been specified, default to aws
 provider=${PROVIDER:-"aws"}
 
@@ -43,6 +64,9 @@ function cleanup {
 
   echodate "Starting cleanup"
   set +e
+
+  local resource_name; resource_name="$(jq .name <<<"${boskos_resource}")"
+  boskosctl release --name "${resource_name}" --target-state dirty
 
   # Try being a little helpful
   if [[ ${testRC} -ne 0 ]]; then
