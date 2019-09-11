@@ -312,6 +312,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	registerMetrics()
 
 	mainRouter := mux.NewRouter()
+	mainRouter.Use(setSecureHeaders)
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
 	r.RegisterV1(v1Router, metrics)
 	r.RegisterV1Legacy(v1Router)
@@ -354,6 +355,36 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	}
 
 	return instrumentHandler(mainRouter, lookupRoute), nil
+}
+
+func setSecureHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// ContentSecurityPolicy sets the `Content-Security-Policy` header providing
+		// security against cross-site scripting (XSS), clickjacking and other code
+		// injection attacks resulting from execution of malicious content in the
+		// trusted web page context. Reference: https://w3c.github.io/webappsec-csp/
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; object-src 'self'; style-src 'self'; img-src 'self'; media-src 'self'; frame-ancestors 'self'; frame-src 'self'; connect-src 'self'")
+		// XFrameOptions can be used to indicate whether or not a browser should
+		// be allowed to render a page in a <frame>, <iframe> or <object> .
+		// Sites can use this to avoid clickjacking attacks, by ensuring that their
+		// content is not embedded into other sites.provides protection against
+		// clickjacking.
+		// Optional. Default value "SAMEORIGIN".
+		// Possible values:
+		// - "SAMEORIGIN" - The page can only be displayed in a frame on the same origin as the page itself.
+		// - "DENY" - The page cannot be displayed in a frame, regardless of the site attempting to do so.
+		// - "ALLOW-FROM uri" - The page can only be displayed in a frame on the specified origin.
+		w.Header().Set("X-Frame-Options", "DENY")
+		// XSSProtection provides protection against cross-site scripting attack (XSS)
+		// by setting the `X-XSS-Protection` header.
+		// Optional. Default value "1; mode=block".
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
+		// ContentTypeNosniff provides protection against overriding Content-Type
+		// header by setting the `X-Content-Type-Options` header.
+		// Optional. Default value "nosniff".
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		next.ServeHTTP(w, r)
+	})
 }
 
 func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, seedClientGetter provider.SeedClientGetter, workerName string, oidcKubeCfgEndpointEnabled bool) provider.ClusterProviderGetter {
