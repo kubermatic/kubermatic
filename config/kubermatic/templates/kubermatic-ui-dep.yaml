@@ -13,6 +13,7 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/ui-config-configmap.yaml") . | sha256sum }}
+        fluentbit.io/parser: json_iso
       labels:
         role: kubermatic-ui
         version: v1
