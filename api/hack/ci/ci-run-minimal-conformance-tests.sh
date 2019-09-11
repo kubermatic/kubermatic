@@ -306,7 +306,7 @@ fi
 # we default it in that case.
 #
 # The env var is named `UPGRADE_TEST_BASE_HASH`, but we really only specify release branch heads with it.
-LATEST_DASHBOARD="$(get_latest_dashboard_hash "${UPGRADE_TEST_BASE_HASH:-$PULL_BASE_REF}")"
+LATEST_DASHBOARD=43037e8f118f0e310cfcae713bc2b3bd1a2c8496
 
 # We must delete all templates for cluster-scoped resources
 # because those already exist because of the main Kubermatic installation
