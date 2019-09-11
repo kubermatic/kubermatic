@@ -33,7 +33,11 @@ ENV PATH=$PATH:/usr/local/go/bin
 ENV GOPATH /go
 RUN curl -fL -o /tmp/golang.tag.gz https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf /tmp/golang.tag.gz && \
-    rm /tmp/golang.tag.gz
+    rm /tmp/golang.tag.gz && \
+    git clone https://github.com/kubernetes/test-infra.git $GOPATH/src/k8s.io/test-infra && \
+    cd $GOPATH/src/k8s.io/test-infra && \
+    git checkout 9601c165917cab9b850f24453365f1177aa934f0 && \
+    CGO_ENABLED=0 GO111MODULE=on GOPROXY=https://goproxy.io go build -v -o /usr/local/bin/boskosctl ./boskos/cmd/cli
 
 # Install the kubetest binary
 RUN GO111MODULE=on GOPROXY="https://proxy.golang.org" go get -v k8s.io/test-infra/kubetest@${KUBETEST_COMMIT} && \
