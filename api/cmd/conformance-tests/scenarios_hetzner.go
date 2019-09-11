@@ -56,7 +56,7 @@ func (s *hetznerScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 	}
 }
 
-func (s *hetznerScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDeployment {
+func (s *hetznerScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 	nodeType := "cx31"
 
@@ -77,7 +77,7 @@ func (s *hetznerScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDe
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func (s *hetznerScenario) OS() apimodels.OperatingSystemSpec {
