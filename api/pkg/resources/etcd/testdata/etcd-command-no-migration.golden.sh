@@ -9,11 +9,11 @@ echo "initial-state: ${INITIAL_STATE}"
 echo "initial-cluster: ${INITIAL_CLUSTER}"
 
 exec /usr/local/bin/etcd \
-    --name=${POD_NAME} \
+    --name="${POD_NAME}" \
     --data-dir="/var/run/etcd/pod_${POD_NAME}/" \
-    --initial-cluster=${INITIAL_CLUSTER} \
+    --initial-cluster="${INITIAL_CLUSTER}" \
     --initial-cluster-token="lg69pmx8wf" \
-    --initial-cluster-state=${INITIAL_STATE} \
+    --initial-cluster-state="${INITIAL_STATE}" \
     --advertise-client-urls "https://${POD_NAME}.etcd.cluster-lg69pmx8wf.svc.cluster.local:2379,https://${POD_IP}:2379" \
     --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
     --listen-peer-urls "http://${POD_IP}:2380" \
