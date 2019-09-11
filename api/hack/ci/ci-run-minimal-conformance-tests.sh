@@ -29,15 +29,14 @@ export PULL_BASE_SHA=${PULL_BASE_SHA:-$GIT_HEAD_HASH}
 function boskosctl() {
     boskos_server=${boskos_server:-http://boskos.boskos.svc.cluster.local.}
     identifier=kubermatic-conformance-tests
-    echo stderrTest >/dev/stderr
-    boskosctl --server-url "${boskos_server}" --owner-name "${identifier}" "${@}"
+    $(which boskosctl) --server-url "${boskos_server}" --owner-name "${identifier}" "${@}"
 }
 
 # Using boskos is best-effort for now and should not make jobs fail
 set +e
 boskos_resource="$(boskosctl acquire --type aws-account --state clean --target-state used --timeout 10s)"
 if [[ "$?" = "0" ]]; then
-  boskos_resource_name; boskos_resource_name="$(echo $boskos_resource|jq '.name' -r)"
+  boskos_resource_name="$(echo $boskos_resource|jq '.name' -r)"
   echodate "Successfully acquired boskos resource $boskos_resource_name"
   boskosctl heartbeat --resource "${boskos_resource}" &
   AWS_E2E_TESTS_KEY_ID="$(echo $boskos_resource|jq '.userdata["access-key-id"]' -r)"
