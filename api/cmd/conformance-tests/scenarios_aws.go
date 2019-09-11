@@ -92,6 +92,12 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.Nod
 		return nil, errors.New("got zero vpcs back")
 	}
 	vpcID := vpcResponse.Payload[0].VpcID
+	for _, vpc := range vpcResponse.Payload {
+		if vpc.IsDefault {
+			vpcID = vpc.VpcID
+			break
+		}
+	}
 
 	listSubnetParams := &awsapiclient.ListAWSSubnetsParams{
 		AccessKeyID:     utilpointer.StringPtr(secrets.AWS.AccessKeyID),
