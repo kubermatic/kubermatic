@@ -319,7 +319,7 @@ helm repo update
 helm install --wait --timeout 180 \
 	--tiller-namespace=${NAMESPACE} \
 	--namespace ${LOCAL_PROVISIONER_NAMESPACE} \
-	--set storageClass.name=${KUBERMATIC_STORAGE_CLASS_NAME} \
+	--set storageClass.name=kubermatic-fast \
 	--name hostpath-provisioner rimusz/hostpath-provisioner
 
 TEST_NAME="Deploying dex"
