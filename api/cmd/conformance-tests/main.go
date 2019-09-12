@@ -116,6 +116,8 @@ type secrets struct {
 	Kubevirt struct {
 		Kubeconfig string
 	}
+	kubermaticClient        *apiclient.Kubermatic
+	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
 
 const (
@@ -245,6 +247,8 @@ func main() {
 	}
 	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{"http"}), nil)
 	opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
+	opts.secrets.kubermaticClient = opts.kubermaticClient
+	opts.secrets.kubermaticAuthenticator = opts.kubermaticAuthenticator
 
 	if opts.openshift {
 		opts.openshiftPullSecret = os.Getenv("OPENSHIFT_IMAGE_PULL_SECRET")
