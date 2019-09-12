@@ -1,0 +1,30 @@
+karma:
+  kubermaticNamespace: kubermatic
+  images:
+    karma:
+      repository: docker.io/lmierzwa/karma
+      tag: v0.43
+      pullPolicy: IfNotPresent
+    initContainer:
+      repository: quay.io/kubermatic/util
+      tag: 1.1.2
+      pullPolicy: IfNotPresent
+  resources:
+    karma:
+      requests:
+        cpu: 50m
+        memory: 32Mi
+      limits:
+        cpu: 200m
+        memory: 48Mi
+  nodeSelector: {}
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app: '{{ template "name" . }}'
+          topologyKey: kubernetes.io/hostname
+        weight: 100
+  tolerations: []

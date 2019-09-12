@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ template "name" . }}-config'
+  labels:
+    app.kubernetes.io/name: karma
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/version: '{{ .Chart.Version }}'
+    app.kubernetes.io/managed-by: helm
+data:
+  karma.yaml: |
+    log:
+      config: false
+      level: warning
+      format: json
+
+    filters:
+      default:
+      # only show active alerts
+      - "@state=active"
+
+    receivers:
+      strip:
+      # prevent alerts from showing up multiple times
+      - '@critical-alerts'
+
+    alertmanager:
+      interval: 60s
+      servers:
