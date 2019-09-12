@@ -65,3 +65,9 @@ spec:
           name: '{{ template "name" . }}-config'
       - name: shared-config
         emptyDir: {}
+      nodeSelector:
+{{ toYaml .Values.karma.nodeSelector | indent 8 }}
+      affinity:
+{{ (tpl (toYaml .Values.karma.affinity) .) | fromYaml | toYaml | indent 8 }}
+      tolerations:
+{{ toYaml .Values.karma.tolerations | indent 8 }}
