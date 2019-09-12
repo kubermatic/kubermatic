@@ -155,7 +155,7 @@ kubectl apply -f ${KUBERMATIC_CRD_PATH}
 TEST_NAME="Get kind cluster Kubeconfig"
 echodate "Get kind cluster Kubeconfig"
 KUBECONFIG_PARSED=$(mktemp)
-cp ${KUBECONFIG_PATH} ${KUBECONFIG_PARSED}
+cp ${KUBECONFIG} ${KUBECONFIG_PARSED}
 KUBECONFIG_PATH=${KUBECONFIG_PARSED}
 yq w -i ${KUBECONFIG_PATH} clusters[0].name ${SEED_NAME}
 yq w -i ${KUBECONFIG_PATH} contexts[0].name ${SEED_NAME}
