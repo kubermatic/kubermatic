@@ -7,19 +7,9 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
-
-func init() {
-	// We call this in init because even though it is possible to register the same
-	// scheme multiple times it is an unprotected concurrent map access and these tests
-	// are very good at making that panic
-	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		panic(err)
-	}
-}
 
 func TestValidate(t *testing.T) {
 	fakeProviderSpec := kubermaticv1.DatacenterSpec{

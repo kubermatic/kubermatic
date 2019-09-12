@@ -12,19 +12,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilpointer "k8s.io/utils/pointer"
 
-	"k8s.io/client-go/kubernetes/scheme"
-
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
-
-func init() {
-	// We call this in init because even thought it is possible to register the same
-	// scheme multiple times it is an unprotected concurrent map access and these tests
-	// are very good at making that panic
-	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		panic(err)
-	}
-}
 
 func TestConcurrencyLimitReached(t *testing.T) {
 	concurrencyLimitReachedTestCases := []struct {

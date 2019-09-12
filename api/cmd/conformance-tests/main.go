@@ -312,9 +312,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		log.Fatalf("failed to add kubermatic scheme to mgr: %v", err)
-	}
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		log.Fatalf("failed to add clusterv1alpha1 to scheme: %v", err)
 	}

@@ -3,12 +3,10 @@ package monitoring
 import (
 	"testing"
 
-	kubermaticscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -17,10 +15,6 @@ const (
 )
 
 func newTestReconciler(t *testing.T, objects []runtime.Object) *Reconciler {
-	if err := kubermaticscheme.AddToScheme(scheme.Scheme); err != nil {
-		t.Fatalf("failed to add kubermatic scheme: %v", err)
-	}
-
 	dynamicClient := ctrlruntimefakeclient.NewFakeClient(objects...)
 	reconciler := &Reconciler{
 		Client:               dynamicClient,
