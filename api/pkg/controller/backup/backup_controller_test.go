@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	kubermaticscheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -13,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	certutil "k8s.io/client-go/util/cert"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -30,10 +28,6 @@ var (
 )
 
 func TestEnsureBackupCronJob(t *testing.T) {
-	if err := kubermaticscheme.AddToScheme(scheme.Scheme); err != nil {
-		t.Fatalf("failed to add kubermatic scheme: %v", err)
-	}
-
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",

@@ -11,7 +11,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
-	"k8s.io/client-go/kubernetes/scheme"
 
 	controllerclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -97,11 +96,7 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 				objs = append(objs, test.existingProject)
 			}
 
-			scheme := scheme.Scheme
-			if err := kubermaticv1.AddToScheme(scheme); err != nil {
-				t.Fatal(err)
-			}
-			kubermaticFakeClient := fake.NewFakeClientWithScheme(scheme, objs...)
+			kubermaticFakeClient := fake.NewFakeClient(objs...)
 
 			// act
 			target := reconcileSyncProjectBinding{ctx: context.TODO(), Client: kubermaticFakeClient}
@@ -186,11 +181,7 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 				objs = append(objs, test.existingProject)
 			}
 
-			scheme := scheme.Scheme
-			if err := kubermaticv1.AddToScheme(scheme); err != nil {
-				t.Fatal(err)
-			}
-			kubermaticFakeClient := fake.NewFakeClientWithScheme(scheme, objs...)
+			kubermaticFakeClient := fake.NewFakeClient(objs...)
 
 			// act
 			target := reconcileSyncProjectBinding{ctx: context.TODO(), Client: kubermaticFakeClient}

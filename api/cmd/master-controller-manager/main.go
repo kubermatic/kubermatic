@@ -10,7 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	metricserver "github.com/kubermatic/kubermatic/api/pkg/metrics/server"
@@ -20,7 +19,6 @@ import (
 	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -82,10 +80,6 @@ func main() {
 		sugarLog.Fatalw("Failed to create the label selector for the given worker", "workerName", runOpts.workerName, zap.Error(err))
 	}
 
-	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to add kubermaticv1 scheme to scheme.Scheme", zap.Error(err))
-	}
-
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_master_controller_manager", prometheus.DefaultRegisterer)
 
@@ -120,9 +114,6 @@ func main() {
 	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: ""})
 	if err != nil {
 		sugarLog.Fatalw("failed to create Controller Manager instance", zap.Error(err))
-	}
-	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
-		sugarLog.Fatalw("failed to register types in Scheme", zap.Error(err))
 	}
 	ctrlCtx.mgr = mgr
 	ctrlCtx.seedsGetter, err = provider.SeedsGetterFactory(ctx, ctrlCtx.mgr.GetClient(), runOpts.dcFile, ctrlCtx.namespace, runOpts.workerName, runOpts.dynamicDatacenters)

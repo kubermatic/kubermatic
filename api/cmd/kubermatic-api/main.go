@@ -77,9 +77,6 @@ func main() {
 	}()
 	kubermaticlog.Logger = log
 
-	if err := kubermaticv1.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
-	}
 	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}

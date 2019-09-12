@@ -61,9 +61,6 @@ func init() {
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to add clusterv1alpha1 scheme to scheme.Scheme", "error", err)
 	}
-	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to add kubermaticv1 scheme to scheme.Scheme", "error", err)
-	}
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme v1beta1", "error", err)
 	}

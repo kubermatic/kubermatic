@@ -12,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -96,9 +95,6 @@ func TestCreateAddon(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-			t.Fatalf("failed to add kubermaticv1 scheme to scheme.Scheme: %v", err)
-		}
 
 		t.Run(test.name, func(t *testing.T) {
 			objs := []runtime.Object{test.cluster}

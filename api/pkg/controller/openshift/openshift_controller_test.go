@@ -90,11 +90,7 @@ func TestResources(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			ctrlruntimelog.SetLogger(ctrlruntimelog.ZapLogger(true))
-			if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-				t.Fatalf("failed to add kubermatic scheme to mgr: %v", err)
-			}
 			if err := autoscalingv1beta2.AddToScheme(scheme.Scheme); err != nil {
 				t.Fatalf("failed to add the autoscaling.k8s.io scheme to mgr: %v", err)
 			}
