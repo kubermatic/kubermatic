@@ -391,6 +391,16 @@ type User struct {
 	// Projects holds the list of project the user belongs to
 	// along with the group names
 	Projects []ProjectGroup `json:"projects,omitempty"`
+
+	Settings UserSettings `json:"userSettings,omitempty"`
+}
+
+// UserSettings represent an API user settings
+// swagger:model UserSettings
+type UserSettings struct {
+	SelectedTheme     string `json:"selectedTheme,omitempty"`
+	ItemsPerPage      int8   `json:"itemsPerPage,omitempty"`
+	SelectedProjectID string `json:"selectedProjectId,omitempty"`
 }
 
 // ProjectGroup is a helper data structure that
