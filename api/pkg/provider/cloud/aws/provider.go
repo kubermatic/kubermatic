@@ -622,25 +622,6 @@ func (a *AmazonEC2) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newS
 	return nil
 }
 
-// GetAvailabilityZonesInRegion returns the list of availability zones in the selected AWS region.
-func GetAvailabilityZonesInRegion(accessKeyID, secretAccessKey, region string) ([]*ec2.AvailabilityZone, error) {
-	client, err := GetClientSet(accessKeyID, secretAccessKey, region)
-	if err != nil {
-		return nil, err
-	}
-
-	filters := []*ec2.Filter{
-		{Name: aws.String("region-name"), Values: []*string{aws.String(region)}},
-	}
-	azinput := &ec2.DescribeAvailabilityZonesInput{Filters: filters}
-	out, err := client.EC2.DescribeAvailabilityZones(azinput)
-	if err != nil {
-		return nil, err
-	}
-
-	return out.AvailabilityZones, nil
-}
-
 // GetSubnets returns the list of subnets for a selected AWS vpc.
 func GetSubnets(accessKeyID, secretAccessKey, region, vpcID string) ([]*ec2.Subnet, error) {
 	client, err := GetClientSet(accessKeyID, secretAccessKey, region)

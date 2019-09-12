@@ -169,64 +169,6 @@ func (a *Client) ListAWSVPCS(params *ListAWSVPCSParams, authInfo runtime.ClientA
 
 }
 
-/*
-ListAWSZones Lists available AWS zones
-*/
-func (a *Client) ListAWSZones(params *ListAWSZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSZonesOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListAWSZonesParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "listAWSZones",
-		Method:             "GET",
-		PathPattern:        "/api/v1/providers/aws/{dc}/zones",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &ListAWSZonesReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*ListAWSZonesOK), nil
-
-}
-
-/*
-ListAWSZonesNoCredentials Lists available AWS zones
-*/
-func (a *Client) ListAWSZonesNoCredentials(params *ListAWSZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSZonesNoCredentialsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListAWSZonesNoCredentialsParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "listAWSZonesNoCredentials",
-		Method:             "GET",
-		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/zones",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &ListAWSZonesNoCredentialsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*ListAWSZonesNoCredentialsOK), nil
-
-}
-
 // SetTransport changes the transport on the client
 func (a *Client) SetTransport(transport runtime.ClientTransport) {
 	a.transport = transport
