@@ -26,7 +26,7 @@ export PULL_BASE_REF=${PULL_BASE_REF:-$(git rev-parse --abbrev-ref HEAD)}
 export PULL_BASE_SHA=${PULL_BASE_SHA:-$GIT_HEAD_HASH}
 
 KUBERMATIC_PATH=$(go env GOPATH)/src/github.com/kubermatic/kubermatic
-KUBERMATIC_CRD_PATH=${KUBERMATIC_PATH}/crd
+KUBERMATIC_CRD_PATH=${KUBERMATIC_PATH}/config/kubermatic/crd
 KUBERMATIC_HELM_PATH=${KUBERMATIC_PATH}/helm/kubermatic
 KUBERMATIC_IMAGE="quay.io/kubermatic/"
 KUBERMATIC_IMAGE_TAG=${1:-"latest"}
