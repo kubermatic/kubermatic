@@ -67,7 +67,7 @@ func (s *packetScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	}
 }
 
-func (s *packetScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDeployment {
+func (s *packetScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	instanceType := "t1.small.x86"
 	replicas := int32(num)
 	return []apimodels.NodeDeployment{
@@ -87,7 +87,7 @@ func (s *packetScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDep
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func (s *packetScenario) OS() apimodels.OperatingSystemSpec {

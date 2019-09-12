@@ -68,7 +68,7 @@ func (s *azureScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	}
 }
 
-func (s *azureScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDeployment {
+func (s *azureScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 	size := "Standard_F2"
 	return []apimodels.NodeDeployment{
@@ -88,7 +88,7 @@ func (s *azureScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDepl
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func (s *azureScenario) OS() apimodels.OperatingSystemSpec {

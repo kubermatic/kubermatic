@@ -30,7 +30,6 @@ import (
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -55,7 +54,7 @@ var (
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *apimodels.CreateClusterSpec
-	NodeDeployments(num int, secrets secrets) []apimodels.NodeDeployment
+	NodeDeployments(num int, secrets secrets) ([]apimodels.NodeDeployment, error)
 	OS() apimodels.OperatingSystemSpec
 }
 
@@ -335,7 +334,6 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		return nil, fmt.Errorf("failed to get the client for the cluster: %v", err)
 	}
 
-	nodeDeployments := scenario.NodeDeployments(r.nodeCount, r.secrets)
 	if err := junitReporterWrapper(
 		"[Kubermatic] Create NodeDeployments",
 		report,
@@ -367,7 +365,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 	}
 
 	if !r.onlyTestCreation {
-		if err := r.testCluster(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, kubeconfigFilename, cloudConfigFilename, report); err != nil {
+		if err := r.testCluster(log, scenario, cluster, userClusterClient, kubeconfigFilename, cloudConfigFilename, report); err != nil {
 			return report, fmt.Errorf("failed to test cluster: %v", err)
 		}
 	}
@@ -448,10 +446,9 @@ func retryNAttempts(maxAttempts int, f func(attempt int) error) error {
 
 func (r *testRunner) testCluster(
 	log *zap.SugaredLogger,
-	scenarioName string,
+	scenario testScenario,
 	cluster *kubermaticv1.Cluster,
 	userClusterClient ctrlruntimeclient.Client,
-	nd []apimodels.NodeDeployment,
 	kubeconfigFilename string,
 	cloudConfigFilename string,
 	report *reporters.JUnitTestSuite,
@@ -465,7 +462,7 @@ func (r *testRunner) testCluster(
 		return nil
 	}
 
-	ginkgoRuns, err := r.getGinkgoRuns(log, scenarioName, kubeconfigFilename, cloudConfigFilename, cluster, nd)
+	ginkgoRuns, err := r.getGinkgoRuns(log, scenario, kubeconfigFilename, cloudConfigFilename, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get Ginkgo runs: %v", err)
 	}
@@ -570,7 +567,18 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *zap.SugaredLogger, run *gi
 
 func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario testScenario, clusterName string) error {
 	log.Info("Creating NodeDeployments via kubermatic API")
-	nodeDeployments := scenario.NodeDeployments(r.nodeCount, r.secrets)
+	var nodeDeployments []apimodels.NodeDeployment
+	var err error
+	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+		nodeDeployments, err = scenario.NodeDeployments(r.nodeCount, r.secrets)
+		if err != nil {
+			log.Info("Getting NodeDeployments from scenario failed", zap.Error(err))
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		return fmt.Errorf("didn't get NodeDeployments from scenario within a minute: %v", err)
+	}
 
 	for _, nd := range nodeDeployments {
 		params := &projectclient.CreateNodeDeploymentParams{
@@ -809,20 +817,16 @@ type ginkgoRun struct {
 
 func (r *testRunner) getGinkgoRuns(
 	log *zap.SugaredLogger,
-	scenarioName,
+	scenario testScenario,
 	kubeconfigFilename,
 	cloudConfigFilename string,
 	cluster *kubermaticv1.Cluster,
-	nd []apimodels.NodeDeployment,
 ) ([]*ginkgoRun, error) {
 	kubeconfigFilename = path.Clean(kubeconfigFilename)
 	repoRoot := path.Clean(r.repoRoot)
 	MajorMinor := fmt.Sprintf("%d.%d", cluster.Spec.Version.Major(), cluster.Spec.Version.Minor())
 
-	nodeNumberTotal := int32(0)
-	for _, ndi := range nd {
-		nodeNumberTotal += *ndi.Spec.Replicas
-	}
+	nodeNumberTotal := int32(r.nodeCount)
 
 	runs := []struct {
 		name          string
@@ -848,7 +852,7 @@ func (r *testRunner) getGinkgoRuns(
 	var ginkgoRuns []*ginkgoRun
 	for _, run := range runs {
 
-		reportsDir := path.Join("/tmp", scenarioName, run.name)
+		reportsDir := path.Join("/tmp", scenario.Name(), run.name)
 		env := []string{
 			fmt.Sprintf("HOME=%s", r.homeDir),
 			fmt.Sprintf("AWS_SSH_KEY=%s", path.Join(r.homeDir, ".ssh", "google_compute_engine")),
@@ -877,16 +881,7 @@ func (r *testRunner) getGinkgoRuns(
 
 		args = append(args, "--provider=local")
 
-		// verify that all operating system specs are identical
-		var osSpec *apimodels.OperatingSystemSpec
-		for i, ndi := range nd {
-			if osSpec == nil {
-				osSpec = ndi.Spec.Template.OperatingSystem
-			} else if !equality.Semantic.DeepEqual(osSpec, ndi.Spec.Template.OperatingSystem) {
-				return nil, fmt.Errorf("node deployment #%d has OS specification different from node deployment #0: %+v != %+v", i, ndi.Spec.Template.OperatingSystem, osSpec)
-			}
-		}
-
+		osSpec := scenario.OS()
 		switch {
 		case osSpec.Ubuntu != nil:
 			args = append(args, "--node-os-distro=ubuntu")
