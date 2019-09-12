@@ -151,11 +151,11 @@ func (r *Reconciler) ensureSeedServiceAccounts(client ctrlruntimeclient.Client) 
 
 func (r *Reconciler) ensureSeedRoles(client ctrlruntimeclient.Client) error {
 	creators := []reconciling.NamedRoleCreatorGetter{
-		seedPrometheusRoleCreator(),
+		seedMonitoringRoleCreator(),
 	}
 
-	if err := reconciling.ReconcileRoles(r.ctx, creators, SeedPrometheusNamespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", SeedPrometheusNamespace, err)
+	if err := reconciling.ReconcileRoles(r.ctx, creators, SeedMonitoringNamespace, client); err != nil {
+		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", SeedMonitoringNamespace, err)
 	}
 
 	return nil
@@ -163,11 +163,11 @@ func (r *Reconciler) ensureSeedRoles(client ctrlruntimeclient.Client) error {
 
 func (r *Reconciler) ensureSeedRoleBindings(client ctrlruntimeclient.Client) error {
 	creators := []reconciling.NamedRoleBindingCreatorGetter{
-		seedPrometheusRoleBindingCreator(),
+		seedMonitoringRoleBindingCreator(),
 	}
 
-	if err := reconciling.ReconcileRoleBindings(r.ctx, creators, SeedPrometheusNamespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile RoleBindings in the namespace %s: %v", SeedPrometheusNamespace, err)
+	if err := reconciling.ReconcileRoleBindings(r.ctx, creators, SeedMonitoringNamespace, client); err != nil {
+		return fmt.Errorf("failed to reconcile RoleBindings in the namespace %s: %v", SeedMonitoringNamespace, err)
 	}
 
 	return nil
