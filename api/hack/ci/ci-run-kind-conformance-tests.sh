@@ -303,12 +303,10 @@ if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   build_tag_if_not_exists "$UPGRADE_TEST_BASE_HASH"
 fi
 
-# PULL_BASE_REF is the name of the current branch in case of a post-submit
-# or the name of the base branch in case of a PR. It is unset for Periodics, but
-# we default it in that case.
-#
-# The env var is named `UPGRADE_TEST_BASE_HASH`, but we really only specify release branch heads with it.
-LATEST_DASHBOARD="$(get_latest_dashboard_hash "${UPGRADE_TEST_BASE_HASH:-$PULL_BASE_REF}")"
+# Hardcoded as the only thing these tests test about the dashboard is that the pod comes up. In order to
+# not introduce a dependency on the dashboard push postsubmit being successfully run, we just harcode it
+# here.
+LATEST_DASHBOARD=43037e8f118f0e310cfcae713bc2b3bd1a2c8496
 
 # TODO(xmudrii): Check do we need the hostpath-provisioner.
 TEST_NAME="Deploying hostpath-provisioner"
