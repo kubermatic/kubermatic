@@ -1,6 +1,8 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-cd $(dirname $0)
+set -euo pipefail
+
+cd "$(dirname "$0")"
 
 # Install yq if not installed
 if ! [ -x "$(command -v yq)" ]; then
@@ -13,7 +15,7 @@ fi
 comment="# This file has been generated, do not edit."
 
 for file in */*.yaml; do
-  newfile=$(dirname $file)-$(basename $file)
+  newfile="$(dirname "$file")-$(basename "$file")"
   echo "$file => $newfile"
-  yq r $file -j | jq 'del(.groups[].rules[].runbook)' | (echo "$comment"; yq r -) > ../$newfile
+  yq r "$file" -j | jq 'del(.groups[].rules[].runbook)' | (echo "$comment"; yq r -) > "../$newfile"
 done

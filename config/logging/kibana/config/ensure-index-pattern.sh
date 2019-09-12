@@ -12,6 +12,7 @@ kibana() {
 
 ensure_index_pattern() {
    output=$(kibana --show-error --connect-timeout 1 "${KIBANA_URL}/api/status")
+   # shellcheck disable=SC2181
    if [ $? -ne 0 ] || [ "${output:0:1}" != "{" ]; then
       echo "Kibana is not yet available."
       return 1

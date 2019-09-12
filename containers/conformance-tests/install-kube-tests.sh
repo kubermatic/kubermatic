@@ -40,7 +40,7 @@ for VERSION in 1.{13..15}; do
         rm -rf ${DIRECTORY}/platforms/linux/amd64/genswaggertypedocs
         rm -rf ${DIRECTORY}/platforms/linux/amd64/genyaml
         rm -rf ${DIRECTORY}/platforms/linux/amd64/kubemark
-        find ${DIRECTORY} -name "*.tar.gz" -type f | xargs rm -f
+        find "${DIRECTORY}" -name "*.tar.gz" -type f -print0 | xargs --null rm -f
     fi
 done
 

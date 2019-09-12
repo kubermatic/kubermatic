@@ -1,12 +1,16 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-cd $(dirname $0)
+set -euo pipefail
+
+cd "$(dirname "$0")"
 
 for dashboard in */*.json; do
   echo "$dashboard"
 
   tmpfile="$dashboard.tmp"
 
+  # shellcheck disable=SC2002
+  # because this is more readable
   cat "$dashboard" | \
     jq '(.templating.list[] | select(.type=="query") | .options) = []' | \
     jq '(.templating.list[] | select(.type=="query") | .refresh) = 2' | \
