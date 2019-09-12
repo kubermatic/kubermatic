@@ -31,6 +31,9 @@ KUBERMATIC_HELM_PATH=${KUBERMATIC_PATH}/helm/kubermatic
 KUBERMATIC_IMAGE="quay.io/kubermatic"
 KUBERMATIC_IMAGE_TAG=${1:-"latest"}
 
+# TODO alvaroaleman: Put that into the docker image
+iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+
 KUBECONFIG_PATH=~/.kube/config
 
 SCRIPT_PATH=$(dirname -- "$(readlink -f -- "$BASH_SOURCE")")
