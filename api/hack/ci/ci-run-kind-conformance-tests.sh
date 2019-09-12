@@ -144,7 +144,7 @@ export KUBECONFIG="$(kind get kubeconfig-path --name=${SEED_NAME})"
 
 # Prepare the kind cluster
 TEST_NAME="Preparing the kind cluster"
-echodata "Preparing the kind cluster"
+echodate "Preparing the kind cluster"
 ## Delete kind default storage class
 kubectl delete storageclass standard
 
