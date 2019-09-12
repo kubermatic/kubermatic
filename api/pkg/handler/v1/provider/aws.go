@@ -40,15 +40,6 @@ type AWSCommonReq struct {
 	Credential string
 }
 
-// AWSZoneReq represent a request for AWS zones.
-// swagger:parameters listAWSZones
-type AWSZoneReq struct {
-	AWSCommonReq
-	// in: path
-	// required: true
-	DC string `json:"dc"`
-}
-
 // AWSSubnetReq represent a request for AWS subnets.
 // swagger:parameters listAWSSubnets
 type AWSSubnetReq struct {
@@ -90,25 +81,6 @@ func DecodeAWSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 	req.AccessKeyID = r.Header.Get("AccessKeyID")
 	req.SecretAccessKey = r.Header.Get("SecretAccessKey")
 	req.Credential = r.Header.Get("Credential")
-
-	return req, nil
-}
-
-// DecodeAWSZoneReq decodes a request for a list of AWS zones
-func DecodeAWSZoneReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req AWSZoneReq
-
-	commonReq, err := DecodeAWSCommonReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.AWSCommonReq = commonReq.(AWSCommonReq)
-
-	dc, ok := mux.Vars(r)["dc"]
-	if !ok {
-		return req, fmt.Errorf("'dc' parameter is required")
-	}
-	req.DC = dc
 
 	return req, nil
 }
@@ -224,96 +196,6 @@ func awsSizes(region string) (apiv1.AWSSizeList, error) {
 	}
 
 	return sizes, nil
-}
-
-// AWSZoneEndpoint handles the request to list AWS availability zones in a given region, using provided credentials
-func AWSZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(AWSZoneReq)
-
-		accessKeyID := req.AccessKeyID
-		secretAccessKey := req.SecretAccessKey
-
-		if len(req.Credential) > 0 && credentialManager.GetPresets().AWS.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().AWS.Credentials {
-				if credential.Name == req.Credential {
-					accessKeyID = credential.AccessKeyID
-					secretAccessKey = credential.SecretAccessKey
-					break
-				}
-			}
-		}
-
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, req.DC)
-		if err != nil {
-			return nil, errors.NewBadRequest("%v", err)
-		}
-		return listAWSZones(accessKeyID, secretAccessKey, datacenter)
-	}
-}
-
-// AWSZoneWithClusterCredentialsEndpoint handles the request to list AWS availability zones in a given region, using credentials from a given datacenter
-func AWSZoneWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(common.GetClusterReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		if cluster.Spec.Cloud.AWS == nil {
-			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
-		}
-
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, cluster.Spec.Cloud.DatacenterName)
-		if err != nil {
-			return nil, errors.NewBadRequest("%v", err)
-		}
-
-		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider")
-		}
-
-		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-		accessKeyID, secretAccessKey, err := awsprovider.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
-		if err != nil {
-			return nil, err
-		}
-		return listAWSZones(accessKeyID, secretAccessKey, datacenter)
-	}
-}
-
-func listAWSZones(accessKeyID, secretAccessKey string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSZoneList, error) {
-	zones := apiv1.AWSZoneList{}
-
-	if datacenter.Spec.AWS == nil {
-		return nil, errors.NewBadRequest("cluster is not in an AWS Datacenter")
-	}
-
-	zoneResults, err := awsprovider.GetAvailabilityZonesInRegion(accessKeyID, secretAccessKey, datacenter.Spec.AWS.Region)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, z := range zoneResults {
-		zones = append(zones, apiv1.AWSZone{Name: *z.ZoneName})
-	}
-
-	return zones, err
 }
 
 // AWSSubnetEndpoint handles the request to list AWS availability subnets in a given vpc, using provided credentials
