@@ -34,7 +34,7 @@ function boskosctl() {
 
 # Using boskos is best-effort for now and should not make jobs fail
 set +e
-boskos_resource="$(boskosctl acquire --type aws-account --state clean --target-state used --timeout 10s)"
+boskos_resource="$(boskosctl acquire --type aws-account --state free --target-state used --timeout 10s)"
 if [[ "$?" = "0" ]]; then
   boskos_resource_name="$(echo $boskos_resource|jq '.name' -r)"
   echodate "Successfully acquired boskos resource $boskos_resource_name"
