@@ -53,25 +53,23 @@ const (
 	// cluster where the service account will be created.
 	SeedServiceAccountNamespace = metav1.NamespaceSystem
 
-	// SeedPrometheusNamespace is the namespace inside the seed
-	// cluster where Prometheus is installed.
-	SeedPrometheusNamespace = "monitoring"
+	// SeedMonitoringNamespace is the namespace inside the seed
+	// cluster where Prometheus, Grafana etc. are installed.
+	SeedMonitoringNamespace = "monitoring"
 
-	// SeedPrometheusServiceName is the service that is provided by
-	// Prometheus inside the seed cluster.
-	SeedPrometheusServiceName = "prometheus-kubermatic"
+	// SeedMonitoringRoleName is the name inside the seed monitoring
+	// namespace used for the new role used for proxying to Prometheus/Grafana/...
+	SeedMonitoringRoleName = "seed-proxy"
 
-	// SeedPrometheusServicePort is the port name that is provided by
-	// Prometheus inside the seed cluster.
-	SeedPrometheusServicePort = "web"
+	// SeedMonitoringRoleBindingName is the name inside the seed
+	// monitoring namespace used for the new role binding.
+	SeedMonitoringRoleBindingName = "seed-proxy"
 
-	// SeedPrometheusRoleName is the name inside the seed
-	// used for the new role used for proxying to Prometheus.
-	SeedPrometheusRoleName = "seed-proxy-prometheus"
+	// SeedPrometheusService is the service exposed by Prometheus.
+	SeedPrometheusService = "prometheus:web"
 
-	// SeedPrometheusRoleBindingName is the name inside the seed
-	// used for the new role binding used for proxying to Prometheus.
-	SeedPrometheusRoleBindingName = "seed-proxy-prometheus"
+	// SeedAlertmanagerService is the service exposed by Alertmanager.
+	SeedAlertmanagerService = "alertmanager:web"
 
 	// KubectlProxyPort is the port used by kubectl to provide the
 	// proxy connection on. This is not the port on which any of the
