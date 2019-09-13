@@ -83,6 +83,10 @@ case "${DEPLOY_STACK}" in
     deploy "helm-exporter" "monitoring" ./config/monitoring/helm-exporter/
     if [[ "${DEPLOY_ALERTMANAGER}" = true ]]; then
       deploy "alertmanager" "monitoring" ./config/monitoring/alertmanager/
+
+      if [[ "${1}" = "master" ]]; then
+        deploy "karma" "monitoring" ./config/monitoring/karma/
+      fi
     fi
 
     # Prometheus can take a long time to become ready, depending on the WAL size.
