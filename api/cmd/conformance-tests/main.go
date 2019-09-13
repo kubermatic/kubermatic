@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
-	"os/user"
 	"path"
 	"strings"
 	"time"
@@ -156,11 +155,8 @@ func main() {
 		}
 	}()
 
-	usr, err := user.Current()
-	if err != nil {
-		log.Fatal("failed to get the current user", zap.Error(err))
-	}
-	pubkeyPath := path.Join(usr.HomeDir, ".ssh/id_rsa.pub")
+	// user.Current does not work in Alpine
+	pubkeyPath := path.Join(os.Getenv("HOME"), ".ssh/id_rsa.pub")
 
 	flag.StringVar(&opts.kubeconfigPath, "kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
 	flag.StringVar(&opts.existingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
