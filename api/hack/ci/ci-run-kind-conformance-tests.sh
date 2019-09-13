@@ -531,7 +531,8 @@ if [ -n "${UPGRADE_TEST_BASE_HASH:-}" ]; then
   kubermatic_delete_cluster="false"
 fi
 
-timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
+# 5400 equals 90 minutes, our timeout version does not support units
+timeout -s 9 5400 ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
   -debug \
   -worker-name=$BUILD_ID \
   -kubeconfig=$KUBECONFIG \
