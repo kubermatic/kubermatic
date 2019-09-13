@@ -46,58 +46,55 @@ type PresetSpec struct {
 }
 
 type Digitalocean struct {
-	Credentials []DigitaloceanPresetCredentials `json:"credentials,omitempty"`
+	Credentials DigitaloceanPresetCredentials `json:"credentials,omitempty"`
 }
 
 type Hetzner struct {
-	Credentials []HetznerPresetCredentials `json:"credentials,omitempty"`
+	Credentials HetznerPresetCredentials `json:"credentials,omitempty"`
 }
 
 type Azure struct {
-	Credentials []AzurePresetCredentials `json:"credentials,omitempty"`
+	Credentials AzurePresetCredentials `json:"credentials,omitempty"`
 }
 
 type VSphere struct {
-	Credentials []VSpherePresetCredentials `json:"credentials,omitempty"`
+	Credentials VSpherePresetCredentials `json:"credentials,omitempty"`
 }
 
 type AWS struct {
-	Credentials []AWSPresetCredentials `json:"credentials,omitempty"`
+	Credentials AWSPresetCredentials `json:"credentials,omitempty"`
 }
 
 type Openstack struct {
-	Credentials []OpenstackPresetCredentials `json:"credentials,omitempty"`
+	Credentials OpenstackPresetCredentials `json:"credentials,omitempty"`
 }
 
 type Packet struct {
-	Credentials []PacketPresetCredentials `json:"credentials,omitempty"`
+	Credentials PacketPresetCredentials `json:"credentials,omitempty"`
 }
 
 type GCP struct {
-	Credentials []GCPPresetCredentials `json:"credentials,omitempty"`
+	Credentials GCPPresetCredentials `json:"credentials,omitempty"`
 }
 
 type Fake struct {
-	Credentials []FakePresetCredentials `json:"credentials,omitempty"`
+	Credentials FakePresetCredentials `json:"credentials,omitempty"`
 }
 
 type Kubevirt struct {
-	Credentials []KubevirtPresetCredentials `json:"credentials,omitempty"`
+	Credentials KubevirtPresetCredentials `json:"credentials,omitempty"`
 }
 
 // DigitaloceanPresetCredentials defines Digitalocean credential
 type DigitaloceanPresetCredentials struct {
-	Name  string `json:"name"`
 	Token string `json:"token"` // Token is used to authenticate with the DigitalOcean API.
 }
 
 type HetznerPresetCredentials struct {
-	Name  string `json:"name"`
 	Token string `json:"token"` // Token is used to authenticate with the Hetzner API.
 }
 
 type AzurePresetCredentials struct {
-	Name           string `json:"name"`
 	TenantID       string `json:"tenantId"`
 	SubscriptionID string `json:"subscriptionId"`
 	ClientID       string `json:"clientId"`
@@ -112,7 +109,6 @@ type AzurePresetCredentials struct {
 
 // VSpherePresetCredentials credentials represents a credential for accessing vSphere
 type VSpherePresetCredentials struct {
-	Name     string `json:"name"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 
@@ -120,7 +116,6 @@ type VSpherePresetCredentials struct {
 }
 
 type AWSPresetCredentials struct {
-	Name            string `json:"name"`
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
 
@@ -132,7 +127,6 @@ type AWSPresetCredentials struct {
 
 // OpenstackPresetCredentials specifies access data to an openstack cloud.
 type OpenstackPresetCredentials struct {
-	Name     string `json:"name"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Tenant   string `json:"tenant"`
@@ -148,7 +142,6 @@ type OpenstackPresetCredentials struct {
 
 // PacketPresetCredentials specifies access data to a Packet cloud.
 type PacketPresetCredentials struct {
-	Name      string `json:"name"`
 	APIKey    string `json:"apiKey"`
 	ProjectID string `json:"projectId"`
 
@@ -157,7 +150,6 @@ type PacketPresetCredentials struct {
 
 // GCPPresetCredentials specifies access data to GCP.
 type GCPPresetCredentials struct {
-	Name           string `json:"name"`
 	ServiceAccount string `json:"serviceAccount"`
 
 	Network    string `json:"network,omitempty"`
@@ -166,12 +158,10 @@ type GCPPresetCredentials struct {
 
 // KubevirtPresetCredentials specifies access data to Kubevirt.
 type KubevirtPresetCredentials struct {
-	Name       string `json:"name,omitempty"`
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 }
 
 // FakePresetCredentials defines fake credential for tests
 type FakePresetCredentials struct {
-	Name  string `json:"name"`
 	Token string `json:"token"`
 }

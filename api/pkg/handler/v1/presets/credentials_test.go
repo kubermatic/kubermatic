@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/equality"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/diff"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -29,8 +30,30 @@ func TestCredentialEndpoint(t *testing.T) {
 		expectedResponse string
 	}{
 		{
-			name:             "test no credentials for AWS",
-			provider:         "aws",
+			name:     "test no credentials for AWS",
+			provider: "aws",
+			credentials: &kubermaticv1.PresetList{
+				Items: []kubermaticv1.Preset{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "first",
+						},
+						Spec: kubermaticv1.PresetSpec{
+							RequiredEmailDomain: test.RequiredEmailDomain,
+							AWS: kubermaticv1.AWS{
+								Credentials: kubermaticv1.AWSPresetCredentials{}},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "second",
+						},
+						Spec: kubermaticv1.PresetSpec{
+							RequiredEmailDomain: test.RequiredEmailDomain,
+						},
+					},
+				},
+			},
 			httpStatus:       http.StatusOK,
 			expectedResponse: "{}",
 		},
@@ -40,19 +63,33 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "first",
+						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
 							AWS: kubermaticv1.AWS{
-								Credentials: []kubermaticv1.AWSPresetCredentials{
-									{Name: "first"},
-									{Name: "second"},
+								Credentials: kubermaticv1.AWSPresetCredentials{
+									AccessKeyID: "a",
+								}},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "second",
+						},
+						Spec: kubermaticv1.PresetSpec{
+							RequiredEmailDomain: test.RequiredEmailDomain,
+							AWS: kubermaticv1.AWS{
+								Credentials: kubermaticv1.AWSPresetCredentials{
+									AccessKeyID: "a",
 								}},
 						},
 					},
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `{"names":["first","second"]}`,
+			expectedResponse: `{"names":["first", "second"]}`,
 		},
 		{
 			name:             "test no credentials for Azure",
@@ -66,18 +103,20 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "first",
+						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							Azure: kubermaticv1.Azure{Credentials: []kubermaticv1.AzurePresetCredentials{
-								{Name: "first", ClientID: "test-first", ClientSecret: "secret-first", SubscriptionID: "subscription-first", TenantID: "tenant-first"},
-								{Name: "second", ClientID: "test-second", ClientSecret: "secret-second", SubscriptionID: "subscription-second", TenantID: "tenant-second"},
+							Azure: kubermaticv1.Azure{Credentials: kubermaticv1.AzurePresetCredentials{
+								ClientID: "test-first", ClientSecret: "secret-first", SubscriptionID: "subscription-first", TenantID: "tenant-first",
 							}},
 						},
 					},
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `{"names":["first","second"]}`,
+			expectedResponse: `{"names":["first"]}`,
 		},
 		{
 			name:             "test no credentials for DigitalOcean",
@@ -91,18 +130,20 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "digitalocean-first",
+						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							Digitalocean: kubermaticv1.Digitalocean{Credentials: []kubermaticv1.DigitaloceanPresetCredentials{
-								{Name: "digitalocean-first"},
-								{Name: "digitalocean-second"},
+							Digitalocean: kubermaticv1.Digitalocean{Credentials: kubermaticv1.DigitaloceanPresetCredentials{
+								Token: "toke",
 							}},
 						},
 					},
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `{"names":["digitalocean-first","digitalocean-second"]}`,
+			expectedResponse: `{"names":["digitalocean-first"]}`,
 		},
 		{
 			name:             "test no credentials for GCP",
@@ -116,18 +157,20 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "first",
+						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							GCP: kubermaticv1.GCP{Credentials: []kubermaticv1.GCPPresetCredentials{
-								{Name: "first"},
-								{Name: "second"},
+							GCP: kubermaticv1.GCP{Credentials: kubermaticv1.GCPPresetCredentials{
+								ServiceAccount: "sa",
 							}},
 						},
 					},
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `{"names":["first","second"]}`,
+			expectedResponse: `{"names":["first"]}`,
 		},
 		{
 			name:             "test no credentials for Hetzner",
@@ -141,18 +184,20 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "first",
+						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							Hetzner: kubermaticv1.Hetzner{Credentials: []kubermaticv1.HetznerPresetCredentials{
-								{Name: "first"},
-								{Name: "second"},
+							Hetzner: kubermaticv1.Hetzner{Credentials: kubermaticv1.HetznerPresetCredentials{
+								Token: "aa",
 							}},
 						},
 					},
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `{"names":["first","second"]}`,
+			expectedResponse: `{"names":["first"]}`,
 		},
 		{
 			name:             "test no credentials for OpenStack",
@@ -166,18 +211,20 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "first",
+						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							Openstack: kubermaticv1.Openstack{Credentials: []kubermaticv1.OpenstackPresetCredentials{
-								{Name: "first"},
-								{Name: "second"},
+							Openstack: kubermaticv1.Openstack{Credentials: kubermaticv1.OpenstackPresetCredentials{
+								Password: "password",
 							}},
 						},
 					},
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `{"names":["first","second"]}`,
+			expectedResponse: `{"names":["first"]}`,
 		},
 		{
 			name:             "test no credentials for Packet",
@@ -191,18 +238,20 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "first",
+						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							Packet: kubermaticv1.Packet{Credentials: []kubermaticv1.PacketPresetCredentials{
-								{Name: "first"},
-								{Name: "second"},
+							Packet: kubermaticv1.Packet{Credentials: kubermaticv1.PacketPresetCredentials{
+								APIKey: "key",
 							}},
 						},
 					},
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `{"names":["first","second"]}`,
+			expectedResponse: `{"names":["first"]}`,
 		},
 		{
 			name:             "test no credentials for Vsphere",
@@ -216,18 +265,30 @@ func TestCredentialEndpoint(t *testing.T) {
 			credentials: &kubermaticv1.PresetList{
 				Items: []kubermaticv1.Preset{
 					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "first",
+						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							VSphere: kubermaticv1.VSphere{Credentials: []kubermaticv1.VSpherePresetCredentials{
-								{Name: "first"},
-								{Name: "second"},
+							VSphere: kubermaticv1.VSphere{Credentials: kubermaticv1.VSpherePresetCredentials{
+								Password: "password",
+							}},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "second",
+						},
+						Spec: kubermaticv1.PresetSpec{
+							VSphere: kubermaticv1.VSphere{Credentials: kubermaticv1.VSpherePresetCredentials{
+								Password: "password",
 							}},
 						},
 					},
 				},
 			},
 			httpStatus:       http.StatusOK,
-			expectedResponse: `{"names":["first","second"]}`,
+			expectedResponse: `{"names":["first", "second"]}`,
 		},
 		{
 			name:       "test no existing provider",

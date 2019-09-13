@@ -150,22 +150,17 @@ func AzureSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoin
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeReq)
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		subscriptionID := req.SubscriptionID
 		clientID := req.ClientID
 		clientSecret := req.ClientSecret
 		tenantID := req.TenantID
 
-		if len(req.Credential) > 0 && credentialManager.GetPreset(*userInfo).Spec.Azure.Credentials != nil {
-			for _, credential := range credentialManager.GetPreset(*userInfo).Spec.Azure.Credentials {
-				if credential.Name == req.Credential {
-					subscriptionID = credential.SubscriptionID
-					clientID = credential.ClientID
-					clientSecret = credential.ClientSecret
-					tenantID = credential.TenantID
-					break
-				}
-			}
+		if len(req.Credential) > 0 {
+			credentials := credentialManager.GetPreset(req.Credential).Spec.Azure.Credentials
+			subscriptionID = credentials.SubscriptionID
+			clientID = credentials.ClientID
+			clientSecret = credentials.ClientSecret
+			tenantID = credentials.TenantID
 		}
 		return azureSize(ctx, subscriptionID, clientID, clientSecret, tenantID, req.Location)
 	}

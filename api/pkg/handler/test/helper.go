@@ -93,10 +93,8 @@ const (
 	TestOSuserPass = "OSpass"
 	// TestOSuserName OpenStack user name
 	TestOSuserName = "OSuser"
-	// TestOSCredential OpenStack provider credential name
-	TestOSCredential = "testOpenstack"
 	// TestFakeCredential Fake provider credential name
-	TestFakeCredential = "pluton"
+	TestFakeCredential = "fake"
 	// RequiredEmailDomain required domain for predefined credentials
 	RequiredEmailDomain = "acme.com"
 )
@@ -280,13 +278,16 @@ func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.Seeds
 	credentialManager := presets.NewWithPresets(&kubermaticv1.PresetList{
 		Items: []kubermaticv1.Preset{
 			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "fake",
+				},
 				Spec: kubermaticv1.PresetSpec{
 					RequiredEmailDomain: RequiredEmailDomain,
-					Fake: kubermaticv1.Fake{Credentials: []kubermaticv1.FakePresetCredentials{
-						{Name: TestFakeCredential, Token: "dummy_pluton_token"},
+					Fake: kubermaticv1.Fake{Credentials: kubermaticv1.FakePresetCredentials{
+						Token: "dummy_pluton_token",
 					}},
-					Openstack: kubermaticv1.Openstack{Credentials: []kubermaticv1.OpenstackPresetCredentials{
-						{Name: TestOSCredential, Username: TestOSuserName, Password: TestOSuserPass, Domain: TestOSdomain},
+					Openstack: kubermaticv1.Openstack{Credentials: kubermaticv1.OpenstackPresetCredentials{
+						Username: TestOSuserName, Password: TestOSuserPass, Domain: TestOSdomain,
 					}},
 				},
 			},

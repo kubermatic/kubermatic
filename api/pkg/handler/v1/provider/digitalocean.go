@@ -58,16 +58,13 @@ func DigitaloceanSizeEndpoint(credentialManager common.PresetsManager) endpoint.
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DoSizesReq)
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		token := req.DoToken
-		if len(req.Credential) > 0 && credentialManager.GetPreset(*userInfo).Spec.Digitalocean.Credentials != nil {
-			for _, credential := range credentialManager.GetPreset(*userInfo).Spec.Digitalocean.Credentials {
-				if credential.Name == req.Credential {
-					token = credential.Token
-					break
-				}
-			}
+
+		if len(req.Credential) > 0 {
+			credentials := credentialManager.GetPreset(req.Credential).Spec.Digitalocean.Credentials
+			token = credentials.Token
 		}
+
 		return digitaloceanSize(ctx, token)
 	}
 }

@@ -22,7 +22,6 @@ func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, credentialManager c
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		seeds, err := seedsGetter()
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
@@ -34,7 +33,7 @@ func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, credentialManager c
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
 
-		username, password, domain, tenant, tenantID := getOpenstackCredentials(userInfo, req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
+		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
 		return getOpenstackSizes(username, password, tenant, tenantID, domain, datacenterName, datacenter)
 	}
 }
@@ -119,8 +118,7 @@ func OpenstackTenantEndpoint(seedsGetter provider.SeedsGetter, credentialManager
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackTenantReq, got = %T", request)
 		}
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		username, password, domain, _, _ := getOpenstackCredentials(userInfo, req.Credential, req.Username, req.Password, req.Domain, "", "", credentialManager)
+		username, password, domain, _, _ := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, "", "", credentialManager)
 
 		return getOpenstackTenants(seedsGetter, username, password, domain, req.DatacenterName)
 	}
@@ -183,8 +181,7 @@ func OpenstackNetworkEndpoint(seedsGetter provider.SeedsGetter, credentialManage
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		username, password, domain, tenant, tenantID := getOpenstackCredentials(userInfo, req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
+		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
 
 		return getOpenstackNetworks(seedsGetter, username, password, tenant, tenantID, domain, req.DatacenterName)
 	}
@@ -249,8 +246,7 @@ func OpenstackSecurityGroupEndpoint(seedsGetter provider.SeedsGetter, credential
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		username, password, domain, tenant, tenantID := getOpenstackCredentials(userInfo, req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
+		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
 
 		return getOpenstackSecurityGroups(seedsGetter, username, password, tenant, tenantID, domain, req.DatacenterName)
 	}
@@ -313,8 +309,8 @@ func OpenstackSubnetsEndpoint(seedsGetter provider.SeedsGetter, credentialManage
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackSubnetReq, got = %T", request)
 		}
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		username, password, domain, tenant, tenantID := getOpenstackCredentials(userInfo, req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
+
+		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
 
 		return getOpenstackSubnets(seedsGetter, username, password, domain, tenant, tenantID, req.NetworkID, req.DatacenterName)
 	}
@@ -496,20 +492,15 @@ func DecodeOpenstackTenantReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-func getOpenstackCredentials(userInfo *provider.UserInfo, credentialName, username, password, domain, tenant, tenantID string, credentialManager common.PresetsManager) (string, string, string, string, string) {
-	if len(credentialName) > 0 && credentialManager.GetPreset(*userInfo).Spec.Openstack.Credentials != nil {
-		for _, credential := range credentialManager.GetPreset(*userInfo).Spec.Openstack.Credentials {
-			if credential.Name == credentialName {
-				username = credential.Username
-				password = credential.Password
-				tenant = credential.Tenant
-				tenantID = credential.TenantID
-				domain = credential.Domain
-				break
-			}
-		}
+func getOpenstackCredentials(credentialName, username, password, domain, tenant, tenantID string, credentialManager common.PresetsManager) (string, string, string, string, string) {
+	if len(credentialName) > 0 {
+		credentials := credentialManager.GetPreset(credentialName).Spec.Openstack.Credentials
+		username = credentials.Username
+		password = credentials.Password
+		tenant = credentials.Tenant
+		tenantID = credentials.TenantID
+		domain = credentials.Domain
 	}
-
 	return username, password, domain, tenant, tenantID
 }
 

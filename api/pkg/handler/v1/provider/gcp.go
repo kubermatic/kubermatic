@@ -113,19 +113,13 @@ func GCPDiskTypesEndpoint(credentialManager common.PresetsManager) endpoint.Endp
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesReq)
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		zone := req.Zone
 		sa := req.ServiceAccount
 
-		if len(req.Credential) > 0 && credentialManager.GetPreset(*userInfo).Spec.GCP.Credentials != nil {
-			for _, credential := range credentialManager.GetPreset(*userInfo).Spec.GCP.Credentials {
-				if credential.Name == req.Credential {
-					sa = credential.ServiceAccount
-					break
-				}
-			}
+		if len(req.Credential) > 0 {
+			credentials := credentialManager.GetPreset(req.Credential).Spec.GCP.Credentials
+			sa = credentials.ServiceAccount
 		}
-
 		return listGCPDiskTypes(ctx, sa, zone)
 	}
 }
@@ -182,17 +176,12 @@ func GCPSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint 
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesReq)
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		zone := req.Zone
 		sa := req.ServiceAccount
 
-		if len(req.Credential) > 0 && credentialManager.GetPreset(*userInfo).Spec.GCP.Credentials != nil {
-			for _, credential := range credentialManager.GetPreset(*userInfo).Spec.GCP.Credentials {
-				if credential.Name == req.Credential {
-					sa = credential.ServiceAccount
-					break
-				}
-			}
+		if len(req.Credential) > 0 {
+			credentials := credentialManager.GetPreset(req.Credential).Spec.GCP.Credentials
+			sa = credentials.ServiceAccount
 		}
 
 		return listGCPSizes(ctx, sa, zone)
@@ -254,17 +243,11 @@ func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachine
 func GCPZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPZoneReq)
-
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		sa := req.ServiceAccount
 
-		if len(req.Credential) > 0 && credentialManager.GetPreset(*userInfo).Spec.GCP.Credentials != nil {
-			for _, credential := range credentialManager.GetPreset(*userInfo).Spec.GCP.Credentials {
-				if credential.Name == req.Credential {
-					sa = credential.ServiceAccount
-					break
-				}
-			}
+		if len(req.Credential) > 0 {
+			credentials := credentialManager.GetPreset(req.Credential).Spec.GCP.Credentials
+			sa = credentials.ServiceAccount
 		}
 
 		return listGCPZones(ctx, sa, req.DC, seedsGetter)

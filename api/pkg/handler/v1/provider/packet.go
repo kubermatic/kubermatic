@@ -68,18 +68,13 @@ func PacketSizesEndpoint(credentialManager common.PresetsManager) endpoint.Endpo
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PacketSizesReq)
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		projectID := req.ProjectID
 		apiKey := req.APIKey
 
-		if len(req.Credential) > 0 && credentialManager.GetPreset(*userInfo).Spec.Packet.Credentials != nil {
-			for _, credential := range credentialManager.GetPreset(*userInfo).Spec.Packet.Credentials {
-				if credential.Name == req.Credential {
-					projectID = credential.ProjectID
-					apiKey = credential.APIKey
-					break
-				}
-			}
+		if len(req.Credential) > 0 {
+			credentials := credentialManager.GetPreset(req.Credential).Spec.Packet.Credentials
+			projectID = credentials.ProjectID
+			apiKey = credentials.APIKey
 		}
 		return sizes(ctx, apiKey, projectID)
 	}

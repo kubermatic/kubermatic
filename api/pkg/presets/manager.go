@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"strings"
 
 	"sigs.k8s.io/yaml"
@@ -68,255 +69,233 @@ func NewFromFile(credentialsFilename string) (*Manager, error) {
 	return &Manager{presets: presets}, nil
 }
 
-// GetPreset returns preset which belong to the specific email group.
-// If there is no preset for the email domain then returns preset for all user (the RequiredEmailDomain is empty).
-func (m *Manager) GetPreset(userInfo provider.UserInfo) *kubermaticv1.Preset {
-	// find preset for specific email domain
+// GetPresets returns presets which belong to the specific email group and for all users
+func (m *Manager) GetPresets(userInfo provider.UserInfo) []kubermaticv1.Preset {
+	presetList := make([]kubermaticv1.Preset, 0)
+
 	for _, preset := range m.presets.Items {
-		emailDomain := preset.Spec.RequiredEmailDomain
-		domain := strings.Split(userInfo.Email, "@")
-		if len(domain) == 2 {
-			if strings.EqualFold(domain[1], emailDomain) {
-				return &preset
+		requiredEmailDomain := preset.Spec.RequiredEmailDomain
+		// find preset for specific email domain
+		if len(requiredEmailDomain) > 0 {
+			userDomain := strings.Split(userInfo.Email, "@")
+			if len(userDomain) == 2 && strings.EqualFold(userDomain[1], requiredEmailDomain) {
+				presetList = append(presetList, preset)
 			}
+		} else {
+			// find preset for "all" without RequiredEmailDomain field
+			presetList = append(presetList, preset)
 		}
 	}
-	// find preset for "all" without RequiredEmailDomain field
+
+	return presetList
+}
+
+// GetPreset returns presets which belong to the specific email group and for all users
+func (m *Manager) GetPreset(name string) *kubermaticv1.Preset {
 	for _, preset := range m.presets.Items {
-		emailDomain := preset.Spec.RequiredEmailDomain
-		if len(emailDomain) == 0 {
+		if preset.Name == name {
 			return &preset
 		}
 	}
 	return emptyPreset()
 }
 
-func (m *Manager) SetCloudCredentials(userInfo provider.UserInfo, credentialName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
+func (m *Manager) SetCloudCredentials(presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
 
 	if cloud.VSphere != nil {
-		return m.setVsphereCredentials(userInfo, credentialName, cloud)
+		return m.setVsphereCredentials(presetName, cloud)
 	}
 	if cloud.Openstack != nil {
-		return m.setOpenStackCredentials(userInfo, credentialName, cloud, dc)
+		return m.setOpenStackCredentials(presetName, cloud, dc)
 	}
 	if cloud.Azure != nil {
-		return m.setAzureCredentials(userInfo, credentialName, cloud)
+		return m.setAzureCredentials(presetName, cloud)
 	}
 	if cloud.Digitalocean != nil {
-		return m.setDigitalOceanCredentials(userInfo, credentialName, cloud)
+		return m.setDigitalOceanCredentials(presetName, cloud)
 	}
 	if cloud.Packet != nil {
-		return m.setPacketCredentials(userInfo, credentialName, cloud)
+		return m.setPacketCredentials(presetName, cloud)
 	}
 	if cloud.Hetzner != nil {
-		return m.setHetznerCredentials(userInfo, credentialName, cloud)
+		return m.setHetznerCredentials(presetName, cloud)
 	}
 	if cloud.AWS != nil {
-		return m.setAWSCredentials(userInfo, credentialName, cloud)
+		return m.setAWSCredentials(presetName, cloud)
 	}
 	if cloud.GCP != nil {
-		return m.setGCPCredentials(userInfo, credentialName, cloud)
+		return m.setGCPCredentials(presetName, cloud)
 	}
 	if cloud.Fake != nil {
-		return m.setFakeCredentials(userInfo, credentialName, cloud)
+		return m.setFakeCredentials(presetName, cloud)
 	}
 	if cloud.Kubevirt != nil {
-		return m.setKubevirtCredentials(userInfo, credentialName, cloud)
+		return m.setKubevirtCredentials(presetName, cloud)
 	}
 
 	return nil, fmt.Errorf("can not find provider to set credentials")
 }
 
-func emptyCredentialListError(provider string) error {
-	return fmt.Errorf("can not find any credential for %s provider", provider)
+func emptyCredentialError(preset, provider string) error {
+	return fmt.Errorf("the preset %s doesn't contain credential for %s provider", preset, provider)
 }
 
-func noCredentialError(credentialName string) error {
-	return fmt.Errorf("can not find %s credential", credentialName)
+func (m *Manager) setFakeCredentials(presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset := m.GetPreset(presetName)
+
+	if reflect.DeepEqual(preset.Spec.Fake.Credentials, kubermaticv1.FakePresetCredentials{}) {
+		return nil, emptyCredentialError(presetName, "Fake")
+	}
+
+	cloud.Fake.Token = preset.Spec.Fake.Credentials.Token
+	return &cloud, nil
+
 }
 
-func (m *Manager) setFakeCredentials(userInfo provider.UserInfo, credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset := m.GetPreset(userInfo)
-	if preset.Spec.Fake.Credentials == nil {
-		return nil, emptyCredentialListError("Fake")
+func (m *Manager) setKubevirtCredentials(presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset := m.GetPreset(presetName)
+	if reflect.DeepEqual(preset.Spec.Kubevirt.Credentials, kubermaticv1.KubevirtPresetCredentials{}) {
+		return nil, emptyCredentialError(presetName, "Kubevirt")
 	}
-	for _, credential := range preset.Spec.Fake.Credentials {
-		if credentialName == credential.Name {
-			cloud.Fake.Token = credential.Token
-			return &cloud, nil
-		}
-	}
-	return nil, noCredentialError(credentialName)
+
+	cloud.Kubevirt.Kubeconfig = preset.Spec.Kubevirt.Credentials.Kubeconfig
+	return &cloud, nil
 }
 
-func (m *Manager) setKubevirtCredentials(userInfo provider.UserInfo, credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset := m.GetPreset(userInfo)
-	if preset.Spec.Kubevirt.Credentials == nil {
-		return nil, emptyCredentialListError("Kubevirt")
+func (m *Manager) setGCPCredentials(presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset := m.GetPreset(presetName)
+	if reflect.DeepEqual(preset.Spec.GCP.Credentials, kubermaticv1.GCPPresetCredentials{}) {
+		return nil, emptyCredentialError(presetName, "GCP")
 	}
-	for _, credential := range preset.Spec.Kubevirt.Credentials {
-		if credentialName == credential.Name {
 
-			cloud.Kubevirt.Kubeconfig = credential.Kubeconfig
-			return &cloud, nil
-		}
-	}
-	return nil, noCredentialError(credentialName)
+	credentials := preset.Spec.GCP.Credentials
+	cloud.GCP.ServiceAccount = credentials.ServiceAccount
+	cloud.GCP.Network = credentials.Network
+	cloud.GCP.Subnetwork = credentials.Subnetwork
+	return &cloud, nil
+
 }
 
-func (m *Manager) setGCPCredentials(userInfo provider.UserInfo, credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset := m.GetPreset(userInfo)
-	if preset.Spec.GCP.Credentials == nil {
-		return nil, emptyCredentialListError("GCP")
+func (m *Manager) setAWSCredentials(presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset := m.GetPreset(presetName)
+	if reflect.DeepEqual(preset.Spec.AWS.Credentials, kubermaticv1.AWSPresetCredentials{}) {
+		return nil, emptyCredentialError(presetName, "AWS")
 	}
-	for _, credential := range preset.Spec.GCP.Credentials {
-		if credentialName == credential.Name {
-			cloud.GCP.ServiceAccount = credential.ServiceAccount
 
-			cloud.GCP.Network = credential.Network
-			cloud.GCP.Subnetwork = credential.Subnetwork
-			return &cloud, nil
-		}
-	}
-	return nil, noCredentialError(credentialName)
+	credentials := preset.Spec.AWS.Credentials
+
+	cloud.AWS.AccessKeyID = credentials.AccessKeyID
+	cloud.AWS.SecretAccessKey = credentials.SecretAccessKey
+
+	cloud.AWS.InstanceProfileName = credentials.InstanceProfileName
+	cloud.AWS.RouteTableID = credentials.RouteTableID
+	cloud.AWS.SecurityGroupID = credentials.SecurityGroupID
+	cloud.AWS.VPCID = credentials.VPCID
+	return &cloud, nil
 }
 
-func (m *Manager) setAWSCredentials(userInfo provider.UserInfo, credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset := m.GetPreset(userInfo)
-	if preset.Spec.AWS.Credentials == nil {
-		return nil, emptyCredentialListError("AWS")
+func (m *Manager) setHetznerCredentials(presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset := m.GetPreset(presetName)
+	if reflect.DeepEqual(preset.Spec.Hetzner.Credentials, kubermaticv1.HetznerPresetCredentials{}) {
+		return nil, emptyCredentialError(presetName, "Hetzner")
 	}
-	for _, credential := range preset.Spec.AWS.Credentials {
-		if credentialName == credential.Name {
-			cloud.AWS.AccessKeyID = credential.AccessKeyID
-			cloud.AWS.SecretAccessKey = credential.SecretAccessKey
 
-			cloud.AWS.InstanceProfileName = credential.InstanceProfileName
-			cloud.AWS.RouteTableID = credential.RouteTableID
-			cloud.AWS.SecurityGroupID = credential.SecurityGroupID
-			cloud.AWS.VPCID = credential.VPCID
-			return &cloud, nil
-		}
-	}
-	return nil, noCredentialError(credentialName)
+	cloud.Hetzner.Token = preset.Spec.Hetzner.Credentials.Token
+	return &cloud, nil
+
 }
 
-func (m *Manager) setHetznerCredentials(userInfo provider.UserInfo, credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset := m.GetPreset(userInfo)
-	if preset.Spec.Hetzner.Credentials == nil {
-		return nil, emptyCredentialListError("Hetzner")
+func (m *Manager) setPacketCredentials(presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset := m.GetPreset(presetName)
+	if reflect.DeepEqual(preset.Spec.Packet.Credentials, kubermaticv1.PacketPresetCredentials{}) {
+		return nil, emptyCredentialError(presetName, "Packet")
 	}
-	for _, credential := range preset.Spec.Hetzner.Credentials {
-		if credentialName == credential.Name {
-			cloud.Hetzner.Token = credential.Token
-			return &cloud, nil
-		}
+
+	credentials := preset.Spec.Packet.Credentials
+	cloud.Packet.ProjectID = credentials.ProjectID
+	cloud.Packet.APIKey = credentials.APIKey
+
+	cloud.Packet.BillingCycle = credentials.BillingCycle
+	if len(credentials.BillingCycle) == 0 {
+		cloud.Packet.BillingCycle = "hourly"
 	}
-	return nil, noCredentialError(credentialName)
+
+	return &cloud, nil
+
 }
 
-func (m *Manager) setPacketCredentials(userInfo provider.UserInfo, credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset := m.GetPreset(userInfo)
-	if preset.Spec.Packet.Credentials == nil {
-		return nil, emptyCredentialListError("Packet")
+func (m *Manager) setDigitalOceanCredentials(presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset := m.GetPreset(presetName)
+	if reflect.DeepEqual(preset.Spec.Digitalocean.Credentials, kubermaticv1.DigitaloceanPresetCredentials{}) {
+		return nil, emptyCredentialError(presetName, "Digitalocean")
 	}
-	for _, credential := range preset.Spec.Packet.Credentials {
-		if credentialName == credential.Name {
-			cloud.Packet.ProjectID = credential.ProjectID
-			cloud.Packet.APIKey = credential.APIKey
 
-			cloud.Packet.BillingCycle = credential.BillingCycle
-			if len(credential.BillingCycle) == 0 {
-				cloud.Packet.BillingCycle = "hourly"
-			}
+	cloud.Digitalocean.Token = preset.Spec.Digitalocean.Credentials.Token
+	return &cloud, nil
 
-			return &cloud, nil
-		}
-	}
-	return nil, noCredentialError(credentialName)
 }
 
-func (m *Manager) setDigitalOceanCredentials(userInfo provider.UserInfo, credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset := m.GetPreset(userInfo)
-	if preset.Spec.Digitalocean.Credentials == nil {
-		return nil, emptyCredentialListError("Digitalocean")
+func (m *Manager) setAzureCredentials(presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset := m.GetPreset(presetName)
+	if reflect.DeepEqual(preset.Spec.Azure.Credentials, kubermaticv1.AzurePresetCredentials{}) {
+		return nil, emptyCredentialError(presetName, "Azure")
 	}
-	for _, credential := range preset.Spec.Digitalocean.Credentials {
-		if credentialName == credential.Name {
-			cloud.Digitalocean.Token = credential.Token
-			return &cloud, nil
-		}
-	}
-	return nil, noCredentialError(credentialName)
+
+	credentials := preset.Spec.Azure.Credentials
+	cloud.Azure.TenantID = credentials.TenantID
+	cloud.Azure.ClientSecret = credentials.ClientSecret
+	cloud.Azure.ClientID = credentials.ClientID
+	cloud.Azure.SubscriptionID = credentials.SubscriptionID
+
+	cloud.Azure.ResourceGroup = credentials.ResourceGroup
+	cloud.Azure.RouteTableName = credentials.RouteTableName
+	cloud.Azure.SecurityGroup = credentials.SecurityGroup
+	cloud.Azure.SubnetName = credentials.SubnetName
+	cloud.Azure.VNetName = credentials.VNetName
+	return &cloud, nil
+
 }
 
-func (m *Manager) setAzureCredentials(userInfo provider.UserInfo, credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset := m.GetPreset(userInfo)
-	if preset.Spec.Azure.Credentials == nil {
-		return nil, emptyCredentialListError("Azure")
+func (m *Manager) setOpenStackCredentials(presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
+	preset := m.GetPreset(presetName)
+	if reflect.DeepEqual(preset.Spec.Openstack.Credentials, kubermaticv1.OpenstackPresetCredentials{}) {
+		return nil, emptyCredentialError(presetName, "Openstack")
 	}
-	for _, credential := range preset.Spec.Azure.Credentials {
-		if credentialName == credential.Name {
-			cloud.Azure.TenantID = credential.TenantID
-			cloud.Azure.ClientSecret = credential.ClientSecret
-			cloud.Azure.ClientID = credential.ClientID
-			cloud.Azure.SubscriptionID = credential.SubscriptionID
 
-			cloud.Azure.ResourceGroup = credential.ResourceGroup
-			cloud.Azure.RouteTableName = credential.RouteTableName
-			cloud.Azure.SecurityGroup = credential.SecurityGroup
-			cloud.Azure.SubnetName = credential.SubnetName
-			cloud.Azure.VNetName = credential.VNetName
-			return &cloud, nil
-		}
+	credentials := preset.Spec.Openstack.Credentials
+
+	cloud.Openstack.Username = credentials.Username
+	cloud.Openstack.Password = credentials.Password
+	cloud.Openstack.Domain = credentials.Domain
+	cloud.Openstack.Tenant = credentials.Tenant
+	cloud.Openstack.TenantID = credentials.TenantID
+
+	cloud.Openstack.SubnetID = credentials.SubnetID
+	cloud.Openstack.Network = credentials.Network
+	cloud.Openstack.FloatingIPPool = credentials.FloatingIPPool
+
+	if cloud.Openstack.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
+		return nil, fmt.Errorf("preset error, no floating ip pool specified for OpenStack")
 	}
-	return nil, noCredentialError(credentialName)
+
+	cloud.Openstack.RouterID = credentials.RouterID
+	cloud.Openstack.SecurityGroups = credentials.SecurityGroups
+	return &cloud, nil
+
 }
 
-func (m *Manager) setOpenStackCredentials(userInfo provider.UserInfo, credentialName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
-	preset := m.GetPreset(userInfo)
-	if preset.Spec.Openstack.Credentials == nil {
-		return nil, emptyCredentialListError("Openstack")
+func (m *Manager) setVsphereCredentials(presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset := m.GetPreset(presetName)
+	if reflect.DeepEqual(preset.Spec.VSphere.Credentials, kubermaticv1.VSpherePresetCredentials{}) {
+		return nil, emptyCredentialError(presetName, "Vsphere")
 	}
-	for _, credential := range preset.Spec.Openstack.Credentials {
-		if credentialName == credential.Name {
-			cloud.Openstack.Username = credential.Username
-			cloud.Openstack.Password = credential.Password
-			cloud.Openstack.Domain = credential.Domain
-			cloud.Openstack.Tenant = credential.Tenant
-			cloud.Openstack.TenantID = credential.TenantID
+	credentials := preset.Spec.VSphere.Credentials
+	cloud.VSphere.Password = credentials.Password
+	cloud.VSphere.Username = credentials.Username
 
-			cloud.Openstack.SubnetID = credential.SubnetID
-			cloud.Openstack.Network = credential.Network
-			cloud.Openstack.FloatingIPPool = credential.FloatingIPPool
+	cloud.VSphere.VMNetName = credentials.VMNetName
+	return &cloud, nil
 
-			if cloud.Openstack.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
-				return nil, fmt.Errorf("preset error, no floating ip pool specified for OpenStack")
-			}
-
-			cloud.Openstack.RouterID = credential.RouterID
-			cloud.Openstack.SecurityGroups = credential.SecurityGroups
-			return &cloud, nil
-		}
-	}
-	return nil, noCredentialError(credentialName)
-}
-
-func (m *Manager) setVsphereCredentials(userInfo provider.UserInfo, credentialName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
-	preset := m.GetPreset(userInfo)
-	if preset.Spec.VSphere.Credentials == nil {
-		return nil, emptyCredentialListError("Vsphere")
-	}
-	for _, credential := range preset.Spec.VSphere.Credentials {
-		if credentialName == credential.Name {
-			cloud.VSphere.Password = credential.Password
-			cloud.VSphere.Username = credential.Username
-
-			cloud.VSphere.VMNetName = credential.VMNetName
-			return &cloud, nil
-		}
-	}
-	return nil, noCredentialError(credentialName)
 }
 
 func emptyPreset() *kubermaticv1.Preset {

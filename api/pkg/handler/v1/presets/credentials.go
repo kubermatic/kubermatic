@@ -58,40 +58,33 @@ func CredentialEndpoint(credentialManager common.PresetsManager) endpoint.Endpoi
 		names := make([]string, 0)
 
 		providerN := parseProvider(req.ProviderName)
-		preset := credentialManager.GetPreset(*userInfo)
+		presets := credentialManager.GetPresets(*userInfo)
 
-		// get specific provider by name from the Preset spec struct:
-		// type PresetSpec struct {
-		//	Digitalocean Digitalocean
-		//	Hetzner      Hetzner
-		//	Azure        Azure
-		//	VSphere      VSphere
-		//	AWS          AWS
-		//	Openstack    Openstack
-		//	Packet       Packet
-		//	GCP          GCP
-		//	Kubevirt     Kubevirt
-		// }
-		providersRaw := reflect.ValueOf(preset.Spec)
-		if providersRaw.Kind() == reflect.Struct {
-			providers := reflect.Indirect(providersRaw)
-			providerItem := providers.Field(providerN)
+		for _, preset := range presets {
+			// get specific provider by name from the Preset spec struct:
+			// type PresetSpec struct {
+			//	Digitalocean Digitalocean
+			//	Hetzner      Hetzner
+			//	Azure        Azure
+			//	VSphere      VSphere
+			//	AWS          AWS
+			//	Openstack    Openstack
+			//	Packet       Packet
+			//	GCP          GCP
+			//	Kubevirt     Kubevirt
+			// }
+			providersRaw := reflect.ValueOf(preset.Spec)
+			if providersRaw.Kind() == reflect.Struct {
+				providers := reflect.Indirect(providersRaw)
+				providerItem := providers.Field(providerN)
 
-			// find all credentials for the specific provider:
-			// Credentials []SomeProviderPresetCredentials
-			// and retrieve the names
-			credentialItems := providerItem.FieldByName("Credentials")
-			if credentialItems.Kind() == reflect.Slice {
-				for i := 0; i < credentialItems.Len(); i++ {
-					item := credentialItems.Index(i)
-					if item.Kind() == reflect.Struct {
-						v := reflect.Indirect(item)
-						// retrieve credential name and append to credentials names
-						if _, ok := v.Type().FieldByName("Name"); ok {
-							rawName := v.FieldByName("Name").Interface()
-							name := rawName.(string)
-							names = append(names, name)
-						}
+				// get credentials for the specific provider:
+				// Credentials SomeProviderPresetCredentials
+				// and check if are defined (not empty structure)
+				credentialItems := providerItem.FieldByName("Credentials")
+				if credentialItems.Kind() == reflect.Struct {
+					if !reflect.DeepEqual(reflect.Zero(credentialItems.Type()).Interface(), credentialItems.Interface()) {
+						names = append(names, preset.Name)
 					}
 				}
 			}

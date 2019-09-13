@@ -23,18 +23,13 @@ func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, credentialManager
 			return nil, fmt.Errorf("incorrect type of request, expected = VSphereNetworksReq, got = %T", request)
 		}
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		username := req.Username
 		password := req.Password
 
-		if len(req.Credential) > 0 && credentialManager.GetPreset(*userInfo).Spec.VSphere.Credentials != nil {
-			for _, credential := range credentialManager.GetPreset(*userInfo).Spec.VSphere.Credentials {
-				if credential.Name == req.Credential {
-					username = credential.Username
-					password = credential.Password
-					break
-				}
-			}
+		if len(req.Credential) > 0 {
+			credentials := credentialManager.GetPreset(req.Credential).Spec.VSphere.Credentials
+			username = credentials.Username
+			password = credentials.Password
 		}
 
 		return getVsphereNetworks(seedsGetter, username, password, req.DatacenterName)
@@ -111,18 +106,13 @@ func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, credentialManager 
 			return nil, fmt.Errorf("incorrect type of request, expected = VSphereFoldersReq, got = %T", request)
 		}
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		username := req.Username
 		password := req.Password
 
-		if len(req.Credential) > 0 && credentialManager.GetPreset(*userInfo).Spec.VSphere.Credentials != nil {
-			for _, credential := range credentialManager.GetPreset(*userInfo).Spec.VSphere.Credentials {
-				if credential.Name == req.Credential {
-					username = credential.Username
-					password = credential.Password
-					break
-				}
-			}
+		if len(req.Credential) > 0 {
+			credentials := credentialManager.GetPreset(req.Credential).Spec.VSphere.Credentials
+			username = credentials.Username
+			password = credentials.Password
 		}
 
 		return getVsphereFolders(seedsGetter, username, password, req.DatacenterName)
