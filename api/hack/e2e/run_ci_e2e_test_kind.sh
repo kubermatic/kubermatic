@@ -47,9 +47,9 @@ done
 # Load kind image
 docker load --input /kindest.tar
 
-DOCKER_CONFIG=/ docker run --name controller -d -v /root/.kube/config:/inner -v /etc/kubeconfig/kubeconfig:/outer --network host --privileged ${CONTROLLER_IMAGE} --kubeconfig-inner "/inner" --kubeconfig-outer "/outer" --namespace "default" --build-id "$PROW_JOB_ID"
-docker logs -f controller &
+#DOCKER_CONFIG=/ docker run --name controller -d -v /root/.kube/config:/inner -v /etc/kubeconfig/kubeconfig:/outer --network host --privileged ${CONTROLLER_IMAGE} --kubeconfig-inner "/inner" --kubeconfig-outer "/outer" --namespace "default" --build-id "$PROW_JOB_ID"
+#docker logs -f controller &
 
-expose.sh
+#expose.sh
 
 sh -c "$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api/hack/ci/ci-run-kind-conformance-tests.sh"

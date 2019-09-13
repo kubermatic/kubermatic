@@ -41,6 +41,8 @@ SCRIPT_PATH=$(dirname -- "$(readlink -f -- "$BASH_SOURCE")")
 DEX_PATH=${SCRIPT_PATH}/helm/oauth
 DEX_NAMESPACE="oauth"
 
+CLUSTER_EXPOSER_IMAGE="quay.io/kubermatic/cluster-exposer:v1.0.0"
+
 # if no provider argument has been specified, default to aws
 provider=${PROVIDER:-"aws"}
 
@@ -461,6 +463,21 @@ EOF
 TEST_NAME="Deploy Seed Manifest"
 retry 5 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing seed"
+
+# Run the cluster exposer
+TEST_NAME="Run cluster exposer"
+DOCKER_CONFIG=/ docker run --name controller -d -v /root/.kube/config:/inner -v /etc/kubeconfig/kubeconfig:/outer --network host --privileged ${CLUSTER_EXPOSER_IMAGE} --kubeconfig-inner "/inner" --kubeconfig-outer "/outer" --namespace "default" --build-id "$PROW_JOB_ID"
+docker logs -f controller &
+echodate "Finished running cluster exposer"
+
+# expose.sh
+# Expose dex to localhost
+TEST_NAME="Expose dex and kubermatic API to localhost"
+kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556 > /dev/null 2> /dev/null &
+
+# Expose kubermatic API to localhost
+kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 > /dev/null 2> /dev/null &
+echodate "Finished exposing components"
 
 # We build the CLI after deploying to make sure we fail fast if the helm deployment fails
 if ! ls ./api/_build/conformance-tests &>/dev/null; then
