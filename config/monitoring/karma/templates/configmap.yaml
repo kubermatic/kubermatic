@@ -9,21 +9,4 @@ metadata:
     app.kubernetes.io/managed-by: helm
 data:
   karma.yaml: |
-    log:
-      config: false
-      level: warning
-      format: json
-
-    filters:
-      default:
-      # only show active alerts
-      - "@state=active"
-
-    receivers:
-      strip:
-      # prevent alerts from showing up multiple times
-      - '@critical-alerts'
-
-    alertmanager:
-      interval: 60s
-      servers:
+{{ .Values.karma.config | indent 4 }}

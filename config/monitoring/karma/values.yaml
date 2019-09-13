@@ -1,5 +1,25 @@
 karma:
   kubermaticNamespace: kubermatic
+  config: |
+    log:
+      config: false
+      level: warning
+      format: json
+
+    filters:
+      default:
+      # only show active alerts
+      - "@state=active"
+
+    receivers:
+      strip:
+      # prevent alerts from showing up multiple times
+      - '@critical-alerts'
+
+    alertmanager:
+      interval: 60s
+      servers:
+
   images:
     karma:
       repository: docker.io/lmierzwa/karma
