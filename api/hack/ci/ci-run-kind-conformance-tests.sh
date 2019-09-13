@@ -33,6 +33,9 @@ KUBERMATIC_IMAGE_TAG=${1:-"latest"}
 
 # TODO alvaroaleman: Put that into the docker image
 iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+echodate "echoing hosts"
+cat /etc/hosts
+echodate "finishing echoing hosts"
 sed 's/localhost/localhost dex.oauth/' < /etc/hosts > /hosts
 sed 's/localhost/localhost dex.oauth/' < /etc/hosts > /etc/hosts
 
