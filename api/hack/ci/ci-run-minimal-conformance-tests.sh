@@ -65,8 +65,9 @@ function cleanup {
   echodate "Starting cleanup"
   set +e
 
-  local resource_name; resource_name="$(jq .name <<<"${boskos_resource}")"
-  boskosctl release --name "${resource_name}" --target-state dirty
+  if [[ -n ${boskos_resource_name:-} ]]; then
+    boskosctl release --name "${boskos_resource_name}" --target-state dirty
+  fi
 
   # Try being a little helpful
   if [[ ${testRC} -ne 0 ]]; then
