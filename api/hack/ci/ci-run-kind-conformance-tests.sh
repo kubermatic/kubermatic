@@ -329,7 +329,6 @@ cp -r ${KUBERMATIC_PATH}/config/oauth ${DEX_PATH}
 rm ${DEX_PATH}/templates/ingress.yaml
 cp ${SCRIPT_PATH}/testdata/oauth_values.yaml ${DEX_PATH}/values.yaml
 cp ${SCRIPT_PATH}/testdata/oauth_configmap.yaml ${DEX_PATH}/templates/configmap.yaml
-cp -r ${KUBERMATIC_PATH}/config/kubermatic ${KUBERMATIC_HELM_PATH}
 rm ${KUBERMATIC_HELM_PATH}/templates/ingress.yaml
 
 helm install --wait --timeout 180 \
