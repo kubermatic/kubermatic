@@ -471,6 +471,9 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 	if err := userClusterClient.Get(ctx, nn(metav1.NamespaceSystem, tokenOwnerServiceAccount.Secrets[0].Name), tokenSecret); err != nil {
 		return nil, fmt.Errorf("failed to get token secret from user cluster: %v", err)
 	}
+	if len(tokenSecret.Data["token"]) == 0 {
+		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
 
 	// Create the admin-kubeconfig in the seed cluster
 	adminKubeconfigSecretName, adminKubeconfigCreator := resources.AdminKubeconfigCreator(osData, func(c *clientcmdapi.Config) {
