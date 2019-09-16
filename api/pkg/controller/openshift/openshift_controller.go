@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"go.uber.org/zap"
+
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/clusterdeletion"
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
@@ -26,8 +28,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/usercluster"
-
-	"go.uber.org/zap"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -264,6 +264,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		kubermaticImage:                       r.kubermaticImage,
 		dnatControllerImage:                   r.dnatControllerImage,
 		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
+		userClusterClient: func() (client.Client, error) {
+			return r.getUserClusterClient(ctx, cluster)
+		},
 	}
 
 	if err := r.networkDefaults(ctx, cluster); err != nil {
@@ -345,7 +348,20 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
+	// This requires both the cluster to be up and a CRD we deploy via the AddonController
+	// to exist, so do this at the very end
+	if err := r.ensureConsoleOauthSecret(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to create oauth secret for Openshift console: %v", err)
+	}
+
 	return nil, nil
+}
+
+func (r *Reconciler) ensureConsoleOauthSecret(ctx context.Context, osData *openshiftData) error {
+	getter := []reconciling.NamedSecretCreatorGetter{
+		openshiftresources.ConsoleOauthClientSecretCreator(osData)}
+	ns := osData.Cluster().Status.NamespaceName
+	return reconciling.ReconcileSecrets(ctx, getter, ns, r.Client)
 }
 
 func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error {
@@ -539,12 +555,9 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 }
 
 func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
-	for _, namedSecretCreator := range r.getAllSecretCreators(ctx, osData) {
-		secretName, secretCreator := namedSecretCreator()
-		if err := reconciling.EnsureNamedObject(ctx,
-			nn(osData.Cluster().Status.NamespaceName, secretName), reconciling.SecretObjectWrapper(secretCreator), r.Client, &corev1.Secret{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Secret %s: %v", secretName, err)
-		}
+	ns := osData.Cluster().Status.NamespaceName
+	if err := reconciling.ReconcileSecrets(ctx, r.getAllSecretCreators(ctx, osData), ns, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Secrets: %v", err)
 	}
 
 	return nil

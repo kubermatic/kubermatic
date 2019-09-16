@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	certutil "k8s.io/client-go/util/cert"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // openshiftData implements the openshiftData interface which is
@@ -36,6 +37,7 @@ type openshiftData struct {
 	kubermaticImage                       string
 	dnatControllerImage                   string
 	supportsFailureDomainZoneAntiAffinity bool
+	userClusterClient                     func() (ctrlruntimeclient.Client, error)
 }
 
 func (od *openshiftData) DC() *kubermaticv1.Datacenter {
@@ -317,4 +319,8 @@ func (od *openshiftData) GetOauthExternalNodePort() (int32, error) {
 		return 0, fmt.Errorf("expected service to have exactly one port, had %d", n)
 	}
 	return svc.Spec.Ports[0].NodePort, nil
+}
+
+func (od *openshiftData) Client() (ctrlruntimeclient.Client, error) {
+	return od.userClusterClient()
 }
