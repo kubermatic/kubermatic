@@ -283,12 +283,12 @@ func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.Seeds
 				},
 				Spec: kubermaticv1.PresetSpec{
 					RequiredEmailDomain: RequiredEmailDomain,
-					Fake: kubermaticv1.Fake{Credentials: kubermaticv1.FakePresetCredentials{
+					Fake: &kubermaticv1.Fake{
 						Token: "dummy_pluton_token",
-					}},
-					Openstack: kubermaticv1.Openstack{Credentials: kubermaticv1.OpenstackPresetCredentials{
+					},
+					Openstack: &kubermaticv1.Openstack{
 						Username: TestOSuserName, Password: TestOSuserPass, Domain: TestOSdomain,
-					}},
+					},
 				},
 			},
 		},

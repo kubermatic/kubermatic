@@ -22,14 +22,22 @@ func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, credentialManager
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = VSphereNetworksReq, got = %T", request)
 		}
-
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
 		username := req.Username
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			credentials := credentialManager.GetPreset(req.Credential).Spec.VSphere.Credentials
-			username = credentials.Username
-			password = credentials.Password
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.VSphere; credentials != nil {
+				username = credentials.Username
+				password = credentials.Password
+			}
 		}
 
 		return getVsphereNetworks(seedsGetter, username, password, req.DatacenterName)
@@ -105,14 +113,22 @@ func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, credentialManager 
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = VSphereFoldersReq, got = %T", request)
 		}
-
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
 		username := req.Username
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			credentials := credentialManager.GetPreset(req.Credential).Spec.VSphere.Credentials
-			username = credentials.Username
-			password = credentials.Password
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.VSphere; credentials != nil {
+				username = credentials.Username
+				password = credentials.Password
+			}
 		}
 
 		return getVsphereFolders(seedsGetter, username, password, req.DatacenterName)

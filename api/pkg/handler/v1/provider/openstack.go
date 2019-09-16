@@ -22,6 +22,11 @@ func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, credentialManager c
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+
 		seeds, err := seedsGetter()
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
@@ -33,7 +38,10 @@ func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, credentialManager c
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
 
-		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
+		username, password, domain, tenant, tenantID, err := getOpenstackCredentials(userInfo, req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
+		if err != nil {
+			return nil, fmt.Errorf("error getting OpenStack credentials: %v", err)
+		}
 		return getOpenstackSizes(username, password, tenant, tenantID, domain, datacenterName, datacenter)
 	}
 }
@@ -118,8 +126,14 @@ func OpenstackTenantEndpoint(seedsGetter provider.SeedsGetter, credentialManager
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackTenantReq, got = %T", request)
 		}
-		username, password, domain, _, _ := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, "", "", credentialManager)
-
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+		username, password, domain, _, _, err := getOpenstackCredentials(userInfo, req.Credential, req.Username, req.Password, req.Domain, "", "", credentialManager)
+		if err != nil {
+			return nil, fmt.Errorf("error getting OpenStack credentials: %v", err)
+		}
 		return getOpenstackTenants(seedsGetter, username, password, domain, req.DatacenterName)
 	}
 }
@@ -180,9 +194,14 @@ func OpenstackNetworkEndpoint(seedsGetter provider.SeedsGetter, credentialManage
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
-
-		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
-
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+		username, password, domain, tenant, tenantID, err := getOpenstackCredentials(userInfo, req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
+		if err != nil {
+			return nil, fmt.Errorf("error getting OpenStack credentials: %v", err)
+		}
 		return getOpenstackNetworks(seedsGetter, username, password, tenant, tenantID, domain, req.DatacenterName)
 	}
 }
@@ -245,9 +264,14 @@ func OpenstackSecurityGroupEndpoint(seedsGetter provider.SeedsGetter, credential
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackReq, got = %T", request)
 		}
-
-		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
-
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+		username, password, domain, tenant, tenantID, err := getOpenstackCredentials(userInfo, req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
+		if err != nil {
+			return nil, fmt.Errorf("error getting OpenStack credentials: %v", err)
+		}
 		return getOpenstackSecurityGroups(seedsGetter, username, password, tenant, tenantID, domain, req.DatacenterName)
 	}
 }
@@ -309,9 +333,14 @@ func OpenstackSubnetsEndpoint(seedsGetter provider.SeedsGetter, credentialManage
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackSubnetReq, got = %T", request)
 		}
-
-		username, password, domain, tenant, tenantID := getOpenstackCredentials(req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
-
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+		username, password, domain, tenant, tenantID, err := getOpenstackCredentials(userInfo, req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID, credentialManager)
+		if err != nil {
+			return nil, fmt.Errorf("error getting OpenStack credentials: %v", err)
+		}
 		return getOpenstackSubnets(seedsGetter, username, password, domain, tenant, tenantID, req.NetworkID, req.DatacenterName)
 	}
 }
@@ -492,16 +521,21 @@ func DecodeOpenstackTenantReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-func getOpenstackCredentials(credentialName, username, password, domain, tenant, tenantID string, credentialManager common.PresetsManager) (string, string, string, string, string) {
+func getOpenstackCredentials(userInfo *provider.UserInfo, credentialName, username, password, domain, tenant, tenantID string, credentialManager common.PresetsManager) (string, string, string, string, string, error) {
 	if len(credentialName) > 0 {
-		credentials := credentialManager.GetPreset(credentialName).Spec.Openstack.Credentials
-		username = credentials.Username
-		password = credentials.Password
-		tenant = credentials.Tenant
-		tenantID = credentials.TenantID
-		domain = credentials.Domain
+		preset, err := credentialManager.GetPreset(userInfo, credentialName)
+		if err != nil {
+			return "", "", "", "", "", fmt.Errorf("can not get preset %s for the user %s", credentialName, userInfo.Email)
+		}
+		if credentials := preset.Spec.Openstack; credentials != nil {
+			username = credentials.Username
+			password = credentials.Password
+			tenant = credentials.Tenant
+			tenantID = credentials.TenantID
+			domain = credentials.Domain
+		}
 	}
-	return username, password, domain, tenant, tenantID
+	return username, password, domain, tenant, tenantID, nil
 }
 
 func getOpenstackCloudProvider(seeds map[string]*kubermaticv1.Seed, datacenterName string) (*openstack.Provider, error) {

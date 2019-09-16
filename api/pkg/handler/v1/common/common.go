@@ -51,9 +51,9 @@ type UpdateManager interface {
 
 // PresetsManager specifies a set of methods to handle presets for specific provider
 type PresetsManager interface {
-	GetPresets(userInfo provider.UserInfo) []kubermaticv1.Preset
-	GetPreset(name string) *kubermaticv1.Preset
-	SetCloudCredentials(presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error)
+	GetPresets(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error)
+	GetPreset(userInfo *provider.UserInfo, name string) (*kubermaticv1.Preset, error)
+	SetCloudCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error)
 }
 
 // ServerMetrics defines metrics used by the API.

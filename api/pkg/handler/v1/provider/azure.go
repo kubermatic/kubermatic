@@ -155,12 +155,22 @@ func AzureSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoin
 		clientSecret := req.ClientSecret
 		tenantID := req.TenantID
 
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+
 		if len(req.Credential) > 0 {
-			credentials := credentialManager.GetPreset(req.Credential).Spec.Azure.Credentials
-			subscriptionID = credentials.SubscriptionID
-			clientID = credentials.ClientID
-			clientSecret = credentials.ClientSecret
-			tenantID = credentials.TenantID
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.Azure; credentials != nil {
+				subscriptionID = credentials.SubscriptionID
+				clientID = credentials.ClientID
+				clientSecret = credentials.ClientSecret
+				tenantID = credentials.TenantID
+			}
 		}
 		return azureSize(ctx, subscriptionID, clientID, clientSecret, tenantID, req.Location)
 	}

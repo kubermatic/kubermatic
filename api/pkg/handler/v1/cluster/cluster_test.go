@@ -733,7 +733,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		{
 			Name:                   "scenario 7: custom credential doesn't exist for Fake cloud provider",
 			Body:                   `{"cluster":{"name":"keen-snyder","type":"openshift","credential":"default","spec":{"version":"1.9.7","cloud":{"fake":{},"dc":"fake-dc"}}}}`,
-			ExpectedResponse:       `{"error":{"code":400,"message":"invalid credentials: the preset default doesn't contain credential for Fake provider"}}`,
+			ExpectedResponse:       `{"error":{"code":400,"message":"invalid credentials: missing preset 'default' for the user 'bob@acme.com'"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ProjectToSync:          test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),

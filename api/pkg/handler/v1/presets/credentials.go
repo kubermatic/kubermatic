@@ -58,7 +58,10 @@ func CredentialEndpoint(credentialManager common.PresetsManager) endpoint.Endpoi
 		names := make([]string, 0)
 
 		providerN := parseProvider(req.ProviderName)
-		presets := credentialManager.GetPresets(*userInfo)
+		presets, err := credentialManager.GetPresets(userInfo)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
 
 		for _, preset := range presets {
 			// get specific provider by name from the Preset spec struct:
@@ -78,14 +81,9 @@ func CredentialEndpoint(credentialManager common.PresetsManager) endpoint.Endpoi
 				providers := reflect.Indirect(providersRaw)
 				providerItem := providers.Field(providerN)
 
-				// get credentials for the specific provider:
-				// Credentials SomeProviderPresetCredentials
-				// and check if are defined (not empty structure)
-				credentialItems := providerItem.FieldByName("Credentials")
-				if credentialItems.Kind() == reflect.Struct {
-					if !reflect.DeepEqual(reflect.Zero(credentialItems.Type()).Interface(), credentialItems.Interface()) {
-						names = append(names, preset.Name)
-					}
+				// append preset name if specific provider is not empty:
+				if !providerItem.IsNil() {
+					names = append(names, preset.Name)
 				}
 			}
 		}

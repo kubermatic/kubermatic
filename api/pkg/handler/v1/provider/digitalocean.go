@@ -59,10 +59,19 @@ func DigitaloceanSizeEndpoint(credentialManager common.PresetsManager) endpoint.
 		req := request.(DoSizesReq)
 
 		token := req.DoToken
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
 
 		if len(req.Credential) > 0 {
-			credentials := credentialManager.GetPreset(req.Credential).Spec.Digitalocean.Credentials
-			token = credentials.Token
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.Digitalocean; credentials != nil {
+				token = credentials.Token
+			}
 		}
 
 		return digitaloceanSize(ctx, token)

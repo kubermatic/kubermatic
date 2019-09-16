@@ -115,10 +115,18 @@ func GCPDiskTypesEndpoint(credentialManager common.PresetsManager) endpoint.Endp
 
 		zone := req.Zone
 		sa := req.ServiceAccount
-
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
 		if len(req.Credential) > 0 {
-			credentials := credentialManager.GetPreset(req.Credential).Spec.GCP.Credentials
-			sa = credentials.ServiceAccount
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GCP; credentials != nil {
+				sa = credentials.ServiceAccount
+			}
 		}
 		return listGCPDiskTypes(ctx, sa, zone)
 	}
@@ -179,9 +187,18 @@ func GCPSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint 
 		zone := req.Zone
 		sa := req.ServiceAccount
 
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
 		if len(req.Credential) > 0 {
-			credentials := credentialManager.GetPreset(req.Credential).Spec.GCP.Credentials
-			sa = credentials.ServiceAccount
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GCP; credentials != nil {
+				sa = credentials.ServiceAccount
+			}
 		}
 
 		return listGCPSizes(ctx, sa, zone)
@@ -245,9 +262,18 @@ func GCPZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provid
 		req := request.(GCPZoneReq)
 		sa := req.ServiceAccount
 
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
 		if len(req.Credential) > 0 {
-			credentials := credentialManager.GetPreset(req.Credential).Spec.GCP.Credentials
-			sa = credentials.ServiceAccount
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GCP; credentials != nil {
+				sa = credentials.ServiceAccount
+			}
 		}
 
 		return listGCPZones(ctx, sa, req.DC, seedsGetter)

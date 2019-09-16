@@ -36,16 +36,6 @@ func TestCredentialEndpoint(t *testing.T) {
 				Items: []kubermaticv1.Preset{
 					{
 						ObjectMeta: metav1.ObjectMeta{
-							Name: "first",
-						},
-						Spec: kubermaticv1.PresetSpec{
-							RequiredEmailDomain: test.RequiredEmailDomain,
-							AWS: kubermaticv1.AWS{
-								Credentials: kubermaticv1.AWSPresetCredentials{}},
-						},
-					},
-					{
-						ObjectMeta: metav1.ObjectMeta{
 							Name: "second",
 						},
 						Spec: kubermaticv1.PresetSpec{
@@ -68,10 +58,9 @@ func TestCredentialEndpoint(t *testing.T) {
 						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							AWS: kubermaticv1.AWS{
-								Credentials: kubermaticv1.AWSPresetCredentials{
-									AccessKeyID: "a",
-								}},
+							AWS: &kubermaticv1.AWS{
+								AccessKeyID: "a",
+							},
 						},
 					},
 					{
@@ -80,10 +69,9 @@ func TestCredentialEndpoint(t *testing.T) {
 						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							AWS: kubermaticv1.AWS{
-								Credentials: kubermaticv1.AWSPresetCredentials{
-									AccessKeyID: "a",
-								}},
+							AWS: &kubermaticv1.AWS{
+								AccessKeyID: "a",
+							},
 						},
 					},
 				},
@@ -108,9 +96,9 @@ func TestCredentialEndpoint(t *testing.T) {
 						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							Azure: kubermaticv1.Azure{Credentials: kubermaticv1.AzurePresetCredentials{
+							Azure: &kubermaticv1.Azure{
 								ClientID: "test-first", ClientSecret: "secret-first", SubscriptionID: "subscription-first", TenantID: "tenant-first",
-							}},
+							},
 						},
 					},
 				},
@@ -135,9 +123,9 @@ func TestCredentialEndpoint(t *testing.T) {
 						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							Digitalocean: kubermaticv1.Digitalocean{Credentials: kubermaticv1.DigitaloceanPresetCredentials{
+							Digitalocean: &kubermaticv1.Digitalocean{
 								Token: "toke",
-							}},
+							},
 						},
 					},
 				},
@@ -162,9 +150,9 @@ func TestCredentialEndpoint(t *testing.T) {
 						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							GCP: kubermaticv1.GCP{Credentials: kubermaticv1.GCPPresetCredentials{
+							GCP: &kubermaticv1.GCP{
 								ServiceAccount: "sa",
-							}},
+							},
 						},
 					},
 				},
@@ -189,9 +177,9 @@ func TestCredentialEndpoint(t *testing.T) {
 						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							Hetzner: kubermaticv1.Hetzner{Credentials: kubermaticv1.HetznerPresetCredentials{
+							Hetzner: &kubermaticv1.Hetzner{
 								Token: "aa",
-							}},
+							},
 						},
 					},
 				},
@@ -216,9 +204,9 @@ func TestCredentialEndpoint(t *testing.T) {
 						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							Openstack: kubermaticv1.Openstack{Credentials: kubermaticv1.OpenstackPresetCredentials{
+							Openstack: &kubermaticv1.Openstack{
 								Password: "password",
-							}},
+							},
 						},
 					},
 				},
@@ -243,9 +231,9 @@ func TestCredentialEndpoint(t *testing.T) {
 						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							Packet: kubermaticv1.Packet{Credentials: kubermaticv1.PacketPresetCredentials{
+							Packet: &kubermaticv1.Packet{
 								APIKey: "key",
-							}},
+							},
 						},
 					},
 				},
@@ -270,9 +258,9 @@ func TestCredentialEndpoint(t *testing.T) {
 						},
 						Spec: kubermaticv1.PresetSpec{
 							RequiredEmailDomain: test.RequiredEmailDomain,
-							VSphere: kubermaticv1.VSphere{Credentials: kubermaticv1.VSpherePresetCredentials{
+							VSphere: &kubermaticv1.VSphere{
 								Password: "password",
-							}},
+							},
 						},
 					},
 					{
@@ -280,9 +268,9 @@ func TestCredentialEndpoint(t *testing.T) {
 							Name: "second",
 						},
 						Spec: kubermaticv1.PresetSpec{
-							VSphere: kubermaticv1.VSphere{Credentials: kubermaticv1.VSpherePresetCredentials{
+							VSphere: &kubermaticv1.VSphere{
 								Password: "password",
-							}},
+							},
 						},
 					},
 				},

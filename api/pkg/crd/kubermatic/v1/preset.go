@@ -31,70 +31,29 @@ type Preset struct {
 
 // Presets specifies default presets for supported providers
 type PresetSpec struct {
-	Digitalocean Digitalocean `json:"digitalocean,omitempty"`
-	Hetzner      Hetzner      `json:"hetzner,omitempty"`
-	Azure        Azure        `json:"azure,omitempty"`
-	VSphere      VSphere      `json:"vsphere,omitempty"`
-	AWS          AWS          `json:"aws,omitempty"`
-	Openstack    Openstack    `json:"openstack,omitempty"`
-	Packet       Packet       `json:"packet,omitempty"`
-	GCP          GCP          `json:"gcp,omitempty"`
-	Kubevirt     Kubevirt     `json:"kubevirt,omitempty"`
+	Digitalocean *Digitalocean `json:"digitalocean,omitempty"`
+	Hetzner      *Hetzner      `json:"hetzner,omitempty"`
+	Azure        *Azure        `json:"azure,omitempty"`
+	VSphere      *VSphere      `json:"vsphere,omitempty"`
+	AWS          *AWS          `json:"aws,omitempty"`
+	Openstack    *Openstack    `json:"openstack,omitempty"`
+	Packet       *Packet       `json:"packet,omitempty"`
+	GCP          *GCP          `json:"gcp,omitempty"`
+	Kubevirt     *Kubevirt     `json:"kubevirt,omitempty"`
 
-	Fake                Fake   `json:"fake,omitempty"`
+	Fake                *Fake  `json:"fake,omitempty"`
 	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
 }
 
 type Digitalocean struct {
-	Credentials DigitaloceanPresetCredentials `json:"credentials,omitempty"`
-}
-
-type Hetzner struct {
-	Credentials HetznerPresetCredentials `json:"credentials,omitempty"`
-}
-
-type Azure struct {
-	Credentials AzurePresetCredentials `json:"credentials,omitempty"`
-}
-
-type VSphere struct {
-	Credentials VSpherePresetCredentials `json:"credentials,omitempty"`
-}
-
-type AWS struct {
-	Credentials AWSPresetCredentials `json:"credentials,omitempty"`
-}
-
-type Openstack struct {
-	Credentials OpenstackPresetCredentials `json:"credentials,omitempty"`
-}
-
-type Packet struct {
-	Credentials PacketPresetCredentials `json:"credentials,omitempty"`
-}
-
-type GCP struct {
-	Credentials GCPPresetCredentials `json:"credentials,omitempty"`
-}
-
-type Fake struct {
-	Credentials FakePresetCredentials `json:"credentials,omitempty"`
-}
-
-type Kubevirt struct {
-	Credentials KubevirtPresetCredentials `json:"credentials,omitempty"`
-}
-
-// DigitaloceanPresetCredentials defines Digitalocean credential
-type DigitaloceanPresetCredentials struct {
 	Token string `json:"token"` // Token is used to authenticate with the DigitalOcean API.
 }
 
-type HetznerPresetCredentials struct {
+type Hetzner struct {
 	Token string `json:"token"` // Token is used to authenticate with the Hetzner API.
 }
 
-type AzurePresetCredentials struct {
+type Azure struct {
 	TenantID       string `json:"tenantId"`
 	SubscriptionID string `json:"subscriptionId"`
 	ClientID       string `json:"clientId"`
@@ -107,15 +66,14 @@ type AzurePresetCredentials struct {
 	SecurityGroup  string `json:"securityGroup,omitempty"`
 }
 
-// VSpherePresetCredentials credentials represents a credential for accessing vSphere
-type VSpherePresetCredentials struct {
+type VSphere struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 
 	VMNetName string `json:"vmNetName,omitempty"`
 }
 
-type AWSPresetCredentials struct {
+type AWS struct {
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
 
@@ -125,8 +83,7 @@ type AWSPresetCredentials struct {
 	SecurityGroupID     string `json:"securityGroupID,omitempty"`
 }
 
-// OpenstackPresetCredentials specifies access data to an openstack cloud.
-type OpenstackPresetCredentials struct {
+type Openstack struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Tenant   string `json:"tenant"`
@@ -140,28 +97,24 @@ type OpenstackPresetCredentials struct {
 	SubnetID       string `json:"subnetID,omitempty"`
 }
 
-// PacketPresetCredentials specifies access data to a Packet cloud.
-type PacketPresetCredentials struct {
+type Packet struct {
 	APIKey    string `json:"apiKey"`
 	ProjectID string `json:"projectId"`
 
 	BillingCycle string `json:"billingCycle,omitempty"`
 }
 
-// GCPPresetCredentials specifies access data to GCP.
-type GCPPresetCredentials struct {
+type GCP struct {
 	ServiceAccount string `json:"serviceAccount"`
 
 	Network    string `json:"network,omitempty"`
 	Subnetwork string `json:"subnetwork,omitempty"`
 }
 
-// KubevirtPresetCredentials specifies access data to Kubevirt.
-type KubevirtPresetCredentials struct {
-	Kubeconfig string `json:"kubeconfig,omitempty"`
+type Fake struct {
+	Token string `json:"token"`
 }
 
-// FakePresetCredentials defines fake credential for tests
-type FakePresetCredentials struct {
-	Token string `json:"token"`
+type Kubevirt struct {
+	Kubeconfig string `json:"kubeconfig"`
 }

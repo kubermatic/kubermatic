@@ -207,11 +207,21 @@ func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter prov
 		secretAccessKey := req.SecretAccessKey
 		vpcID := req.VPC
 
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+
 		if len(req.Credential) > 0 {
-			credential := credentialManager.GetPreset(req.Credential).Spec.AWS.Credentials
-			accessKeyID = credential.AccessKeyID
-			secretAccessKey = credential.SecretAccessKey
-			vpcID = credential.VPCID
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credential := preset.Spec.AWS; credential != nil {
+				accessKeyID = credential.AccessKeyID
+				secretAccessKey = credential.SecretAccessKey
+				vpcID = credential.VPCID
+			}
 		}
 
 		seeds, err := seedsGetter()
@@ -328,10 +338,20 @@ func AWSVPCEndpoint(credentialManager common.PresetsManager, seedsGetter provide
 		accessKeyID := req.AccessKeyID
 		secretAccessKey := req.SecretAccessKey
 
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+
 		if len(req.Credential) > 0 {
-			credential := credentialManager.GetPreset(req.Credential).Spec.AWS.Credentials
-			accessKeyID = credential.AccessKeyID
-			secretAccessKey = credential.SecretAccessKey
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credential := preset.Spec.AWS; credential != nil {
+				accessKeyID = credential.AccessKeyID
+				secretAccessKey = credential.SecretAccessKey
+			}
 		}
 
 		seeds, err := seedsGetter()
