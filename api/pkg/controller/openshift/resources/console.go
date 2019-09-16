@@ -1,10 +1,12 @@
 package resources
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"text/template"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -14,10 +16,60 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+var (
+	consoleTemplate = template.Must(template.New("base").Parse(consoleTemplateRaw))
+)
+
 const (
 	consoleOauthSecretName       = "console-oauth-client-secret"
 	consoleOauthClientObjectName = "console"
+	consoleConfigMapName         = "console-config"
+	consoleConfigMapKey          = "console-config.yaml"
+	consoleTemplateRaw           = `apiVersion: console.openshift.io/v1
+auth:
+  clientID: console
+  clientSecretFile: /var/oauth-config/clientSecret
+  logoutRedirect: ""
+  oauthEndpointCAFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+clusterInfo:
+  consoleBaseAddress: https://{{ .ExternalName }}:443
+  consoleBasePath: ""
+  masterPublicURL: {{ .APIServerURL}}
+customization:
+  branding: ocp
+  documentationBaseURL: https://docs.openshift.com/container-platform/4.1/
+kind: ConsoleConfig
+servingInfo:
+  bindAddress: https://0.0.0.0:8443
+  certFile: /var/serving-cert/tls.crt
+  keyFile: /var/serving-cert/tls.key
+`
 )
+
+func ConsoleConfigCreator(data openshiftData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return consoleConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+
+			data := struct {
+				APIServerURL string
+				ExternalName string
+			}{
+				APIServerURL: data.Cluster().Address.URL,
+				ExternalName: data.Cluster().Address.ExternalName,
+			}
+			buffer := bytes.NewBuffer([]byte{})
+			if err := consoleTemplate.Execute(buffer, data); err != nil {
+				return nil, fmt.Errorf("failed to render template for openshift console: %v", err)
+			}
+
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
+			cm.Data[consoleConfigMapKey] = buffer.String()
+			return cm, nil
+		}
+	}
+}
 
 func ConsoleOauthClientSecretCreator(data openshiftData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {

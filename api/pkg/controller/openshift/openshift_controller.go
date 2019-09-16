@@ -584,6 +584,7 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 		openshiftresources.KubeSchedulerConfigMapCreator,
 		dns.ConfigMapCreator(osData),
 		openshiftresources.OauthConfigMapCreator(osData),
+		openshiftresources.ConsoleConfigCreator(osData),
 		// Put the cloudconfig at the end, it may need data from the cloud controller, this reduces the likelyhood
 		// that we instantly rotate the apiserver due to cloudconfig changes
 		cloudconfig.ConfigMapCreator(osData),
