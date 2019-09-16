@@ -541,6 +541,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		openshiftresources.OauthSessionSecretCreator,
 		openshiftresources.OauthOCPBrandingSecretCreator,
 		openshiftresources.OauthTLSServingCertCreator(osData.GetRootCA),
+		openshiftresources.ConsoleServingCertCreator(osData.GetRootCA),
 
 		//TODO: This is only needed because of the ServiceAccount Token needed for Openshift
 		//TODO: Streamline this by using it everywhere and use the clientprovider here or remove

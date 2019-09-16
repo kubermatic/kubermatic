@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"text/template"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/servingcerthelper"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -21,9 +22,10 @@ var (
 )
 
 const (
-	consoleOauthSecretName       = "console-oauth-client-secret"
+	consoleOauthSecretName       = "openshift-console-oauth-client-secret"
+	consoleServingCertSecretName = "openshift-console-serving-cert"
 	consoleOauthClientObjectName = "console"
-	consoleConfigMapName         = "console-config"
+	consoleConfigMapName         = "openshift-console-config"
 	consoleConfigMapKey          = "console-config.yaml"
 	consoleTemplateRaw           = `apiVersion: console.openshift.io/v1
 auth:
@@ -69,6 +71,15 @@ func ConsoleConfigCreator(data openshiftData) reconciling.NamedConfigMapCreatorG
 			return cm, nil
 		}
 	}
+}
+
+func ConsoleServingCertCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretCreatorGetter {
+	return servingcerthelper.ServingCertSecretCreator(caGetter,
+		consoleServingCertSecretName,
+		// We proxy this from the API
+		"console.openshift.seed.tld",
+		[]string{"console.openshift.seed.tld"},
+		nil)
 }
 
 func ConsoleOauthClientSecretCreator(data openshiftData) reconciling.NamedSecretCreatorGetter {
