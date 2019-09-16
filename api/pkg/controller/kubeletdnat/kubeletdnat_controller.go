@@ -14,6 +14,7 @@ import (
 	"github.com/golang/glog"
 
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"go.uber.org/zap"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -39,6 +40,8 @@ type Reconciler struct {
 	nodeTranslationChainName string
 	nodeAccessNetwork        net.IP
 	vpnInterface             string
+
+	log *zap.SugaredLogger
 }
 
 // dnatRule stores address+port before translation (match) and
@@ -55,13 +58,15 @@ func Add(
 	mgr manager.Manager,
 	nodeTranslationChainName string,
 	nodeAccessNetwork net.IP,
-	vpnInterface string) error {
+	vpnInterface string,
+	log *zap.SugaredLogger) error {
 
 	reconciler := &Reconciler{
 		Client:                   mgr.GetClient(),
 		nodeTranslationChainName: nodeTranslationChainName,
 		nodeAccessNetwork:        nodeAccessNetwork,
 		vpnInterface:             vpnInterface,
+		log:                      log,
 	}
 
 	ctrlOptions := controller.Options{
