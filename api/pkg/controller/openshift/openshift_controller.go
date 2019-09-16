@@ -563,7 +563,6 @@ func (r *Reconciler) statefulSets(ctx context.Context, osData *openshiftData) er
 
 func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedConfigMapCreatorGetter {
 	return []reconciling.NamedConfigMapCreatorGetter{
-		cloudconfig.ConfigMapCreator(osData),
 		openshiftresources.OpenshiftAPIServerConfigMapCreator(osData),
 		openshiftresources.OpenshiftKubeAPIServerConfigMapCreator(osData),
 		openshiftresources.KubeControllerManagerConfigMapCreatorFactory(osData),
@@ -572,6 +571,9 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 		openshiftresources.KubeSchedulerConfigMapCreator,
 		dns.ConfigMapCreator(osData),
 		openshiftresources.OauthConfigMapCreator(osData),
+		// Put the cloudconfig at the end, it may need data from the cloud controller, this reduces the likelyhood
+		// that we instantly rotate the apiserver due to cloudconfig changes
+		cloudconfig.ConfigMapCreator(osData),
 	}
 }
 
