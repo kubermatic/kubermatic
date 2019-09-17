@@ -46,11 +46,13 @@ type PresetSpec struct {
 }
 
 type Digitalocean struct {
-	Token string `json:"token"` // Token is used to authenticate with the DigitalOcean API.
+	// Token is used to authenticate with the DigitalOcean API.
+	Token string `json:"token"`
 }
 
 type Hetzner struct {
-	Token string `json:"token"` // Token is used to authenticate with the Hetzner API.
+	// Token is used to authenticate with the Hetzner API.
+	Token string `json:"token"`
 }
 
 type Azure struct {

@@ -92,7 +92,7 @@ func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList
 	if list == nil {
 		return nil, fmt.Errorf("the preset list can not be nil")
 	}
-	presetList := make([]kubermaticv1.Preset, 0)
+	var presetList []kubermaticv1.Preset
 
 	for _, preset := range list.Items {
 		requiredEmailDomain := preset.Spec.RequiredEmailDomain

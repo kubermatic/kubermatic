@@ -11,6 +11,189 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func TestGetPreset(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		name          string
+		presetName    string
+		userInfo      provider.UserInfo
+		manager       *presets.Manager
+		expected      *kubermaticv1.Preset
+		expectedError string
+	}{
+		{
+			name:       "test 1: get Preset for the specific email group and name",
+			userInfo:   provider.UserInfo{Email: "test@example.com"},
+			presetName: "test-3",
+			manager: func() *presets.Manager {
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-1",
+							},
+							Spec: kubermaticv1.PresetSpec{
+								Fake: &kubermaticv1.Fake{
+									Token: "aaaaa",
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-2",
+							},
+							Spec: kubermaticv1.PresetSpec{
+								RequiredEmailDomain: "test.com",
+								Fake: &kubermaticv1.Fake{
+									Token: "bbbbb",
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-3",
+							},
+							Spec: kubermaticv1.PresetSpec{
+								RequiredEmailDomain: "example.com",
+								Fake: &kubermaticv1.Fake{
+									Token: "abc",
+								},
+							},
+						},
+					},
+				})
+				return manager
+			}(),
+			expected: &kubermaticv1.Preset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-3",
+				},
+				Spec: kubermaticv1.PresetSpec{
+					RequiredEmailDomain: "example.com",
+					Fake: &kubermaticv1.Fake{
+						Token: "abc",
+					},
+				},
+			},
+		},
+		{
+			name:       "test 1: get Preset for the rest of the users",
+			userInfo:   provider.UserInfo{Email: "test@example.com"},
+			presetName: "test-1",
+			manager: func() *presets.Manager {
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-1",
+							},
+							Spec: kubermaticv1.PresetSpec{
+								Fake: &kubermaticv1.Fake{
+									Token: "aaaaa",
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-2",
+							},
+							Spec: kubermaticv1.PresetSpec{
+								RequiredEmailDomain: "test.com",
+								Fake: &kubermaticv1.Fake{
+									Token: "bbbbb",
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test-3",
+							},
+							Spec: kubermaticv1.PresetSpec{
+								RequiredEmailDomain: "example.com",
+								Fake: &kubermaticv1.Fake{
+									Token: "abc",
+								},
+							},
+						},
+					},
+				})
+				return manager
+			}(),
+			expected: &kubermaticv1.Preset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-1",
+				},
+				Spec: kubermaticv1.PresetSpec{
+					Fake: &kubermaticv1.Fake{
+						Token: "aaaaa",
+					},
+				},
+			},
+		},
+		{
+			name:       "test 3: get Preset which doesn't belong to specific group",
+			presetName: "test-2",
+			userInfo:   provider.UserInfo{Email: "test@example.com"},
+			manager: func() *presets.Manager {
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "tes-1",
+							},
+							Spec: kubermaticv1.PresetSpec{
+								Fake: &kubermaticv1.Fake{
+									Token: "aaaaa",
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "tes-2",
+							},
+							Spec: kubermaticv1.PresetSpec{
+								RequiredEmailDomain: "acme.com",
+								Fake: &kubermaticv1.Fake{
+									Token: "bbbbb",
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "tes-3",
+							},
+							Spec: kubermaticv1.PresetSpec{
+								RequiredEmailDomain: "test.com",
+								Fake: &kubermaticv1.Fake{
+									Token: "abc",
+								},
+							},
+						},
+					},
+				})
+				return manager
+			}(),
+			expectedError: "missing preset 'test-2' for the user 'test@example.com'",
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			preset, err := tc.manager.GetPreset(&tc.userInfo, tc.presetName)
+			if len(tc.expectedError) > 0 {
+				if err == nil {
+					t.Fatalf("expected error")
+				}
+				if err.Error() != tc.expectedError {
+					t.Fatalf("expected: %s, got %v", tc.expectedError, err)
+				}
+
+			} else if !equality.Semantic.DeepEqual(preset, tc.expected) {
+				t.Fatalf("expected: %v, got %v", tc.expected, preset)
+			}
+		})
+	}
+}
+
 func TestGetPresets(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
@@ -494,6 +677,31 @@ func TestCredentialEndpoint(t *testing.T) {
 			}(),
 			cloudSpec:         kubermaticv1.CloudSpec{Kubevirt: &kubermaticv1.KubevirtCloudSpec{}},
 			expectedCloudSpec: &kubermaticv1.CloudSpec{Kubevirt: &kubermaticv1.KubevirtCloudSpec{Kubeconfig: "test"}},
+		},
+		{
+			name:       "test 13: credential with wrong email domain returns error",
+			presetName: "test",
+			userInfo:   provider.UserInfo{Email: "test@example.com"},
+			manager: func() *presets.Manager {
+				manager := presets.NewWithPresets(&kubermaticv1.PresetList{
+					Items: []kubermaticv1.Preset{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "test",
+							},
+							Spec: kubermaticv1.PresetSpec{
+								RequiredEmailDomain: "test.com",
+								Azure: &kubermaticv1.Azure{
+									SubscriptionID: "a", ClientID: "b", ClientSecret: "c", TenantID: "d",
+								},
+							},
+						},
+					},
+				})
+				return manager
+			}(),
+			cloudSpec:     kubermaticv1.CloudSpec{Azure: &kubermaticv1.AzureCloudSpec{}},
+			expectedError: "missing preset 'test' for the user 'test@example.com'",
 		},
 	}
 
