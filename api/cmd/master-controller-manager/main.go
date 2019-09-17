@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	metricserver "github.com/kubermatic/kubermatic/api/pkg/metrics/server"
@@ -19,9 +20,16 @@ import (
 	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+)
+
+const (
+	controllerName = "kubermatic-master-controller-manager"
 )
 
 type controllerRunOptions struct {
@@ -64,20 +72,20 @@ func main() {
 	flag.StringVar(&runOpts.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
 
-	log.SetLogger(log.ZapLogger(false))
+	ctrlruntimelog.SetLogger(ctrlruntimelog.ZapLogger(false))
 	rawLog := kubermaticlog.New(runOpts.log.Debug, kubermaticlog.Format(runOpts.log.Format))
-	sugarLog := rawLog.Sugar()
+	log := rawLog.Sugar()
 	defer func() {
-		if err := sugarLog.Sync(); err != nil {
+		if err := log.Sync(); err != nil {
 			fmt.Println(err)
 		}
 	}()
-	kubermaticlog.Logger = sugarLog
-	ctrlCtx.log = sugarLog
+	kubermaticlog.Logger = log
+	ctrlCtx.log = log
 
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)
 	if err != nil {
-		sugarLog.Fatalw("Failed to create the label selector for the given worker", "workerName", runOpts.workerName, zap.Error(err))
+		log.Fatalw("Failed to create the label selector for the given worker", "workerName", runOpts.workerName, zap.Error(err))
 	}
 
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
@@ -85,14 +93,16 @@ func main() {
 
 	// register an operating system signals and context on which we will gracefully close the app
 	stopCh := signals.SetupSignalHandler()
-	ctx, ctxDone := context.WithCancel(context.Background())
-	defer ctxDone()
-	done := ctx.Done()
+
+	// prepare a context to use throughout the controller manager
+	ctx, ctxCancel := context.WithCancel(context.Background())
+	defer ctxCancel()
 	ctrlCtx.ctx = ctx
 
+	// load kubeconfig and create API client
 	kubeconfig, err := clientcmd.LoadFromFile(runOpts.kubeconfig)
 	if err != nil {
-		sugarLog.Fatalw("Failed to read the kubeconfig", zap.Error(err))
+		log.Fatalw("Failed to read the kubeconfig", zap.Error(err))
 	}
 
 	config := clientcmd.NewNonInteractiveClientConfig(
@@ -104,7 +114,7 @@ func main() {
 
 	cfg, err := config.ClientConfig()
 	if err != nil {
-		sugarLog.Fatalw("Failed to create client", zap.Error(err))
+		log.Fatalw("Failed to create client", zap.Error(err))
 	}
 
 	ctrlCtx.labelSelectorFunc = func(listOpts *metav1.ListOptions) {
@@ -113,65 +123,97 @@ func main() {
 
 	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: ""})
 	if err != nil {
-		sugarLog.Fatalw("failed to create Controller Manager instance", zap.Error(err))
+		log.Fatalw("failed to create Controller Manager instance", zap.Error(err))
 	}
 	ctrlCtx.mgr = mgr
 	ctrlCtx.seedsGetter, err = provider.SeedsGetterFactory(ctx, ctrlCtx.mgr.GetClient(), runOpts.dcFile, ctrlCtx.namespace, runOpts.workerName, runOpts.dynamicDatacenters)
 	if err != nil {
-		sugarLog.Fatalw("failed to construct seedsGetter", zap.Error(err))
+		log.Fatalw("failed to construct seedsGetter", zap.Error(err))
 	}
 	ctrlCtx.seedKubeconfigGetter, err = provider.SeedKubeconfigGetterFactory(
 		ctx, mgr.GetClient(), runOpts.kubeconfig, ctrlCtx.namespace, runOpts.dynamicDatacenters)
 	if err != nil {
-		sugarLog.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
+		log.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
 
 	if runOpts.seedvalidationHook.CertFile != "" || runOpts.seedvalidationHook.KeyFile != "" {
 		seedValidationWebhookServer, err := runOpts.seedvalidationHook.Server(
-			ctx, sugarLog, runOpts.workerName, ctrlCtx.seedsGetter, provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter))
+			ctx, log, runOpts.workerName, ctrlCtx.seedsGetter, provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter))
 		if err != nil {
-			sugarLog.Fatalw("failed to create validatingAdmissionWebhook server for seeds", zap.Error(err))
+			log.Fatalw("failed to create validatingAdmissionWebhook server for seeds", zap.Error(err))
 		}
 		if err := mgr.Add(seedValidationWebhookServer); err != nil {
-			sugarLog.Fatalf("failed to add validatingAdmissionWebhook server to mgr", zap.Error(err))
+			log.Fatalw("failed to add validatingAdmissionWebhook server to mgr", zap.Error(err))
 		}
 	} else {
-		sugarLog.Info("the validatingAdmissionWebhook server can not be started because seed-admissionwebhook-cert-file and seed-admissionwebhook-key-file are empty")
+		log.Info("the validatingAdmissionWebhook server can not be started because seed-admissionwebhook-cert-file and seed-admissionwebhook-key-file are empty")
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {
-		sugarLog.Fatalw("could not create all controllers", zap.Error(err))
+		log.Fatalw("could not create all controllers", zap.Error(err))
 	}
 
 	if err := mgr.Add(metricserver.New(runOpts.internalAddr)); err != nil {
-		sugarLog.Fatalw("failed to add metrics server", zap.Error(err))
+		log.Fatalw("failed to add metrics server", zap.Error(err))
 	}
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
 		g.Add(func() error {
+
 			select {
 			case <-stopCh:
 				return errors.New("a user has requested to stop the controller")
-			case <-done:
+			case <-ctx.Done():
 				return errors.New("parent context has been closed - propagating the request")
 			}
 		}, func(err error) {
-			ctxDone()
+			ctxCancel()
 		})
 	}
 
-	// This group is running all controllers
+	// This group is running the actual controller logic
 	{
+		leaderCtx, stopLeaderElection := context.WithCancel(ctx)
+		defer stopLeaderElection()
+
 		g.Add(func() error {
-			return mgr.Start(ctx.Done())
+			leaderElectionClient, err := kubernetes.NewForConfig(rest.AddUserAgent(cfg, "kubermatic-master-controller-manager-leader-election"))
+			if err != nil {
+				return err
+			}
+			callbacks := kubeleaderelection.LeaderCallbacks{
+				OnStartedLeading: func(ctx context.Context) {
+					log.Info("acquired the leader lease, starting the master-controller-manager...")
+					if err := mgr.Start(ctx.Done()); err != nil {
+						log.Errorw("the controller-manager stopped with an error", zap.Error(err))
+						stopLeaderElection()
+					}
+				},
+				OnStoppedLeading: func() {
+					// Gets called when we could not renew the lease or the parent context was closed
+					log.Info("shutting down the master-controller-manager...")
+					stopLeaderElection()
+				},
+			}
+
+			leaderName := controllerName
+			if runOpts.workerName != "" {
+				leaderName = runOpts.workerName + "-" + leaderName
+			}
+			leader, err := leaderelection.New(leaderName, leaderElectionClient, mgr.GetRecorder(controllerName), callbacks)
+			if err != nil {
+				return fmt.Errorf("failed to create a leaderelection: %v", err)
+			}
+
+			leader.Run(leaderCtx)
+			return nil
 		}, func(err error) {
-			sugarLog.Infow("Stopping Master Controller", zap.Error(err))
-			ctxDone()
+			stopLeaderElection()
 		})
 	}
 
 	if err := g.Run(); err != nil {
-		sugarLog.Fatalw("Can not start Master Controller", zap.Error(err))
+		log.Fatalw("cannot start the master-controller-manager", zap.Error(err))
 	}
 }
