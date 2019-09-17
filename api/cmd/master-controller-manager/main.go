@@ -20,10 +20,7 @@ import (
 	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
@@ -160,7 +157,6 @@ func main() {
 	// This group is forever waiting in a goroutine for signals to stop
 	{
 		g.Add(func() error {
-
 			select {
 			case <-stopCh:
 				return errors.New("a user has requested to stop the controller")
@@ -174,40 +170,23 @@ func main() {
 
 	// This group is running the actual controller logic
 	{
+		// This group is running the actual controller logic
 		leaderCtx, stopLeaderElection := context.WithCancel(ctx)
 		defer stopLeaderElection()
 
 		g.Add(func() error {
-			leaderElectionClient, err := kubernetes.NewForConfig(rest.AddUserAgent(cfg, "kubermatic-master-controller-manager-leader-election"))
-			if err != nil {
-				return err
-			}
-			callbacks := kubeleaderelection.LeaderCallbacks{
-				OnStartedLeading: func(ctx context.Context) {
-					log.Info("acquired the leader lease, starting the master-controller-manager...")
-					if err := mgr.Start(ctx.Done()); err != nil {
-						log.Errorw("the controller-manager stopped with an error", zap.Error(err))
-						stopLeaderElection()
-					}
-				},
-				OnStoppedLeading: func() {
-					// Gets called when we could not renew the lease or the parent context was closed
-					log.Info("shutting down the master-controller-manager...")
-					stopLeaderElection()
-				},
-			}
-
-			leaderName := controllerName
+			electionName := controllerName + "-leader-election"
 			if runOpts.workerName != "" {
-				leaderName = runOpts.workerName + "-" + leaderName
-			}
-			leader, err := leaderelection.New(leaderName, leaderElectionClient, mgr.GetRecorder(controllerName), callbacks)
-			if err != nil {
-				return fmt.Errorf("failed to create a leaderelection: %v", err)
+				electionName += "-" + runOpts.workerName
 			}
 
-			leader.Run(leaderCtx)
-			return nil
+			return leaderelection.RunAsLeader(leaderCtx, log, cfg, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) {
+				log.Info("starting the master-controller-manager...")
+				if err := mgr.Start(ctx.Done()); err != nil {
+					log.Errorw("the controller-manager stopped with an error", zap.Error(err))
+					stopLeaderElection()
+				}
+			})
 		}, func(err error) {
 			stopLeaderElection()
 		})

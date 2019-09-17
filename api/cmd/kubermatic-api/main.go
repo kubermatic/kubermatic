@@ -130,7 +130,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 	// We use the manager only to get a lister-backed ctrlruntimeclient.Client. We can not use it for most
 	// other actions, because it doesn't support impersonation (and cant be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
-	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0", LeaderElection: false})
+	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0"})
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to construct manager: %v", err)
 	}
