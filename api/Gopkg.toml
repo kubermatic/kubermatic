@@ -125,7 +125,7 @@ required = [
 
 [[override]]
   name = "github.com/kubermatic/machine-controller"
-  version = "v1.5.5"
+  version = "v1.5.6"
 
 [[override]]
   name = "kubevirt.io/containerized-data-importer"
