@@ -42,7 +42,7 @@ type Reconciler struct {
 // dummy Result struct.
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("seed", request.NamespacedName.String())
-	log.Debugw("reconciling seed")
+	log.Debug("reconciling seed")
 
 	return reconcile.Result{}, r.reconcile(request.Name, log)
 }
@@ -71,7 +71,7 @@ func (r *Reconciler) reconcile(seedName string, log *zap.SugaredLogger) error {
 			return fmt.Errorf("failed to check for namespace %s: %v", MasterTargetNamespace, err)
 		}
 
-		log.Debug("skipping because target master namespace does not exist", "namespace", MasterTargetNamespace)
+		log.Debugw("skipping because target master namespace does not exist", "namespace", MasterTargetNamespace)
 		return nil
 	}
 
@@ -144,22 +144,14 @@ func (r *Reconciler) reconcileSeedProxy(seed *kubermaticv1.Seed, client ctrlrunt
 		return fmt.Errorf("failed to ensure ServiceAccount: %v", err)
 	}
 
-	err = client.Get(r.ctx, types.NamespacedName{Name: SeedPrometheusNamespace}, &corev1.Namespace{})
-	if err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("failed to check for namespace %s: %v", SeedPrometheusNamespace, err)
+	log.Debug("reconciling RBAC...")
+	if err := r.reconcileSeedRBAC(seed, client, log); err != nil {
+		return fmt.Errorf("failed to ensure RBAC: %v", err)
 	}
-	if err == nil {
-		log.Debug("reconciling Roles...")
-		if err := r.reconcileSeedRoles(client, log); err != nil {
-			return fmt.Errorf("failed to ensure Role: %v", err)
-		}
 
-		log.Debug("reconciling RoleBindings...")
-		if err := r.reconcileSeedRoleBindings(client, log); err != nil {
-			return fmt.Errorf("failed to ensure RoleBinding: %v", err)
-		}
-	} else {
-		log.Debugw("skipping RBAC setup because Prometheus namespace does not exist in master", "namespace", SeedPrometheusNamespace)
+	log.Debug("reconciling RoleBindings...")
+	if err := r.reconcileSeedRoleBindings(client, log); err != nil {
+		return fmt.Errorf("failed to ensure RoleBinding: %v", err)
 	}
 
 	log.Debug("fetching ServiceAccount details from seed cluster...")
@@ -206,6 +198,30 @@ func (r *Reconciler) reconcileSeedRoleBindings(client ctrlruntimeclient.Client, 
 
 	if err := reconciling.ReconcileRoleBindings(r.ctx, creators, SeedMonitoringNamespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in the namespace %s: %v", SeedMonitoringNamespace, err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileSeedRBAC(seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	err := client.Get(r.ctx, types.NamespacedName{Name: SeedMonitoringNamespace}, &corev1.Namespace{})
+	if err != nil {
+		if kerrors.IsNotFound(err) {
+			log.Debugw("skipping RBAC setup because monitoring namespace does not exist in master", "namespace", SeedMonitoringNamespace)
+			return nil
+		}
+
+		return fmt.Errorf("failed to check for namespace %s: %v", SeedMonitoringNamespace, err)
+	}
+
+	log.Debug("reconciling Roles...")
+	if err := r.reconcileSeedRoles(client, log); err != nil {
+		return fmt.Errorf("failed to ensure Role: %v", err)
+	}
+
+	log.Debug("reconciling RoleBindings...")
+	if err := r.reconcileSeedRoleBindings(client, log); err != nil {
+		return fmt.Errorf("failed to ensure RoleBinding: %v", err)
 	}
 
 	return nil
