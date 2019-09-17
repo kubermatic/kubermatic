@@ -31,7 +31,7 @@ func main() {
 	vpnInterfaceFlag := flag.String("vpn-interface", "tun0", "Name of the vpn interface.")
 
 	var logOptions kubermaticlog.Options
-	flag.BoolVar(&logOptions.Debug, "log-debug", false, "Enables debug logging")
+	flag.BoolVar(&logOptions.Debug, "log-debug", true, "Enables debug logging")
 	flag.StringVar(&logOptions.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 
 	flag.Parse()
