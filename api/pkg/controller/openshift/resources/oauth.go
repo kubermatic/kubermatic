@@ -133,12 +133,11 @@ var (
 	oauthCLIConfigTemplate = template.Must(template.New("base").Funcs(sprig.TxtFuncMap()).Parse(oauthCLIConfigTemplateRaw))
 )
 
-func OauthTLSServingCertCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretCreatorGetter {
-	return servingcerthelper.ServingCertSecretCreator(caGetter,
+func OauthTLSServingCertCreator(data openshiftData) reconciling.NamedSecretCreatorGetter {
+	return servingcerthelper.ServingCertSecretCreator(data.GetRootCA,
 		oauthServingCertSecretName,
-		// TODO: Update this to use the external name
-		"oauth-openshift.apps.alvaro-test.aws.k8c.io",
-		[]string{"oauth-openshift.apps.alvaro-test.aws.k8c.io"},
+		data.Cluster().Address.ExternalName,
+		[]string{data.Cluster().Address.ExternalName},
 		nil)
 }
 

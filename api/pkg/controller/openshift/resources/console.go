@@ -6,15 +6,22 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"strconv"
 	"text/template"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/servingcerthelper"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
+	utilpointer "k8s.io/utils/pointer"
 )
 
 var (
@@ -27,6 +34,7 @@ const (
 	consoleOauthClientObjectName = "console"
 	consoleConfigMapName         = "openshift-console-config"
 	consoleConfigMapKey          = "console-config.yaml"
+	consoleDeploymentName        = "openshift-console"
 	consoleTemplateRaw           = `apiVersion: console.openshift.io/v1
 auth:
   clientID: console
@@ -43,10 +51,120 @@ customization:
 kind: ConsoleConfig
 servingInfo:
   bindAddress: https://0.0.0.0:8443
-  certFile: /var/serving-cert/tls.crt
-  keyFile: /var/serving-cert/tls.key
+  certFile: /var/serving-cert/serving.crt
+  keyFile: /var/serving-cert/serving.key
 `
 )
+
+func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGetter {
+	return func() (string, reconciling.DeploymentCreator) {
+		return consoleDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+
+			d.Spec.Template.Spec.AutomountServiceAccountToken = utilpointer.BoolPtr(false)
+			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: openshiftImagePullSecretName}}
+			d.Spec.Selector = &metav1.LabelSelector{
+				MatchLabels: resources.BaseAppLabel(consoleDeploymentName, nil),
+			}
+			image, err := getConsoleImage(data.Cluster().Spec.Version.String())
+			if err != nil {
+				return nil, err
+			}
+
+			d.Spec.Template.Spec.Containers = []corev1.Container{{
+				Name:  "console",
+				Image: image,
+				Command: []string{
+					"/opt/bridge/bin/bridge",
+					"--public-dir=/opt/bridge/static",
+					"--config=/etc/console-config/console-config.yaml",
+				},
+				Env: []corev1.EnvVar{
+					{
+						Name:  "KUBERNETES_SERVICE_HOST",
+						Value: data.Cluster().Address.InternalName,
+					},
+					{
+						Name:  "KUBERNETES_SERVICE_PORT",
+						Value: strconv.Itoa(int(data.Cluster().Address.Port)),
+					},
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      consoleOauthSecretName,
+						MountPath: "/var/oauth-config",
+					},
+					{
+						Name:      consoleConfigMapName,
+						MountPath: "/etc/console-config",
+					},
+					{
+						Name:      consoleServingCertSecretName,
+						MountPath: "/var/serving-cert",
+					},
+					{
+						Name:      resources.CASecretName,
+						MountPath: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+						SubPath:   "ca.crt",
+					},
+					{
+						Name:      resources.AdminKubeconfigSecretName,
+						MountPath: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+						SubPath:   "token",
+					},
+				},
+			}}
+			d.Spec.Template.Spec.Volumes = []corev1.Volume{
+				{
+					Name: resources.AdminKubeconfigSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{SecretName: resources.AdminKubeconfigSecretName},
+					},
+				},
+				{
+					Name: consoleOauthSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{SecretName: consoleOauthSecretName},
+					},
+				},
+				{
+					Name: consoleServingCertSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{SecretName: consoleServingCertSecretName},
+					},
+				},
+				{
+					Name: consoleConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{Name: consoleConfigMapName},
+						},
+					},
+				},
+				{
+					Name: resources.CASecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.CASecretName,
+						},
+					},
+				},
+			}
+
+			podLabels, err := data.GetPodTemplateLabels(consoleDeploymentName, d.Spec.Template.Spec.Volumes, nil)
+			if err != nil {
+				return nil, err
+			}
+			d.Spec.Template.Labels = podLabels
+
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString("console"))
+			if err != nil {
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+			}
+			d.Spec.Template.Spec = *wrappedPodSpec
+			return d, nil
+		}
+	}
+}
 
 func ConsoleConfigCreator(data openshiftData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
@@ -141,4 +259,13 @@ func generateNewSecret() (string, error) {
 		return "", fmt.Errorf("failed to read from crypto/rand: %v", err)
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func getConsoleImage(openshiftVersion string) (string, error) {
+	switch openshiftVersion {
+	case "4.1.9":
+		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:9e554ac4505edd925eb73fec52e33d7418e2cfaf8058b59d8246ed478337748d", nil
+	default:
+		return "", fmt.Errorf("no openshhift console image available for version %q", openshiftVersion)
+	}
 }

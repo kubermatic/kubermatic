@@ -33,8 +33,51 @@ var (
 )
 
 const (
-	legacyAppLabelValue = "apiserver"
+	legacyAppLabelValue                 = "apiserver"
+	apiServerOauthMetadataConfigMapName = "openshift-oauth-metadata"
+	apiServerOauthMetadataConfigMapKey  = "oauthMetadata"
 )
+
+func APIServerOauthMetadataConfigMapCreator(data openshiftData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return apiServerOauthMetadataConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			oauthPort, err := data.GetOauthExternalNodePort()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get exeternal port for oauth service: %v", err)
+			}
+			oauthAddress := fmt.Sprintf("https://%s:%d", data.Cluster().Address.ExternalName, oauthPort)
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
+			cm.Data["oauthMetadata"] = fmt.Sprintf(`{
+  "issuer": "%s",
+  "authorization_endpoint": "%s/oauth/authorize",
+  "token_endpoint": "%s/oauth/token",
+  "scopes_supported": [
+    "user:check-access",
+    "user:full",
+    "user:info",
+    "user:list-projects",
+    "user:list-scoped-projects"
+  ],
+  "response_types_supported": [
+    "code",
+    "token"
+  ],
+  "grant_types_supported": [
+    "authorization_code",
+    "implicit"
+  ],
+  "code_challenge_methods_supported": [
+    "plain",
+    "S256"
+  ]
+}`, oauthAddress, oauthAddress, oauthAddress)
+
+			return cm, nil
+		}
+	}
+}
 
 // DeploymentCreator returns the function to create and update the API server deployment
 func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.NamedDeploymentCreatorGetter {
@@ -240,6 +283,10 @@ func getVolumeMounts() []corev1.VolumeMount {
 			Name:      resources.DexCASecretName,
 			MountPath: "/etc/kubernetes/dex/ca",
 		},
+		{
+			Name:      apiServerOauthMetadataConfigMapName,
+			MountPath: "/etc/kubernetes/oauth-metadata",
+		},
 	}
 
 	return volumesMounts
@@ -365,6 +412,13 @@ func getAPIServerVolumes() []corev1.Volume {
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.DexCASecretName,
 				},
+			},
+		},
+		{
+
+			Name: apiServerOauthMetadataConfigMapName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: apiServerOauthMetadataConfigMapName}},
 			},
 		},
 	}

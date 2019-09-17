@@ -495,9 +495,17 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 	adminKubeconfigSecretName, adminKubeconfigCreator := resources.AdminKubeconfigCreator(osData, func(c *clientcmdapi.Config) {
 		c.AuthInfos[resources.KubeconfigDefaultContextKey].Token = string(tokenSecret.Data["token"])
 	})()
+	creatorWithToken := func(s *corev1.Secret) (*corev1.Secret, error) {
+		s, err := adminKubeconfigCreator(s)
+		if err != nil {
+			return nil, err
+		}
+		s.Data["token"] = tokenSecret.Data["token"]
+		return s, nil
+	}
 	err = reconciling.EnsureNamedObject(ctx,
 		nn(osData.Cluster().Status.NamespaceName, adminKubeconfigSecretName),
-		reconciling.SecretObjectWrapper(adminKubeconfigCreator),
+		reconciling.SecretObjectWrapper(creatorWithToken),
 		r.Client,
 		&corev1.Secret{},
 		false)
@@ -540,7 +548,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		openshiftresources.ImagePullSecretCreator(osData.Cluster()),
 		openshiftresources.OauthSessionSecretCreator,
 		openshiftresources.OauthOCPBrandingSecretCreator,
-		openshiftresources.OauthTLSServingCertCreator(osData.GetRootCA),
+		openshiftresources.OauthTLSServingCertCreator(osData),
 		openshiftresources.ConsoleServingCertCreator(osData.GetRootCA),
 
 		//TODO: This is only needed because of the ServiceAccount Token needed for Openshift
@@ -577,6 +585,7 @@ func (r *Reconciler) statefulSets(ctx context.Context, osData *openshiftData) er
 
 func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedConfigMapCreatorGetter {
 	return []reconciling.NamedConfigMapCreatorGetter{
+		openshiftresources.APIServerOauthMetadataConfigMapCreator(osData),
 		openshiftresources.OpenshiftAPIServerConfigMapCreator(osData),
 		openshiftresources.OpenshiftKubeAPIServerConfigMapCreator(osData),
 		openshiftresources.KubeControllerManagerConfigMapCreatorFactory(osData),
@@ -611,7 +620,8 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 		usercluster.DeploymentCreator(osData, true),
 		openshiftresources.OpenshiftNetworkOperatorCreatorFactory(osData),
 		openshiftresources.OpenshiftDNSOperatorFactory(osData),
-		openshiftresources.OauthDeploymentCreator(osData)}
+		openshiftresources.OauthDeploymentCreator(osData),
+		openshiftresources.ConsoleDeployment(osData)}
 
 	if osData.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" {
 		creators = append(creators, clusterautoscaler.DeploymentCreator(osData))
