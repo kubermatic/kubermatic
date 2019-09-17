@@ -109,9 +109,6 @@ spec:
         - /etc/kubernetes/kubeconfig/kubeconfig
         - -node-access-network
         - 192.0.2.0/24
-        - -v
-        - "4"
-        - -logtostderr
         - -master
         - https://127.0.0.1:30000
         command:
