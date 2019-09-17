@@ -42,7 +42,7 @@ spec:
           value: az-tenant-id
         - name: AZURE_SUBSCRIPTION_ID
           value: az-subscription-id
-        image: docker.io/kubermatic/machine-controller:v1.5.5
+        image: docker.io/kubermatic/machine-controller:v1.5.6
         livenessProbe:
           failureThreshold: 8
           httpGet:
