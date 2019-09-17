@@ -115,16 +115,19 @@ func GCPDiskTypesEndpoint(credentialManager common.PresetsManager) endpoint.Endp
 
 		zone := req.Zone
 		sa := req.ServiceAccount
-
-		if len(req.Credential) > 0 && credentialManager.GetPresets().GCP.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().GCP.Credentials {
-				if credential.Name == req.Credential {
-					sa = credential.ServiceAccount
-					break
-				}
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GCP; credentials != nil {
+				sa = credentials.ServiceAccount
 			}
 		}
-
 		return listGCPDiskTypes(ctx, sa, zone)
 	}
 }
@@ -184,12 +187,17 @@ func GCPSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint 
 		zone := req.Zone
 		sa := req.ServiceAccount
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().GCP.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().GCP.Credentials {
-				if credential.Name == req.Credential {
-					sa = credential.ServiceAccount
-					break
-				}
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GCP; credentials != nil {
+				sa = credentials.ServiceAccount
 			}
 		}
 
@@ -252,15 +260,19 @@ func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachine
 func GCPZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPZoneReq)
-
 		sa := req.ServiceAccount
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().GCP.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().GCP.Credentials {
-				if credential.Name == req.Credential {
-					sa = credential.ServiceAccount
-					break
-				}
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GCP; credentials != nil {
+				sa = credentials.ServiceAccount
 			}
 		}
 

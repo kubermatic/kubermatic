@@ -22,17 +22,21 @@ func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, credentialManager
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = VSphereNetworksReq, got = %T", request)
 		}
-
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
 		username := req.Username
 		password := req.Password
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().VSphere.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().VSphere.Credentials {
-				if credential.Name == req.Credential {
-					username = credential.Username
-					password = credential.Password
-					break
-				}
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.VSphere; credentials != nil {
+				username = credentials.Username
+				password = credentials.Password
 			}
 		}
 
@@ -109,17 +113,21 @@ func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, credentialManager 
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = VSphereFoldersReq, got = %T", request)
 		}
-
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
 		username := req.Username
 		password := req.Password
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().VSphere.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().VSphere.Credentials {
-				if credential.Name == req.Credential {
-					username = credential.Username
-					password = credential.Password
-					break
-				}
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.VSphere; credentials != nil {
+				username = credentials.Username
+				password = credentials.Password
 			}
 		}
 
