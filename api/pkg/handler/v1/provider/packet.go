@@ -71,13 +71,18 @@ func PacketSizesEndpoint(credentialManager common.PresetsManager) endpoint.Endpo
 		projectID := req.ProjectID
 		apiKey := req.APIKey
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().Packet.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().Packet.Credentials {
-				if credential.Name == req.Credential {
-					projectID = credential.ProjectID
-					apiKey = credential.APIKey
-					break
-				}
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.Packet; credentials != nil {
+				projectID = credentials.ProjectID
+				apiKey = credentials.APIKey
 			}
 		}
 		return sizes(ctx, apiKey, projectID)

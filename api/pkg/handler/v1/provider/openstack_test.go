@@ -189,7 +189,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 		},
 		{
 			Name:       "test tenants endpoint with predefined credentials",
-			Credential: test.TestOSCredential,
+			Credential: test.TestFakeCredential,
 			URL:        "/api/v1/providers/openstack/tenants",
 			ExpectedResponse: `[
 				{"id":"456788", "name": "a project name"},
@@ -207,7 +207,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 		},
 		{
 			Name:        "test subnets endpoint with predefined credentials",
-			Credential:  test.TestOSCredential,
+			Credential:  test.TestFakeCredential,
 			URL:         "/api/v1/providers/openstack/subnets",
 			QueryParams: map[string]string{"network_id": "foo"},
 			ExpectedResponse: `[
@@ -224,7 +224,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 		},
 		{
 			Name:       "test networks endpoint with predefined credentials",
-			Credential: test.TestOSCredential,
+			Credential: test.TestFakeCredential,
 			URL:        "/api/v1/providers/openstack/networks",
 			ExpectedResponse: `[
 				{"id": "71c1e68c-171a-4aa2-aca5-50ea153a3718", "name": "net2", "external": false}
@@ -247,7 +247,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 		},
 		{
 			Name:       "test sizes endpoint with predefined credentials",
-			Credential: test.TestOSCredential,
+			Credential: test.TestFakeCredential,
 			URL:        "/api/v1/providers/openstack/sizes",
 			ExpectedResponse: `[
 				{
@@ -280,17 +280,17 @@ func TestOpenstackEndpoints(t *testing.T) {
 
 			req.Header.Add("DatacenterName", datacenterName)
 			if len(tc.Credential) > 0 {
-				req.Header.Add("Credential", test.TestOSCredential)
+				req.Header.Add("Credential", test.TestFakeCredential)
 			} else {
 				req.Header.Add("Username", test.TestOSuserName)
 				req.Header.Add("Password", test.TestOSuserPass)
 				req.Header.Add("Domain", test.TestOSdomain)
 			}
 
-			apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
+			apiUser := test.GenDefaultAPIUser()
 
 			res := httptest.NewRecorder()
-			router, _, err := test.CreateTestEndpointAndGetClients(apiUser, buildOpenstackDatacenter(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
+			router, _, err := test.CreateTestEndpointAndGetClients(*apiUser, buildOpenstackDatacenter(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(*apiUser)}, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v\n", err)
 			}

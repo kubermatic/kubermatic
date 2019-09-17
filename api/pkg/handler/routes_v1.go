@@ -510,6 +510,7 @@ func (r Routing) listCredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(presets.CredentialEndpoint(r.presetsManager)),
 		presets.DecodeProviderReq,
 		encodeJSON,
@@ -554,6 +555,7 @@ func (r Routing) listAWSSubnets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.AWSSubnetEndpoint(r.presetsManager, r.seedsGetter)),
 		provider.DecodeAWSSubnetReq,
 		encodeJSON,
@@ -576,6 +578,7 @@ func (r Routing) listAWSVPCS() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.AWSVPCEndpoint(r.presetsManager, r.seedsGetter)),
 		provider.DecodeAWSVPCReq,
 		encodeJSON,
@@ -598,6 +601,7 @@ func (r Routing) listGCPDiskTypes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.GCPDiskTypesEndpoint(r.presetsManager)),
 		provider.DecodeGCPTypesReq,
 		encodeJSON,
@@ -620,6 +624,7 @@ func (r Routing) listGCPSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.GCPSizeEndpoint(r.presetsManager)),
 		provider.DecodeGCPTypesReq,
 		encodeJSON,
@@ -642,6 +647,7 @@ func (r Routing) listGCPZones() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.GCPZoneEndpoint(r.presetsManager, r.seedsGetter)),
 		provider.DecodeGCPZoneReq,
 		encodeJSON,
@@ -664,6 +670,7 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.DigitaloceanSizeEndpoint(r.presetsManager)),
 		provider.DecodeDoSizesReq,
 		encodeJSON,
@@ -686,6 +693,7 @@ func (r Routing) listAzureSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.AzureSizeEndpoint(r.presetsManager)),
 		provider.DecodeAzureSizesReq,
 		encodeJSON,
@@ -708,6 +716,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.OpenstackSizeEndpoint(r.seedsGetter, r.presetsManager)),
 		provider.DecodeOpenstackReq,
 		encodeJSON,
@@ -730,6 +739,7 @@ func (r Routing) listVSphereNetworks() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.VsphereNetworksEndpoint(r.seedsGetter, r.presetsManager)),
 		provider.DecodeVSphereNetworksReq,
 		encodeJSON,
@@ -752,6 +762,7 @@ func (r Routing) listVSphereFolders() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.VsphereFoldersEndpoint(r.seedsGetter, r.presetsManager)),
 		provider.DecodeVSphereFoldersReq,
 		encodeJSON,
@@ -774,6 +785,7 @@ func (r Routing) listPacketSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.PacketSizesEndpoint(r.presetsManager)),
 		provider.DecodePacketSizesReq,
 		encodeJSON,
@@ -820,6 +832,7 @@ func (r Routing) listOpenstackTenants() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.OpenstackTenantEndpoint(r.seedsGetter, r.presetsManager)),
 		provider.DecodeOpenstackTenantReq,
 		encodeJSON,
@@ -842,6 +855,7 @@ func (r Routing) listOpenstackNetworks() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.OpenstackNetworkEndpoint(r.seedsGetter, r.presetsManager)),
 		provider.DecodeOpenstackReq,
 		encodeJSON,
@@ -864,6 +878,7 @@ func (r Routing) listOpenstackSubnets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.OpenstackSubnetsEndpoint(r.seedsGetter, r.presetsManager)),
 		provider.DecodeOpenstackSubnetReq,
 		encodeJSON,
@@ -886,6 +901,7 @@ func (r Routing) listOpenstackSecurityGroups() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.OpenstackSecurityGroupEndpoint(r.seedsGetter, r.presetsManager)),
 		provider.DecodeOpenstackReq,
 		encodeJSON,
@@ -908,6 +924,7 @@ func (r Routing) listHetznerSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.HetznerSizeEndpoint(r.presetsManager)),
 		provider.DecodeHetznerSizesReq,
 		encodeJSON,

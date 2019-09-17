@@ -45,12 +45,18 @@ func HetznerSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpo
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(HetznerSizesReq)
 		token := req.HetznerToken
-		if len(req.Credential) > 0 && credentialManager.GetPresets().Hetzner.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().Hetzner.Credentials {
-				if credential.Name == req.Credential {
-					token = credential.Token
-					break
-				}
+
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.Hetzner; credentials != nil {
+				token = credentials.Token
 			}
 		}
 		return hetznerSize(ctx, token)

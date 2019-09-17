@@ -93,10 +93,10 @@ const (
 	TestOSuserPass = "OSpass"
 	// TestOSuserName OpenStack user name
 	TestOSuserName = "OSuser"
-	// TestOSCredential OpenStack provider credential name
-	TestOSCredential = "testOpenstack"
 	// TestFakeCredential Fake provider credential name
-	TestFakeCredential = "pluton"
+	TestFakeCredential = "fake"
+	// RequiredEmailDomain required domain for predefined credentials
+	RequiredEmailDomain = "acme.com"
 )
 
 // GetUser is a convenience function for generating apiv1.User
@@ -275,13 +275,24 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
 func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
-	credentialManager := presets.New()
-	credentialManager.GetPresets().Fake = presets.Fake{Credentials: []presets.FakeCredentials{
-		{Name: TestFakeCredential, Token: "dummy_pluton_token"},
-	}}
-	credentialManager.GetPresets().Openstack = presets.Openstack{Credentials: []presets.OpenstackCredentials{
-		{Name: TestOSCredential, Username: TestOSuserName, Password: TestOSuserPass, Domain: TestOSdomain},
-	}}
+	credentialManager := presets.NewWithPresets(&kubermaticv1.PresetList{
+		Items: []kubermaticv1.Preset{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "fake",
+				},
+				Spec: kubermaticv1.PresetSpec{
+					RequiredEmailDomain: RequiredEmailDomain,
+					Fake: &kubermaticv1.Fake{
+						Token: "dummy_pluton_token",
+					},
+					Openstack: &kubermaticv1.Openstack{
+						Username: TestOSuserName, Password: TestOSuserPass, Domain: TestOSdomain,
+					},
+				},
+			},
+		},
+	})
 	return initTestEndpoint(user, seedsGetter, kubeObjects, machineObjects, kubermaticObjects, versions, updates, credentialManager, routingFunc)
 }
 

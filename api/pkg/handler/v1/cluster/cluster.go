@@ -87,7 +87,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 
 		credentialName := req.Body.Cluster.Credential
 		if len(credentialName) > 0 {
-			cloudSpec, err := credentialManager.SetCloudCredentials(credentialName, req.Body.Cluster.Spec.Cloud, dc)
+			cloudSpec, err := credentialManager.SetCloudCredentials(userInfo, credentialName, req.Body.Cluster.Spec.Cloud, dc)
 			if err != nil {
 				return nil, errors.NewBadRequest("invalid credentials: %v", err)
 			}
