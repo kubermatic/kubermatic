@@ -36,10 +36,8 @@ fi
 
 ./_build/user-cluster-controller-manager \
     -kubeconfig=${KUBECONFIG_USERCLUSTER_CONTROLLER_FILE} \
-    -logtostderr \
     -metrics-listen-address=127.0.0.1:8087 \
     -health-listen-address=127.0.0.1:8088 \
-    -v=4 \
     -namespace=${CLUSTER_NAMESPACE} \
     -openvpn-server-port=${OPENVPN_SERVER_NODEPORT} \
     -openvpn-ca-cert-file=${OPENVPN_CA_CERT_FILE} \
