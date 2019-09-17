@@ -80,7 +80,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Add a wrapping here so we can emit an event on error
 	result, err := r.reconcile(ctx, cluster)
 	if err != nil {
-		r.log.Errorf("Failed to reconcile cluster %q: %v", request.NamespacedName.String(), err)
+		r.log.Errorw("Failed to reconcile cluster", "namespace", request.NamespacedName.String(), zap.Error(err))
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
 	if result == nil {

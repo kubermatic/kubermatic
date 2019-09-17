@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-test/deep"
+
 	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -109,7 +110,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Add a wrapping here so we can emit an event on error
 	err := r.syncDnatRules(ctx)
 	if err != nil {
-		r.log.Errorf("Failed reconciling: %v", err)
+		r.log.Errorw("Failed reconciling", zap.Error(err))
 	}
 	return reconcile.Result{}, err
 }
@@ -152,7 +153,7 @@ func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 
 	if !equality.Semantic.DeepEqual(actualRules, desiredRules) || !haveJump || !haveMasquerade {
 		// Need to update chain in kernel.
-		r.log.Debugf("Updating iptables chain in kernel (%d rules).", len(desiredRules))
+		r.log.Debugw("Updating iptables chain in kernel", "rules-count", len(desiredRules))
 		if err := r.applyDNATRules(desiredRules, haveJump, haveMasquerade); err != nil {
 			return fmt.Errorf("failed to apply iptable rules: %v", err)
 		}

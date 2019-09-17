@@ -109,7 +109,7 @@ func main() {
 		log.Fatalw("Failed to parse certs", zap.Error(err))
 	}
 	if len(certs) != 1 {
-		log.Fatalf("Did not find exactly one but %d certificates in the given CA", len(certs))
+		log.Fatalw("Did not find exactly one certificate in the given CA", "certificates-count", len(certs))
 	}
 
 	openVPNCACertBytes, err := ioutil.ReadFile(runOp.openvpnCACertFilePath)
@@ -121,7 +121,7 @@ func main() {
 		log.Fatalw("Failed to parse openVPN CA file", zap.Error(err))
 	}
 	if certsLen := len(openVPNCACerts); certsLen != 1 {
-		log.Fatalf("Did not find exactly one but %v certificates in the openVPN CA file", certsLen)
+		log.Fatalw("Did not find exactly one certificate in the openVPN CA file", "certificates-count", certsLen)
 	}
 	openVPNCAKeyBytes, err := ioutil.ReadFile(runOp.openvpnCAKeyFilePath)
 	if err != nil {

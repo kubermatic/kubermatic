@@ -53,7 +53,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	defer cancel()
 	err := r.reconcile(ctx, request)
 	if err != nil {
-		r.log.Errorf("Reconciliation of request %s failed: %v", request.NamespacedName.String(), err)
+		r.log.Errorw("Reconciliation of request failed", "request", request.NamespacedName.String(), zap.Error(err))
 	}
 	return reconcile.Result{}, err
 }
@@ -81,7 +81,7 @@ func (r *reconciler) reconcile(ctx context.Context, request reconcile.Request) e
 	}
 
 	if !sets.NewString(csr.Spec.Groups...).Has("system:nodes") {
-		log.Debug("Skipping reconciling because its 'system:nodes' is not in its groups")
+		log.Debug("Skipping reconciling because 'system:nodes' is not in its groups")
 		return nil
 	}
 
@@ -92,13 +92,13 @@ func (r *reconciler) reconcile(ctx context.Context, request reconcile.Request) e
 
 	for _, usage := range csr.Spec.Usages {
 		if !isUsageInUsageList(usage, allowedUsages) {
-			r.log.Debugf("Skipping reconciling because its usage %q is not in the list of allowed usages %v",
-				usage, allowedUsages)
+			r.log.Debugw("Skipping reconciling because its usage is not in the list of allowed usages",
+				"usage", usage, "allowed-usages", allowedUsages)
 			return nil
 		}
 	}
 
-	log.Debug("Approving", csr.Name)
+	log.Debug("Approving")
 	approvalCondition := certificatesv1beta1.CertificateSigningRequestCondition{
 		Type:   certificatesv1beta1.CertificateApproved,
 		Reason: "Kubermatic NodeCSRApprover controller approved node serving cert",
@@ -109,7 +109,7 @@ func (r *reconciler) reconcile(ctx context.Context, request reconcile.Request) e
 		return fmt.Errorf("failed to update approval for CSR %q: %v", csr.Name, err)
 	}
 
-	r.log.Infof("Successfully approved")
+	log.Infof("Successfully approved")
 	return nil
 }
 

@@ -50,9 +50,9 @@ func GetLoopbackKubeconfigCreator(ctx context.Context, data loopbackKubeconfigCr
 			valid, err := resources.IsValidKubeconfig(b, ca.Cert, url, commonName, organizations, data.Cluster().Name)
 			if err != nil || !valid {
 				if err != nil {
-					log.Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
+					log.Infow("failed to validate existing kubeconfig. Regenerating it...", "secret-namespace", se.Namespace, "secret-name", se.Name, zap.Error(err))
 				} else {
-					log.Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
+					log.Infow("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", "secret-namespace", se.Namespace, "secret-name", se.Name)
 				}
 
 				se.Data[resources.KubeconfigSecretKey], err = resources.BuildNewKubeconfigAsByte(ca, url, commonName, organizations, data.Cluster().Name)

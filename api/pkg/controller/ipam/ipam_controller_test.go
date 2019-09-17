@@ -3,10 +3,11 @@ package ipam
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
 	"net"
 	"strings"
 	"testing"
+
+	"go.uber.org/zap"
 
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"

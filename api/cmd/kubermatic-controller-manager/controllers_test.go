@@ -6,6 +6,8 @@ import (
 	"os"
 	"testing"
 
+	"go.uber.org/zap"
+
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 )
 
@@ -31,7 +33,7 @@ spec: bar`,
 	defer func() {
 		log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 		if err := os.RemoveAll(tempdir); err != nil {
-			log.Errorf("Failed to clean up temp dir: %v", err)
+			log.Errorw("Failed to clean up temp dir", zap.Error(err))
 		}
 	}()
 
