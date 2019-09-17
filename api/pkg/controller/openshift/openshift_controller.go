@@ -348,6 +348,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
+	// We must put the hash for this into the usercluster and the raw value to expose in the
+	// seed. The usercluster secret must be created max 1h after crreation timestamp of the
+	// kube-system ns: https://github.com/openshift/origin/blob/e774f85c15aef11d76db1ffc458484867e503293/pkg/oauthserver/authenticator/password/bootstrap/bootstrap.go#L131
+	if err := r.ensureConsoleBootstrapPassword(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to create bootstrap password for openshift console: %v", err)
+	}
+
 	// This requires both the cluster to be up and a CRD we deploy via the AddonController
 	// to exist, so do this at the very end
 	if err := r.ensureConsoleOauthSecret(ctx, osData); err != nil {
@@ -355,6 +362,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	return nil, nil
+}
+
+func (r *Reconciler) ensureConsoleBootstrapPassword(ctx context.Context, osData *openshiftData) error {
+	getter := []reconciling.NamedSecretCreatorGetter{
+		openshiftresources.BootStrapPasswordSecretGenerator(osData)}
+	ns := osData.Cluster().Status.NamespaceName
+	return reconciling.ReconcileSecrets(ctx, getter, ns, r.Client)
 }
 
 func (r *Reconciler) ensureConsoleOauthSecret(ctx context.Context, osData *openshiftData) error {

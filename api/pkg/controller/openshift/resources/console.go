@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"golang.org/x/crypto/bcrypt"
 	"strconv"
 	"text/template"
 
@@ -42,7 +43,7 @@ auth:
   logoutRedirect: ""
   oauthEndpointCAFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 clusterInfo:
-  consoleBaseAddress: https://{{ .ExternalName }}:443
+  consoleBaseAddress: https://{{ .ExternalName }}:8443
   consoleBasePath: ""
   masterPublicURL: {{ .APIServerURL}}
 customization:
@@ -175,7 +176,7 @@ func ConsoleConfigCreator(data openshiftData) reconciling.NamedConfigMapCreatorG
 				ExternalName string
 			}{
 				APIServerURL: data.Cluster().Address.URL,
-				ExternalName: data.Cluster().Address.ExternalName,
+				ExternalName: fakeOauthRedirect,
 			}
 			buffer := bytes.NewBuffer([]byte{})
 			if err := consoleTemplate.Execute(buffer, data); err != nil {
@@ -229,7 +230,7 @@ func ConsoleOauthClientSecretCreator(data openshiftData) reconciling.NamedSecret
 				oauthClientObject.Object["secret"] = secret
 				oauthClientObject.Object["redirectURIs"] = []string{
 					// TODO: Insert something proper
-					"https://console-openshift-console.apps.alvaro-test.aws.k8c.io/auth/callback",
+					fmt.Sprintf("https://%s:8443/auth/callback", fakeOauthRedirect),
 				}
 				oauthClientObject.Object["grantMethod"] = "auto"
 				oauthClientObject.SetName(consoleOauthClientObjectName)
@@ -267,5 +268,49 @@ func getConsoleImage(openshiftVersion string) (string, error) {
 		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:9e554ac4505edd925eb73fec52e33d7418e2cfaf8058b59d8246ed478337748d", nil
 	default:
 		return "", fmt.Errorf("no openshhift console image available for version %q", openshiftVersion)
+	}
+}
+
+func BootStrapPasswordSecretGenerator(data openshiftData) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return "openshift-bootstrap-password", func(s *corev1.Secret) (*corev1.Secret, error) {
+			// Check if secret inside usercluster exists. It is only valid if its creation timestmap
+			// is < kube-system creation timestamp + 1h
+			userClusterClient, err := data.Client()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get usercluster client: %v", err)
+			}
+
+			var rawPassword string
+			userClusterSecretName := types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: "kubeadmin"}
+			userClusterSecret := &corev1.Secret{}
+			if err := userClusterClient.Get(context.Background(), userClusterSecretName, userClusterSecret); err != nil {
+				if !kerrors.IsNotFound(err) {
+					return nil, fmt.Errorf("failed to get secret %q from usercluster: %v", userClusterSecretName.String(), err)
+				}
+
+				rawPassword, err = generateNewSecret()
+				if err != nil {
+					return nil, fmt.Errorf("failed to generate password: %v", err)
+				}
+				hashedPassword, err := bcrypt.GenerateFromPassword([]byte(rawPassword), 12)
+				if err != nil {
+					return nil, fmt.Errorf("failed to hash password: %v", err)
+				}
+
+				userClusterSecret.Namespace = metav1.NamespaceSystem
+				userClusterSecret.Name = "kubeadmin"
+				userClusterSecret.Data = map[string][]byte{"kubeadmin": hashedPassword}
+				if err := userClusterClient.Create(context.Background(), userClusterSecret); err != nil {
+					return nil, fmt.Errorf("failed to create password hash in usercluster: %v", err)
+				}
+			}
+
+			// TODO: This needs reworking, we can not fix the seed secret if someone changes it
+			if len(s.Data["kubeadmin"]) == 0 {
+				s.Data = map[string][]byte{"kubeadmin": []byte(rawPassword)}
+			}
+			return s, nil
+		}
 	}
 }

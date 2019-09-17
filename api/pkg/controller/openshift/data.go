@@ -14,6 +14,7 @@ import (
 	kubernetesresources "github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -152,6 +153,10 @@ func (od *openshiftData) ClusterIPByServiceName(name string) (string, error) {
 func (od *openshiftData) secretRevision(ctx context.Context, name string) (string, error) {
 	secret := &corev1.Secret{}
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, name), secret); err != nil {
+		if kerrors.IsNotFound(err) {
+			// "-1" is not allowed, label values must start and end with an alphanumeric character
+			return "1-1", nil
+		}
 		return "", fmt.Errorf("failed to get secret %s: %v", name, err)
 	}
 	return secret.ResourceVersion, nil
