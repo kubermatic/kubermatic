@@ -35,6 +35,4 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
   -monitoring-scrape-annotation-prefix='kubermatic.io' \
   -log-debug=true \
   -log-format=Console \
-  -logtostderr=1 \
-  -v=4 $@ 2>&1|tee /tmp/kubermatic-controller-manager.log
   -max-parallel-reconcile=10
