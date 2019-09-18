@@ -1,38 +1,77 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
 	"flag"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"text/template"
 	"time"
+
+	"github.com/Masterminds/sprig"
+	"sigs.k8s.io/yaml"
 )
 
-// parseYAML analysis a YAML file for limits. But reads them
-// as text files as they are also templates (non-valid YAML).
-func parseYAML(filepath string) (*buffer, error) {
+// kv simulates the nested structs for template execution.
+type kv map[string]interface{}
+
+// fillKV creates the key/values needed for template execution.
+func fillKV() kv {
+	return kv{
+		"Cluster": kv{
+			"Spec": kv{
+				"ClusterNetwork": kv{
+					"Pods": kv{
+						"CIDRBlocks": []string{"first"},
+					},
+				},
+			},
+		},
+	}
+}
+
+// funcMap creates a function map needed for template execution.
+func funcMap() template.FuncMap {
+	funcs := sprig.TxtFuncMap()
+	funcs["Registry"] = func(registry string) string {
+		return registry
+	}
+	return funcs
+}
+
+// readYAML reads a YAML file and unmarshals it.
+func readYAML(filepath string) (interface{}, error) {
 	log.Printf("Parsing YAML file %q ...", filepath)
 	f, err := os.Open(filepath)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	// Read the YAML into the in buffer.
-	s := bufio.NewScanner(f)
-	in := &buffer{}
-	for s.Scan() {
-		in.push(s.Text())
+	bs, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+		// Apply template.
 	}
-	if s.Err() != nil {
-		return nil, s.Err()
+	t, err := template.
+		New("addon").
+		Funcs(funcMap()).
+		Parse(string(bs))
+	if err != nil {
+		return nil, err
 	}
-	// Create parser and let it work.
-	p := newParser(in)
-	p.do()
-	return p.out, nil
+	var buf bytes.Buffer
+	err = t.Execute(&buf, fillKV())
+	if err != nil {
+		return nil, err
+	}
+	// Unmarshal the YAML.
+	var i interface{}
+	err = yaml.Unmarshal(buf.Bytes(), &i)
+	return i, err
 }
 
 // resourcesToDoc creates documentation out of the
@@ -113,13 +152,13 @@ func traverseAddons(dir string) (*buffer, error) {
 			case info.IsDir() || !strings.HasSuffix(info.Name(), ".yaml"):
 				return nil
 			default:
-				out, err := parseYAML(filepath)
+				_, err := readYAML(filepath)
 				if err != nil {
 					return err
 				}
-				if !out.isEmpty() {
-					doc.pushAll(resourcesToDoc(filepath, out))
-				}
+				// if !out.isEmpty() {
+				//	doc.pushAll(resourcesToDoc(filepath, out))
+				// }
 			}
 			return nil
 		}); err != nil {
