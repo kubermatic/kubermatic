@@ -211,20 +211,19 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 				electionName += "-" + options.workerName
 			}
 
-			return leaderelection.RunAsLeader(leaderCtx, log, config, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) {
+			return leaderelection.RunAsLeader(leaderCtx, log, config, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) error {
 				log.Info("Executing migrations...")
 				if err := migrations.RunAll(ctrlCtx.mgr.GetConfig(), options.workerName); err != nil {
-					log.Errorw("failed to run migrations", zap.Error(err))
-					stopLeaderElection()
-					return
+					return fmt.Errorf("failed to run migrations: %v", err)
 				}
 				log.Info("Migrations executed successfully")
 
 				log.Info("Starting the controller-manager...")
 				if err := mgr.Start(ctx.Done()); err != nil {
-					log.Errorw("The controller-manager stopped with an error", zap.Error(err))
-					stopLeaderElection()
+					return fmt.Errorf("the controller-manager stopped with an error: %v", err)
 				}
+
+				return nil
 			})
 		}, func(err error) {
 			stopLeaderElection()

@@ -54,7 +54,7 @@ func New(name string, leaderElectionClient kubernetes.Interface, recorder record
 	})
 }
 
-func RunAsLeader(ctx context.Context, log *zap.SugaredLogger, cfg *rest.Config, recorder record.EventRecorder, leaderName string, callback func(context.Context)) error {
+func RunAsLeader(ctx context.Context, log *zap.SugaredLogger, cfg *rest.Config, recorder record.EventRecorder, leaderName string, callback func(context.Context) error) error {
 	leaderElectionClient, err := kubernetes.NewForConfig(rest.AddUserAgent(cfg, leaderName))
 	if err != nil {
 		return err
@@ -66,7 +66,10 @@ func RunAsLeader(ctx context.Context, log *zap.SugaredLogger, cfg *rest.Config, 
 	callbacks := kubeleaderelection.LeaderCallbacks{
 		OnStartedLeading: func(ctx context.Context) {
 			log.Info("acquired the leader lease")
-			callback(ctx)
+			if err := callback(ctx); err != nil {
+				log.Error(zap.Error(err))
+				cancel()
+			}
 		},
 		OnStoppedLeading: func() {
 			// Gets called when we could not renew the lease or the parent context was closed

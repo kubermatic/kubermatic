@@ -180,12 +180,12 @@ func main() {
 				electionName += "-" + runOpts.workerName
 			}
 
-			return leaderelection.RunAsLeader(leaderCtx, log, cfg, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) {
+			return leaderelection.RunAsLeader(leaderCtx, log, cfg, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) error {
 				log.Info("starting the master-controller-manager...")
 				if err := mgr.Start(ctx.Done()); err != nil {
-					log.Errorw("the controller-manager stopped with an error", zap.Error(err))
-					stopLeaderElection()
+					return fmt.Errorf("the controller-manager stopped with an error: %v", err)
 				}
+				return nil
 			})
 		}, func(err error) {
 			stopLeaderElection()
