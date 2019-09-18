@@ -366,6 +366,10 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 					"--config=/etc/oauth/config.yaml",
 					"--v=2",
 				},
+				Env: []corev1.EnvVar{{
+					Name:  "KUBECONFIG",
+					Value: "/etc/kubernetes/kubeconfig/kubeconfig",
+				}},
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "config",
@@ -426,7 +430,7 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 			}
 			dep.Spec.Template.Labels = podLabels
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OauthName))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OauthName), "OAuthClient", "oauth.openshift.io/v1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}

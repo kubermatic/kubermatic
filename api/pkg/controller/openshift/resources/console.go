@@ -88,6 +88,10 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 						Name:  "KUBERNETES_SERVICE_PORT",
 						Value: strconv.Itoa(int(data.Cluster().Address.Port)),
 					},
+					{
+						Name:  "KUBECONFIG",
+						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
+					},
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
@@ -111,6 +115,11 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 						Name:      resources.AdminKubeconfigSecretName,
 						MountPath: "/var/run/secrets/kubernetes.io/serviceaccount/token",
 						SubPath:   "token",
+					},
+					// Used by the http prober
+					{
+						Name:      resources.AdminKubeconfigSecretName,
+						MountPath: "/etc/kubernetes/kubeconfig",
 					},
 				},
 			}}
@@ -157,7 +166,7 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 			}
 			d.Spec.Template.Labels = podLabels
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString("console"))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString("console"), "OAuthClient", "oauth.openshift.io/v1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}
