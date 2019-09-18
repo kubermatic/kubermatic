@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
+	"go.uber.org/zap"
 
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
@@ -47,12 +47,14 @@ type reconciler struct {
 	client.Client
 	recorder   record.EventRecorder
 	cidrRanges []Network
+	log        *zap.SugaredLogger
 }
 
-func Add(mgr manager.Manager, cidrRanges []Network) error {
+func Add(mgr manager.Manager, cidrRanges []Network, log *zap.SugaredLogger) error {
 	reconciler := &reconciler{Client: mgr.GetClient(),
 		recorder:   mgr.GetRecorder(ControllerName),
-		cidrRanges: cidrRanges}
+		cidrRanges: cidrRanges,
+		log:        log}
 	c, err := controller.New(ControllerName, mgr,
 		controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -88,7 +90,7 @@ func (r *reconciler) reconcile(ctx context.Context, machine *clusterv1alpha1.Mac
 	}
 
 	if !strings.Contains(machine.Annotations[annotationMachineUninitialized], annotationValue) {
-		glog.V(4).Infof("Machine %s doesn't need initialization", machine.Name)
+		r.log.Debugw("Machine doesn't need initialization", "machine", machine.Name)
 		return nil
 	}
 

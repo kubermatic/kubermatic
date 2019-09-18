@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/golang/glog"
+	"go.uber.org/zap"
 
 	certificatesv1beta1 "k8s.io/api/certificates/v1beta1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,16 +30,16 @@ type reconciler struct {
 	// Have to use the typed client because csr approval is a subresource
 	// the dynamic client does not approve
 	certClient certificatesv1beta1client.CertificateSigningRequestInterface
+	log        *zap.SugaredLogger
 }
 
-func Add(mgr manager.Manager, numWorkers int, cfg *rest.Config) error {
+func Add(mgr manager.Manager, numWorkers int, cfg *rest.Config, log *zap.SugaredLogger) error {
 	certClient, err := certificatesv1beta1client.NewForConfig(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to create certificate client: %v", err)
 	}
-	client := mgr.GetClient()
 
-	r := &reconciler{Client: client, certClient: certClient.CertificateSigningRequests()}
+	r := &reconciler{Client: mgr.GetClient(), certClient: certClient.CertificateSigningRequests(), log: log}
 	c, err := controller.New(ControllerName, mgr,
 		controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
 	if err != nil {
@@ -53,7 +53,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	defer cancel()
 	err := r.reconcile(ctx, request)
 	if err != nil {
-		glog.Errorf("Reconciliation of request %s failed: %v", request.NamespacedName.String(), err)
+		r.log.Errorw("Reconciliation of request failed", "request", request.NamespacedName.String(), zap.Error(err))
 	}
 	return reconcile.Result{}, err
 }
@@ -63,7 +63,9 @@ var allowedUsages = []certificatesv1beta1.KeyUsage{certificatesv1beta1.UsageDigi
 	certificatesv1beta1.UsageServerAuth}
 
 func (r *reconciler) reconcile(ctx context.Context, request reconcile.Request) error {
-	glog.V(4).Infof("Reconciling csr %q", request.NamespacedName.String())
+	log := r.log.With("csr", request.NamespacedName.String())
+	log.Debug("Reconciling")
+
 	csr := &certificatesv1beta1.CertificateSigningRequest{}
 	if err := r.Get(ctx, request.NamespacedName, csr); err != nil {
 		if kerrors.IsNotFound(err) {
@@ -73,30 +75,30 @@ func (r *reconciler) reconcile(ctx context.Context, request reconcile.Request) e
 	}
 	for _, condition := range csr.Status.Conditions {
 		if condition.Type == certificatesv1beta1.CertificateApproved {
-			glog.V(4).Infof("CSR %q already approved, skipping", csr.Name)
+			log.Debug("already approved, skipping reconciling")
 			return nil
 		}
 	}
 
 	if !sets.NewString(csr.Spec.Groups...).Has("system:nodes") {
-		glog.V(4).Infof("Skipping CSR %q because it 'system:nodes' is not in its groups", csr.Name)
+		log.Debug("Skipping reconciling because 'system:nodes' is not in its groups")
 		return nil
 	}
 
 	if len(csr.Spec.Usages) != 3 {
-		glog.V(4).Infof("Skipping CSR %q because it has not exactly three usages defined", csr.Name)
+		log.Debug("Skipping reconciling because it has not exactly three usages defined")
 		return nil
 	}
 
 	for _, usage := range csr.Spec.Usages {
 		if !isUsageInUsageList(usage, allowedUsages) {
-			glog.V(4).Infof("Skipping CSR %q because its usage %q is not in the list of allowed usages %v",
-				csr.Name, usage, allowedUsages)
+			r.log.Debugw("Skipping reconciling because its usage is not in the list of allowed usages",
+				"usage", usage, "allowed-usages", allowedUsages)
 			return nil
 		}
 	}
 
-	glog.V(4).Infof("Approving CSR %q", csr.Name)
+	log.Debug("Approving")
 	approvalCondition := certificatesv1beta1.CertificateSigningRequestCondition{
 		Type:   certificatesv1beta1.CertificateApproved,
 		Reason: "Kubermatic NodeCSRApprover controller approved node serving cert",
@@ -107,7 +109,7 @@ func (r *reconciler) reconcile(ctx context.Context, request reconcile.Request) e
 		return fmt.Errorf("failed to update approval for CSR %q: %v", csr.Name, err)
 	}
 
-	glog.V(2).Infof("Successfully approved CSR %q", csr.Name)
+	log.Infof("Successfully approved")
 	return nil
 }
 

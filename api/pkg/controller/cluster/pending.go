@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang/glog"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -63,7 +62,7 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 	}
 
 	if !cluster.Status.ExtendedHealth.AllHealthy() {
-		glog.V(4).Infof("Cluster %q not yet healthy: %+v", cluster.Name, cluster.Status.ExtendedHealth)
+		r.log.Debugf("Cluster %q not yet healthy: %+v", cluster.Name, cluster.Status.ExtendedHealth)
 		return &reconcile.Result{RequeueAfter: reachableCheckPeriod}, nil
 	}
 

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
+
 	"go.uber.org/zap"
 
 	addonutils "github.com/kubermatic/kubermatic/api/pkg/addon"

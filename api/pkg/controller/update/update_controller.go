@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
+	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
@@ -35,16 +35,19 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 	recorder                      record.EventRecorder
 	userClusterConnectionProvider client.UserClusterConnectionProvider
+	log                           *zap.SugaredLogger
 }
 
 // Add creates a new update controller
-func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager *version.Manager, userClusterConnectionProvider client.UserClusterConnectionProvider) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager *version.Manager,
+	userClusterConnectionProvider client.UserClusterConnectionProvider, log *zap.SugaredLogger) error {
 	reconciler := &Reconciler{
 		workerName:                    workerName,
 		updateManager:                 updateManager,
 		Client:                        mgr.GetClient(),
 		recorder:                      mgr.GetRecorder(ControllerName),
 		userClusterConnectionProvider: userClusterConnectionProvider,
+		log:                           log,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{
@@ -77,7 +80,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Add a wrapping here so we can emit an event on error
 	result, err := r.reconcile(ctx, cluster)
 	if err != nil {
-		glog.Errorf("Failed to reconcile cluster %q: %v", request.NamespacedName.String(), err)
+		r.log.Errorw("Failed to reconcile cluster", "namespace", request.NamespacedName.String(), zap.Error(err))
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
 	if result == nil {
@@ -127,7 +130,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 }
 
 func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Cluster, clusterType string) error {
-	client, err := r.userClusterConnectionProvider.GetClient(cluster)
+	c, err := r.userClusterConnectionProvider.GetClient(cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get usercluster client: %v", err)
 	}
@@ -135,7 +138,7 @@ func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Clust
 	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
 	// Kubermatic only creates MachineDeployments in the kube-system namespace, everything else is essentially unsupported
 	listOpts := &ctrlruntimeclient.ListOptions{Namespace: "kube-system"}
-	if err := client.List(ctx, listOpts, machineDeployments); err != nil {
+	if err := c.List(ctx, listOpts, machineDeployments); err != nil {
 		return fmt.Errorf("failed to list MachineDeployments: %v", err)
 	}
 
@@ -149,7 +152,7 @@ func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Clust
 		}
 		md.Spec.Template.Spec.Versions.Kubelet = targetVersion.Version.String()
 		// DeepCopy it so we don't get a NPD when we return an error
-		if err := client.Update(ctx, md.DeepCopy()); err != nil {
+		if err := c.Update(ctx, md.DeepCopy()); err != nil {
 			return fmt.Errorf("failed to update MachineDeployment %s/%s to %q: %v", md.Namespace, md.Name, md.Spec.Template.Spec.Versions.Kubelet, err)
 		}
 		r.recorder.Eventf(cluster, corev1.EventTypeNormal, "AutoUpdateMachineDeployment", "Triggered automatic update of MachineDeployment %s/%s to version %q", md.Namespace, md.Name, targetVersion.Version.String())

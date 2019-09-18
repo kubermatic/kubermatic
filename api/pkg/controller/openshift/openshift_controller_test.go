@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
 
 	appsv1 "k8s.io/api/apps/v1"

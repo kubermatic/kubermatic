@@ -113,8 +113,6 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 						"-version", data.Cluster().Spec.Version.String(),
 						fmt.Sprintf("-openvpn-ca-cert-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCACertKey),
 						fmt.Sprintf("-openvpn-ca-key-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCAKeyKey),
-						"-logtostderr",
-						"-v", "2",
 					}, getNetworkArgs(data)...),
 					Env: []corev1.EnvVar{
 						{

@@ -6,7 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/golang/glog"
+	"go.uber.org/zap"
+
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 )
 
 func TestGetBackupContainer(t *testing.T) {
@@ -29,8 +31,9 @@ spec: bar`,
 		t.Fatalf("Failed to crteate tempdir: %v", err)
 	}
 	defer func() {
+		log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 		if err := os.RemoveAll(tempdir); err != nil {
-			glog.Errorf("Failed to clean up temp dir: %v", err)
+			log.Errorw("Failed to clean up temp dir", zap.Error(err))
 		}
 	}()
 
