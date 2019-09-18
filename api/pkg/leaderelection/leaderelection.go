@@ -67,7 +67,7 @@ func RunAsLeader(ctx context.Context, log *zap.SugaredLogger, cfg *rest.Config, 
 		OnStartedLeading: func(ctx context.Context) {
 			log.Info("acquired the leader lease")
 			if err := callback(ctx); err != nil {
-				log.Error(zap.Error(err))
+				log.Error(err)
 				cancel()
 			}
 		},
