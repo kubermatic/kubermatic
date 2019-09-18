@@ -32,7 +32,7 @@ const (
 	// Currently, adding this to /etc/hosts as localhost alias and port-forwarding
 	// the console to localhost, then visiting https://console.openshift.seed.tld:8443
 	// allows using it.
-	fakeOauthRedirect          = "console.openshift.seed.tld"
+	fakeOAuthRedirect          = "console.openshift.seed.tld"
 	OauthName                  = "openshift-oauth"
 	oauthSessionSecretName     = "openshift-oauth-session-secret"
 	oauthServingCertSecretName = "openshift-oauth-serving-cert"

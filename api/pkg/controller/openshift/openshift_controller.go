@@ -349,7 +349,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	// We must put the hash for this into the usercluster and the raw value to expose in the
-	// seed. The usercluster secret must be created max 1h after crreation timestamp of the
+	// seed. The usercluster secret must be created max 1h after creation timestamp of the
 	// kube-system ns: https://github.com/openshift/origin/blob/e774f85c15aef11d76db1ffc458484867e503293/pkg/oauthserver/authenticator/password/bootstrap/bootstrap.go#L131
 	if err := r.ensureConsoleBootstrapPassword(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to create bootstrap password for openshift console: %v", err)
@@ -357,7 +357,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	// This requires both the cluster to be up and a CRD we deploy via the AddonController
 	// to exist, so do this at the very end
-	if err := r.ensureConsoleOauthSecret(ctx, osData); err != nil {
+	if err := r.ensureConsoleOAuthSecret(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to create oauth secret for Openshift console: %v", err)
 	}
 
@@ -371,9 +371,9 @@ func (r *Reconciler) ensureConsoleBootstrapPassword(ctx context.Context, osData 
 	return reconciling.ReconcileSecrets(ctx, getter, ns, r.Client)
 }
 
-func (r *Reconciler) ensureConsoleOauthSecret(ctx context.Context, osData *openshiftData) error {
+func (r *Reconciler) ensureConsoleOAuthSecret(ctx context.Context, osData *openshiftData) error {
 	getter := []reconciling.NamedSecretCreatorGetter{
-		openshiftresources.ConsoleOauthClientSecretCreator(osData)}
+		openshiftresources.ConsoleOAuthClientSecretCreator(osData)}
 	ns := osData.Cluster().Status.NamespaceName
 	return reconciling.ReconcileSecrets(ctx, getter, ns, r.Client)
 }
@@ -609,7 +609,7 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 		dns.ConfigMapCreator(osData),
 		openshiftresources.OauthConfigMapCreator(osData),
 		openshiftresources.ConsoleConfigCreator(osData),
-		// Put the cloudconfig at the end, it may need data from the cloud controller, this reduces the likelyhood
+		// Put the cloudconfig at the end, it may need data from the cloud controller, this reduces the likelihood
 		// that we instantly rotate the apiserver due to cloudconfig changes
 		cloudconfig.ConfigMapCreator(osData),
 	}

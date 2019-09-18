@@ -30,9 +30,9 @@ var (
 )
 
 const (
-	consoleOauthSecretName       = "openshift-console-oauth-client-secret"
+	consoleOAuthSecretName       = "openshift-console-oauth-client-secret"
 	consoleServingCertSecretName = "openshift-console-serving-cert"
-	consoleOauthClientObjectName = "console"
+	consoleOAuthClientObjectName = "console"
 	consoleConfigMapName         = "openshift-console-config"
 	consoleConfigMapKey          = "console-config.yaml"
 	consoleDeploymentName        = "openshift-console"
@@ -91,7 +91,7 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
-						Name:      consoleOauthSecretName,
+						Name:      consoleOAuthSecretName,
 						MountPath: "/var/oauth-config",
 					},
 					{
@@ -122,9 +122,9 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 					},
 				},
 				{
-					Name: consoleOauthSecretName,
+					Name: consoleOAuthSecretName,
 					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{SecretName: consoleOauthSecretName},
+						Secret: &corev1.SecretVolumeSource{SecretName: consoleOAuthSecretName},
 					},
 				},
 				{
@@ -176,7 +176,7 @@ func ConsoleConfigCreator(data openshiftData) reconciling.NamedConfigMapCreatorG
 				ExternalName string
 			}{
 				APIServerURL: data.Cluster().Address.URL,
-				ExternalName: fakeOauthRedirect,
+				ExternalName: fakeOAuthRedirect,
 			}
 			buffer := bytes.NewBuffer([]byte{})
 			if err := consoleTemplate.Execute(buffer, data); err != nil {
@@ -201,9 +201,9 @@ func ConsoleServingCertCreator(caGetter servingcerthelper.CAGetter) reconciling.
 		nil)
 }
 
-func ConsoleOauthClientSecretCreator(data openshiftData) reconciling.NamedSecretCreatorGetter {
+func ConsoleOAuthClientSecretCreator(data openshiftData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
-		return consoleOauthSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+		return consoleOAuthSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			oauthClientObject := &unstructured.Unstructured{}
 			oauthClientObject.SetAPIVersion("oauth.openshift.io/v1")
 			oauthClientObject.SetKind("OAuthClient")
@@ -215,14 +215,14 @@ func ConsoleOauthClientSecretCreator(data openshiftData) reconciling.NamedSecret
 
 			// Create oauthClient object in the usercluster first, as it can not be reset otherwise
 			// because end-users do not have access to the seed
-			name := types.NamespacedName{Name: consoleOauthClientObjectName}
+			name := types.NamespacedName{Name: consoleOAuthClientObjectName}
 			if err := client.Get(context.Background(), name, oauthClientObject); err != nil {
 				if !kerrors.IsNotFound(err) {
-					return nil, fmt.Errorf("failed to get OauthClient %q from usercluster: %v", consoleOauthClientObjectName, err)
+					return nil, fmt.Errorf("failed to get OAuthClient %q from usercluster: %v", consoleOAuthClientObjectName, err)
 				}
 				secret, err := generateNewSecret()
 				if err != nil {
-					return nil, fmt.Errorf("failed to generate oauth client secret: %v", err)
+					return nil, fmt.Errorf("failed to generate OAuthClient secret: %v", err)
 				}
 				if oauthClientObject.Object == nil {
 					oauthClientObject.Object = map[string]interface{}{}
@@ -230,12 +230,12 @@ func ConsoleOauthClientSecretCreator(data openshiftData) reconciling.NamedSecret
 				oauthClientObject.Object["secret"] = secret
 				oauthClientObject.Object["redirectURIs"] = []string{
 					// TODO: Insert something proper
-					fmt.Sprintf("https://%s:8443/auth/callback", fakeOauthRedirect),
+					fmt.Sprintf("https://%s:8443/auth/callback", fakeOAuthRedirect),
 				}
 				oauthClientObject.Object["grantMethod"] = "auto"
-				oauthClientObject.SetName(consoleOauthClientObjectName)
+				oauthClientObject.SetName(consoleOAuthClientObjectName)
 				if err := client.Create(context.Background(), oauthClientObject); err != nil {
-					return nil, fmt.Errorf("failed to create OauthClient object in user cluster: %v", err)
+					return nil, fmt.Errorf("failed to create OAuthClient object in user cluster: %v", err)
 				}
 			}
 
@@ -274,7 +274,7 @@ func getConsoleImage(openshiftVersion string) (string, error) {
 func BootStrapPasswordSecretGenerator(data openshiftData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return "openshift-bootstrap-password", func(s *corev1.Secret) (*corev1.Secret, error) {
-			// Check if secret inside usercluster exists. It is only valid if its creation timestmap
+			// Check if secret inside usercluster exists. It is only valid if its creation tiemestmap
 			// is < kube-system creation timestamp + 1h
 			userClusterClient, err := data.Client()
 			if err != nil {

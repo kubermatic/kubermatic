@@ -43,13 +43,13 @@ func APIServerOauthMetadataConfigMapCreator(data openshiftData) reconciling.Name
 		return apiServerOauthMetadataConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			oauthPort, err := data.GetOauthExternalNodePort()
 			if err != nil {
-				return nil, fmt.Errorf("failed to get exeternal port for oauth service: %v", err)
+				return nil, fmt.Errorf("failed to get external port for oauth service: %v", err)
 			}
 			oauthAddress := fmt.Sprintf("https://%s:%d", data.Cluster().Address.ExternalName, oauthPort)
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
-			cm.Data["oauthMetadata"] = fmt.Sprintf(`{
+			cm.Data[apiServerOauthMetadataConfigMapKey] = fmt.Sprintf(`{
   "issuer": "%s",
   "authorization_endpoint": "%s/oauth/authorize",
   "token_endpoint": "%s/oauth/token",
