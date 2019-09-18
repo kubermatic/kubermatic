@@ -44,7 +44,7 @@ func funcMap() template.FuncMap {
 }
 
 // readYAML reads a YAML file and unmarshals it.
-func readYAML(filepath string) (interface{}, error) {
+func readYAML(filepath string) (kv, error) {
 	log.Printf("Parsing YAML file %q ...", filepath)
 	f, err := os.Open(filepath)
 	if err != nil {
@@ -69,9 +69,9 @@ func readYAML(filepath string) (interface{}, error) {
 		return nil, err
 	}
 	// Unmarshal the YAML.
-	var i interface{}
-	err = yaml.Unmarshal(buf.Bytes(), &i)
-	return i, err
+	var yamlKV kv
+	err = yaml.Unmarshal(buf.Bytes(), &yamlKV)
+	return yamlKV, err
 }
 
 // resourcesToDoc creates documentation out of the
