@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
@@ -63,7 +64,7 @@ func main() {
 	flag.StringVar(&runOpts.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&ctrlCtx.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&runOpts.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served")
-	flag.BoolVar(&runOpts.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
+	flag.BoolVar(&runOpts.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters. Enabling this and defining the datcenters flag will enable the seed migration")
 	flag.StringVar(&ctrlCtx.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.BoolVar(&runOpts.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&runOpts.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
@@ -181,6 +182,16 @@ func main() {
 			}
 
 			return leaderelection.RunAsLeader(leaderCtx, log, cfg, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) error {
+				log.Info("Executing migrations...")
+				options := master.MigrationOptions{
+					DatacentersFile:    runOpts.dcFile,
+					DynamicDatacenters: runOpts.dynamicDatacenters,
+				}
+				if err := master.RunAll(ctx, log, mgr.GetClient(), runOpts.workerName, ctrlCtx.namespace, options); err != nil {
+					return fmt.Errorf("failed to run migrations: %v", err)
+				}
+				log.Info("Migrations executed successfully")
+
 				log.Info("starting the master-controller-manager...")
 				if err := mgr.Start(ctx.Done()); err != nil {
 					return fmt.Errorf("the controller-manager stopped with an error: %v", err)
