@@ -69,7 +69,7 @@ get_latest_dashboard_tag() {
   local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
 
   MINOR_VERSION="${FOR_BRANCH##release/}"
-  FOUND_TAG="$(retry 5 git ls-remote "$DASHBOARD_URL" "refs/tags/$MINOR_VERSION*" --sort=-authordate --count=1 | awk '{print $2}')"
+  FOUND_TAG="$(retry 5 git ls-remote --sort=-version:refname "$DASHBOARD_URL" "refs/tags/$MINOR_VERSION*" | head -n1 | awk '{print $2}')"
   if [ -z "$FOUND_TAG" ]; then
     echo "Error, no Dashboard tags contain $MINOR_VERSION" >/dev/stderr
     exit 1
