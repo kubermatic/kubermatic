@@ -1,3 +1,11 @@
+### [v2.11.6]()
+
+
+- Fixed a bug that could cause intermittent delays when using kubectl logs/exec with `exposeStrategy: LoadBalancer` [#4279](https://github.com/kubermatic/kubermatic/issues/4279) ([kubermatic-bot](https://github.com/kubermatic-bot))
+
+
+
+
 ### [v2.11.5]()
 
 
