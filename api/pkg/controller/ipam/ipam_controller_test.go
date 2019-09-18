@@ -7,8 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/glog"
+	"go.uber.org/zap"
 
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,8 +24,9 @@ func init() {
 	// We call this in init because even thought it is possible to register the same
 	// scheme multiple times it is an unprotected concurrent map access and these tests
 	// are very good at making that panic
+	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		glog.Fatalf("failed to add clusterv1alpha1 scheme to scheme.Scheme: %v", err)
+		log.Fatalw("failed to add clusterv1alpha1 scheme to scheme.Scheme", zap.Error(err))
 	}
 }
 
