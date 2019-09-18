@@ -184,7 +184,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 						Name:    "audit-logs",
 						Image:   "docker.io/fluent/fluent-bit:1.2.2",
 						Command: []string{"/fluent-bit/bin/fluent-bit"},
-						Args:    []string{"-i", "tail", "-p", "path=/var/log/kubernetes/audit/audit.log", "-p", "db=/var/log/kubernetes/audit/fluentbit.db", "-o", "stdout"},
+						Args:    []string{"-i", "tail", "-p", "path=/var/log/kubernetes/audit/audit.log", "-p", "db=/var/log/kubernetes/audit/fluent-bit.db", "-o", "stdout"},
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      resources.AuditLogVolumeName,

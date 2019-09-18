@@ -126,7 +126,7 @@ case "${DEPLOY_STACK}" in
   logging)
     initTiller
     deploy "elasticsearch" "logging" ./config/logging/elasticsearch/
-    deploy "fluentbit" "logging" ./config/logging/fluentbit/
+    deploy "fluent-bit" "logging" ./config/logging/fluent-bit/
     deploy "kibana" "logging" ./config/logging/kibana/
     ;;
 

@@ -67,7 +67,7 @@ helm template monitoring/helm-exporter | ../api/hack/retag-images.sh
 helm template monitoring/alertmanager | ../api/hack/retag-images.sh
 
 helm template logging/elasticsearch | ../api/hack/retag-images.sh
-helm template logging/fluentbit | ../api/hack/retag-images.sh
+helm template logging/fluent-bit | ../api/hack/retag-images.sh
 helm template logging/kibana | ../api/hack/retag-images.sh
 
 # PULL_BASE_REF is the name of the current branch in case of a post-submit
