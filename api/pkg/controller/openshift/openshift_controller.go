@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"go.uber.org/zap"
+
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/clusterdeletion"
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
@@ -26,8 +28,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/usercluster"
-
-	"go.uber.org/zap"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -264,6 +264,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		kubermaticImage:                       r.kubermaticImage,
 		dnatControllerImage:                   r.dnatControllerImage,
 		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
+		userClusterClient: func() (client.Client, error) {
+			return r.getUserClusterClient(ctx, cluster)
+		},
 	}
 
 	if err := r.networkDefaults(ctx, cluster); err != nil {
@@ -345,7 +348,34 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
+	// We must put the hash for this into the usercluster and the raw value to expose in the
+	// seed. The usercluster secret must be created max 1h after creation timestamp of the
+	// kube-system ns: https://github.com/openshift/origin/blob/e774f85c15aef11d76db1ffc458484867e503293/pkg/oauthserver/authenticator/password/bootstrap/bootstrap.go#L131
+	if err := r.ensureConsoleBootstrapPassword(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to create bootstrap password for openshift console: %v", err)
+	}
+
+	// This requires both the cluster to be up and a CRD we deploy via the AddonController
+	// to exist, so do this at the very end
+	if err := r.ensureConsoleOAuthSecret(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to create oauth secret for Openshift console: %v", err)
+	}
+
 	return nil, nil
+}
+
+func (r *Reconciler) ensureConsoleBootstrapPassword(ctx context.Context, osData *openshiftData) error {
+	getter := []reconciling.NamedSecretCreatorGetter{
+		openshiftresources.BootStrapPasswordSecretGenerator(osData)}
+	ns := osData.Cluster().Status.NamespaceName
+	return reconciling.ReconcileSecrets(ctx, getter, ns, r.Client)
+}
+
+func (r *Reconciler) ensureConsoleOAuthSecret(ctx context.Context, osData *openshiftData) error {
+	getter := []reconciling.NamedSecretCreatorGetter{
+		openshiftresources.ConsoleOAuthClientSecretCreator(osData)}
+	ns := osData.Cluster().Status.NamespaceName
+	return reconciling.ReconcileSecrets(ctx, getter, ns, r.Client)
 }
 
 func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error {
@@ -471,14 +501,25 @@ func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *opens
 	if err := userClusterClient.Get(ctx, nn(metav1.NamespaceSystem, tokenOwnerServiceAccount.Secrets[0].Name), tokenSecret); err != nil {
 		return nil, fmt.Errorf("failed to get token secret from user cluster: %v", err)
 	}
+	if len(tokenSecret.Data["token"]) == 0 {
+		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
 
 	// Create the admin-kubeconfig in the seed cluster
 	adminKubeconfigSecretName, adminKubeconfigCreator := resources.AdminKubeconfigCreator(osData, func(c *clientcmdapi.Config) {
 		c.AuthInfos[resources.KubeconfigDefaultContextKey].Token = string(tokenSecret.Data["token"])
 	})()
+	creatorWithToken := func(s *corev1.Secret) (*corev1.Secret, error) {
+		s, err := adminKubeconfigCreator(s)
+		if err != nil {
+			return nil, err
+		}
+		s.Data["token"] = tokenSecret.Data["token"]
+		return s, nil
+	}
 	err = reconciling.EnsureNamedObject(ctx,
 		nn(osData.Cluster().Status.NamespaceName, adminKubeconfigSecretName),
-		reconciling.SecretObjectWrapper(adminKubeconfigCreator),
+		reconciling.SecretObjectWrapper(creatorWithToken),
 		r.Client,
 		&corev1.Secret{},
 		false)
@@ -521,7 +562,8 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		openshiftresources.ImagePullSecretCreator(osData.Cluster()),
 		openshiftresources.OauthSessionSecretCreator,
 		openshiftresources.OauthOCPBrandingSecretCreator,
-		openshiftresources.OauthTLSServingCertCreator(osData.GetRootCA),
+		openshiftresources.OauthTLSServingCertCreator(osData),
+		openshiftresources.ConsoleServingCertCreator(osData.GetRootCA),
 
 		//TODO: This is only needed because of the ServiceAccount Token needed for Openshift
 		//TODO: Streamline this by using it everywhere and use the clientprovider here or remove
@@ -536,12 +578,9 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 }
 
 func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
-	for _, namedSecretCreator := range r.getAllSecretCreators(ctx, osData) {
-		secretName, secretCreator := namedSecretCreator()
-		if err := reconciling.EnsureNamedObject(ctx,
-			nn(osData.Cluster().Status.NamespaceName, secretName), reconciling.SecretObjectWrapper(secretCreator), r.Client, &corev1.Secret{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Secret %s: %v", secretName, err)
-		}
+	ns := osData.Cluster().Status.NamespaceName
+	if err := reconciling.ReconcileSecrets(ctx, r.getAllSecretCreators(ctx, osData), ns, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Secrets: %v", err)
 	}
 
 	return nil
@@ -560,7 +599,7 @@ func (r *Reconciler) statefulSets(ctx context.Context, osData *openshiftData) er
 
 func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedConfigMapCreatorGetter {
 	return []reconciling.NamedConfigMapCreatorGetter{
-		cloudconfig.ConfigMapCreator(osData),
+		openshiftresources.APIServerOauthMetadataConfigMapCreator(osData),
 		openshiftresources.OpenshiftAPIServerConfigMapCreator(osData),
 		openshiftresources.OpenshiftKubeAPIServerConfigMapCreator(osData),
 		openshiftresources.KubeControllerManagerConfigMapCreatorFactory(osData),
@@ -569,6 +608,10 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 		openshiftresources.KubeSchedulerConfigMapCreator,
 		dns.ConfigMapCreator(osData),
 		openshiftresources.OauthConfigMapCreator(osData),
+		openshiftresources.ConsoleConfigCreator(osData),
+		// Put the cloudconfig at the end, it may need data from the cloud controller, this reduces the likelihood
+		// that we instantly rotate the apiserver due to cloudconfig changes
+		cloudconfig.ConfigMapCreator(osData),
 	}
 }
 
@@ -591,7 +634,8 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 		usercluster.DeploymentCreator(osData, true),
 		openshiftresources.OpenshiftNetworkOperatorCreatorFactory(osData),
 		openshiftresources.OpenshiftDNSOperatorFactory(osData),
-		openshiftresources.OauthDeploymentCreator(osData)}
+		openshiftresources.OauthDeploymentCreator(osData),
+		openshiftresources.ConsoleDeployment(osData)}
 
 	if osData.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" {
 		creators = append(creators, clusterautoscaler.DeploymentCreator(osData))

@@ -251,8 +251,7 @@ auditConfig:
       omitStages:
       - RequestReceived
 authConfig:
-  # TODO: What is this? Looks like an additional auth webhook source?
-  # oauthMetadataFile: /etc/kubernetes/static-pod-resources/configmaps/oauth-metadata/oauthMetadata
+  oauthMetadataFile: /etc/kubernetes/oauth-metadata/oauthMetadata
   requestHeader:
     clientCA: /etc/kubernetes/pki/front-proxy/client/ca.crt
     clientCommonNames:
