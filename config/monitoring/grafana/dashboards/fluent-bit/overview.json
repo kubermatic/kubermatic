@@ -177,7 +177,7 @@
       },
       "yaxes": [
         {
-          "format": "pps",
+          "format": "rpm",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -272,7 +272,7 @@
       },
       "yaxes": [
         {
-          "format": "pps",
+          "format": "opm",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -367,7 +367,7 @@
       },
       "yaxes": [
         {
-          "format": "pps",
+          "format": "short",
           "label": null,
           "logBase": 1,
           "max": null,
