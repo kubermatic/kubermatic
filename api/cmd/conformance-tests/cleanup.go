@@ -34,7 +34,10 @@ func deleteAllNonDefaultNamespaces(log *zap.SugaredLogger, client ctrlruntimecli
 			if protectedNamespaces.Has(namespace.Name) {
 				continue
 			}
-			log = log.With("namespace-to-delete", namespace.Name)
+
+			// make sure to create a new variable, or else subsequent With() calls will
+			// *add* new attributes instead of overriding the existing namespace-to-delete value
+			log := log.With("namespace-to-delete", namespace.Name)
 
 			// If its not gone & the DeletionTimestamp is nil, delete it
 			if namespace.DeletionTimestamp == nil {
