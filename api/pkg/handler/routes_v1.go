@@ -2756,7 +2756,7 @@ func (r Routing) openshiftConsole() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.OpenshiftConsoleProxyEndpoint(r.log, r.projectProvider)),
-		common.DecodeGetClusterReq,
+		common.DecodeOpenshiftConsoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

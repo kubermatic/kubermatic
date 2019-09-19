@@ -1131,12 +1131,12 @@ func DecodeGetClusterEvents(c context.Context, r *http.Request) (interface{}, er
 
 func OpenshiftConsoleProxyEndpoint(log *zap.SugaredLogger, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(common.GetClusterReq)
+		req, ok := request.(common.OpenshiftConsoleReq)
 		if !ok {
 			return nil, errors.New(http.StatusBadRequest, "invalid request")
 		}
 
-		cluster, err := getCluster(ctx, req, projectProvider)
+		cluster, err := getCluster(ctx, req.GetClusterReq, projectProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -1184,13 +1184,15 @@ func OpenshiftConsoleProxyEndpoint(log *zap.SugaredLogger, projectProvider provi
 			}
 		}()
 
-		rawRequest, ok := request.([]byte)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "failed to get request data")
+		defer func() {
+			if err := req.RawRequest.Body.Close(); err != nil {
+				log.Errorw("Failed to close request body", zap.Error(err))
+			}
+		}()
+		if _, err := io.Copy(dataStream, req.RawRequest.Body); err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to write data to upstream: %v", err))
 		}
-		if _, err := dataStream.Write(rawRequest); err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to forward request: %v", err))
-		}
+		log.Debug("Wrote request")
 
 		// This means we buffer the response which is not that great
 		var resp []byte

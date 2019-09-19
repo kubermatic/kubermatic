@@ -97,6 +97,19 @@ func DecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
+type OpenshiftConsoleReq struct {
+	GetClusterReq
+	RawRequest *http.Request
+}
+
+func DecodeOpenshiftConsoleReq(c context.Context, r *http.Request) (interface{}, error) {
+	dcr, err := DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	return OpenshiftConsoleReq{GetClusterReq: dcr.(GetClusterReq), RawRequest: r}, nil
+}
+
 func DecodeClusterID(c context.Context, r *http.Request) (string, error) {
 	clusterID := mux.Vars(r)["cluster_id"]
 	if clusterID == "" {
