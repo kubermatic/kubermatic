@@ -20,6 +20,9 @@ type AWSNodeSpec struct {
 	// ami to use. Will be defaulted to a ami for your selected operating system and region. Only set this when you know what you do.
 	AMI string `json:"ami,omitempty"`
 
+	// should the machine have a publicly accessible IP address
+	AssignPublicIP bool `json:"assignPublicIP,omitempty"`
+
 	// Availiability zone in which to place the node. It is coupled with the subnet to which the node will belong.
 	AvailabilityZone string `json:"availabilityZone,omitempty"`
 
