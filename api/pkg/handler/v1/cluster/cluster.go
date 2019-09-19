@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -30,10 +32,16 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/httpstream"
 	"k8s.io/apimachinery/pkg/util/rand"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
+	corev1interface "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/portforward"
+	"k8s.io/client-go/transport/spdy"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -254,9 +262,15 @@ func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 }
 
 func getCluster(ctx context.Context, req common.GetClusterReq, projectProvider provider.ProjectProvider) (*kubermaticv1.Cluster, error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	if !ok {
+		return nil, errors.New(http.StatusInternalServerError, "no cluster in request")
+	}
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-	userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+	userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+	if !ok {
+		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+	}
 	project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -1113,4 +1127,132 @@ func DecodeGetClusterEvents(c context.Context, r *http.Request) (interface{}, er
 	}
 
 	return req, nil
+}
+
+func OpenshiftConsoleProxyEndpoint(log *zap.SugaredLogger, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(common.GetClusterReq)
+		if !ok {
+			return nil, errors.New(http.StatusBadRequest, "invalid request")
+		}
+
+		cluster, err := getCluster(ctx, req, projectProvider)
+		if err != nil {
+			return nil, err
+		}
+
+		privilegedClusterProvider, ok := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "no clusterProvider in request")
+		}
+
+		assertedClusterProvider, ok := privilegedClusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		corev1Client := assertedClusterProvider.GetSeedClusterAdminClient().CoreV1()
+		consolePod, err := getReadyOpenshiftConsolePod(corev1Client.Pods(cluster.Status.NamespaceName))
+		if err != nil {
+			return nil, err
+		}
+
+		connection, err := getConnectionForPod(consolePod, corev1Client.RESTClient(), assertedClusterProvider.SeedAdminConfig())
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to connect to console: %v", err))
+		}
+
+		// Source:
+		// https://github.com/kubernetes/kubernetes/blob/b88662505d288297750becf968bf307dacf872fa/staging/src/k8s.io/client-go/tools/portforward/portforward.go#L359
+
+		// TODO: upstream creates an error stream as well. What purpose does it serve? Seems to work
+		// well without.
+		headers := http.Header{}
+		// TODO: Export the port in the openshift package
+		headers.Set(corev1.PortHeader, "8443")
+		headers.Set(corev1.PortForwardRequestIDHeader, "0")
+
+		headers.Set(corev1.StreamType, corev1.StreamTypeData)
+		dataStream, err := connection.CreateStream(headers)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to open backend connection: %v", err))
+		}
+		defer func() {
+			if err := dataStream.Close(); err != nil {
+				// TODO: Having the seed name here as well would help. How do we get it?
+				log.Errorw("Failed to close stream to openshift console", zap.Error(err), "cluster", cluster.Name)
+			}
+		}()
+
+		rawRequest, ok := request.([]byte)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to get request data")
+		}
+		if _, err := dataStream.Write(rawRequest); err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to forward request: %v", err))
+		}
+
+		// This means we buffer the response which is not that great
+		var resp []byte
+		if _, err := dataStream.Read(resp); err != nil && err != io.EOF {
+			return nil, err
+		}
+		return resp, nil
+	}
+}
+
+func getConnectionForPod(
+	pod *corev1.Pod,
+	restClient rest.Interface,
+	cfg *rest.Config) (httpstream.Connection, error) {
+
+	// The logic here is copied straight from kubectl at
+	// https://github.com/kubernetes/kubernetes/blob/b88662505d288297750becf968bf307dacf872fa/staging/src/k8s.io/kubectl/pkg/cmd/portforward/portforward.go#L334
+	req := restClient.Post().
+		Resource("pods").
+		Namespace(pod.Namespace).
+		Name(pod.Name).
+		SubResource("portforward")
+
+	transport, upgrader, err := spdy.RoundTripperFor(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, req.URL())
+	// We can not use client-gos portforward package directly, as it does a portforward, i.E. binds to
+	// a local port. What we want here is the raw io.ReadWriteCloser to be able to proxy.
+	connection, _, err := dialer.Dial(portforward.PortForwardProtocolV1Name)
+	if err != nil {
+		return nil, fmt.Errorf("error upgrading connection: %v", err)
+	}
+	return connection, nil
+}
+
+func getReadyOpenshiftConsolePod(client corev1interface.PodInterface) (*corev1.Pod, error) {
+	// TODO: Export the labelselector from the openshift resources
+	consolePods, err := client.List(metav1.ListOptions{LabelSelector: "app=openshift-console"})
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, "failed to get openshift console pod")
+	}
+
+	readyConsolePods := getReadyPods(consolePods)
+	if len(readyConsolePods.Items) < 1 {
+		return nil, errors.New(http.StatusBadRequest, "openshift console is not ready")
+	}
+
+	return &readyConsolePods.Items[0], nil
+}
+
+func getReadyPods(pods *corev1.PodList) *corev1.PodList {
+	res := &corev1.PodList{}
+	for _, pod := range pods.Items {
+		for _, condition := range pod.Status.Conditions {
+			if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
+				res.Items = append(res.Items, pod)
+				break
+			}
+		}
+	}
+	return res
 }
