@@ -970,6 +970,9 @@ type AWSNodeSpec struct {
 	AvailabilityZone string `json:"availabilityZone"`
 	// The VPC subnet to which the node shall be connected.
 	SubnetID string `json:"subnetID"`
+	// should the machine have a publicly accessible IP address
+	// required: false
+	AssignPublicIP *bool `json:"assignPublicIP"`
 }
 
 // PacketNodeSpec specifies packet specific node settings
