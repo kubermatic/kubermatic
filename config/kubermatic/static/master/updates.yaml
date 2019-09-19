@@ -59,3 +59,13 @@ updates:
 - from: 1.15.*
   to: 1.16.*
   automatic: false
+
+# ======= 1.16 =======
+# Allow to change to any patch version
+- from: 1.16.*
+  to: 1.16.*
+  automatic: false
+# Allow to next minor release
+- from: 1.16.*
+  to: 1.17.*
+  automatic: false
