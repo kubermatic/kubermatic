@@ -16,24 +16,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// kv simulates the nested structs for template execution.
-type kv map[string]interface{}
-
-// fillKV creates the key/values needed for template execution.
-func fillKV() kv {
-	return kv{
-		"Cluster": kv{
-			"Spec": kv{
-				"ClusterNetwork": kv{
-					"Pods": kv{
-						"CIDRBlocks": []string{"first"},
-					},
-				},
-			},
-		},
-	}
-}
-
 // funcMap creates a function map needed for template execution.
 func funcMap() template.FuncMap {
 	funcs := sprig.TxtFuncMap()
@@ -44,7 +26,7 @@ func funcMap() template.FuncMap {
 }
 
 // readYAML reads a YAML file and unmarshals it.
-func readYAML(filepath string) (kv, error) {
+func readYAML(filepath string) ([]kv, error) {
 	log.Printf("Parsing YAML file %q ...", filepath)
 	f, err := os.Open(filepath)
 	if err != nil {
@@ -68,63 +50,66 @@ func readYAML(filepath string) (kv, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Unmarshal the YAML.
-	var yamlKV kv
-	err = yaml.Unmarshal(buf.Bytes(), &yamlKV)
-	return yamlKV, err
+	// Unmarshal the contained YAMLs.
+	blocks := strings.Split(buf.String(), "\n---\n")
+	yamlKVs := []kv{}
+	for _, block := range blocks {
+		var yamlKV kv
+		err = yaml.Unmarshal([]byte(block), &yamlKV)
+		if err != nil {
+			return nil, err
+		}
+		yamlKV.postprocess()
+		kind := yamlKV.stringAt("kind")
+		if kind == "Deployment" || kind == "DaemonSet" {
+			// Only interested in deployments.
+			yamlKVs = append(yamlKVs, yamlKV)
+		}
+	}
+	return yamlKVs, nil
 }
 
-// resourcesToDoc creates documentation out of the
-// collected configuration.
-func resourcesToDoc(filepath string, out *buffer) *buffer {
+// yamlToDoc creates documentation out of the collected YAML.
+func yamlToDoc(filepath string, yamlKV kv) *buffer {
+	if len(yamlKV) == 0 {
+		return nil
+	}
+	if !yamlKV.exists("spec", "template", "spec", "containers") {
+		return nil
+	}
+	containers := yamlKV.kvAt("spec", "template", "spec", "containers")
+	if !containers.any("resources") {
+		return nil
+	}
+
 	doc := &buffer{}
 	dir, filename := path.Split(filepath)
-	isCode := false
-	counter := 0
 	dirs := strings.Split(dir, "/")
 	addon := dirs[len(dirs)-2]
 
-	doc.push("#### Addon: ")
+	doc.push("\n\n#### Addon: ")
 	doc.push(addon)
 	doc.push(" / File: ")
 	doc.push(filename)
-	doc.push("\n\n")
 
-	for {
-		line, ok := out.pop()
-		if !ok {
-			break
-		}
-		switch {
-		case strings.HasPrefix(line, "container: "):
-			name := line[11:]
-			if isCode {
-				if counter == 0 {
-					doc.push("none\n")
-				}
-				doc.push("```\n\n")
-				counter = 0
-			}
-			doc.push("##### Container: ")
-			doc.push(name)
-			doc.push("\n\n```yaml\n")
-			isCode = true
-		case line == "limits:" || line == "requests:":
-			doc.push(line)
-			doc.push("\n")
-			counter++
-		default:
-			doc.push("    ")
-			doc.push(line)
-			doc.push("\n")
-			counter++
-		}
-	}
+	containers.do(func(k string, v interface{}) {
+		container := v.(kv)
+		container.postprocess()
 
-	if counter == 0 {
-		doc.push("none\n")
-	}
-	doc.push("```\n\n")
+		if !container.exists("resources") {
+			return
+		}
+
+		doc.push("\n\n##### Container: ", container.stringAt("name"), "\n")
+		doc.push("\n```yaml\n")
+		doc.push("limits:\n")
+		doc.push("    cpu: ", container.stringAt("resources", "limits", "cpu"), "\n")
+		doc.push("    memory: ", container.stringAt("resources", "limits", "memory"), "\n")
+		doc.push("requests:\n")
+		doc.push("    cpu: ", container.stringAt("resources", "requests", "cpu"), "\n")
+		doc.push("    memory: ", container.stringAt("resources", "requests", "memory"), "\n")
+		doc.push("```")
+	})
 
 	return doc
 }
@@ -141,7 +126,7 @@ func traverseAddons(dir string) (*buffer, error) {
 	doc.push("weight = 7\n")
 	doc.push("pre = \"<b></b>\"\n")
 	doc.push("+++\n\n")
-	doc.push("### Kubermatic Addons - Resources\n\n")
+	doc.push("### Kubermatic Addons - Resources")
 	// Walk over directories.
 	if err := filepath.Walk(
 		dir,
@@ -152,18 +137,19 @@ func traverseAddons(dir string) (*buffer, error) {
 			case info.IsDir() || !strings.HasSuffix(info.Name(), ".yaml"):
 				return nil
 			default:
-				_, err := readYAML(filepath)
+				yamlKVs, err := readYAML(filepath)
 				if err != nil {
 					return err
 				}
-				// if !out.isEmpty() {
-				//	doc.pushAll(resourcesToDoc(filepath, out))
-				// }
+				for _, yamlKV := range yamlKVs {
+					doc.pushAll(yamlToDoc(filepath, yamlKV))
+				}
 			}
 			return nil
 		}); err != nil {
 		return nil, err
 	}
+	doc.push("\n")
 	return doc, nil
 }
 

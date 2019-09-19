@@ -11,8 +11,8 @@ func (b *buffer) isEmpty() bool {
 	return len(b.lines) == 0
 }
 
-func (b *buffer) push(line string) {
-	b.lines = append(b.lines, line)
+func (b *buffer) push(lines ...string) {
+	b.lines = append(b.lines, lines...)
 }
 
 func (b *buffer) pop() (string, bool) {
@@ -24,10 +24,8 @@ func (b *buffer) pop() (string, bool) {
 	return line, true
 }
 
-func (b *buffer) pushBack(line string) {
-	b.lines = append([]string{line}, b.lines...)
-}
-
 func (b *buffer) pushAll(ba *buffer) {
-	b.lines = append(b.lines, ba.lines...)
+	if ba != nil {
+		b.lines = append(b.lines, ba.lines...)
+	}
 }
