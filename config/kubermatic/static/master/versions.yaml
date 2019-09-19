@@ -5,6 +5,8 @@ versions:
 # Kubernetes 1.15
 - version: "v1.15.3"
   default: false
+- version: "v1.15.4"
+  default: false
 # Kubernetes 1.16
 - version: "v1.16.0-rc.2"
   default: false
