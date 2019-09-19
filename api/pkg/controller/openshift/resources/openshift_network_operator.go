@@ -68,7 +68,10 @@ func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.Name
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  "network-operator",
 				Image: image,
-				Env:   env,
+				Env: append(env, corev1.EnvVar{
+					Name:  "KUBECONFIG",
+					Value: "/etc/kubernetes/kubeconfig/kubeconfig",
+				}),
 				Command: []string{
 					"/usr/bin/cluster-network-operator",
 					"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
@@ -95,7 +98,7 @@ func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.Name
 				return nil, err
 			}
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString("network-operator"))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString("network-operator"), "Network", "operator.openshift.io/v1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}
