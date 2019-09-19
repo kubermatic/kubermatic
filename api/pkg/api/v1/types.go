@@ -8,6 +8,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
@@ -1159,6 +1160,16 @@ type ObjectReference struct {
 type KubermaticVersions struct {
 	// Version of the Kubermatic API server.
 	API string `json:"api"`
+}
+
+// UserClusterRole defines cluster or namespace RBAC role for the user cluster
+// swagger:model UserClusterRole
+type UserClusterRole struct {
+	ObjectMeta `json:",inline"`
+	// Indicates the scope of this role. If empty then cluster scope otherwise namespace scope.
+	Namespace string `json:"namespace,omitempty"`
+	// Rules holds all the PolicyRules for this UserClusterRole
+	Rules []rbacv1.PolicyRule `json:"rules"`
 }
 
 const (

@@ -83,6 +83,35 @@ func (a *Client) CreateCluster(params *CreateClusterParams, authInfo runtime.Cli
 }
 
 /*
+CreateClusterRole Creates cluster role
+*/
+func (a *Client) CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterRoleCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateClusterRoleParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "createClusterRole",
+		Method:             "POST",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateClusterRoleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*CreateClusterRoleCreated), nil
+
+}
+
+/*
 CreateNodeDeployment Creates a node deployment that will belong to the given cluster
 */
 func (a *Client) CreateNodeDeployment(params *CreateNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeDeploymentCreated, error) {
