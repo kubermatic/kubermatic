@@ -20,6 +20,11 @@ func New(code int, msg string) HTTPError {
 	}
 }
 
+func NewPtr(code int, msg string) *HTTPError {
+	err := New(code, msg)
+	return &err
+}
+
 // NewWithDetails creates a brand new HTTPError object
 func NewWithDetails(code int, msg string, details []string) HTTPError {
 	return HTTPError{
