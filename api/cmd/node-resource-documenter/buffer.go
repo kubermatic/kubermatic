@@ -7,10 +7,6 @@ type buffer struct {
 	lines []string
 }
 
-func (b *buffer) isEmpty() bool {
-	return len(b.lines) == 0
-}
-
 func (b *buffer) push(lines ...string) {
 	b.lines = append(b.lines, lines...)
 }
