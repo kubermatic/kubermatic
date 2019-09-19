@@ -4844,6 +4844,11 @@
           "type": "string",
           "x-go-name": "AMI"
         },
+        "assignPublicIP": {
+          "description": "should the machine have a publicly accessible IP address",
+          "type": "boolean",
+          "x-go-name": "AssignPublicIP"
+        },
         "availabilityZone": {
           "description": "Availiability zone in which to place the node. It is coupled with the subnet to which the node will belong.",
           "type": "string",
