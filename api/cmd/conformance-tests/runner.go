@@ -828,6 +828,13 @@ func (r *testRunner) getGinkgoRuns(
 
 	nodeNumberTotal := int32(r.nodeCount)
 
+	ginkgoSkipParallel := `\[Serial\]`
+	if cluster.Spec.Version.Minor() == 16 {
+		// These require the nodes NodePort to be available from the tester, which is not the case for us.
+		// TODO: Maybe add an option to allow the NodePorts in the SecurityGroup?
+		ginkgoSkipParallel += "|Services should be able to change the type from ExternalName to NodePort|Services should be able to create a functioning NodePort service"
+	}
+
 	runs := []struct {
 		name          string
 		ginkgoFocus   string
@@ -837,7 +844,7 @@ func (r *testRunner) getGinkgoRuns(
 		{
 			name:          "parallel",
 			ginkgoFocus:   `\[Conformance\]`,
-			ginkgoSkip:    `\[Serial\]`,
+			ginkgoSkip:    ginkgoSkipParallel,
 			parallelTests: int(nodeNumberTotal) * 10,
 		},
 		{
