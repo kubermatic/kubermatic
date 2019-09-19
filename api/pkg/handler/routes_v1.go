@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"bytes"
+	"context"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -351,8 +353,9 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 
 	//
 	// Defines a set of openshift-specific endpoints
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console").
+	// This one may use any method, we only validate the request and then proxy it to an
+	// openshift console pod.
+	mux.Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/").
 		Handler(r.openshiftConsole())
 
 	//
@@ -2757,7 +2760,20 @@ func (r Routing) openshiftConsole() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.OpenshiftConsoleProxyEndpoint(r.log, r.projectProvider)),
 		common.DecodeOpenshiftConsoleReq,
-		encodeJSON,
+		func(c context.Context, w http.ResponseWriter, response interface{}) error {
+			if httpResp, ok := response.(*http.Response); ok {
+				// TODO: This is tremendously inefficient, we buffer the response twice
+				// Find a way to use net/http/httputil.ReverseProxy with the middlewares
+				w.WriteHeader(httpResp.StatusCode)
+				buffer := bytes.NewBuffer([]byte{})
+				if err := httpResp.Write(buffer); err != nil {
+					return err
+				}
+				_, err := w.Write(buffer.Bytes())
+				return err
+			}
+			return encodeJSON(c, w, response)
+		},
 		r.defaultServerOptions()...,
 	)
 }

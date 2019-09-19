@@ -1,10 +1,10 @@
 package cluster
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -1131,6 +1131,7 @@ func DecodeGetClusterEvents(c context.Context, r *http.Request) (interface{}, er
 
 func OpenshiftConsoleProxyEndpoint(log *zap.SugaredLogger, projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		log := log.With("endpoint", "openshift-console-proxy")
 		req, ok := request.(common.OpenshiftConsoleReq)
 		if !ok {
 			return nil, errors.New(http.StatusBadRequest, "invalid request")
@@ -1140,6 +1141,7 @@ func OpenshiftConsoleProxyEndpoint(log *zap.SugaredLogger, projectProvider provi
 		if err != nil {
 			return nil, err
 		}
+		log = log.With("cluster", cluster.Name)
 
 		privilegedClusterProvider, ok := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 		if !ok {
@@ -1172,6 +1174,23 @@ func OpenshiftConsoleProxyEndpoint(log *zap.SugaredLogger, projectProvider provi
 		headers.Set(corev1.PortHeader, "8443")
 		headers.Set(corev1.PortForwardRequestIDHeader, "0")
 
+		// If the error channel doesn't get opened, the request doesn't get forwarded.
+		headers.Set(corev1.StreamType, corev1.StreamTypeError)
+		errorStream, err := connection.CreateStream(headers)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create error stream: %v", err))
+		}
+		if err := errorStream.Close(); err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to close error stream: %v", err))
+		}
+		//	msg, err := ioutil.ReadAll(errorStream)
+		//	if err != nil {
+		//		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to read from error stream: %v", err))
+		//	}
+		//	if stringMessage := string(msg); stringMessage != "" {
+		//		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("encountered error: %s", stringMessage))
+		//	}
+
 		headers.Set(corev1.StreamType, corev1.StreamTypeData)
 		dataStream, err := connection.CreateStream(headers)
 		if err != nil {
@@ -1180,26 +1199,21 @@ func OpenshiftConsoleProxyEndpoint(log *zap.SugaredLogger, projectProvider provi
 		defer func() {
 			if err := dataStream.Close(); err != nil {
 				// TODO: Having the seed name here as well would help. How do we get it?
-				log.Errorw("Failed to close stream to openshift console", zap.Error(err), "cluster", cluster.Name)
+				log.Errorw("Failed to close stream to openshift console", zap.Error(err))
 			}
 		}()
 
-		defer func() {
-			if err := req.RawRequest.Body.Close(); err != nil {
-				log.Errorw("Failed to close request body", zap.Error(err))
-			}
-		}()
-		if _, err := io.Copy(dataStream, req.RawRequest.Body); err != nil {
+		upstreamRequest := req.RawRequest.Clone(ctx)
+		upstreamRequest.Header = http.Header{}
+		upstreamRequest.Header.Set("Host", "console.openshift.seed.tld")
+		upstreamRequest.URL.Scheme = "https"
+		//upstreamRequest.URL.Path = ""
+		if err := upstreamRequest.Write(dataStream); err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to write data to upstream: %v", err))
 		}
 		log.Debug("Wrote request")
 
-		// This means we buffer the response which is not that great
-		var resp []byte
-		if _, err := dataStream.Read(resp); err != nil && err != io.EOF {
-			return nil, err
-		}
-		return resp, nil
+		return http.ReadResponse(bufio.NewReader(dataStream), nil)
 	}
 }
 
