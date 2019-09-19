@@ -5,14 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"strconv"
 	"strings"
 	"time"
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
+	transporthttp "github.com/go-kit/kit/transport/http"
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
@@ -1129,98 +1132,148 @@ func DecodeGetClusterEvents(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-func OpenshiftConsoleProxyEndpoint(log *zap.SugaredLogger, projectProvider provider.ProjectProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		log := log.With("endpoint", "openshift-console-proxy")
-		req, ok := request.(common.OpenshiftConsoleReq)
-		if !ok {
-			return nil, errors.New(http.StatusBadRequest, "invalid request")
-		}
+type inMemRoundTripper struct {
+	target io.ReadWriteCloser
+}
 
-		cluster, err := getCluster(ctx, req.GetClusterReq, projectProvider)
-		if err != nil {
-			return nil, err
-		}
-		log = log.With("cluster", cluster.Name)
-
-		privilegedClusterProvider, ok := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "no clusterProvider in request")
-		}
-
-		assertedClusterProvider, ok := privilegedClusterProvider.(*kubernetesprovider.ClusterProvider)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-		}
-
-		corev1Client := assertedClusterProvider.GetSeedClusterAdminClient().CoreV1()
-		consolePod, err := getReadyOpenshiftConsolePod(corev1Client.Pods(cluster.Status.NamespaceName))
-		if err != nil {
-			return nil, err
-		}
-
-		connection, err := getConnectionForPod(consolePod, corev1Client.RESTClient(), assertedClusterProvider.SeedAdminConfig())
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to connect to console: %v", err))
-		}
-
-		// Source:
-		// https://github.com/kubernetes/kubernetes/blob/b88662505d288297750becf968bf307dacf872fa/staging/src/k8s.io/client-go/tools/portforward/portforward.go#L359
-
-		// TODO: upstream creates an error stream as well. What purpose does it serve? Seems to work
-		// well without.
-		headers := http.Header{}
-		// TODO: Export the port in the openshift package
-		headers.Set(corev1.PortHeader, "8443")
-		headers.Set(corev1.PortForwardRequestIDHeader, "0")
-
-		// If the error channel doesn't get opened, the request doesn't get forwarded.
-		headers.Set(corev1.StreamType, corev1.StreamTypeError)
-		errorStream, err := connection.CreateStream(headers)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create error stream: %v", err))
-		}
-		if err := errorStream.Close(); err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to close error stream: %v", err))
-		}
-		//	msg, err := ioutil.ReadAll(errorStream)
-		//	if err != nil {
-		//		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to read from error stream: %v", err))
-		//	}
-		//	if stringMessage := string(msg); stringMessage != "" {
-		//		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("encountered error: %s", stringMessage))
-		//	}
-
-		headers.Set(corev1.StreamType, corev1.StreamTypeData)
-		dataStream, err := connection.CreateStream(headers)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to open backend connection: %v", err))
-		}
-		defer func() {
-			if err := dataStream.Close(); err != nil {
-				// TODO: Having the seed name here as well would help. How do we get it?
-				log.Errorw("Failed to close stream to openshift console", zap.Error(err))
-			}
-		}()
-
-		upstreamRequest := req.RawRequest.Clone(ctx)
-		upstreamRequest.Header = http.Header{}
-		upstreamRequest.Header.Set("Host", "console.openshift.seed.tld")
-		upstreamRequest.URL.Scheme = "https"
-		//upstreamRequest.URL.Path = ""
-		if err := upstreamRequest.Write(dataStream); err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to write data to upstream: %v", err))
-		}
-		log.Debug("Wrote request")
-
-		return http.ReadResponse(bufio.NewReader(dataStream), nil)
+func (imrt *inMemRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	if err := r.Write(imrt.target); err != nil {
+		return nil, fmt.Errorf("failed to write request: %v", err)
 	}
+	return http.ReadResponse(bufio.NewReader(imrt.target), nil)
+}
+
+func writeHTTPError(log *zap.SugaredLogger, w http.ResponseWriter, err errors.HTTPError) {
+	w.WriteHeader(err.StatusCode())
+	if _, wErr := w.Write([]byte(err.Error())); wErr != nil {
+		log.Errorw("Failed to write body", zap.Error(err))
+	}
+}
+
+func OpenshiftConsoleProxyEndpoint(
+	log *zap.SugaredLogger,
+	extractor transporthttp.RequestFunc,
+	projectProvider provider.ProjectProvider,
+	middleware endpoint.Middleware) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		log := log.With("endpoint", "openshift-console-proxy", "uri", r.URL.Path)
+		ctx := extractor(r.Context(), r)
+
+		request, err := common.DecodeGetClusterReq(ctx, r)
+		if err != nil {
+			writeHTTPError(log, w, errors.New(http.StatusBadRequest, err.Error()))
+			log.Debugw("Error decoding request", zap.Error(err))
+			return
+		}
+
+		// The middleware needs an endpoint at that endpoint is the last one getting called
+		// so it must be the one with the actual business logic. This is confusing because
+		// we directly write the response from within the endpoint instead of returning it.
+		endpoint := func(ctx context.Context, request interface{}) (interface{}, error) {
+			roundTripper, err := roundTripperForOpenshiftConsole(ctx, request, log, projectProvider)
+			if err != nil {
+				log.Debugw("Failed to get roundTripper", zap.Error(err))
+				return nil, err
+			}
+			defer func() {
+				if err := roundTripper.target.Close(); err != nil {
+					log.Errorw("Failed closing transport", zap.Error(err))
+				}
+			}()
+
+			// Yup, not very efficient. But we have a different roundTripper for each request.
+			// We could think about caching those.
+			proxy := &httputil.ReverseProxy{
+				Director:  func(_ *http.Request) { return },
+				Transport: roundTripper}
+			proxy.ServeHTTP(w, r)
+
+			return nil, nil
+		}
+		if _, err := middleware(endpoint)(ctx, request); err != nil {
+			log.Debugw("Error serving openshift console", zap.Error(err))
+			if httpErr, ok := err.(errors.HTTPError); ok {
+				writeHTTPError(log, w, httpErr)
+			} else {
+				writeHTTPError(log, w, errors.New(http.StatusInternalServerError, err.Error()))
+			}
+		}
+		return
+	}
+}
+
+func roundTripperForOpenshiftConsole(
+	ctx context.Context,
+	request interface{},
+	log *zap.SugaredLogger,
+	projectProvider provider.ProjectProvider) (*inMemRoundTripper, *errors.HTTPError) {
+
+	req, ok := request.(common.GetClusterReq)
+	if !ok {
+		return nil, errors.NewPtr(http.StatusBadRequest, "invalid request")
+	}
+
+	cluster, err := getCluster(ctx, req, projectProvider)
+	if err != nil {
+		return nil, errors.NewPtr(http.StatusInternalServerError, err.Error())
+	}
+	log = log.With("cluster", cluster.Name)
+
+	privilegedClusterProvider, ok := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+	if !ok {
+		return nil, errors.NewPtr(http.StatusInternalServerError, "no clusterProvider in request")
+	}
+
+	assertedClusterProvider, ok := privilegedClusterProvider.(*kubernetesprovider.ClusterProvider)
+	if !ok {
+		return nil, errors.NewPtr(http.StatusInternalServerError, "failed to assert clusterProvider")
+	}
+
+	corev1Client := assertedClusterProvider.GetSeedClusterAdminClient().CoreV1()
+	consolePod, httpErr := getReadyOpenshiftConsolePod(corev1Client.Pods(cluster.Status.NamespaceName))
+	if err != nil {
+		return nil, httpErr
+	}
+
+	connection, httpErr := getConnectionForPod(consolePod, corev1Client.RESTClient(), assertedClusterProvider.SeedAdminConfig())
+	if err != nil {
+		return nil, httpErr
+	}
+
+	// Source:
+	// https://github.com/kubernetes/kubernetes/blob/b88662505d288297750becf968bf307dacf872fa/staging/src/k8s.io/client-go/tools/portforward/portforward.go#L359
+
+	// TODO: upstream creates an error stream as well. What purpose does it serve? Seems to work
+	// well without.
+	headers := http.Header{}
+	// TODO: Export the port in the openshift package
+	headers.Set(corev1.PortHeader, "8443")
+	headers.Set(corev1.PortForwardRequestIDHeader, "0")
+
+	// If the error channel doesn't get opened, the request doesn't get forwarded.
+	headers.Set(corev1.StreamType, corev1.StreamTypeError)
+	errorStream, err := connection.CreateStream(headers)
+	if err != nil {
+		return nil, errors.NewPtr(http.StatusInternalServerError, fmt.Sprintf("failed to create error stream: %v", err))
+	}
+	if err := errorStream.Close(); err != nil {
+		return nil, errors.NewPtr(http.StatusInternalServerError, fmt.Sprintf("failed to close error stream: %v", err))
+	}
+
+	headers.Set(corev1.StreamType, corev1.StreamTypeData)
+	dataStream, err := connection.CreateStream(headers)
+	if err != nil {
+		return nil, errors.NewPtr(http.StatusInternalServerError, fmt.Sprintf("failed to open backend connection: %v", err))
+	}
+
+	return &inMemRoundTripper{target: dataStream}, nil
 }
 
 func getConnectionForPod(
 	pod *corev1.Pod,
 	restClient rest.Interface,
-	cfg *rest.Config) (httpstream.Connection, error) {
+	cfg *rest.Config) (httpstream.Connection, *errors.HTTPError) {
 
 	// The logic here is copied straight from kubectl at
 	// https://github.com/kubernetes/kubernetes/blob/b88662505d288297750becf968bf307dacf872fa/staging/src/k8s.io/kubectl/pkg/cmd/portforward/portforward.go#L334
@@ -1232,7 +1285,7 @@ func getConnectionForPod(
 
 	transport, upgrader, err := spdy.RoundTripperFor(cfg)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewPtr(http.StatusInternalServerError, err.Error())
 	}
 
 	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, req.URL())
@@ -1240,21 +1293,21 @@ func getConnectionForPod(
 	// a local port. What we want here is the raw io.ReadWriteCloser to be able to proxy.
 	connection, _, err := dialer.Dial(portforward.PortForwardProtocolV1Name)
 	if err != nil {
-		return nil, fmt.Errorf("error upgrading connection: %v", err)
+		return nil, errors.NewPtr(http.StatusInternalServerError, fmt.Sprintf("error upgrading connection: %v", err))
 	}
 	return connection, nil
 }
 
-func getReadyOpenshiftConsolePod(client corev1interface.PodInterface) (*corev1.Pod, error) {
+func getReadyOpenshiftConsolePod(client corev1interface.PodInterface) (*corev1.Pod, *errors.HTTPError) {
 	// TODO: Export the labelselector from the openshift resources
 	consolePods, err := client.List(metav1.ListOptions{LabelSelector: "app=openshift-console"})
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, "failed to get openshift console pod")
+		return nil, errors.NewPtr(http.StatusInternalServerError, "failed to get openshift console pod")
 	}
 
 	readyConsolePods := getReadyPods(consolePods)
 	if len(readyConsolePods.Items) < 1 {
-		return nil, errors.New(http.StatusBadRequest, "openshift console is not ready")
+		return nil, errors.NewPtr(http.StatusBadRequest, "openshift console is not ready")
 	}
 
 	return &readyConsolePods.Items[0], nil

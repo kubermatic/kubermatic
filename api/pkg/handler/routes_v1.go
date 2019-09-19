@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"bytes"
-	"context"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -355,7 +353,7 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines a set of openshift-specific endpoints
 	// This one may use any method, we only validate the request and then proxy it to an
 	// openshift console pod.
-	mux.Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/").
+	mux.PathPrefix("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/").
 		Handler(r.openshiftConsole())
 
 	//
@@ -2749,31 +2747,27 @@ func (r Routing) createClusterRole() http.Handler {
 	)
 }
 
+// Minimal wrapper to implement the http.Handler interface via a function
+type dynamicHTTPHandler func(http.ResponseWriter, *http.Request)
+
+func (dHandler dynamicHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	dHandler(w, r)
+	return
+}
+
 func (r Routing) openshiftConsole() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
-			middleware.UserSaver(r.userProvider),
-			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
-			// client that allows access to the cluster namespace only
-			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.OpenshiftConsoleProxyEndpoint(r.log, r.projectProvider)),
-		common.DecodeOpenshiftConsoleReq,
-		func(c context.Context, w http.ResponseWriter, response interface{}) error {
-			if httpResp, ok := response.(*http.Response); ok {
-				// TODO: This is tremendously inefficient, we buffer the response twice
-				// Find a way to use net/http/httputil.ReverseProxy with the middlewares
-				w.WriteHeader(httpResp.StatusCode)
-				buffer := bytes.NewBuffer([]byte{})
-				if err := httpResp.Write(buffer); err != nil {
-					return err
-				}
-				_, err := w.Write(buffer.Bytes())
-				return err
-			}
-			return encodeJSON(c, w, response)
-		},
-		r.defaultServerOptions()...,
+	return dynamicHTTPHandler(
+		cluster.OpenshiftConsoleProxyEndpoint(
+			r.log,
+			middleware.TokenExtractor(r.tokenExtractors),
+			r.projectProvider,
+			endpoint.Chain(
+				middleware.TokenVerifier(r.tokenVerifiers),
+				middleware.UserSaver(r.userProvider),
+				// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
+				// client that allows access to the cluster namespace only
+				middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+				middleware.UserInfoExtractor(r.userProjectMapper),
+			)),
 	)
 }
