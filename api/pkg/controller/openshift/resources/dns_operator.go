@@ -65,9 +65,12 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 			}
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
-				Name:    openshiftDNSOperatorContainerName,
-				Image:   image,
-				Env:     env,
+				Name:  openshiftDNSOperatorContainerName,
+				Image: image,
+				Env: append(env, corev1.EnvVar{
+					Name:  "KUBECONFIG",
+					Value: "/etc/kubernetes/kubeconfig/kubeconfig",
+				}),
 				Command: []string{"dns-operator"},
 				VolumeMounts: []corev1.VolumeMount{{
 					Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
@@ -92,7 +95,7 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 				return nil, err
 			}
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString(openshiftDNSOperatorContainerName))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString(openshiftDNSOperatorContainerName), "DNS", "operator.openshift.io/v1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}

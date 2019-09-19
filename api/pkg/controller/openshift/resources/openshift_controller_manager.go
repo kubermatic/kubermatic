@@ -163,6 +163,10 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 					Command:   []string{"hypershift", "openshift-controller-manager"},
 					Args:      []string{"--config=/etc/origin/master/config.yaml", "-v=2"},
 					Resources: resourceRequirements,
+					Env: []corev1.EnvVar{{
+						Name:  "KUBECONFIG",
+						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
+					}},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
@@ -190,7 +194,7 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(OpenshiftControllerManagerDeploymentName, data.Cluster().Name)
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OpenshiftControllerManagerDeploymentName))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OpenshiftControllerManagerDeploymentName), "OAuthClient", "oauth.openshift.io/v1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}

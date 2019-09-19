@@ -58,7 +58,7 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 			if err != nil {
 				return nil, err
 			}
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.NewString(Name))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.NewString(Name), "Machine", "cluster.k8s.io/v1alpha1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}
@@ -115,11 +115,14 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:      Name,
-					Image:     data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
-					Command:   []string{"/usr/local/bin/machine-controller"},
-					Args:      getFlags(clusterDNSIP, data.DC().Node),
-					Env:       envVars,
+					Name:    Name,
+					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
+					Command: []string{"/usr/local/bin/machine-controller"},
+					Args:    getFlags(clusterDNSIP, data.DC().Node),
+					Env: append(envVars, corev1.EnvVar{
+						Name:  "KUBECONFIG",
+						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
+					}),
 					Resources: controllerResourceRequirements,
 					LivenessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
