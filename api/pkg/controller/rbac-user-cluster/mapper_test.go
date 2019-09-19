@@ -77,7 +77,7 @@ func TestGenerateVerbsForGroup(t *testing.T) {
 		{
 			name:          "scenario 1: generate verbs for owners",
 			resurceName:   genResourceName(rbac.OwnerGroupNamePrefix),
-			expectedVerbs: []string{"create", "list", "get", "update", "delete"},
+			expectedVerbs: []string{"create", "list", "get", "update", "delete", "patch", "watch", "deletecollection"},
 			expectError:   false,
 		},
 		{
