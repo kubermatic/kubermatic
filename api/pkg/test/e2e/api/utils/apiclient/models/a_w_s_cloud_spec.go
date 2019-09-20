@@ -37,7 +37,7 @@ type AWSCloudSpec struct {
 	SecretAccessKey string `json:"secretAccessKey,omitempty"`
 
 	// security group ID
-	SecurityGroupID string `json:"securityGroupID,omitempty"`
+	SecurityGroupID string `json:"securityGroupId,omitempty"`
 
 	// v p c ID
 	VPCID string `json:"vpcId,omitempty"`

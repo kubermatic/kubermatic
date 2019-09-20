@@ -403,7 +403,7 @@ type AWSCloudSpec struct {
 	ControlPlaneRoleARN string `json:"roleARN"`
 	RouteTableID        string `json:"routeTableId"`
 	InstanceProfileName string `json:"instanceProfileName"`
-	SecurityGroupID     string `json:"securityGroupID"`
+	SecurityGroupID     string `json:"securityGroupId"`
 
 	// DEPRECATED. Don't care for the role name. We only require the ControlPlaneRoleARN to be set so the control plane
 	// can perform the assume-role.
