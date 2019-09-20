@@ -311,6 +311,8 @@ func consoleRoundTripper(
 		return nil, err
 	}
 
+	// We should cache these, we can get many streams via the same SPDY connections, re-creation everything
+	// for each and every request is very inefficient.
 	connection, err := getConnectionForPod(consolePod, corev1Client.RESTClient(), cfg)
 	if err != nil {
 		return nil, err
@@ -388,12 +390,18 @@ func getReadyOpenshiftConsolePod(client corev1interface.PodInterface) (*corev1.P
 func getReadyPods(pods *corev1.PodList) *corev1.PodList {
 	res := &corev1.PodList{}
 	for _, pod := range pods.Items {
-		for _, condition := range pod.Status.Conditions {
-			if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
-				res.Items = append(res.Items, pod)
-				break
-			}
+		if isPodReady(pod) {
+			res.Items = append(res.Items, pod)
 		}
 	}
 	return res
+}
+
+func isPodReady(pod corev1.Pod) bool {
+	for _, condition := range pod.Status.Conditions {
+		if condition.Type == corev1.PodReady {
+			return condition.Status == corev1.ConditionTrue
+		}
+	}
+	return false
 }
