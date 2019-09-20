@@ -970,7 +970,8 @@ type AWSNodeSpec struct {
 	AvailabilityZone string `json:"availabilityZone"`
 	// The VPC subnet to which the node shall be connected.
 	SubnetID string `json:"subnetID"`
-	// should the machine have a publicly accessible IP address
+	// This flag controls a property of the AWS instance. When set the AWS instance will get a public IP address
+	// assigned during launch overriding a possible setting in the used AWS subnet.
 	// required: false
 	AssignPublicIP *bool `json:"assignPublicIP"`
 }

@@ -4845,7 +4845,7 @@
           "x-go-name": "AMI"
         },
         "assignPublicIP": {
-          "description": "should the machine have a publicly accessible IP address",
+          "description": "This flag controls a property of the AWS instance. When set the AWS instance will get a public IP address\nassigned during launch overriding a possible setting in the used AWS subnet.",
           "type": "boolean",
           "x-go-name": "AssignPublicIP"
         },
