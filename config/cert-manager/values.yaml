@@ -49,7 +49,7 @@ certManager:
     replicas: 1
     image:
       repository: quay.io/jetstack/cert-manager-cainjector
-      tag: v0.9.1
+      tag: v0.10.0
       pullPolicy: IfNotPresent
 
     resources:
