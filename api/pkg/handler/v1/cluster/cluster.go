@@ -732,7 +732,6 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 }
 
 func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1beta1.NodeMetrics, availableNodesResources map[string]corev1.ResourceList, cluster *kubermaticv1.Cluster) (*apiv1.ClusterMetrics, error) {
-
 	if podMetrics == nil {
 		return nil, fmt.Errorf("metric list can not be nil")
 	}
@@ -742,14 +741,11 @@ func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1b
 	clusterMetrics := &apiv1.ClusterMetrics{
 		Name:                cluster.Name,
 		ControlPlaneMetrics: apiv1.ControlPlaneMetrics{},
-		NodesMetrics:        make([]apiv1.NodeMetric, 0),
+		NodesMetrics:        apiv1.NodesMetric{},
 	}
 
 	for _, m := range nodeMetrics {
 		usage := corev1.ResourceList{}
-		nodeMetric := apiv1.NodeMetric{
-			Name: m.Name,
-		}
 		err := scheme.Scheme.Convert(&m.Usage, &usage, nil)
 		if err != nil {
 			return nil, err
@@ -760,22 +756,19 @@ func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1b
 			Available: availableNodesResources[m.Name],
 		}
 
-		if available, found := resourceMetricsInfo.Available[corev1.ResourceCPU]; found {
+		availableCPU, foundCPU := resourceMetricsInfo.Available[corev1.ResourceCPU]
+		availableMemory, foundMemory := resourceMetricsInfo.Available[corev1.ResourceMemory]
+		if foundCPU && foundMemory {
 			quantityCPU := resourceMetricsInfo.Metrics[corev1.ResourceCPU]
-			nodeMetric.CPUTotalMillicores = quantityCPU.MilliValue()
-			nodeMetric.CPUAvailableMillicores = available.MilliValue()
-			fraction := float64(quantityCPU.MilliValue()) / float64(available.MilliValue()) * 100
-			nodeMetric.CPUUsedPercentage = int64(fraction)
-		}
+			clusterMetrics.NodesMetrics.CPUTotalMillicores += quantityCPU.MilliValue()
+			clusterMetrics.NodesMetrics.CPUAvailableMillicores += availableCPU.MilliValue()
+			clusterMetrics.NodesMetrics.CPUUsedPercentage += float64(quantityCPU.MilliValue()) / float64(availableCPU.MilliValue()) * 100
 
-		if available, found := resourceMetricsInfo.Available[corev1.ResourceMemory]; found {
 			quantityM := resourceMetricsInfo.Metrics[corev1.ResourceMemory]
-			nodeMetric.MemoryTotalBytes = quantityM.Value() / (1024 * 1024)
-			nodeMetric.MemoryAvailableBytes = available.Value() / (1024 * 1024)
-			fraction := float64(quantityM.MilliValue()) / float64(available.MilliValue()) * 100
-			nodeMetric.MemoryUsedPercentage = int64(fraction)
+			clusterMetrics.NodesMetrics.MemoryTotalBytes += quantityM.Value() / (1024 * 1024)
+			clusterMetrics.NodesMetrics.MemoryAvailableBytes += availableMemory.Value() / (1024 * 1024)
+			clusterMetrics.NodesMetrics.MemoryUsedPercentage += float64(quantityM.MilliValue()) / float64(availableMemory.MilliValue()) * 100
 		}
-		clusterMetrics.NodesMetrics = append(clusterMetrics.NodesMetrics, nodeMetric)
 	}
 
 	for _, podMetrics := range podMetrics.Items {
