@@ -64,7 +64,7 @@ for the create cluster role operation typically these are written to a http.Requ
 type CreateClusterRoleParams struct {
 
 	/*Body*/
-	Body *models.UserClusterRole
+	Body *models.ClusterRole
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
@@ -111,13 +111,13 @@ func (o *CreateClusterRoleParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithBody adds the body to the create cluster role params
-func (o *CreateClusterRoleParams) WithBody(body *models.UserClusterRole) *CreateClusterRoleParams {
+func (o *CreateClusterRoleParams) WithBody(body *models.ClusterRole) *CreateClusterRoleParams {
 	o.SetBody(body)
 	return o
 }
 
 // SetBody adds the body to the create cluster role params
-func (o *CreateClusterRoleParams) SetBody(body *models.UserClusterRole) {
+func (o *CreateClusterRoleParams) SetBody(body *models.ClusterRole) {
 	o.Body = body
 }
 

@@ -1182,13 +1182,21 @@ type KubermaticVersions struct {
 	API string `json:"api"`
 }
 
-// UserClusterRole defines cluster or namespace RBAC role for the user cluster
-// swagger:model UserClusterRole
-type UserClusterRole struct {
+// ClusterRole defines cluster RBAC role for the user cluster
+// swagger:model ClusterRole
+type ClusterRole struct {
 	ObjectMeta `json:",inline"`
-	// Indicates the scope of this role. If empty then cluster scope otherwise namespace scope.
+	// Rules holds all the PolicyRules for this ClusterRole
+	Rules []rbacv1.PolicyRule `json:"rules"`
+}
+
+// Role defines RBAC role for the user cluster
+// swagger:model Role
+type Role struct {
+	ObjectMeta `json:",inline"`
+	// Indicates the scope of this role.
 	Namespace string `json:"namespace,omitempty"`
-	// Rules holds all the PolicyRules for this UserClusterRole
+	// Rules holds all the PolicyRules for this Role
 	Rules []rbacv1.PolicyRule `json:"rules"`
 }
 
