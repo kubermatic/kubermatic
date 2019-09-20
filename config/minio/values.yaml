@@ -1,7 +1,7 @@
 minio:
   image:
     repository: docker.io/minio/minio
-    tag: RELEASE.2019-08-14T20-37-41Z
+    tag: RELEASE.2019-09-18T21-55-05Z
   storeSize: 100Gi
   credentials:
     accessKey: wtupllWfpMg414ZM5YkzZiUmgjh1vZdk
@@ -19,7 +19,7 @@ minio:
     enabled: true
     image:
       repository: quay.io/kubermatic/util
-      tag: 1.1.2
+      tag: 1.1.3
 
   # If your cluster does not have a default storage class,
   # you can specify the class to use for Minio. Note that
