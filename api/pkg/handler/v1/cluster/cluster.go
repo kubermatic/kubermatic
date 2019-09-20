@@ -732,6 +732,7 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 }
 
 func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1beta1.NodeMetrics, availableNodesResources map[string]corev1.ResourceList, cluster *kubermaticv1.Cluster) (*apiv1.ClusterMetrics, error) {
+
 	if podMetrics == nil {
 		return nil, fmt.Errorf("metric list can not be nil")
 	}
@@ -762,14 +763,16 @@ func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1b
 			quantityCPU := resourceMetricsInfo.Metrics[corev1.ResourceCPU]
 			clusterMetrics.NodesMetrics.CPUTotalMillicores += quantityCPU.MilliValue()
 			clusterMetrics.NodesMetrics.CPUAvailableMillicores += availableCPU.MilliValue()
-			clusterMetrics.NodesMetrics.CPUUsedPercentage += float64(quantityCPU.MilliValue()) / float64(availableCPU.MilliValue()) * 100
 
 			quantityM := resourceMetricsInfo.Metrics[corev1.ResourceMemory]
 			clusterMetrics.NodesMetrics.MemoryTotalBytes += quantityM.Value() / (1024 * 1024)
 			clusterMetrics.NodesMetrics.MemoryAvailableBytes += availableMemory.Value() / (1024 * 1024)
-			clusterMetrics.NodesMetrics.MemoryUsedPercentage += float64(quantityM.MilliValue()) / float64(availableMemory.MilliValue()) * 100
 		}
 	}
+	fractionCPU := float64(clusterMetrics.NodesMetrics.CPUTotalMillicores) / float64(clusterMetrics.NodesMetrics.CPUAvailableMillicores) * 100
+	clusterMetrics.NodesMetrics.CPUUsedPercentage += int64(fractionCPU)
+	fractionMemory := float64(clusterMetrics.NodesMetrics.MemoryTotalBytes) / float64(clusterMetrics.NodesMetrics.MemoryAvailableBytes) * 100
+	clusterMetrics.NodesMetrics.MemoryUsedPercentage += int64(fractionMemory)
 
 	for _, podMetrics := range podMetrics.Items {
 		for _, container := range podMetrics.Containers {

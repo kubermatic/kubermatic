@@ -1091,12 +1091,12 @@ type NodesMetric struct {
 	// MemoryAvailableBytes available memory for node
 	MemoryAvailableBytes int64 `json:"memoryAvailableBytes,omitempty"`
 	// MemoryUsedPercentage in percentage
-	MemoryUsedPercentage float64 `json:"memoryUsedPercentage,omitempty"`
+	MemoryUsedPercentage int64 `json:"memoryUsedPercentage,omitempty"`
 	// CPUTotalMillicores in m cores
 	CPUTotalMillicores     int64 `json:"cpuTotalMillicores,omitempty"`
 	CPUAvailableMillicores int64 `json:"cpuAvailableMillicores,omitempty"`
 	// CPUUsedPercentage in percentage
-	CPUUsedPercentage float64 `json:"cpuUsedPercentage,omitempty"`
+	CPUUsedPercentage int64 `json:"cpuUsedPercentage,omitempty"`
 }
 
 // NodeMetric defines a metric for the given node
@@ -1108,12 +1108,12 @@ type NodeMetric struct {
 	// MemoryAvailableBytes available memory for node
 	MemoryAvailableBytes int64 `json:"memoryAvailableBytes,omitempty"`
 	// MemoryUsedPercentage in percentage
-	MemoryUsedPercentage float64 `json:"memoryUsedPercentage,omitempty"`
+	MemoryUsedPercentage int64 `json:"memoryUsedPercentage,omitempty"`
 	// CPUTotalMillicores in m cores
 	CPUTotalMillicores     int64 `json:"cpuTotalMillicores,omitempty"`
 	CPUAvailableMillicores int64 `json:"cpuAvailableMillicores,omitempty"`
 	// CPUUsedPercentage in percentage
-	CPUUsedPercentage float64 `json:"cpuUsedPercentage,omitempty"`
+	CPUUsedPercentage int64 `json:"cpuUsedPercentage,omitempty"`
 }
 
 // NodeDeployment represents a set of worker nodes that is part of a cluster

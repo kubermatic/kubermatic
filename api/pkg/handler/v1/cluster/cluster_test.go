@@ -1416,7 +1416,7 @@ func TestGetClusterMetrics(t *testing.T) {
 		{
 			Name:             "scenario 1: gets cluster metrics",
 			Body:             ``,
-			ExpectedResponse: `{"name":"defClusterID","controlPlane":{"memoryTotalBytes":1310,"cpuTotalMillicores":580000},"nodes":[{"name":"venus","memoryTotalBytes":655,"memoryAvailableBytes":655,"memoryUsedPercentage":100,"cpuTotalMillicores":290000,"cpuAvailableMillicores":290000,"cpuUsedPercentage":100},{"name":"mars","memoryTotalBytes":655,"memoryAvailableBytes":655,"memoryUsedPercentage":100,"cpuTotalMillicores":290000,"cpuAvailableMillicores":290000,"cpuUsedPercentage":100}]}`,
+			ExpectedResponse: `{"name":"defClusterID","controlPlane":{"memoryTotalBytes":1310,"cpuTotalMillicores":580000},"nodes":{"memoryTotalBytes":1310,"memoryAvailableBytes":1310,"memoryUsedPercentage":100,"cpuTotalMillicores":580000,"cpuAvailableMillicores":580000,"cpuUsedPercentage":100}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingNodes: []*corev1.Node{
