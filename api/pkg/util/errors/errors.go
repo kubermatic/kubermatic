@@ -36,7 +36,7 @@ func NewWithDetails(code int, msg string, details []string) HTTPError {
 
 // Error implements the error interface.
 func (err HTTPError) Error() string {
-	return err.msg
+	return fmt.Sprintf("http/%d: %s", err.code, err.msg)
 }
 
 // StatusCode returns the status code for the error

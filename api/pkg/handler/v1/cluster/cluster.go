@@ -2,13 +2,16 @@ package cluster
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -1150,6 +1153,60 @@ func writeHTTPError(log *zap.SugaredLogger, w http.ResponseWriter, err errors.HT
 	}
 }
 
+func openshiftLogin(log *zap.SugaredLogger, w http.ResponseWriter) {
+	client := &http.Client{
+		Transport: &http.Transport{
+			// TODO: Fetch the CA instead and use it for verification
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+		CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest("GET", "https://alvaro-openshift-test.europe-west3-c.dev.kubermatic.io:30289/oauth/authorize?client_id=console&response_type=code&scope=user%3Afull&state=23bdc3c8", bytes.NewBuffer([]byte{}))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("failed to construct request: %v", err)))
+		return
+	}
+	req.SetBasicAuth("kubeadmin", "Rz141YoTUTbDpyZiyyqfT0gzScndtfputvF3Ma0vXWQ")
+	b, _ := httputil.DumpRequest(req, true)
+	log.Info(string(b))
+	resp, err := client.Do(req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("error logging in: %v", err)))
+		return
+	}
+	b, _ = httputil.DumpResponse(resp, true)
+	log.Info(string(b))
+	redirectURL, err := resp.Location()
+	if err != nil {
+		body, _ := ioutil.ReadAll(resp.Body)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("error getting response location: %v, status code: %d, body: %s, req url: %q", err, resp.StatusCode, string(body), req.URL.String())))
+		return
+	}
+	// TODO: Generate a random state arg and validate it
+	oauthToken := redirectURL.Query().Get("code")
+	if oauthToken == "" {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("response didn't contain token: %v", err)))
+		return
+	}
+	http.SetCookie(w, &http.Cookie{Name: "state-token", Value: "23bdc3c8"})
+	u, err := url.Parse("http://console.openshift.seed.tld:8080/api/v1/projects/p4vmk4ckn2/dc/europe-west3-c/clusters/alvaro-openshift-test/openshift/console/auth/callback?state=23bdc3c8&code=" + oauthToken)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("failed parsing redirect uri: %v", err)))
+		return
+	}
+	u.Query().Set("state", "23bdc3c8")
+	http.Redirect(w, req, u.String(), http.StatusFound)
+}
+
 func OpenshiftConsoleProxyEndpoint(
 	log *zap.SugaredLogger,
 	extractor transporthttp.RequestFunc,
@@ -1158,6 +1215,19 @@ func OpenshiftConsoleProxyEndpoint(
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		log := log.With("endpoint", "openshift-console-proxy", "uri", r.URL.Path)
+		r.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InNlcnZpY2VhY2NvdW50LWhwa3NycTh6eG5AZGV2Lmt1YmVybWF0aWMuaW8iLCJleHAiOjE2NjM1ODgyNDMsImlhdCI6MTU2ODg5Mzg0MywibmJmIjoxNTY4ODkzODQzLCJwcm9qZWN0X2lkIjoicDR2bWs0Y2tuMiIsInRva2VuX2lkIjoid3Iyc3BtdmhicSJ9.I_UCyfuy_NHCBm_lWjVfYloCS2MkD54uPEjLvBlJg9o")
+		//	if _, err := r.Cookie("state-token"); err != nil {
+		//		cookie := &http.Cookie{Name: "state-token", Value: "23bdc3c8"}
+		//		http.SetCookie(w, cookie)
+		//		return
+		//	}
+		if strings.HasSuffix(r.URL.Path, "console-login") {
+			log.Debug("Loggin in user into openshift")
+			openshiftLogin(log, w)
+			return
+		}
+		//	cookies := r.Cookies()
+		//	cookies = append(cookies, &http.Cookie{Name: "state-token", Value: "23bdc3c8"})
 		ctx := extractor(r.Context(), r)
 
 		request, err := common.DecodeGetClusterReq(ctx, r)
@@ -1192,7 +1262,7 @@ func OpenshiftConsoleProxyEndpoint(
 			return nil, nil
 		}
 		if _, err := middleware(endpoint)(ctx, request); err != nil {
-			log.Debugw("Error serving openshift console", zap.Error(err))
+			log.Debugw("Error serving openshift console", zap.Error(err), "Header", r.Header)
 			if httpErr, ok := err.(errors.HTTPError); ok {
 				writeHTTPError(log, w, httpErr)
 			} else {
