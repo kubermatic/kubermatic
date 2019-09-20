@@ -1071,7 +1071,7 @@ type NodeSystemInfo struct {
 type ClusterMetrics struct {
 	Name                string              `json:"name"`
 	ControlPlaneMetrics ControlPlaneMetrics `json:"controlPlane"`
-	NodesMetrics        NodesMetric          `json:"nodes"`
+	NodesMetrics        NodesMetric         `json:"nodes"`
 }
 
 // ControlPlaneMetrics defines a metric for the user cluster control plane resources
