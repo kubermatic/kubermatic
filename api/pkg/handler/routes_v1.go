@@ -9,12 +9,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-	v1 "github.com/kubermatic/kubermatic/api/pkg/handler/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/addon"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/node"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/openshift"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
@@ -2747,27 +2748,18 @@ func (r Routing) createClusterRole() http.Handler {
 	)
 }
 
-// Minimal wrapper to implement the http.Handler interface via a function
-type dynamicHTTPHandler func(http.ResponseWriter, *http.Request)
-
-func (dHandler dynamicHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	dHandler(w, r)
-	return
-}
-
 func (r Routing) openshiftConsole() http.Handler {
-	return dynamicHTTPHandler(
-		cluster.OpenshiftConsoleProxyEndpoint(
-			r.log,
-			middleware.TokenExtractor(r.tokenExtractors),
-			r.projectProvider,
-			endpoint.Chain(
-				middleware.TokenVerifier(r.tokenVerifiers),
-				middleware.UserSaver(r.userProvider),
-				// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
-				// client that allows access to the cluster namespace only
-				middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-				middleware.UserInfoExtractor(r.userProjectMapper),
-			)),
+	return openshift.ConsoleProxyEndpoint(
+		r.log,
+		middleware.TokenExtractor(r.tokenExtractors),
+		r.projectProvider,
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
+			// client that allows access to the cluster namespace only
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		),
 	)
 }

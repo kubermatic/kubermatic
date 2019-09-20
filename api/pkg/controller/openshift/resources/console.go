@@ -36,14 +36,21 @@ const (
 	consoleConfigMapName         = "openshift-console-config"
 	consoleConfigMapKey          = "console-config.yaml"
 	consoleDeploymentName        = "openshift-console"
-	consoleTemplateRaw           = `apiVersion: console.openshift.io/v1
+	// ConsoleAdminPasswordSecretName is the name of the secret that contains
+	// the bootstrap admin user for Openshift OAuth
+	ConsoleAdminPasswordSecretName = "openshift-bootstrap-password"
+	// ConsoleAdminUserName is the name of the bootstrap admin user for oauth/the console
+	ConsoleAdminUserName = "kubeadmin"
+	// ConsoleListenPort is the port the console listens on
+	ConsoleListenPort  = 8443
+	consoleTemplateRaw = `apiVersion: console.openshift.io/v1
 auth:
   clientID: console
   clientSecretFile: /var/oauth-config/clientSecret
   logoutRedirect: ""
   oauthEndpointCAFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 clusterInfo:
-  consoleBaseAddress: https://{{ .ExternalName }}:8443
+  consoleBaseAddress: https://{{ .ExternalName }}:{{ .ListenPort }}
   consoleBasePath: ""
   masterPublicURL: {{ .APIServerURL}}
 customization:
@@ -183,9 +190,11 @@ func ConsoleConfigCreator(data openshiftData) reconciling.NamedConfigMapCreatorG
 			data := struct {
 				APIServerURL string
 				ExternalName string
+				ListenPort   string
 			}{
 				APIServerURL: data.Cluster().Address.URL,
 				ExternalName: fakeOAuthRedirect,
+				ListenPort:   strconv.Itoa(ConsoleListenPort),
 			}
 			buffer := bytes.NewBuffer([]byte{})
 			if err := consoleTemplate.Execute(buffer, data); err != nil {
@@ -282,7 +291,7 @@ func getConsoleImage(openshiftVersion string) (string, error) {
 
 func BootStrapPasswordSecretGenerator(data openshiftData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
-		return "openshift-bootstrap-password", func(s *corev1.Secret) (*corev1.Secret, error) {
+		return ConsoleAdminPasswordSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			// Check if secret inside usercluster exists. It is only valid if its creation tiemestmap
 			// is < kube-system creation timestamp + 1h
 			userClusterClient, err := data.Client()
@@ -316,7 +325,7 @@ func BootStrapPasswordSecretGenerator(data openshiftData) reconciling.NamedSecre
 			}
 
 			// TODO: This needs reworking, we can not fix the seed secret if someone changes it
-			if len(s.Data["kubeadmin"]) == 0 {
+			if len(s.Data[ConsoleAdminUserName]) == 0 {
 				s.Data = map[string][]byte{"kubeadmin": []byte(rawPassword)}
 			}
 			return s, nil
