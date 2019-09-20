@@ -31,7 +31,7 @@ prometheus:
     enabled: true
     image:
       repository: quay.io/kubermatic/util
-      tag: 1.1.2
+      tag: 1.1.3
     timeout: 60m
 
   # Specify additional external labels which will be added to all
@@ -184,7 +184,7 @@ prometheus:
     enabled: false
     image:
       repository: quay.io/kubermatic/util
-      tag: 1.1.2
+      tag: 1.1.3
 
   containers:
     prometheus:
