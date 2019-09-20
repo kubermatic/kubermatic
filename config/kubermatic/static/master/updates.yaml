@@ -6,10 +6,6 @@ updates:
   automatic: false
 
 # ======= 1.13 =======
-# Allow to change to any patch version
-- from: 1.13.*
-  to: 1.13.*
-  automatic: false
 # CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514
 - from: <= 1.13.9, >= 1.13.0
   to: 1.13.10
