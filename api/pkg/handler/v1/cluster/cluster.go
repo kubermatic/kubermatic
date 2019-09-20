@@ -1307,7 +1307,7 @@ func roundTripperForOpenshiftConsole(
 	}
 
 	connection, httpErr := getConnectionForPod(consolePod, corev1Client.RESTClient(), assertedClusterProvider.SeedAdminConfig())
-	if err != nil {
+	if httpErr != nil {
 		return nil, httpErr
 	}
 
