@@ -6921,8 +6921,8 @@
         },
         "cpuUsedPercentage": {
           "description": "CPUUsedPercentage in percentage",
-          "type": "number",
-          "format": "double",
+          "type": "integer",
+          "format": "int64",
           "x-go-name": "CPUUsedPercentage"
         },
         "memoryAvailableBytes": {
@@ -6939,8 +6939,8 @@
         },
         "memoryUsedPercentage": {
           "description": "MemoryUsedPercentage in percentage",
-          "type": "number",
-          "format": "double",
+          "type": "integer",
+          "format": "int64",
           "x-go-name": "MemoryUsedPercentage"
         },
         "name": {
