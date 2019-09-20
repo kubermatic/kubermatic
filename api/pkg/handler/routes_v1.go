@@ -210,6 +210,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics").
 		Handler(r.getClusterMetrics())
 
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles").
+		Handler(r.createClusterRole())
+
 	//
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
 	mux.Methods(http.MethodPut).
@@ -2702,6 +2706,35 @@ func (r Routing) getClusterMetrics() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.GetMetricsEndpoint(r.projectProvider)),
 		common.DecodeGetClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles project createClusterRole
+//
+//    Creates cluster role
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: UserClusterRole
+//       401: empty
+//       403: empty
+func (r Routing) createClusterRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(cluster.CreateClusterRoleEndpoint()),
+		cluster.DecodeCreateClusterRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
