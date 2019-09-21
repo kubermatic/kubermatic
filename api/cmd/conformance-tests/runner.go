@@ -37,19 +37,18 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	podIsReady = func(p *corev1.Pod) bool {
-		for _, c := range p.Status.Conditions {
-			if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
-				return true
-			}
+func podIsReady(p *corev1.Pod) bool {
+	for _, c := range p.Status.Conditions {
+		if c.Type == corev1.PodReady {
+			return c.Status == corev1.ConditionTrue
 		}
-		return false
 	}
-)
+	return false
+}
 
 type testScenario interface {
 	Name() string
@@ -344,20 +343,41 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		return report, fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
-	podReadyTimeout := 10 * time.Minute
+	nodeJoinTimeout := 5 * time.Minute
 	if cluster.Annotations["kubermatic.io/openshift"] == "true" {
 		// Openshift installs a lot more during node provisioning, hence this may take longer
-		podReadyTimeout = 15 * time.Minute
+		nodeJoinTimeout = 10 * time.Minute
 	}
-	// TODO: Split this up into "Node appears", "Node got ready", "Pods got ready" to provide
-	// better feedback to the user
+	if err := junitReporterWrapper(
+		"[Kubermatic] Wait for machines to get a node",
+		report,
+		func() error {
+			return waitForMachinesToJoinCluster(log, userClusterClient, nodeJoinTimeout)
+		},
+	); err != nil {
+		return report, fmt.Errorf("failed to wait for machines to get a node: %v", err)
+	}
+
+	if err := junitReporterWrapper(
+		"[Kubermatic] Wait for nodes to be ready",
+		report,
+		func() error {
+			// Getting ready just implies starting the CNI deamonset, so that should
+			// be quick.
+			return waitForNodesToBeReady(log, userClusterClient, 2*time.Minute)
+		},
+	); err != nil {
+		return report, fmt.Errorf("failed to wait for all nodes to be ready: %v", err)
+	}
+
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for Pods inside usercluster to be ready",
 		report,
 		func() error {
-			return r.waitUntilAllPodsAreReady(log, userClusterClient, podReadyTimeout)
-		}); err != nil {
-		return nil, fmt.Errorf("failed to wait until all pods are running after creating the cluster: %v", err)
+			return r.waitUntilAllPodsAreReady(log, userClusterClient, 2*time.Minute)
+		},
+	); err != nil {
+		return nil, fmt.Errorf("failed to wait for all pods to get ready: %v", err)
 	}
 
 	if r.onlyTestCreation {
@@ -1049,6 +1069,62 @@ func (r *testRunner) controlplaneWaitFailureStdout(clusterName string) string {
 		return fmt.Sprintf("Encountered error getting controlplane timeout output: %v\n%s", err, res)
 	}
 	return res
+}
+
+// waitForMachinesToJoinCluster waits for machines to join the cluster. It does so by checking
+// if the machines have a nodeRef. It does not check if the nodeRef is valid.
+// All errors are swallowed, only the timeout error is returned.
+func waitForMachinesToJoinCluster(log *zap.SugaredLogger, client ctrlruntimeclient.Client, timeout time.Duration) error {
+	startTime := time.Now()
+	return wait.Poll(10*time.Second, timeout, func() (bool, error) {
+		machineList := &clusterv1alpha1.MachineList{}
+		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, machineList); err != nil {
+			log.Warnw("Failed to list machines", zap.Error(err))
+			return false, nil
+		}
+		for _, machine := range machineList.Items {
+			if !machineHasNodeRef(machine) {
+				log.Infow("Machine has no nodeRef yet", "machine", machine.Name)
+				return false, nil
+			}
+		}
+		log.Infow("All machines got a Node", "duration-in-seconds", time.Since(startTime).Seconds())
+		return true, nil
+	})
+}
+
+func machineHasNodeRef(machine clusterv1alpha1.Machine) bool {
+	return machine.Status.NodeRef != nil && machine.Status.NodeRef.Name != ""
+}
+
+// WaitForNodesToBeReady waits for all nodes to be ready. It does so by checking the Nodes "Ready"
+// condition. It swallows all errors except for the timeout.
+func waitForNodesToBeReady(log *zap.SugaredLogger, client ctrlruntimeclient.Client, timeout time.Duration) error {
+	startTime := time.Now()
+	return wait.Poll(10*time.Second, timeout, func() (bool, error) {
+		nodeList := &corev1.NodeList{}
+		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+			log.Warnw("Failed to list nodes", zap.Error(err))
+			return false, nil
+		}
+		for _, node := range nodeList.Items {
+			if !nodeIsReady(node) {
+				log.Infow("Node is not ready", "node", node.Name)
+				return false, nil
+			}
+		}
+		log.Infow("All nodes got ready", "duration-in-seconds", time.Since(startTime).Seconds())
+		return true, nil
+	})
+}
+
+func nodeIsReady(node corev1.Node) bool {
+	for _, c := range node.Status.Conditions {
+		if c.Type == corev1.NodeReady {
+			return c.Status == corev1.ConditionTrue
+		}
+	}
+	return false
 }
 
 func printFileUnbuffered(filename string) error {
