@@ -20,11 +20,6 @@ func New(code int, msg string) HTTPError {
 	}
 }
 
-func NewPtr(code int, msg string) *HTTPError {
-	err := New(code, msg)
-	return &err
-}
-
 // NewWithDetails creates a brand new HTTPError object
 func NewWithDetails(code int, msg string, details []string) HTTPError {
 	return HTTPError{
@@ -36,7 +31,7 @@ func NewWithDetails(code int, msg string, details []string) HTTPError {
 
 // Error implements the error interface.
 func (err HTTPError) Error() string {
-	return fmt.Sprintf("http/%d: %s", err.code, err.msg)
+	return err.msg
 }
 
 // StatusCode returns the status code for the error

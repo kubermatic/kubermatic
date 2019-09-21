@@ -1,19 +1,20 @@
 package openshift
 
 import (
-	"bufio"
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/tls"
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-kit/kit/endpoint"
 	transporthttp "github.com/go-kit/kit/transport/http"
@@ -59,6 +60,7 @@ func ConsoleProxyEndpoint(
 	return dynamicHTTPHandler(func(w http.ResponseWriter, r *http.Request) {
 
 		log := log.With("endpoint", "openshift-console-proxy", "uri", r.URL.Path)
+		r.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InNlcnZpY2VhY2NvdW50LWhwa3NycTh6eG5AZGV2Lmt1YmVybWF0aWMuaW8iLCJleHAiOjE2NjM1ODgyNDMsImlhdCI6MTU2ODg5Mzg0MywibmJmIjoxNTY4ODkzODQzLCJwcm9qZWN0X2lkIjoicDR2bWs0Y2tuMiIsInRva2VuX2lkIjoid3Iyc3BtdmhicSJ9.I_UCyfuy_NHCBm_lWjVfYloCS2MkD54uPEjLvBlJg9o")
 		ctx := extractor(r.Context(), r)
 		request, err := common.DecodeGetClusterReq(ctx, r)
 		if err != nil {
@@ -93,33 +95,55 @@ func ConsoleProxyEndpoint(
 				return nil, nil
 			}
 
-			// TODO: Cache these, the current approach of creating a roundTripper per request
-			// is extremely inefficient. Keep in mind that this has to be threadsafe.
-			roundTripper, err := consoleRoundTripper(
+			// Ideally we would cache these to not open a port for every single request
+			portforwarder, err := consolePortForwarder(
 				ctx,
 				log,
 				clusterProvider.GetSeedClusterAdminClient().CoreV1(),
 				clusterProvider.SeedAdminConfig(),
 				cluster)
 			if err != nil {
-				return nil, fmt.Errorf("failed to get RoundTripper for console: %v", err)
+				return nil, fmt.Errorf("failed to get portforwarder for console: %v", err)
 			}
-			defer func() {
-				if err := roundTripper.target.Close(); err != nil {
-					log.Errorw("Failed closing transport", zap.Error(err))
+			defer portforwarder.Close()
+
+			// This is blocking so we have to do it in a distinct goroutine
+			errorChan := make(chan error, 0)
+			go func() {
+				if err := portforwarder.ForwardPorts(); err != nil {
+					errorChan <- err
 				}
 			}()
+			if err := waitForPortForwarder(portforwarder); err != nil {
+				writeHTTPError(log, w, err)
+				return nil, nil
+			}
+			ports, err := portforwarder.GetPorts()
+			if err != nil {
+				writeHTTPError(log, w, fmt.Errorf("failed to get backend port: %v", err))
+				return nil, nil
+			}
+			if n := len(ports); n != 1 {
+				writeHTTPError(log, w, fmt.Errorf("expected exactly one backend port, got %d", n))
+				return nil, nil
+			}
+			url, err := url.Parse(fmt.Sprintf("http://localhost:%d", ports[0].Local))
+			if err != nil {
+				writeHTTPError(log, w, fmt.Errorf("failed to parse backend url: %v", err))
+				return nil, nil
+			}
 
 			// Proxy the request
-			proxy := &httputil.ReverseProxy{
-				Director:  func(_ *http.Request) { return },
-				Transport: roundTripper}
+			proxy := httputil.NewSingleHostReverseProxy(url)
 			proxy.ServeHTTP(w, r)
 
 			return nil, nil
 		}
 
 		if _, err := middlewares(endpoint)(ctx, request); err != nil {
+			if strings.HasPrefix(err.Error(), "http/401") {
+				log.Infow("headers", "header", r.Header)
+			}
 			writeHTTPError(log, w, err)
 			return
 		}
@@ -282,72 +306,47 @@ func httpRequestOAuthClient() *http.Client {
 	}
 }
 
-// inMemRoundTripper is a roundTripper what reads and writes from/to
-// an io.ReadWriteCloser. We use it when proxying to the backing console
-// pod, to avoid opening a TCP port in one goroutine, that gets read from
-// another goroutine, both with the same lifecycle.
-type inMemRoundTripper struct {
-	target io.ReadWriteCloser
-}
-
-// RoundTrip implements the net/http.RoundTripper interface.
-func (imrt *inMemRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	if err := r.Write(imrt.target); err != nil {
-		return nil, fmt.Errorf("failed to write request: %v", err)
-	}
-	// Would be nicer if we copied this without buffering.
-	return http.ReadResponse(bufio.NewReader(imrt.target), nil)
-}
-
-func consoleRoundTripper(
+// While it is tempting to write our own roundTripper to do all the reading/writing
+// in memory intead of opening a TCP port it has some drawbacks:
+// * net/http.ReadResponse does not work with websockets, because its body is hardcoded to be an
+//   io.ReadCloster and not an io.ReadWriteCloser:
+//   * https://github.com/golang/go/blob/361ab73305788c4bf35359a02d8873c36d654f1b/src/net/http/transfer.go#L550
+//   * https://github.com/golang/go/blob/361ab73305788c4bf35359a02d8873c36d654f1b/src/net/http/httputil/reverseproxy.go#L518
+// * RoundTripping is a bit more complicated than just read and write, mimicking that badly is likely
+//   to be more expensive than doing the extra round via the TCP socket:
+//   https://github.com/golang/go/blob/361ab73305788c4bf35359a02d8873c36d654f1b/src/net/http/transport.go#L454
+func consolePortForwarder(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	corev1Client corev1interface.CoreV1Interface,
 	cfg *rest.Config,
-	cluster *kubermaticv1.Cluster) (*inMemRoundTripper, error) {
+	cluster *kubermaticv1.Cluster) (*portforward.PortForwarder, error) {
 
 	consolePod, err := getReadyOpenshiftConsolePod(corev1Client.Pods(cluster.Status.NamespaceName))
 	if err != nil {
 		return nil, err
 	}
 
-	// We should cache these, we can get many streams via the same SPDY connections, re-creation everything
-	// for each and every request is very inefficient.
-	connection, err := getConnectionForPod(consolePod, corev1Client.RESTClient(), cfg)
+	dealer, err := getDialerForPod(consolePod, corev1Client.RESTClient(), cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	// Source:
-	// https://github.com/kubernetes/kubernetes/blob/b88662505d288297750becf968bf307dacf872fa/staging/src/k8s.io/client-go/tools/portforward/portforward.go#L359
-	headers := http.Header{}
-	headers.Set(corev1.PortHeader, strconv.Itoa(openshiftresources.ConsoleListenPort))
-	headers.Set(corev1.PortForwardRequestIDHeader, "0")
-
-	// If the error channel doesn't get opened, the request doesn't get forwarded. Other
-	// than that it does not seem to have an obvious purpose.
-	headers.Set(corev1.StreamType, corev1.StreamTypeError)
-	errorStream, err := connection.CreateStream(headers)
+	readyChan := make(chan struct{}, 0)
+	stopChan := make(chan struct{}, 0)
+	errorBuffer := bytes.NewBuffer(make([]byte, 1024))
+	portforwarder, err := portforward.New(dealer, []string{strconv.Itoa(openshiftresources.ConsoleListenPort)}, stopChan, readyChan, ioutil.Discard, errorBuffer)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create error stream: %v", err)
+		return nil, fmt.Errorf("failed to create portforwarder: %v", err)
 	}
-	if err := errorStream.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close error stream: %v", err)
-	}
-
-	headers.Set(corev1.StreamType, corev1.StreamTypeData)
-	dataStream, err := connection.CreateStream(headers)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open backend connection: %v", err)
-	}
-
-	return &inMemRoundTripper{target: dataStream}, nil
+	// Portforwarding is blocking, so we can't do it here
+	return portforwarder, nil
 }
 
-func getConnectionForPod(
+func getDialerForPod(
 	pod *corev1.Pod,
 	restClient rest.Interface,
-	cfg *rest.Config) (httpstream.Connection, error) {
+	cfg *rest.Config) (httpstream.Dialer, error) {
 
 	// The logic here is copied straight from kubectl at
 	// https://github.com/kubernetes/kubernetes/blob/b88662505d288297750becf968bf307dacf872fa/staging/src/k8s.io/kubectl/pkg/cmd/portforward/portforward.go#L334
@@ -362,14 +361,7 @@ func getConnectionForPod(
 		return nil, fmt.Errorf("failed to get spdy roundTripper: %v", err)
 	}
 
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, req.URL())
-	// We can not use client-gos portforward package directly, as it does a portforward, i.E. binds to
-	// a local port. What we want here is the raw io.ReadWriteCloser to be able to proxy.
-	connection, _, err := dialer.Dial(portforward.PortForwardProtocolV1Name)
-	if err != nil {
-		return nil, fmt.Errorf("failed to upgrade connection: %v", err)
-	}
-	return connection, nil
+	return spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, req.URL()), nil
 }
 
 func getReadyOpenshiftConsolePod(client corev1interface.PodInterface) (*corev1.Pod, error) {
@@ -404,4 +396,14 @@ func isPodReady(pod corev1.Pod) bool {
 		}
 	}
 	return false
+}
+
+func waitForPortForwarder(p *portforward.PortForwarder) error {
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-timeout:
+		return errors.New("timeout waiting for backend connection")
+	case <-p.Ready:
+		return nil
+	}
 }
