@@ -4873,7 +4873,7 @@
           "type": "string",
           "x-go-name": "SecretAccessKey"
         },
-        "securityGroupId": {
+        "securityGroupID": {
           "type": "string",
           "x-go-name": "SecurityGroupID"
         },
