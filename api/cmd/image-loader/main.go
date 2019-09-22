@@ -20,6 +20,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/docker"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	kubermaticversion "github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -329,6 +330,7 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 		resources.MachineControllerWebhookServingCertSecretName,
 		resources.InternalUserClusterAdminKubeconfigSecretName,
 		resources.ClusterAutoscalerKubeconfigSecretName,
+		metricsserver.ServingCertSecretName,
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 
