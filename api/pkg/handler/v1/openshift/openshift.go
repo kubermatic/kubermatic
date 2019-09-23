@@ -262,7 +262,6 @@ func consoleLogin(
 // matches a cookie:
 // https://github.com/openshift/console/blob/5c80c44d31e244b01dd9bbb4c8b1adec18e3a46b/auth/auth.go#L375
 func generateRandomOauthState() (string, error) {
-	return "1234", nil
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
 		return "", fmt.Errorf("failed to get entropy: %v", err)
