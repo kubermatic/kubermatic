@@ -1075,7 +1075,7 @@ type NodeSystemInfo struct {
 type ClusterMetrics struct {
 	Name                string              `json:"name"`
 	ControlPlaneMetrics ControlPlaneMetrics `json:"controlPlane"`
-	NodesMetrics        []NodeMetric        `json:"nodes"`
+	NodesMetrics        NodesMetric         `json:"nodes"`
 }
 
 // ControlPlaneMetrics defines a metric for the user cluster control plane resources
@@ -1085,6 +1085,22 @@ type ControlPlaneMetrics struct {
 	MemoryTotalBytes int64 `json:"memoryTotalBytes,omitempty"`
 	// CPUTotalMillicores in m cores
 	CPUTotalMillicores int64 `json:"cpuTotalMillicores,omitempty"`
+}
+
+// NodesMetric defines a metric for a group of nodes
+// swagger:model NodeMetric
+type NodesMetric struct {
+	// MemoryTotalBytes current memory usage in bytes
+	MemoryTotalBytes int64 `json:"memoryTotalBytes,omitempty"`
+	// MemoryAvailableBytes available memory for node
+	MemoryAvailableBytes int64 `json:"memoryAvailableBytes,omitempty"`
+	// MemoryUsedPercentage in percentage
+	MemoryUsedPercentage int64 `json:"memoryUsedPercentage,omitempty"`
+	// CPUTotalMillicores in m cores
+	CPUTotalMillicores     int64 `json:"cpuTotalMillicores,omitempty"`
+	CPUAvailableMillicores int64 `json:"cpuAvailableMillicores,omitempty"`
+	// CPUUsedPercentage in percentage
+	CPUUsedPercentage int64 `json:"cpuUsedPercentage,omitempty"`
 }
 
 // NodeMetric defines a metric for the given node
