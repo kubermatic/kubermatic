@@ -21,6 +21,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
+	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
@@ -239,6 +240,13 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				dynamicClient := ctrlruntimefakeclient.NewFakeClient(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            metricsserver.ServingCertSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
 					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",

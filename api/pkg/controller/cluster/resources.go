@@ -238,6 +238,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		openvpn.TLSServingCertificateCreator(data),
 		openvpn.InternalClientCertificateCreator(data),
 		machinecontroller.TLSServingCertificateCreator(data),
+		metricsserver.TLSServingCertSecretCreator(data.GetRootCA),
 
 		// Kubeconfigs
 		resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data),
