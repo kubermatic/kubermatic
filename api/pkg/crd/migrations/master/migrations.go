@@ -41,6 +41,7 @@ func RunAll(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclien
 		if err := migrateDatacenters(migrationCtx, opt.DatacentersFile); err != nil {
 			return fmt.Errorf("failed to migrate datacenters.yaml: %v", err)
 		}
+		log.Info("migration completed successfully")
 	}
 
 	return nil
@@ -77,9 +78,8 @@ func migrateDatacenters(ctx *migrationContext, dcFile string) error {
 		if err := ctx.client.Create(ctx.ctx, seed); err != nil {
 			return fmt.Errorf("failed to create seed %s: %v", name, seed)
 		}
+		ctx.log.Infow("Seed created", "name", name)
 	}
-
-	ctx.log.Infof("created %d Seed CRs", len(seeds))
 
 	return nil
 }
