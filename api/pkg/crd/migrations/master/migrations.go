@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
-
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
