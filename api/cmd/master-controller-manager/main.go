@@ -182,7 +182,7 @@ func main() {
 			}
 
 			return leaderelection.RunAsLeader(leaderCtx, log, cfg, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) error {
-				log.Info("Executing migrations...")
+				log.Info("executing migrations...")
 				options := master.MigrationOptions{
 					DatacentersFile:    runOpts.dcFile,
 					DynamicDatacenters: runOpts.dynamicDatacenters,
@@ -190,7 +190,7 @@ func main() {
 				if err := master.RunAll(ctx, log, mgr.GetClient(), runOpts.workerName, ctrlCtx.namespace, options); err != nil {
 					return fmt.Errorf("failed to run migrations: %v", err)
 				}
-				log.Info("Migrations executed successfully")
+				log.Info("migrations executed successfully")
 
 				log.Info("starting the master-controller-manager...")
 				if err := mgr.Start(ctx.Done()); err != nil {
