@@ -81,14 +81,15 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 
 func (r *reconciler) ensureAPIServices(ctx context.Context) error {
 	creators := []reconciling.NamedAPIServiceCreatorGetter{}
+	caCert := certutil.EncodeCertPEM(r.caCert)
 	if r.openshift {
-		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion(r.version, certutil.EncodeCertPEM(r.caCert))
+		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion(r.version, caCert)
 		if err != nil {
 			return fmt.Errorf("failed to get openshift apiservice creators: %v", err)
 		}
 		creators = append(creators, openshiftAPIServiceCreators...)
 	} else {
-		creators = append(creators, metricsserver.APIServiceCreator())
+		creators = append(creators, metricsserver.APIServiceCreator(caCert))
 	}
 
 	if err := reconciling.ReconcileAPIServices(ctx, creators, metav1.NamespaceNone, r.Client); err != nil {

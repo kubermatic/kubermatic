@@ -63,6 +63,7 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 		DiskType:         providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.VolumeType},
 		DiskSize:         nodeSpec.Cloud.AWS.VolumeSize,
 		AMI:              providerconfig.ConfigVarString{Value: ami},
+		AssignPublicIP:   nodeSpec.Cloud.AWS.AssignPublicIP,
 	}
 	if config.DiskType.Value == "" {
 		config.DiskType.Value = ec2.VolumeTypeGp2

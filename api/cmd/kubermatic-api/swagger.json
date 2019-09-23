@@ -4909,6 +4909,11 @@
           "type": "string",
           "x-go-name": "AMI"
         },
+        "assignPublicIP": {
+          "description": "This flag controls a property of the AWS instance. When set the AWS instance will get a public IP address\nassigned during launch overriding a possible setting in the used AWS subnet.",
+          "type": "boolean",
+          "x-go-name": "AssignPublicIP"
+        },
         "availabilityZone": {
           "description": "Availiability zone in which to place the node. It is coupled with the subnet to which the node will belong.",
           "type": "string",
