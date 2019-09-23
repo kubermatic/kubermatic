@@ -354,8 +354,11 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines a set of openshift-specific endpoints
 	// This one may use any method, we only validate the request and then proxy it to an
 	// openshift console pod.
-	mux.PathPrefix("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console").
-		Handler(r.openshiftConsole())
+	mux.PathPrefix("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/proxy").
+		Handler(r.openshiftConsoleProxy())
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/login").
+		Handler(r.openshiftConsoleLogin())
 
 	//
 	// Defines set of HTTP endpoints for Users of the given project
@@ -2748,7 +2751,23 @@ func (r Routing) createClusterRole() http.Handler {
 	)
 }
 
-func (r Routing) openshiftConsole() http.Handler {
+func (r Routing) openshiftConsoleLogin() http.Handler {
+	return openshift.ConsoleLoginEndpoint(
+		r.log,
+		middleware.TokenExtractor(r.tokenExtractors),
+		r.projectProvider,
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
+			// client that allows access to the cluster namespace only
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		),
+	)
+}
+
+func (r Routing) openshiftConsoleProxy() http.Handler {
 	return openshift.ConsoleProxyEndpoint(
 		r.log,
 		middleware.TokenExtractor(r.tokenExtractors),

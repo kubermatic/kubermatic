@@ -49,6 +49,43 @@ func (dHandler dynamicHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	return
 }
 
+// ConsoleLoginEndpoint is an endpoint that gets an oauth token for the user from the openshift
+// oauth service, then redirects back to the openshift console
+func ConsoleLoginEndpoint(
+	log *zap.SugaredLogger,
+	extractor transporthttp.RequestFunc,
+	projectProvider provider.ProjectProvider,
+	middlewares endpoint.Middleware) http.Handler {
+	return dynamicHTTPHandler(func(w http.ResponseWriter, r *http.Request) {
+
+		log := log.With("endpoint", "openshift-console-login", "uri", r.URL.Path)
+		ctx := extractor(r.Context(), r)
+		request, err := common.DecodeGetClusterReq(ctx, r)
+		if err != nil {
+			writeHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, err.Error()))
+			return
+		}
+
+		// The endpoint the middleware is called with is the innermost one, hence we must
+		// define it as closure and pass it to the middleware() call below.
+		endpoint := func(ctx context.Context, request interface{}) (interface{}, error) {
+			cluster, clusterProvider, err := getClusterProviderFromRequest(ctx, request, projectProvider)
+			if err != nil {
+				writeHTTPError(log, w, err)
+				return nil, nil
+			}
+			log = log.With("cluster", cluster.Name)
+			// TODO: Verify the user is owner, else they should not be allowed to do this
+			consoleLogin(ctx, log, w, cluster, clusterProvider.GetSeedClusterAdminRuntimeClient(), r)
+			return nil, nil
+		}
+		if _, err := middlewares(endpoint)(ctx, request); err != nil {
+			writeHTTPError(log, w, err)
+			return
+		}
+	})
+}
+
 // ConsoleProxyEndpoint is an endpoint that proxies to the Openshift console running
 // in the seed. It also performs authentication on the users behalf. Currently, it only supports
 // login as cluster-admin user, so this must not be accessible for users that are not cluster admin.
@@ -60,7 +97,6 @@ func ConsoleProxyEndpoint(
 	return dynamicHTTPHandler(func(w http.ResponseWriter, r *http.Request) {
 
 		log := log.With("endpoint", "openshift-console-proxy", "uri", r.URL.Path)
-		r.Header.Set("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InNlcnZpY2VhY2NvdW50LWhwa3NycTh6eG5AZGV2Lmt1YmVybWF0aWMuaW8iLCJleHAiOjE2NjM1ODgyNDMsImlhdCI6MTU2ODg5Mzg0MywibmJmIjoxNTY4ODkzODQzLCJwcm9qZWN0X2lkIjoicDR2bWs0Y2tuMiIsInRva2VuX2lkIjoid3Iyc3BtdmhicSJ9.I_UCyfuy_NHCBm_lWjVfYloCS2MkD54uPEjLvBlJg9o")
 		ctx := extractor(r.Context(), r)
 		request, err := common.DecodeGetClusterReq(ctx, r)
 		if err != nil {
@@ -71,29 +107,12 @@ func ConsoleProxyEndpoint(
 		// The endpoint the middleware is called with is the innermost one, hence we must
 		// define it as closure and pass it to the middleware() call below.
 		endpoint := func(ctx context.Context, request interface{}) (interface{}, error) {
-			req, ok := request.(common.GetClusterReq)
-			if !ok {
-				return nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")
-			}
-			cluster, err := cluster.GetCluster(ctx, req, projectProvider)
+			cluster, clusterProvider, err := getClusterProviderFromRequest(ctx, request, projectProvider)
 			if err != nil {
-				return nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
-			}
-			log = log.With("cluster", cluster.Name)
-
-			rawClusterProvider, ok := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-			if !ok {
-				return nil, kubermaticerrors.New(http.StatusInternalServerError, "no clusterProvider in request")
-			}
-			clusterProvider, ok := rawClusterProvider.(*kubernetesprovider.ClusterProvider)
-			if !ok {
-				return nil, kubermaticerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-			}
-			if strings.HasSuffix(r.URL.Path, "console/login") {
-				// TODO: Verify the user may do this
-				consoleLogin(ctx, log, w, cluster, clusterProvider.GetSeedClusterAdminRuntimeClient(), r)
+				writeHTTPError(log, w, err)
 				return nil, nil
 			}
+			log = log.With("cluster", cluster.Name)
 
 			// Ideally we would cache these to not open a port for every single request
 			portforwarder, outBuffer, err := consolePortForwarder(
@@ -422,4 +441,29 @@ func getLocalPortFromPortForwardOutput(out string) (int, error) {
 		return 0, fmt.Errorf("failed to parse int: %v", err)
 	}
 	return result, nil
+}
+
+func getClusterProviderFromRequest(
+	ctx context.Context,
+	request interface{},
+	projectProvider provider.ProjectProvider) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
+
+	req, ok := request.(common.GetClusterReq)
+	if !ok {
+		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")
+	}
+	cluster, err := cluster.GetCluster(ctx, req, projectProvider)
+	if err != nil {
+		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+	}
+
+	rawClusterProvider, ok := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+	if !ok {
+		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, "no clusterProvider in request")
+	}
+	clusterProvider, ok := rawClusterProvider.(*kubernetesprovider.ClusterProvider)
+	if !ok {
+		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+	}
+	return cluster, clusterProvider, nil
 }
