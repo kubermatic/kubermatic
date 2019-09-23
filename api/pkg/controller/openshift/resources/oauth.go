@@ -28,12 +28,7 @@ import (
 )
 
 const (
-	// fakeOauthRedirect is a stopgap until we have properly set up oauth.
-	// Currently, adding this to /etc/hosts as localhost alias and port-forwarding
-	// the console to localhost, then visiting https://console.openshift.seed.tld:8443
-	// allows using it.
-	fakeOAuthRedirect = "console.openshift.seed.tld"
-	OauthName         = "openshift-oauth"
+	OauthName = "openshift-oauth"
 	// OAuthServiceName is the name of the OAuthService
 	OAuthServiceName           = OauthName
 	oauthSessionSecretName     = "openshift-oauth-session-secret"

@@ -189,7 +189,6 @@ func ConsoleConfigCreator(data openshiftData) reconciling.NamedConfigMapCreatorG
 
 			data := struct {
 				APIServerURL string
-				ExternalName string
 				ExternalURL  string
 				ProjectID    string
 				SeedName     string
@@ -197,7 +196,6 @@ func ConsoleConfigCreator(data openshiftData) reconciling.NamedConfigMapCreatorG
 				ListenPort   string
 			}{
 				APIServerURL: data.Cluster().Address.URL,
-				ExternalName: fakeOAuthRedirect,
 				ExternalURL:  data.ExternalURL(),
 				ProjectID:    data.Cluster().Labels[kubermaticv1.ProjectIDLabelKey],
 				SeedName:     data.SeedName(),
@@ -255,8 +253,7 @@ func ConsoleOAuthClientSecretCreator(data openshiftData) reconciling.NamedSecret
 				}
 				oauthClientObject.Object["secret"] = secret
 				oauthClientObject.Object["redirectURIs"] = []string{
-					// TODO: Insert something proper
-					fmt.Sprintf("https://%s:8443/auth/callback", fakeOAuthRedirect),
+					fmt.Sprintf("https://%s:/api/v1/projects/%s/dc/%s/clusters/%s/openshift/console/proxy/auth/callback", data.ExternalURL(), data.Cluster().Labels[kubermaticv1.ProjectIDLabelKey], data.SeedName()),
 				}
 				oauthClientObject.Object["grantMethod"] = "auto"
 				oauthClientObject.SetName(consoleOAuthClientObjectName)
