@@ -310,6 +310,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	registerMetrics()
 
 	mainRouter := mux.NewRouter()
+	// This breaks the Openshift console proxying.
 	//mainRouter.Use(setSecureHeaders)
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
 	r.RegisterV1(v1Router, metrics)
@@ -354,6 +355,9 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 
 	return instrumentHandler(mainRouter, lookupRoute), nil
 }
+
+// TODO: Figure out why this breaks the Openshift console and re-enable
+var _ = setSecureHeaders
 
 func setSecureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

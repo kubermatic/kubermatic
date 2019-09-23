@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	//	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -46,7 +45,6 @@ type dynamicHTTPHandler func(http.ResponseWriter, *http.Request)
 // ServeHTTP implements http.Handler
 func (dHandler dynamicHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	dHandler(w, r)
-	return
 }
 
 // ConsoleLoginEndpoint is an endpoint that gets an oauth token for the user from the openshift
@@ -127,7 +125,7 @@ func ConsoleProxyEndpoint(
 			defer portforwarder.Close()
 
 			// This is blocking so we have to do it in a distinct goroutine
-			errorChan := make(chan error, 0)
+			errorChan := make(chan error)
 			go func() {
 				log.Debug("Starting to forward port")
 				if err := portforwarder.ForwardPorts(); err != nil {
@@ -168,7 +166,7 @@ func ConsoleProxyEndpoint(
 }
 
 // consoleLogin loggs an user into the console by doing the oauth login, then returning a redirect.
-// This is not done by the user themsvelces, because:
+// This is not done by the user themselves, because:
 // * The openshift OAuth server is under the same URL as the kubermatic UI but doesn't have a
 //   certificate signed by a CA the browser has. This mean that if HSTS is enabled, the brower
 //   wont allow the user to visit that URL.
@@ -245,6 +243,7 @@ func consoleLogin(
 		writeHTTPError(log, w, fmt.Errorf("failed to get oauth code: %v", err))
 		return
 	}
+	defer resp.Body.Close()
 
 	redirectURL, err := resp.Location()
 	if err != nil {
@@ -288,7 +287,7 @@ func generateRandomOauthState() (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
-// writeHTTPError writes an http error out. If debug is enabled, it also gets loogged.
+// writeHTTPError writes an http error out. If debug is enabled, it also gets logged.
 func writeHTTPError(log *zap.SugaredLogger, w http.ResponseWriter, err error) {
 	log.Debugw("Encountered error", zap.Error(err))
 	var httpErr kubermaticerrors.HTTPError
@@ -348,8 +347,8 @@ func consolePortForwarder(
 		return nil, nil, err
 	}
 
-	readyChan := make(chan struct{}, 0)
-	stopChan := make(chan struct{}, 0)
+	readyChan := make(chan struct{})
+	stopChan := make(chan struct{})
 	errorBuffer := bytes.NewBuffer(make([]byte, 1024))
 	outBuffer := bytes.NewBuffer(make([]byte, 1024))
 	portforwarder, err := portforward.NewOnAddresses(dealer, []string{"127.0.0.1"}, []string{"0:" + strconv.Itoa(openshiftresources.ConsoleListenPort)}, stopChan, readyChan, outBuffer, errorBuffer)

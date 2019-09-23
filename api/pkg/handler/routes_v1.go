@@ -352,11 +352,11 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 
 	//
 	// Defines a set of openshift-specific endpoints
-	mux.PathPrefix("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/proxy").
-		Handler(r.openshiftConsoleProxy())
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/login").
 		Handler(r.openshiftConsoleLogin())
+	mux.PathPrefix("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/proxy").
+		Handler(r.openshiftConsoleProxy())
 
 	//
 	// Defines set of HTTP endpoints for Users of the given project
