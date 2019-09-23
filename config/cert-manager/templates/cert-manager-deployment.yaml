@@ -46,6 +46,10 @@ spec:
         - --default-acme-issuer-dns01-provider-name={{ .defaultACMEDNS01ChallengeProvider }}
         {{- end }}
         {{- end }}
+        - --webhook-namespace=$(POD_NAMESPACE)
+        - --webhook-ca-secret=webhook-ca
+        - --webhook-serving-secret=webhook-tls
+        - --webhook-dns-names=webhook,webhook.{{ .Release.Namespace }},webhook.{{ .Release.Namespace }}.svc
         env:
         - name: POD_NAMESPACE
           valueFrom:
