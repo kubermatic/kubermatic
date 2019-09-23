@@ -1,7 +1,7 @@
 .theme-body {
-	background-color: #f1f1f1;
-	color: #333;
-	font-family: 'Source Sans Pro', Helvetica, sans-serif;
+	background: #001930 url("bg.svg") no-repeat fixed center center;
+	background-size: cover;
+	font-family: "Roboto", Helvetica, Arial, sans-serif;
 }
 
 .theme-navbar {
@@ -10,31 +10,29 @@
 	color: #333;
 	font-size: 13px;
 	font-weight: 100;
-	height: 45px;
+	height: 60px;
+	margin-top: 2px;
 	overflow: hidden;
 }
 
-.theme-navbar__logo-wrap {
-	display: block;
-	margin: 0 auto;
-	width: 184px;
-}
-
 .theme-navbar__logo {
-	width: 218px;
-	margin-top: -24px;
+	content: url("logo.svg");
+	background-size: 30px;
+	margin-top: 13px;
+	margin-left: 26px;
+	width: 160px;
+	height: 35px;
 }
 
 .theme-heading {
-	font-size: 20px;
-	font-weight: 500;
-	margin-bottom: 20px;
-	margin-top: 0;
+	display: none;
 }
 
 .theme-panel {
-	background-color: rgba(254,254,254,1);
+	background-color: #fff;
+	border-radius: 5px;
 	padding: 30px;
+	width: 380px;
 }
 
 .theme-btn-provider {
@@ -70,14 +68,12 @@
 	background-color: #49E3A8;
 }
 
-.theme-form-row {
-	display: block;
-	margin: 20px auto;
+.theme-form-row:not(:last-child){
+	margin-bottom: 10px;
 }
 
 .theme-form-input {
-	border-radius: 2px;
-	box-shadow: 0 1px 4px rgba(68,77,88,.5);
+	border-radius: 5px;
 	color: rgba(0, 0, 0, 0.87);
 	display: block;
 	font-size: 14px;
@@ -101,4 +97,30 @@
 	position: relative;
 	text-align: left;
 	width: 250px;
+}
+
+.dex-container {
+	left: 50%;
+	position: absolute;
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.dex-btn {
+	border: 1px solid #E0E3E5;
+	border-radius: 5px;
+	box-shadow: unset;
+}
+
+.dex-btn-icon {
+	background-color: unset !important;
+}
+
+.dex-btn-icon--local {
+	filter: invert(100%) !important;
+}
+
+.dex-btn-text {
+	font-size: 16px;
+	font-weight: normal;
 }
