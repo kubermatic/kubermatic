@@ -8,7 +8,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	//	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -89,14 +89,14 @@ func ConsoleProxyEndpoint(
 			if !ok {
 				return nil, kubermaticerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 			}
-			if strings.HasSuffix(r.URL.Path, "console-login") {
+			if strings.HasSuffix(r.URL.Path, "console/login") {
 				// TODO: Verify the user may do this
 				consoleLogin(ctx, log, w, cluster, clusterProvider.GetSeedClusterAdminRuntimeClient(), r)
 				return nil, nil
 			}
 
 			// Ideally we would cache these to not open a port for every single request
-			portforwarder, err := consolePortForwarder(
+			portforwarder, outBuffer, err := consolePortForwarder(
 				ctx,
 				log,
 				clusterProvider.GetSeedClusterAdminClient().CoreV1(),
@@ -110,24 +110,24 @@ func ConsoleProxyEndpoint(
 			// This is blocking so we have to do it in a distinct goroutine
 			errorChan := make(chan error, 0)
 			go func() {
+				log.Debug("Starting to forward port")
 				if err := portforwarder.ForwardPorts(); err != nil {
 					errorChan <- err
 				}
 			}()
-			if err := waitForPortForwarder(portforwarder); err != nil {
+			if err := waitForPortForwarder(portforwarder, errorChan); err != nil {
 				writeHTTPError(log, w, err)
 				return nil, nil
 			}
-			ports, err := portforwarder.GetPorts()
+			// PortForwarder does have a `GetPorts` but its plain broken in case the portforwarder picks
+			// a random port and always returns 0.
+			// TODO @alvaroaleman: Fix upstream
+			port, err := getLocalPortFromPortForwardOutput(outBuffer.String())
 			if err != nil {
 				writeHTTPError(log, w, fmt.Errorf("failed to get backend port: %v", err))
 				return nil, nil
 			}
-			if n := len(ports); n != 1 {
-				writeHTTPError(log, w, fmt.Errorf("expected exactly one backend port, got %d", n))
-				return nil, nil
-			}
-			url, err := url.Parse(fmt.Sprintf("http://localhost:%d", ports[0].Local))
+			url, err := url.Parse(fmt.Sprintf("http://127.0.0.1:%d", port))
 			if err != nil {
 				writeHTTPError(log, w, fmt.Errorf("failed to parse backend url: %v", err))
 				return nil, nil
@@ -141,9 +141,6 @@ func ConsoleProxyEndpoint(
 		}
 
 		if _, err := middlewares(endpoint)(ctx, request); err != nil {
-			if strings.HasPrefix(err.Error(), "http/401") {
-				log.Infow("headers", "header", r.Header)
-			}
 			writeHTTPError(log, w, err)
 			return
 		}
@@ -249,7 +246,7 @@ func consoleLogin(
 		"code":  []string{oauthCode},
 	}
 	// Leave the Host unset, http.Redirect will fill it with the host from the original request
-	redirectTargetURLRaw := strings.Replace(initialRequest.URL.Path, "console-login", "console/auth/callback", 1)
+	redirectTargetURLRaw := strings.Replace(initialRequest.URL.Path, "login", "proxy/auth/callback", 1)
 	redirectTargetURL, err := url.Parse(redirectTargetURLRaw)
 	if err != nil {
 		writeHTTPError(log, w, fmt.Errorf("failed to parse target redirect URL: %v", err))
@@ -257,7 +254,7 @@ func consoleLogin(
 	}
 	redirectTargetURL.RawQuery = redirectQueryArgs.Encode()
 
-	http.Redirect(w, initialRequest, redirectURL.String(), http.StatusFound)
+	http.Redirect(w, initialRequest, redirectTargetURL.String(), http.StatusFound)
 }
 
 // generateRandomOauthState generates a random string that is being used when performing the
@@ -265,6 +262,7 @@ func consoleLogin(
 // matches a cookie:
 // https://github.com/openshift/console/blob/5c80c44d31e244b01dd9bbb4c8b1adec18e3a46b/auth/auth.go#L375
 func generateRandomOauthState() (string, error) {
+	return "1234", nil
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
 		return "", fmt.Errorf("failed to get entropy: %v", err)
@@ -320,27 +318,28 @@ func consolePortForwarder(
 	log *zap.SugaredLogger,
 	corev1Client corev1interface.CoreV1Interface,
 	cfg *rest.Config,
-	cluster *kubermaticv1.Cluster) (*portforward.PortForwarder, error) {
+	cluster *kubermaticv1.Cluster) (*portforward.PortForwarder, *bytes.Buffer, error) {
 
 	consolePod, err := getReadyOpenshiftConsolePod(corev1Client.Pods(cluster.Status.NamespaceName))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	dealer, err := getDialerForPod(consolePod, corev1Client.RESTClient(), cfg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	readyChan := make(chan struct{}, 0)
 	stopChan := make(chan struct{}, 0)
 	errorBuffer := bytes.NewBuffer(make([]byte, 1024))
-	portforwarder, err := portforward.New(dealer, []string{strconv.Itoa(openshiftresources.ConsoleListenPort)}, stopChan, readyChan, ioutil.Discard, errorBuffer)
+	outBuffer := bytes.NewBuffer(make([]byte, 1024))
+	portforwarder, err := portforward.NewOnAddresses(dealer, []string{"127.0.0.1"}, []string{"0:" + strconv.Itoa(openshiftresources.ConsoleListenPort)}, stopChan, readyChan, outBuffer, errorBuffer)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create portforwarder: %v", err)
+		return nil, nil, fmt.Errorf("failed to create portforwarder: %v", err)
 	}
 	// Portforwarding is blocking, so we can't do it here
-	return portforwarder, nil
+	return portforwarder, outBuffer, nil
 }
 
 func getDialerForPod(
@@ -398,12 +397,30 @@ func isPodReady(pod corev1.Pod) bool {
 	return false
 }
 
-func waitForPortForwarder(p *portforward.PortForwarder) error {
+func waitForPortForwarder(p *portforward.PortForwarder, errChan <-chan error) error {
 	timeout := time.After(10 * time.Second)
 	select {
 	case <-timeout:
 		return errors.New("timeout waiting for backend connection")
+	case err := <-errChan:
+		return fmt.Errorf("failed to get connection to backend: %v", err)
 	case <-p.Ready:
 		return nil
 	}
+}
+
+func getLocalPortFromPortForwardOutput(out string) (int, error) {
+	colonSplit := strings.Split(out, ":")
+	if n := len(colonSplit); n < 2 {
+		return 0, fmt.Errorf("expected at least two results when splitting by colon, got %d", n)
+	}
+	spaceSplit := strings.Split(colonSplit[1], " ")
+	if n := len(spaceSplit); n < 1 {
+		return 0, fmt.Errorf("expected at least one result when splitting by space, got %d", n)
+	}
+	result, err := strconv.Atoi(spaceSplit[0])
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse int: %v", err)
+	}
+	return result, nil
 }

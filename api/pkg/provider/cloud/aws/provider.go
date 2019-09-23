@@ -587,7 +587,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 
 	if kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
 		if err := removeTags(cluster, client.EC2); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to cleanup tags: %v", err)
 		}
 		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinalizer)

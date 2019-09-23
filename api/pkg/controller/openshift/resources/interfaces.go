@@ -36,4 +36,6 @@ type openshiftData interface {
 	DNATControllerImage() string
 	GetOauthExternalNodePort() (int32, error)
 	Client() (ctrlruntimeclient.Client, error)
+	ExternalURL() string
+	SeedName() string
 }

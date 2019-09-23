@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"text/template"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/servingcerthelper"
@@ -47,21 +48,20 @@ const (
 auth:
   clientID: console
   clientSecretFile: /var/oauth-config/clientSecret
-  logoutRedirect: ""
+  logoutRedirect: https://{{ .ExternalURL }}/api/v1/projects/{{ .ProjectID }}/dc/{{ .SeedName }}/clusters/{{ .ClusterName }}/openshift/console/login
   oauthEndpointCAFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 clusterInfo:
-  consoleBaseAddress: https://{{ .ExternalName }}:{{ .ListenPort }}
-  consoleBasePath: ""
-  masterPublicURL: {{ .APIServerURL}}
+  consoleBaseAddress: https://{{ .ExternalURL }}
+  consoleBasePath: /api/v1/projects/{{ .ProjectID }}/dc/{{ .SeedName }}/clusters/{{ .ClusterName }}/openshift/console/proxy/
+  masterPublicURL: {{ .APIServerURL }}
 customization:
   branding: ocp
   documentationBaseURL: https://docs.openshift.com/container-platform/4.1/
 kind: ConsoleConfig
 servingInfo:
-  bindAddress: https://0.0.0.0:8443
+  bindAddress: http://0.0.0.0:{{ .ListenPort }}
   certFile: /var/serving-cert/serving.crt
-  keyFile: /var/serving-cert/serving.key
-`
+  keyFile: /var/serving-cert/serving.key`
 )
 
 func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGetter {
@@ -190,10 +190,18 @@ func ConsoleConfigCreator(data openshiftData) reconciling.NamedConfigMapCreatorG
 			data := struct {
 				APIServerURL string
 				ExternalName string
+				ExternalURL  string
+				ProjectID    string
+				SeedName     string
+				ClusterName  string
 				ListenPort   string
 			}{
 				APIServerURL: data.Cluster().Address.URL,
 				ExternalName: fakeOAuthRedirect,
+				ExternalURL:  data.ExternalURL(),
+				ProjectID:    data.Cluster().Labels[kubermaticv1.ProjectIDLabelKey],
+				SeedName:     data.SeedName(),
+				ClusterName:  data.Cluster().Name,
 				ListenPort:   strconv.Itoa(ConsoleListenPort),
 			}
 			buffer := bytes.NewBuffer([]byte{})

@@ -39,6 +39,8 @@ type openshiftData struct {
 	dnatControllerImage                   string
 	supportsFailureDomainZoneAntiAffinity bool
 	userClusterClient                     func() (ctrlruntimeclient.Client, error)
+	externalURL                           string
+	seedName                              string
 }
 
 func (od *openshiftData) DC() *kubermaticv1.Datacenter {
@@ -328,4 +330,12 @@ func (od *openshiftData) GetOauthExternalNodePort() (int32, error) {
 
 func (od *openshiftData) Client() (ctrlruntimeclient.Client, error) {
 	return od.userClusterClient()
+}
+
+func (od *openshiftData) ExternalURL() string {
+	return od.externalURL
+}
+
+func (od *openshiftData) SeedName() string {
+	return od.seedName
 }
