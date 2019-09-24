@@ -933,6 +933,35 @@ func (a *Client) ListClustersForProject(params *ListClustersForProjectParams, au
 }
 
 /*
+ListNamespace Lists all namespaces in the cluster
+*/
+func (a *Client) ListNamespace(params *ListNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*ListNamespaceOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListNamespaceParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listNamespace",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListNamespaceReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListNamespaceOK), nil
+
+}
+
+/*
 ListNodeDeploymentNodes lists nodes that belong to the given node deployment
 */
 func (a *Client) ListNodeDeploymentNodes(params *ListNodeDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentNodesOK, error) {

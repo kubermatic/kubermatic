@@ -1114,3 +1114,34 @@ func DecodeGetClusterEvents(c context.Context, r *http.Request) (interface{}, er
 
 	return req, nil
 }
+
+func ListNamespaceEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(common.GetClusterReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		namespaceList := &corev1.NamespaceList{}
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, namespaceList); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var apiNamespaces []apiv1.Namespace
+
+		for _, namespace := range namespaceList.Items {
+			apiNamespace := apiv1.Namespace{Name: namespace.Name}
+			apiNamespaces = append(apiNamespaces, apiNamespace)
+		}
+
+		return apiNamespaces, nil
+	}
+}

@@ -210,6 +210,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics").
 		Handler(r.getClusterMetrics())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces").
+		Handler(r.listNamespace())
+
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles").
 		Handler(r.createClusterRole())
@@ -2948,6 +2952,32 @@ func (r Routing) deleteRole() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.DeleteRoleEndpoint()),
 		cluster.DecodeGetRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces project listNamespace
+//
+//     Lists all namespaces in the cluster
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Namespace
+//       401: empty
+//       403: empty
+func (r Routing) listNamespace() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(cluster.ListNamespaceEndpoint(r.projectProvider)),
+		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
