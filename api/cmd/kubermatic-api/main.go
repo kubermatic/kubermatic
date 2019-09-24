@@ -361,8 +361,7 @@ func setSecureHeaders(next http.Handler) http.Handler {
 		// security against cross-site scripting (XSS), clickjacking and other code
 		// injection attacks resulting from execution of malicious content in the
 		// trusted web page context. Reference: https://w3c.github.io/webappsec-csp/
-		// script-src 'unsafe-inline' and style-src 'unsafe-inline' are required for the Openshift console proxy
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; object-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; media-src 'self'; frame-ancestors 'self'; frame-src 'self'; connect-src 'self'")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; object-src 'self'; style-src 'self'; img-src 'self'; media-src 'self'; frame-ancestors 'self'; frame-src 'self'; connect-src 'self'")
 		// XFrameOptions can be used to indicate whether or not a browser should
 		// be allowed to render a page in a <frame>, <iframe> or <object> .
 		// Sites can use this to avoid clickjacking attacks, by ensuring that their

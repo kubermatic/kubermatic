@@ -160,6 +160,9 @@ func ConsoleProxyEndpoint(
 				return nil, nil
 			}
 
+			// The Openshift console needs script-src: unsafe-inline and sryle-src: unsafe-inline.
+			// The header here overwrites the setting on the main router, which is more strict.
+			w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; object-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; media-src 'self'; frame-ancestors 'self'; frame-src 'self'; connect-src 'self'")
 			// Proxy the request
 			proxy := httputil.NewSingleHostReverseProxy(url)
 			proxy.ServeHTTP(w, r)
