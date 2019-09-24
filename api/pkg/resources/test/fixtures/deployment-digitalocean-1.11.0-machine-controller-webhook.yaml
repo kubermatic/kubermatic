@@ -42,7 +42,7 @@ spec:
           value: do-token
         - name: KUBECONFIG
           value: /etc/kubernetes/kubeconfig/kubeconfig
-        image: docker.io/kubermatic/machine-controller:v1.5.6
+        image: docker.io/kubermatic/machine-controller:v1.5.7
         livenessProbe:
           failureThreshold: 8
           httpGet:
