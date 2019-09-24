@@ -4,10 +4,11 @@ metadata:
   name: nodeport-lb
   annotations:
     "helm.sh/resource-policy": keep
-    # If we're running on AWS, use an NLB. It has a fixed IP & we can use VPC endpoints
-    # https://docs.aws.amazon.com/de_de/eks/latest/userguide/load-balancing.html
-    "service.beta.kubernetes.io/aws-load-balancer-type": nlb
-    "service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout": "3600"  # On AWS default timeout is 60s, which means: kubectl logs -f will recieve EOF after 60s.
+    {{- if .Values.nodePortProxy.service.annotations }}
+    {{- range $key, $value := .Values.nodePortProxy.service.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
 spec:
   selector:
     app: nodeport-proxy
