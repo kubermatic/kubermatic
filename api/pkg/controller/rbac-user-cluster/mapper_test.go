@@ -19,13 +19,13 @@ func TestGeneratedResourcesForGroups(t *testing.T) {
 		{
 			name:              "scenario 1: check resources for owners",
 			resurceName:       genResourceName(rbac.OwnerGroupNamePrefix),
-			expectedResources: []string{"machinedeployments", "machinesets", "machines"},
+			expectedResources: []string{"*"},
 			expectError:       false,
 		},
 		{
 			name:              "scenario 2: check resources for editors",
 			resurceName:       genResourceName(rbac.EditorGroupNamePrefix),
-			expectedResources: []string{"machinedeployments", "machinesets", "machines"},
+			expectedResources: []string{"*"},
 			expectError:       false,
 		},
 		{
@@ -77,13 +77,13 @@ func TestGenerateVerbsForGroup(t *testing.T) {
 		{
 			name:          "scenario 1: generate verbs for owners",
 			resurceName:   genResourceName(rbac.OwnerGroupNamePrefix),
-			expectedVerbs: []string{"create", "list", "get", "update", "delete", "patch", "watch", "deletecollection"},
+			expectedVerbs: []string{"*"},
 			expectError:   false,
 		},
 		{
 			name:          "scenario 2: generate verbs for editors",
 			resurceName:   genResourceName(rbac.EditorGroupNamePrefix),
-			expectedVerbs: []string{"create", "list", "get", "update", "delete"},
+			expectedVerbs: []string{"*"},
 			expectError:   false,
 		},
 		{
