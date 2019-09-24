@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 	"time"
 
@@ -22,9 +23,21 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type multiValFlag []string
+
+func (mvf *multiValFlag) Set(value string) error {
+	*mvf = append(*mvf, value)
+	return nil
+}
+
+func (mvf *multiValFlag) String() string {
+	return fmt.Sprintf("%v", *mvf)
+}
 
 func main() {
 	var (
@@ -33,8 +46,7 @@ func main() {
 		retries       int
 		retryWait     int
 		timeout       int
-		crdKind       string
-		crdAPIVersion string
+		crdsToWaitFor multiValFlag
 		commandRaw    string
 	)
 	flag.StringVar(&endpoint, "endpoint", "", "The endpoint which should be waited for")
@@ -42,14 +54,13 @@ func main() {
 	flag.IntVar(&retries, "retries", 10, "Number of retries")
 	flag.IntVar(&retryWait, "retry-wait", 1, "Wait interval in seconds between retries")
 	flag.IntVar(&timeout, "timeout", 30, "Timeout in seconds")
-	flag.StringVar(&crdKind, "wait-for-crd-kind", "", "If set, wait for this CRD to be present. Requires the KUBECONFIG env var to be set.")
-	flag.StringVar(&crdAPIVersion, "wait-for-crd-apiversion", "", "If set, wait for this CRD to be present. Requires the KUBECONFIG env var to be set.")
+	flag.Var(&crdsToWaitFor, "crd-to-wait-for", "Wait for these crds to exist. Must contain kind and apiVersion comma seperated, e.G `machines,cluster.k8s.io/v1alpha1`. Can be passed multiple times. Requires the `KUBECONFIG` env var to be set and to point to a valid kubeconfig.")
 	flag.StringVar(&commandRaw, "command", "", "If passed, the http prober will exec this command. Must be json encoded")
 	flag.Parse()
 
 	log := kubermaticlog.Logger.Named("http-prober")
 
-	crdChecker, err := crdCheckerFactory(crdKind, crdAPIVersion)
+	crdCheckers, err := crdCheckersFactory(crdsToWaitFor)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -110,12 +121,14 @@ func main() {
 
 		log.Info("Endpoint is available")
 
-		if err := crdChecker(); err != nil {
-			log.Infow("Check if crd is available was not successful", "crd", crdKind, zap.Error(err))
-			continue
+		for _, crdChecker := range crdCheckers {
+			if err := crdChecker(); err != nil {
+				log.Infow("Check if crd is available was not successful", zap.Error(err))
+				continue
+			}
 		}
-		if crdKind != "" {
-			log.Infow("CRD is available", "crd", crdKind)
+		if len(crdCheckers) > 0 {
+			log.Info("All CRDs became available")
 		}
 
 		if command != nil {
@@ -136,32 +149,43 @@ func main() {
 	log.Fatal("Failed: Reached retry limit!")
 }
 
-func crdCheckerFactory(crdKind, crdAPIVersion string) (func() error, error) {
-	if crdKind == "" && crdAPIVersion == "" {
-		return func() error {
-			return nil
-		}, nil
-	}
-	if crdKind == "" {
-		return nil, errors.New("--wait-for-crd-kind must bet set if --wait-for-crd-apiversion is set")
-	}
-	if crdAPIVersion == "" {
-		return nil, errors.New("--wait-for-crd-apiversion must be set if --wait-for-crd-kind is set")
+func crdCheckersFactory(mvf multiValFlag) ([]func() error, error) {
+	if len(mvf) == 0 {
+		return nil, nil
 	}
 
 	kubeconfig := os.Getenv("KUBECONFIG")
 	if kubeconfig == "" {
-		return nil, errors.New("--wait-for-crd was set, but KUBECONFIG env var was not")
+		return nil, errors.New("--crd-to-wait-for was set, but KUBECONFIG env var was not")
 	}
 	cfg, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create kubeconfig: %v", err)
 	}
 
-	list := &unstructured.UnstructuredList{}
-	list.SetKind(crdKind)
-	list.SetAPIVersion(crdAPIVersion)
+	var checkers []func() error
+	for _, val := range mvf {
+		checker, err := crdCheckerFromFlag(val, cfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to construct crd checker: %v", err)
+		}
+		checkers = append(checkers, checker)
+	}
 
+	return checkers, nil
+}
+
+func crdCheckerFromFlag(flag string, cfg *restclient.Config) (func() error, error) {
+	splitVal := strings.Split(flag, ",")
+	if n := len(splitVal); n != 2 {
+		return nil, fmt.Errorf("comma-seperating the flag value did not yield exactly two results, but %d", n)
+	}
+	kind := splitVal[0]
+	apiVersion := splitVal[1]
+
+	list := &unstructured.UnstructuredList{}
+	list.SetKind(kind)
+	list.SetAPIVersion(apiVersion)
 	listOpts := &ctrlruntimeclient.ListOptions{Raw: &metav1.ListOptions{Limit: 1}}
 
 	return func() error {
@@ -173,7 +197,7 @@ func crdCheckerFactory(crdKind, crdAPIVersion string) (func() error, error) {
 		}
 
 		if err := client.List(context.Background(), listOpts, list); err != nil {
-			return fmt.Errorf("failed to list %q: %v", crdKind, err)
+			return fmt.Errorf("failed to list %s.%s: %v", kind, apiVersion, err)
 		}
 
 		return nil
