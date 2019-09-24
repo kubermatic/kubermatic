@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"time"
 
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
@@ -20,8 +21,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
@@ -151,8 +156,16 @@ func main() {
 		if err != nil {
 			log.Fatalw("failed to create validatingAdmissionWebhook server for seeds", zap.Error(err))
 		}
-		if err := mgr.Add(seedValidationWebhookServer); err != nil {
-			log.Fatalw("failed to add validatingAdmissionWebhook server to mgr", zap.Error(err))
+
+		// This group starts the validation webhook server; it's not using the
+		// mgr because we want the webhook to run so that migrations can perform
+		// operations on seeds
+		{
+			g.Add(func() error {
+				return seedValidationWebhookServer.Start(ctx.Done())
+			}, func(err error) {
+				ctxCancel()
+			})
 		}
 	} else {
 		log.Info("the validatingAdmissionWebhook server can not be started because seed-admissionwebhook-cert-file and seed-admissionwebhook-key-file are empty")
@@ -193,8 +206,33 @@ func main() {
 			}
 
 			return leaderelection.RunAsLeader(leaderCtx, log, cfg, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) error {
+				// create a dedicated client because the one from the manager is not yet
+				// initialized and returns 404's for everything
+				client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
+				if err != nil {
+					return fmt.Errorf("failed to create kube client: %v", err)
+				}
+
+				// wait for the webhook to be ready
+				if migrationOptions.SeedMigrationEnabled() {
+					deadline := 30 * time.Second
+					endpoint := types.NamespacedName{Namespace: ctrlCtx.namespace, Name: "seed-webhook"}
+
+					log.Infow("waiting for webhook to be ready...", "webhook", endpoint, "deadline", deadline)
+					if err := wait.Poll(500*time.Millisecond, deadline, func() (bool, error) {
+						endpoints := &corev1.Endpoints{}
+						if err := client.Get(ctx, endpoint, endpoints); err != nil {
+							return false, err
+						}
+						return len(endpoints.Subsets) > 0, nil
+					}); err != nil {
+						return fmt.Errorf("failed to wait for webhook: %v", err)
+					}
+					log.Info("webhook is ready")
+				}
+
 				log.Info("executing migrations...")
-				if err := master.RunAll(ctx, log, mgr.GetClient(), runOpts.workerName, ctrlCtx.namespace, migrationOptions); err != nil {
+				if err := master.RunAll(ctx, log, client, ctrlCtx.namespace, migrationOptions); err != nil {
 					return fmt.Errorf("failed to run migrations: %v", err)
 				}
 				log.Info("migrations executed successfully")
