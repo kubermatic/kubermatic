@@ -79,10 +79,10 @@ func ConsoleLoginEndpoint(
 				writeHTTPError(log, w, kubermaticerrors.New(http.StatusInternalServerError, "couldn't get userInfo"))
 				return nil, nil
 			}
-			if userInfo.Group == "owners" {
+			if strings.HasPrefix(userInfo.Group, "editors") {
 				consoleLogin(ctx, log, w, cluster, clusterProvider.GetSeedClusterAdminRuntimeClient(), r)
 			} else {
-				writeHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, fmt.Sprintf("user %q does not belong to the owners group", userInfo.Email)))
+				writeHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, fmt.Sprintf("user %q does not belong to the editors group", userInfo.Email)))
 			}
 
 			return nil, nil
