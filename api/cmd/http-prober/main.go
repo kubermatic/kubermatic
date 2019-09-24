@@ -54,7 +54,7 @@ func main() {
 	flag.IntVar(&retries, "retries", 10, "Number of retries")
 	flag.IntVar(&retryWait, "retry-wait", 1, "Wait interval in seconds between retries")
 	flag.IntVar(&timeout, "timeout", 30, "Timeout in seconds")
-	flag.Var(&crdsToWaitFor, "crd-to-wait-for", "Wait for these crds to exist. Must contain kind and apiVersion comma seperated, e.G `machines,cluster.k8s.io/v1alpha1`. Can be passed multiple times. Requires the `KUBECONFIG` env var to be set and to point to a valid kubeconfig.")
+	flag.Var(&crdsToWaitFor, "crd-to-wait-for", "Wait for these crds to exist. Must contain kind and apiVersion comma separated, e.G `machines,cluster.k8s.io/v1alpha1`. Can be passed multiple times. Requires the `KUBECONFIG` env var to be set and to point to a valid kubeconfig.")
 	flag.StringVar(&commandRaw, "command", "", "If passed, the http prober will exec this command. Must be json encoded")
 	flag.Parse()
 
