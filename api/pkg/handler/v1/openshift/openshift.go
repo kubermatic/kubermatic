@@ -76,7 +76,7 @@ func ConsoleLoginEndpoint(
 
 			userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 			if !ok {
-				writeHTTPError(log, w, kubermaticerrors.New(http.StatusInternalServerError, err.Error()))
+				writeHTTPError(log, w, kubermaticerrors.New(http.StatusInternalServerError, "couldn't get userInfo"))
 				return nil, nil
 			}
 			if userInfo.Group == "owners" {
