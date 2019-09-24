@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:
-{{- if .Values.certManager.injectAPIServerCA }}
+{{- if .Values.certManager.webhook.injectAPIServerCA }}
     certmanager.k8s.io/inject-apiserver-ca: 'true'
 {{- end }}
 webhooks:
