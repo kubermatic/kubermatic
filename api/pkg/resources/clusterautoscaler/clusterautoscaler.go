@@ -118,7 +118,7 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 				},
 			}
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(resources.ClusterAutoscalerDeploymentName), "", "")
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(resources.ClusterAutoscalerDeploymentName))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}

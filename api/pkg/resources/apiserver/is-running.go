@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	tag                = "v0.3"
+	tag                = "v0.3.1"
 	emptyDirVolumeName = "http-prober-bin"
 	initContainerName  = "copy-http-prober"
 )
@@ -30,7 +30,7 @@ type isRunningInitContainerData interface {
 // then mounting that volume onto all named containers and replacing the command with a call to
 // the `http-prober` binary. The http prober binary gets the original command as serialized string
 // and does an syscall.Exec onto it once the apiserver became reachable
-func IsRunningWrapper(data isRunningInitContainerData, spec corev1.PodSpec, containersToWrap sets.String, crdKindToWaitFor, crdAPIVersionToWaitFor string) (*corev1.PodSpec, error) {
+func IsRunningWrapper(data isRunningInitContainerData, spec corev1.PodSpec, containersToWrap sets.String, crdsToWaitFor ...string) (*corev1.PodSpec, error) {
 	if containersToWrap.Len() == 0 {
 		return nil, errors.New("no containers to wrap passed")
 	}
@@ -80,7 +80,7 @@ func IsRunningWrapper(data isRunningInitContainerData, spec corev1.PodSpec, cont
 		if !containersToWrap.Has(spec.InitContainers[idx].Name) {
 			continue
 		}
-		wrappedContainer, err := wrapContainer(data, spec.InitContainers[idx], crdKindToWaitFor, crdAPIVersionToWaitFor)
+		wrappedContainer, err := wrapContainer(data, spec.InitContainers[idx], crdsToWaitFor...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to wrap initContainer %q: %v", spec.InitContainers[idx].Name, err)
 		}
@@ -90,7 +90,7 @@ func IsRunningWrapper(data isRunningInitContainerData, spec corev1.PodSpec, cont
 		if !containersToWrap.Has(spec.Containers[idx].Name) {
 			continue
 		}
-		wrappedContainer, err := wrapContainer(data, spec.Containers[idx], crdKindToWaitFor, crdAPIVersionToWaitFor)
+		wrappedContainer, err := wrapContainer(data, spec.Containers[idx], crdsToWaitFor...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to wrap container %q: %v", spec.Containers[idx].Name, err)
 		}
@@ -109,7 +109,7 @@ func hasContainerNamed(spec corev1.PodSpec, name string) bool {
 	return false
 }
 
-func wrapContainer(data isRunningInitContainerData, container corev1.Container, crdKindToWaitFor, crdAPIVersionToWaitFor string) (*corev1.Container, error) {
+func wrapContainer(data isRunningInitContainerData, container corev1.Container, crdsToWaitFor ...string) (*corev1.Container, error) {
 	commandWithArgs := append(container.Command, container.Args...)
 	if len(commandWithArgs) == 0 {
 		return nil, fmt.Errorf("container %q has no command or args set", container.Name)
@@ -138,10 +138,8 @@ func wrapContainer(data isRunningInitContainerData, container corev1.Container, 
 		"-timeout", "1",
 		"-command", string(serializedCommand),
 	}
-	if crdKindToWaitFor != "" {
-		container.Args = append(container.Args,
-			"-wait-for-crd-kind", crdKindToWaitFor,
-			"-wait-for-crd-apiversion", crdAPIVersionToWaitFor)
+	for _, crdToWaitFor := range crdsToWaitFor {
+		container.Args = append(container.Args, "--crd-to-wait-for", crdToWaitFor)
 	}
 
 	return &container, nil

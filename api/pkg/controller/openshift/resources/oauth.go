@@ -430,7 +430,7 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 			}
 			dep.Spec.Template.Labels = podLabels
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OauthName), "OAuthClient", "oauth.openshift.io/v1")
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OauthName), "OAuthClient,oauth.openshift.io/v1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}
