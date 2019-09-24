@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -32,13 +33,16 @@ func (opts *WebhookOpts) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&opts.KeyFile, "seed-admissionwebhook-key-file", "", "The location of the certificate key file")
 }
 
-// Server returns a Server that validates AdmissionRequests for Seed CRs
+// Server returns a Server that validates AdmissionRequests for Seed CRs.
+// When migrationMode is enabled, only creating new seeds is allowed, not
+// changing or deleting existing.
 func (opts *WebhookOpts) Server(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	workerName string,
 	seedsGetter provider.SeedsGetter,
-	seedClientGetter provider.SeedClientGetter) (*Server, error) {
+	seedClientGetter provider.SeedClientGetter,
+	migrationMode bool) (*Server, error) {
 
 	labelSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
@@ -59,6 +63,7 @@ func (opts *WebhookOpts) Server(
 		certFile:      opts.CertFile,
 		keyFile:       opts.KeyFile,
 		validator:     newValidator(ctx, seedsGetter, seedClientGetter, listOpts),
+		migrationMode: migrationMode,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", server.handleSeedValidationRequests)
@@ -74,6 +79,7 @@ type Server struct {
 	certFile      string
 	keyFile       string
 	validator     *seedValidator
+	migrationMode bool
 }
 
 // Start implements sigs.k8s.io/controller-runtime/pkg/manager.Runnable
@@ -120,6 +126,12 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 	admissionReview := &admissionv1beta1.AdmissionReview{}
 	if err := json.Unmarshal(body.Bytes(), admissionReview); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal request body: %v", err)
+	}
+
+	// during datacenters->seed migration we reject any changes, so the seeds can never get
+	// out of sync with the datacenters.yaml
+	if s.migrationMode && admissionReview.Request.Operation != admissionv1beta1.Create {
+		return admissionReview.Request, errors.New("migration is enabled, changes to Seed resources are forbidden")
 	}
 
 	seed := &kubermaticv1.Seed{}

@@ -18,6 +18,10 @@ type MigrationOptions struct {
 	DynamicDatacenters bool
 }
 
+func (o MigrationOptions) SeedMigrationEnabled() bool {
+	return o.DatacentersFile != "" && o.DynamicDatacenters
+}
+
 type migrationContext struct {
 	ctx                 context.Context
 	log                 *zap.SugaredLogger
@@ -36,7 +40,7 @@ func RunAll(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclien
 		kubermaticNamespace: kubermaticNamespace,
 	}
 
-	if opt.DatacentersFile != "" && opt.DynamicDatacenters {
+	if opt.SeedMigrationEnabled() {
 		log.Info("datacenters given and dynamic datacenters enabled, attempting to migrate datacenters to Seeds")
 		if err := migrateDatacenters(migrationCtx, opt.DatacentersFile); err != nil {
 			return fmt.Errorf("failed to migrate datacenters.yaml: %v", err)

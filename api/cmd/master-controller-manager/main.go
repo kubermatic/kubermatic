@@ -97,6 +97,12 @@ func main() {
 	defer ctxCancel()
 	ctrlCtx.ctx = ctx
 
+	// prepare migration options
+	migrationOptions := master.MigrationOptions{
+		DatacentersFile:    runOpts.dcFile,
+		DynamicDatacenters: runOpts.dynamicDatacenters,
+	}
+
 	// load kubeconfig and create API client
 	kubeconfig, err := clientcmd.LoadFromFile(runOpts.kubeconfig)
 	if err != nil {
@@ -136,7 +142,12 @@ func main() {
 
 	if runOpts.seedvalidationHook.CertFile != "" || runOpts.seedvalidationHook.KeyFile != "" {
 		seedValidationWebhookServer, err := runOpts.seedvalidationHook.Server(
-			ctx, log, runOpts.workerName, ctrlCtx.seedsGetter, provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter))
+			ctx,
+			log,
+			runOpts.workerName,
+			ctrlCtx.seedsGetter,
+			provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter),
+			migrationOptions.SeedMigrationEnabled())
 		if err != nil {
 			log.Fatalw("failed to create validatingAdmissionWebhook server for seeds", zap.Error(err))
 		}
@@ -183,11 +194,7 @@ func main() {
 
 			return leaderelection.RunAsLeader(leaderCtx, log, cfg, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) error {
 				log.Info("executing migrations...")
-				options := master.MigrationOptions{
-					DatacentersFile:    runOpts.dcFile,
-					DynamicDatacenters: runOpts.dynamicDatacenters,
-				}
-				if err := master.RunAll(ctx, log, mgr.GetClient(), runOpts.workerName, ctrlCtx.namespace, options); err != nil {
+				if err := master.RunAll(ctx, log, mgr.GetClient(), runOpts.workerName, ctrlCtx.namespace, migrationOptions); err != nil {
 					return fmt.Errorf("failed to run migrations: %v", err)
 				}
 				log.Info("migrations executed successfully")
