@@ -141,7 +141,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources
 			}
 
-			envVars, err := getEnvVars(data)
+			envVars, err := GetEnvVars(data)
 			if err != nil {
 				return nil, err
 			}
@@ -327,7 +327,7 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
+func GetEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
 	credentials, err := resources.GetCredentials(data)
 	if err != nil {
 		return nil, err

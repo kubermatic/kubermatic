@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -174,6 +175,7 @@ type kubeControllerManagerData interface {
 	ClusterIPByServiceName(name string) (string, error)
 	ImageRegistry(defaultRegistry string) string
 	GetPodTemplateLabels(appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error)
+	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 }
 
 func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerData) reconciling.NamedDeploymentCreatorGetter {
@@ -208,6 +210,11 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 					resourceRequirements = *data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources
 				}
 
+				env, err := controllermanager.GetEnvVars(data)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get controller manager env vars: %v", err)
+				}
+
 				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 				if err != nil {
 					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
@@ -218,6 +225,7 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 					{
 						Name:    "kube-controller-manager",
 						Image:   image,
+						Env:     env,
 						Command: []string{"hyperkube", kubeControllerManagerContainerName},
 						Args: kubeControllerManagerArgs(
 							"/etc/origin/config.yaml",

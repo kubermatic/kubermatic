@@ -25,7 +25,10 @@ import (
 
 const (
 	controllerName = "kubermatic_openshift_master_node_labeler"
-	minMasterNodes = 3
+	// Keep this as low as possible. The Service controller doesn't allow
+	// using nodes that have the master label as backend:
+	// https://github.com/kubernetes/kubernetes/issues/65618
+	minMasterNodes = 1
 )
 
 type reconciler struct {

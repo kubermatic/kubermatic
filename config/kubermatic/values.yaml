@@ -102,6 +102,7 @@ kubermatic:
         - openvpn
         - rbac
         - network
+        - default-storage-class
         image:
           repository: "quay.io/kubermatic/openshift-addons"
           tag: "__KUBERMATIC_TAG__"
