@@ -73,8 +73,18 @@ func ConsoleLoginEndpoint(
 				return nil, nil
 			}
 			log = log.With("cluster", cluster.Name)
-			// TODO: Verify the user is owner, else they should not be allowed to do this
-			consoleLogin(ctx, log, w, cluster, clusterProvider.GetSeedClusterAdminRuntimeClient(), r)
+
+			userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+			if !ok {
+				writeHTTPError(log, w, kubermaticerrors.New(http.StatusInternalServerError, err.Error()))
+				return nil, nil
+			}
+			if userInfo.Group == "owners" {
+				consoleLogin(ctx, log, w, cluster, clusterProvider.GetSeedClusterAdminRuntimeClient(), r)
+			} else {
+				writeHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, fmt.Sprintf("user %q does not belong to the owners group", userInfo.Email)))
+			}
+
 			return nil, nil
 		}
 		if _, err := middlewares(endpoint)(ctx, request); err != nil {

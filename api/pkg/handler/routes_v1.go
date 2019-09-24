@@ -2799,7 +2799,6 @@ func (r Routing) openshiftConsoleProxy() http.Handler {
 			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
 			// client that allows access to the cluster namespace only
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
 		),
 	)
 }
