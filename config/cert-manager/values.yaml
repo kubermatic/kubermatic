@@ -41,9 +41,7 @@ certManager:
 
     # If true, the apiserver's cabundle will be automatically injected into the
     # webhook's ValidatingWebhookConfiguration resource by the CA injector.
-    # If you're running on Kubernetes 1.11+, you can set this to false already.
-    # see https://github.com/kubernetes/kubernetes/pull/62649
-    injectAPIServerCA: false
+    injectAPIServerCA: true
 
   cainjector:
     replicas: 1
