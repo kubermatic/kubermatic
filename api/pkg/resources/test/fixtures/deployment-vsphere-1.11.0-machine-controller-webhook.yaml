@@ -42,7 +42,7 @@ spec:
           value: https://vs-endpoint.io
         - name: VSPHERE_USERNAME
         - name: VSPHERE_PASSWORD
-        image: docker.io/kubermatic/machine-controller:v1.5.4
+        image: docker.io/kubermatic/machine-controller:v1.5.7
         livenessProbe:
           failureThreshold: 8
           httpGet:
