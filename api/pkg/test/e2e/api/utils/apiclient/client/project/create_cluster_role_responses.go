@@ -65,19 +65,19 @@ func NewCreateClusterRoleCreated() *CreateClusterRoleCreated {
 
 /*CreateClusterRoleCreated handles this case with default header values.
 
-UserClusterRole
+ClusterRole
 */
 type CreateClusterRoleCreated struct {
-	Payload *models.UserClusterRole
+	Payload *models.ClusterRole
 }
 
 func (o *CreateClusterRoleCreated) Error() string {
-	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] createClusterRoleCreated  %+v", 201, o.Payload)
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRoleCreated  %+v", 201, o.Payload)
 }
 
 func (o *CreateClusterRoleCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.UserClusterRole)
+	o.Payload = new(models.ClusterRole)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -100,7 +100,7 @@ type CreateClusterRoleUnauthorized struct {
 }
 
 func (o *CreateClusterRoleUnauthorized) Error() string {
-	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] createClusterRoleUnauthorized ", 401)
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRoleUnauthorized ", 401)
 }
 
 func (o *CreateClusterRoleUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -121,7 +121,7 @@ type CreateClusterRoleForbidden struct {
 }
 
 func (o *CreateClusterRoleForbidden) Error() string {
-	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] createClusterRoleForbidden ", 403)
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRoleForbidden ", 403)
 }
 
 func (o *CreateClusterRoleForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -152,7 +152,7 @@ func (o *CreateClusterRoleDefault) Code() int {
 }
 
 func (o *CreateClusterRoleDefault) Error() string {
-	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] createClusterRole default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRole default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *CreateClusterRoleDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
