@@ -25,11 +25,8 @@ const (
 // generateVerbsForGroup generates a set of verbs for a group
 func generateVerbsForGroup(groupName string) ([]string, error) {
 	// verbs for owners
-	if groupName == rbac.OwnerGroupNamePrefix {
-		return []string{"create", "list", "get", "update", "delete", "patch", "watch", "deletecollection"}, nil
-	}
-	if groupName == rbac.EditorGroupNamePrefix {
-		return []string{"create", "list", "get", "update", "delete"}, nil
+	if groupName == rbac.OwnerGroupNamePrefix || groupName == rbac.EditorGroupNamePrefix {
+		return []string{"*"}, nil
 	}
 
 	if groupName == rbac.ViewerGroupNamePrefix {
@@ -69,12 +66,13 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 			},
 		},
 	}
-	if groupName == rbac.OwnerGroupNamePrefix {
-		clusterRole.Rules = append(clusterRole.Rules, rbacv1.PolicyRule{
-			APIGroups: []string{"rbac.authorization.k8s.io"},
-			Resources: []string{"*"},
-			Verbs:     verbs,
-		})
+	if groupName == rbac.OwnerGroupNamePrefix || groupName == rbac.EditorGroupNamePrefix {
+		clusterRole.Rules = []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     verbs,
+			}}
 	}
 	return clusterRole, nil
 }
