@@ -12,13 +12,13 @@ spec:
     matchLabels:
       app: cainjector
       app.kubernetes.io/name: cainjector
-      app.kubernetes.io/instance:  {{ .Release.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
         app: cainjector
         app.kubernetes.io/name: cainjector
-        app.kubernetes.io/instance:  {{ .Release.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
         fluentbit.io/parser: glog
     spec:

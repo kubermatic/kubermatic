@@ -5,7 +5,7 @@ metadata:
   labels:
     app: webhook
     app.kubernetes.io/name: webhook
-    app.kubernetes.io/instance:  {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   type: ClusterIP
   ports:
@@ -15,4 +15,4 @@ spec:
   selector:
     app: webhook
     app.kubernetes.io/name: webhook
-    app.kubernetes.io/instance:  {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
