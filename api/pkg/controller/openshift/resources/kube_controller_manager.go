@@ -10,6 +10,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
@@ -39,17 +40,22 @@ extendedArguments:
   - 'true'
   cert-dir:
   - /var/run/kubernetes
-  # Must be an explicit empty slice, else the controller-manager panics
-  cloud-provider: []
-  #- aws
+{{- if .CloudProvider }}
+  cloud-provider:
+   - {{ .CloudProvider}}
+  cloud-config:
+   - /etc/kubernetes/cloud/config
+{{- end }}
   cluster-cidr:
   - {{ .ClusterCIDR }}
   cluster-signing-cert-file:
   - {{ .CACertPath }}
   cluster-signing-key-file:
   - {{ .CAKeyPath }}
+{{- if .ConfigureCloudRoutes }}
   configure-cloud-routes:
-  - 'false'
+  - '{{ .ConfigureCloudRoutes }}'
+{{- end }}
   controllers:
   - '*'
   - -ttl
@@ -129,18 +135,27 @@ func KubeControllerManagerConfigMapCreatorFactory(data kubeControllerManagerConf
 				if len(data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks) > 0 {
 					serviceCIDR = data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0]
 				}
+				configureCloudRoutes := ""
+				configureCloudRoutesBoolPtr := controllermanager.CloudRoutesFlagVal(data.Cluster().Spec.Cloud)
+				if configureCloudRoutesBoolPtr != nil {
+					configureCloudRoutes = fmt.Sprintf("%t", *configureCloudRoutesBoolPtr)
+				}
 				vars := struct {
 					CACertPath            string
 					CAKeyPath             string
 					ClusterCIDR           string
 					ServiceAccountKeyFile string
 					ServiceCIDR           string
+					CloudProvider         string
+					ConfigureCloudRoutes  string
 				}{
 					CACertPath:            kubeControllerManagerCACertPath,
 					CAKeyPath:             kubeControllerManagerCAKeyPath,
 					ClusterCIDR:           podCIDR,
 					ServiceAccountKeyFile: kubeControllerManagerServiceAccountKeyPath,
 					ServiceCIDR:           serviceCIDR,
+					CloudProvider:         apiserver.GetKubernetesCloudProviderName(data.Cluster()),
+					ConfigureCloudRoutes:  configureCloudRoutes,
 				}
 
 				templateBuffer := &bytes.Buffer{}
@@ -250,6 +265,11 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 								MountPath: "/etc/kubernetes/pki/front-proxy/ca",
 								ReadOnly:  true,
 							},
+							{
+								Name:      resources.CloudConfigConfigMapName,
+								MountPath: "/etc/kubernetes/cloud",
+								ReadOnly:  true,
+							},
 						},
 					},
 				}
@@ -349,6 +369,16 @@ func kubeControllerManagerVolumes() []corev1.Volume {
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  resources.FrontProxyCASecretName,
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
+				},
+			},
+		},
+		{
+			Name: resources.CloudConfigConfigMapName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: resources.CloudConfigConfigMapName,
+					},
 				},
 			},
 		},
