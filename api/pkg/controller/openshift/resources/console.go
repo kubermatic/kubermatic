@@ -253,7 +253,7 @@ func ConsoleOAuthClientSecretCreator(data openshiftData) reconciling.NamedSecret
 				}
 				oauthClientObject.Object["secret"] = secret
 				oauthClientObject.Object["redirectURIs"] = []string{
-					fmt.Sprintf("https://%s:/api/v1/projects/%s/dc/%s/clusters/%s/openshift/console/proxy/auth/callback",
+					fmt.Sprintf("https://%s/api/v1/projects/%s/dc/%s/clusters/%s/openshift/console/proxy/auth/callback",
 						data.ExternalURL(), data.Cluster().Labels[kubermaticv1.ProjectIDLabelKey], data.SeedName(), data.Cluster().Name),
 				}
 				oauthClientObject.Object["grantMethod"] = "auto"
