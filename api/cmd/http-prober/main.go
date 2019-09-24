@@ -121,11 +121,9 @@ func main() {
 
 		log.Info("Endpoint is available")
 
-		for _, crdChecker := range crdCheckers {
-			if err := crdChecker(); err != nil {
-				log.Infow("Check if crd is available was not successful", zap.Error(err))
-				continue
-			}
+		if err := executeCheckers(crdCheckers); err != nil {
+			log.Infow("Check if crd is available was not successful", zap.Error(err))
+			continue
 		}
 		if len(crdCheckers) > 0 {
 			log.Info("All CRDs became available")
@@ -178,7 +176,7 @@ func crdCheckersFactory(mvf multiValFlag) ([]func() error, error) {
 func crdCheckerFromFlag(flag string, cfg *restclient.Config) (func() error, error) {
 	splitVal := strings.Split(flag, ",")
 	if n := len(splitVal); n != 2 {
-		return nil, fmt.Errorf("comma-seperating the flag value did not yield exactly two results, but %d", n)
+		return nil, fmt.Errorf("comma-separating the flag value did not yield exactly two results, but %d", n)
 	}
 	kind := splitVal[0]
 	apiVersion := splitVal[1]
@@ -202,4 +200,13 @@ func crdCheckerFromFlag(flag string, cfg *restclient.Config) (func() error, erro
 
 		return nil
 	}, nil
+}
+
+func executeCheckers(checkers []func() error) error {
+	for _, checker := range checkers {
+		if err := checker(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
