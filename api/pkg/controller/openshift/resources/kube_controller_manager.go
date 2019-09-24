@@ -10,6 +10,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
@@ -194,6 +195,49 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 					{Name: openshiftImagePullSecretName},
 				}
 				dep.Spec.Template.Spec.Volumes = kubeControllerManagerVolumes()
+				volumeMounts := []corev1.VolumeMount{
+					{
+						Name:      resources.CASecretName,
+						MountPath: "/etc/kubernetes/pki/ca",
+						ReadOnly:  true,
+					},
+					{
+						Name:      resources.ServiceAccountKeySecretName,
+						MountPath: "/etc/kubernetes/service-account-key",
+						ReadOnly:  true,
+					},
+					{
+						Name:      resources.ControllerManagerKubeconfigSecretName,
+						MountPath: "/etc/kubernetes/kubeconfig",
+						ReadOnly:  true,
+					},
+					{
+						Name:      kubeControllerManagerOpenshiftConfigConfigmapName,
+						MountPath: "/etc/origin",
+						ReadOnly:  true,
+					},
+					{
+						Name:      resources.FrontProxyCASecretName,
+						MountPath: "/etc/kubernetes/pki/front-proxy/ca",
+						ReadOnly:  true,
+					},
+					{
+						Name:      resources.CloudConfigConfigMapName,
+						MountPath: "/etc/kubernetes/cloud",
+						ReadOnly:  true,
+					},
+				}
+
+				if data.Cluster().Spec.Cloud.VSphere != nil {
+					fakeVMWareUUIDMount := corev1.VolumeMount{
+						Name:      resources.CloudConfigConfigMapName,
+						SubPath:   cloudconfig.FakeVMWareUUIDKeyName,
+						MountPath: "/sys/class/dmi/id/product_serial",
+						ReadOnly:  true,
+					}
+					// Required because of https://github.com/kubernetes/kubernetes/issues/65145
+					volumeMounts = append(volumeMounts, fakeVMWareUUIDMount)
+				}
 
 				image, err := kubeControllerManagerImage(data.Cluster().Spec.Version.String())
 				if err != nil {
@@ -247,38 +291,7 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 							SuccessThreshold: 1,
 							TimeoutSeconds:   15,
 						},
-						VolumeMounts: []corev1.VolumeMount{
-							{
-								Name:      resources.CASecretName,
-								MountPath: "/etc/kubernetes/pki/ca",
-								ReadOnly:  true,
-							},
-							{
-								Name:      resources.ServiceAccountKeySecretName,
-								MountPath: "/etc/kubernetes/service-account-key",
-								ReadOnly:  true,
-							},
-							{
-								Name:      resources.ControllerManagerKubeconfigSecretName,
-								MountPath: "/etc/kubernetes/kubeconfig",
-								ReadOnly:  true,
-							},
-							{
-								Name:      kubeControllerManagerOpenshiftConfigConfigmapName,
-								MountPath: "/etc/origin",
-								ReadOnly:  true,
-							},
-							{
-								Name:      resources.FrontProxyCASecretName,
-								MountPath: "/etc/kubernetes/pki/front-proxy/ca",
-								ReadOnly:  true,
-							},
-							{
-								Name:      resources.CloudConfigConfigMapName,
-								MountPath: "/etc/kubernetes/cloud",
-								ReadOnly:  true,
-							},
-						},
+						VolumeMounts: volumeMounts,
 					},
 				}
 
