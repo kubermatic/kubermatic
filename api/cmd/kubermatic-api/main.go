@@ -310,8 +310,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	registerMetrics()
 
 	mainRouter := mux.NewRouter()
-	// This breaks the Openshift console proxying.
-	//mainRouter.Use(setSecureHeaders)
+	mainRouter.Use(setSecureHeaders)
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
 	r.RegisterV1(v1Router, metrics)
 	r.RegisterV1Legacy(v1Router)
@@ -356,16 +355,14 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	return instrumentHandler(mainRouter, lookupRoute), nil
 }
 
-// TODO: Figure out why this breaks the Openshift console and re-enable
-var _ = setSecureHeaders
-
 func setSecureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// ContentSecurityPolicy sets the `Content-Security-Policy` header providing
 		// security against cross-site scripting (XSS), clickjacking and other code
 		// injection attacks resulting from execution of malicious content in the
 		// trusted web page context. Reference: https://w3c.github.io/webappsec-csp/
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; object-src 'self'; style-src 'self'; img-src 'self'; media-src 'self'; frame-ancestors 'self'; frame-src 'self'; connect-src 'self'")
+		// script-src 'unsafe-inline' and style-src 'unsafe-inline' are required for the Openshift console proxy
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; object-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; media-src 'self'; frame-ancestors 'self'; frame-src 'self'; connect-src 'self'")
 		// XFrameOptions can be used to indicate whether or not a browser should
 		// be allowed to render a page in a <frame>, <iframe> or <object> .
 		// Sites can use this to avoid clickjacking attacks, by ensuring that their
