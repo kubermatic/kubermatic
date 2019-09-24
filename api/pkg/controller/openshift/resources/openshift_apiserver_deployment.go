@@ -268,7 +268,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 			dep.Spec.Template.Labels = podLabels
 
 			// The openshift apiserver needs the normal apiserver
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OpenshiftAPIServerDeploymentName), "", "")
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OpenshiftAPIServerDeploymentName))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}

@@ -31,10 +31,8 @@ spec:
         - "1"
         - -command
         - '{"command":"/usr/local/bin/webhook","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-logtostderr","-v","4","-listen-address","0.0.0.0:9876"]}'
-        - -wait-for-crd-kind
-        - Machine
-        - -wait-for-crd-apiversion
-        - cluster.k8s.io/v1alpha1
+        - --crd-to-wait-for
+        - Machine,cluster.k8s.io/v1alpha1
         command:
         - /http-prober-bin/http-prober
         env:
@@ -95,7 +93,7 @@ spec:
         - /bin/cp
         - /usr/local/bin/http-prober
         - /http-prober-bin/http-prober
-        image: quay.io/kubermatic/http-prober:v0.3
+        image: quay.io/kubermatic/http-prober:v0.3.1
         name: copy-http-prober
         resources: {}
         volumeMounts:

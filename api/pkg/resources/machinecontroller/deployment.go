@@ -58,7 +58,7 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 			if err != nil {
 				return nil, err
 			}
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.NewString(Name), "Machine", "cluster.k8s.io/v1alpha1")
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.NewString(Name), "Machine,cluster.k8s.io/v1alpha1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}
