@@ -40,7 +40,7 @@ spec:
         - '{"command":"/usr/local/bin/machine-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-logtostderr","-v","4","-cluster-dns","169.254.20.10","-internal-listen-address","0.0.0.0:8085"]}'
         command:
         - /http-prober-bin/http-prober
-        image: docker.io/kubermatic/machine-controller:v1.5.4
+        image: docker.io/kubermatic/machine-controller:v1.5.7
         livenessProbe:
           failureThreshold: 3
           httpGet:
