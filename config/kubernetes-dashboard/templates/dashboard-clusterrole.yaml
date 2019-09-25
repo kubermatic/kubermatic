@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/version: '{{ .Chart.Version }}'
     app.kubernetes.io/managed-by: helm
-  name: kubernetes-dashboard
+  name: '{{ template "dashboard-name" . }}'
 rules:
   # Allow Metrics Scraper to get metrics from the Metrics server
   - apiGroups: ["metrics.k8s.io"]

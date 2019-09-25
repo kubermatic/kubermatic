@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/version: '{{ .Chart.Version }}'
     app.kubernetes.io/managed-by: helm
-  name: dashboard-metrics-scraper
+  name: '{{ template "scraper-name" . }}'
 spec:
   ports:
     - port: 8000

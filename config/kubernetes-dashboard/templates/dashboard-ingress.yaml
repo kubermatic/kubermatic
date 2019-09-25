@@ -15,14 +15,14 @@ metadata:
       auth_request_set $token $upstream_http_authorization;
       proxy_set_header Authorization "Bearer {{ .Values.dashboard.token }}";
       proxy_pass_header Authorization;
-  name: kubernetes-dashboard
+  name: '{{ template "dashboard-name" . }}'
 spec:
   rules:
     - host: {{ .Values.dashboard.domain }}
       http:
         paths:
           - backend:
-              serviceName: kubernetes-dashboard
+              serviceName: '{{ template "dashboard-name" . }}'
               servicePort: 80
             path: {{ .Values.dashboard.ingress.path }}
   tls:

@@ -32,7 +32,7 @@ spec:
             - containerPort: 9090
               protocol: TCP
           args:
-            - --namespace=kubernetes-dashboard
+            - --namespace={{ .Release.Namespace }}
             - --enable-insecure-login
           volumeMounts:
             - name: kubernetes-dashboard-certs
@@ -54,7 +54,7 @@ spec:
       volumes:
         - name: tmp-volume
           emptyDir: {}
-      serviceAccountName: kubernetes-dashboard
+      serviceAccountName: '{{ template "dashboard-name" . }}'
       nodeSelector:
 {{ toYaml .Values.dashboard.deployment.dashboard.nodeSelector | indent 8 }}
       affinity:

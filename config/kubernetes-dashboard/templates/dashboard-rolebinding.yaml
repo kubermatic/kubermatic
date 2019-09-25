@@ -6,12 +6,12 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/version: '{{ .Chart.Version }}'
     app.kubernetes.io/managed-by: helm
-  name: kubernetes-dashboard
+  name: '{{ template "dashboard-name" . }}'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: kubernetes-dashboard
+  name: '{{ template "dashboard-name" . }}'
 subjects:
   - kind: ServiceAccount
-    name: kubernetes-dashboard
-    namespace: kubernetes-dashboard
+    name: '{{ template "dashboard-name" . }}'
+    namespace: {{ .Release.Namespace }}

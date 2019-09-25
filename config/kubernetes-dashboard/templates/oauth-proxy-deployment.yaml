@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/version: '{{ .Chart.Version }}'
     app.kubernetes.io/managed-by: helm
-  name: oauth-proxy
+  name: '{{ template "oauth-name" . }}'
 spec:
   selector:
     matchLabels:
@@ -45,17 +45,17 @@ spec:
             - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: oauth-proxy-config
+                  name: '{{ template "oauth-name" . }}-config'
                   key: clientID
             - name: OAUTH2_PROXY_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: oauth-proxy-config
+                  name: '{{ template "oauth-name" . }}-config'
                   key: clientSecret
             - name: OAUTH2_PROXY_COOKIE_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: oauth-proxy-config
+                  name: '{{ template "oauth-name" . }}-config'
                   key: cookieSecret
       nodeSelector:
 {{ toYaml .Values.dashboard.deployment.proxy.nodeSelector | indent 8 }}
