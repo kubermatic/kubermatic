@@ -14,20 +14,6 @@ import (
 
 const getAWSMaxAttempts = 12
 
-func cleanUpProject(id string) func(t *testing.T) {
-	return func(t *testing.T) {
-		masterToken, err := GetMasterToken()
-		if err != nil {
-			t.Fatalf("can not get master token due error: %v", err)
-		}
-		apiRunner := CreateAPIRunner(masterToken, t)
-
-		if err := apiRunner.DeleteProject(id); err != nil {
-			t.Fatalf("can not delete project due error: %v", err)
-		}
-	}
-}
-
 func getSecretAccessKey() string {
 	return os.Getenv("AWS_E2E_TESTS_SECRET")
 }
@@ -70,7 +56,7 @@ func TestCreateAWSCluster(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create project %v", err)
 			}
-			teardown := cleanUpProject(project.ID)
+			teardown := CleanUpProject(project.ID, 10)
 			defer teardown(t)
 
 			cluster, err := apiRunner.CreateAWSCluster(project.ID, tc.dc, rand.String(10), getSecretAccessKey(), getAccessKeyID(), getKubernetesVersion(), tc.location, tc.replicas)
