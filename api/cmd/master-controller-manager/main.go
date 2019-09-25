@@ -11,7 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master"
+	mastermigrations "github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
@@ -64,14 +64,14 @@ func main() {
 	runOpts := controllerRunOptions{}
 	runOpts.seedvalidationHook.AddFlags(flag.CommandLine)
 	flag.StringVar(&runOpts.kubeconfig, "kubeconfig", "", "Path to a kubeconfig.")
-	flag.StringVar(&runOpts.dcFile, "datacenters", "", "The datacenters.yaml file path")
+	flag.StringVar(&runOpts.dcFile, "datacenters", "", "The datacenters.yaml file path.")
 	flag.StringVar(&runOpts.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&runOpts.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&ctrlCtx.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
-	flag.StringVar(&runOpts.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served")
-	flag.BoolVar(&runOpts.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters. Enabling this and defining the datcenters flag will enable the seed migration")
-	flag.StringVar(&ctrlCtx.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
-	flag.BoolVar(&runOpts.log.Debug, "log-debug", false, "Enables debug logging")
+	flag.StringVar(&runOpts.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served.")
+	flag.BoolVar(&runOpts.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters. Enabling this and defining the datcenters flag will enable the migration of the datacenters defined in datancenters.yaml to Seed custom resources.")
+	flag.StringVar(&ctrlCtx.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources.")
+	flag.BoolVar(&runOpts.log.Debug, "log-debug", false, "Enables debug logging.")
 	flag.StringVar(&runOpts.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
 
@@ -88,7 +88,7 @@ func main() {
 
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)
 	if err != nil {
-		log.Fatalw("Failed to create the label selector for the given worker", "workerName", runOpts.workerName, zap.Error(err))
+		log.Fatalw("failed to create the label selector for the given worker", "workerName", runOpts.workerName, zap.Error(err))
 	}
 
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
@@ -103,7 +103,7 @@ func main() {
 	ctrlCtx.ctx = ctx
 
 	// prepare migration options
-	migrationOptions := master.MigrationOptions{
+	migrationOptions := mastermigrations.MigrationOptions{
 		DatacentersFile:    runOpts.dcFile,
 		DynamicDatacenters: runOpts.dynamicDatacenters,
 	}
@@ -111,7 +111,7 @@ func main() {
 	// load kubeconfig and create API client
 	kubeconfig, err := clientcmd.LoadFromFile(runOpts.kubeconfig)
 	if err != nil {
-		log.Fatalw("Failed to read the kubeconfig", zap.Error(err))
+		log.Fatalw("failed to read the kubeconfig", zap.Error(err))
 	}
 
 	config := clientcmd.NewNonInteractiveClientConfig(
@@ -123,7 +123,7 @@ func main() {
 
 	cfg, err := config.ClientConfig()
 	if err != nil {
-		log.Fatalw("Failed to create client", zap.Error(err))
+		log.Fatalw("failed to create client", zap.Error(err))
 	}
 
 	ctrlCtx.labelSelectorFunc = func(listOpts *metav1.ListOptions) {
@@ -215,11 +215,11 @@ func main() {
 
 				// wait for the webhook to be ready
 				if migrationOptions.SeedMigrationEnabled() {
-					deadline := 30 * time.Second
+					timeout := 30 * time.Second
 					endpoint := types.NamespacedName{Namespace: ctrlCtx.namespace, Name: "seed-webhook"}
 
-					log.Infow("waiting for webhook to be ready...", "webhook", endpoint, "deadline", deadline)
-					if err := wait.Poll(500*time.Millisecond, deadline, func() (bool, error) {
+					log.Infow("waiting for webhook to be ready...", "webhook", endpoint, "timeout", timeout)
+					if err := wait.Poll(500*time.Millisecond, timeout, func() (bool, error) {
 						endpoints := &corev1.Endpoints{}
 						if err := client.Get(ctx, endpoint, endpoints); err != nil {
 							return false, err
@@ -232,7 +232,7 @@ func main() {
 				}
 
 				log.Info("executing migrations...")
-				if err := master.RunAll(ctx, log, client, ctrlCtx.namespace, migrationOptions); err != nil {
+				if err := mastermigrations.RunAll(ctx, log, client, ctrlCtx.namespace, migrationOptions); err != nil {
 					return fmt.Errorf("failed to run migrations: %v", err)
 				}
 				log.Info("migrations executed successfully")

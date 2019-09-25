@@ -34,7 +34,7 @@ func (opts *WebhookOpts) AddFlags(fs *flag.FlagSet) {
 }
 
 // Server returns a Server that validates AdmissionRequests for Seed CRs.
-// When migrationMode is enabled, only creating new seeds is allowed, not
+// When migrationModeEnabled is enabled, only creating new seeds is allowed, not
 // changing or deleting existing.
 func (opts *WebhookOpts) Server(
 	ctx context.Context,
@@ -42,7 +42,7 @@ func (opts *WebhookOpts) Server(
 	workerName string,
 	seedsGetter provider.SeedsGetter,
 	seedClientGetter provider.SeedClientGetter,
-	migrationMode bool) (*Server, error) {
+	migrationModeEnabled bool) (*Server, error) {
 
 	labelSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
@@ -58,12 +58,12 @@ func (opts *WebhookOpts) Server(
 		Server: &http.Server{
 			Addr: opts.ListenAddress,
 		},
-		log:           log.Named("seed-webhook-server"),
-		listenAddress: opts.ListenAddress,
-		certFile:      opts.CertFile,
-		keyFile:       opts.KeyFile,
-		validator:     newValidator(ctx, seedsGetter, seedClientGetter, listOpts),
-		migrationMode: migrationMode,
+		log:                  log.Named("seed-webhook-server"),
+		listenAddress:        opts.ListenAddress,
+		certFile:             opts.CertFile,
+		keyFile:              opts.KeyFile,
+		validator:            newValidator(ctx, seedsGetter, seedClientGetter, listOpts),
+		migrationModeEnabled: migrationModeEnabled,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", server.handleSeedValidationRequests)
@@ -74,12 +74,12 @@ func (opts *WebhookOpts) Server(
 
 type Server struct {
 	*http.Server
-	log           *zap.SugaredLogger
-	listenAddress string
-	certFile      string
-	keyFile       string
-	validator     *seedValidator
-	migrationMode bool
+	log                  *zap.SugaredLogger
+	listenAddress        string
+	certFile             string
+	keyFile              string
+	validator            *seedValidator
+	migrationModeEnabled bool
 }
 
 // Start implements sigs.k8s.io/controller-runtime/pkg/manager.Runnable
@@ -130,8 +130,8 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 
 	// during datacenters->seed migration we reject any changes, so the seeds can never get
 	// out of sync with the datacenters.yaml
-	if s.migrationMode && admissionReview.Request.Operation != admissionv1beta1.Create {
-		return admissionReview.Request, errors.New("migration is enabled, changes to Seed resources are forbidden")
+	if s.migrationModeEnabled && admissionReview.Request.Operation != admissionv1beta1.Create {
+		return admissionReview.Request, errors.New("migration is enabled, changes to Seed resources are forbidden; disable migration by removing either -datacenters or -dynamic-datacenters flags from the master-controller-manager")
 	}
 
 	seed := &kubermaticv1.Seed{}

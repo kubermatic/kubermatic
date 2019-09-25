@@ -35,6 +35,10 @@ func RunAll(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclien
 	return nil
 }
 
+// migrateDatacenters creates Seed CRs based on the given datacenters file.
+// Seeds are only ever created and never updated/reconciled to match the
+// datacenters.yaml, because the validation webhook prevents any modifications
+// while the migration is enabled.
 func migrateDatacenters(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, dcFile string) error {
 	seeds, err := provider.LoadSeeds(dcFile)
 	if err != nil {
