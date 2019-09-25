@@ -15,10 +15,10 @@ exitCode=0
 
 [ -n "$charts" ] && while read -r chartYAML; do
   name="$(dirname $(echo "$chartYAML" | cut -d/ -f2-))"
-  echo "Verifying $name chart..."
+  echo "Verifying $name chart ($PULL_BASE_SHA...$PULL_PULL_SHA) ($(dirname "$chartYAML"))..."
 
   # if this chart was touched in this PR
-  if ! git diff --exit-code --no-patch "$PULL_BASE_SHA...$PULL_PULL_SHA" "$(dirname "$chartYAML")"; then
+  if ! git diff --exit-code "$PULL_BASE_SHA...$PULL_PULL_SHA" "$(dirname "$chartYAML")"; then
     oldVersion=""
 
     # as we scan for charts by looking through the current files, we can always
