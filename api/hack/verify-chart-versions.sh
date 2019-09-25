@@ -8,12 +8,11 @@ set -euo pipefail
 
 cd $(dirname $0)/../..
 
-branch=alertmanager-0.19
-charts=$(find config/ -name Chart.yaml | cut -d/ -f2- | xargs -l1 dirname | sort)
+charts=$(find config/ -name Chart.yaml | cut -d/ -f2- | sort)
 exitCode=0
 
-while read -r chartdir; do
-  chartYAML="config/$chartdir/Chart.yaml"
+[ -n "$charts" ] && while read -r chartYAML; do
+  chartdir="$(dirname "$chartYAML")"
 
   # if this chart was touched in this PR
   if ! git diff --exit-code --no-patch "master...$PULL_PULL_SHA" "config/$chartdir/"; then
