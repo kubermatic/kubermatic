@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    ingress.kubernetes.io/ingress.class: "nginx"
+  name: oauth-proxy
+  namespace: kubernetes-dashboard
+spec:
+  rules:
+    - host: {{ .Values.dashboard.domain }}
+      http:
+        paths:
+          - backend:
+              serviceName: oauth-proxy
+              servicePort: 4180
+            path: {{ .Values.dashboard.oauth.ingress.path }}

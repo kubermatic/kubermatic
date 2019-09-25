@@ -1,0 +1,24 @@
+dashboard:
+  # Domain that Kubernetes Dashboard and oauth-proxy will be served on.
+  domain: ""
+  # Dashboard ingress configuration.
+  ingress:
+    # By default serve on root path. https://<domain>/
+    path: "/"
+  oauth:
+    ingress:
+      # By default serve on same domain as Dashboard. https://<domain>/oauth2/
+      path: "/oauth2"
+  oidc:
+    # URL to used OIDC, i.e. "https://dev.kubermatic.io/dex"
+    issuerUrl: ""
+    # Restrict access to Dashboard to a single domain or use '*' for all.
+    emailDomain: ""
+    # Client ID configured in your OIDC provider.
+    clientID: "dashboard"
+    clientSecret: ""
+    # Can be generated using: docker run -ti --rm python:3-alpine python -c 'import secrets,base64; print(base64.b64encode(base64.b64encode(secrets.token_bytes(16))));'
+    cookieSecret: ""
+  # If core Kubernetes cluster is configured to use same OIDC as the provided issuerUrl, set it to "$token", otherwise provide bearer token accepted by the API server in the seed cluster.
+  # In such case your OIDC will only act as authentication mechanism and every user will have same privileges in the Dashboard.
+  token: ""
