@@ -24,3 +24,43 @@ dashboard:
   # If core Kubernetes cluster is configured to use same OIDC as the provided issuerUrl, set it to "$token", otherwise provide bearer token accepted by the API server in the seed cluster.
   # In such case your OIDC will only act as authentication mechanism and every user will have same privileges in the Dashboard.
   token: ""
+  images:
+    dashboard:
+      repository: "docker.io/kubernetesui/dashboard"
+      tag: "v2.0.0-beta4"
+      pullPolicy: "IfNotPresent"
+    proxy:
+      repository: "quay.io/pusher/oauth2_proxy"
+      tag: "v4.0.0"
+      pullPolicy: "IfNotPresent"
+    scraper:
+      repository: "docker.io/kubernetesui/metrics-scraper"
+      tag: "v1.0.1"
+      pullPolicy: "IfNotPresent"
+
+  deployment:
+    # Config for the Kubernetes Dashboard deployment
+    dashboard:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      affinity: {}
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+
+    # Config for the OAuth Proxy deployment
+    proxy:
+      nodeSelector: {}
+      affinity: {}
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+
+    # Config for the Scraper deployment
+    scraper:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      affinity: {}
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule

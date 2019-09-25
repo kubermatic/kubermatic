@@ -4,24 +4,30 @@ metadata:
   labels:
     app.kubernetes.io/name: oauth-proxy
     app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: '{{ .Chart.Version }}'
+    app.kubernetes.io/managed-by: helm
   name: oauth-proxy
 spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: oauth-proxy
       app.kubernetes.io/instance: {{ .Release.Name }}
-  replicas: 1
+      app.kubernetes.io/version: '{{ .Chart.Version }}'
+      app.kubernetes.io/managed-by: helm
+  replicas: 2
   revisionHistoryLimit: 10
   template:
     metadata:
       labels:
         app.kubernetes.io/name: oauth-proxy
         app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/version: '{{ .Chart.Version }}'
+        app.kubernetes.io/managed-by: helm
     spec:
       containers:
         - name: oauth-proxy
-          image: quay.io/pusher/oauth2_proxy:v4.0.0
-          imagePullPolicy: Always
+          image: {{ .Values.dashboard.images.proxy.repository }}:{{ .Values.dashboard.images.proxy.tag }}
+          imagePullPolicy: {{ .Values.dashboard.images.proxy.pullPolicy }}
           ports:
             - containerPort: 4180
               protocol: TCP
@@ -51,3 +57,9 @@ spec:
                 secretKeyRef:
                   name: oauth-proxy-config
                   key: cookieSecret
+      nodeSelector:
+{{ toYaml .Values.dashboard.deployment.proxy.nodeSelector | indent 8 }}
+      affinity:
+{{ (tpl (toYaml .Values.dashboard.deployment.proxy.affinity) .) | fromYaml | toYaml | indent 8 }}
+      tolerations:
+{{ toYaml .Values.dashboard.deployment.proxy.tolerations | indent 8 }}

@@ -4,6 +4,8 @@ metadata:
   labels:
     app.kubernetes.io/name: dashboard-metrics-scraper
     app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: '{{ .Chart.Version }}'
+    app.kubernetes.io/managed-by: helm
   name: dashboard-metrics-scraper
 spec:
   replicas: 1
@@ -12,17 +14,22 @@ spec:
     matchLabels:
       app.kubernetes.io/name: dashboard-metrics-scraper
       app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/version: '{{ .Chart.Version }}'
+      app.kubernetes.io/managed-by: helm
   template:
     metadata:
       labels:
         app.kubernetes.io/name: dashboard-metrics-scraper
         app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/version: '{{ .Chart.Version }}'
+        app.kubernetes.io/managed-by: helm
       annotations:
         seccomp.security.alpha.kubernetes.io/pod: 'runtime/default'
     spec:
       containers:
         - name: dashboard-metrics-scraper
-          image: kubernetesui/metrics-scraper:v1.0.1
+          image: {{ .Values.dashboard.images.scraper.repository }}:{{ .Values.dashboard.images.scraper.tag }}
+          imagePullPolicy: {{ .Values.dashboard.images.scraper.pullPolicy }}
           ports:
             - containerPort: 8000
               protocol: TCP
@@ -43,11 +50,11 @@ spec:
             runAsGroup: 2001
       serviceAccountName: kubernetes-dashboard
       nodeSelector:
-        "beta.kubernetes.io/os": linux
-      # Comment the following tolerations if Dashboard must not be deployed on master
+{{ toYaml .Values.dashboard.deployment.scraper.nodeSelector | indent 8 }}
+      affinity:
+{{ (tpl (toYaml .Values.dashboard.deployment.scraper.affinity) .) | fromYaml | toYaml | indent 8 }}
       tolerations:
-        - key: node-role.kubernetes.io/master
-          effect: NoSchedule
+{{ toYaml .Values.dashboard.deployment.scraper.tolerations | indent 8 }}
       volumes:
-        - name: tmp-volume
-          emptyDir: {}
+      - name: tmp-volume
+        emptyDir: {}

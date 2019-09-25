@@ -4,6 +4,8 @@ metadata:
   labels:
     app.kubernetes.io/name: kubernetes-dashboard
     app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: '{{ .Chart.Version }}'
+    app.kubernetes.io/managed-by: helm
   annotations:
     kubernetes.io/ingress.class: "nginx"
     ingress.kubernetes.io/auth-url: "https://{{ .Values.dashboard.domain }}/{{ .Values.dashboard.oauth.ingress.path }}/auth"
