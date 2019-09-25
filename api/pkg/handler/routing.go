@@ -6,6 +6,7 @@ import (
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	prometheusapi "github.com/prometheus/client_golang/api"
+	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
@@ -18,6 +19,7 @@ import (
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
+	log                         *zap.SugaredLogger
 	seedsGetter                 provider.SeedsGetter
 	sshKeyProvider              provider.SSHKeyProvider
 	userProvider                provider.UserProvider
@@ -44,6 +46,7 @@ type Routing struct {
 
 // NewRouting creates a new Routing.
 func NewRouting(
+	logger *zap.SugaredLogger,
 	seedsGetter provider.SeedsGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
@@ -67,6 +70,7 @@ func NewRouting(
 	exposeStrategy corev1.ServiceType,
 ) Routing {
 	return Routing{
+		log:                         logger,
 		seedsGetter:                 seedsGetter,
 		clusterProviderGetter:       clusterProviderGetter,
 		addonProviderGetter:         addonProviderGetter,

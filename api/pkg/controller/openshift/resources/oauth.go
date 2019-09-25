@@ -28,12 +28,9 @@ import (
 )
 
 const (
-	// fakeOauthRedirect is a stopgap until we have properly set up oauth.
-	// Currently, adding this to /etc/hosts as localhost alias and port-forwarding
-	// the console to localhost, then visiting https://console.openshift.seed.tld:8443
-	// allows using it.
-	fakeOAuthRedirect          = "console.openshift.seed.tld"
-	OauthName                  = "openshift-oauth"
+	OauthName = "openshift-oauth"
+	// OAuthServiceName is the name of the OAuthService
+	OAuthServiceName           = OauthName
 	oauthSessionSecretName     = "openshift-oauth-session-secret"
 	oauthServingCertSecretName = "openshift-oauth-serving-cert"
 	oauthCLIConfigTemplateRaw  = `
@@ -181,7 +178,7 @@ func OauthConfigMapCreator(data openshiftData) reconciling.NamedConfigMapCreator
 // OauthServiceCreator returns the function to reconcile the external Oauth service
 func OauthServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
-		return OauthName, func(se *corev1.Service) (*corev1.Service, error) {
+		return OAuthServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Labels = resources.BaseAppLabel(name, nil)
 
 			if se.Annotations == nil {

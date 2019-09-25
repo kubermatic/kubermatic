@@ -9,12 +9,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-	v1 "github.com/kubermatic/kubermatic/api/pkg/handler/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/addon"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/node"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/openshift"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
@@ -380,6 +381,14 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes").
 		Handler(r.listPacketSizesNoCredentials())
+
+	//
+	// Defines a set of openshift-specific endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/login").
+		Handler(r.openshiftConsoleLogin())
+	mux.PathPrefix("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/proxy").
+		Handler(r.openshiftConsoleProxy())
 
 	//
 	// Defines set of HTTP endpoints for Users of the given project
@@ -2769,6 +2778,61 @@ func (r Routing) createClusterRole() http.Handler {
 		cluster.DecodeCreateClusterRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/login
+//
+//    Creates an oauth token for the user and redirects them to the Openshift Console
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       302: empty
+//       401: empty
+//       403: empty
+func (r Routing) openshiftConsoleLogin() http.Handler {
+	return openshift.ConsoleLoginEndpoint(
+		r.log,
+		middleware.TokenExtractor(r.tokenExtractors),
+		r.projectProvider,
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
+			// client that allows access to the cluster namespace only
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		),
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/proxy
+//
+//    Proxies the Openshift console. Requires a valid OIDC token. The token can be obtained
+//    using the /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/login
+//    endpoint.
+//
+//     Responses:
+//       default: empty
+func (r Routing) openshiftConsoleProxy() http.Handler {
+	return openshift.ConsoleProxyEndpoint(
+		r.log,
+		middleware.TokenExtractor(r.tokenExtractors),
+		r.projectProvider,
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
+			// client that allows access to the cluster namespace only
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		),
 	)
 }
 

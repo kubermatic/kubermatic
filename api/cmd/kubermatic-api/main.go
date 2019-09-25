@@ -283,6 +283,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	serviceAccountTokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey))
 
 	r := handler.NewRouting(
+		kubermaticlog.New(options.log.Debug, kubermaticlog.Format(options.log.Format)).Sugar(),
 		prov.seedsGetter,
 		prov.clusterProviderGetter,
 		prov.addons,
@@ -407,6 +408,7 @@ func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, 
 		}
 
 		return kubernetesprovider.NewClusterProvider(
+			cfg,
 			defaultImpersonationClientForSeed.CreateImpersonatedKubermaticClientSet,
 			userClusterConnectionProvider,
 			workerName,

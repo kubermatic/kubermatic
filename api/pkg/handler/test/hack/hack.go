@@ -11,6 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
@@ -45,6 +46,7 @@ func NewTestRouting(
 
 	updateManager := version.New(versions, updates)
 	r := handler.NewRouting(
+		kubermaticlog.Logger,
 		seedsGetter,
 		clusterProvidersGetter,
 		addonProviderGetter,

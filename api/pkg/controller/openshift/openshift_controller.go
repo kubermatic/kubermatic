@@ -267,6 +267,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		userClusterClient: func() (client.Client, error) {
 			return r.getUserClusterClient(ctx, cluster)
 		},
+		externalURL: r.externalURL,
+		seedName:    seed.Name,
 	}
 
 	if err := r.networkDefaults(ctx, cluster); err != nil {
