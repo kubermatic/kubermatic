@@ -1489,6 +1489,64 @@ func TestGetClusterMetrics(t *testing.T) {
 	}
 }
 
+func TestListNamespace(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name                   string
+		expectedResponse       string
+		httpStatus             int
+		clusterToGet           string
+		existingAPIUser        *apiv1.User
+		existingKubermaticObjs []runtime.Object
+		existingKubernrtesObjs []runtime.Object
+	}{
+		// scenario 1
+		{
+			name:             "scenario 1: get cluster namespaces",
+			expectedResponse: `[{"name":"default"},{"name":"kube-admin"}]`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				&corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{Name: "default"},
+				},
+				&corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{Name: "kube-admin"},
+				},
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			kubernetesObj := []runtime.Object{}
+			kubeObj := []runtime.Object{}
+			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/namespaces", test.ProjectName, tc.clusterToGet), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
+	}
+}
+
 func genClusterWithOpenstack(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluster {
 	cluster.Spec.Cloud = kubermaticv1.CloudSpec{
 		DatacenterName: "OpenstackDatacenter",
