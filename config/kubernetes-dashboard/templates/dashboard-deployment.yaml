@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: kubernetes-dashboard
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: '{{ .Chart.Version }}'
+    app.kubernetes.io/managed-by: helm
+  name: kubernetes-dashboard
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kubernetes-dashboard
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/version: '{{ .Chart.Version }}'
+      app.kubernetes.io/managed-by: helm
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kubernetes-dashboard
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/version: '{{ .Chart.Version }}'
+        app.kubernetes.io/managed-by: helm
+    spec:
+      containers:
+        - name: kubernetes-dashboard
+          image: {{ .Values.dashboard.images.dashboard.repository }}:{{ .Values.dashboard.images.dashboard.tag }}
+          imagePullPolicy: {{ .Values.dashboard.images.dashboard.pullPolicy }}
+          ports:
+            - containerPort: 9090
+              protocol: TCP
+          args:
+            - --namespace={{ .Release.Namespace }}
+            - --enable-insecure-login
+          volumeMounts:
+            - name: kubernetes-dashboard-certs
+              mountPath: /certs
+              # Create on-disk volume to store exec logs
+            - mountPath: /tmp
+              name: tmp-volume
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9090
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 1001
+            runAsGroup: 2001
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+      serviceAccountName: '{{ template "dashboard-name" . }}'
+      nodeSelector:
+{{ toYaml .Values.dashboard.deployment.dashboard.nodeSelector | indent 8 }}
+      affinity:
+{{ (tpl (toYaml .Values.dashboard.deployment.dashboard.affinity) .) | fromYaml | toYaml | indent 8 }}
+      tolerations:
+{{ toYaml .Values.dashboard.deployment.dashboard.tolerations | indent 8 }}
