@@ -28,14 +28,6 @@ func TestReconciliation(t *testing.T) {
 					Name:   "one",
 					Labels: map[string]string{"node-role.kubernetes.io/master": ""},
 				}},
-				&corev1.Node{ObjectMeta: metav1.ObjectMeta{
-					Name:   "two",
-					Labels: map[string]string{"node-role.kubernetes.io/master": ""},
-				}},
-				&corev1.Node{ObjectMeta: metav1.ObjectMeta{
-					Name:   "three",
-					Labels: map[string]string{"node-role.kubernetes.io/master": ""},
-				}},
 			},
 			verify: func(r *reconcile.Result, err error, client ctrlruntimeclient.Client) error {
 				if r != nil {
@@ -48,7 +40,7 @@ func TestReconciliation(t *testing.T) {
 				if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, nodes); err != nil {
 					return fmt.Errorf("error listing nodes: %v", err)
 				}
-				if n := len(nodes.Items); n != 3 {
+				if n := len(nodes.Items); n != 1 {
 					return fmt.Errorf("expected three nodes, got %d", n)
 				}
 				for _, node := range nodes.Items {
@@ -60,7 +52,7 @@ func TestReconciliation(t *testing.T) {
 			},
 		},
 		{
-			name: "Labeling three nodes",
+			name: "Labeling one node",
 			nodes: []runtime.Object{
 				&corev1.Node{ObjectMeta: metav1.ObjectMeta{
 					Name: "one",
@@ -86,10 +78,14 @@ func TestReconciliation(t *testing.T) {
 				if n := len(nodes.Items); n != 3 {
 					return fmt.Errorf("expected three nodes, got %d", n)
 				}
+				var nodesWithLabels int
 				for _, node := range nodes.Items {
-					if _, exists := node.Labels["node-role.kubernetes.io/master"]; !exists {
-						return fmt.Errorf("node %q didnt have the master label", node.Name)
+					if _, exists := node.Labels["node-role.kubernetes.io/master"]; exists {
+						nodesWithLabels++
 					}
+				}
+				if nodesWithLabels != 1 {
+					return fmt.Errorf("expected one labeled node, got %d", nodesWithLabels)
 				}
 				return nil
 			},
@@ -97,14 +93,6 @@ func TestReconciliation(t *testing.T) {
 		{
 			name: "Labeling one node",
 			nodes: []runtime.Object{
-				&corev1.Node{ObjectMeta: metav1.ObjectMeta{
-					Name:   "one",
-					Labels: map[string]string{"node-role.kubernetes.io/master": ""},
-				}},
-				&corev1.Node{ObjectMeta: metav1.ObjectMeta{
-					Name:   "two",
-					Labels: map[string]string{"node-role.kubernetes.io/master": ""},
-				}},
 				&corev1.Node{ObjectMeta: metav1.ObjectMeta{
 					Name: "three",
 				}},
@@ -120,8 +108,8 @@ func TestReconciliation(t *testing.T) {
 				if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, nodes); err != nil {
 					return fmt.Errorf("error listing nodes: %v", err)
 				}
-				if n := len(nodes.Items); n != 3 {
-					return fmt.Errorf("expected three nodes, got %d", n)
+				if n := len(nodes.Items); n != 1 {
+					return fmt.Errorf("expected one node, got %d", n)
 				}
 				for _, node := range nodes.Items {
 					if _, exists := node.Labels["node-role.kubernetes.io/master"]; !exists {
@@ -133,16 +121,6 @@ func TestReconciliation(t *testing.T) {
 		},
 		{
 			name: "Not enough nodes exist, retrying later",
-			nodes: []runtime.Object{
-				&corev1.Node{ObjectMeta: metav1.ObjectMeta{
-					Name:   "one",
-					Labels: map[string]string{"node-role.kubernetes.io/master": ""},
-				}},
-				&corev1.Node{ObjectMeta: metav1.ObjectMeta{
-					Name:   "two",
-					Labels: map[string]string{"node-role.kubernetes.io/master": ""},
-				}},
-			},
 			verify: func(r *reconcile.Result, err error, client ctrlruntimeclient.Client) error {
 				if err != nil {
 					return fmt.Errorf("expected err to be nil, was %v", err)

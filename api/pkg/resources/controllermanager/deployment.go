@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	utilpointer "k8s.io/utils/pointer"
 )
 
 var (
@@ -140,7 +141,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources
 			}
 
-			envVars, err := getEnvVars(data)
+			envVars, err := GetEnvVars(data)
 			if err != nil {
 				return nil, err
 			}
@@ -221,22 +222,18 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 	if cluster.Spec.Cloud.AWS != nil {
 		flags = append(flags, "--cloud-provider", "aws")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes=false")
 	}
 	if cluster.Spec.Cloud.Openstack != nil {
 		flags = append(flags, "--cloud-provider", "openstack")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes=false")
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
 		flags = append(flags, "--cloud-provider", "vsphere")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes=false")
 	}
 	if cluster.Spec.Cloud.Azure != nil {
 		flags = append(flags, "--cloud-provider", "azure")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes=false")
 		if cluster.Spec.Version.Semver().Minor() >= 15 {
 			// Required so multiple clusters using the same resource group can
 			// allocate public IPs. Ref: https://github.com/kubernetes/kubernetes/pull/77630
@@ -246,7 +243,10 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 	if cluster.Spec.Cloud.GCP != nil {
 		flags = append(flags, "--cloud-provider", "gce")
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes=true")
+	}
+
+	if val := CloudRoutesFlagVal(cluster.Spec.Cloud); val != nil {
+		flags = append(flags, fmt.Sprintf("--configure-cloud-routes=%t", *val))
 	}
 
 	if cluster.Spec.Version.Semver().Minor() >= 12 {
@@ -327,7 +327,7 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
+func GetEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
 	credentials, err := resources.GetCredentials(data)
 	if err != nil {
 		return nil, err
@@ -375,4 +375,23 @@ func getHealthGetAction(data *resources.TemplateData) *corev1.HTTPGetAction {
 		action.Port = intstr.FromInt(10252)
 	}
 	return action
+}
+
+func CloudRoutesFlagVal(cloudSpec kubermaticv1.CloudSpec) *bool {
+	if cloudSpec.AWS != nil {
+		return utilpointer.BoolPtr(false)
+	}
+	if cloudSpec.Openstack != nil {
+		return utilpointer.BoolPtr(false)
+	}
+	if cloudSpec.VSphere != nil {
+		return utilpointer.BoolPtr(false)
+	}
+	if cloudSpec.Azure != nil {
+		return utilpointer.BoolPtr(false)
+	}
+	if cloudSpec.GCP != nil {
+		return utilpointer.BoolPtr(true)
+	}
+	return nil
 }
