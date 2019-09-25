@@ -1005,22 +1005,22 @@ type GCPNodeSpec struct {
 type KubevirtNodeSpec struct {
 	// CPUs states how many cpus the kubevirt node will have.
 	// required: true
-	CPUs string
+	CPUs string `json:"cpus"`
 	// Memory states the memory that kubevirt node will have.
 	// required: true
-	Memory string
+	Memory string `json:"memory"`
 	// Namespace states in which namespace kubevirt node will be provisioned.
 	// required: true
-	Namespace string
+	Namespace string `json:"namespace"`
 	// SourceURL states the url from which the imported image will be downloaded.
 	// required: true
-	SourceURL string
+	SourceURL string `json:"sourceURL"`
 	// StorageClassName states the storage class name for the provisioned PVCs.
 	// required: true
-	StorageClassName string
+	StorageClassName string `json:"storageClassName"`
 	// PVCSize states the size of the provisioned pvc per node.
 	// required: true
-	PVCSize string
+	PVCSize string `json:"pvcSize"`
 }
 
 // NodeResources cpu and memory of a node
