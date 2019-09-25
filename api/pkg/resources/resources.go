@@ -380,6 +380,11 @@ const (
 	AWSAccessKeyID     = "accessKeyId"
 	AWSSecretAccessKey = "secretAccessKey"
 
+	AzureTenantID       = "tenantID"
+	AzureSubscriptionID = "subscriptionID"
+	AzureClientID       = "clientID"
+	AzureClientSecret   = "clientSecret"
+
 	DigitaloceanToken = "token"
 
 	HetznerToken = "token"

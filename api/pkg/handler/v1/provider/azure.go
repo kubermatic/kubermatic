@@ -14,6 +14,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/azure"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -140,9 +142,18 @@ func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 			return nil, errors.NewNotFound("cloud spec (dc) for ", req.ClusterID)
 		}
 
-		azureSpec := cluster.Spec.Cloud.Azure
 		azureLocation := dc.Spec.Azure.Location
-		return azureSize(ctx, azureSpec.SubscriptionID, azureSpec.ClientID, azureSpec.ClientSecret, azureSpec.TenantID, azureLocation)
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		creds, err := azure.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+		return azureSize(ctx, creds.SubscriptionID, creds.ClientID, creds.ClientSecret, creds.TenantID, azureLocation)
 	}
 }
 

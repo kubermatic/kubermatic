@@ -7,6 +7,7 @@ import (
 
 type Credentials struct {
 	AWS          AWSCredentials
+	Azure        AzureCredentials
 	Digitalocean DigitaloceanCredentials
 	Hetzner      HetznerCredentials
 	Packet       PacketCredentials
@@ -16,6 +17,13 @@ type Credentials struct {
 type AWSCredentials struct {
 	AccessKeyID     string
 	SecretAccessKey string
+}
+
+type AzureCredentials struct {
+	TenantID       string
+	SubscriptionID string
+	ClientID       string
+	ClientSecret   string
 }
 
 type DigitaloceanCredentials struct {
@@ -46,6 +54,11 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 
 	if data.Cluster().Spec.Cloud.AWS != nil {
 		if credentials.AWS, err = GetAWSCredentials(data); err != nil {
+			return Credentials{}, err
+		}
+	}
+	if data.Cluster().Spec.Cloud.Azure != nil {
+		if credentials.Azure, err = GetAzureCredentials(data); err != nil {
 			return Credentials{}, err
 		}
 	}
@@ -91,6 +104,38 @@ func GetAWSCredentials(data CredentialsData) (AWSCredentials, error) {
 	}
 
 	return awsCredentials, nil
+}
+
+func GetAzureCredentials(data CredentialsData) (AzureCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.Azure
+	azureCredentials := AzureCredentials{}
+	var err error
+
+	if spec.TenantID != "" {
+		azureCredentials.TenantID = spec.TenantID
+	} else if azureCredentials.TenantID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureTenantID); err != nil {
+		return AzureCredentials{}, err
+	}
+
+	if spec.SubscriptionID != "" {
+		azureCredentials.SubscriptionID = spec.SubscriptionID
+	} else if azureCredentials.SubscriptionID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureSubscriptionID); err != nil {
+		return AzureCredentials{}, err
+	}
+
+	if spec.ClientID != "" {
+		azureCredentials.ClientID = spec.ClientID
+	} else if azureCredentials.ClientID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureClientID); err != nil {
+		return AzureCredentials{}, err
+	}
+
+	if spec.ClientSecret != "" {
+		azureCredentials.ClientSecret = spec.ClientSecret
+	} else if azureCredentials.ClientSecret, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AzureClientSecret); err != nil {
+		return AzureCredentials{}, err
+	}
+
+	return azureCredentials, nil
 }
 
 func GetDigitaloceanCredentials(data CredentialsData) (DigitaloceanCredentials, error) {
