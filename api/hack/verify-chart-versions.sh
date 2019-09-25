@@ -15,7 +15,7 @@ exitCode=0
 
 [ -n "$charts" ] && while read -r chartYAML; do
   name="$(dirname $(echo "$chartYAML" | cut -d/ -f2-))"
-  echo "Verifying $name chart ($PULL_BASE_SHA...$PULL_PULL_SHA) ($(dirname "$chartYAML"))..."
+  echo "Verifying $name chart..."
 
   # if this chart was touched in this PR
   if ! git diff --exit-code "$PULL_BASE_SHA...$PULL_PULL_SHA" "$(dirname "$chartYAML")"; then
@@ -25,23 +25,15 @@ exitCode=0
     # determine the new version (unless the Chart.yaml is missing entirely)
     newVersion="$(yq read "$chartYAML" version)"
 
-    echo "new version = $newVersion"
-
     # if the chart already existed, retrieve its old version
     if git show "$PULL_BASE_SHA:$chartYAML" > /dev/null 2>&1; then
       oldVersion=$(git show "$PULL_BASE_SHA:$chartYAML" | yq read - version)
-    else
-      echo "file does not exist in git show $PULL_BASE_SHA:$chartYAML"
     fi
 
-    echo "old version = $oldVersion"
-
-    if [ "$oldVersion" != "$newVersion" ]; then
+    if [ "$oldVersion" = "$newVersion" ]; then
       echo "Chart $name was modified but its version ($oldVersion) was not changed. Please adjust $chartYAML."
       exitCode=1
     fi
-  else
-    echo "no diff return code"
   fi
 done <<< "$charts"
 
