@@ -12,12 +12,18 @@ import (
 	"text/template"
 	"time"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
 	"github.com/Masterminds/sprig"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 )
 
-// funcMap creates a function map needed for template execution.
-func funcMap() template.FuncMap {
+// createFuncMap creates a function map needed for template execution.
+func createFuncMap() template.FuncMap {
 	funcs := sprig.TxtFuncMap()
 	funcs["Registry"] = func(registry string) string {
 		return registry
@@ -25,93 +31,134 @@ func funcMap() template.FuncMap {
 	return funcs
 }
 
-// readYAML reads a YAML file and unmarshals it.
-func readYAML(filepath string) ([]kv, error) {
+// templateResources normally is a larger struct. But for the templates
+// here the contained dummy cluster is okay.
+type templateResources struct {
+	Variables    map[string]interface{}
+	Cluster      *kubermaticv1.Cluster
+	DNSClusterIP string
+}
+
+// createResources creates dummy resources for the template.
+func createResources() templateResources {
+	res := templateResources{
+		Variables: make(map[string]interface{}),
+		Cluster: &kubermaticv1.Cluster{
+			Spec: kubermaticv1.ClusterSpec{
+				ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+					Pods: kubermaticv1.NetworkRanges{
+						CIDRBlocks: []string{
+							"172.25.0.0/16",
+						},
+					},
+				},
+			},
+		},
+		DNSClusterIP: "1.2.3.4",
+	}
+	res.Variables["NodeAccessNetwork"] = "172.26.0.0/16"
+	return res
+}
+
+// specToDoc creates documentation out of a pod spec.
+func specToDoc(filepath string, ps corev1.PodSpec) *buffer {
+	qf := func(q *resource.Quantity) string {
+		s := q.String()
+		if s == "0" {
+			return "none"
+		}
+		return "\"" + s + "\""
+	}
+	doc := &buffer{}
+	dir, filename := path.Split(filepath)
+	dirs := strings.Split(dir, "/")
+	addon := dirs[len(dirs)-2]
+	hasHeader := false
+	// Iterate over the containers.
+	for _, container := range ps.Containers {
+		if container.Resources.Size() == 0 {
+			continue
+		}
+		if !hasHeader {
+			doc.push("\n\n#### Addon: ")
+			doc.push(addon)
+			doc.push(" / File: ")
+			doc.push(filename)
+
+			hasHeader = true
+		}
+		limitsCPU := container.Resources.Limits.Cpu()
+		limitsMem := container.Resources.Limits.Memory()
+		requestsCPU := container.Resources.Requests.Cpu()
+		requestsMem := container.Resources.Requests.Memory()
+
+		doc.push("\n\n##### Container: ", container.Name, "\n")
+		doc.push("\n```yaml\n")
+		doc.push("limits:\n")
+		doc.push("    cpu: ", qf(limitsCPU), "\n")
+		doc.push("    memory: ", qf(limitsMem), "\n")
+		doc.push("requests:\n")
+		doc.push("    cpu: ", qf(requestsCPU), "\n")
+		doc.push("    memory: ", qf(requestsMem), "\n")
+		doc.push("```")
+	}
+	return doc
+}
+
+// readYAML reads a YAML file, unmarshals it, and creates the
+// documentation buffer.
+func readYAML(filepath string) (*buffer, error) {
 	log.Printf("Parsing YAML file %q ...", filepath)
-	f, err := os.Open(filepath)
+	bs, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
-	bs, err := ioutil.ReadAll(f)
-	if err != nil {
-		return nil, err
-		// Apply template.
-	}
-	t, err := template.
-		New("addon").
-		Funcs(funcMap()).
-		Parse(string(bs))
+	// Prepare template.
+	t, err := template.New("addon").Funcs(createFuncMap()).Parse(string(bs))
 	if err != nil {
 		return nil, err
 	}
 	var buf bytes.Buffer
-	err = t.Execute(&buf, fillKV())
+	err = t.Execute(&buf, createResources())
 	if err != nil {
 		return nil, err
 	}
 	// Unmarshal the contained YAMLs.
 	blocks := strings.Split(buf.String(), "\n---\n")
-	yamlKVs := []kv{}
+	doc := &buffer{}
 	for _, block := range blocks {
-		var yamlKV kv
-		err = yaml.Unmarshal([]byte(block), &yamlKV)
+		bs := []byte(block)
+		var u unstructured.Unstructured
+		err = yaml.Unmarshal(bs, &u)
 		if err != nil {
 			return nil, err
 		}
-		yamlKV.postprocess()
-		kind := yamlKV.stringAt("kind")
-		if kind == "Deployment" || kind == "DaemonSet" {
-			// Only interested in deployments.
-			yamlKVs = append(yamlKVs, yamlKV)
+		kind := u.GetKind()
+		switch kind {
+		case "Deployment":
+			var d appsv1.Deployment
+			err = yaml.Unmarshal(bs, &d)
+			if err != nil {
+				return nil, err
+			}
+			doc.pushAll(specToDoc(filepath, d.Spec.Template.Spec))
+		case "DaemonSet":
+			var d appsv1.DaemonSet
+			err = yaml.Unmarshal(bs, &d)
+			if err != nil {
+				return nil, err
+			}
+			doc.pushAll(specToDoc(filepath, d.Spec.Template.Spec))
+		case "StatefulSet":
+			var s appsv1.StatefulSet
+			err = yaml.Unmarshal(bs, &s)
+			if err != nil {
+				return nil, err
+			}
+			doc.pushAll(specToDoc(filepath, s.Spec.Template.Spec))
 		}
 	}
-	return yamlKVs, nil
-}
-
-// yamlToDoc creates documentation out of the collected YAML.
-func yamlToDoc(filepath string, yamlKV kv) *buffer {
-	if len(yamlKV) == 0 {
-		return nil
-	}
-	if !yamlKV.exists("spec", "template", "spec", "containers") {
-		return nil
-	}
-	containers := yamlKV.kvAt("spec", "template", "spec", "containers")
-	if !containers.any("resources") {
-		return nil
-	}
-
-	doc := &buffer{}
-	dir, filename := path.Split(filepath)
-	dirs := strings.Split(dir, "/")
-	addon := dirs[len(dirs)-2]
-
-	doc.push("\n\n#### Addon: ")
-	doc.push(addon)
-	doc.push(" / File: ")
-	doc.push(filename)
-
-	containers.do(func(k string, v interface{}) {
-		container := v.(kv)
-		container.postprocess()
-
-		if !container.exists("resources") {
-			return
-		}
-
-		doc.push("\n\n##### Container: ", container.stringAt("name"), "\n")
-		doc.push("\n```yaml\n")
-		doc.push("limits:\n")
-		doc.push("    cpu: ", container.stringAt("resources", "limits", "cpu"), "\n")
-		doc.push("    memory: ", container.stringAt("resources", "limits", "memory"), "\n")
-		doc.push("requests:\n")
-		doc.push("    cpu: ", container.stringAt("resources", "requests", "cpu"), "\n")
-		doc.push("    memory: ", container.stringAt("resources", "requests", "memory"), "\n")
-		doc.push("```")
-	})
-
-	return doc
+	return doc, nil
 }
 
 // traverseAddons traverses the directories in kubermatic/addons
@@ -137,13 +184,11 @@ func traverseAddons(dir string) (*buffer, error) {
 			case info.IsDir() || !strings.HasSuffix(info.Name(), ".yaml"):
 				return nil
 			default:
-				yamlKVs, err := readYAML(filepath)
+				filedoc, err := readYAML(filepath)
 				if err != nil {
 					return err
 				}
-				for _, yamlKV := range yamlKVs {
-					doc.pushAll(yamlToDoc(filepath, yamlKV))
-				}
+				doc.pushAll(filedoc)
 			}
 			return nil
 		}); err != nil {
