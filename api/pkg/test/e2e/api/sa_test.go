@@ -3,24 +3,11 @@
 package e2e
 
 import (
-	"k8s.io/apimachinery/pkg/util/rand"
 	"strings"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/util/rand"
 )
-
-func cleanUpProject(id string) func(t *testing.T) {
-	return func(t *testing.T) {
-		masterToken, err := GetMasterToken()
-		if err != nil {
-			t.Fatalf("can not get master token due error: %v", err)
-		}
-		apiRunner := CreateAPIRunner(masterToken, t)
-
-		if err := apiRunner.DeleteProject(id); err != nil {
-			t.Fatalf("can not delete project due error: %v", err)
-		}
-	}
-}
 
 func TestCreateSA(t *testing.T) {
 	tests := []struct {
@@ -48,7 +35,7 @@ func TestCreateSA(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create project due error: %v", err)
 			}
-			teardown := cleanUpProject(project.ID)
+			teardown := CleanUpProject(project.ID, 10)
 			defer teardown(t)
 
 			sa, err := apiRunner.CreateServiceAccount(rand.String(10), tc.group, project.ID)
@@ -88,7 +75,7 @@ func TestTokenAccessForProject(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create project due error: %v", err)
 			}
-			teardown := cleanUpProject(project.ID)
+			teardown := CleanUpProject(project.ID, 10)
 			defer teardown(t)
 
 			sa, err := apiRunner.CreateServiceAccount(rand.String(10), tc.group, project.ID)
@@ -136,7 +123,7 @@ func TestTokenAccessForProject(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create project due error: %v", err)
 			}
-			teardownNotOwnedProject := cleanUpProject(notOwnedProject.ID)
+			teardownNotOwnedProject := CleanUpProject(notOwnedProject.ID, 10)
 			defer teardownNotOwnedProject(t)
 
 			_, err = apiRunnerWithSAToken.GetProject(notOwnedProject.ID, 1)

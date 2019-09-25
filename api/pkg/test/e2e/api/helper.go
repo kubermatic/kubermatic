@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -15,6 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/serviceaccounts"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/tokens"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/users"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 
 	"github.com/Masterminds/semver"
@@ -37,6 +39,31 @@ type APIRunner struct {
 	client      *apiclient.Kubermatic
 	bearerToken runtime.ClientAuthInfoWriter
 	test        *testing.T
+}
+
+func CleanUpProject(id string, attempts int) func(t *testing.T) {
+	return func(t *testing.T) {
+		masterToken, err := GetMasterToken()
+		if err != nil {
+			t.Fatalf("can not get master token due error: %v", err)
+		}
+		apiRunner := CreateAPIRunner(masterToken, t)
+
+		if err := apiRunner.DeleteProject(id); err != nil {
+			t.Fatalf("can not delete project due error: %v", err)
+		}
+		for attempt := 1; attempt <= attempts; attempt++ {
+			_, err := apiRunner.GetProject(id, 5)
+			if err != nil {
+				break
+			}
+			time.Sleep(3 * time.Second)
+		}
+		_, err = apiRunner.GetProject(id, 5)
+		if err == nil {
+			t.Fatalf("can not delete the project")
+		}
+	}
 }
 
 func GetMasterToken() (string, error) {
@@ -442,4 +469,79 @@ func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
 	apiCluster.CreationTimestamp = apiv1.NewTime(creationTime)
 
 	return apiCluster, nil
+}
+
+func (r *APIRunner) GetProjectUsers(projectID string) ([]apiv1.User, error) {
+	params := &users.GetUsersForProjectParams{ProjectID: projectID}
+	params.WithTimeout(timeout)
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		_, err := r.client.Users.GetUsersForProject(params, r.bearerToken)
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+
+	responseUsers, err := r.client.Users.GetUsersForProject(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	users := make([]apiv1.User, 0)
+	for _, user := range responseUsers.Payload {
+		usr := apiv1.User{
+			Email: user.Email,
+			ObjectMeta: apiv1.ObjectMeta{
+				ID:   user.ID,
+				Name: user.Name,
+			},
+		}
+		users = append(users, usr)
+	}
+
+	return users, nil
+}
+
+// GetErrorResponse converts the client error response to string
+func GetErrorResponse(err error) string {
+	rawData, newErr := json.Marshal(err)
+	if newErr != nil {
+		return err.Error()
+	}
+	return string(rawData)
+}
+
+func (r *APIRunner) DeleteUserFromProject(projectID, userID string) error {
+	params := &users.DeleteUserFromProjectParams{ProjectID: projectID, UserID: userID}
+	params.WithTimeout(timeout)
+	if _, err := r.client.Users.DeleteUserFromProject(params, r.bearerToken); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *APIRunner) AddProjectUser(projectID, email, name, group string) (*apiv1.User, error) {
+	params := &users.AddUserToProjectParams{ProjectID: projectID, Body: &models.User{
+		Email: email,
+		Name:  name,
+		Projects: []*models.ProjectGroup{
+			{ID: projectID,
+				GroupPrefix: group,
+			},
+		},
+	}}
+	params.WithTimeout(timeout)
+	responseUser, err := r.client.Users.AddUserToProject(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	usr := &apiv1.User{
+		Email: responseUser.Payload.Email,
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:   responseUser.Payload.ID,
+			Name: responseUser.Payload.Name,
+		},
+	}
+	return usr, nil
 }
