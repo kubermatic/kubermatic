@@ -27,7 +27,7 @@ exitCode=0
       oldVersion=$(git show "$PULL_BASE_SHA:$chartYAML" | yq read - version)
     fi
 
-    if [ "$oldVersion" = "$newVersion" ]; then
+    if [ "$oldVersion" != "$newVersion" ]; then
       echo "Chart $chartdir was modified but its version ($oldVersion) was not changed. Please adjust $chartYAML."
       exitCode=1
     fi
