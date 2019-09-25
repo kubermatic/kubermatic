@@ -7078,37 +7078,43 @@
       "description": "KubevirtNodeSpec kubevirt specific node settings",
       "type": "object",
       "required": [
-        "CPUs",
-        "Memory",
-        "Namespace",
-        "SourceURL",
-        "StorageClassName",
-        "PVCSize"
+        "cpus",
+        "memory",
+        "namespace",
+        "sourceURL",
+        "storageClassName",
+        "pvcSize"
       ],
       "properties": {
-        "CPUs": {
+        "cpus": {
           "description": "CPUs states how many cpus the kubevirt node will have.",
-          "type": "string"
+          "type": "string",
+          "x-go-name": "CPUs"
         },
-        "Memory": {
+        "memory": {
           "description": "Memory states the memory that kubevirt node will have.",
-          "type": "string"
+          "type": "string",
+          "x-go-name": "Memory"
         },
-        "Namespace": {
+        "namespace": {
           "description": "Namespace states in which namespace kubevirt node will be provisioned.",
-          "type": "string"
+          "type": "string",
+          "x-go-name": "Namespace"
         },
-        "PVCSize": {
+        "pvcSize": {
           "description": "PVCSize states the size of the provisioned pvc per node.",
-          "type": "string"
+          "type": "string",
+          "x-go-name": "PVCSize"
         },
-        "SourceURL": {
+        "sourceURL": {
           "description": "SourceURL states the url from which the imported image will be downloaded.",
-          "type": "string"
+          "type": "string",
+          "x-go-name": "SourceURL"
         },
-        "StorageClassName": {
+        "storageClassName": {
           "description": "StorageClassName states the storage class name for the provisioned PVCs.",
-          "type": "string"
+          "type": "string",
+          "x-go-name": "StorageClassName"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
