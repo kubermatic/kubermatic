@@ -10,15 +10,15 @@ cd $(dirname $0)/../..
 
 echo "Verifying Helm chart versions..."
 
-charts=$(find config/ -name Chart.yaml | cut -d/ -f2- | sort)
+charts=$(find config/ -name Chart.yaml | sort)
 exitCode=0
 
 [ -n "$charts" ] && while read -r chartYAML; do
-  echo "Checking $chartYAML..."
-  chartdir="$(dirname "$chartYAML")"
+  name="$(dirname $(echo "$chartYAML" | cut -d/ -f2-))"
+  echo "Verifying $name chart..."
 
   # if this chart was touched in this PR
-  if ! git diff --exit-code --no-patch "$PULL_BASE_SHA...$PULL_PULL_SHA" "config/$chartdir/"; then
+  if ! git diff --exit-code --no-patch "$PULL_BASE_SHA...$PULL_PULL_SHA" "$(dirname "$chartYAML")"; then
     oldVersion=""
 
     # as we scan for charts by looking through the current files, we can always
@@ -31,7 +31,7 @@ exitCode=0
     fi
 
     if [ "$oldVersion" != "$newVersion" ]; then
-      echo "Chart $chartdir was modified but its version ($oldVersion) was not changed. Please adjust $chartYAML."
+      echo "Chart $name was modified but its version ($oldVersion) was not changed. Please adjust $chartYAML."
       exitCode=1
     fi
   fi
