@@ -1,6 +1,9 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
+  labels:
+    app.kubernetes.io/name: kubernetes-dashboard
+    app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:
     kubernetes.io/ingress.class: "nginx"
     ingress.kubernetes.io/auth-url: "https://{{ .Values.dashboard.domain }}/{{ .Values.dashboard.oauth.ingress.path }}/auth"

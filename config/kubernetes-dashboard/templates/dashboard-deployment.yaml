@@ -2,18 +2,21 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    k8s-app: kubernetes-dashboard
+    app.kubernetes.io/name: kubernetes-dashboard
+    app.kubernetes.io/instance: {{ .Release.Name }}
   name: kubernetes-dashboard
 spec:
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      k8s-app: kubernetes-dashboard
+      app.kubernetes.io/name: kubernetes-dashboard
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        k8s-app: kubernetes-dashboard
+        app.kubernetes.io/name: kubernetes-dashboard
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
         - name: kubernetes-dashboard

@@ -2,18 +2,21 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    k8s-app: oauth-proxy
+    app.kubernetes.io/name: oauth-proxy
+    app.kubernetes.io/instance: {{ .Release.Name }}
   name: oauth-proxy
 spec:
   selector:
     matchLabels:
-      k8s-app: oauth-proxy
+      app.kubernetes.io/name: oauth-proxy
+      app.kubernetes.io/instance: {{ .Release.Name }}
   replicas: 1
   revisionHistoryLimit: 10
   template:
     metadata:
       labels:
-        k8s-app: oauth-proxy
+        app.kubernetes.io/name: oauth-proxy
+        app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       containers:
         - name: oauth-proxy

@@ -3,6 +3,9 @@ kind: Ingress
 metadata:
   annotations:
     ingress.kubernetes.io/ingress.class: "nginx"
+  labels:
+    app.kubernetes.io/name: oauth-proxy
+    app.kubernetes.io/instance: {{ .Release.Name }}
   name: oauth-proxy
   namespace: kubernetes-dashboard
 spec:

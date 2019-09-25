@@ -2,18 +2,21 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    k8s-app: dashboard-metrics-scraper
+    app.kubernetes.io/name: dashboard-metrics-scraper
+    app.kubernetes.io/instance: {{ .Release.Name }}
   name: dashboard-metrics-scraper
 spec:
   replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      k8s-app: dashboard-metrics-scraper
+      app.kubernetes.io/name: dashboard-metrics-scraper
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        k8s-app: dashboard-metrics-scraper
+        app.kubernetes.io/name: dashboard-metrics-scraper
+        app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
         seccomp.security.alpha.kubernetes.io/pod: 'runtime/default'
     spec:
