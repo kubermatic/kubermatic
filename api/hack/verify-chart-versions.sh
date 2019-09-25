@@ -8,14 +8,17 @@ set -euo pipefail
 
 cd $(dirname $0)/../..
 
+echo "Verifying Helm chart versions..."
+
 charts=$(find config/ -name Chart.yaml | cut -d/ -f2- | sort)
 exitCode=0
 
 [ -n "$charts" ] && while read -r chartYAML; do
+  echo "Checking $chartYAML..."
   chartdir="$(dirname "$chartYAML")"
 
   # if this chart was touched in this PR
-  if ! git diff --exit-code --no-patch "master...$PULL_PULL_SHA" "config/$chartdir/"; then
+  if ! git diff --exit-code --no-patch "$PULL_BASE_SHA...$PULL_PULL_SHA" "config/$chartdir/"; then
     oldVersion=""
 
     # as we scan for charts by looking through the current files, we can always
