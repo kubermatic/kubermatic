@@ -9,13 +9,21 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	kubeconfigFieldPath = "kubeconfig"
 )
 
 type MigrationOptions struct {
 	DatacentersFile    string
 	DynamicDatacenters bool
+	Kubeconfig         *clientcmdapi.Config
 }
 
 func (o MigrationOptions) SeedMigrationEnabled() bool {
@@ -26,7 +34,7 @@ func (o MigrationOptions) SeedMigrationEnabled() bool {
 func RunAll(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, opt MigrationOptions) error {
 	if opt.SeedMigrationEnabled() {
 		log.Info("datacenters given and dynamic datacenters enabled, attempting to migrate datacenters to Seeds")
-		if err := migrateDatacenters(ctx, log, client, kubermaticNamespace, opt.DatacentersFile); err != nil {
+		if err := migrateDatacenters(ctx, log, client, kubermaticNamespace, opt); err != nil {
 			return fmt.Errorf("failed to migrate datacenters.yaml: %v", err)
 		}
 		log.Info("migration completed successfully")
@@ -39,17 +47,27 @@ func RunAll(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclien
 // Seeds are only ever created and never updated/reconciled to match the
 // datacenters.yaml, because the validation webhook prevents any modifications
 // while the migration is enabled.
-func migrateDatacenters(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, dcFile string) error {
-	seeds, err := provider.LoadSeeds(dcFile)
+func migrateDatacenters(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, opt MigrationOptions) error {
+	seeds, err := provider.LoadSeeds(opt.DatacentersFile)
 	if err != nil {
-		return fmt.Errorf("failed to load %s: %v", dcFile, err)
+		return fmt.Errorf("failed to load %s: %v", opt.DatacentersFile, err)
 	}
 
 	for name, seed := range seeds {
-		log := log.With("seed", seed)
+		log := log.With("seed", name)
+		log.Info("processing Seed...")
 
 		seed.Namespace = kubermaticNamespace
 
+		// create a kubeconfig Secret just for this seed
+		objectRef, err := createSeedKubeconfig(ctx, log, client, seed, opt)
+		if err != nil {
+			return fmt.Errorf("failed to create kubeconfig secret for seed %s: %v", name, err)
+		}
+
+		seed.Spec.Kubeconfig = *objectRef
+
+		// create the seed itself
 		key, err := ctrlruntimeclient.ObjectKeyFromObject(seed)
 		if err != nil {
 			return fmt.Errorf("failed to create object key for seed %s: %v", name, err)
@@ -71,4 +89,84 @@ func migrateDatacenters(ctx context.Context, log *zap.SugaredLogger, client ctrl
 	}
 
 	return nil
+}
+
+// createSeedKubeconfig creates a new Secret with a kubeconfig contains only the credentials
+// required for connecting to the given seed. If the Secret already exists, nothing happens.
+func createSeedKubeconfig(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, opt MigrationOptions) (*corev1.ObjectReference, error) {
+	kubeconfig, err := singleSeedKubeconfig(seed, opt.Kubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create kubeconfig: %v", err)
+	}
+
+	encoded, err := clientcmd.Write(*kubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize kubeconfig: %v", err)
+	}
+
+	secret := &corev1.Secret{}
+	secret.Name = seed.Name
+	secret.Namespace = seed.Namespace
+	secret.Data = map[string][]byte{
+		kubeconfigFieldPath: encoded,
+	}
+
+	key, err := ctrlruntimeclient.ObjectKeyFromObject(secret)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create object key: %v", err)
+	}
+
+	log.Info("checking for kubeconfig Secret...")
+	existingSecret := corev1.Secret{}
+	err = client.Get(ctx, key, &existingSecret)
+	if err != nil {
+		if !kerrors.IsNotFound(err) {
+			return nil, fmt.Errorf("failed to get Secret: %v", err)
+		}
+
+		log.Info("creating Secret...")
+		if err := client.Create(ctx, secret); err != nil {
+			return nil, fmt.Errorf("failed to create Secret: %v", err)
+		}
+	}
+
+	return &corev1.ObjectReference{
+		APIVersion: "v1",
+		Kind:       "Secret",
+		Name:       seed.Name,
+		Namespace:  seed.Namespace,
+		FieldPath:  kubeconfigFieldPath,
+	}, nil
+}
+
+// singleSeedKubeconfig takes a kubeconfig and returns a new kubeconfig that only has the
+// required parts to connect to the given seed. An error is returned when the given seed
+// has no valid matching context in the kubeconfig.
+func singleSeedKubeconfig(seed *kubermaticv1.Seed, kubeconfig *clientcmdapi.Config) (*clientcmdapi.Config, error) {
+	contextName := seed.Name
+
+	context, exists := kubeconfig.Contexts[contextName]
+	if !exists {
+		return nil, fmt.Errorf("no context named %s found in kubeconfig", contextName)
+	}
+	clusterName := context.Cluster
+	authName := context.AuthInfo
+
+	cluster, exists := kubeconfig.Clusters[clusterName]
+	if !exists {
+		return nil, fmt.Errorf("no cluster named %s found in kubeconfig", clusterName)
+	}
+
+	auth, exists := kubeconfig.AuthInfos[authName]
+	if !exists {
+		return nil, fmt.Errorf("no user named %s found in kubeconfig", authName)
+	}
+
+	config := clientcmdapi.NewConfig()
+	config.CurrentContext = contextName
+	config.Contexts[contextName] = context
+	config.Clusters[clusterName] = cluster
+	config.AuthInfos[authName] = auth
+
+	return config, nil
 }

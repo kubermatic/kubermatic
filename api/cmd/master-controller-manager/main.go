@@ -102,12 +102,6 @@ func main() {
 	defer ctxCancel()
 	ctrlCtx.ctx = ctx
 
-	// prepare migration options
-	migrationOptions := mastermigrations.MigrationOptions{
-		DatacentersFile:    runOpts.dcFile,
-		DynamicDatacenters: runOpts.dynamicDatacenters,
-	}
-
 	// load kubeconfig and create API client
 	kubeconfig, err := clientcmd.LoadFromFile(runOpts.kubeconfig)
 	if err != nil {
@@ -143,6 +137,13 @@ func main() {
 		ctx, mgr.GetClient(), runOpts.kubeconfig, ctrlCtx.namespace, runOpts.dynamicDatacenters)
 	if err != nil {
 		log.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
+	}
+
+	// prepare migration options
+	migrationOptions := mastermigrations.MigrationOptions{
+		DatacentersFile:    runOpts.dcFile,
+		DynamicDatacenters: runOpts.dynamicDatacenters,
+		Kubeconfig:         kubeconfig,
 	}
 
 	if runOpts.seedvalidationHook.CertFile != "" || runOpts.seedvalidationHook.KeyFile != "" {
