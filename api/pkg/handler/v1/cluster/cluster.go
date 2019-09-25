@@ -244,7 +244,7 @@ func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 
-		cluster, err := getCluster(ctx, req, projectProvider)
+		cluster, err := GetCluster(ctx, req, projectProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -253,10 +253,17 @@ func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	}
 }
 
-func getCluster(ctx context.Context, req common.GetClusterReq, projectProvider provider.ProjectProvider) (*kubermaticv1.Cluster, error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+// GetCluster returns the cluster for a given request
+func GetCluster(ctx context.Context, req common.GetClusterReq, projectProvider provider.ProjectProvider) (*kubermaticv1.Cluster, error) {
+	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	if !ok {
+		return nil, errors.New(http.StatusInternalServerError, "no cluster in request")
+	}
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-	userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+	userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+	if !ok {
+		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+	}
 	project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -693,7 +700,7 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
-		cluster, err := getCluster(ctx, req, projectProvider)
+		cluster, err := GetCluster(ctx, req, projectProvider)
 		if err != nil {
 			return nil, err
 		}

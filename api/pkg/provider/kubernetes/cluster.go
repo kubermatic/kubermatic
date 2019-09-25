@@ -41,6 +41,7 @@ type extractGroupPrefixFunc func(groupName string) string
 // NewClusterProvider returns a new cluster provider that respects RBAC policies
 // it uses createSeedImpersonatedClient to create a connection that uses user impersonation
 func NewClusterProvider(
+	cfg *restclient.Config,
 	createSeedImpersonatedClient kubermaticImpersonationClient,
 	userClusterConnProvider UserClusterConnectionProvider,
 	workerName string,
@@ -56,6 +57,7 @@ func NewClusterProvider(
 		client:                       client,
 		k8sClient:                    k8sClient,
 		oidcKubeConfEndpoint:         oidcKubeConfEndpoint,
+		seedKubeconfig:               cfg,
 	}
 }
 
@@ -74,6 +76,7 @@ type ClusterProvider struct {
 	extractGroupPrefix   extractGroupPrefixFunc
 	client               ctrlruntimeclient.Client
 	k8sClient            kubernetes.Interface
+	seedKubeconfig       *restclient.Config
 }
 
 // New creates a brand new cluster that is bound to the given project
@@ -272,4 +275,10 @@ func (p *ClusterProvider) GetUnsecured(project *kubermaticv1.Project, clusterNam
 	}
 
 	return nil, kerrors.NewNotFound(schema.GroupResource{}, clusterName)
+}
+
+// SeedAdminConfig return an admin kubeconfig for the seed. This function does not perform any kind
+// of access control. Try to not use it.
+func (p *ClusterProvider) SeedAdminConfig() *restclient.Config {
+	return p.seedKubeconfig
 }

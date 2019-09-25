@@ -81,6 +81,7 @@ func SetPrivilegedClusterProvider(clusterProviderGetter provider.ClusterProvider
 			}
 
 			privilegedClusterProvider := clusterProvider.(provider.PrivilegedClusterProvider)
+			ctx = context.WithValue(ctx, ClusterProviderContextKey, clusterProvider)
 			ctx = context.WithValue(ctx, PrivilegedClusterProviderContextKey, privilegedClusterProvider)
 			return next(ctx, request)
 		}
@@ -126,6 +127,7 @@ func UserInfoExtractor(userProjectMapper provider.ProjectMemberMapper) endpoint.
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			user, ok := ctx.Value(UserCRContextKey).(*kubermaticapiv1.User)
 			if !ok {
+				// This happens if middleware.UserSaver is not enabled.
 				return nil, k8cerrors.New(http.StatusInternalServerError, "unable to get authenticated user object")
 			}
 
