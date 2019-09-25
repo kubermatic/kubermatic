@@ -1161,6 +1161,77 @@
             }
           }
         }
+      },
+      "patch": {
+        "description": "Patch the cluster role with the given name",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "patchClusterRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RoleID",
+            "name": "role_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterRole",
+            "schema": {
+              "$ref": "#/definitions/ClusterRole"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/events": {
@@ -3355,6 +3426,84 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "description": "Patch the role with the given name",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "patchRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RoleID",
+            "name": "role_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Namespace",
+            "name": "namespace",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Role",
+            "schema": {
+              "$ref": "#/definitions/Role"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"

@@ -1230,6 +1230,35 @@ func (a *Client) PatchCluster(params *PatchClusterParams, authInfo runtime.Clien
 }
 
 /*
+PatchClusterRole Patch the cluster role with the given name
+*/
+func (a *Client) PatchClusterRole(params *PatchClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterRoleOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchClusterRoleParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "patchClusterRole",
+		Method:             "PATCH",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchClusterRoleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*PatchClusterRoleOK), nil
+
+}
+
+/*
 PatchNodeDeployment Patches a node deployment that is assigned to the given cluster. Please note that at the moment only
 node deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.
 */
@@ -1256,6 +1285,35 @@ func (a *Client) PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo
 		return nil, err
 	}
 	return result.(*PatchNodeDeploymentOK), nil
+
+}
+
+/*
+PatchRole Patch the role with the given name
+*/
+func (a *Client) PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchRoleOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchRoleParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "patchRole",
+		Method:             "PATCH",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchRoleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*PatchRoleOK), nil
 
 }
 

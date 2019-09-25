@@ -31,7 +31,6 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/healthz").
 		HandlerFunc(statusOK)
-
 	//
 	// Defines endpoints for managing data centers
 	mux.Methods(http.MethodGet).
@@ -231,6 +230,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}").
 		Handler(r.deleteClusterRole())
 
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}").
+		Handler(r.patchClusterRole())
+
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles").
 		Handler(r.createRole())
@@ -246,6 +249,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}").
 		Handler(r.deleteRole())
+
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}").
+		Handler(r.patchRole())
 
 	//
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
@@ -3042,6 +3049,58 @@ func (r Routing) listNamespace() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.ListNamespaceEndpoint(r.projectProvider)),
 		common.DecodeGetClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id} project patchRole
+//
+//     Patch the role with the given name
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Role
+//       401: empty
+//       403: empty
+func (r Routing) patchRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(cluster.PatchRoleEndpoint()),
+		cluster.DecodePatchRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id} project patchClusterRole
+//
+//     Patch the cluster role with the given name
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterRole
+//       401: empty
+//       403: empty
+func (r Routing) patchClusterRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(cluster.PatchClusterRoleEndpoint()),
+		cluster.DecodePatchClusterRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
