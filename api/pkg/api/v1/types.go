@@ -1200,6 +1200,12 @@ type Role struct {
 	Rules []rbacv1.PolicyRule `json:"rules"`
 }
 
+// Namespace defines namespace
+// swagger:model Namespace
+type Namespace struct {
+	Name string `json:"name"`
+}
+
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup
 	NodeDeletionFinalizer = "kubermatic.io/delete-nodes"
