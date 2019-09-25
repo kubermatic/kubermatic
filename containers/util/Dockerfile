@@ -13,6 +13,7 @@ RUN apk add --no-cache -U \
     git \
     iproute2 \
     iptables \
+    ipvsadm \
     jq \
     rsync \
     socat \
