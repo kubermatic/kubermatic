@@ -105,7 +105,7 @@ func createSeedKubeconfig(ctx context.Context, log *zap.SugaredLogger, client ct
 	}
 
 	secret := &corev1.Secret{}
-	secret.Name = seed.Name
+	secret.Name = "kubeconfig-" + seed.Name
 	secret.Namespace = seed.Namespace
 	secret.Data = map[string][]byte{
 		kubeconfigFieldPath: encoded,
@@ -133,8 +133,8 @@ func createSeedKubeconfig(ctx context.Context, log *zap.SugaredLogger, client ct
 	return &corev1.ObjectReference{
 		APIVersion: "v1",
 		Kind:       "Secret",
-		Name:       seed.Name,
-		Namespace:  seed.Namespace,
+		Name:       secret.Name,
+		Namespace:  secret.Namespace,
 		FieldPath:  kubeconfigFieldPath,
 	}, nil
 }
