@@ -86,10 +86,10 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		vnetResourceGroup := cloud.Azure.ResourceGroup
 		azureCloudConfig := &azure.CloudConfig{
 			Cloud:                      "AZUREPUBLICCLOUD",
-			TenantID:                   cloud.Azure.TenantID,
-			SubscriptionID:             cloud.Azure.SubscriptionID,
-			AADClientID:                cloud.Azure.ClientID,
-			AADClientSecret:            cloud.Azure.ClientSecret,
+			TenantID:                   credentials.Azure.TenantID,
+			SubscriptionID:             credentials.Azure.SubscriptionID,
+			AADClientID:                credentials.Azure.ClientID,
+			AADClientSecret:            credentials.Azure.ClientSecret,
 			ResourceGroup:              cloud.Azure.ResourceGroup,
 			Location:                   dc.Spec.Azure.Location,
 			VNetName:                   cloud.Azure.VNetName,
