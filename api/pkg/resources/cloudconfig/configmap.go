@@ -111,11 +111,11 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		openstackCloudConfig := &openstack.CloudConfig{
 			Global: openstack.GlobalOpts{
 				AuthURL:    dc.Spec.Openstack.AuthURL,
-				Username:   cloud.Openstack.Username,
-				Password:   cloud.Openstack.Password,
-				DomainName: cloud.Openstack.Domain,
-				TenantName: cloud.Openstack.Tenant,
-				TenantID:   cloud.Openstack.TenantID,
+				Username:   credentials.Openstack.Username,
+				Password:   credentials.Openstack.Password,
+				DomainName: credentials.Openstack.Domain,
+				TenantName: credentials.Openstack.Tenant,
+				TenantID:   credentials.Openstack.TenantID,
 				Region:     dc.Spec.Openstack.Region,
 			},
 			BlockStorage: openstack.BlockStorageOpts{

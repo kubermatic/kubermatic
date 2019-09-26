@@ -391,6 +391,12 @@ const (
 
 	HetznerToken = "token"
 
+	OpenstackUsername = "username"
+	OpenstackPassword = "password"
+	OpenstackTenant   = "tenant"
+	OpenstackTenantID = "tenantID"
+	OpenstackDomain   = "domain"
+
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"
 

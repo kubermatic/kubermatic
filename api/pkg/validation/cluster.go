@@ -261,17 +261,32 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter)
 
 func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kubermaticv1.Datacenter) error {
 	if spec.Domain == "" {
-		return errors.New("no domain specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackDomain); err != nil {
+			return err
+		}
 	}
 	if spec.Username == "" {
-		return errors.New("no username specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackUsername); err != nil {
+			return err
+		}
 	}
 	if spec.Password == "" {
-		return errors.New("no password specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackPassword); err != nil {
+			return err
+		}
 	}
-	if spec.Tenant == "" && spec.TenantID == "" {
+
+	var err1, err2 error
+	if spec.Tenant == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+		err1 = kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenant)
+	}
+	if spec.TenantID == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+		err2 = kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenantID)
+	}
+	if err1 != nil && err2 != nil {
 		return errors.New("no tenant name or ID specified")
 	}
+
 	if spec.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
 		return errors.New("no floating ip pool specified")
 	}
