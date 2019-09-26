@@ -16,6 +16,8 @@ import (
 
 const (
 	openshiftRegistryOperatorName = "openshift-registry-operator"
+	// RegistryNamespaceName is the name in which the registry is getting created by the openshift registry operator
+	RegistryNamespaceName = "openshift-image-registry"
 )
 
 func RegistryOperatorFactory(data openshiftData) reconciling.NamedDeploymentCreatorGetter {
@@ -97,7 +99,7 @@ func registryOperatorEnv(openshiftVersion string) ([]corev1.EnvVar, error) {
 		},
 		{
 			Name:  "WATCH_NAMESPACE",
-			Value: "openshift-image-registry",
+			Value: RegistryNamespaceName,
 		},
 		{
 			Name:  "OPERATOR_NAME",
