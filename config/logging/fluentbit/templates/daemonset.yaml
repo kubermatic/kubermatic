@@ -4,6 +4,7 @@ metadata:
   name: fluent-bit
   labels:
     app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
     app.kubernetes.io/version: '{{ .Values.logging.fluentbit.image.tag }}'
     app.kubernetes.io/managed-by: helm
 spec:
@@ -28,7 +29,7 @@ spec:
         kubermatic/metric_path: /api/v1/metrics/prometheus
         kubermatic/scrape: "true"
         kubermatic/scrape_port: "2020"
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config: '{{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}'
     spec:
       serviceAccountName: fluent-bit
       containers:
@@ -43,10 +44,6 @@ spec:
         ports:
         - containerPort: 2020
         env:
-        - name: FLUENT_ELASTICSEARCH_HOST
-          value: es-data
-        - name: FLUENT_ELASTICSEARCH_PORT
-          value: '9200'
         # We attach the node name to each log line
         - name: NODE_NAME
           valueFrom:
