@@ -8,6 +8,7 @@ import (
 type Credentials struct {
 	AWS          AWSCredentials
 	Digitalocean DigitaloceanCredentials
+	GCP          GCPCredentials
 	Hetzner      HetznerCredentials
 	Packet       PacketCredentials
 	Kubevirt     KubevirtCredentials
@@ -20,6 +21,10 @@ type AWSCredentials struct {
 
 type DigitaloceanCredentials struct {
 	Token string
+}
+
+type GCPCredentials struct {
+	ServiceAccount string
 }
 
 type HetznerCredentials struct {
@@ -51,6 +56,11 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 	}
 	if data.Cluster().Spec.Cloud.Digitalocean != nil {
 		if credentials.Digitalocean, err = GetDigitaloceanCredentials(data); err != nil {
+			return Credentials{}, err
+		}
+	}
+	if data.Cluster().Spec.Cloud.GCP != nil {
+		if credentials.GCP, err = GetGCPCredentials(data); err != nil {
 			return Credentials{}, err
 		}
 	}
@@ -105,6 +115,20 @@ func GetDigitaloceanCredentials(data CredentialsData) (DigitaloceanCredentials, 
 	}
 
 	return digitaloceanCredentials, nil
+}
+
+func GetGCPCredentials(data CredentialsData) (GCPCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.GCP
+	gcpCredentials := GCPCredentials{}
+	var err error
+
+	if spec.ServiceAccount != "" {
+		gcpCredentials.ServiceAccount = spec.ServiceAccount
+	} else if gcpCredentials.ServiceAccount, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, GCPServiceAccount); err != nil {
+		return GCPCredentials{}, err
+	}
+
+	return gcpCredentials, nil
 }
 
 func GetHetznerCredentials(data CredentialsData) (HetznerCredentials, error) {

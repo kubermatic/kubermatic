@@ -382,6 +382,8 @@ const (
 
 	DigitaloceanToken = "token"
 
+	GCPServiceAccount = "serviceAccount"
+
 	HetznerToken = "token"
 
 	PacketAPIKey    = "apiKey"

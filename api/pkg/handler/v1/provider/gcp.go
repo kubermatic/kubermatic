@@ -16,6 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/gcp"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -149,7 +150,17 @@ func GCPDiskTypesWithClusterCredentialsEndpoint(projectProvider provider.Project
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		sa := cluster.Spec.Cloud.GCP.ServiceAccount
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		sa, err := gcp.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+
 		return listGCPDiskTypes(ctx, sa, req.Zone)
 	}
 }
@@ -222,7 +233,16 @@ func GCPSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvi
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		sa := cluster.Spec.Cloud.GCP.ServiceAccount
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		sa, err := gcp.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
 		return listGCPSizes(ctx, sa, req.Zone)
 	}
 }
@@ -297,7 +317,16 @@ func GCPZoneWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvi
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		sa := cluster.Spec.Cloud.GCP.ServiceAccount
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		sa, err := gcp.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
 		return listGCPZones(ctx, sa, cluster.Spec.Cloud.DatacenterName, seedsGetter)
 	}
 }

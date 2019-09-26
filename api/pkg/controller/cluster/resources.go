@@ -261,7 +261,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 	}
 
 	if data.Cluster().Spec.Cloud.GCP != nil {
-		creators = append(creators, resources.ServiceAccountSecretCreator(data.Cluster().Spec.Cloud.GCP.ServiceAccount))
+		creators = append(creators, resources.ServiceAccountSecretCreator(data))
 	}
 
 	return creators

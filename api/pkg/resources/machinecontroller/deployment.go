@@ -205,7 +205,7 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "PACKET_PROJECT_ID", Value: credentials.Packet.ProjectID})
 	}
 	if data.Cluster().Spec.Cloud.GCP != nil {
-		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", Value: data.Cluster().Spec.Cloud.GCP.ServiceAccount})
+		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", Value: credentials.GCP.ServiceAccount})
 	}
 	if data.Cluster().Spec.Cloud.Kubevirt != nil {
 		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", Value: credentials.Kubevirt.KubeConfig})
