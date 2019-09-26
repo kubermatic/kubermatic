@@ -573,7 +573,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		openshiftresources.GetLoopbackKubeconfigCreator(ctx, osData, r.log)}
 
 	if osData.cluster.Spec.Cloud.GCP != nil {
-		creators = append(creators, resources.ServiceAccountSecretCreator(osData.cluster.Spec.Cloud.GCP.ServiceAccount))
+		creators = append(creators, resources.ServiceAccountSecretCreator(osData))
 	}
 
 	return creators

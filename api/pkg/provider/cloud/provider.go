@@ -44,7 +44,7 @@ func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 		return vsphere.NewCloudProvider(datacenter)
 	}
 	if datacenter.Spec.GCP != nil {
-		return gcp.NewCloudProvider(), nil
+		return gcp.NewCloudProvider(secretKeyGetter), nil
 	}
 	if datacenter.Spec.Fake != nil {
 		return fake.NewCloudProvider(), nil

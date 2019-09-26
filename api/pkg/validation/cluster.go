@@ -294,7 +294,9 @@ func validateAWSCloudSpec(spec *kubermaticv1.AWSCloudSpec) error {
 
 func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec) error {
 	if spec.ServiceAccount == "" {
-		return errors.New("no serviceaccount specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.GCPServiceAccount); err != nil {
+			return err
+		}
 	}
 	return nil
 }

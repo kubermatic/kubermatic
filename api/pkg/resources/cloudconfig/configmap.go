@@ -167,7 +167,7 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		}
 
 	case cloud.GCP != nil:
-		b, err := base64.StdEncoding.DecodeString(cloud.GCP.ServiceAccount)
+		b, err := base64.StdEncoding.DecodeString(credentials.GCP.ServiceAccount)
 		if err != nil {
 			return "", fmt.Errorf("error decoding service account: %v", err)
 		}

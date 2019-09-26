@@ -447,7 +447,9 @@ type PacketCloudSpec struct {
 
 // GCPCloudSpec specifies access data to GCP.
 type GCPCloudSpec struct {
-	ServiceAccount string `json:"serviceAccount"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	ServiceAccount string `json:"serviceAccount,omitempty"`
 	Network        string `json:"network"`
 	Subnetwork     string `json:"subnetwork"`
 }
@@ -538,6 +540,9 @@ func (cluster *Cluster) GetSecretName() string {
 	}
 	if cluster.Spec.Cloud.Digitalocean != nil {
 		return fmt.Sprintf("%s-digitalocean-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.GCP != nil {
+		return fmt.Sprintf("%s-gcp-%s", CredentialPrefix, cluster.Name)
 	}
 	if cluster.Spec.Cloud.Hetzner != nil {
 		return fmt.Sprintf("%s-hetzner-%s", CredentialPrefix, cluster.Name)

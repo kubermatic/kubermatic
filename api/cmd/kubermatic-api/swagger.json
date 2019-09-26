@@ -6672,6 +6672,9 @@
       "type": "object",
       "title": "GCPCloudSpec specifies access data to GCP.",
       "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "network": {
           "type": "string",
           "x-go-name": "Network"
