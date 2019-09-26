@@ -45,7 +45,7 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 				}),
 			),
 			HeaderParams:       map[string]string{"DeleteVolumes": "true", "DeleteLoadBalancers": "true"},
-			ExpectedFinalizers: []string{"kubermatic.io/cleanup-in-cluster-pv", "kubermatic.io/cleanup-in-cluster-lb", "kubermatic.io/cleanup-credentials-secrets", "kubermatic.io/delete-nodes"},
+			ExpectedFinalizers: []string{"kubermatic.io/cleanup-in-cluster-pv", "kubermatic.io/cleanup-in-cluster-lb", "kubermatic.io/delete-nodes"},
 		},
 		{
 			Name: "scenario 2: tests deletion of a cluster with only volume finalizer",
@@ -56,7 +56,7 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 				}),
 			),
 			HeaderParams:       map[string]string{"DeleteVolumes": "true", "DeleteLoadBalancers": "false"},
-			ExpectedFinalizers: []string{"kubermatic.io/cleanup-in-cluster-pv", "kubermatic.io/cleanup-credentials-secrets", "kubermatic.io/delete-nodes"},
+			ExpectedFinalizers: []string{"kubermatic.io/cleanup-in-cluster-pv", "kubermatic.io/delete-nodes"},
 		},
 		{
 			Name: "scenario 3: tests deletion of a cluster without finalizers",
@@ -65,7 +65,7 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 			),
 			HeaderParams:       map[string]string{},
-			ExpectedFinalizers: []string{"kubermatic.io/cleanup-credentials-secrets"},
+			ExpectedFinalizers: []string{},
 		},
 		{
 			Name: "PV and LB finalizers do not get attached when cluster has no node delete finalizer",
@@ -74,7 +74,7 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 			),
 			HeaderParams:       map[string]string{"DeleteVolumes": "true", "DeleteLoadBalancers": "true"},
-			ExpectedFinalizers: []string{"kubermatic.io/cleanup-credentials-secrets"},
+			ExpectedFinalizers: []string{},
 		},
 	}
 	for _, tc := range testcases {
