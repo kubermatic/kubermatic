@@ -245,11 +245,16 @@ type AuditLoggingSettings struct {
 }
 
 type ComponentSettings struct {
-	Apiserver         DeploymentSettings  `json:"apiserver"`
+	Apiserver         APIServerSettings   `json:"apiserver"`
 	ControllerManager DeploymentSettings  `json:"controllerManager"`
 	Scheduler         DeploymentSettings  `json:"scheduler"`
 	Etcd              StatefulSetSettings `json:"etcd"`
 	Prometheus        StatefulSetSettings `json:"prometheus"`
+}
+
+type APIServerSettings struct {
+	DeploymentSettings
+	EndpointReconcilingDisabled bool `json:"endpointReconcilingDisabled"`
 }
 
 type DeploymentSettings struct {
