@@ -359,10 +359,12 @@ type HetznerCloudSpec struct {
 
 // AzureCloudSpec specifies acceess credentials to Azure cloud.
 type AzureCloudSpec struct {
-	TenantID       string `json:"tenantID"`
-	SubscriptionID string `json:"subscriptionID"`
-	ClientID       string `json:"clientID"`
-	ClientSecret   string `json:"clientSecret"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	TenantID       string `json:"tenantID,omitempty"`
+	SubscriptionID string `json:"subscriptionID,omitempty"`
+	ClientID       string `json:"clientID,omitempty"`
+	ClientSecret   string `json:"clientSecret,omitempty"`
 
 	ResourceGroup   string `json:"resourceGroup"`
 	VNetName        string `json:"vnet"`
@@ -537,6 +539,9 @@ func NewBytes(b64 string) Bytes {
 func (cluster *Cluster) GetSecretName() string {
 	if cluster.Spec.Cloud.AWS != nil {
 		return fmt.Sprintf("%s-aws-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.Azure != nil {
+		return fmt.Sprintf("%s-azure-%s", CredentialPrefix, cluster.Name)
 	}
 	if cluster.Spec.Cloud.Digitalocean != nil {
 		return fmt.Sprintf("%s-digitalocean-%s", CredentialPrefix, cluster.Name)

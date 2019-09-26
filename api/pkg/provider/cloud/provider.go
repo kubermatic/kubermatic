@@ -29,7 +29,7 @@ func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 		return aws.NewCloudProvider(datacenter, secretKeyGetter)
 	}
 	if datacenter.Spec.Azure != nil {
-		return azure.New(datacenter)
+		return azure.New(datacenter, secretKeyGetter)
 	}
 	if datacenter.Spec.Openstack != nil {
 		return openstack.NewCloudProvider(datacenter)

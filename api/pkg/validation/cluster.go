@@ -338,16 +338,24 @@ func validateVSphereCloudSpec(spec *kubermaticv1.VSphereCloudSpec) error {
 
 func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 	if spec.TenantID == "" {
-		return errors.New("no tenant ID specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AzureTenantID); err != nil {
+			return err
+		}
 	}
 	if spec.SubscriptionID == "" {
-		return errors.New("no subscription ID specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AzureSubscriptionID); err != nil {
+			return err
+		}
 	}
 	if spec.ClientID == "" {
-		return errors.New("no client ID specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AzureClientID); err != nil {
+			return err
+		}
 	}
 	if spec.ClientSecret == "" {
-		return errors.New("no client secret specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AzureClientSecret); err != nil {
+			return err
+		}
 	}
 
 	return nil
