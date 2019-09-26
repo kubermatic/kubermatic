@@ -4,6 +4,7 @@ metadata:
   name: fluent-bit-read
   labels:
     app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
     app.kubernetes.io/version: '{{ .Values.logging.fluentbit.image.tag }}'
     app.kubernetes.io/managed-by: helm
 rules:

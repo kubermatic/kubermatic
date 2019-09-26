@@ -8,13 +8,14 @@ logging:
       containerRuntimeParser: docker
       collectSystemd: false
       collectKernelMessages: false
+      parsers: []
       outputs:
       - |
         Name            es
         Alias           elasticsearch
         Match           *
-        Host            ${FLUENT_ELASTICSEARCH_HOST}
-        Port            ${FLUENT_ELASTICSEARCH_PORT}
+        Host            es-data
+        Port            9200
         Logstash_Format On
         Replace_Dots    On
         Generate_ID     On
@@ -24,8 +25,8 @@ logging:
         cpu: 10m
         memory: 24Mi
       limits:
-        cpu: 30m
-        memory: 32Mi
+        cpu: 200m
+        memory: 128Mi
     nodeSelector: {}
     affinity: {}
     tolerations:
