@@ -127,6 +127,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		if err := kubernetesprovider.CreateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster, req.ProjectID); err != nil {
 			return nil, err
 		}
+		kuberneteshelper.AddFinalizer(partialCluster, apiv1.CredentialsSecretsCleanupFinalizer)
 
 		newCluster, err := clusterProvider.New(project, userInfo, partialCluster)
 		if err != nil {
@@ -424,8 +425,6 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-
-		kuberneteshelper.AddFinalizer(existingCluster, apiv1.CredentialsSecretsCleanupFinalizer)
 
 		// Use the NodeDeletionFinalizer to determine if the cluster was ever up, the LB and PV finalizers
 		// will prevent cluster deletion if the APIserver was never created
