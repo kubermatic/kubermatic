@@ -15,6 +15,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	kruntime "k8s.io/apimachinery/pkg/util/runtime"
 )
 
@@ -24,8 +25,8 @@ const (
 
 // Provider represents the vsphere provider.
 type Provider struct {
-	dc             *kubermaticv1.DatacenterSpecVSphere
-	clusterUpdater provider.ClusterUpdater
+	dc                *kubermaticv1.DatacenterSpecVSphere
+	secretKeySelector provider.SecretKeySelectorValueFunc
 }
 
 // Folder represents a vsphere folder.
@@ -34,12 +35,13 @@ type Folder struct {
 }
 
 // NewCloudProvider creates a new vSphere provider.
-func NewCloudProvider(dc *kubermaticv1.Datacenter) (*Provider, error) {
+func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*Provider, error) {
 	if dc.Spec.VSphere == nil {
 		return nil, errors.New("datacenter is not a vSphere datacenter")
 	}
 	return &Provider{
-		dc: dc.Spec.VSphere,
+		dc:                dc.Spec.VSphere,
+		secretKeySelector: secretKeyGetter,
 	}, nil
 }
 
@@ -104,7 +106,6 @@ func (v *Provider) getVMRootPath(cloud kubermaticv1.CloudSpec) string {
 
 // InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
 func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	v.clusterUpdater = update
 	ctx := context.Background()
 
 	session, err := v.newSession(ctx, cluster.Spec.Cloud)
@@ -191,9 +192,14 @@ func (v *Provider) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 			Password: v.dc.InfraManagementUser.Password,
 		}
 	} else {
+		username, password, err := GetCredentialsForCluster(*cloud, v.secretKeySelector)
+		if err != nil {
+			return err
+		}
+
 		cloud.VSphere.InfraManagementUser = kubermaticv1.VSphereCredentials{
-			Username: cloud.VSphere.Username,
-			Password: cloud.VSphere.Password,
+			Username: username,
+			Password: password,
 		}
 	}
 
@@ -214,7 +220,6 @@ func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 // This covers cases where the finalizer was not added
 // We also remove the finalizer if either the folder is not present or we successfully deleted it
 func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	v.clusterUpdater = update
 	ctx := context.TODO()
 
 	session, err := v.newSession(ctx, cluster.Spec.Cloud)
@@ -227,7 +232,7 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		if err := deleteVMFolder(ctx, session, cluster.Spec.Cloud.VSphere.Folder); err != nil {
 			return nil, err
 		}
-		cluster, err = v.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
 		})
 		if err != nil {
@@ -241,4 +246,32 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
 func (v *Provider) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
+}
+
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (username, password string, err error) {
+	username = cloud.VSphere.Username
+	password = cloud.VSphere.Password
+
+	if username == "" {
+		if cloud.VSphere.CredentialsReference == nil {
+			return "", "", errors.New("no credentials provided")
+		}
+		username, err = secretKeySelector(cloud.VSphere.CredentialsReference, resources.VsphereUsername)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	if password == "" {
+		if cloud.VSphere.CredentialsReference == nil {
+			return "", "", errors.New("no credentials provided")
+		}
+		password, err = secretKeySelector(cloud.VSphere.CredentialsReference, resources.VspherePassword)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	return username, password, nil
 }

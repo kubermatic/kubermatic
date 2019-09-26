@@ -19,6 +19,7 @@ type Credentials struct {
 	Openstack    OpenstackCredentials
 	Packet       PacketCredentials
 	Kubevirt     KubevirtCredentials
+	VSphere      VSphereCredentials
 }
 
 type AWSCredentials struct {
@@ -60,6 +61,11 @@ type PacketCredentials struct {
 
 type KubevirtCredentials struct {
 	KubeConfig string
+}
+
+type VSphereCredentials struct {
+	Username string
+	Password string
 }
 
 type CredentialsData interface {
@@ -128,6 +134,11 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 	}
 	if data.Cluster().Spec.Cloud.Kubevirt != nil {
 		if credentials.Kubevirt, err = GetKubevirtCredentials(data); err != nil {
+			return Credentials{}, err
+		}
+	}
+	if data.Cluster().Spec.Cloud.VSphere != nil {
+		if credentials.VSphere, err = GetVSphereCredentials(data); err != nil {
 			return Credentials{}, err
 		}
 	}
@@ -303,4 +314,24 @@ func GetKubevirtCredentials(data CredentialsData) (KubevirtCredentials, error) {
 	}
 
 	return kubevirtCredentials, nil
+}
+
+func GetVSphereCredentials(data CredentialsData) (VSphereCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.VSphere
+	vSphereCredentials := VSphereCredentials{}
+	var err error
+
+	if spec.Username != "" {
+		vSphereCredentials.Username = spec.Username
+	} else if vSphereCredentials.Username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereUsername); err != nil {
+		return VSphereCredentials{}, err
+	}
+
+	if spec.Password != "" {
+		vSphereCredentials.Password = spec.Password
+	} else if vSphereCredentials.Password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VspherePassword); err != nil {
+		return VSphereCredentials{}, err
+	}
+
+	return vSphereCredentials, nil
 }

@@ -38,6 +38,9 @@ func CreateCredentialSecretForCluster(ctx context.Context, seedClient ctrlruntim
 	if cluster.Spec.Cloud.Kubevirt != nil {
 		return createKubevirtSecret(ctx, seedClient, cluster, projectID)
 	}
+	if cluster.Spec.Cloud.VSphere != nil {
+		return createVSphereSecret(ctx, seedClient, cluster, projectID)
+	}
 	return nil
 }
 
@@ -338,6 +341,44 @@ func createKubevirtSecret(ctx context.Context, seedClient ctrlruntimeclient.Clie
 
 	// remove credentials from cluster object
 	cluster.Spec.Cloud.Kubevirt.Kubeconfig = ""
+
+	return nil
+}
+
+func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
+	// create secret for storing credentials
+	name := cluster.GetSecretName()
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: resources.KubermaticNamespace,
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: projectID,
+				"name":                         name,
+			},
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			resources.VsphereUsername: []byte(cluster.Spec.Cloud.VSphere.Username),
+			resources.VspherePassword: []byte(cluster.Spec.Cloud.VSphere.Password),
+		},
+	}
+
+	if err := seedClient.Create(ctx, secret); err != nil {
+		return err
+	}
+
+	// add secret key selectors to cluster object
+	cluster.Spec.Cloud.VSphere.CredentialsReference = &providerconfig.GlobalSecretKeySelector{
+		ObjectReference: corev1.ObjectReference{
+			Name:      secret.Name,
+			Namespace: secret.Namespace,
+		},
+	}
+
+	// remove credentials from cluster object
+	cluster.Spec.Cloud.VSphere.Username = ""
+	cluster.Spec.Cloud.VSphere.Password = ""
 
 	return nil
 }

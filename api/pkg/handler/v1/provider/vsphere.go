@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/vsphere"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -62,8 +63,18 @@ func VsphereNetworksWithClusterCredentialsEndpoint(projectProvider provider.Proj
 		}
 
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		vSpec := cluster.Spec.Cloud.VSphere
-		return getVsphereNetworks(seedsGetter, vSpec.Username, vSpec.Password, datacenterName)
+
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		username, password, err := vsphere.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+		return getVsphereNetworks(seedsGetter, username, password, datacenterName)
 	}
 }
 
@@ -76,7 +87,7 @@ func getVsphereNetworks(seedsGetter provider.SeedsGetter, username, password, da
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
-	vsProvider, err := vsphere.NewCloudProvider(datacenter)
+	vsProvider, err := vsphere.NewCloudProvider(datacenter, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -153,8 +164,17 @@ func VsphereFoldersWithClusterCredentialsEndpoint(projectProvider provider.Proje
 		}
 
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		vSpec := cluster.Spec.Cloud.VSphere
-		return getVsphereFolders(seedsGetter, vSpec.Username, vSpec.Password, datacenterName)
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		username, password, err := vsphere.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+		return getVsphereFolders(seedsGetter, username, password, datacenterName)
 	}
 }
 
@@ -167,7 +187,7 @@ func getVsphereFolders(seedsGetter provider.SeedsGetter, username, password, dat
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
-	vsProvider, err := vsphere.NewCloudProvider(datacenter)
+	vsProvider, err := vsphere.NewCloudProvider(datacenter, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new cloud provider: %v", err)
 	}

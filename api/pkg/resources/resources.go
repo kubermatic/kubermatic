@@ -427,6 +427,9 @@ const (
 	PacketProjectID = "projectID"
 
 	KubevirtKubeConfig = "kubeConfig"
+
+	VsphereUsername = "username"
+	VspherePassword = "password"
 )
 
 // ECDSAKeyPair is a ECDSA x509 certifcate and private key
