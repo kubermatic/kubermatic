@@ -147,10 +147,6 @@ func ValidateSeed(seed *kubermaticv1.Seed) error {
 
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName, dcFile, namespace string, dynamicDatacenters bool) (SeedGetter, error) {
-	if dcFile != "" && dynamicDatacenters {
-		return nil, errors.New("--datacenters must be empty when --dynamic-datacenters is enabled")
-	}
-
 	if dynamicDatacenters {
 		return func() (*kubermaticv1.Seed, error) {
 			seed := &kubermaticv1.Seed{}
@@ -180,10 +176,6 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 }
 
 func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace, workerName string, dynamicDatacenters bool) (SeedsGetter, error) {
-	if dcFile != "" && dynamicDatacenters {
-		return nil, errors.New("--datacenters must be empty when --dynamic-datacenters is enabled")
-	}
-
 	if dynamicDatacenters {
 		labelSelector, err := workerlabel.LabelSelector(workerName)
 		if err != nil {
