@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"time"
 
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
@@ -21,10 +20,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -207,36 +203,22 @@ func main() {
 			}
 
 			return leaderelection.RunAsLeader(leaderCtx, log, cfg, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) error {
-				// create a dedicated client because the one from the manager is not yet
-				// initialized and returns 404's for everything
-				client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
-				if err != nil {
-					return fmt.Errorf("failed to create kube client: %v", err)
-				}
+				if migrationOptions.MigrationEnabled() {
+					log.Info("executing migrations...")
 
-				// wait for the webhook to be ready
-				if migrationOptions.SeedMigrationEnabled() {
-					timeout := 30 * time.Second
-					endpoint := types.NamespacedName{Namespace: ctrlCtx.namespace, Name: "seed-webhook"}
-
-					log.Infow("waiting for webhook to be ready...", "webhook", endpoint, "timeout", timeout)
-					if err := wait.Poll(500*time.Millisecond, timeout, func() (bool, error) {
-						endpoints := &corev1.Endpoints{}
-						if err := client.Get(ctx, endpoint, endpoints); err != nil {
-							return false, err
-						}
-						return len(endpoints.Subsets) > 0, nil
-					}); err != nil {
-						return fmt.Errorf("failed to wait for webhook: %v", err)
+					// create a dedicated client because the one from the manager is not yet
+					// initialized and returns 404's for everything
+					client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
+					if err != nil {
+						return fmt.Errorf("failed to create kube client: %v", err)
 					}
-					log.Info("webhook is ready")
-				}
 
-				log.Info("executing migrations...")
-				if err := mastermigrations.RunAll(ctx, log, client, ctrlCtx.namespace, migrationOptions); err != nil {
-					return fmt.Errorf("failed to run migrations: %v", err)
+					if err := mastermigrations.RunAll(ctx, log, client, ctrlCtx.namespace, migrationOptions); err != nil {
+						return fmt.Errorf("failed to run migrations: %v", err)
+					}
+
+					log.Info("migrations executed successfully")
 				}
-				log.Info("migrations executed successfully")
 
 				log.Info("starting the master-controller-manager...")
 				if err := mgr.Start(ctx.Done()); err != nil {

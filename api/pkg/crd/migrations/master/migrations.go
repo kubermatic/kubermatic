@@ -3,6 +3,7 @@ package master
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -11,6 +12,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,6 +29,12 @@ type MigrationOptions struct {
 	Kubeconfig         *clientcmdapi.Config
 }
 
+// MigrationEnabled returns true if at least one migration is enabled.
+func (o MigrationOptions) MigrationEnabled() bool {
+	return o.SeedMigrationEnabled()
+}
+
+// SeedMigrationEnabled returns true if the datacenters->seed migration is enabled.
 func (o MigrationOptions) SeedMigrationEnabled() bool {
 	return o.DatacentersFile != "" && o.DynamicDatacenters
 }
@@ -33,12 +42,38 @@ func (o MigrationOptions) SeedMigrationEnabled() bool {
 // RunAll runs all migrations that should be run inside a master cluster.
 func RunAll(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, opt MigrationOptions) error {
 	if opt.SeedMigrationEnabled() {
+		if err := waitForWebhook(ctx, log, client, kubermaticNamespace); err != nil {
+			return fmt.Errorf("failed to wait for webhook: %v", err)
+		}
+
 		log.Info("datacenters given and dynamic datacenters enabled, attempting to migrate datacenters to Seeds")
 		if err := migrateDatacenters(ctx, log, client, kubermaticNamespace, opt); err != nil {
 			return fmt.Errorf("failed to migrate datacenters.yaml: %v", err)
 		}
-		log.Info("migration completed successfully")
+		log.Info("seed migration completed successfully")
 	}
+
+	return nil
+}
+
+// waitForWebhook waits for the seed validation webhook to be ready, so that
+// the migration can successfully create new Seed resources.
+func waitForWebhook(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string) error {
+	// wait for the webhook to be ready
+	timeout := 30 * time.Second
+	endpoint := types.NamespacedName{Namespace: kubermaticNamespace, Name: "seed-webhook"}
+
+	log.Infow("waiting for webhook to be ready...", "webhook", endpoint, "timeout", timeout)
+	if err := wait.Poll(500*time.Millisecond, timeout, func() (bool, error) {
+		endpoints := &corev1.Endpoints{}
+		if err := client.Get(ctx, endpoint, endpoints); err != nil {
+			return false, err
+		}
+		return len(endpoints.Subsets) > 0, nil
+	}); err != nil {
+		return fmt.Errorf("failed to wait for webhook: %v", err)
+	}
+	log.Info("webhook is ready")
 
 	return nil
 }
