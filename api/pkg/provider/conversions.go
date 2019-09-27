@@ -3,8 +3,6 @@ package provider
 import (
 	"fmt"
 
-	corev1 "k8s.io/api/core/v1"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 )
 
@@ -37,10 +35,9 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 			seeds[dcName].Name = dcName
 			seeds[dcName].Spec.Country = datacenterSpec.Country
 			seeds[dcName].Spec.Location = datacenterSpec.Location
-			// TODO: What to do about the kubeconfig?
-			seeds[dcName].Spec.Kubeconfig = corev1.ObjectReference{}
 			seeds[dcName].Spec.SeedDNSOverwrite = datacenterSpec.SeedDNSOverwrite
 
+			// Kubeconfig object ref is injected during the automated migration.
 		} else {
 			if _, exists := dm[datacenterSpec.Seed]; !exists {
 				return nil, fmt.Errorf("seedDatacenter %q used by node datacenter %q does not exist", datacenterSpec.Seed, dcName)

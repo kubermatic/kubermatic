@@ -108,7 +108,7 @@ datacenters:
 	err = file.Sync()
 	assert.NoError(t, err)
 
-	resultDatacenters, err := loadSeeds(file.Name())
+	resultDatacenters, err := LoadSeeds(file.Name())
 	if err != nil {
 		t.Fatalf("failed to load datacenters: %v", err)
 	}

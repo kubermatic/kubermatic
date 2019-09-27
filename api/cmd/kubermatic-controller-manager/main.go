@@ -151,7 +151,8 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 					return nil, fmt.Errorf("can only return kubeconfig for our own seed (%q), got request for %q", options.dc, seed.Name)
 				}
 				return restMapperCache.Client(mgr.GetConfig())
-			})
+			},
+			false)
 		if err != nil {
 			log.Fatalw("Failed to get seedValidationWebhookServer", zap.Error(err))
 		}
