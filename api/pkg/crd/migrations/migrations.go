@@ -32,14 +32,14 @@ func RunAll(config *rest.Config, workerName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create kubeClient: %v", err)
 	}
-	kubermatiClient, err := kubermaticclientset.NewForConfig(config)
+	kubermaticClient, err := kubermaticclientset.NewForConfig(config)
 	if err != nil {
 		return fmt.Errorf("failed to create Kubermatic client: %v", err)
 	}
 
 	ctx := &cleanupContext{
 		kubeClient:       kubeClient,
-		kubermaticClient: kubermatiClient,
+		kubermaticClient: kubermaticClient,
 	}
 
 	if err := cleanupClusters(workerName, ctx); err != nil {

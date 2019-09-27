@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	mastermigrations "github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
@@ -21,6 +22,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
@@ -58,14 +60,14 @@ func main() {
 	runOpts := controllerRunOptions{}
 	runOpts.seedvalidationHook.AddFlags(flag.CommandLine)
 	flag.StringVar(&runOpts.kubeconfig, "kubeconfig", "", "Path to a kubeconfig.")
-	flag.StringVar(&runOpts.dcFile, "datacenters", "", "The datacenters.yaml file path")
+	flag.StringVar(&runOpts.dcFile, "datacenters", "", "The datacenters.yaml file path.")
 	flag.StringVar(&runOpts.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&runOpts.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&ctrlCtx.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
-	flag.StringVar(&runOpts.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served")
-	flag.BoolVar(&runOpts.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
-	flag.StringVar(&ctrlCtx.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
-	flag.BoolVar(&runOpts.log.Debug, "log-debug", false, "Enables debug logging")
+	flag.StringVar(&runOpts.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served.")
+	flag.BoolVar(&runOpts.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters. Enabling this and defining the datcenters flag will enable the migration of the datacenters defined in datancenters.yaml to Seed custom resources.")
+	flag.StringVar(&ctrlCtx.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources.")
+	flag.BoolVar(&runOpts.log.Debug, "log-debug", false, "Enables debug logging.")
 	flag.StringVar(&runOpts.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
 
@@ -82,7 +84,7 @@ func main() {
 
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)
 	if err != nil {
-		log.Fatalw("Failed to create the label selector for the given worker", "workerName", runOpts.workerName, zap.Error(err))
+		log.Fatalw("failed to create the label selector for the given worker", "workerName", runOpts.workerName, zap.Error(err))
 	}
 
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
@@ -99,7 +101,7 @@ func main() {
 	// load kubeconfig and create API client
 	kubeconfig, err := clientcmd.LoadFromFile(runOpts.kubeconfig)
 	if err != nil {
-		log.Fatalw("Failed to read the kubeconfig", zap.Error(err))
+		log.Fatalw("failed to read the kubeconfig", zap.Error(err))
 	}
 
 	config := clientcmd.NewNonInteractiveClientConfig(
@@ -111,7 +113,7 @@ func main() {
 
 	cfg, err := config.ClientConfig()
 	if err != nil {
-		log.Fatalw("Failed to create client", zap.Error(err))
+		log.Fatalw("failed to create client", zap.Error(err))
 	}
 
 	ctrlCtx.labelSelectorFunc = func(listOpts *metav1.ListOptions) {
@@ -133,14 +135,34 @@ func main() {
 		log.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
 
+	// prepare migration options
+	migrationOptions := mastermigrations.MigrationOptions{
+		DatacentersFile:    runOpts.dcFile,
+		DynamicDatacenters: runOpts.dynamicDatacenters,
+		Kubeconfig:         kubeconfig,
+	}
+
 	if runOpts.seedvalidationHook.CertFile != "" || runOpts.seedvalidationHook.KeyFile != "" {
 		seedValidationWebhookServer, err := runOpts.seedvalidationHook.Server(
-			ctx, log, runOpts.workerName, ctrlCtx.seedsGetter, provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter))
+			ctx,
+			log,
+			runOpts.workerName,
+			ctrlCtx.seedsGetter,
+			provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter),
+			migrationOptions.SeedMigrationEnabled())
 		if err != nil {
 			log.Fatalw("failed to create validatingAdmissionWebhook server for seeds", zap.Error(err))
 		}
-		if err := mgr.Add(seedValidationWebhookServer); err != nil {
-			log.Fatalw("failed to add validatingAdmissionWebhook server to mgr", zap.Error(err))
+
+		// This group starts the validation webhook server; it's not using the
+		// mgr because we want the webhook to run so that migrations can perform
+		// operations on seeds
+		{
+			g.Add(func() error {
+				return seedValidationWebhookServer.Start(ctx.Done())
+			}, func(err error) {
+				ctxCancel()
+			})
 		}
 	} else {
 		log.Info("the validatingAdmissionWebhook server can not be started because seed-admissionwebhook-cert-file and seed-admissionwebhook-key-file are empty")
@@ -181,6 +203,23 @@ func main() {
 			}
 
 			return leaderelection.RunAsLeader(leaderCtx, log, cfg, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) error {
+				if migrationOptions.MigrationEnabled() {
+					log.Info("executing migrations...")
+
+					// create a dedicated client because the one from the manager is not yet
+					// initialized and returns 404's for everything
+					client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
+					if err != nil {
+						return fmt.Errorf("failed to create kube client: %v", err)
+					}
+
+					if err := mastermigrations.RunAll(ctx, log, client, ctrlCtx.namespace, migrationOptions); err != nil {
+						return fmt.Errorf("failed to run migrations: %v", err)
+					}
+
+					log.Info("migrations executed successfully")
+				}
+
 				log.Info("starting the master-controller-manager...")
 				if err := mgr.Start(ctx.Done()); err != nil {
 					return fmt.Errorf("the controller-manager stopped with an error: %v", err)

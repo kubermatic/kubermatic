@@ -63,8 +63,8 @@ type datacentersMeta struct {
 	Datacenters map[string]DatacenterMeta `json:"datacenters"`
 }
 
-// loadDatacenters loads all Datacenters from the given path.
-func loadSeeds(path string) (map[string]*kubermaticv1.Seed, error) {
+// LoadSeeds loads all Datacenters from the given path.
+func LoadSeeds(path string) (map[string]*kubermaticv1.Seed, error) {
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read datacenter.yaml: %v", err)
@@ -89,8 +89,10 @@ func loadSeeds(path string) (map[string]*kubermaticv1.Seed, error) {
 	return seeds, nil
 }
 
+// LoadSeed loads an existing datacenters.yaml from disk and returns the given
+// datacenter as a seed or an error if the datacenter does not exist.
 func LoadSeed(path, datacenterName string) (*kubermaticv1.Seed, error) {
-	seeds, err := loadSeeds(path)
+	seeds, err := LoadSeeds(path)
 	if err != nil {
 		return nil, err
 	}
@@ -113,6 +115,7 @@ func validateImageList(images kubermaticv1.ImageList) error {
 	return nil
 }
 
+// ValidateSeed takes a seed and returns an error if the seed's spec is invalid.
 func ValidateSeed(seed *kubermaticv1.Seed) error {
 	for name, dc := range seed.Spec.Datacenters {
 		if dc.Spec.VSphere != nil {
@@ -144,10 +147,6 @@ func ValidateSeed(seed *kubermaticv1.Seed) error {
 
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName, dcFile, namespace string, dynamicDatacenters bool) (SeedGetter, error) {
-	if dcFile != "" && dynamicDatacenters {
-		return nil, errors.New("--datacenters must be empty when --dynamic-datacenters is enabled")
-	}
-
 	if dynamicDatacenters {
 		return func() (*kubermaticv1.Seed, error) {
 			seed := &kubermaticv1.Seed{}
@@ -177,10 +176,6 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 }
 
 func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace, workerName string, dynamicDatacenters bool) (SeedsGetter, error) {
-	if dcFile != "" && dynamicDatacenters {
-		return nil, errors.New("--datacenters must be empty when --dynamic-datacenters is enabled")
-	}
-
 	if dynamicDatacenters {
 		labelSelector, err := workerlabel.LabelSelector(workerName)
 		if err != nil {
@@ -208,8 +203,8 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 	if dcFile == "" {
 		return nil, errors.New("--datacenters is required")
 	}
-	// Make sure we fail early, an error here is nor recoverable
-	seedMap, err := loadSeeds(dcFile)
+	// Make sure we fail early, an error here is not recoverable
+	seedMap, err := LoadSeeds(dcFile)
 	if err != nil {
 		return nil, err
 	}
