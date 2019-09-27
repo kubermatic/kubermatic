@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
-	"github.com/gorilla/mux"
-
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
@@ -459,6 +460,184 @@ func DecodeGetClusterRoleReq(c context.Context, r *http.Request) (interface{}, e
 		return "", fmt.Errorf("'role_id' parameter is required but was not provided")
 	}
 	req.RoleID = roleID
+
+	return req, nil
+}
+
+// PatchRoleEndpoint patches Role with given name
+func PatchRoleEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(patchRoleReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		roleID := addUserClusterRolePrefix(req.RoleID)
+
+		existingRole := &rbacv1.Role{}
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: roleID, Namespace: req.Namespace}, existingRole); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		existingRoleJSON, err := json.Marshal(existingRole)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot decode existing role: %v", err)
+		}
+
+		patchedRoleJSON, err := jsonpatch.MergePatch(existingRoleJSON, req.Patch)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot patch role: %v", err)
+		}
+
+		var patchedRole *rbacv1.Role
+		err = json.Unmarshal(patchedRoleJSON, &patchedRole)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot decode patched role: %v", err)
+		}
+
+		if err := client.Update(ctx, patchedRole); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalRoleToExternal(patchedRole), nil
+	}
+}
+
+// patchRoleReq defines HTTP request for patchRole endpoint
+// swagger:parameters patchRole
+type patchRoleReq struct {
+	common.GetClusterReq
+	// in: path
+	// required: true
+	RoleID string `json:"role_id"`
+	// in: path
+	// required: true
+	Namespace string `json:"namespace"`
+	// in: body
+	Patch []byte
+}
+
+func DecodePatchRoleReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchRoleReq
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(common.DCReq)
+	req.ClusterID = clusterID
+
+	roleID := mux.Vars(r)["role_id"]
+	if roleID == "" {
+		return "", fmt.Errorf("'role_id' parameter is required but was not provided")
+	}
+	req.RoleID = roleID
+	namespace := mux.Vars(r)["namespace"]
+	if namespace == "" {
+		return "", fmt.Errorf("'namespace' parameter is required but was not provided")
+	}
+	req.Namespace = namespace
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// PatchRoleEndpoint patches ClusterRole with given name
+func PatchClusterRoleEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(patchClusterRoleReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		roleID := addUserClusterRolePrefix(req.RoleID)
+
+		existingClusterRole := &rbacv1.ClusterRole{}
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: roleID}, existingClusterRole); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		existingClusterRoleJSON, err := json.Marshal(existingClusterRole)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot decode existing cluster role: %v", err)
+		}
+
+		patchedClusterRoleJSON, err := jsonpatch.MergePatch(existingClusterRoleJSON, req.Patch)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot patch cluster role: %v", err)
+		}
+
+		var patchedClusterRole *rbacv1.ClusterRole
+		err = json.Unmarshal(patchedClusterRoleJSON, &patchedClusterRole)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot decode patched role: %v", err)
+		}
+
+		if err := client.Update(ctx, patchedClusterRole); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalClusterRoleToExternal(patchedClusterRole), nil
+	}
+}
+
+// patchClusterRoleReq defines HTTP request for patchClusterRole endpoint
+// swagger:parameters patchClusterRole
+type patchClusterRoleReq struct {
+	common.GetClusterReq
+	// in: path
+	// required: true
+	RoleID string `json:"role_id"`
+	// in: body
+	Patch []byte
+}
+
+func DecodePatchClusterRoleReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchClusterRoleReq
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(common.DCReq)
+	req.ClusterID = clusterID
+
+	roleID := mux.Vars(r)["role_id"]
+	if roleID == "" {
+		return "", fmt.Errorf("'role_id' parameter is required but was not provided")
+	}
+	req.RoleID = roleID
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
