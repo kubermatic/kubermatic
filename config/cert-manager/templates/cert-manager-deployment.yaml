@@ -50,6 +50,9 @@ spec:
         - --webhook-ca-secret=webhook-ca
         - --webhook-serving-secret=webhook-tls
         - --webhook-dns-names=webhook,webhook.{{ .Release.Namespace }},webhook.{{ .Release.Namespace }}.svc
+        {{- if .Values.certManager.controller.extraArgs }}
+{{ toYaml .Values.certManager.controller.extraArgs | indent 8 }}
+        {{- end }}
         env:
         - name: POD_NAMESPACE
           valueFrom:
@@ -66,6 +69,9 @@ spec:
         {{- if .Values.certManager.no_proxy }}
         - name: NO_PROXY
           value: {{ .Values.certManager.no_proxy }}
+        {{- end }}
+        {{- if .Values.certManager.controller.extraEnv }}
+{{ toYaml .Values.certManager.controller.extraEnv | indent 8 }}
         {{- end }}
         ports:
         - name: metrics
