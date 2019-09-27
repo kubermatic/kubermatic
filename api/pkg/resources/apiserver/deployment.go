@@ -116,7 +116,8 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 			}
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableDexCA, auditLogEnabled)
+			endpointReconcilingDisabled := data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled
+			flags, err := getApiserverFlags(data, etcdEndpoints, enableDexCA, auditLogEnabled, endpointReconcilingDisabled)
 			if err != nil {
 				return nil, err
 			}
@@ -213,7 +214,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableDexCA, auditLogEnabled bool) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableDexCA, auditLogEnabled, endpointReconcilingDisabled bool) ([]string, error) {
 	nodePortRange := data.NodePortRange()
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
@@ -273,6 +274,10 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	if auditLogEnabled {
 		flags = append(flags, "--audit-policy-file", "/etc/kubernetes/audit/policy.yaml")
+	}
+
+	if endpointReconcilingDisabled {
+		flags = append(flags, "--endpoint-reconciler-type=none")
 	}
 
 	if data.Cluster().Spec.Cloud.GCP != nil {
