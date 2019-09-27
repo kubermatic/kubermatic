@@ -283,7 +283,7 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 	if spec.TenantID == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
 		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenantID))
 	}
-	if errs != nil && len(errs) != 0 {
+	if len(errs) != 0 {
 		return errors.New("no tenant name or ID specified")
 	}
 
