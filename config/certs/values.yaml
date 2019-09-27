@@ -7,3 +7,10 @@ certificates:
   - "kibana.kubermatic.example.com"
   issuer:
     email: dev@loodse.com
+
+  dnsValidation:
+    enabled: false
+    route53:
+      region: ""
+      accessKeyID: ""
+      secretAccessKey: ""
