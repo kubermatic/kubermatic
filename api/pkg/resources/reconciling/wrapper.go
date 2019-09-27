@@ -1,11 +1,15 @@
 package reconciling
 
 import (
+	"errors"
+
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilerror "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	utilpointer "k8s.io/utils/pointer"
 )
@@ -177,5 +181,26 @@ func DefaultCronJob(creator CronJobCreator) CronJobCreator {
 		}
 
 		return cj, nil
+	}
+}
+
+// ValidateUnstructured validates that the unstructued has correctly set both
+// Kind and APIVersion, to avoid errors further down the line.
+func ValidateUnstructured(creator UnstructuredCreator) UnstructuredCreator {
+	return func(u *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+		u, err := creator(u)
+		if err != nil {
+			return nil, err
+		}
+
+		var errs []error
+		if u.GetKind() == "" {
+			errs = append(errs, errors.New("Kind is unset for unstructured.Unstructured"))
+		}
+		if u.GetAPIVersion() == "" {
+			errs = append(errs, errors.New("APIVersion is unset for unstructured.Unstructured"))
+		}
+
+		return u, utilerror.NewAggregate(errs)
 	}
 }

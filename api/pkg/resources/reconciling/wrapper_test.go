@@ -15,6 +15,7 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	utilpointer "k8s.io/utils/pointer"
 )
@@ -732,6 +733,61 @@ func TestDeploymentStrategyDefaulting(t *testing.T) {
 
 			if err := tc.verify(deployment); err != nil {
 				t.Fatal(err)
+			}
+		})
+	}
+
+}
+
+func unstructuredWithGVK(kind, apiVersion string) *unstructured.Unstructured {
+	u := &unstructured.Unstructured{}
+	u.SetKind(kind)
+	u.SetAPIVersion(apiVersion)
+	return u
+}
+
+func TestValidateUnstructurted(t *testing.T) {
+	tests := []struct {
+		name          string
+		in            *unstructured.Unstructured
+		expectedError string
+	}{
+		{
+			name:          "Both Kind and APIVersion are unset, error",
+			in:            unstructuredWithGVK("", ""),
+			expectedError: "[Kind is unset for unstructured.Unstructured, APIVersion is unset for unstructured.Unstructured]",
+		},
+		{
+			name:          "Kind is unset, error",
+			in:            unstructuredWithGVK("", "kubermatic.io/v1"),
+			expectedError: "Kind is unset for unstructured.Unstructured",
+		},
+
+		{
+			name:          "APIVersion is unset, error",
+			in:            unstructuredWithGVK("Cluster", ""),
+			expectedError: "APIVersion is unset for unstructured.Unstructured",
+		},
+		{
+			name: "Kind and APIVersion are set, no error",
+			in:   unstructuredWithGVK("Cluster", "kubermatic.io/v1"),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			creator := func(u *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+				return u, nil
+			}
+			_, err := ValidateUnstructured(creator)(tc.in)
+
+			errMsg := ""
+			if err != nil {
+				errMsg = err.Error()
+			}
+
+			if errMsg != tc.expectedError {
+				t.Fatalf("Expected error %q, got error %q", tc.expectedError, errMsg)
 			}
 		})
 	}
