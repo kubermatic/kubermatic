@@ -14,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/api/equality"
+	utilerror "k8s.io/apimachinery/pkg/util/errors"
 )
 
 var (
@@ -283,7 +284,7 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 	if spec.TenantID == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
 		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenantID))
 	}
-	if len(errs) != 0 {
+	if utilerror.NewAggregate(errs) != nil {
 		return errors.New("no tenant name or ID specified")
 	}
 
