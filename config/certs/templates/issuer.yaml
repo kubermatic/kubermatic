@@ -23,6 +23,16 @@ spec:
     # Configure the challenge solvers.
     solvers:
     - selector: {} # empty selector matches every certificate
+      {{- if .Values.certificates.dnsValidation.enabled }}
+      dns01:
+        route53:
+           region: {{ .Values.certificates.dnsValidation.route53.region | quote }}
+           accessKeyID: {{ .Values.certificates.dnsValidation.route53.accessKeyID | quote }}
+           secretAccessKeySecretRef:
+             name: letsencrypt-prod-dns
+             key: secret-access-key
+      {{- else }}
       http01:
         ingress:
           class: nginx
+      {{- end }}
