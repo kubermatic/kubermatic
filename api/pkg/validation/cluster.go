@@ -276,14 +276,14 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 		}
 	}
 
-	var err1, err2 error
+	var errs []error
 	if spec.Tenant == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		err1 = kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenant)
+		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenant))
 	}
 	if spec.TenantID == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		err2 = kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenantID)
+		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenantID))
 	}
-	if err1 != nil && err2 != nil {
+	if errs != nil && len(errs) != 0 {
 		return errors.New("no tenant name or ID specified")
 	}
 
