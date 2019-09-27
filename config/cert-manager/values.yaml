@@ -1,6 +1,11 @@
 certManager:
   isOpenshift: false
 
+  # Optional proxy server configuration
+  # http_proxy: ""
+  # https_proxy: ""
+  # no_proxy: ""
+
   controller:
     replicas: 1
     image:
@@ -19,6 +24,17 @@ certManager:
     affinity: {}
     nodeSelector: {}
     tolerations: []
+
+    # Optional additional arguments. Use at your own risk.
+    extraArgs: []
+    # Must be a list of `--`-denoted args, e.G.:
+    # - --foo-args=foo-value
+
+    # Optional adddional env vars. Use at your own risk.
+    extraEnv: []
+    # Must be a list of valid env var definitions, e.G.:
+    # - name: SOME_VAR
+    #   value: 'some value'
 
   webhook:
     replicas: 1
