@@ -117,6 +117,11 @@ spec:
         - -namespace=$(NAMESPACE)
         - -seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/serverCert.pem
         - -seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/serverKey.pem
+        {{- if .Values.kubermatic.apiserverEndpointReconcilingDisabled }}
+        - -apiserver-endpoint-reconciling-disabled=true
+        {{- else }}
+        - -apiserver-endpoint-reconciling-disabled=false
+        {{- end }}
         image: '{{ .Values.kubermatic.controller.image.repository }}:{{ .Values.kubermatic.controller.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.image.pullPolicy }}
         env:

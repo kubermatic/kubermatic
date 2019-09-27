@@ -39,6 +39,9 @@ kubermatic:
   schedulerDefaultReplicas: "1"
   maxParallelReconcile: "10"
 
+  # Whether to disable reconciling for the apiserver endpoints
+  apiserverEndpointReconcilingDisabled: false
+
   # Whether to load the datacenters from CRDs dynamically during runtime
   dynamicDatacenters: false
 

@@ -55,8 +55,10 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
 	predicates := workerlabel.Predicates(ctrlCtx.runOptions.workerName)
 	defaultCompontentsOverrides := kubermaticv1.ComponentSettings{
-		Apiserver: kubermaticv1.DeploymentSettings{
-			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.apiServerDefaultReplicas))},
+		Apiserver: kubermaticv1.APIServerSettings{
+			DeploymentSettings:          kubermaticv1.DeploymentSettings{Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.apiServerDefaultReplicas))},
+			EndpointReconcilingDisabled: ctrlCtx.runOptions.apiServerEndpointReconcilingDisabled,
+		},
 		ControllerManager: kubermaticv1.DeploymentSettings{
 			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.controllerManagerDefaultReplicas))},
 		Scheduler: kubermaticv1.DeploymentSettings{
