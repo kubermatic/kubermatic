@@ -253,7 +253,8 @@ type ComponentSettings struct {
 }
 
 type APIServerSettings struct {
-	DeploymentSettings
+	DeploymentSettings `json:",inline"`
+
 	EndpointReconcilingDisabled bool `json:"endpointReconcilingDisabled"`
 }
 
