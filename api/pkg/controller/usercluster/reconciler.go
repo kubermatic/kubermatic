@@ -21,6 +21,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	certutil "k8s.io/client-go/util/cert"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Reconcile creates, updates, or deletes Kubernetes resources to match the desired state.
@@ -33,6 +34,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	// We need to reconcile namespaces and services next to make sure
 	// the openshift apiservices become available ASAP
 	if err := r.reconcileNamespaces(ctx); err != nil {
+		return err
+	}
+
+	if err := r.reconcileUnstructured(ctx); err != nil {
 		return err
 	}
 
@@ -339,4 +344,37 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (r *reconciler) reconcileUnstructured(ctx context.Context) error {
+	if !r.openshift {
+		return nil
+	}
+
+	creators := []reconciling.NamedUnstructuredCreatorGetter{
+		openshift.InfrastructureCreatorGetter(r.platform),
+	}
+	r.log.Debug("Reconciling unstructured")
+	// The delegatingReader from the `mgr` always redirects request for unstructured.Unstructured
+	// to the API even though the cache-backed reader is perfectly capable of creating watches
+	// for unstructured.Unstructured: https://github.com/kubernetes-sigs/controller-runtime/issues/615
+	// Since using the API is very expensive as we get triggered by almost anything, we construct our
+	// own client that uses the cache as reader.
+	client := ctrlruntimeclientClient{
+		Reader:       r.cache,
+		Writer:       r.Client,
+		StatusClient: r.Client,
+	}
+	if err := reconciling.ReconcileUnstructureds(ctx, creators, "", client); err != nil {
+		return fmt.Errorf("failed to reconcile unstructureds: %v", err)
+	}
+	r.log.Debug("Finished reconciling unstructured")
+
+	return nil
+}
+
+type ctrlruntimeclientClient struct {
+	ctrlruntimeclient.Reader
+	ctrlruntimeclient.Writer
+	ctrlruntimeclient.StatusClient
 }
