@@ -233,6 +233,35 @@ func (a *Client) CreateRole(params *CreateRoleParams, authInfo runtime.ClientAut
 }
 
 /*
+CreateRoleBinding Creates role binding
+*/
+func (a *Client) CreateRoleBinding(params *CreateRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*CreateRoleBindingCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateRoleBindingParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "createRoleBinding",
+		Method:             "POST",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateRoleBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*CreateRoleBindingCreated), nil
+
+}
+
+/*
 CreateSSHKey adds the given SSH key to the specified project
 */
 func (a *Client) CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.ClientAuthInfoWriter) (*CreateSSHKeyOK, error) {

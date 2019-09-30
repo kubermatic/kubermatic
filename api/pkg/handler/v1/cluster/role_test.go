@@ -515,7 +515,7 @@ func genDefaultRole(name, namespace string) *rbacv1.Role {
 	return &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s%s", cluster.UserClusterRolePrefix, name),
-			Labels:    map[string]string{cluster.UserClusterRoleComponentKey: cluster.UserClusterRoleComponentValue},
+			Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
 			Namespace: namespace,
 		},
 		Rules: []rbacv1.PolicyRule{
@@ -532,7 +532,7 @@ func genDefaultClusterRole(name string) *rbacv1.ClusterRole {
 	return &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   fmt.Sprintf("%s%s", cluster.UserClusterRolePrefix, name),
-			Labels: map[string]string{cluster.UserClusterRoleComponentKey: cluster.UserClusterRoleComponentValue},
+			Labels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
