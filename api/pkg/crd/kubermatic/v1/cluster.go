@@ -421,11 +421,13 @@ type AWSCloudSpec struct {
 
 // OpenstackCloudSpec specifies access data to an OpenStack cloud.
 type OpenstackCloudSpec struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Tenant   string `json:"tenant"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+	Tenant   string `json:"tenant,omitempty"`
 	TenantID string `json:"tenantID,omitempty"`
-	Domain   string `json:"domain"`
+	Domain   string `json:"domain,omitempty"`
 	// Network holds the name of the internal network
 	// When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created
 	//
@@ -557,6 +559,9 @@ func (cluster *Cluster) GetSecretName() string {
 	}
 	if cluster.Spec.Cloud.Hetzner != nil {
 		return fmt.Sprintf("%s-hetzner-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.Openstack != nil {
+		return fmt.Sprintf("%s-openstack-%s", CredentialPrefix, cluster.Name)
 	}
 	if cluster.Spec.Cloud.Packet != nil {
 		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, cluster.Name)
