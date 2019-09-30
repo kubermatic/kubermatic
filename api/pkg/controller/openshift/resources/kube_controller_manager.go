@@ -44,9 +44,9 @@ extendedArguments:
   - /var/run/kubernetes
 {{- if .CloudProvider }}
   cloud-provider:
-   - {{ .CloudProvider}}
+  - {{ .CloudProvider}}
   cloud-config:
-   - /etc/kubernetes/cloud/config
+  - /etc/kubernetes/cloud/config
 {{- end }}
   cluster-cidr:
   - {{ .ClusterCIDR }}

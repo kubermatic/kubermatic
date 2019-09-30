@@ -193,9 +193,9 @@ aggregatorConfig:
 apiServerArguments:
 {{- if .CloudProvider }}
   cloud-provider:
-   - {{ .CloudProvider}}
+  - {{ .CloudProvider}}
   cloud-config:
-   - /etc/kubernetes/cloud/config
+  - /etc/kubernetes/cloud/config
 {{- end }}
   enable-aggregator-routing:
   # Thist _must_ stay false, if its true, the kube-apiserver will try to resolve endpoints for
