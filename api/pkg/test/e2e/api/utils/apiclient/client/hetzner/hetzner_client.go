@@ -53,6 +53,35 @@ func (a *Client) ListHetznerSizes(params *ListHetznerSizesParams, authInfo runti
 
 }
 
+/*
+ListHetznerSizesNoCredentials Lists sizes from hetzner
+*/
+func (a *Client) ListHetznerSizesNoCredentials(params *ListHetznerSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListHetznerSizesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListHetznerSizesNoCredentialsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listHetznerSizesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/hetzner/sizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListHetznerSizesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListHetznerSizesNoCredentialsOK), nil
+
+}
+
 // SetTransport changes the transport on the client
 func (a *Client) SetTransport(transport runtime.ClientTransport) {
 	a.transport = transport
