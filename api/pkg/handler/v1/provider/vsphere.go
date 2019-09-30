@@ -87,12 +87,8 @@ func getVsphereNetworks(seedsGetter provider.SeedsGetter, username, password, da
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
-	vsProvider, err := vsphere.NewCloudProvider(datacenter, nil)
-	if err != nil {
-		return nil, err
-	}
 
-	networks, err := vsProvider.GetNetworks(kubermaticv1.CloudSpec{
+	networks, err := vsphere.GetNetworks(kubermaticv1.CloudSpec{
 		DatacenterName: datacenterName,
 		VSphere: &kubermaticv1.VSphereCloudSpec{
 			InfraManagementUser: kubermaticv1.VSphereCredentials{
@@ -100,7 +96,7 @@ func getVsphereNetworks(seedsGetter provider.SeedsGetter, username, password, da
 				Password: password,
 			},
 		},
-	})
+	}, datacenter.Spec.VSphere)
 	if err != nil {
 		return nil, err
 	}
@@ -187,12 +183,8 @@ func getVsphereFolders(seedsGetter provider.SeedsGetter, username, password, dat
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
-	vsProvider, err := vsphere.NewCloudProvider(datacenter, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create new cloud provider: %v", err)
-	}
 
-	folders, err := vsProvider.GetVMFolders(kubermaticv1.CloudSpec{
+	folders, err := vsphere.GetVMFolders(kubermaticv1.CloudSpec{
 		DatacenterName: datacenterName,
 		VSphere: &kubermaticv1.VSphereCloudSpec{
 			InfraManagementUser: kubermaticv1.VSphereCredentials{
@@ -200,7 +192,7 @@ func getVsphereFolders(seedsGetter provider.SeedsGetter, username, password, dat
 				Password: password,
 			},
 		},
-	})
+	}, datacenter.Spec.VSphere)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get folders: %v", err)
 	}

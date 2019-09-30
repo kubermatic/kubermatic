@@ -58,20 +58,20 @@ func (s *Session) Logout() {
 	}
 }
 
-func (v *Provider) newSession(ctx context.Context, cloud kubermaticv1.CloudSpec) (*Session, error) {
-	u, err := url.Parse(fmt.Sprintf("%s/sdk", v.dc.Endpoint))
+func newSession(ctx context.Context, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecVSphere) (*Session, error) {
+	u, err := url.Parse(fmt.Sprintf("%s/sdk", dc.Endpoint))
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := govmomi.NewClient(context.Background(), u, v.dc.AllowInsecure)
+	client, err := govmomi.NewClient(context.Background(), u, dc.AllowInsecure)
 	if err != nil {
 		return nil, err
 	}
 
 	user := url.UserPassword(cloud.VSphere.InfraManagementUser.Username, cloud.VSphere.InfraManagementUser.Password)
-	if v.dc.InfraManagementUser != nil {
-		user = url.UserPassword(v.dc.InfraManagementUser.Username, v.dc.InfraManagementUser.Password)
+	if dc.InfraManagementUser != nil {
+		user = url.UserPassword(dc.InfraManagementUser.Username, dc.InfraManagementUser.Password)
 	}
 
 	if err = client.Login(ctx, user); err != nil {
@@ -79,9 +79,9 @@ func (v *Provider) newSession(ctx context.Context, cloud kubermaticv1.CloudSpec)
 	}
 
 	finder := find.NewFinder(client.Client, true)
-	datacenter, err := finder.Datacenter(ctx, v.dc.Datacenter)
+	datacenter, err := finder.Datacenter(ctx, dc.Datacenter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get vSphere datacenter %q: %v", v.dc.Datacenter, err)
+		return nil, fmt.Errorf("failed to get vSphere datacenter %q: %v", dc.Datacenter, err)
 	}
 	finder.SetDatacenter(datacenter)
 
@@ -94,12 +94,12 @@ func (v *Provider) newSession(ctx context.Context, cloud kubermaticv1.CloudSpec)
 
 // getVMRootPath is a helper func to get the root path for VM's
 // We extracted it because we use it in several places
-func (v *Provider) getVMRootPath(cloud kubermaticv1.CloudSpec) string {
+func getVMRootPath(cloud kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecVSphere) string {
 	// Each datacenter root directory for VM's is: ${DATACENTER_NAME}/vm
-	rootPath := path.Join("/", v.dc.Datacenter, "vm")
+	rootPath := path.Join("/", dc.Datacenter, "vm")
 	// We offer a different root path though in case people would like to store all Kubermatic VM's below a certain directory
-	if v.dc.RootPath != "" {
-		rootPath = path.Clean(v.dc.RootPath)
+	if dc.RootPath != "" {
+		rootPath = path.Clean(dc.RootPath)
 	}
 	return rootPath
 }
@@ -108,13 +108,13 @@ func (v *Provider) getVMRootPath(cloud kubermaticv1.CloudSpec) string {
 func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	ctx := context.Background()
 
-	session, err := v.newSession(ctx, cluster.Spec.Cloud)
+	session, err := newSession(ctx, cluster.Spec.Cloud, v.dc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
 	}
 	defer session.Logout()
 
-	rootPath := v.getVMRootPath(cluster.Spec.Cloud)
+	rootPath := getVMRootPath(cluster.Spec.Cloud, v.dc)
 	if cluster.Spec.Cloud.VSphere.Folder == "" {
 		// If the user did not specify a folder, we create a own folder for this cluster to improve
 		// the VM management in vCenter
@@ -136,13 +136,13 @@ func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update
 }
 
 // GetNetworks returns a slice of VSphereNetworks of the datacenter from the passed cloudspec.
-func (v *Provider) GetNetworks(cloud kubermaticv1.CloudSpec) ([]NetworkInfo, error) {
+func GetNetworks(cloud kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecVSphere) ([]NetworkInfo, error) {
 	ctx := context.Background()
 	// For the GetNetworks request we use dc.Spec.VSphere.InfraManagementUser
 	// if set because that is the user which will ultimatively configure
 	// the networks - But it means users in the UI can see vsphere
 	// networks without entering credentials
-	session, err := v.newSession(ctx, cloud)
+	session, err := newSession(ctx, cloud, dc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
 	}
@@ -152,10 +152,10 @@ func (v *Provider) GetNetworks(cloud kubermaticv1.CloudSpec) ([]NetworkInfo, err
 }
 
 // GetVMFolders returns a slice of VSphereFolders of the datacenter from the passed cloudspec.
-func (v *Provider) GetVMFolders(cloud kubermaticv1.CloudSpec) ([]Folder, error) {
+func GetVMFolders(cloud kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecVSphere) ([]Folder, error) {
 	ctx := context.TODO()
 
-	session, err := v.newSession(ctx, cloud)
+	session, err := newSession(ctx, cloud, dc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
 	}
@@ -169,7 +169,7 @@ func (v *Provider) GetVMFolders(cloud kubermaticv1.CloudSpec) ([]Folder, error) 
 		return nil, fmt.Errorf("couldn't retrieve folder list: %v", err)
 	}
 
-	rootPath := v.getVMRootPath(cloud)
+	rootPath := getVMRootPath(cloud, dc)
 	var folders []Folder
 	for _, folderRef := range folderRefs {
 		// We filter by rootPath. If someone configures it, we should respect it.
@@ -208,7 +208,7 @@ func (v *Provider) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 
 // ValidateCloudSpec validates whether a vsphere client can be constructued for the passed cloudspec.
 func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
-	session, err := v.newSession(context.TODO(), spec)
+	session, err := newSession(context.TODO(), spec, v.dc)
 	if err != nil {
 		return fmt.Errorf("failed to create vCenter session: %v", err)
 	}
@@ -222,7 +222,7 @@ func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	ctx := context.TODO()
 
-	session, err := v.newSession(ctx, cluster.Spec.Cloud)
+	session, err := newSession(ctx, cluster.Spec.Cloud, v.dc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
 	}

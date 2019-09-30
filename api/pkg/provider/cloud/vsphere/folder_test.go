@@ -30,8 +30,7 @@ func TestCreateVMFolder(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	p := &Provider{dc: dc}
-	session, err := p.newSession(ctx, cloudSpec)
+	session, err := newSession(ctx, cloudSpec, dc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,9 +87,7 @@ func TestProvider_GetVMFolders(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p := &Provider{dc: test.dc}
-
-			folders, err := p.GetVMFolders(getTestCloudSpec())
+			folders, err := GetVMFolders(getTestCloudSpec(), test.dc)
 			if err != nil {
 				t.Fatal(err)
 			}
