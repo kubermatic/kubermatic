@@ -2767,6 +2767,55 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/hetzner/sizes": {
+      "get": {
+        "description": "Lists sizes from hetzner",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "hetzner"
+        ],
+        "operationId": "listHetznerSizesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HetznerSizeList",
+            "schema": {
+              "$ref": "#/definitions/HetznerSizeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/networks": {
       "get": {
         "description": "Lists networks from openstack",
