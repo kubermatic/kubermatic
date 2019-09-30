@@ -119,6 +119,7 @@ var (
 
 type kubeControllerManagerConfigData interface {
 	Cluster() *kubermaticv1.Cluster
+	GetKubernetesCloudProviderName() string
 }
 
 func KubeControllerManagerConfigMapCreatorFactory(data kubeControllerManagerConfigData) reconciling.NamedConfigMapCreatorGetter {
@@ -156,7 +157,7 @@ func KubeControllerManagerConfigMapCreatorFactory(data kubeControllerManagerConf
 					ClusterCIDR:           podCIDR,
 					ServiceAccountKeyFile: kubeControllerManagerServiceAccountKeyPath,
 					ServiceCIDR:           serviceCIDR,
-					CloudProvider:         apiserver.GetKubernetesCloudProviderName(data.Cluster()),
+					CloudProvider:         data.GetKubernetesCloudProviderName(),
 					ConfigureCloudRoutes:  configureCloudRoutes,
 				}
 

@@ -44,6 +44,7 @@ func Add(
 	openshift bool,
 	version string,
 	namespace string,
+	cloudProviderName string,
 	caCert *x509.Certificate,
 	clusterURL *url.URL,
 	openvpnServerPort int,
@@ -62,6 +63,7 @@ func Add(
 		openvpnServerPort: openvpnServerPort,
 		openVPNCA:         openVPNCA,
 		log:               log,
+		platform:          cloudProviderName,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {

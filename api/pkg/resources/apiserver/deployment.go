@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd/etcdrunning"
@@ -296,7 +295,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, strings.Join(featureGates, ","))
 	}
 
-	cloudProviderName := GetKubernetesCloudProviderName(data.Cluster())
+	cloudProviderName := data.GetKubernetesCloudProviderName()
 	if cloudProviderName != "" {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
@@ -328,23 +327,6 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	}
 
 	return flags, nil
-}
-
-func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
-	if cluster.Spec.Cloud.AWS != nil {
-		return "aws"
-	}
-	if cluster.Spec.Cloud.Openstack != nil {
-		return "openstack"
-	}
-	if cluster.Spec.Cloud.VSphere != nil {
-		return "vsphere"
-	}
-	if cluster.Spec.Cloud.Azure != nil {
-		return "azure"
-	}
-
-	return ""
 }
 
 func getVolumeMounts(enableDexCA bool) []corev1.VolumeMount {

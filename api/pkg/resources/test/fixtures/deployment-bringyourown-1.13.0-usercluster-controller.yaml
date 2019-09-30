@@ -39,7 +39,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/user-cluster-controller-manager","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-metrics-listen-address","0.0.0.0:8085","-health-listen-address","0.0.0.0:8086","-namespace","$(NAMESPACE)","-ca-cert","/etc/kubernetes/pki/ca/ca.crt","-cluster-url","","-openvpn-server-port","30003","-overwrite-registry","","-openshift=false","-version","1.13.0","-openvpn-ca-cert-file=/etc/kubernetes/pki/openvpn/ca.crt","-openvpn-ca-key-file=/etc/kubernetes/pki/openvpn/ca.key","--ipam-controller-network","192.168.1.1/24,192.168.1.1,8.8.8.8"]}'
+        - '{"command":"/usr/local/bin/user-cluster-controller-manager","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-metrics-listen-address","0.0.0.0:8085","-health-listen-address","0.0.0.0:8086","-namespace","$(NAMESPACE)","-ca-cert","/etc/kubernetes/pki/ca/ca.crt","-cluster-url","","-openvpn-server-port","30003","-overwrite-registry","","-openshift=false","-version","1.13.0","-cloud-provider-name","","-openvpn-ca-cert-file=/etc/kubernetes/pki/openvpn/ca.crt","-openvpn-ca-key-file=/etc/kubernetes/pki/openvpn/ca.key","--ipam-controller-network","192.168.1.1/24,192.168.1.1,8.8.8.8"]}'
         command:
         - /http-prober-bin/http-prober
         env:

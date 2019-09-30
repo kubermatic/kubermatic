@@ -10,6 +10,10 @@ data:
       - 'true'
       cert-dir:
       - /var/run/kubernetes
+      cloud-provider:
+       - fake-cloud-provider
+      cloud-config:
+       - /etc/kubernetes/cloud/config
       cluster-cidr:
       - 10.240.16.0
       cluster-signing-cert-file:
