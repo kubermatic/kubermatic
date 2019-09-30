@@ -4,8 +4,10 @@ nginx:
   replicas: 3
   image:
     repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
-    tag: 0.25.1
+    tag: 0.26.1
   config: {}
+  extraArgs:
+  - '--default-ssl-certificate=default/kubermatic-tls-certificates'
 #    load-balance: "least_conn"
   resources:
     requests:
@@ -13,7 +15,7 @@ nginx:
       memory: 128Mi
     limits:
       cpu: 250m
-      memory: 256Mi
+      memory: 512Mi
   nodeSelector: {}
   affinity:
     nodeAffinity:
