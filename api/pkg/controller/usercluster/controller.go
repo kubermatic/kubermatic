@@ -139,6 +139,7 @@ type reconciler struct {
 	clusterURL        *url.URL
 	openvpnServerPort int
 	openVPNCA         *resources.ECDSAKeyPair
+	platform          string
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

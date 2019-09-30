@@ -125,17 +125,6 @@ func main() {
 				ImportAlias:        "kubermaticv1",
 				ResourceImportPath: "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1",
 			},
-			{
-				// This is somewhat hacky in that unstructured.Unstructued is not actually an API
-				// type but a "meta type" that can be anything. It is needed to cope with the
-				// various custom resoruces in Openshift without having to import them.
-				ResourceName:       "Unstructured",
-				ImportAlias:        "unstructured",
-				ResourceImportPath: "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured",
-				// We abuse the mechanism a little, this doesn't actually do any kind of defaulting
-				// bust just validation.
-				DefaultingFunc: "ValidateUnstructured",
-			},
 		},
 	}
 

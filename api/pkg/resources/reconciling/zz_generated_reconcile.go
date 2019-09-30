@@ -18,7 +18,6 @@ import (
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
@@ -701,41 +700,6 @@ func ReconcileSeeds(ctx context.Context, namedGetters []NamedSeedCreatorGetter, 
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.Seed{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Seed %s/%s: %v", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
-// UnstructuredCreator defines an interface to create/update Unstructureds
-type UnstructuredCreator = func(existing *unstructured.Unstructured) (*unstructured.Unstructured, error)
-
-// NamedUnstructuredCreatorGetter returns the name of the resource and the corresponding creator function
-type NamedUnstructuredCreatorGetter = func() (name string, create UnstructuredCreator)
-
-// UnstructuredObjectWrapper adds a wrapper so the UnstructuredCreator matches ObjectCreator.
-// This is needed as Go does not support function interface matching.
-func UnstructuredObjectWrapper(create UnstructuredCreator) ObjectCreator {
-	return func(existing runtime.Object) (runtime.Object, error) {
-		if existing != nil {
-			return create(existing.(*unstructured.Unstructured))
-		}
-		return create(&unstructured.Unstructured{})
-	}
-}
-
-// ReconcileUnstructureds will create and update the Unstructureds coming from the passed UnstructuredCreator slice
-func ReconcileUnstructureds(ctx context.Context, namedGetters []NamedUnstructuredCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
-	for _, get := range namedGetters {
-		name, create := get()
-		create = ValidateUnstructured(create)
-		createObject := UnstructuredObjectWrapper(create)
-		for _, objectModifier := range objectModifiers {
-			createObject = objectModifier(createObject)
-		}
-
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &unstructured.Unstructured{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Unstructured %s/%s: %v", namespace, name, err)
 		}
 	}
 
