@@ -2177,6 +2177,7 @@ func (r Routing) listHetznerSizesNoCredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.HetznerSizeWithClusterCredentialsEndpoint(r.projectProvider)),
 		provider.DecodeHetznerSizesNoCredentialsReq,
