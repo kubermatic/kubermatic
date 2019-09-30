@@ -53,6 +53,7 @@ type controllerRunOptions struct {
 	openvpnCACertFilePath string
 	openvpnCAKeyFilePath  string
 	overwriteRegistry     string
+	cloudProviderName     string
 	log                   kubermaticlog.Options
 }
 
@@ -72,6 +73,7 @@ func main() {
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.BoolVar(&runOp.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&runOp.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
+	flag.StringVar(&runOp.cloudProviderName, "cloud-provider-name", "", "Name of the cloudprovider")
 
 	flag.Parse()
 
@@ -177,6 +179,7 @@ func main() {
 		runOp.openshift,
 		runOp.version,
 		runOp.namespace,
+		runOp.cloudProviderName,
 		certs[0],
 		clusterURL,
 		runOp.openvpnServerPort,

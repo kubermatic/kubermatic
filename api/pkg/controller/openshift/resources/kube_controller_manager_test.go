@@ -60,3 +60,7 @@ type fakeKubeControllerManagerConfigData struct {
 func (f *fakeKubeControllerManagerConfigData) Cluster() *kubermaticv1.Cluster {
 	return f.cluster
 }
+
+func (f *fakeKubeControllerManagerConfigData) GetKubernetesCloudProviderName() string {
+	return "fake-cloud-provider"
+}

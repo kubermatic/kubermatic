@@ -339,3 +339,7 @@ func (od *openshiftData) ExternalURL() string {
 func (od *openshiftData) SeedName() string {
 	return od.seedName
 }
+
+func (od *openshiftData) GetKubernetesCloudProviderName() string {
+	return kubernetesresources.GetKubernetesCloudProviderName(od.Cluster())
+}

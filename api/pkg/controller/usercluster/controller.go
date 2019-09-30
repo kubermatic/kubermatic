@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
@@ -43,6 +44,7 @@ func Add(
 	openshift bool,
 	version string,
 	namespace string,
+	cloudProviderName string,
 	caCert *x509.Certificate,
 	clusterURL *url.URL,
 	openvpnServerPort int,
@@ -61,6 +63,7 @@ func Add(
 		openvpnServerPort: openvpnServerPort,
 		openVPNCA:         openVPNCA,
 		log:               log,
+		platform:          cloudProviderName,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -93,6 +96,13 @@ func Add(
 		&rbacv1.ClusterRoleBinding{},
 		&admissionregistrationv1beta1.MutatingWebhookConfiguration{},
 		&apiextensionsv1beta1.CustomResourceDefinition{},
+	}
+
+	if openshift {
+		infrastructureConfigKind := &unstructured.Unstructured{}
+		infrastructureConfigKind.SetKind("Infrastructure")
+		infrastructureConfigKind.SetAPIVersion("config.openshift.io/v1")
+		typesToWatch = append(typesToWatch, infrastructureConfigKind)
 	}
 
 	// Avoid getting triggered by the leader lease AKA: If the annotation exists AND changed on
@@ -139,6 +149,7 @@ type reconciler struct {
 	clusterURL        *url.URL
 	openvpnServerPort int
 	openVPNCA         *resources.ECDSAKeyPair
+	platform          string
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

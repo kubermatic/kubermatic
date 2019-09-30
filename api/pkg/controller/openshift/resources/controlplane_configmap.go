@@ -9,7 +9,6 @@ import (
 	"github.com/Masterminds/sprig"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -33,6 +32,7 @@ type masterConfigData interface {
 	OIDCIssuerURL() string
 	OIDCClientID() string
 	OIDCClientSecret() string
+	GetKubernetesCloudProviderName() string
 }
 
 type openshiftAPIServerCreatorData interface {
@@ -89,7 +89,7 @@ func OpenshiftKubeAPIServerConfigMapCreator(data masterConfigData) reconciling.N
 				ListenPort:       fmt.Sprint(data.Cluster().Address.Port),
 				ETCDEndpoints:    etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
 				AdvertiseAddress: data.Cluster().Address.IP,
-				CloudProvider:    apiserver.GetKubernetesCloudProviderName(data.Cluster()),
+				CloudProvider:    data.GetKubernetesCloudProviderName(),
 			}
 			if err := openshiftKubeAPIServerTemplate.Execute(&apiServerConfigBuffer, templateInput); err != nil {
 				return nil, fmt.Errorf("failed to execute template: %v", err)
@@ -193,9 +193,9 @@ aggregatorConfig:
 apiServerArguments:
 {{- if .CloudProvider }}
   cloud-provider:
-   - {{ .CloudProvider}}
+  - {{ .CloudProvider}}
   cloud-config:
-   - /etc/kubernetes/cloud/config
+  - /etc/kubernetes/cloud/config
 {{- end }}
   enable-aggregator-routing:
   # Thist _must_ stay false, if its true, the kube-apiserver will try to resolve endpoints for

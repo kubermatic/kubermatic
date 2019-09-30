@@ -34,6 +34,10 @@ if echo $CLUSTER_RAW |grep openshift -q; then
   ARGS="-openshift=true"
 fi
 
+if echo $CLUSTER_RAW|grep -i aws -q; then
+	ARGS="$ARGS -cloud-provider-name=aws"
+fi
+
 ./_build/user-cluster-controller-manager \
     -kubeconfig=${KUBECONFIG_USERCLUSTER_CONTROLLER_FILE} \
     -metrics-listen-address=127.0.0.1:8087 \

@@ -309,3 +309,24 @@ func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig
 	}
 	return "", nil
 }
+
+func (d *TemplateData) GetKubernetesCloudProviderName() string {
+	return GetKubernetesCloudProviderName(d.Cluster())
+}
+
+func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
+	if cluster.Spec.Cloud.AWS != nil {
+		return "aws"
+	}
+	if cluster.Spec.Cloud.Openstack != nil {
+		return "openstack"
+	}
+	if cluster.Spec.Cloud.VSphere != nil {
+		return "vsphere"
+	}
+	if cluster.Spec.Cloud.Azure != nil {
+		return "azure"
+	}
+
+	return ""
+}
