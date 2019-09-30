@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	UserClusterRoleComponentKey   = "component"
+	UserClusterComponentKey       = "component"
 	UserClusterRoleComponentValue = "userClusterRole"
 	UserClusterRoleLabelSelector  = "component=userClusterRole"
 
@@ -670,7 +670,7 @@ func generateRBACClusterRole(name string, rules []rbacv1.PolicyRule) (*rbacv1.Cl
 	clusterRole := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   addUserClusterRolePrefix(name),
-			Labels: map[string]string{UserClusterRoleComponentKey: UserClusterRoleComponentValue},
+			Labels: map[string]string{UserClusterComponentKey: UserClusterRoleComponentValue},
 		},
 		Rules: rules,
 	}
@@ -685,7 +685,7 @@ func generateRBACRole(name, namespace string, rules []rbacv1.PolicyRule) (*rbacv
 	clusterRole := &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      addUserClusterRolePrefix(name),
-			Labels:    map[string]string{UserClusterRoleComponentKey: UserClusterRoleComponentValue},
+			Labels:    map[string]string{UserClusterComponentKey: UserClusterRoleComponentValue},
 			Namespace: namespace,
 		},
 		Rules: rules,
