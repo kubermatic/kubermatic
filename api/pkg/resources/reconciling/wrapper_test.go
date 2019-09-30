@@ -738,10 +738,3 @@ func TestDeploymentStrategyDefaulting(t *testing.T) {
 	}
 
 }
-
-func unstructuredWithGVK(kind, apiVersion string) *unstructured.Unstructured {
-	u := &unstructured.Unstructured{}
-	u.SetKind(kind)
-	u.SetAPIVersion(apiVersion)
-	return u
-}
