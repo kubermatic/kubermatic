@@ -354,6 +354,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listGCPZonesNoCredentials())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/hetzner/sizes").
+		Handler(r.listHetznerSizesNoCredentials())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/digitalocean/sizes").
 		Handler(r.listDigitaloceanSizesNoCredentials())
 
@@ -2157,6 +2161,30 @@ func (r Routing) listGCPZonesNoCredentials() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(provider.GCPZoneWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
 		common.DecodeGetClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/hetzner/sizes hetzner listHetznerSizesNoCredentials
+//
+// Lists sizes from hetzner
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: HetznerSizeList
+func (r Routing) listHetznerSizesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(provider.HetznerSizeWithClusterCredentialsEndpoint(r.projectProvider)),
+		provider.DecodeHetznerSizesNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
