@@ -7890,6 +7890,9 @@
       "type": "object",
       "title": "OpenstackCloudSpec specifies access data to an OpenStack cloud.",
       "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "domain": {
           "type": "string",
           "x-go-name": "Domain"

@@ -29,6 +29,9 @@ func CreateCredentialSecretForCluster(ctx context.Context, seedClient ctrlruntim
 	if cluster.Spec.Cloud.Hetzner != nil {
 		return createHetznerSecret(ctx, seedClient, cluster, projectID)
 	}
+	if cluster.Spec.Cloud.Openstack != nil {
+		return createOpenstackSecret(ctx, seedClient, cluster, projectID)
+	}
 	if cluster.Spec.Cloud.Packet != nil {
 		return createPacketSecret(ctx, seedClient, cluster, projectID)
 	}
@@ -218,6 +221,49 @@ func createHetznerSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 
 	// remove credentials from cluster object
 	cluster.Spec.Cloud.Hetzner.Token = ""
+
+	return nil
+}
+
+func createOpenstackSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
+	name := cluster.GetSecretName()
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: resources.KubermaticNamespace,
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: projectID,
+				"name":                         name,
+			},
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			resources.OpenstackUsername: []byte(cluster.Spec.Cloud.Openstack.Username),
+			resources.OpenstackPassword: []byte(cluster.Spec.Cloud.Openstack.Password),
+			resources.OpenstackTenant:   []byte(cluster.Spec.Cloud.Openstack.Tenant),
+			resources.OpenstackTenantID: []byte(cluster.Spec.Cloud.Openstack.TenantID),
+			resources.OpenstackDomain:   []byte(cluster.Spec.Cloud.Openstack.Domain),
+		},
+	}
+
+	if err := seedClient.Create(ctx, secret); err != nil {
+		return err
+	}
+
+	// add secret key selectors to cluster object
+	cluster.Spec.Cloud.Openstack.CredentialsReference = &providerconfig.GlobalSecretKeySelector{
+		ObjectReference: corev1.ObjectReference{
+			Name:      secret.Name,
+			Namespace: secret.Namespace,
+		},
+	}
+
+	// remove credentials from cluster object
+	cluster.Spec.Cloud.Openstack.Username = ""
+	cluster.Spec.Cloud.Openstack.Password = ""
+	cluster.Spec.Cloud.Openstack.Tenant = ""
+	cluster.Spec.Cloud.Openstack.TenantID = ""
+	cluster.Spec.Cloud.Openstack.Domain = ""
 
 	return nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -54,7 +55,6 @@ func OpenstackSizeWithClusterCredentialsEndpoint(projectProvider provider.Projec
 			return nil, err
 		}
 
-		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
 
 		seeds, err := seedsGetter()
@@ -67,26 +67,24 @@ func OpenstackSizeWithClusterCredentialsEndpoint(projectProvider provider.Projec
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
 
-		return getOpenstackSizes(openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName, datacenter)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		creds, err := openstack.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+
+		return getOpenstackSizes(creds.Username, creds.Password, creds.Tenant, creds.TenantID, creds.Domain, datacenterName, datacenter)
 	}
 }
 
-func getOpenstackSizes(username, passowrd, tenant, tenantID, domain, datacenterName string, datacenter *kubermaticv1.Datacenter) ([]apiv1.OpenstackSize, error) {
-
-	provider, err := openstack.NewCloudProvider(datacenter)
-	if err != nil {
-		return nil, err
-	}
-	flavors, err := provider.GetFlavors(kubermaticv1.CloudSpec{
-		DatacenterName: datacenterName,
-		Openstack: &kubermaticv1.OpenstackCloudSpec{
-			Username: username,
-			Password: passowrd,
-			Tenant:   tenant,
-			TenantID: tenantID,
-			Domain:   domain,
-		},
-	})
+func getOpenstackSizes(username, password, tenant, tenantID, domain, datacenterName string, datacenter *kubermaticv1.Datacenter) ([]apiv1.OpenstackSize, error) {
+	flavors, err := openstack.GetFlavors(username, password, domain, tenant, tenantID, datacenter.Spec.Openstack.AuthURL, datacenter.Spec.Openstack.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +132,7 @@ func OpenstackTenantEndpoint(seedsGetter provider.SeedsGetter, credentialManager
 		if err != nil {
 			return nil, fmt.Errorf("error getting OpenStack credentials: %v", err)
 		}
-		return getOpenstackTenants(seedsGetter, username, password, domain, req.DatacenterName)
+		return getOpenstackTenants(seedsGetter, username, password, domain, "", "", req.DatacenterName)
 	}
 }
 
@@ -146,31 +144,35 @@ func OpenstackTenantWithClusterCredentialsEndpoint(projectProvider provider.Proj
 			return nil, err
 		}
 
-		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		return getOpenstackTenants(seedsGetter, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, datacenterName)
+
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		creds, err := openstack.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+		return getOpenstackTenants(seedsGetter, creds.Username, creds.Password, creds.Domain, creds.Tenant, creds.TenantID, datacenterName)
 	}
 }
 
-func getOpenstackTenants(seedsGetter provider.SeedsGetter, username, password, domain, datacenterName string) ([]apiv1.OpenstackTenant, error) {
+func getOpenstackTenants(seedsGetter provider.SeedsGetter, username, password, domain, tenant, tenantID, datacenterName string) ([]apiv1.OpenstackTenant, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
 
-	osProvider, err := getOpenstackCloudProvider(seeds, datacenterName)
+	authURL, region, err := getOpenstackAuthURLAndRegion(seeds, datacenterName)
 	if err != nil {
 		return nil, err
 	}
 
-	tenants, err := osProvider.GetTenants(kubermaticv1.CloudSpec{
-		DatacenterName: datacenterName,
-		Openstack: &kubermaticv1.OpenstackCloudSpec{
-			Username: username,
-			Password: password,
-			Domain:   domain,
-		},
-	})
+	tenants, err := openstack.GetTenants(username, password, domain, tenant, tenantID, authURL, region)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get tenants: %v", err)
 	}
@@ -214,9 +216,20 @@ func OpenstackNetworkWithClusterCredentialsEndpoint(projectProvider provider.Pro
 			return nil, err
 		}
 
-		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		return getOpenstackNetworks(seedsGetter, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName)
+
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		creds, err := openstack.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+		return getOpenstackNetworks(seedsGetter, creds.Username, creds.Password, creds.Tenant, creds.TenantID, creds.Domain, datacenterName)
 	}
 }
 
@@ -225,21 +238,13 @@ func getOpenstackNetworks(seedsGetter provider.SeedsGetter, username, password, 
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
-	osProvider, err := getOpenstackCloudProvider(seeds, datacenterName)
+
+	authURL, region, err := getOpenstackAuthURLAndRegion(seeds, datacenterName)
 	if err != nil {
 		return nil, err
 	}
 
-	networks, err := osProvider.GetNetworks(kubermaticv1.CloudSpec{
-		DatacenterName: datacenterName,
-		Openstack: &kubermaticv1.OpenstackCloudSpec{
-			Username: username,
-			Password: password,
-			Tenant:   tenant,
-			TenantID: tenantID,
-			Domain:   domain,
-		},
-	})
+	networks, err := openstack.GetNetworks(username, password, domain, tenant, tenantID, authURL, region)
 	if err != nil {
 		return nil, err
 	}
@@ -284,9 +289,20 @@ func OpenstackSecurityGroupWithClusterCredentialsEndpoint(projectProvider provid
 			return nil, err
 		}
 
-		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		return getOpenstackSecurityGroups(seedsGetter, openstackSpec.Username, openstackSpec.Password, openstackSpec.Tenant, openstackSpec.TenantID, openstackSpec.Domain, datacenterName)
+
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		creds, err := openstack.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+		return getOpenstackSecurityGroups(seedsGetter, creds.Username, creds.Password, creds.Tenant, creds.TenantID, creds.Domain, datacenterName)
 	}
 }
 
@@ -295,21 +311,13 @@ func getOpenstackSecurityGroups(seedsGetter provider.SeedsGetter, username, pass
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
-	osProvider, err := getOpenstackCloudProvider(seeds, datacenterName)
+
+	authURL, region, err := getOpenstackAuthURLAndRegion(seeds, datacenterName)
 	if err != nil {
 		return nil, err
 	}
 
-	securityGroups, err := osProvider.GetSecurityGroups(kubermaticv1.CloudSpec{
-		DatacenterName: datacenterName,
-		Openstack: &kubermaticv1.OpenstackCloudSpec{
-			Username: username,
-			Password: password,
-			Tenant:   tenant,
-			TenantID: tenantID,
-			Domain:   domain,
-		},
-	})
+	securityGroups, err := openstack.GetSecurityGroups(username, password, domain, tenant, tenantID, authURL, region)
 	if err != nil {
 		return nil, err
 	}
@@ -353,9 +361,20 @@ func OpenstackSubnetsWithClusterCredentialsEndpoint(projectProvider provider.Pro
 			return nil, err
 		}
 
-		openstackSpec := cluster.Spec.Cloud.Openstack
 		datacenterName := cluster.Spec.Cloud.DatacenterName
-		return getOpenstackSubnets(seedsGetter, openstackSpec.Username, openstackSpec.Password, openstackSpec.Domain, openstackSpec.Tenant, openstackSpec.TenantID, req.NetworkID, datacenterName)
+
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		creds, err := openstack.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+		return getOpenstackSubnets(seedsGetter, creds.Username, creds.Password, creds.Domain, creds.Tenant, creds.TenantID, req.NetworkID, datacenterName)
 	}
 }
 
@@ -364,21 +383,13 @@ func getOpenstackSubnets(seedsGetter provider.SeedsGetter, username, password, d
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
-	osProvider, err := getOpenstackCloudProvider(seeds, datacenterName)
+
+	authURL, region, err := getOpenstackAuthURLAndRegion(seeds, datacenterName)
 	if err != nil {
 		return nil, err
 	}
 
-	subnets, err := osProvider.GetSubnets(kubermaticv1.CloudSpec{
-		DatacenterName: datacenterName,
-		Openstack: &kubermaticv1.OpenstackCloudSpec{
-			Username: username,
-			Password: password,
-			Domain:   domain,
-			Tenant:   tenant,
-			TenantID: tenantID,
-		},
-	}, networkID)
+	subnets, err := openstack.GetSubnets(username, password, domain, tenant, tenantID, networkID, authURL, region)
 	if err != nil {
 		return nil, err
 	}
@@ -538,15 +549,10 @@ func getOpenstackCredentials(userInfo *provider.UserInfo, credentialName, userna
 	return username, password, domain, tenant, tenantID, nil
 }
 
-func getOpenstackCloudProvider(seeds map[string]*kubermaticv1.Seed, datacenterName string) (*openstack.Provider, error) {
+func getOpenstackAuthURLAndRegion(seeds map[string]*kubermaticv1.Seed, datacenterName string) (string, string, error) {
 	_, dc, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find datacenter %q: %v", datacenterName, err)
+		return "", "", fmt.Errorf("failed to find datacenter %q: %v", datacenterName, err)
 	}
-	osProvider, err := openstack.NewCloudProvider(dc)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Openstack provider: %v", err)
-	}
-
-	return osProvider, nil
+	return dc.Spec.Openstack.AuthURL, dc.Spec.Openstack.Region, nil
 }
