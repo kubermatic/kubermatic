@@ -356,7 +356,7 @@ func (r *reconciler) reconcileUnstructured(ctx context.Context) error {
 	}
 	r.log.Debug("Reconciling unstructured")
 	// The delegatingReader from the `mgr` always redirects request for unstructured.Unstructured
-	// to the API even thought the cache-backed reader is perfectly well capable of creating watches
+	// to the API even though the cache-backed reader is perfectly capable of creating watches
 	// for unstructured.Unstructured: https://github.com/kubernetes-sigs/controller-runtime/issues/615
 	// Since using the API is very expensive as we get triggered by almost anything, we construct our
 	// own client that uses the cache as reader.
