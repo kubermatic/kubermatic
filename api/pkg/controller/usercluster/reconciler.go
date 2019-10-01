@@ -18,7 +18,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/user-auth"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
-	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	certutil "k8s.io/client-go/util/cert"
@@ -324,9 +323,9 @@ func (r *reconciler) reconcileSecrets(ctx context.Context) error {
 		openvpn.ClientCertificate(r.openVPNCA),
 	}
 	if r.openshift {
-		s := &corev1.Secret{}
-		s.Name = "alvaro-test"
-		creators = append(creators, openshift.CloudCredentialSecretCreator(*s))
+		if r.cloudCredentialSecretTemplate != nil {
+			creators = append(creators, openshift.CloudCredentialSecretCreator(*r.cloudCredentialSecretTemplate))
+		}
 	}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
