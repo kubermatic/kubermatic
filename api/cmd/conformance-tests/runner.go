@@ -343,38 +343,43 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		return report, fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
-	nodeJoinTimeout := 5 * time.Minute
+	overallTimeout := 10 * time.Minute
 	if cluster.Annotations["kubermatic.io/openshift"] == "true" {
 		// Openshift installs a lot more during node provisioning, hence this may take longer
-		nodeJoinTimeout = 10 * time.Minute
+		overallTimeout = 15 * time.Minute
 	}
+
+	startTime := time.Now()
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for machines to get a node",
 		report,
 		func() error {
-			return waitForMachinesToJoinCluster(log, userClusterClient, nodeJoinTimeout)
+			return waitForMachinesToJoinCluster(log, userClusterClient, overallTimeout)
 		},
 	); err != nil {
 		return report, fmt.Errorf("failed to wait for machines to get a node: %v", err)
 	}
+	timeoutLeft := time.Duration(overallTimeout.Minutes() - time.Since(startTime).Minutes())
 
+	startTime = time.Now()
 	if err := junitReporterWrapper(
-		"[Kubermatic] Wait for nodes to be ready",
+		fmt.Sprintf("[Kubermatic] Wait for nodes to be ready using timeout %v", timeoutLeft.String()),
 		report,
 		func() error {
 			// Getting ready just implies starting the CNI deamonset, so that should
 			// be quick.
-			return waitForNodesToBeReady(log, userClusterClient, 2*time.Minute)
+			return waitForNodesToBeReady(log, userClusterClient, timeoutLeft)
 		},
 	); err != nil {
 		return report, fmt.Errorf("failed to wait for all nodes to be ready: %v", err)
 	}
+	timeoutLeft = time.Duration(timeoutLeft.Minutes() - time.Since(startTime).Minutes())
 
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for Pods inside usercluster to be ready",
 		report,
 		func() error {
-			return r.waitUntilAllPodsAreReady(log, userClusterClient, 2*time.Minute)
+			return r.waitUntilAllPodsAreReady(log, userClusterClient, timeoutLeft)
 		},
 	); err != nil {
 		return nil, fmt.Errorf("failed to wait for all pods to get ready: %v", err)
