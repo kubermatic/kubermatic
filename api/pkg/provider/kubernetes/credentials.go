@@ -346,7 +346,7 @@ func createKubevirtSecret(ctx context.Context, seedClient ctrlruntimeclient.Clie
 }
 
 func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
-	// create secret for storing credentials
+	spec := cluster.Spec.Cloud.VSphere
 	name := cluster.GetSecretName()
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -359,8 +359,10 @@ func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: map[string][]byte{
-			resources.VsphereUsername: []byte(cluster.Spec.Cloud.VSphere.Username),
-			resources.VspherePassword: []byte(cluster.Spec.Cloud.VSphere.Password),
+			resources.VsphereUsername:                    []byte(spec.Username),
+			resources.VspherePassword:                    []byte(spec.Password),
+			resources.VsphereInfraManagementUserUsername: []byte(spec.InfraManagementUser.Username),
+			resources.VsphereInfraManagementUserPassword: []byte(spec.InfraManagementUser.Password),
 		},
 	}
 
@@ -379,6 +381,8 @@ func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 	// remove credentials from cluster object
 	cluster.Spec.Cloud.VSphere.Username = ""
 	cluster.Spec.Cloud.VSphere.Password = ""
+	cluster.Spec.Cloud.VSphere.InfraManagementUser.Username = ""
+	cluster.Spec.Cloud.VSphere.InfraManagementUser.Password = ""
 
 	return nil
 }

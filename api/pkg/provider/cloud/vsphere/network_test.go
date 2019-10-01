@@ -34,7 +34,7 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			networkInfos, err := GetNetworks(getTestCloudSpec(), getTestDC())
+			networkInfos, err := GetNetworks(getTestDC(), vSphereUsername, vSpherePassword)
 			if err != nil {
 				t.Fatal(err)
 			}

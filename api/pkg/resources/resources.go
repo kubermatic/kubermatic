@@ -428,8 +428,10 @@ const (
 
 	KubevirtKubeConfig = "kubeConfig"
 
-	VsphereUsername = "username"
-	VspherePassword = "password"
+	VsphereUsername                    = "username"
+	VspherePassword                    = "password"
+	VsphereInfraManagementUserUsername = "infraManagementUserUsername"
+	VsphereInfraManagementUserPassword = "infraManagementUserPassword"
 )
 
 // ECDSAKeyPair is a ECDSA x509 certifcate and private key

@@ -20,17 +20,8 @@ func TestCreateVMFolder(t *testing.T) {
 		RootPath:   path.Join("/", vSphereDatacenter, "vm"),
 	}
 
-	cloudSpec := kubermaticv1.CloudSpec{
-		VSphere: &kubermaticv1.VSphereCloudSpec{
-			InfraManagementUser: kubermaticv1.VSphereCredentials{
-				Username: vSphereUsername,
-				Password: vSpherePassword,
-			},
-		},
-	}
-
 	ctx := context.Background()
-	session, err := newSession(ctx, cloudSpec, dc)
+	session, err := newSession(ctx, dc, vSphereUsername, vSpherePassword)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +78,7 @@ func TestProvider_GetVMFolders(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			folders, err := GetVMFolders(getTestCloudSpec(), test.dc)
+			folders, err := GetVMFolders(test.dc, vSphereUsername, vSpherePassword)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -8,7 +8,6 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -68,9 +67,18 @@ func VsphereNetworksWithClusterCredentialsEndpoint(projectProvider provider.Proj
 		if !ok {
 			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 		}
-
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-		username, password, err := vsphere.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		}
+		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
+		}
+
+		username, password, err := vsphere.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector, datacenter.Spec.VSphere)
 		if err != nil {
 			return nil, err
 		}
@@ -88,15 +96,7 @@ func getVsphereNetworks(seedsGetter provider.SeedsGetter, username, password, da
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
 
-	networks, err := vsphere.GetNetworks(kubermaticv1.CloudSpec{
-		DatacenterName: datacenterName,
-		VSphere: &kubermaticv1.VSphereCloudSpec{
-			InfraManagementUser: kubermaticv1.VSphereCredentials{
-				Username: username,
-				Password: password,
-			},
-		},
-	}, datacenter.Spec.VSphere)
+	networks, err := vsphere.GetNetworks(datacenter.Spec.VSphere, username, password)
 	if err != nil {
 		return nil, err
 	}
@@ -164,9 +164,18 @@ func VsphereFoldersWithClusterCredentialsEndpoint(projectProvider provider.Proje
 		if !ok {
 			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 		}
-
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-		username, password, err := vsphere.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		}
+		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
+		}
+
+		username, password, err := vsphere.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector, datacenter.Spec.VSphere)
 		if err != nil {
 			return nil, err
 		}
@@ -184,15 +193,7 @@ func getVsphereFolders(seedsGetter provider.SeedsGetter, username, password, dat
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
 
-	folders, err := vsphere.GetVMFolders(kubermaticv1.CloudSpec{
-		DatacenterName: datacenterName,
-		VSphere: &kubermaticv1.VSphereCloudSpec{
-			InfraManagementUser: kubermaticv1.VSphereCredentials{
-				Username: username,
-				Password: password,
-			},
-		},
-	}, datacenter.Spec.VSphere)
+	folders, err := vsphere.GetVMFolders(datacenter.Spec.VSphere, username, password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get folders: %v", err)
 	}

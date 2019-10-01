@@ -398,8 +398,8 @@ type AzureCloudSpec struct {
 
 // VSphereCredentials credentials represents a credential for accessing vSphere
 type VSphereCredentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 // VSphereCloudSpec specifies access data to VSphere cloud.
