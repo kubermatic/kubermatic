@@ -99,3 +99,23 @@ func OpenshiftRegistryNSGetter() (string, reconciling.NamespaceCreator) {
 		return ns, nil
 	}
 }
+
+// OpenshiftCloudCredentialOperatorNSGetter creates the namesapce in which all credentialsrequests end up
+func OpenshiftCloudCredentialOperatorNSGetter() (string, reconciling.NamespaceCreator) {
+	return "openshift-cloud-credential-operator", func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+		if ns.Annotations == nil {
+			ns.Annotations = map[string]string{}
+		}
+		if ns.Labels == nil {
+			ns.Labels = map[string]string{}
+		}
+		ns.Annotations["openshift.io/node-selector"] = ""
+		ns.Annotations["openshift.io/sa.scc.mcs"] = "s0:c1,c0"
+		ns.Annotations["openshift.io/sa.scc.supplemental-groups"] = "1000000000/10000"
+		ns.Annotations["openshift.io/sa.scc.uid-range"] = "1000000000/10000"
+		ns.Labels["controller-tools.k8s.io"] = "1.0"
+		ns.Labels["openshift.io/run-level"] = "1"
+
+		return ns, nil
+	}
+}
