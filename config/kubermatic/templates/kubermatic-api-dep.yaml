@@ -31,10 +31,11 @@ spec:
         - -address=0.0.0.0:8080
         - -v=2
         - -logtostderr
+        {{- if .Values.kubermatic.datacenters }}
+        - -datacenters=/opt/datacenter/datacenters.yaml
+        {{- end }}
         {{- if .Values.kubermatic.dynamicDatacenters }}
         - -dynamic-datacenters=true
-        {{- else }}
-        - -datacenters=/opt/datacenter/datacenters.yaml
         {{- end }}
         - -oidc-url={{ .Values.kubermatic.auth.tokenIssuer }}
         - -oidc-authenticator-client-id={{ .Values.kubermatic.auth.clientID }}
@@ -87,7 +88,7 @@ spec:
         - name: kubeconfig
           mountPath: "/opt/.kube/"
           readOnly: true
-        {{- if not .Values.kubermatic.dynamicDatacenters }}
+        {{- if .Values.kubermatic.datacenters }}
         - name: datacenters
           mountPath: "/opt/datacenter/"
           readOnly: true
@@ -108,7 +109,7 @@ spec:
       - name: kubeconfig
         secret:
           secretName: kubeconfig
-      {{- if not .Values.kubermatic.dynamicDatacenters }}
+      {{- if .Values.kubermatic.datacenters }}
       - name: datacenters
         secret:
           secretName: datacenters
