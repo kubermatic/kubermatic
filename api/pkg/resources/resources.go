@@ -67,8 +67,12 @@ const (
 	UserClusterControllerDeploymentName = "usercluster-controller"
 	// ClusterAutoscalerDeploymentName is the name of the cluster-autoscaler depoyment
 	ClusterAutoscalerDeploymentName = "cluster-autoscaler"
-	// TODO
+	// TODO(floreks)
 	KubernetesDashboardDeploymentName = "kubernetes-dashboard"
+	// TODO(floreks)
+	MetricsScraperDeploymentName = "dashboard-metrics-scraper"
+	// TODO(floreks)
+	MetricsScraperServiceName = "dashboard-metrics-scraper"
 
 	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
 	PrometheusStatefulSetName = "prometheus"
@@ -124,7 +128,7 @@ const (
 	// ClusterAutoscalerKubeconfigSecretName is the name of the kubeconfig secret used for
 	// the cluster-autoscaler
 	ClusterAutoscalerKubeconfigSecretName = "cluster-autoscaler-kubeconfig"
-	// TODO
+	// TODO(floreks)
 	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
@@ -207,8 +211,10 @@ const (
 	PrometheusCertUsername = "prometheus"
 	// ClusterAutoscalerCertUsername is the name of the user coming from the CA kubeconfig cert
 	ClusterAutoscalerCertUsername = "kubermatic:cluster-autoscaler"
-	// TODO
+	// TODO(floreks)
 	KubernetesDashboardCertUsername = "kubermatic:kubernetes-dashboard"
+	// TODO(floreks)
+	MetricsScraperServiceAccountUsername = "dashboard-metrics-scraper"
 
 	// KubeletDnatControllerClusterRoleName is the name for the KubeletDnatController cluster role
 	KubeletDnatControllerClusterRoleName = "system:kubermatic-kubeletdnat-controller"
@@ -250,9 +256,9 @@ const (
 	// TODO(floreks)
 	KubernetesDashboardRoleBindingName = "system:kubernetes-dashboard"
 	// TODO(floreks)
-	KubernetesDashboardClusterRoleName = "system:kubernetes-dashboard"
+	MetricsScraperClusterRoleName = "system:dashboard-metrics-scraper"
 	// TODO(floreks)
-	KubernetesDashboardClusterRoleBindingName = "system:kubernetes-dashboard"
+	MetricsScraperClusterRoleBindingName = "system:dashboard-metrics-scraper"
 
 	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd StatefulSet
 	EtcdPodDisruptionBudgetName = "etcd"

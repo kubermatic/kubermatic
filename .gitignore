@@ -4,6 +4,8 @@
 .env
 .idea
 *.iml*
+go.mod
+go.sum
 api/.cover
 api/_build
 api/_cache

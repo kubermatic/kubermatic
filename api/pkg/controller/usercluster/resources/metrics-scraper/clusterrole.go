@@ -1,4 +1,4 @@
-package kubernetesdashboard
+package metricsscraper
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -7,11 +7,12 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// ClusterRole returns a cluster role for the Kubernetes Dashboard
+// ClusterRoleCreator returns a cluster role for the Dashboard Metrics Scraper
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
-		return resources.KubernetesDashboardClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-			cr.Labels = resources.BaseAppLabel(Name, nil)
+		return resources.MetricsScraperClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+			cr.Labels = resources.BaseAppLabel(name, nil)
+
 			cr.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{"metrics.k8s.io"},

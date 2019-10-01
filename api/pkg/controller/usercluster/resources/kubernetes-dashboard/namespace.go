@@ -6,7 +6,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func NamespaceCreatorGetter() (string, reconciling.NamespaceCreator) {
+// NamespaceCreator TODO(floreks)
+func NamespaceCreator() (string, reconciling.NamespaceCreator) {
 	return Namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 		return ns, nil
 	}

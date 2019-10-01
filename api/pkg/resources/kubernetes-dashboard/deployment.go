@@ -29,8 +29,9 @@ var (
 )
 
 const (
-	name = "kubernetes-dashbaord"
-	tag  = "v2.0.0-beta4"
+	name      = resources.KubernetesDashboardDeploymentName
+	imageName = "kubernetesui/dashboard"
+	tag       = "v2.0.0-beta4"
 	// Namespace used by Dashboard to find required resources.
 	namespace = "kubernetes-dashboard"
 )
@@ -45,8 +46,8 @@ type kubernetesDashboardData interface {
 // DeploymentCreator returns the function to create and update the metrics server deployment
 func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return resources.KubernetesDashboardDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = resources.KubernetesDashboardDeploymentName
+		return name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			dep.Name = name
 			dep.Labels = resources.BaseAppLabel(name, nil)
 
 			dep.Spec.Replicas = resources.Int32(2)
@@ -84,7 +85,7 @@ func getContainers(data kubernetesDashboardData) []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:            name,
-			Image:           data.ImageRegistry(resources.RegistryDocker) + "/kubernetesui/dashboard:" + tag,
+			Image:           fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryDocker), imageName, tag),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/dashboard"},
 			Args: []string{

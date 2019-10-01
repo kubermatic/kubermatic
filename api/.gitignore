@@ -17,3 +17,4 @@ handler/swagger/api/index.json
 /codecgen_binary
 /defaulter-gen
 /deepcopy-gen
+download-gocache

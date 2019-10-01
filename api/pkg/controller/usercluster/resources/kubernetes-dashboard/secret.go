@@ -1,7 +1,7 @@
 package kubernetesdashboard
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -10,7 +10,7 @@ import (
 // KeyHolderSecretCreator  TODO(floreks)
 func KeyHolderSecretCreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
-		return resources.KubernetesDashboardKeyHolderSecretName, func(secret *v1.Secret) (*v1.Secret, error) {
+		return resources.KubernetesDashboardKeyHolderSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			if secret.Data == nil {
 				secret.Data = map[string][]byte{}
 			}
@@ -24,7 +24,7 @@ func KeyHolderSecretCreator() reconciling.NamedSecretCreatorGetter {
 // CsrfTokenSecretCreator  TODO(floreks)
 func CsrfTokenSecretCreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
-		return resources.KubernetesDashboardCsrfTokenSecretName, func(secret *v1.Secret) (*v1.Secret, error) {
+		return resources.KubernetesDashboardCsrfTokenSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			if secret.Data == nil {
 				secret.Data = map[string][]byte{}
 			}
