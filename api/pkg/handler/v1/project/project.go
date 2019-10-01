@@ -32,7 +32,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 		}
 
 		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
-		kubermaticProject, err := projectProvider.New(user, projectRq.Body.Name)
+		kubermaticProject, err := projectProvider.New(user, projectRq.Body.Name, projectRq.Body.Labels)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -268,7 +268,8 @@ func DecodeUpdateRq(c context.Context, r *http.Request) (interface{}, error) {
 type projectReq struct {
 	// in:body
 	Body struct {
-		Name string `json:"name"`
+		Name   string            `json:"name"`
+		Labels map[string]string `json:"labels,omitempty"`
 	}
 }
 
