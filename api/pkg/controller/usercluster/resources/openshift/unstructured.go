@@ -49,3 +49,21 @@ func translateKubernetesCloudProviderName(kubernetesCloudProviderName string) st
 		return "None"
 	}
 }
+
+// ClusterVersionCreatorGetter returns the ClusterVersionCreator
+func ClusterVersionCreatorGetter() reconciling.NamedUnstructuredCreatorGetter {
+	return func() (string, string, string, reconciling.UnstructuredCreator) {
+		return "version", "ClusterVersion", "config.openshift.io/v1", func(u *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+
+			originalContent := u.Object
+			if originalContent == nil {
+				originalContent = map[string]interface{}{}
+			}
+			// Spec must not be empty, but avoid overwriting anything
+			if _, ok := originalContent["spec"]; !ok {
+				originalContent["spec"] = struct{}{}
+			}
+			return u, nil
+		}
+	}
+}
