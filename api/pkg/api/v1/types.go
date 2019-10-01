@@ -434,7 +434,8 @@ type ServiceAccountToken struct {
 // swagger:model Project
 type Project struct {
 	ObjectMeta
-	Status string `json:"status"`
+	Status string            `json:"status"`
+	Labels map[string]string `json:"labels,omitempty"`
 	// Owners an optional owners list for the given project
 	Owners []User `json:"owners,omitempty"`
 }

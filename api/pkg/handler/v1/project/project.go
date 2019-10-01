@@ -43,6 +43,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 				CreationTimestamp: apiv1.NewTime(kubermaticProject.CreationTimestamp.Time),
 			},
 			Status: kubermaticProject.Status.Phase,
+			Labels: kubermaticProject.Labels,
 			Owners: []apiv1.User{
 				{
 					ObjectMeta: apiv1.ObjectMeta{
@@ -145,6 +146,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, memberProvider pro
 		}
 
 		kubermaticProject.Spec.Name = req.Body.Name
+		kubermaticProject.Spec.Labels = req.Body.Labels
 		project, err := projectProvider.Update(userInfo, kubermaticProject)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -195,6 +197,7 @@ func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project
 				return nil
 			}(),
 		},
+		Labels: kubermaticProject.Labels,
 		Status: kubermaticProject.Status.Phase,
 		Owners: projectOwners,
 	}
