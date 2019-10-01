@@ -1201,6 +1201,28 @@ type Role struct {
 	Rules []rbacv1.PolicyRule `json:"rules"`
 }
 
+// RoleBinding references a role, but does not contain it.
+type RoleBinding struct {
+	ObjectMeta `json:",inline"`
+	// Indicates the scope of this binding.
+	Namespace string `json:"namespace,omitempty"`
+	// Subjects holds references to the objects the role applies to.
+	Subjects []Subject `json:"subjects,omitempty"`
+
+	RoleRefName string `json:"roleRefName"`
+}
+
+// Subject contains a reference to the object or user identities a role binding applies to.
+// Right now we support "User" as a API group.
+type Subject struct {
+	// Kind of object being referenced. Values defined by this API group are "User" and "Group".
+	// If the Authorizer does not recognized the kind value, the Authorizer should report an error.
+	Kind string `json:"kind"`
+
+	// Name of the object being referenced.
+	Name string `json:"name"`
+}
+
 // Namespace defines namespace
 // swagger:model Namespace
 type Namespace struct {

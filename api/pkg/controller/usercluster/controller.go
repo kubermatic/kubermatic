@@ -18,14 +18,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -40,6 +44,7 @@ func Add(
 	openshift bool,
 	version string,
 	namespace string,
+	cloudProviderName string,
 	caCert *x509.Certificate,
 	clusterURL *url.URL,
 	openvpnServerPort int,
@@ -58,6 +63,7 @@ func Add(
 		openvpnServerPort: openvpnServerPort,
 		openVPNCA:         openVPNCA,
 		log:               log,
+		platform:          cloudProviderName,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -65,6 +71,10 @@ func Add(
 	}
 
 	mapFn := handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
+		log.Debugw("Controller got triggered",
+			"type", fmt.Sprintf("%T", o.Object),
+			"name", o.Meta.GetName(),
+			"namespace", o.Meta.GetNamespace())
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{
 				// There is no "parent object" like e.G. a cluster that can be used to reconcile, we just have a random set of resources
@@ -87,8 +97,30 @@ func Add(
 		&admissionregistrationv1beta1.MutatingWebhookConfiguration{},
 		&apiextensionsv1beta1.CustomResourceDefinition{},
 	}
+
+	if openshift {
+		infrastructureConfigKind := &unstructured.Unstructured{}
+		infrastructureConfigKind.SetKind("Infrastructure")
+		infrastructureConfigKind.SetAPIVersion("config.openshift.io/v1")
+		typesToWatch = append(typesToWatch, infrastructureConfigKind)
+	}
+
+	// Avoid getting triggered by the leader lease AKA: If the annotation exists AND changed on
+	// UPDATE, do not reconcile
+	predicateIgnoreLeaderLeaseRenew := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			if e.MetaOld.GetAnnotations()[resourcelock.LeaderElectionRecordAnnotationKey] == "" {
+				return true
+			}
+			if e.MetaOld.GetAnnotations()[resourcelock.LeaderElectionRecordAnnotationKey] ==
+				e.MetaNew.GetAnnotations()[resourcelock.LeaderElectionRecordAnnotationKey] {
+				return true
+			}
+			return false
+		},
+	}
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}, predicateIgnoreLeaderLeaseRenew); err != nil {
 			return fmt.Errorf("failed to create watch for %T: %v", t, err)
 		}
 	}
@@ -117,6 +149,7 @@ type reconciler struct {
 	clusterURL        *url.URL
 	openvpnServerPort int
 	openVPNCA         *resources.ECDSAKeyPair
+	platform          string
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

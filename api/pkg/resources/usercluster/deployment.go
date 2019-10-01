@@ -45,6 +45,7 @@ type userclusterControllerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetOpenVPNServerPort() (int32, error)
 	KubermaticAPIImage() string
+	GetKubernetesCloudProviderName() string
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
@@ -111,6 +112,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 						"-overwrite-registry", data.ImageRegistry(""),
 						fmt.Sprintf("-openshift=%t", openshift),
 						"-version", data.Cluster().Spec.Version.String(),
+						"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
 						fmt.Sprintf("-openvpn-ca-cert-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCACertKey),
 						fmt.Sprintf("-openvpn-ca-key-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCAKeyKey),
 					}, getNetworkArgs(data)...),
