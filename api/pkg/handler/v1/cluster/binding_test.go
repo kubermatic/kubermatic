@@ -7,11 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
-
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
