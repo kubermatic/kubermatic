@@ -359,7 +359,7 @@ func (r *reconciler) reconcileUnstructured(ctx context.Context) error {
 
 	creators := []reconciling.NamedUnstructuredCreatorGetter{
 		openshift.InfrastructureCreatorGetter(r.platform),
-		openshift.ClusterVersionCreatorGetter(),
+		openshift.ClusterVersionCreatorGetter(r.namespace),
 	}
 	r.log.Debug("Reconciling unstructured")
 	// The delegatingReader from the `mgr` always redirects request for unstructured.Unstructured
