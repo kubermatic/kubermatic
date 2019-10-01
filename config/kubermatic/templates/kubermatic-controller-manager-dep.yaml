@@ -60,10 +60,11 @@ spec:
         - -datacenter-name={{ .Values.kubermatic.controller.datacenterName }}
         - -etcd-disk-size={{ .Values.kubermatic.etcd.diskSize }}
         - -master-resources=/opt/master-files
+        {{- if .Values.kubermatic.datacenters }}
+        - -datacenters=/opt/datacenter/datacenters.yaml
+        {{- end }}
         {{- if .Values.kubermatic.dynamicDatacenters }}
         - -dynamic-datacenters=true
-        {{- else }}
-        - -datacenters=/opt/datacenter/datacenters.yaml
         {{- end }}
         - -versions=/opt/master-files/versions.yaml
         - -updates=/opt/master-files/updates.yaml
@@ -142,7 +143,7 @@ spec:
         - name: master-files
           mountPath: "/opt/master-files/"
           readOnly: true
-        {{- if not .Values.kubermatic.dynamicDatacenters }}
+        {{- if .Values.kubermatic.datacenters }}
         - name: datacenters
           mountPath: "/opt/datacenter/"
           readOnly: true
@@ -181,7 +182,7 @@ spec:
       - name: master-files
         secret:
           secretName: master-files
-      {{- if not .Values.kubermatic.dynamicDatacenters }}
+      {{- if .Values.kubermatic.datacenters }}
       - name: datacenters
         secret:
           secretName: datacenters
