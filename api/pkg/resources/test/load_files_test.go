@@ -401,6 +401,13 @@ func TestLoadFiles(t *testing.T) {
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.KubernetesDashboardKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
 					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
