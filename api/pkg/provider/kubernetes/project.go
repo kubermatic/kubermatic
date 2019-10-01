@@ -80,11 +80,11 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string, la
 					Name:       user.Name,
 				},
 			},
-			Name: rand.String(10),
+			Name:   rand.String(10),
+			Labels: labels,
 		},
 		Spec: kubermaticapiv1.ProjectSpec{
-			Name:   projectName,
-			Labels: labels,
+			Name: projectName,
 		},
 		Status: kubermaticapiv1.ProjectStatus{
 			Phase: kubermaticapiv1.ProjectInactive,

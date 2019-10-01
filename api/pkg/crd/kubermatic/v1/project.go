@@ -39,8 +39,7 @@ type Project struct {
 
 // ProjectSpec is a specification of a project.
 type ProjectSpec struct {
-	Name   string            `json:"name"`
-	Labels map[string]string `json:"labels,omitempty"`
+	Name string `json:"name"`
 }
 
 // ProjectStatus represents the current status of a project.
