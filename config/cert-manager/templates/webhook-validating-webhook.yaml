@@ -41,4 +41,4 @@ webhooks:
     service:
       name: kubernetes
       namespace: default
-      path: /apis/webhook.certmanager.k8s.io/v1beta1/validation
+      path: /apis/webhook.certmanager.k8s.io/v1beta1/validations
