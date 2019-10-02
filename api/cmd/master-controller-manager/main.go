@@ -261,10 +261,10 @@ type unstartableCache struct {
 	ctrlruntimecache.Cache
 }
 
-func (m *myCache) Start(_ <-chan struct{}) error {
+func (m *unstartableCache) Start(_ <-chan struct{}) error {
 	return nil
 }
 
-func (m *myCache) WaitForCacheSync(_ <-chan struct{}) bool {
+func (m *unstartableCache) WaitForCacheSync(_ <-chan struct{}) bool {
 	return true
 }
