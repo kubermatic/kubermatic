@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	mastermigrations "github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
@@ -125,7 +126,10 @@ func main() {
 		log.Fatalw("failed to create Controller Manager instance", zap.Error(err))
 	}
 	ctrlCtx.mgr = mgr
-	ctrlCtx.seedsGetter, err = provider.SeedsGetterFactory(ctx, ctrlCtx.mgr.GetClient(), runOpts.dcFile, ctrlCtx.namespace, runOpts.workerName, runOpts.dynamicDatacenters)
+
+	// these two getters rely on the ctrlruntime manager being started; they are
+	// only used inside controllers
+	ctrlCtx.seedsGetter, err = provider.SeedsGetterFactory(ctx, mgr.GetClient(), runOpts.dcFile, ctrlCtx.namespace, runOpts.workerName, runOpts.dynamicDatacenters)
 	if err != nil {
 		log.Fatalw("failed to construct seedsGetter", zap.Error(err))
 	}
@@ -142,13 +146,57 @@ func main() {
 		Kubeconfig:         kubeconfig,
 	}
 
+	// the runtime manager and all controllers are only started when the leader election is won;
+	// the validating webhook however runs in all master-controller pods;
+	// because of this we always need to have a dedicated, non-manager managed client that can
+	// be used until the manager has been started
+	var (
+		fallbackClient           ctrlruntimeclient.Client
+		fallbackSeedsGetter      provider.SeedsGetter
+		fallbackSeedClientGetter provider.SeedClientGetter
+	)
+
 	if runOpts.seedvalidationHook.CertFile != "" || runOpts.seedvalidationHook.KeyFile != "" {
+		fallbackClient, err = ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
+		if err != nil {
+			log.Fatalw("failed to create fallback kube client", zap.Error(err))
+		}
+		fallbackSeedsGetter, err = provider.SeedsGetterFactory(ctx, fallbackClient, runOpts.dcFile, ctrlCtx.namespace, runOpts.workerName, runOpts.dynamicDatacenters)
+		if err != nil {
+			log.Fatalw("failed to construct fallback seedsGetter", zap.Error(err))
+		}
+		fallbackSeedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, fallbackClient, runOpts.kubeconfig, ctrlCtx.namespace, runOpts.dynamicDatacenters)
+		if err != nil {
+			log.Fatalw("failed to construct fallback seedKubeconfigGetter", zap.Error(err))
+		}
+
+		seedClientGetter := provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter)
+		fallbackSeedClientGetter = provider.SeedClientGetterFactory(fallbackSeedKubeconfigGetter)
+
+		// inject custom getters into the webhook, because we need it to work before we ever
+		// started the manager
 		seedValidationWebhookServer, err := runOpts.seedvalidationHook.Server(
 			ctx,
 			log,
 			runOpts.workerName,
-			ctrlCtx.seedsGetter,
-			provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter),
+			// these wrappers make sure that once the migration is completed, the proper
+			// clients are being used for the remaining run time
+			func() (map[string]*kubermaticv1.Seed, error) {
+				getter := fallbackSeedsGetter
+				if getter != nil {
+					return getter()
+				}
+
+				return ctrlCtx.seedsGetter()
+			},
+			func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+				getter := fallbackSeedClientGetter
+				if getter != nil {
+					return getter(seed)
+				}
+
+				return seedClientGetter(seed)
+			},
 			migrationOptions.SeedMigrationEnabled())
 		if err != nil {
 			log.Fatalw("failed to create validatingAdmissionWebhook server for seeds", zap.Error(err))
@@ -219,6 +267,10 @@ func main() {
 
 					log.Info("migrations executed successfully")
 				}
+
+				// from now on, use the real getters and clients
+				fallbackSeedsGetter = nil
+				fallbackSeedClientGetter = nil
 
 				log.Info("starting the master-controller-manager...")
 				if err := mgr.Start(ctx.Done()); err != nil {
