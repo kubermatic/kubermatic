@@ -50,7 +50,7 @@ func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 		return fake.NewCloudProvider(), nil
 	}
 	if datacenter.Spec.Kubevirt != nil {
-		return kubevirt.NewCloudProvider(), nil
+		return kubevirt.NewCloudProvider(secretKeyGetter), nil
 	}
 	return nil, errors.New("no cloudprovider found")
 }
