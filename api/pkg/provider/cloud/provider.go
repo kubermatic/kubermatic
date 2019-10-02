@@ -20,7 +20,7 @@ import (
 
 func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (provider.CloudProvider, error) {
 	if datacenter.Spec.Digitalocean != nil {
-		return digitalocean.NewCloudProvider(), nil
+		return digitalocean.NewCloudProvider(secretKeyGetter), nil
 	}
 	if datacenter.Spec.BringYourOwn != nil {
 		return bringyourown.NewCloudProvider(), nil
