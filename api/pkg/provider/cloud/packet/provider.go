@@ -2,8 +2,6 @@ package packet
 
 import (
 	"errors"
-	"fmt"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -14,11 +12,14 @@ const (
 )
 
 type packet struct {
+	secretKeySelector provider.SecretKeySelectorValueFunc
 }
 
 // NewCloudProvider creates a new packet provider.
-func NewCloudProvider() provider.CloudProvider {
-	return &packet{}
+func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provider.CloudProvider {
+	return &packet{
+		secretKeySelector: secretKeyGetter,
+	}
 }
 
 // DefaultCloudSpec adds defaults to the CloudSpec.
@@ -28,13 +29,8 @@ func (p *packet) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 
 // ValidateCloudSpec validates the given CloudSpec.
 func (p *packet) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
-	if spec.Packet.APIKey == "" {
-		return fmt.Errorf("apiKey cannot be empty")
-	}
-	if spec.Packet.ProjectID == "" {
-		return fmt.Errorf("projectID cannot be empty")
-	}
-	return nil
+	_, _, err := GetCredentialsForCluster(spec, p.secretKeySelector)
+	return err
 }
 
 // InitializeCloudProvider initializes a cluster, in particular
