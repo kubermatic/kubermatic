@@ -1,4 +1,4 @@
-package metricsscraper
+package kubernetesdashboard
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -12,7 +12,7 @@ import (
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.MetricsScraperClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.Labels = resources.BaseAppLabel(name, nil)
+			crb.Labels = resources.BaseAppLabel(scraperName, nil)
 
 			crb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,

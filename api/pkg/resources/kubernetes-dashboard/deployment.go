@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 )
 
 var (
@@ -111,10 +112,10 @@ func getContainers(data kubernetesDashboardData) []corev1.Container {
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
-				RunAsUser:                &[]int64{1001}[0],
-				RunAsGroup:               &[]int64{2001}[0],
-				ReadOnlyRootFilesystem:   &[]bool{true}[0],
-				AllowPrivilegeEscalation: &[]bool{false}[0],
+				RunAsUser:                pointer.Int64Ptr(1001),
+				RunAsGroup:               pointer.Int64Ptr(2001),
+				ReadOnlyRootFilesystem:   pointer.BoolPtr(true),
+				AllowPrivilegeEscalation: pointer.BoolPtr(false),
 			},
 		},
 	}

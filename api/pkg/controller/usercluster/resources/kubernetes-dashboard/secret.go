@@ -15,7 +15,7 @@ func KeyHolderSecretCreator() reconciling.NamedSecretCreatorGetter {
 				secret.Data = map[string][]byte{}
 			}
 
-			secret.Labels = resources.BaseAppLabel(Name, nil)
+			secret.Labels = resources.BaseAppLabel(AppName, nil)
 			return secret, nil
 		}
 	}
@@ -29,7 +29,7 @@ func CsrfTokenSecretCreator() reconciling.NamedSecretCreatorGetter {
 				secret.Data = map[string][]byte{}
 			}
 
-			secret.Labels = resources.BaseAppLabel(Name, nil)
+			secret.Labels = resources.BaseAppLabel(AppName, nil)
 			return secret, nil
 		}
 	}

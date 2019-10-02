@@ -1,4 +1,4 @@
-package metricsscraper
+package kubernetesdashboard
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -11,7 +11,7 @@ import (
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.MetricsScraperClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-			cr.Labels = resources.BaseAppLabel(name, nil)
+			cr.Labels = resources.BaseAppLabel(scraperName, nil)
 
 			cr.Rules = []rbacv1.PolicyRule{
 				{

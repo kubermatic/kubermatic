@@ -11,7 +11,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/kube-state-metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/kubernetes-dashboard"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/metrics-scraper"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/openshift"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/openvpn"
@@ -120,10 +119,10 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 
 	// Kubernetes Dashboard and related resources
 	creators = []reconciling.NamedServiceAccountCreatorGetter{
-		metricsscraper.ServiceAccountCreator(),
+		kubernetesdashboard.ServiceAccountCreator(),
 	}
-	if err := reconciling.ReconcileServiceAccounts(ctx, creators, metricsscraper.Namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", metricsscraper.Namespace, err)
+	if err := reconciling.ReconcileServiceAccounts(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
 	return nil
@@ -325,11 +324,11 @@ func (r *reconciler) reconcileServices(ctx context.Context) error {
 
 	// Kubernetes Dashboard and related resources
 	creators := []reconciling.NamedServiceCreatorGetter{
-		metricsscraper.ServiceCreator(),
+		kubernetesdashboard.ServiceCreator(),
 	}
 
-	if err := reconciling.ReconcileServices(ctx, creators, metricsscraper.Namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Services in namespace %s: %v", metricsscraper.Namespace, err)
+	if err := reconciling.ReconcileServices(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Services in namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
 	if r.openshift {
@@ -460,7 +459,7 @@ type ctrlruntimeclientClient struct {
 func (r *reconciler) reconcileDeployments(ctx context.Context) error {
 	// Kubernetes Dashboard and related resources
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		metricsscraper.DeploymentCreator(),
+		kubernetesdashboard.DeploymentCreator(),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
