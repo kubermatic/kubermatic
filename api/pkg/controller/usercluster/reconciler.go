@@ -343,7 +343,7 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 		openshift.ControllerManagerNSCreatorGetter,
 		openshift.KubeSchedulerNSCreatorGetter,
 		openshift.NetworkOperatorNSGetter,
-		openshift.OpenshiftCloudCredentialOperatorNSGetter,
+		openshift.CloudCredentialOperatorNSGetter,
 	}
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile namespaces: %v", err)
