@@ -38,7 +38,7 @@ func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 		return packet.NewCloudProvider(), nil
 	}
 	if datacenter.Spec.Hetzner != nil {
-		return hetzner.NewCloudProvider(), nil
+		return hetzner.NewCloudProvider(secretKeyGetter), nil
 	}
 	if datacenter.Spec.VSphere != nil {
 		return vsphere.NewCloudProvider(datacenter)
