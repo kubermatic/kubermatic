@@ -46,6 +46,7 @@ type userclusterControllerData interface {
 	GetOpenVPNServerPort() (int32, error)
 	KubermaticAPIImage() string
 	GetKubernetesCloudProviderName() string
+	CloudCredentialSecretTemplate() ([]byte, error)
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
@@ -96,26 +97,36 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
+			args := append([]string{
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"-metrics-listen-address", "0.0.0.0:8085",
+				"-health-listen-address", "0.0.0.0:8086",
+				"-namespace", "$(NAMESPACE)",
+				"-ca-cert", "/etc/kubernetes/pki/ca/ca.crt",
+				"-cluster-url", data.Cluster().Address.URL,
+				"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
+				"-overwrite-registry", data.ImageRegistry(""),
+				fmt.Sprintf("-openshift=%t", openshift),
+				"-version", data.Cluster().Spec.Version.String(),
+				"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
+				fmt.Sprintf("-openvpn-ca-cert-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCACertKey),
+				fmt.Sprintf("-openvpn-ca-key-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCAKeyKey),
+			}, getNetworkArgs(data)...)
+
+			cloudCredentialSecretTemplate, err := data.CloudCredentialSecretTemplate()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get cloud-credential-secret-template: %v", err)
+			}
+			if cloudCredentialSecretTemplate != nil {
+				args = append(args, "--cloud-credential-secret-template", string(cloudCredentialSecretTemplate))
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
 					Image:   data.KubermaticAPIImage() + ":" + resources.KUBERMATICCOMMIT,
 					Command: []string{"/usr/local/bin/user-cluster-controller-manager"},
-					Args: append([]string{
-						"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-						"-metrics-listen-address", "0.0.0.0:8085",
-						"-health-listen-address", "0.0.0.0:8086",
-						"-namespace", "$(NAMESPACE)",
-						"-ca-cert", "/etc/kubernetes/pki/ca/ca.crt",
-						"-cluster-url", data.Cluster().Address.URL,
-						"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
-						"-overwrite-registry", data.ImageRegistry(""),
-						fmt.Sprintf("-openshift=%t", openshift),
-						"-version", data.Cluster().Spec.Version.String(),
-						"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
-						fmt.Sprintf("-openvpn-ca-cert-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCACertKey),
-						fmt.Sprintf("-openvpn-ca-key-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCAKeyKey),
-					}, getNetworkArgs(data)...),
+					Args:    args,
 					Env: []corev1.EnvVar{
 						{
 							Name: "NAMESPACE",
