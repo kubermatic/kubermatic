@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/coreos/go-oidc"
@@ -242,26 +241,12 @@ type cookieHeaderBearerTokenExtractor struct {
 }
 
 func (e cookieHeaderBearerTokenExtractor) Extract(r *http.Request) (string, error) {
-	header := r.Header.Get("Cookie")
-	cookies := strings.Split(header, ";")
-
-	for _, cookie := range cookies {
-		cookie = strings.TrimSpace(cookie)
-		parts := strings.Split(cookie, "=")
-
-		if len(parts) != 2 {
-			continue
-		}
-
-		headerName := parts[0]
-		headerValue := parts[1]
-
-		if headerName == e.name {
-			return headerValue, nil
-		}
+	cookie, err := r.Cookie("token")
+	if err != nil {
+		return "", fmt.Errorf("haven't found a Bearer token in the Cookie header %s: %v", e.name, err)
 	}
 
-	return "", fmt.Errorf("haven't found a Bearer token in the Cookie %s header", e.name)
+	return cookie.Value, nil
 }
 
 // NewCombinedExtractor returns an token extractor which tries a list of token extractors until it finds a token
