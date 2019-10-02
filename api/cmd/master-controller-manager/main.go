@@ -254,14 +254,7 @@ func main() {
 				if migrationOptions.MigrationEnabled() {
 					log.Info("executing migrations...")
 
-					// create a dedicated client because the one from the manager is not yet
-					// initialized and returns 404's for everything
-					client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
-					if err != nil {
-						return fmt.Errorf("failed to create kube client: %v", err)
-					}
-
-					if err := mastermigrations.RunAll(ctx, log, client, ctrlCtx.namespace, migrationOptions); err != nil {
+					if err := mastermigrations.RunAll(ctx, log, fallbackClient, ctrlCtx.namespace, migrationOptions); err != nil {
 						return fmt.Errorf("failed to run migrations: %v", err)
 					}
 
