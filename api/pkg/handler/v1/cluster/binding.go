@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
@@ -243,8 +245,44 @@ func GetRoleBindingEndpoint() endpoint.Endpoint {
 	}
 }
 
+func DeleteRoleBindingEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(roleBindingReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		roleID := addUserClusterRBACPrefix(req.RoleID)
+
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: roleID, Namespace: req.Namespace}, &rbacv1.Role{}); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		bindingID := addUserClusterRBACPrefix(req.BindingID)
+		binding := &rbacv1.RoleBinding{}
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: bindingID, Namespace: req.Namespace}, binding); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if err := client.Delete(ctx, binding); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return nil, nil
+	}
+}
+
 // roleBindingReq defines HTTP request for getRoleBinding endpoint
-// swagger:parameters getRoleBinding
+// swagger:parameters getRoleBinding deleteRoleBinding
 type roleBindingReq struct {
 	common.GetClusterReq
 	// in: path
@@ -288,6 +326,113 @@ func DecodeRoleBindingReq(c context.Context, r *http.Request) (interface{}, erro
 		return "", fmt.Errorf("'binding_id' parameter is required but was not provided")
 	}
 	req.BindingID = bindingID
+	return req, nil
+}
+
+func PatchRoleBindingEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(patchRoleBindingReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		roleID := addUserClusterRBACPrefix(req.RoleID)
+
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: roleID, Namespace: req.Namespace}, &rbacv1.Role{}); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		bindingID := addUserClusterRBACPrefix(req.BindingID)
+		existingBinding := &rbacv1.RoleBinding{}
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: bindingID, Namespace: req.Namespace}, existingBinding); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		existingBindingJSON, err := json.Marshal(existingBinding)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot decode existing role binding: %v", err)
+		}
+
+		patchedBindingJSON, err := jsonpatch.MergePatch(existingBindingJSON, req.Patch)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot patch role binding: %v", err)
+		}
+
+		var patchedBinding *rbacv1.RoleBinding
+		err = json.Unmarshal(patchedBindingJSON, &patchedBinding)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot decode patched role binding: %v", err)
+		}
+
+		if err := client.Update(ctx, patchedBinding); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalRoleBindingToExternal(patchedBinding), nil
+	}
+}
+
+// patchRoleBindingReq defines HTTP request for patchRoleBinding endpoint
+// swagger:parameters patchRoleBinding
+type patchRoleBindingReq struct {
+	common.GetClusterReq
+	// in: path
+	// required: true
+	RoleID string `json:"role_id"`
+	// in: path
+	// required: true
+	Namespace string `json:"namespace"`
+	// in: path
+	// required: true
+	BindingID string `json:"binding_id"`
+	// in: body
+	Patch []byte
+}
+
+func DecodePatchRoleBindingReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchRoleBindingReq
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(common.DCReq)
+	req.ClusterID = clusterID
+
+	roleID := mux.Vars(r)["role_id"]
+	if roleID == "" {
+		return "", fmt.Errorf("'role_id' parameter is required but was not provided")
+	}
+	req.RoleID = roleID
+	namespace := mux.Vars(r)["namespace"]
+	if namespace == "" {
+		return "", fmt.Errorf("'namespace' parameter is required but was not provided")
+	}
+	req.Namespace = namespace
+
+	bindingID := mux.Vars(r)["binding_id"]
+	if bindingID == "" {
+		return "", fmt.Errorf("'binding_id' parameter is required but was not provided")
+	}
+	req.BindingID = bindingID
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+
 	return req, nil
 }
 
@@ -337,8 +482,9 @@ func convertInternalRoleBindingToExternal(clusterRole *rbacv1.RoleBinding) *apiv
 
 	for _, subjectInternal := range clusterRole.Subjects {
 		subjectExternal := apiv1.Subject{
-			Kind: subjectInternal.Kind,
-			Name: subjectInternal.Name,
+			Kind:     subjectInternal.Kind,
+			Name:     subjectInternal.Name,
+			APIGroup: subjectInternal.APIGroup,
 		}
 		roleBinding.Subjects = append(roleBinding.Subjects, subjectExternal)
 	}
