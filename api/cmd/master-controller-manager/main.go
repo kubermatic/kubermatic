@@ -23,7 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -124,7 +123,7 @@ func main() {
 
 	// create a new cache that we can start independently of the manager, so that other
 	// components work even if the manager has not yet been started
-	cache, err := ctrlruntimecache.New(cfg, cache.Options{})
+	cache, err := ctrlruntimecache.New(cfg, ctrlruntimecache.Options{})
 	if err != nil {
 		log.Fatalw("failed to create cache", zap.Error(err))
 	}
@@ -135,7 +134,9 @@ func main() {
 		}
 	}()
 
-	cache.WaitForCacheSync(ctx.Done())
+	if !cache.WaitForCacheSync(ctx.Done()) {
+		log.Fatal("failed to wait for caches to synchronize")
+	}
 
 	mgr, err := manager.New(cfg, manager.Options{
 		MetricsBindAddress: "",
