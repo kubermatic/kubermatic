@@ -467,6 +467,35 @@ func (a *Client) DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAut
 }
 
 /*
+DeleteRoleBinding Delete role binding
+*/
+func (a *Client) DeleteRoleBinding(params *DeleteRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteRoleBindingOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteRoleBindingParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteRoleBinding",
+		Method:             "DELETE",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings/{binding_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteRoleBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*DeleteRoleBindingOK), nil
+
+}
+
+/*
 DeleteSSHKey removes the given SSH key from the system
 */
 func (a *Client) DeleteSSHKey(params *DeleteSSHKeyParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteSSHKeyOK, error) {
@@ -1401,6 +1430,35 @@ func (a *Client) PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthI
 		return nil, err
 	}
 	return result.(*PatchRoleOK), nil
+
+}
+
+/*
+PatchRoleBinding Update role binding
+*/
+func (a *Client) PatchRoleBinding(params *PatchRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*PatchRoleBindingOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchRoleBindingParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "patchRoleBinding",
+		Method:             "PATCH",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings/{binding_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchRoleBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*PatchRoleBindingOK), nil
 
 }
 

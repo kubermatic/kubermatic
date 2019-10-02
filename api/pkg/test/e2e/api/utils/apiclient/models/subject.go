@@ -17,6 +17,10 @@ import (
 // swagger:model Subject
 type Subject struct {
 
+	// APIGroup holds the API group of the referenced subject.
+	// Defaults to "rbac.authorization.k8s.io" for User and Group subjects.
+	APIGroup string `json:"apiGroup,omitempty"`
+
 	// Kind of object being referenced. Values defined by this API group are "User" and "Group".
 	// If the Authorizer does not recognized the kind value, the Authorizer should report an error.
 	Kind string `json:"kind,omitempty"`
