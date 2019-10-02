@@ -10,7 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	mastermigrations "github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
@@ -22,8 +21,10 @@ import (
 	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
@@ -121,7 +122,28 @@ func main() {
 		listOpts.LabelSelector = selector.String()
 	}
 
-	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: ""})
+	// create a new cache that we can start independently of the manager, so that other
+	// components work even if the manager has not yet been started
+	cache, err := ctrlruntimecache.New(cfg, cache.Options{})
+	if err != nil {
+		log.Fatalw("failed to create cache", zap.Error(err))
+	}
+
+	go func() {
+		if err := cache.Start(ctx.Done()); err != nil {
+			log.Fatalw("failed to start cache", zap.Error(err))
+		}
+	}()
+
+	cache.WaitForCacheSync(ctx.Done())
+
+	mgr, err := manager.New(cfg, manager.Options{
+		MetricsBindAddress: "",
+		// inject the handcrafted cache into the manager
+		NewCache: func(config *rest.Config, opts ctrlruntimecache.Options) (ctrlruntimecache.Cache, error) {
+			return &unstartableCache{cache}, nil
+		},
+	})
 	if err != nil {
 		log.Fatalw("failed to create Controller Manager instance", zap.Error(err))
 	}
@@ -146,57 +168,13 @@ func main() {
 		Kubeconfig:         kubeconfig,
 	}
 
-	// the runtime manager and all controllers are only started when the leader election is won;
-	// the validating webhook however runs in all master-controller pods;
-	// because of this we always need to have a dedicated, non-manager managed client that can
-	// be used until the manager has been started
-	var (
-		fallbackClient           ctrlruntimeclient.Client
-		fallbackSeedsGetter      provider.SeedsGetter
-		fallbackSeedClientGetter provider.SeedClientGetter
-	)
-
 	if runOpts.seedvalidationHook.CertFile != "" || runOpts.seedvalidationHook.KeyFile != "" {
-		fallbackClient, err = ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
-		if err != nil {
-			log.Fatalw("failed to create fallback kube client", zap.Error(err))
-		}
-		fallbackSeedsGetter, err = provider.SeedsGetterFactory(ctx, fallbackClient, runOpts.dcFile, ctrlCtx.namespace, runOpts.workerName, runOpts.dynamicDatacenters)
-		if err != nil {
-			log.Fatalw("failed to construct fallback seedsGetter", zap.Error(err))
-		}
-		fallbackSeedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, fallbackClient, runOpts.kubeconfig, ctrlCtx.namespace, runOpts.dynamicDatacenters)
-		if err != nil {
-			log.Fatalw("failed to construct fallback seedKubeconfigGetter", zap.Error(err))
-		}
-
-		seedClientGetter := provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter)
-		fallbackSeedClientGetter = provider.SeedClientGetterFactory(fallbackSeedKubeconfigGetter)
-
-		// inject custom getters into the webhook, because we need it to work before we ever
-		// started the manager
 		seedValidationWebhookServer, err := runOpts.seedvalidationHook.Server(
 			ctx,
 			log,
 			runOpts.workerName,
-			// these wrappers make sure that once the migration is completed, the proper
-			// clients are being used for the remaining run time
-			func() (map[string]*kubermaticv1.Seed, error) {
-				getter := fallbackSeedsGetter
-				if getter != nil {
-					return getter()
-				}
-
-				return ctrlCtx.seedsGetter()
-			},
-			func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
-				getter := fallbackSeedClientGetter
-				if getter != nil {
-					return getter(seed)
-				}
-
-				return seedClientGetter(seed)
-			},
+			ctrlCtx.seedsGetter,
+			provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter),
 			migrationOptions.SeedMigrationEnabled())
 		if err != nil {
 			log.Fatalw("failed to create validatingAdmissionWebhook server for seeds", zap.Error(err))
@@ -254,16 +232,12 @@ func main() {
 				if migrationOptions.MigrationEnabled() {
 					log.Info("executing migrations...")
 
-					if err := mastermigrations.RunAll(ctx, log, fallbackClient, ctrlCtx.namespace, migrationOptions); err != nil {
+					if err := mastermigrations.RunAll(ctx, log, mgr.GetClient(), ctrlCtx.namespace, migrationOptions); err != nil {
 						return fmt.Errorf("failed to run migrations: %v", err)
 					}
 
 					log.Info("migrations executed successfully")
 				}
-
-				// from now on, use the real getters and clients
-				fallbackSeedsGetter = nil
-				fallbackSeedClientGetter = nil
 
 				log.Info("starting the master-controller-manager...")
 				if err := mgr.Start(ctx.Done()); err != nil {
@@ -279,4 +253,18 @@ func main() {
 	if err := g.Run(); err != nil {
 		log.Fatalw("cannot start the master-controller-manager", zap.Error(err))
 	}
+}
+
+// unstartableCache is used to prevent the ctrlruntime manager from starting the
+// cache *again*, just after we started and initialized it.
+type unstartableCache struct {
+	ctrlruntimecache.Cache
+}
+
+func (m *myCache) Start(_ <-chan struct{}) error {
+	return nil
+}
+
+func (m *myCache) WaitForCacheSync(_ <-chan struct{}) bool {
+	return true
 }
