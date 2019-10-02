@@ -1236,6 +1236,9 @@ const (
 	InClusterPVCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-pv"
 	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup
 	InClusterLBCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-lb"
+	// InClusterCredentialsRequestsCleanupFinalizer indicates that CredentialsRequests still need cleanup. This
+	// CRD only exists on Openshift and is a no-op for Kubernetes.
+	InClusterCredentialsRequestsCleanupFinalizer = "kubermatic-io/cleanup-credentials-requests"
 	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup
 	CredentialsSecretsCleanupFinalizer = "kubermatic.io/cleanup-credentials-secrets"
 )

@@ -344,6 +344,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
 		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer)
+			kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err

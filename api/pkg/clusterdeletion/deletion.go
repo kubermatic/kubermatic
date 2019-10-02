@@ -66,10 +66,11 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 
 	shouldDeleteLBs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterLBCleanupFinalizer)
 	shouldDeletePVs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterPVCleanupFinalizer)
+	shouldDeleteCredentialsRequests := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer)
 
 	// If no relevant finalizer exists, directly return
-	if !shouldDeleteLBs && !shouldDeletePVs {
-		log.Debug("Skipping in-cluster-resources deletion. Neither the LB nor the PV finalizers is set")
+	if !shouldDeleteLBs && !shouldDeletePVs && !shouldDeleteCredentialsRequests {
+		log.Debug("Skipping in-cluster-resources deletion. None iof the in-cluster cleanup finalizers is set.")
 		return nil
 	}
 
@@ -93,6 +94,16 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 		deletedSomeResource = deletedSomeResource || deletedSomeVolumes
 	}
 
+	if shouldDeleteCredentialsRequests {
+		deletedSomeCredentialsRequests, err := d.cleanupCredentialsRequest(ctx, log, cluster)
+		if err != nil {
+			return fmt.Errorf("failed to cleanup CredentialsRequests: %v", err)
+		}
+		deletedSomeResource = deletedSomeResource || deletedSomeCredentialsRequests
+	}
+
+	return nil
+
 	// If we deleted something it is implied that there was still something left. Just return
 	// here so the finalizers stay, it will make the cluster controller requeue us after a delay
 	// This also means that we may end up issuing multiple DELETE calls against the same ressource
@@ -115,6 +126,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 	return d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.InClusterLBCleanupFinalizer)
 		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.InClusterPVCleanupFinalizer)
+		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer)
 	})
 }
 
