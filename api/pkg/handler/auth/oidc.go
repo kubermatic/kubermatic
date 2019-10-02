@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/coreos/go-oidc"
@@ -230,6 +231,37 @@ func (e queryParamBearerTokenExtractor) Extract(r *http.Request) (string, error)
 		return "", fmt.Errorf("haven't found an OIDC token in the query %q param ", e.name)
 	}
 	return val, nil
+}
+
+func NewCookieHeaderBearerTokenExtractor(header string) TokenExtractor {
+	return cookieHeaderBearerTokenExtractor{name: header}
+}
+
+type cookieHeaderBearerTokenExtractor struct {
+	name string
+}
+
+func (e cookieHeaderBearerTokenExtractor) Extract(r *http.Request) (string, error) {
+	header := r.Header.Get("Cookie")
+	cookies := strings.Split(header, ";")
+
+	for _, cookie := range cookies {
+		cookie = strings.TrimSpace(cookie)
+		parts := strings.Split(cookie, "=")
+
+		if len(parts) != 2 {
+			continue
+		}
+
+		headerName := parts[0]
+		headerValue := parts[1]
+
+		if headerName == e.name {
+			return headerValue, nil
+		}
+	}
+
+	return "", fmt.Errorf("haven't found a Bearer token in the Cookie %s header", e.name)
 }
 
 // NewCombinedExtractor returns an token extractor which tries a list of token extractors until it finds a token
