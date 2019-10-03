@@ -98,6 +98,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	tasks := []ClusterTask{
 		setExposeStrategyIfEmpty,
 		setProxyModeIfEmpty,
+		createSecretsForCredentials,
 	}
 
 	w := sync.WaitGroup{}
