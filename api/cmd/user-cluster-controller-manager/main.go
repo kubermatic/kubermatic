@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -29,6 +30,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
+	corev1 "k8s.io/api/core/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	certutil "k8s.io/client-go/util/cert"
@@ -41,20 +43,21 @@ import (
 )
 
 type controllerRunOptions struct {
-	metricsListenAddr     string
-	healthListenAddr      string
-	openshift             bool
-	version               string
-	networks              networkFlags
-	namespace             string
-	caPath                string
-	clusterURL            string
-	openvpnServerPort     int
-	openvpnCACertFilePath string
-	openvpnCAKeyFilePath  string
-	overwriteRegistry     string
-	cloudProviderName     string
-	log                   kubermaticlog.Options
+	metricsListenAddr             string
+	healthListenAddr              string
+	openshift                     bool
+	version                       string
+	networks                      networkFlags
+	namespace                     string
+	caPath                        string
+	clusterURL                    string
+	openvpnServerPort             int
+	openvpnCACertFilePath         string
+	openvpnCAKeyFilePath          string
+	overwriteRegistry             string
+	cloudProviderName             string
+	cloudCredentialSecretTemplate string
+	log                           kubermaticlog.Options
 }
 
 func main() {
@@ -74,6 +77,7 @@ func main() {
 	flag.BoolVar(&runOp.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&runOp.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.StringVar(&runOp.cloudProviderName, "cloud-provider-name", "", "Name of the cloudprovider")
+	flag.StringVar(&runOp.cloudCredentialSecretTemplate, "cloud-credential-secret-template", "", "A serialized Kubernetes secret whose Name and Data fields will be used to create a secret for the openshift cloud credentials operator.")
 
 	flag.Parse()
 
@@ -139,6 +143,14 @@ func main() {
 	}
 	openVPNCACert := &resources.ECDSAKeyPair{Cert: openVPNCACerts[0], Key: openVPNECSDAKey}
 
+	var cloudCredentialSecretTemplate *corev1.Secret
+	if runOp.cloudCredentialSecretTemplate != "" {
+		cloudCredentialSecretTemplate = &corev1.Secret{}
+		if err := json.Unmarshal([]byte(runOp.cloudCredentialSecretTemplate), cloudCredentialSecretTemplate); err != nil {
+			log.Fatalw("Failed to unmarshal value of --cloud-credential-secret-template flag into secret", zap.Error(err))
+		}
+	}
+
 	var g run.Group
 
 	healthHandler := healthcheck.NewHandler()
@@ -185,6 +197,7 @@ func main() {
 		runOp.openvpnServerPort,
 		healthHandler.AddReadinessCheck,
 		openVPNCACert,
+		cloudCredentialSecretTemplate,
 		log); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
 	}

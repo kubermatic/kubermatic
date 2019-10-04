@@ -322,6 +322,11 @@ func (r *reconciler) reconcileSecrets(ctx context.Context) error {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		openvpn.ClientCertificate(r.openVPNCA),
 	}
+	if r.openshift {
+		if r.cloudCredentialSecretTemplate != nil {
+			creators = append(creators, openshift.CloudCredentialSecretCreator(*r.cloudCredentialSecretTemplate))
+		}
+	}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets in kue-system Namespace: %v", err)
@@ -338,6 +343,7 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 		openshift.ControllerManagerNSCreatorGetter,
 		openshift.KubeSchedulerNSCreatorGetter,
 		openshift.NetworkOperatorNSGetter,
+		openshift.CloudCredentialOperatorNSGetter,
 	}
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile namespaces: %v", err)
@@ -353,6 +359,7 @@ func (r *reconciler) reconcileUnstructured(ctx context.Context) error {
 
 	creators := []reconciling.NamedUnstructuredCreatorGetter{
 		openshift.InfrastructureCreatorGetter(r.platform),
+		openshift.ClusterVersionCreatorGetter(r.namespace),
 	}
 	r.log.Debug("Reconciling unstructured")
 	// The delegatingReader from the `mgr` always redirects request for unstructured.Unstructured

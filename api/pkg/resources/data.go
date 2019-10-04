@@ -314,6 +314,11 @@ func (d *TemplateData) GetKubernetesCloudProviderName() string {
 	return GetKubernetesCloudProviderName(d.Cluster())
 }
 
+func (d *TemplateData) CloudCredentialSecretTemplate() ([]byte, error) {
+	// This is needed for Openshift only
+	return nil, nil
+}
+
 func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
 	if cluster.Spec.Cloud.AWS != nil {
 		return "aws"
