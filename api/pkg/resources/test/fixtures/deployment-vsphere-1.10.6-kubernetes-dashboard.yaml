@@ -46,10 +46,6 @@ spec:
         - "1"
         - -command
         - '{"command":"/dashboard","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--namespace","kubernetes-dashboard","--enable-insecure-login"]}'
-        - --crd-to-wait-for
-        - ""
-        - --crd-to-wait-for
-        - ""
         command:
         - /http-prober-bin/http-prober
         image: docker.io/kubernetesui/dashboard:v2.0.0-beta4
