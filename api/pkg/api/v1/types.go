@@ -1212,6 +1212,15 @@ type RoleBinding struct {
 	RoleRefName string `json:"roleRefName"`
 }
 
+// ClusterRoleBinding references a cluster role, but does not contain it.
+type ClusterRoleBinding struct {
+	ObjectMeta `json:",inline"`
+	// Subjects holds references to the objects the role applies to.
+	Subjects []Subject `json:"subjects,omitempty"`
+
+	RoleRefName string `json:"roleRefName"`
+}
+
 // Subject contains a reference to the object or user identities a role binding applies to.
 // Right now we support "User" as a API group.
 type Subject struct {
