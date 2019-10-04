@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -342,4 +343,32 @@ func (od *openshiftData) SeedName() string {
 
 func (od *openshiftData) GetKubernetesCloudProviderName() string {
 	return kubernetesresources.GetKubernetesCloudProviderName(od.Cluster())
+}
+
+func (od *openshiftData) CloudCredentialSecretTemplate() ([]byte, error) {
+	// TODO: Support more providers than just AWS :)
+	if od.Cluster().Spec.Cloud.AWS == nil {
+		return nil, nil
+	}
+	credentials, err := kubernetesresources.GetCredentials(od)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get credentials: %v", err)
+	}
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			// https://github.com/openshift/cloud-credential-operator/blob/ec6f38d73a7921e79d0ca7555da3a864e808e681/pkg/aws/actuator/actuator.go#L51
+			Name: "aws-creds",
+		},
+		// https://github.com/openshift/cloud-credential-operator/blob/ec6f38d73a7921e79d0ca7555da3a864e808e681/pkg/aws/actuator/actuator.go#L671-L682
+		Data: map[string][]byte{
+			"aws_access_key_id":     []byte(credentials.AWS.AccessKeyID),
+			"aws_secret_access_key": []byte(credentials.AWS.SecretAccessKey),
+		},
+	}
+
+	serializedSecret, err := json.Marshal(secret)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal secret: %v", err)
+	}
+	return serializedSecret, nil
 }
