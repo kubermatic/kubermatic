@@ -12,6 +12,8 @@ versions:
 # Kubernetes 1.16
 - version: "v1.16.0"
   default: false
+- version: "v1.16.1"
+  default: false
 # OpenShift 4.1.9
 - version: "v4.1.9"
   default: true
