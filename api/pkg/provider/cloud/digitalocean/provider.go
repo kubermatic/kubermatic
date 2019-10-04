@@ -13,11 +13,14 @@ import (
 )
 
 type digitalocean struct {
+	secretKeySelector provider.SecretKeySelectorValueFunc
 }
 
 // NewCloudProvider creates a new digitalocean provider.
-func NewCloudProvider() provider.CloudProvider {
-	return &digitalocean{}
+func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provider.CloudProvider {
+	return &digitalocean{
+		secretKeySelector: secretKeyGetter,
+	}
 }
 
 func (do *digitalocean) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
@@ -25,10 +28,15 @@ func (do *digitalocean) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 }
 
 func (do *digitalocean) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
-	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: spec.Digitalocean.Token})
+	token, err := GetCredentialsForCluster(spec, do.secretKeySelector)
+	if err != nil {
+		return err
+	}
+
+	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
 
-	_, _, err := client.Regions.List(context.Background(), nil)
+	_, _, err = client.Regions.List(context.Background(), nil)
 	return err
 }
 

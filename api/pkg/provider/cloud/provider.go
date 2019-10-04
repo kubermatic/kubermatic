@@ -20,7 +20,7 @@ import (
 
 func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (provider.CloudProvider, error) {
 	if datacenter.Spec.Digitalocean != nil {
-		return digitalocean.NewCloudProvider(), nil
+		return digitalocean.NewCloudProvider(secretKeyGetter), nil
 	}
 	if datacenter.Spec.BringYourOwn != nil {
 		return bringyourown.NewCloudProvider(), nil
@@ -35,10 +35,10 @@ func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 		return openstack.NewCloudProvider(datacenter, secretKeyGetter)
 	}
 	if datacenter.Spec.Packet != nil {
-		return packet.NewCloudProvider(), nil
+		return packet.NewCloudProvider(secretKeyGetter), nil
 	}
 	if datacenter.Spec.Hetzner != nil {
-		return hetzner.NewCloudProvider(), nil
+		return hetzner.NewCloudProvider(secretKeyGetter), nil
 	}
 	if datacenter.Spec.VSphere != nil {
 		return vsphere.NewCloudProvider(datacenter)
@@ -50,7 +50,7 @@ func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 		return fake.NewCloudProvider(), nil
 	}
 	if datacenter.Spec.Kubevirt != nil {
-		return kubevirt.NewCloudProvider(), nil
+		return kubevirt.NewCloudProvider(secretKeyGetter), nil
 	}
 	return nil, errors.New("no cloudprovider found")
 }

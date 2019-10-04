@@ -11,11 +11,14 @@ import (
 )
 
 type hetzner struct {
+	secretKeySelector provider.SecretKeySelectorValueFunc
 }
 
 // NewCloudProvider creates a new hetzner provider.
-func NewCloudProvider() provider.CloudProvider {
-	return &hetzner{}
+func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provider.CloudProvider {
+	return &hetzner{
+		secretKeySelector: secretKeyGetter,
+	}
 }
 
 // DefaultCloudSpec
@@ -25,8 +28,13 @@ func (h *hetzner) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 
 // ValidateCloudSpec
 func (h *hetzner) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
-	client := hcloud.NewClient(hcloud.WithToken(spec.Hetzner.Token))
-	_, _, err := client.ServerType.List(context.Background(), hcloud.ServerTypeListOpts{})
+	hetznerToken, err := GetCredentialsForCluster(spec, h.secretKeySelector)
+	if err != nil {
+		return err
+	}
+
+	client := hcloud.NewClient(hcloud.WithToken(hetznerToken))
+	_, _, err = client.ServerType.List(context.Background(), hcloud.ServerTypeListOpts{})
 	return err
 }
 

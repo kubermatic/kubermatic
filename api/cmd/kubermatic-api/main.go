@@ -245,6 +245,7 @@ func createAuthClients(options serverRunOptions, prov providers) (auth.TokenVeri
 		"",
 		auth.NewCombinedExtractor(
 			auth.NewHeaderBearerTokenExtractor("Authorization"),
+			auth.NewCookieHeaderBearerTokenExtractor("token"),
 			auth.NewQueryParamBearerTokenExtractor("token"),
 		),
 		options.oidcSkipTLSVerify,
