@@ -536,6 +536,75 @@ func DecodeCreateClusterRoleBindingReq(c context.Context, r *http.Request) (inte
 	return req, nil
 }
 
+func ListClusterRoleBindingEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listClusterRoleBindingReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		labelSelector, err := labels.Parse(UserClusterBindingLabelSelector)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}, clusterRoleBindingList); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var bindings []rbacv1.ClusterRoleBinding
+		for _, binding := range clusterRoleBindingList.Items {
+			if removeUserClusterRBACPrefix(binding.RoleRef.Name) == req.RoleID {
+				bindings = append(bindings, binding)
+			}
+		}
+
+		return convertInternalClusterRoleBindingsToExternal(bindings), nil
+	}
+}
+
+// listClusterRoleBindingReq defines HTTP request for listClusterRoleBinding endpoint
+// swagger:parameters listClusterRoleBinding
+type listClusterRoleBindingReq struct {
+	common.GetClusterReq
+	// in: path
+	// required: true
+	RoleID string `json:"role_id"`
+}
+
+func DecodeListClusterRoleBindingReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req listClusterRoleBindingReq
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	dcr, err := common.DecodeDcReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.DCReq = dcr.(common.DCReq)
+	req.ClusterID = clusterID
+
+	roleID := mux.Vars(r)["role_id"]
+	if roleID == "" {
+		return "", fmt.Errorf("'role_id' parameter is required but was not provided")
+	}
+	req.RoleID = roleID
+
+	return req, nil
+}
+
 // generateRBACRoleBinding creates role binding
 func generateRBACRoleBinding(name, namespace, roleName string, subjects []apiv1.Subject) (*rbacv1.RoleBinding, error) {
 
@@ -653,4 +722,13 @@ func convertInternalClusterRoleBindingToExternal(clusterRoleBinding *rbacv1.Clus
 	}
 
 	return binding
+}
+
+func convertInternalClusterRoleBindingsToExternal(clusterRoleBindings []rbacv1.ClusterRoleBinding) []*apiv1.ClusterRoleBinding {
+	var apiClusterRoleBinding []*apiv1.ClusterRoleBinding
+	for _, binding := range clusterRoleBindings {
+		apiClusterRoleBinding = append(apiClusterRoleBinding, convertInternalClusterRoleBindingToExternal(binding.DeepCopy()))
+	}
+
+	return apiClusterRoleBinding
 }
