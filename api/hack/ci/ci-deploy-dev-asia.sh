@@ -19,6 +19,7 @@ retry 5 vault write \
 export VAULT_TOKEN="$(cat /tmp/vault-token-response.json| jq .auth.client_token -r)"
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
+export HELM_EXTRA_ARGS="--set=kubermatic.controller.datacenterName=asia-south1-c"
 
 # deploy to dev-asia
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}
@@ -27,5 +28,5 @@ kubectl config use-context asia-south1-c
 echodate "Successfully got secrets for dev-asia from Vault"
 
 echodate "Deploying ${DEPLOY_STACK} stack to dev-asia"
-TILLER_NAMESPACE=kubermatic-installer ./api/hack/deploy.sh seed ${VALUES_FILE}
+TILLER_NAMESPACE=kubermatic-installer ./api/hack/deploy.sh seed ${VALUES_FILE} ${HELM_EXTRA_ARGS}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to dev-asia"
