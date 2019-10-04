@@ -149,11 +149,6 @@ func (r *Reconciler) reconcileSeedProxy(seed *kubermaticv1.Seed, client ctrlrunt
 		return fmt.Errorf("failed to ensure RBAC: %v", err)
 	}
 
-	log.Debug("reconciling RoleBindings...")
-	if err := r.reconcileSeedRoleBindings(client, log); err != nil {
-		return fmt.Errorf("failed to ensure RoleBinding: %v", err)
-	}
-
 	log.Debug("fetching ServiceAccount details from seed cluster...")
 	serviceAccountSecret, err := r.fetchServiceAccountSecret(client, log)
 	if err != nil {
@@ -248,7 +243,7 @@ func (r *Reconciler) fetchServiceAccountSecret(client ctrlruntimeclient.Client, 
 		Name:      sa.Secrets[0].Name,
 	}
 
-	if err := r.Get(r.ctx, name, secret); err != nil {
+	if err := client.Get(r.ctx, name, secret); err != nil {
 		return nil, fmt.Errorf("could not find Secret '%s'", name)
 	}
 
