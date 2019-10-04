@@ -65,13 +65,13 @@ const (
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
 	// UserClusterControllerDeploymentName is the name of the usercluster-controller deployment
 	UserClusterControllerDeploymentName = "usercluster-controller"
-	// ClusterAutoscalerDeploymentName is the name of the cluster-autoscaler depoyment
+	// ClusterAutoscalerDeploymentName is the name of the cluster-autoscaler deployment
 	ClusterAutoscalerDeploymentName = "cluster-autoscaler"
-	// TODO(floreks)
+	// KubernetesDashboardDeploymentName is the name of the Kubernetes Dashboard deployment
 	KubernetesDashboardDeploymentName = "kubernetes-dashboard"
-	// TODO(floreks)
+	// MetricsScraperDeploymentName is the name of dashboard-metrics-scraper deployment
 	MetricsScraperDeploymentName = "dashboard-metrics-scraper"
-	// TODO(floreks)
+	// MetricsScraperServiceName is the name of dashboard-metrics-scraper service
 	MetricsScraperServiceName = "dashboard-metrics-scraper"
 
 	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
@@ -128,7 +128,7 @@ const (
 	// ClusterAutoscalerKubeconfigSecretName is the name of the kubeconfig secret used for
 	// the cluster-autoscaler
 	ClusterAutoscalerKubeconfigSecretName = "cluster-autoscaler-kubeconfig"
-	// TODO(floreks)
+	// KubernetesDashboardKubeconfigSecretName is the name of the kubeconfig secret user for Kubernetes Dashboard
 	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
@@ -168,9 +168,11 @@ const (
 	GoogleServiceAccountVolumeName = "google-service-account-volume"
 	// AuditLogVolumeName is the name of the volume that hold the audit log of the apiserver.
 	AuditLogVolumeName = "audit-log"
-	// TODO(floreks)
+	// KubernetesDashboardKeyHolderSecretName is the name of the secret that contains JWE token encryption key
+	// used by the Kubernetes Dashboard
 	KubernetesDashboardKeyHolderSecretName = "kubernetes-dashboard-key-holder"
-	// TODO(floreks)
+	// KubernetesDashboardCsrfTokenSecretName is the name of the secret that contains CSRF token used by
+	// the Kubernetes Dashboard
 	KubernetesDashboardCsrfTokenSecretName = "kubernetes-dashboard-csrf"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
@@ -211,9 +213,9 @@ const (
 	PrometheusCertUsername = "prometheus"
 	// ClusterAutoscalerCertUsername is the name of the user coming from the CA kubeconfig cert
 	ClusterAutoscalerCertUsername = "kubermatic:cluster-autoscaler"
-	// TODO(floreks)
+	// KubernetesDashboardCertUsername is the name of the user coming from kubeconfig cert
 	KubernetesDashboardCertUsername = "kubermatic:kubernetes-dashboard"
-	// TODO(floreks)
+	// MetricsScraperServiceAccountUsername is the name of the user coming from kubeconfig cert
 	MetricsScraperServiceAccountUsername = "dashboard-metrics-scraper"
 
 	// KubeletDnatControllerClusterRoleName is the name for the KubeletDnatController cluster role
@@ -251,13 +253,13 @@ const (
 	ClusterAutoscalerClusterRoleName = "system:kubermatic-cluster-autoscaler"
 	// ClusterAutoscalerClusterRoleBindingName is the name of the clusterrolebinding for the CA
 	ClusterAutoscalerClusterRoleBindingName = "system:kubermatic-cluster-autoscaler"
-	// TODO(floreks)
+	// KubernetesDashboardRoleName is the name of the role for the Kubernetes Dashboard
 	KubernetesDashboardRoleName = "system:kubernetes-dashboard"
-	// TODO(floreks)
+	// KubernetesDashboardRoleBindingName is the name of the role binding for the Kubernetes Dashboard
 	KubernetesDashboardRoleBindingName = "system:kubernetes-dashboard"
-	// TODO(floreks)
+	// MetricsScraperClusterRoleName is the name of the role for the dashboard-metrics-scraper
 	MetricsScraperClusterRoleName = "system:dashboard-metrics-scraper"
-	// TODO(floreks)
+	// MetricsScraperClusterRoleBindingName is the name of the role binding for the dashboard-metrics-scraper
 	MetricsScraperClusterRoleBindingName = "system:dashboard-metrics-scraper"
 
 	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd StatefulSet

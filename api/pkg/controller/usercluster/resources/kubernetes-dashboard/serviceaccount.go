@@ -7,7 +7,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 )
 
-// ServiceAccountCreator TODO(floreks)
+// ServiceAccountCreator creates the service account for the dashboard-metrics-scraper
 func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return resources.MetricsScraperServiceAccountUsername, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {

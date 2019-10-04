@@ -7,7 +7,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 )
 
-// KeyHolderSecretCreator  TODO(floreks)
+// KeyHolderSecretCreator  creates key holder secret for the Kubernetes Dashboard
 func KeyHolderSecretCreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.KubernetesDashboardKeyHolderSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
@@ -21,7 +21,7 @@ func KeyHolderSecretCreator() reconciling.NamedSecretCreatorGetter {
 	}
 }
 
-// CsrfTokenSecretCreator  TODO(floreks)
+// CsrfTokenSecretCreator  creates the csrf token secret for the Kubernetes Dashboard
 func CsrfTokenSecretCreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.KubernetesDashboardCsrfTokenSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
