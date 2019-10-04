@@ -118,7 +118,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				return nil, fmt.Errorf("failed to get cloud-credential-secret-template: %v", err)
 			}
 			if cloudCredentialSecretTemplate != nil {
-				args = append(args, "--cloud-credential-secret-template", string(cloudCredentialSecretTemplate))
+				args = append(args, "-cloud-credential-secret-template", string(cloudCredentialSecretTemplate))
 			}
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
