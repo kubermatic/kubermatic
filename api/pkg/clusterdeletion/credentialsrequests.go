@@ -13,8 +13,8 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (d *Deletion) cleanupCredentialsRequest(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (deletedSomething bool, err error) {
-	log = log.Named("CredentialsRequestCleanup")
+func (d *Deletion) cleanupCredentialsRequests(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (deletedSomething bool, err error) {
+	log = log.Named("CredentialsRequestsCleanup")
 
 	userClusterClient, err := d.userClusterClientGetter()
 	if err != nil {
@@ -42,7 +42,7 @@ func (d *Deletion) cleanupCredentialsRequest(ctx context.Context, log *zap.Sugar
 
 	for _, credentialRequest := range credentialRequests.Items {
 		if err := userClusterClient.Delete(ctx, &credentialRequest); err != nil {
-			return false, fmt.Errorf("failed to delete CloudCredentia")
+			return false, fmt.Errorf("failed to delete CredentialsRequest: %v", err)
 		}
 	}
 

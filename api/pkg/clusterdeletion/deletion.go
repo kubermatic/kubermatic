@@ -70,7 +70,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 
 	// If no relevant finalizer exists, directly return
 	if !shouldDeleteLBs && !shouldDeletePVs && !shouldDeleteCredentialsRequests {
-		log.Debug("Skipping in-cluster-resources deletion. None iof the in-cluster cleanup finalizers is set.")
+		log.Debug("Skipping in-cluster-resources deletion. None of the in-cluster cleanup finalizers is set.")
 		return nil
 	}
 
@@ -95,7 +95,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 	}
 
 	if shouldDeleteCredentialsRequests {
-		deletedSomeCredentialsRequests, err := d.cleanupCredentialsRequest(ctx, log, cluster)
+		deletedSomeCredentialsRequests, err := d.cleanupCredentialsRequests(ctx, log, cluster)
 		if err != nil {
 			return fmt.Errorf("failed to cleanup CredentialsRequests: %v", err)
 		}
