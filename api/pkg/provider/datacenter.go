@@ -193,8 +193,8 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 				return nil, fmt.Errorf("failed to list the seeds: %v", err)
 			}
 			seedMap := map[string]*kubermaticv1.Seed{}
-			for _, seed := range seeds.Items {
-				seedMap[seed.Name] = &seed
+			for idx, seed := range seeds.Items {
+				seedMap[seed.Name] = &seeds.Items[idx]
 			}
 			return seedMap, nil
 		}, nil
