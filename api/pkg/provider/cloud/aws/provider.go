@@ -21,6 +21,8 @@ import (
 const (
 	resourceNamePrefix = "kubernetes-"
 
+	regionAnnotationKey = "kubermatic.io/aws-region"
+
 	securityGroupCleanupFinalizer    = "kubermatic.io/cleanup-aws-security-group"
 	instanceProfileCleanupFinalizer  = "kubermatic.io/cleanup-aws-instance-profile"
 	controlPlaneRoleCleanupFinalizer = "kubermatic.io/cleanup-aws-control-plane-role"
@@ -475,6 +477,20 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, tagCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// We put this as an annotation on the cluster to allow addons to read this
+	// information.
+	if cluster.Annotations[regionAnnotationKey] != a.dc.Region {
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			if cluster.Annotations == nil {
+				cluster.Annotations = map[string]string{}
+			}
+			cluster.Annotations[regionAnnotationKey] = a.dc.Region
 		})
 		if err != nil {
 			return nil, err
