@@ -30,10 +30,11 @@ spec:
         - -v=2
         - -logtostderr
         - -kubeconfig=/opt/.kube/kubeconfig
+        {{- if .Values.kubermatic.datacenters }}
+        - -datacenters=/opt/datacenter/datacenters.yaml
+        {{- end }}
         {{- if .Values.kubermatic.dynamicDatacenters }}
         - -dynamic-datacenters=true
-        {{- else }}
-        - -datacenters=/opt/datacenter/datacenters.yaml
         {{- end }}
         {{- if .Values.kubermatic.worker_name }}
         - -worker-name={{ .Values.kubermatic.worker_name }}
@@ -53,7 +54,7 @@ spec:
           - name: kubeconfig
             mountPath: "/opt/.kube/"
             readOnly: true
-        {{- if not .Values.kubermatic.dynamicDatacenters }}
+        {{- if .Values.kubermatic.datacenters }}
           - name: datacenters
             mountPath: "/opt/datacenter/"
             readOnly: true
@@ -68,7 +69,7 @@ spec:
       - name: kubeconfig
         secret:
           secretName: kubeconfig
-      {{- if not .Values.kubermatic.dynamicDatacenters }}
+      {{- if .Values.kubermatic.datacenters }}
       - name: datacenters
         secret:
           secretName: datacenters

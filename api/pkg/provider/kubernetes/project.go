@@ -65,7 +65,7 @@ type PrivilegedProjectProvider struct {
 // a user cannot own more than one project with the given name
 // since we get the list of the current projects from a cache (lister) there is a small time window
 // during which a user can create more that one project with the given name.
-func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*kubermaticapiv1.Project, error) {
+func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string, labels map[string]string) (*kubermaticapiv1.Project, error) {
 	if user == nil {
 		return nil, errors.New("a user is missing but required")
 	}
@@ -80,7 +80,8 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string) (*
 					Name:       user.Name,
 				},
 			},
-			Name: rand.String(10),
+			Name:   rand.String(10),
+			Labels: labels,
 		},
 		Spec: kubermaticapiv1.ProjectSpec{
 			Name: projectName,

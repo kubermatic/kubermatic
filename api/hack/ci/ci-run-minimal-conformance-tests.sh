@@ -307,6 +307,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
+  --set=kubermatic.datacenters='' \
   --set=kubermatic.dynamicDatacenters=true \
   ${OPENSHIFT_HELM_ARGS:-} \
   --values ${VALUES_FILE} \

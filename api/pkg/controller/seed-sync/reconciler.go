@@ -11,6 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -34,6 +35,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	seed := &kubermaticv1.Seed{}
 	if err := r.Get(r.ctx, request.NamespacedName, seed); err != nil {
+		if kerrors.IsNotFound(err) {
+			logger.Warn("Seed has been deleted, skipping reconciling")
+			return reconcile.Result{}, nil
+		}
+
 		return reconcile.Result{}, fmt.Errorf("failed to get seed: %v", err)
 	}
 

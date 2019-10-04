@@ -344,6 +344,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
 		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer)
+			kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
@@ -353,12 +354,14 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	// We must put the hash for this into the usercluster and the raw value to expose in the
 	// seed. The usercluster secret must be created max 1h after creation timestamp of the
 	// kube-system ns: https://github.com/openshift/origin/blob/e774f85c15aef11d76db1ffc458484867e503293/pkg/oauthserver/authenticator/password/bootstrap/bootstrap.go#L131
+	// TODO: Move this into the usercluster controller
 	if err := r.ensureConsoleBootstrapPassword(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to create bootstrap password for openshift console: %v", err)
 	}
 
 	// This requires both the cluster to be up and a CRD we deploy via the AddonController
 	// to exist, so do this at the very end
+	// TODO: Move this into the usercluster controller
 	if err := r.ensureConsoleOAuthSecret(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to create oauth secret for Openshift console: %v", err)
 	}

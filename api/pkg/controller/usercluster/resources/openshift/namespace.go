@@ -100,8 +100,8 @@ func OpenshiftRegistryNSGetter() (string, reconciling.NamespaceCreator) {
 	}
 }
 
-// OpenshiftCloudCredentialOperatorNSGetter creates the namesapce in which all credentialsrequests end up
-func OpenshiftCloudCredentialOperatorNSGetter() (string, reconciling.NamespaceCreator) {
+// CloudCredentialOperatorNSGetter creates the namespace in which all credentialsrequests end up
+func CloudCredentialOperatorNSGetter() (string, reconciling.NamespaceCreator) {
 	return "openshift-cloud-credential-operator", func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 		if ns.Annotations == nil {
 			ns.Annotations = map[string]string{}

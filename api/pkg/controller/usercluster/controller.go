@@ -50,20 +50,22 @@ func Add(
 	openvpnServerPort int,
 	registerReconciledCheck func(name string, check healthcheck.Check),
 	openVPNCA *resources.ECDSAKeyPair,
+	cloudCredentialSecretTemplate *corev1.Secret,
 	log *zap.SugaredLogger) error {
 	reconciler := &reconciler{
-		Client:            mgr.GetClient(),
-		cache:             mgr.GetCache(),
-		openshift:         openshift,
-		version:           version,
-		rLock:             &sync.Mutex{},
-		namespace:         namespace,
-		caCert:            caCert,
-		clusterURL:        clusterURL,
-		openvpnServerPort: openvpnServerPort,
-		openVPNCA:         openVPNCA,
-		log:               log,
-		platform:          cloudProviderName,
+		Client:                        mgr.GetClient(),
+		cache:                         mgr.GetCache(),
+		openshift:                     openshift,
+		version:                       version,
+		rLock:                         &sync.Mutex{},
+		namespace:                     namespace,
+		caCert:                        caCert,
+		clusterURL:                    clusterURL,
+		openvpnServerPort:             openvpnServerPort,
+		openVPNCA:                     openVPNCA,
+		cloudCredentialSecretTemplate: cloudCredentialSecretTemplate,
+		log:                           log,
+		platform:                      cloudProviderName,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -102,7 +104,10 @@ func Add(
 		infrastructureConfigKind := &unstructured.Unstructured{}
 		infrastructureConfigKind.SetKind("Infrastructure")
 		infrastructureConfigKind.SetAPIVersion("config.openshift.io/v1")
-		typesToWatch = append(typesToWatch, infrastructureConfigKind)
+		clusterVersionConfigKind := &unstructured.Unstructured{}
+		clusterVersionConfigKind.SetKind("ClusterVersion")
+		clusterVersionConfigKind.SetAPIVersion("config.openshift.io/v1")
+		typesToWatch = append(typesToWatch, infrastructureConfigKind, clusterVersionConfigKind)
 	}
 
 	// Avoid getting triggered by the leader lease AKA: If the annotation exists AND changed on
@@ -141,15 +146,16 @@ func Add(
 // reconcileUserCluster reconciles objects in the user cluster
 type reconciler struct {
 	client.Client
-	openshift         bool
-	version           string
-	cache             cache.Cache
-	namespace         string
-	caCert            *x509.Certificate
-	clusterURL        *url.URL
-	openvpnServerPort int
-	openVPNCA         *resources.ECDSAKeyPair
-	platform          string
+	openshift                     bool
+	version                       string
+	cache                         cache.Cache
+	namespace                     string
+	caCert                        *x509.Certificate
+	clusterURL                    *url.URL
+	openvpnServerPort             int
+	openVPNCA                     *resources.ECDSAKeyPair
+	platform                      string
+	cloudCredentialSecretTemplate *corev1.Secret
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
