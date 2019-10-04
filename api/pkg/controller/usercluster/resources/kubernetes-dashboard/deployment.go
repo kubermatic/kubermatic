@@ -32,7 +32,7 @@ const (
 	scraperTag       = "v1.0.1"
 )
 
-// DeploymentCreator returns the function to create and update the metrics server deployment
+// DeploymentCreator returns the function to create and update the dashboard-metrics-scraper deployment
 func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return scraperName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -43,7 +43,6 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabel(scraperName, nil),
 			}
-			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 				Labels: resources.BaseAppLabel(scraperName, nil),
 			}

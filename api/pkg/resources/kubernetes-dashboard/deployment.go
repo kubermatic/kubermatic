@@ -44,7 +44,7 @@ type kubernetesDashboardData interface {
 	ImageRegistry(string) string
 }
 
-// DeploymentCreator returns the function to create and update the metrics server deployment
+// DeploymentCreator returns the function to create and update the Kubernetes Dashboard deployment
 func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -55,7 +55,6 @@ func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeployment
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabel(name, nil),
 			}
-			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
