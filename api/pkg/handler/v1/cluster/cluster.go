@@ -112,6 +112,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		}
 
 		partialCluster := &kubermaticv1.Cluster{}
+		partialCluster.Labels = req.Body.Cluster.Labels
 		partialCluster.Spec = *spec
 		if req.Body.Cluster.Type == "openshift" {
 			if req.Body.Cluster.Spec.Openshift == nil || req.Body.Cluster.Spec.Openshift.ImagePullSecret == "" {
