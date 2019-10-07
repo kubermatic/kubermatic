@@ -42,7 +42,7 @@ spec:
         - -seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/serverCert.pem
         - -seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/serverKey.pem
         - -logtostderr
-        {{- if .Values.kuebrmatic.masterController.debugLog }}
+        {{- if .Values.kubermatic.masterController.debugLog }}
         - -log-debug=true
         - -v=4
         {{- else }}
