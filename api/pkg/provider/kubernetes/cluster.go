@@ -92,7 +92,7 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 	cluster.Spec.HumanReadableName = strings.TrimSpace(cluster.Spec.HumanReadableName)
 
 	labels := map[string]string{
-		kubermaticv1.ProjectIDLabelKey: project.Name,
+		kubermaticv1.ProjectIDLabelKey: project.Name, // TODO
 	}
 	if len(p.workerName) > 0 {
 		labels[kubermaticv1.WorkerNameLabelKey] = p.workerName
