@@ -106,6 +106,7 @@ kubermatic:
         - rbac
         - network
         - default-storage-class
+        - registry
         image:
           repository: "quay.io/kubermatic/openshift-addons"
           tag: "__KUBERMATIC_TAG__"
