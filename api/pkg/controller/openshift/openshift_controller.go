@@ -345,10 +345,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	// Only add the node deletion finalizer when the cluster is actually running
 	// Otherwise we fail to delete the nodes and are stuck in a loop
-	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer,
+		kubermaticapiv1.InClusterImageRegistryConfigCleanupFinalizer,
+		kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer) {
 		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer)
-			kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer)
+			kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer,
+				kubermaticapiv1.InClusterImageRegistryConfigCleanupFinalizer,
+				kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
