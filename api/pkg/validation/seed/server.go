@@ -138,7 +138,7 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 		return admissionReview.Request, errors.New("migration is enabled, changes to Seed resources are forbidden; disable migration by removing either -datacenters or -dynamic-datacenters flags from the master-controller-manager")
 	}
 
-	s.log.Debugw(
+	s.log.Infow(
 		"Received admission request",
 		"kind", admissionReview.Request.Kind,
 		"name", admissionReview.Request.Name,
