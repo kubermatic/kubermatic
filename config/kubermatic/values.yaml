@@ -267,6 +267,7 @@ kubermatic:
       limits:
         cpu: 100m
         memory: 256Mi
+    debugLog: false
     workerCount: 20
     affinity: {}
     nodeSelector: {}
