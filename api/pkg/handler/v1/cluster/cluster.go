@@ -297,7 +297,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 		req := request.(PatchReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -348,7 +348,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
-		updatedCluster, err := clusterProvider.Update(userInfo, patchedCluster)
+		updatedCluster, err := clusterProvider.Update(project, userInfo, patchedCluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -438,7 +438,7 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			}
 		}
 
-		if _, err = clusterProvider.Update(userInfo, existingCluster); err != nil {
+		if _, err = clusterProvider.Update(project, userInfo, existingCluster); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -1021,7 +1021,7 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider) endpoint
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -1033,7 +1033,7 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider) endpoint
 
 		cluster.Address.AdminToken = kuberneteshelper.GenerateToken()
 
-		_, err = clusterProvider.Update(userInfo, cluster)
+		_, err = clusterProvider.Update(project, userInfo, cluster)
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 }

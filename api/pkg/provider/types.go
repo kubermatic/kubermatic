@@ -129,7 +129,7 @@ type ClusterProvider interface {
 	Get(userInfo *UserInfo, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
 
 	// Update updates a cluster
-	Update(userInfo *UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	Update(project *kubermaticv1.Project, userInfo *UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 
 	// Delete deletes the given cluster
 	Delete(userInfo *UserInfo, clusterName string) error
