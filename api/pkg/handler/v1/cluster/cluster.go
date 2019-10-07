@@ -308,7 +308,9 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingClusterJSON, err := json.Marshal(existingCluster)
+		// We cannot use internal type here as we are not exposing it directly.
+		// API uses its own type and we cannot ensure compatibility here.
+		existingClusterJSON, err := json.Marshal(convertInternalClusterToExternal(existingCluster))
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode existing cluster: %v", err)
 		}
@@ -318,13 +320,25 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 			return nil, errors.NewBadRequest("cannot patch cluster: %v", err)
 		}
 
-		var patchedCluster *kubermaticv1.Cluster
+		var patchedCluster *apiv1.Cluster
 		err = json.Unmarshal(patchedClusterJSON, &patchedCluster)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
 		}
 
-		incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfo, clusterProvider, patchedCluster)
+		// Only specific fields from existing internal cluster will be updated by a patch.
+		// It prevents user from changing other fields like resource ID or version that should not be modified.
+		existingCluster.Spec.HumanReadableName = patchedCluster.Name
+		existingCluster.Labels = patchedCluster.Labels
+		existingCluster.Spec.Cloud = patchedCluster.Spec.Cloud
+		existingCluster.Spec.MachineNetworks = patchedCluster.Spec.MachineNetworks
+		existingCluster.Spec.Version = patchedCluster.Spec.Version
+		existingCluster.Spec.OIDC = patchedCluster.Spec.OIDC
+		existingCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = patchedCluster.Spec.UsePodSecurityPolicyAdmissionPlugin
+		existingCluster.Spec.AuditLogging = patchedCluster.Spec.AuditLogging
+		existingCluster.Spec.Openshift = patchedCluster.Spec.Openshift
+
+		incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfo, clusterProvider, existingCluster)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check existing nodes' version skew: %v", err)
 		}
@@ -336,7 +350,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 		if err != nil {
 			return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
-		_, dc, err := provider.DatacenterFromSeedMap(seeds, patchedCluster.Spec.Cloud.DatacenterName)
+		_, dc, err := provider.DatacenterFromSeedMap(seeds, existingCluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
@@ -345,11 +359,11 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 		if !ok {
 			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 		}
-		if err := validation.ValidateUpdateCluster(ctx, patchedCluster, existingCluster, dc, assertedClusterProvider); err != nil {
+		if err := validation.ValidateUpdateCluster(ctx, existingCluster, existingCluster, dc, assertedClusterProvider); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
-		updatedCluster, err := clusterProvider.Update(project, userInfo, patchedCluster)
+		updatedCluster, err := clusterProvider.Update(project, userInfo, existingCluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

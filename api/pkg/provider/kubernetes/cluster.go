@@ -134,6 +134,7 @@ func getClusterLabels(specifiedLabels map[string]string, projectName, workerName
 	}
 
 	resultLabels[kubermaticv1.ProjectIDLabelKey] = projectName
+
 	if len(workerName) > 0 {
 		resultLabels[kubermaticv1.WorkerNameLabelKey] = workerName
 	}
@@ -214,7 +215,7 @@ func (p *ClusterProvider) Update(project *kubermaticv1.Project, userInfo *provid
 	}
 
 	newCluster.Status.KubermaticVersion = resources.KUBERMATICCOMMIT
-	newCluster.Labels = getClusterLabels(newCluster.Labels, project.Name, p.workerName)
+	newCluster.Labels = getClusterLabels(newCluster.Labels, project.Name, "") // Do not update worker name.
 	return seedImpersonatedClient.Clusters().Update(newCluster)
 }
 
