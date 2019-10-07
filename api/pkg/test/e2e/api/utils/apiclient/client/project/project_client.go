@@ -378,6 +378,35 @@ func (a *Client) DeleteClusterRole(params *DeleteClusterRoleParams, authInfo run
 }
 
 /*
+DeleteClusterRoleBinding Delete cluster role binding
+*/
+func (a *Client) DeleteClusterRoleBinding(params *DeleteClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterRoleBindingOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteClusterRoleBindingParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteClusterRoleBinding",
+		Method:             "DELETE",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings/{binding_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteClusterRoleBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*DeleteClusterRoleBindingOK), nil
+
+}
+
+/*
 DeleteNodeDeployment deletes the given node deployment that belongs to the cluster
 */
 func (a *Client) DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteNodeDeploymentOK, error) {
@@ -753,6 +782,35 @@ func (a *Client) GetClusterRole(params *GetClusterRoleParams, authInfo runtime.C
 		return nil, err
 	}
 	return result.(*GetClusterRoleOK), nil
+
+}
+
+/*
+GetClusterRoleBinding Get cluster role binding
+*/
+func (a *Client) GetClusterRoleBinding(params *GetClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterRoleBindingOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetClusterRoleBindingParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getClusterRoleBinding",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings/{binding_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetClusterRoleBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetClusterRoleBindingOK), nil
 
 }
 

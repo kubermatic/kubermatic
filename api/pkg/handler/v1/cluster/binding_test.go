@@ -607,3 +607,125 @@ func TestListClusterRoleBinding(t *testing.T) {
 		})
 	}
 }
+
+func TestGetClusterRoleBinding(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name                   string
+		roleName               string
+		bindingName            string
+		expectedResponse       string
+		httpStatus             int
+		clusterToGet           string
+		existingAPIUser        *apiv1.User
+		existingKubermaticObjs []runtime.Object
+		existingKubernrtesObjs []runtime.Object
+	}{
+		// scenario 1
+		{
+			name:             "scenario 1: get cluster role bindings for role test-1",
+			roleName:         "role-1",
+			bindingName:      "binding-1-1",
+			expectedResponse: `{"id":"binding-1-1","name":"binding-1-1","creationTimestamp":"0001-01-01T00:00:00Z","subjects":[{"kind":"User","name":"test-1"}],"roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultClusterRole("role-2"),
+				genDefaultClusterRoleBinding("binding-1-1", "role-1", "test-1"),
+				genDefaultClusterRoleBinding("binding-1-2", "role-1", "test-2"),
+				genDefaultClusterRoleBinding("binding-2-1", "role-2", "test-3"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			kubernetesObj := []runtime.Object{}
+			kubeObj := []runtime.Object{}
+			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles/%s/clusterbindings/%s", test.ProjectName, tc.clusterToGet, tc.roleName, tc.bindingName), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
+	}
+}
+
+func TestDeleteClusterRoleBinding(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name                   string
+		roleName               string
+		bindingName            string
+		expectedResponse       string
+		httpStatus             int
+		clusterToGet           string
+		existingAPIUser        *apiv1.User
+		existingKubermaticObjs []runtime.Object
+		existingKubernrtesObjs []runtime.Object
+	}{
+		// scenario 1
+		{
+			name:             "scenario 1: delete cluster role bindings for role test-1",
+			roleName:         "role-1",
+			bindingName:      "binding-1-1",
+			expectedResponse: `{}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultClusterRole("role-2"),
+				genDefaultClusterRoleBinding("binding-1-1", "role-1", "test-1"),
+				genDefaultClusterRoleBinding("binding-1-2", "role-1", "test-2"),
+				genDefaultClusterRoleBinding("binding-2-1", "role-2", "test-3"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			kubernetesObj := []runtime.Object{}
+			kubeObj := []runtime.Object{}
+			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles/%s/clusterbindings/%s", test.ProjectName, tc.clusterToGet, tc.roleName, tc.bindingName), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
+	}
+}
