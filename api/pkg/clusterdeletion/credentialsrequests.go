@@ -26,8 +26,8 @@ func (d *Deletion) cleanupCredentialsRequests(ctx context.Context, log *zap.Suga
 	credentialRequests.SetKind("CredentialsRequest")
 
 	if err := userClusterClient.List(ctx, &ctrlruntimeclient.ListOptions{}, credentialRequests); err != nil {
-		if _, matches := err.(*meta.NoKindMatchError); matches {
-			log.Debug("Got a NoKindMatchError when listing CredentialsRequests, skipping their cleanup")
+		if meta.IsNoMatchError(err) {
+			log.Debug("Got a NoMatchError when listing CredentialsRequests, skipping their cleanup")
 			return false, nil
 		}
 		return false, fmt.Errorf("failed to list CredentialsRequests: %v", err)
