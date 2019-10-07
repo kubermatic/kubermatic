@@ -9,6 +9,7 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/machine-controller/pkg/node/eviction"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -57,7 +58,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 
 	machineDeploymentList := &clusterv1alpha1.MachineDeploymentList{}
 	listOpts := &controllerruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}
-	if err := userClusterClient.List(ctx, listOpts, machineDeploymentList); err != nil {
+	if err := userClusterClient.List(ctx, listOpts, machineDeploymentList); err != nil && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to list MachineDeployments: %v", err)
 	}
 	if len(machineDeploymentList.Items) > 0 {
@@ -72,7 +73,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	machineSetList := &clusterv1alpha1.MachineSetList{}
-	if err := userClusterClient.List(ctx, listOpts, machineSetList); err != nil {
+	if err := userClusterClient.List(ctx, listOpts, machineSetList); err != nil && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to list MachineSets: %v", err)
 	}
 	if len(machineSetList.Items) > 0 {
@@ -87,7 +88,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	machineList := &clusterv1alpha1.MachineList{}
-	if err := userClusterClient.List(ctx, listOpts, machineList); err != nil {
+	if err := userClusterClient.List(ctx, listOpts, machineList); err != nil && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to get Machines: %v", err)
 	}
 	if len(machineList.Items) > 0 {
