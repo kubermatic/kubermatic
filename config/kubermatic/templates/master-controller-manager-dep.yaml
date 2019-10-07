@@ -27,8 +27,6 @@ spec:
         - master-controller-manager
         args:
         - -internal-address=0.0.0.0:8085
-        - -v=2
-        - -logtostderr
         - -kubeconfig=/opt/.kube/kubeconfig
         {{- if .Values.kubermatic.datacenters }}
         - -datacenters=/opt/datacenter/datacenters.yaml
@@ -43,6 +41,13 @@ spec:
         - -namespace=$(NAMESPACE)
         - -seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/serverCert.pem
         - -seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/serverKey.pem
+        - -logtostderr
+        {{- if .Values.kuebrmatic.masterController.debugLog }}
+        - -log-debug=true
+        - -v=4
+        {{- else }}
+        - -v=2
+        {{- end }}
         image: '{{ .Values.kubermatic.masterController.image.repository }}:{{ .Values.kubermatic.masterController.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.masterController.image.pullPolicy }}
         env:
