@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -15,11 +14,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	"github.com/Masterminds/sprig"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/yaml"
 )
 
 // createFuncMap creates a function map needed for template execution.
@@ -60,60 +54,13 @@ func createResources() templateResources {
 	return res
 }
 
-// specToDoc creates documentation out of a pod spec.
-func specToDoc(filepath string, ps corev1.PodSpec) *buffer {
-	qf := func(q *resource.Quantity) string {
-		s := q.String()
-		if s == "0" {
-			return "none"
-		}
-		return "\"" + s + "\""
-	}
-	doc := &buffer{}
-	dir, filename := path.Split(filepath)
-	dirs := strings.Split(dir, "/")
-	addon := dirs[len(dirs)-2]
-	hasHeader := false
-	// Iterate over the containers.
-	for _, container := range ps.Containers {
-		if container.Resources.Size() == 0 {
-			continue
-		}
-		if !hasHeader {
-			doc.push("\n\n#### Addon: ")
-			doc.push(addon)
-			doc.push(" / File: ")
-			doc.push(filename)
-
-			hasHeader = true
-		}
-		limitsCPU := container.Resources.Limits.Cpu()
-		limitsMem := container.Resources.Limits.Memory()
-		requestsCPU := container.Resources.Requests.Cpu()
-		requestsMem := container.Resources.Requests.Memory()
-
-		doc.push("\n\n##### Container: ", container.Name, "\n")
-		doc.push("\n```yaml\n")
-		doc.push("limits:\n")
-		doc.push("    cpu: ", qf(limitsCPU), "\n")
-		doc.push("    memory: ", qf(limitsMem), "\n")
-		doc.push("requests:\n")
-		doc.push("    cpu: ", qf(requestsCPU), "\n")
-		doc.push("    memory: ", qf(requestsMem), "\n")
-		doc.push("```")
-	}
-	return doc
-}
-
-// readYAML reads a YAML file, unmarshals it, and creates the
-// documentation buffer.
-func readYAML(filepath string) (*buffer, error) {
-	log.Printf("Parsing YAML file %q ...", filepath)
-	bs, err := ioutil.ReadFile(filepath)
+// readYAML reads a YAML file and executes the potential template.
+func readYAML(path string) ([]byte, error) {
+	log.Printf("Reading YAML file %q ...", path)
+	bs, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	// Prepare template.
 	t, err := template.New("addon").Funcs(createFuncMap()).Parse(string(bs))
 	if err != nil {
 		return nil, err
@@ -123,42 +70,7 @@ func readYAML(filepath string) (*buffer, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Unmarshal the contained YAMLs.
-	blocks := strings.Split(buf.String(), "\n---\n")
-	doc := &buffer{}
-	for _, block := range blocks {
-		bs := []byte(block)
-		var u unstructured.Unstructured
-		err = yaml.Unmarshal(bs, &u)
-		if err != nil {
-			return nil, err
-		}
-		kind := u.GetKind()
-		switch kind {
-		case "Deployment":
-			var d appsv1.Deployment
-			err = yaml.Unmarshal(bs, &d)
-			if err != nil {
-				return nil, err
-			}
-			doc.pushAll(specToDoc(filepath, d.Spec.Template.Spec))
-		case "DaemonSet":
-			var d appsv1.DaemonSet
-			err = yaml.Unmarshal(bs, &d)
-			if err != nil {
-				return nil, err
-			}
-			doc.pushAll(specToDoc(filepath, d.Spec.Template.Spec))
-		case "StatefulSet":
-			var s appsv1.StatefulSet
-			err = yaml.Unmarshal(bs, &s)
-			if err != nil {
-				return nil, err
-			}
-			doc.pushAll(specToDoc(filepath, s.Spec.Template.Spec))
-		}
-	}
-	return doc, nil
+	return buf.Bytes(), nil
 }
 
 // traverseAddons traverses the directories in kubermatic/addons
@@ -177,18 +89,23 @@ func traverseAddons(dir string) (*buffer, error) {
 	// Walk over directories.
 	if err := filepath.Walk(
 		dir,
-		func(filepath string, info os.FileInfo, err error) error {
+		func(path string, info os.FileInfo, err error) error {
 			switch {
 			case err != nil:
 				return err
 			case info.IsDir() || !strings.HasSuffix(info.Name(), ".yaml"):
 				return nil
 			default:
-				filedoc, err := readYAML(filepath)
+				c, err := readYAML(path)
 				if err != nil {
 					return err
 				}
-				doc.pushAll(filedoc)
+				d := newDocumenter(path, c)
+				err = d.scanAll()
+				if err != nil {
+					return err
+				}
+				doc.pushAll(d.document())
 			}
 			return nil
 		}); err != nil {
@@ -199,8 +116,8 @@ func traverseAddons(dir string) (*buffer, error) {
 }
 
 // writeDoc writes the documentation into the given file.
-func writeDoc(filepath string, doc *buffer) error {
-	f, err := os.Create(filepath)
+func writeDoc(file string, doc *buffer) error {
+	f, err := os.Create(file)
 	if err != nil {
 		return err
 	}
