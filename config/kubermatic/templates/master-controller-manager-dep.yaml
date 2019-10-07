@@ -29,6 +29,7 @@ spec:
         - -internal-address=0.0.0.0:8085
         - -v=2
         - -logtostderr
+        - -log-debug=true
         - -kubeconfig=/opt/.kube/kubeconfig
         {{- if .Values.kubermatic.datacenters }}
         - -datacenters=/opt/datacenter/datacenters.yaml

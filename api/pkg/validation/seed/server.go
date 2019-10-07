@@ -128,11 +128,22 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 		return nil, fmt.Errorf("failed to unmarshal request body: %v", err)
 	}
 
+	if admissionReview.Request == nil {
+		return nil, errors.New("received malformed admission review: no request defined")
+	}
+
 	// during datacenters->seed migration we reject any changes, so the seeds can never get
 	// out of sync with the datacenters.yaml
 	if s.migrationModeEnabled && admissionReview.Request.Operation != admissionv1beta1.Create {
 		return admissionReview.Request, errors.New("migration is enabled, changes to Seed resources are forbidden; disable migration by removing either -datacenters or -dynamic-datacenters flags from the master-controller-manager")
 	}
+
+	s.log.Debugw(
+		"Received validation request",
+		"kind", admissionReview.Request.Kind,
+		"name", admissionReview.Request.Name,
+		"namespace", admissionReview.Request.Namespace,
+		"operation", admissionReview.Request.Operation)
 
 	seed := &kubermaticv1.Seed{}
 	// On DELETE, the admissionReview.Request.Object is unset
