@@ -2,17 +2,16 @@ package usercluster
 
 import (
 	"context"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/url"
 	"sync"
 
+	"github.com/heptiolabs/healthcheck"
 	"go.uber.org/zap"
 
-	"github.com/heptiolabs/healthcheck"
-
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,7 +44,7 @@ func Add(
 	version string,
 	namespace string,
 	cloudProviderName string,
-	caCert *x509.Certificate,
+	caCert *triple.KeyPair,
 	clusterURL *url.URL,
 	openvpnServerPort int,
 	registerReconciledCheck func(name string, check healthcheck.Check),
@@ -150,7 +149,7 @@ type reconciler struct {
 	version                       string
 	cache                         cache.Cache
 	namespace                     string
-	caCert                        *x509.Certificate
+	caCert                        *triple.KeyPair
 	clusterURL                    *url.URL
 	openvpnServerPort             int
 	openVPNCA                     *resources.ECDSAKeyPair

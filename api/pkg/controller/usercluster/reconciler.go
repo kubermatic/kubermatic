@@ -86,7 +86,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 
 func (r *reconciler) ensureAPIServices(ctx context.Context) error {
 	creators := []reconciling.NamedAPIServiceCreatorGetter{}
-	caCert := certutil.EncodeCertPEM(r.caCert)
+	caCert := certutil.EncodeCertPEM(r.caCert.Cert)
 	if r.openshift {
 		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion(r.version, caCert)
 		if err != nil {
@@ -274,7 +274,7 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 
 func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context) error {
 	creators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
-		machinecontroller.MutatingwebhookConfigurationCreator(r.caCert, r.namespace),
+		machinecontroller.MutatingwebhookConfigurationCreator(r.caCert.Cert, r.namespace),
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -301,7 +301,7 @@ func (r *reconciler) reconcileServices(ctx context.Context) error {
 
 func (r *reconciler) reconcileConfigMaps(ctx context.Context) error {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		machinecontroller.ClusterInfoConfigMapCreator(r.clusterURL.String(), r.caCert),
+		machinecontroller.ClusterInfoConfigMapCreator(r.clusterURL.String(), r.caCert.Cert),
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespacePublic, r.Client); err != nil {
@@ -310,6 +310,9 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context) error {
 
 	creators = []reconciling.NamedConfigMapCreatorGetter{
 		openvpn.ClientConfigConfigMapCreator(r.clusterURL.Hostname(), r.openvpnServerPort),
+	}
+	if r.openshift {
+		creators = append(creators, openshift.ControlplaneConfigCreator(r.platform))
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -332,6 +335,13 @@ func (r *reconciler) reconcileSecrets(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile Secrets in kue-system Namespace: %v", err)
 	}
 
+	if r.openshift {
+		creators = []reconciling.NamedSecretCreatorGetter{openshift.RegistryServingCert(r.caCert)}
+		if err := reconciling.ReconcileSecrets(ctx, creators, openshiftresources.RegistryNamespaceName, r.Client); err != nil {
+			return fmt.Errorf("failed to create secrets in %q namespace: %v", openshiftresources.RegistryNamespaceName, err)
+		}
+	}
+
 	return nil
 }
 
@@ -343,6 +353,7 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 		openshift.ControllerManagerNSCreatorGetter,
 		openshift.KubeSchedulerNSCreatorGetter,
 		openshift.NetworkOperatorNSGetter,
+		openshift.RegistryNSGetter,
 		openshift.CloudCredentialOperatorNSGetter,
 	}
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {

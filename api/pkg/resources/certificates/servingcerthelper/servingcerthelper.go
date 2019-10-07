@@ -62,6 +62,8 @@ func ServingCertSecretCreator(caGetter CAGetter, secretName, commonName string, 
 			}
 			s.Data[resources.ServingCertSecretKey] = certutil.EncodeCertPEM(cert)
 			s.Data[resources.ServingCertKeySecretKey] = certutil.EncodePrivateKeyPEM(key)
+			s.Data["tls.crt"] = certutil.EncodeCertPEM(cert)
+			s.Data["tls.key"] = certutil.EncodePrivateKeyPEM(key)
 
 			return s, nil
 		}
