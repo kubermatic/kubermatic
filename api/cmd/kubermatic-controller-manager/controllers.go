@@ -95,6 +95,7 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.seedGetter,
+		ctrlCtx.clientProvider,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.runOptions.etcdDiskSize,

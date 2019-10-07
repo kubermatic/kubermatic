@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/clusterdeletion"
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
@@ -40,7 +41,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
-	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
@@ -76,6 +76,7 @@ type Reconciler struct {
 	scheme                   *runtime.Scheme
 	recorder                 record.EventRecorder
 	seedGetter               provider.SeedGetter
+	userClusterConnProvider  clusterclient.UserClusterConnectionProvider
 	overwriteRegistry        string
 	nodeAccessNetwork        string
 	etcdDiskSize             resource.Quantity
@@ -95,6 +96,7 @@ func Add(
 	numWorkers int,
 	workerName string,
 	seedGetter provider.SeedGetter,
+	userClusterConnProvider clusterclient.UserClusterConnectionProvider,
 	overwriteRegistry,
 	nodeAccessNetwork string,
 	etcdDiskSize resource.Quantity,
@@ -112,6 +114,7 @@ func Add(
 		scheme:                   mgr.GetScheme(),
 		recorder:                 mgr.GetRecorder(ControllerName),
 		seedGetter:               seedGetter,
+		userClusterConnProvider:  userClusterConnProvider,
 		overwriteRegistry:        overwriteRegistry,
 		nodeAccessNetwork:        nodeAccessNetwork,
 		etcdDiskSize:             etcdDiskSize,
@@ -220,10 +223,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 		// Defer getting the client to make sure we only request it if we actually need it
 		userClusterClientGetter := func() (client.Client, error) {
-			userClusterClient, err := r.getUserClusterClient(ctx, cluster)
+			userClusterClient, err := r.userClusterConnProvider.GetClient(cluster)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 			}
+			log.Debug("Getting client for cluster %q", cluster.Name)
 			return userClusterClient, nil
 		}
 
@@ -265,7 +269,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		dnatControllerImage:                   r.dnatControllerImage,
 		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
 		userClusterClient: func() (client.Client, error) {
-			return r.getUserClusterClient(ctx, cluster)
+			return r.userClusterConnProvider.GetClient(cluster)
 		},
 		externalURL: r.externalURL,
 		seedName:    seed.Name,
@@ -440,19 +444,6 @@ func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster,
 	})
 }
 
-func (r *Reconciler) getUserClusterClient(ctx context.Context, cluster *kubermaticv1.Cluster) (client.Client, error) {
-	kubeConfigSecret := &corev1.Secret{}
-	if err := r.Get(ctx, nn(cluster.Status.NamespaceName, openshiftresources.ExternalX509KubeconfigName), kubeConfigSecret); err != nil {
-		return nil, fmt.Errorf("failed to get userCluster kubeconfig secret: %v", err)
-	}
-	cfg, err := clientcmd.RESTConfigFromKubeConfig(kubeConfigSecret.Data[resources.KubeconfigSecretKey])
-	if err != nil {
-		return nil, fmt.Errorf("failed to get config from secret: %v", err)
-	}
-	// TODO: Cache the restmapping, its very expensive to create it adhoc
-	return client.New(cfg, client.Options{})
-}
-
 // Openshift doesn't seem to support a token-file-based authentication at all
 // It can be passed down onto the kube-apiserver but does still not work, presumably because OS puts another authentication
 // layer on top
@@ -462,7 +453,7 @@ func (r *Reconciler) getUserClusterClient(ctx context.Context, cluster *kubermat
 // cluster, rendering our admin-kubeconfig invalid
 // TODO: Find an alternate approach or move this to a controller that has informers in both the user cluster and the seed
 func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *openshiftData) (*reconcile.Result, error) {
-	userClusterClient, err := r.getUserClusterClient(ctx, osData.Cluster())
+	userClusterClient, err := osData.Client()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get userClusterClient: %v", err)
 	}
