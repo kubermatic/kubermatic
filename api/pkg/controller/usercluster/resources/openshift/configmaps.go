@@ -57,7 +57,7 @@ func getInstallConfig(existingData map[string]interface{}, platformName string) 
 	}
 	platformKeyValueAsserted, ok := platformKeyValue.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("the `controlplane.platform key is not a map[string]interface{} but a %T`, platformKeyValue")
+		return nil, fmt.Errorf("the `controlplane.platform key is not a map[string]interface{} but a %T`, platformKeyValue", platformKeyValue)
 	}
 
 	if _, exists := platformKeyValueAsserted[platformName]; !exists {
