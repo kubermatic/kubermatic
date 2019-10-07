@@ -1,6 +1,7 @@
 package openshift
 
 import (
+	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -78,6 +79,22 @@ func NetworkOperatorNSGetter() (string, reconciling.NamespaceCreator) {
 		ns.Annotations["openshift.io/sa.scc.supplemental-groups"] = "1000350000/10000"
 		ns.Annotations["openshift.io/sa.scc.uid-range"] = "1000350000/10000"
 		ns.Labels["openshift.io/run-level"] = "0"
+
+		return ns, nil
+	}
+}
+
+// RegistryNSGetter is used to create the namespace in which the registry operator
+// creates the registry
+func RegistryNSGetter() (string, reconciling.NamespaceCreator) {
+	return openshiftresources.RegistryNamespaceName, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+		if ns.Annotations == nil {
+			ns.Annotations = map[string]string{}
+		}
+		ns.Annotations["openshift.io/node-selector"] = ""
+		ns.Annotations["openshift.io/sa.scc.mcs"] = "s0:c17,c9"
+		ns.Annotations["openshift.io/sa.scc.supplemental-groups"] = "1000290000/10000"
+		ns.Annotations["openshift.io/sa.scc.uid-range"] = "1000290000/10000"
 
 		return ns, nil
 	}

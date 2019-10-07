@@ -288,7 +288,7 @@ func generateNewSecret() (string, error) {
 
 func getConsoleImage(openshiftVersion string) (string, error) {
 	switch openshiftVersion {
-	case "4.1.9":
+	case openshiftVersion419:
 		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:9e554ac4505edd925eb73fec52e33d7418e2cfaf8058b59d8246ed478337748d", nil
 	default:
 		return "", fmt.Errorf("no openshhift console image available for version %q", openshiftVersion)
