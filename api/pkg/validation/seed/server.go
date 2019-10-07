@@ -139,7 +139,7 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 	}
 
 	s.log.Debugw(
-		"Received validation request",
+		"Received admission request",
 		"kind", admissionReview.Request.Kind,
 		"name", admissionReview.Request.Name,
 		"namespace", admissionReview.Request.Namespace,
