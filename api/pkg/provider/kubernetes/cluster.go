@@ -135,10 +135,10 @@ func getClusterLabels(specifiedLabels map[string]string, projectName, workerName
 
 	resultLabels[kubermaticv1.ProjectIDLabelKey] = projectName
 	if len(workerName) > 0 {
-		specifiedLabels[kubermaticv1.WorkerNameLabelKey] = workerName
+		resultLabels[kubermaticv1.WorkerNameLabelKey] = workerName
 	}
 
-	return specifiedLabels
+	return resultLabels
 }
 
 // List gets all clusters that belong to the given project
