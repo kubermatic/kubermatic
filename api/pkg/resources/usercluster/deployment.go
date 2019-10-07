@@ -32,8 +32,9 @@ var (
 )
 
 const (
-	name              = "usercluster-controller"
-	openvpnCAMountDir = "/etc/kubernetes/pki/openvpn"
+	name                = "usercluster-controller"
+	openvpnCAMountDir   = "/etc/kubernetes/pki/openvpn"
+	userSSHKeysMountDir = "/etc/kubernetes/usersshkeys"
 )
 
 // userclusterControllerData is the subet of the deploymentData interface
@@ -178,6 +179,11 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 							MountPath: openvpnCAMountDir,
 							ReadOnly:  true,
 						},
+						{
+							Name:      resources.UserSSHKeys,
+							MountPath: userSSHKeysMountDir,
+							ReadOnly:  true,
+						},
 					},
 				},
 			}
@@ -216,6 +222,14 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.OpenVPNCASecretName,
+				},
+			},
+		},
+		{
+			Name: resources.UserSSHKeys,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.UserSSHKeys,
 				},
 			},
 		},

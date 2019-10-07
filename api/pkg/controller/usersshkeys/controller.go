@@ -3,19 +3,21 @@ package usersshkeys
 import (
 	"context"
 	"fmt"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
 
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/tools/record"
+
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -35,6 +37,7 @@ type Reconciler struct {
 	log            *zap.SugaredLogger
 	workerName     string
 	recorder       record.EventRecorder
+	seedGetter     provider.SeedGetter
 }
 
 func Add(
@@ -58,7 +61,11 @@ func Add(
 		return err
 	}
 
-	return c.Watch(&source.Kind{Type: &kubermaticv1.UserSSHKey{}}, &handler.EnqueueRequestForObject{})
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.UserSSHKey{}}, enqueueAllClusters(mgr.GetClient())); err != nil {
+		return fmt.Errorf("failed to create watcher for userSSHKey: %v", err)
+	}
+
+	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{})
 }
 
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -67,46 +74,90 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
-	userSSHKey := &kubermaticv1.UserSSHKey{}
-	if err := r.Get(ctx, request.NamespacedName, userSSHKey); err != nil {
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kubeapierrors.IsNotFound(err) {
-			log.Debug("Could not find user ssh key")
+			log.Debug("Could not find cluster")
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
 	}
 
-	err := r.reconcileUserSSHKeys(ctx, userSSHKey)
-	if err != nil {
-		log.Errorw("Failed to reconcile user ssh keys", zap.Error(err))
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		log.Debugw(
+			"Skipping because the cluster has a different worker name set",
+			"cluster-worker-name", cluster.Labels[kubermaticv1.WorkerNameLabelKey],
+		)
+		return reconcile.Result{}, nil
 	}
 
-	return reconcile.Result{}, err
+	if err := r.reconcileCluster(ctx, cluster); err != nil {
+		log.Errorw("Failed reconciling clusters user ssh secrets", "cluster", cluster.Name, zap.Error(err))
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{}, nil
 }
 
-func (r *Reconciler) reconcileUserSSHKeys(ctx context.Context, userSSHKey *kubermaticv1.UserSSHKey) error {
-	clusterList := &kubermaticv1.ClusterList{}
-	if err := r.List(ctx, &ctrlruntimeclient.ListOptions{}, clusterList); err != nil {
+func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	if err := r.ensureUserSSHKeySecretCreation(ctx, cluster); err != nil {
 		return err
 	}
 
-	clustersNames := buildClustersMapFromSecret(userSSHKey.Spec.Clusters)
-	for _, cluster := range clusterList.Items {
-		namespace := fmt.Sprintf("cluster-%v", cluster.Name)
-		if _, found := clustersNames[cluster.Name]; !found {
-			return r.deleteUserSSHKey(ctx, cluster, namespace, userSSHKey.Name)
+	userSSHKeys := &kubermaticv1.UserSSHKeyList{}
+	if err := r.Client.List(ctx, &ctrlruntimeclient.ListOptions{}, userSSHKeys); err != nil {
+		if kubeapierrors.IsNotFound(err) {
+			r.log.Debug("Could not find user ssh keys")
+			return nil
 		}
-
-		return r.updateUserSSHKeysSecrets(ctx, userSSHKey, cluster.Name, namespace)
+		return err
 	}
 
-	return nil
+	keys := buildUserSSHKeysForCluster(cluster.Name, userSSHKeys)
+	if len(keys) == 0 {
+		r.log.Debugw("No user ssh keys are assigned to cluster", "cluster", cluster.Name)
+		return nil
+	}
+
+	return r.reconcileClustersUserSSHKeys(ctx, keys, cluster)
 }
 
-func (r *Reconciler) updateUserSSHKeysSecrets(ctx context.Context, userSSHKey *kubermaticv1.UserSSHKey, clusterName, namespace string) error {
+func (r *Reconciler) reconcileClustersUserSSHKeys(ctx context.Context, sshKeys []kubermaticv1.UserSSHKey, cluster *kubermaticv1.Cluster) error {
 	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      fmt.Sprintf("%v-%v", resources.UserSSHKeys, clusterName),
+		Namespace: cluster.Status.NamespaceName,
+		Name:      resources.UserSSHKeys,
+	}
+
+	secret := &corev1.Secret{}
+	if err := r.Get(ctx, key, secret); err != nil {
+		return err
+	}
+
+	secret.Data = map[string][]byte{}
+	for _, sshKey := range sshKeys {
+		secret.Data[sshKey.Name] = []byte(sshKey.Spec.PublicKey)
+	}
+
+	return r.Update(ctx, secret)
+}
+
+func buildUserSSHKeysForCluster(clusterName string, list *kubermaticv1.UserSSHKeyList) []kubermaticv1.UserSSHKey {
+	var clusterKeys []kubermaticv1.UserSSHKey
+	for _, item := range list.Items {
+		for _, clusterId := range item.Spec.Clusters {
+			if clusterName == clusterId {
+				clusterKeys = append(clusterKeys, item)
+			}
+		}
+	}
+
+	return clusterKeys
+}
+
+func (r *Reconciler) ensureUserSSHKeySecretCreation(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	key := types.NamespacedName{
+		Namespace: cluster.Status.NamespaceName,
+		Name:      resources.UserSSHKeys,
 	}
 
 	secret := &corev1.Secret{}
@@ -115,47 +166,32 @@ func (r *Reconciler) updateUserSSHKeysSecrets(ctx context.Context, userSSHKey *k
 			secret = &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
-					Namespace: namespace,
+					Namespace: key.Namespace,
 				},
 				Type: corev1.SecretTypeOpaque,
-				Data: map[string][]byte{
-					userSSHKey.Name: []byte(userSSHKey.Spec.PublicKey),
-				},
 			}
 			return r.Create(ctx, secret)
 		}
 		return err
 	}
 
-	if _, found := secret.Data[userSSHKey.Name]; !found {
-		secret.Data[userSSHKey.Name] = []byte(userSSHKey.Spec.PublicKey)
-		return r.Update(ctx, secret)
-	}
-
 	return nil
 }
 
-func (r *Reconciler) deleteUserSSHKey(ctx context.Context, cluster kubermaticv1.Cluster, namespace, keyName string) error {
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      fmt.Sprintf("%v-%v", resources.UserSSHKeys, cluster.Name),
-	}
-	secret := &corev1.Secret{}
-	if err := r.Get(ctx, key, secret); err != nil {
-		if kubeapierrors.IsNotFound(err) {
-			return nil
+// enqueueAllClusters enqueues all clusters
+func enqueueAllClusters(client ctrlruntimeclient.Client) *handler.EnqueueRequestsFromMapFunc {
+	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+		clustersRequests := []reconcile.Request{}
+		clusterList := &kubermaticv1.ClusterList{}
+		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, clusterList); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
+			return clustersRequests
 		}
-		return err
-	}
 
-	delete(secret.Data, keyName)
-	return r.Update(ctx, secret)
-}
+		for _, cluster := range clusterList.Items {
+			clustersRequests = append(clustersRequests, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}})
+		}
 
-func buildClustersMapFromSecret(clusters []string) (mappedClusters map[string]struct{}) {
-	for _, cluster := range clusters {
-		mappedClusters[cluster] = struct{}{}
-	}
-
-	return mappedClusters
+		return clustersRequests
+	})}
 }
