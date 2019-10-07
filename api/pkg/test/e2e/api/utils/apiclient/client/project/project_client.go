@@ -991,6 +991,35 @@ func (a *Client) ListClusterRole(params *ListClusterRoleParams, authInfo runtime
 }
 
 /*
+ListClusterRoleBinding List cluster role binding
+*/
+func (a *Client) ListClusterRoleBinding(params *ListClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleBindingOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListClusterRoleBindingParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listClusterRoleBinding",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListClusterRoleBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListClusterRoleBindingOK), nil
+
+}
+
+/*
 ListClusters lists clusters for the specified project and data center
 */
 func (a *Client) ListClusters(params *ListClustersParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersOK, error) {

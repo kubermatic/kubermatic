@@ -353,7 +353,7 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 		openshift.ControllerManagerNSCreatorGetter,
 		openshift.KubeSchedulerNSCreatorGetter,
 		openshift.NetworkOperatorNSGetter,
-		openshift.OpenshiftRegistryNSGetter,
+		openshift.RegistryNSGetter,
 		openshift.CloudCredentialOperatorNSGetter,
 	}
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {

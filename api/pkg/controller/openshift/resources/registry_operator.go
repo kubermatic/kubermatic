@@ -86,7 +86,7 @@ func RegistryOperatorFactory(data openshiftData) reconciling.NamedDeploymentCrea
 func registryOperatorEnv(openshiftVersion string) ([]corev1.EnvVar, error) {
 	var image string
 	switch openshiftVersion {
-	case "4.1.9":
+	case openshiftVersion419:
 		image = "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:5c0b76746c2f86177b5a0fdce866cf41dbb752af58b96daa8fa7b033fa2c4fc9"
 	default:
 		return nil, fmt.Errorf("no registry image available for openshift version %q", openshiftVersion)
@@ -114,7 +114,7 @@ func registryOperatorEnv(openshiftVersion string) ([]corev1.EnvVar, error) {
 
 func registryOperatorImage(version string) (string, error) {
 	switch version {
-	case "4.1.9":
+	case openshiftVersion419:
 		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:2fb3e2f3eb6dbc013dcd4f7b94f9a9cff5231d1005174a030e265899160efc68", nil
 	default:
 		return "", fmt.Errorf("no image available for Openshift version %q", version)

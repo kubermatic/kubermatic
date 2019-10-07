@@ -84,9 +84,9 @@ func NetworkOperatorNSGetter() (string, reconciling.NamespaceCreator) {
 	}
 }
 
-// OpenshiftRegistryNSGetter is used to create the namespace in which the registry operator
+// RegistryNSGetter is used to create the namespace in which the registry operator
 // creates the registry
-func OpenshiftRegistryNSGetter() (string, reconciling.NamespaceCreator) {
+func RegistryNSGetter() (string, reconciling.NamespaceCreator) {
 	return openshiftresources.RegistryNamespaceName, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 		if ns.Annotations == nil {
 			ns.Annotations = map[string]string{}
