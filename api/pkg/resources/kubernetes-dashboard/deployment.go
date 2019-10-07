@@ -34,7 +34,9 @@ const (
 	imageName = "kubernetesui/dashboard"
 	tag       = "v2.0.0-beta4"
 	// Namespace used by Dashboard to find required resources.
-	namespace = "kubernetes-dashboard"
+	namespace     = "kubernetes-dashboard"
+	ContainerPort = 9090
+	AppLabel      = resources.AppLabelKey + "=" + name
 )
 
 // kubernetesDashboardData is the data needed to construct the Kubernetes Dashboard components
@@ -106,7 +108,7 @@ func getContainers(data kubernetesDashboardData) []corev1.Container {
 			},
 			Ports: []corev1.ContainerPort{
 				{
-					ContainerPort: 9090,
+					ContainerPort: ContainerPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},

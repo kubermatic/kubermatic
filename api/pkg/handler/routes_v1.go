@@ -14,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
+	kubernetesdashboard "github.com/kubermatic/kubermatic/api/pkg/handler/v1/kubernetes-dashboard"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/node"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/openshift"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/presets"
@@ -440,6 +441,11 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.openshiftConsoleLogin())
 	mux.PathPrefix("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/proxy").
 		Handler(r.openshiftConsoleProxy())
+
+	//
+	// Defines a set of kubernetes-dashboard-specific endpoints
+	mux.PathPrefix("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/dashboard/proxy").
+		Handler(r.kubernetesDashboardProxy())
 
 	//
 	// Defines set of HTTP endpoints for Users of the given project
@@ -2897,6 +2903,30 @@ func (r Routing) openshiftConsoleLogin() http.Handler {
 //       default: empty
 func (r Routing) openshiftConsoleProxy() http.Handler {
 	return openshift.ConsoleProxyEndpoint(
+		r.log,
+		middleware.TokenExtractor(r.tokenExtractors),
+		r.projectProvider,
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
+			// client that allows access to the cluster namespace only
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		),
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/proxy
+//
+//    Proxies the Kubernetes Dashboard. Requires a valid bearer token. The token can be obtained
+//    using the /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/dashboard/login
+//    endpoint.
+//
+//     Responses:
+//       default: empty
+func (r Routing) kubernetesDashboardProxy() http.Handler {
+	return kubernetesdashboard.ProxyEndpoint(
 		r.log,
 		middleware.TokenExtractor(r.tokenExtractors),
 		r.projectProvider,
