@@ -308,7 +308,9 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingClusterJSON, err := json.Marshal(existingCluster)
+		// We cannot use internal type here as we are not exposing it directly.
+		// API uses its own type and we cannot ensure compatibility here.
+		existingClusterJSON, err := json.Marshal(convertInternalClusterToExternal(existingCluster))
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode existing cluster: %v", err)
 		}
@@ -318,11 +320,18 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 			return nil, errors.NewBadRequest("cannot patch cluster: %v", err)
 		}
 
-		var patchedCluster *kubermaticv1.Cluster
+		var patchedCluster *apiv1.Cluster
 		err = json.Unmarshal(patchedClusterJSON, &patchedCluster)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
 		}
+
+		// TODO external -> internal
+		// Only the fields from NodeDeploymentSpec will be updated by a patch.
+		// It ensures that the name and resource version are set and the selector stays the same.
+		//machineDeployment.Spec.Template.Spec = patchedMachineDeployment.Spec.Template.Spec
+		//machineDeployment.Spec.Replicas = patchedMachineDeployment.Spec.Replicas
+		//machineDeployment.Spec.Paused = patchedMachineDeployment.Spec.Paused
 
 		incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfo, clusterProvider, patchedCluster)
 		if err != nil {
