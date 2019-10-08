@@ -136,12 +136,6 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 		return nil, errors.New("received malformed admission review: no request defined")
 	}
 
-	// during datacenters->seed migration we reject any changes, so the seeds can never get
-	// out of sync with the datacenters.yaml
-	if s.migrationModeEnabled && admissionReview.Request.Operation != admissionv1beta1.Create {
-		return admissionReview.Request, errors.New("migration is enabled, changes to Seed resources are forbidden; disable migration by removing either -datacenters or -dynamic-datacenters flags from the master-controller-manager")
-	}
-
 	s.log.Debugw(
 		"Received admission request",
 		"kind", admissionReview.Request.Kind,
@@ -157,12 +151,22 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 		if err != nil {
 			return nil, fmt.Errorf("failed to get seeds: %v", err)
 		}
+		// when a namespace is deleted, a DELETE call for all seeds in the namespace
+		// is issued; this request has no .Request.Name set, so this check will make
+		// sure that we exit cleanly and allow deleting namespaces without seeds
 		if _, exists := seeds[admissionReview.Request.Name]; !exists {
 			return admissionReview.Request, nil
 		}
 		seed = seeds[admissionReview.Request.Name]
 	} else if err := json.Unmarshal(admissionReview.Request.Object.Raw, seed); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal object from request into a Seed: %v", err)
+	}
+
+	// during datacenters->seed migration we reject any changes, so the seeds can never get
+	// out of sync with the datacenters.yaml; this must happen after the checks above or else
+	// we would block deleting namespaces
+	if s.migrationModeEnabled && admissionReview.Request.Operation != admissionv1beta1.Create {
+		return admissionReview.Request, errors.New("migration is enabled, changes to Seed resources are forbidden; disable migration by removing either -datacenters or -dynamic-datacenters flags from the master-controller-manager")
 	}
 
 	validationErr := s.validator.Validate(seed, admissionReview.Request.Operation == admissionv1beta1.Delete)
