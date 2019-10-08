@@ -1207,7 +1207,7 @@ type RoleBinding struct {
 	// Indicates the scope of this binding.
 	Namespace string `json:"namespace,omitempty"`
 	// Subjects holds references to the objects the role applies to.
-	Subjects []Subject `json:"subjects,omitempty"`
+	Subjects []rbacv1.Subject `json:"subjects,omitempty"`
 
 	RoleRefName string `json:"roleRefName"`
 }
@@ -1216,7 +1216,7 @@ type RoleBinding struct {
 type ClusterRoleBinding struct {
 	ObjectMeta `json:",inline"`
 	// Subjects holds references to the objects the role applies to.
-	Subjects []Subject `json:"subjects,omitempty"`
+	Subjects []rbacv1.Subject `json:"subjects,omitempty"`
 
 	RoleRefName string `json:"roleRefName"`
 }
