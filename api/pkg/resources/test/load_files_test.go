@@ -401,6 +401,13 @@ func TestLoadFiles(t *testing.T) {
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.KubernetesDashboardKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
 					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
@@ -558,11 +565,6 @@ func TestLoadFiles(t *testing.T) {
 						t.Fatalf("failed to create Deployment: %v", err)
 					}
 					fixturePath := fmt.Sprintf("deployment-%s-%s-%s", prov, ver.Version.String(), res.Name)
-
-					// Verify that every Deployment has the ImagePullSecret set
-					if len(res.Spec.Template.Spec.ImagePullSecrets) == 0 {
-						t.Errorf("Deployment %s is missing the ImagePullSecret on the PodTemplate", res.Name)
-					}
 
 					verifyContainerResources(fmt.Sprintf("Deployment/%s", res.Name), res.Spec.Template, t)
 
