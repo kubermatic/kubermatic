@@ -52,6 +52,7 @@ func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlrun
 				"cloud_provider",
 				"datacenter",
 				"pause",
+				"type",
 			},
 			nil,
 		),
@@ -121,6 +122,11 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		pause = "true"
 	}
 
+	clusterType := "kubernetes"
+	if cluster.Spec.Openshift != nil {
+		clusterType = "openshift"
+	}
+
 	return []string{
 		cluster.Name,
 		cluster.Spec.HumanReadableName,
@@ -129,5 +135,6 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		provider,
 		cluster.Spec.Cloud.DatacenterName,
 		pause,
+		clusterType,
 	}, nil
 }
