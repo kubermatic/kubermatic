@@ -1250,6 +1250,9 @@ const (
 	// InClusterCredentialsRequestsCleanupFinalizer indicates that CredentialsRequests still need cleanup. This
 	// CRD only exists on Openshift and is a no-op for Kubernetes.
 	InClusterCredentialsRequestsCleanupFinalizer = "kubermatic.io/cleanup-credentials-requests"
+	// InClusterImageRegistryConfigCleanupFinalizer indicates that CredentialsRequests still need
+	// cleanup. This CRD only exists on Openshift and is a no-op for Kubernetes.
+	InClusterImageRegistryConfigCleanupFinalizer = "kubermatic.io/cleanup-image-registry-configs"
 	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup
 	CredentialsSecretsCleanupFinalizer = "kubermatic.io/cleanup-credentials-secrets"
 )
