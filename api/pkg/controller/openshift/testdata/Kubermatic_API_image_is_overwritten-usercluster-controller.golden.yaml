@@ -27,6 +27,7 @@ spec:
         cluster: test-cluster
         internal-admin-kubeconfig-secret-revision: ""
         openvpn-ca-secret-revision: ""
+        usersshkeys-secret-revision: 1-1
     spec:
       containers:
       - args:
@@ -80,6 +81,9 @@ spec:
         - mountPath: /etc/kubernetes/pki/openvpn
           name: openvpn-ca
           readOnly: true
+        - mountPath: /etc/kubernetes/usersshkeys
+          name: usersshkeys
+          readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
       imagePullSecrets:
@@ -111,6 +115,10 @@ spec:
         secret:
           defaultMode: 420
           secretName: openvpn-ca
+      - name: usersshkeys
+        secret:
+          defaultMode: 420
+          secretName: usersshkeys
       - emptyDir: {}
         name: http-prober-bin
 status: {}
