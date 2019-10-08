@@ -78,7 +78,7 @@ func readYAML(path string) ([]byte, error) {
 // documentation.
 func traverseAddons(dir string) (*buffer, error) {
 	// Prepare doc buffer.
-	doc := &buffer{}
+	doc := newBuffer()
 	doc.push("+++\n")
 	doc.push("title = \"Kubermatic Addons - Resource\"\n")
 	doc.push("date = " + time.Now().Format(time.RFC3339) + "\n")
@@ -122,16 +122,7 @@ func writeDoc(file string, doc *buffer) error {
 		return err
 	}
 	defer f.Close()
-	for {
-		line, ok := doc.pop()
-		if !ok {
-			break
-		}
-		if _, err := f.WriteString(line); err != nil {
-			return err
-		}
-	}
-	return nil
+	return doc.writeAll(f)
 }
 
 // main function of the resource limit documentation generator.

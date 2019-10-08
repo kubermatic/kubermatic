@@ -1,5 +1,9 @@
 package main
 
+import (
+	"io"
+)
+
 // buffer contains the lines of the YAML file for the parsing
 // state machine and allows to push a line back when it doesn't
 // match the current state.
@@ -7,21 +11,26 @@ type buffer struct {
 	lines []string
 }
 
-func (b *buffer) push(lines ...string) {
-	b.lines = append(b.lines, lines...)
+func newBuffer() *buffer {
+	return &buffer{}
 }
 
-func (b *buffer) pop() (string, bool) {
-	if len(b.lines) == 0 {
-		return "", false
-	}
-	line := b.lines[0]
-	b.lines = b.lines[1:]
-	return line, true
+func (b *buffer) push(lines ...string) {
+	b.lines = append(b.lines, lines...)
 }
 
 func (b *buffer) pushAll(ba *buffer) {
 	if ba != nil {
 		b.lines = append(b.lines, ba.lines...)
 	}
+}
+
+func (b *buffer) writeAll(w io.Writer) error {
+	for _, line := range b.lines {
+		_, err := w.Write([]byte(line))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

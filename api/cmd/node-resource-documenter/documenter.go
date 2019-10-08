@@ -26,7 +26,7 @@ func newDocumenter(p string, c []byte) *documenter {
 	return &documenter{
 		path:    p,
 		content: c,
-		doc:     &buffer{},
+		doc:     newBuffer(),
 	}
 }
 
