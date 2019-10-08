@@ -151,7 +151,7 @@
           "expr": "rate(kubelet_runtime_operations_errors{instance=\"$node\"}[5m])",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "Error Rate",
+          "legendFormat": "{{ operation_type }}",
           "refId": "A"
         }
       ],
