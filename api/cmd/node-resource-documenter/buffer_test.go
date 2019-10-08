@@ -63,10 +63,10 @@ func TestBuffer(t *testing.T) {
 		var builder strings.Builder
 		err := ba.writeAll(&builder)
 		if err != nil {
-			t.Error("writing failed")
+			t.Errorf("writing failed: %v", err)
 		}
 		if builder.String() != test.expected {
-			t.Error("buffer content doesn't match expected")
+			t.Errorf("buffer content doesn't match expected: %s <> %s", builder.String(), test.expected)
 		}
 	}
 }

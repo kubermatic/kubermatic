@@ -102,11 +102,11 @@ func (d *documenter) addSpec(ps corev1.PodSpec) {
 		d.doc.push("\n\n##### Container: ", container.Name, "\n")
 		d.doc.push("\n```yaml\n")
 		d.doc.push("limits:\n")
-		d.doc.push("    cpu: ", qf(limitsCPU), "\n")
-		d.doc.push("    memory: ", qf(limitsMem), "\n")
+		d.doc.push("  cpu: ", qf(limitsCPU), "\n")
+		d.doc.push("  memory: ", qf(limitsMem), "\n")
 		d.doc.push("requests:\n")
-		d.doc.push("    cpu: ", qf(requestsCPU), "\n")
-		d.doc.push("    memory: ", qf(requestsMem), "\n")
+		d.doc.push("  cpu: ", qf(requestsCPU), "\n")
+		d.doc.push("  memory: ", qf(requestsMem), "\n")
 		d.doc.push("```")
 	}
 }
