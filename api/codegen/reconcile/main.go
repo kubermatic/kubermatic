@@ -110,6 +110,11 @@ func main() {
 				ResourceImportPath: "k8s.io/api/admissionregistration/v1beta1",
 			},
 			{
+				ResourceName: "ValidatingWebhookConfiguration",
+				ImportAlias:  "admissionregistrationv1beta1",
+				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
 				ResourceName:       "APIService",
 				ImportAlias:        "apiregistrationv1beta1",
 				ResourceImportPath: "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1",
