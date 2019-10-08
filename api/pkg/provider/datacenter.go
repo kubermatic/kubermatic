@@ -147,6 +147,21 @@ func ValidateSeed(seed *kubermaticv1.Seed) error {
 
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName, dcFile, namespace string, dynamicDatacenters bool) (SeedGetter, error) {
+	seedGetter, err := seedGetterFactory(ctx, client, seedName, dcFile, namespace, dynamicDatacenters)
+	if err != nil {
+		return nil, err
+	}
+	return func() (*kubermaticv1.Seed, error) {
+		seed, err := seedGetter()
+		if err != nil {
+			return nil, err
+		}
+		seed.SetDefaults()
+		return seed, nil
+	}, nil
+}
+
+func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName, dcFile, namespace string, dynamicDatacenters bool) (SeedGetter, error) {
 	if dynamicDatacenters {
 		return func() (*kubermaticv1.Seed, error) {
 			seed := &kubermaticv1.Seed{}
@@ -176,6 +191,23 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 }
 
 func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace, workerName string, dynamicDatacenters bool) (SeedsGetter, error) {
+	seedsGetter, err := seedsGetterFactory(ctx, client, dcFile, namespace, workerName, dynamicDatacenters)
+	if err != nil {
+		return nil, err
+	}
+	return func() (map[string]*kubermaticv1.Seed, error) {
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, err
+		}
+		for idx := range seeds {
+			seeds[idx].SetDefaults()
+		}
+		return seeds, nil
+	}, nil
+}
+
+func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace, workerName string, dynamicDatacenters bool) (SeedsGetter, error) {
 	if dynamicDatacenters {
 		labelSelector, err := workerlabel.LabelSelector(workerName)
 		if err != nil {
