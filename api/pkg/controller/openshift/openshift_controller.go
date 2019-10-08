@@ -41,6 +41,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
+	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
@@ -455,7 +456,16 @@ func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster,
 func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *openshiftData) (*reconcile.Result, error) {
 	userClusterClient, err := osData.Client()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get userClusterClient: %v", err)
+		// This happens when the kubermatic controller manager is running outside of the cluster, because it needs
+		// the token to create the token. We fallback to a cert in this case
+		if err.Error() == `Secret "admin-kubeconfig" not found` {
+			userClusterClient, err = r.getUserclusterClientUseExternalCert(ctx, osData.Cluster())
+			if err != nil {
+				return nil, fmt.Errorf("failed to get userClusterClient via external cert: %v", err)
+			}
+		} else {
+			return nil, fmt.Errorf("failed to get userClusterClient: %v", err)
+		}
 	}
 
 	// Ensure ServiceAccount in user cluster
@@ -817,6 +827,18 @@ func (r *Reconciler) services(ctx context.Context, osData *openshiftData) error 
 		}
 	}
 	return nil
+}
+
+func (r *Reconciler) getUserclusterClientUseExternalCert(ctx context.Context, cluster *kubermaticv1.Cluster) (client.Client, error) {
+	kubeConfigSecret := &corev1.Secret{}
+	if err := r.Get(ctx, nn(cluster.Status.NamespaceName, openshiftresources.ExternalX509KubeconfigName), kubeConfigSecret); err != nil {
+		return nil, fmt.Errorf("failed to get userCluster kubeconfig secret: %v", err)
+	}
+	cfg, err := clientcmd.RESTConfigFromKubeConfig(kubeConfigSecret.Data[resources.KubeconfigSecretKey])
+	if err != nil {
+		return nil, fmt.Errorf("failed to get config from secret: %v", err)
+	}
+	return client.New(cfg, client.Options{})
 }
 
 // A cheap helper because I am too lazy to type this everytime
