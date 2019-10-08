@@ -32,6 +32,20 @@ type Seed struct {
 	Spec SeedSpec `json:"spec"`
 }
 
+func (s *Seed) SetDefaults() {
+	if s.Spec.ProxySettings != nil {
+		for key, dc := range s.Spec.Datacenters {
+			if dc.Node.HTTPProxy == nil {
+				dc.Node.HTTPProxy = s.Spec.ProxySettings.HTTPProxy
+			}
+			if dc.Node.NoProxy == nil {
+				dc.Node.NoProxy = s.Spec.ProxySettings.NoProxy
+			}
+			s.Spec.Datacenters[key] = dc
+		}
+	}
+}
+
 // The spec for a seed data
 type SeedSpec struct {
 	// Country of the seed. For informational purposes only
@@ -44,6 +58,8 @@ type SeedSpec struct {
 	Datacenters map[string]Datacenter `json:"datacenters,omitempty"`
 	// Optional: Overwrite the DNS domain for this seed
 	SeedDNSOverwrite *string `json:"seed_dns_overwrite,omitempty"`
+	// Optional: Configure a http proxy for this seed
+	ProxySettings *ProxySettings `json:"proxy_settings,omitempty`
 }
 
 type Datacenter struct {
@@ -169,12 +185,20 @@ type DatacenterSpecFake struct {
 type DatacenterSpecKubevirt struct {
 }
 
+// ProxySettings allow configuring a HTTP proxy for the controlplanes
+// and nodes
+type ProxySettings struct {
+	// If set, this proxy will be configured for both http and https.
+	HTTPProxy *string `json:"http_proxy,omitempty"`
+	// If set this will be set as NO_PROXY on the node
+	NoProxy *string `json:"no_proxy,omitempty"`
+}
+
 // NodeSettings are node specific flags which can be configured on datacenter level
 type NodeSettings struct {
-	// If set, this proxy will be configured on all nodes.
-	HTTPProxy string `json:"http_proxy,omitempty"`
-	// If set this will be set as NO_PROXY on the node
-	NoProxy string `json:"no_proxy,omitempty"`
+	// ProxySettings for the Nodes in this datacenter. Defaults to the HTTPProxy setting
+	// on Seed level.
+	ProxySettings `json:",inline"`
 	// If set, this image registry will be configured as insecure on the container runtime.
 	InsecureRegistries []string `json:"insecure_registries,omitempty"`
 	// Translates to --pod-infra-container-image on the kubelet. If not set, the kubelet will default it

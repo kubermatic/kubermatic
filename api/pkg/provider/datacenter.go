@@ -164,7 +164,7 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 	if dcFile == "" {
 		return nil, errors.New("--datacenters is required")
 	}
-	// Make sure we fail early, an error here is nor recoverable
+	// Make sure we fail early, an error here is not recoverable
 	seed, err := LoadSeed(dcFile, seedName)
 	if err != nil {
 		return nil, err
