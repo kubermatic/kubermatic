@@ -293,6 +293,12 @@ func isStatus(err error, status int32) bool {
 	return ok && status == kubernetesError.Status().Code
 }
 
+type OriginalClusterSpec apiv1.ClusterSpec
+type ClusterPatch struct {
+	apiv1.Cluster `json:",inline"`
+	Spec          OriginalClusterSpec `json:"spec"`
+}
+
 func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
@@ -310,7 +316,14 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 
 		// We cannot use internal type here as we are not exposing it directly.
 		// API uses its own type and we cannot ensure compatibility here.
-		existingClusterJSON, err := json.Marshal(convertInternalClusterToExternal(existingCluster))
+		e := convertInternalClusterToExternal(existingCluster)
+		cs := (OriginalClusterSpec)(e.Spec)
+		cp := ClusterPatch{
+			Cluster: *e,
+			Spec:    cs,
+		}
+
+		existingClusterJSON, err := json.Marshal(cp)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode existing cluster: %v", err)
 		}
@@ -642,10 +655,8 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 	}
 
 	isOpenShift, ok := internalCluster.Annotations["kubermatic.io/openshift"]
-	if ok {
-		if isOpenShift == "true" {
-			cluster.Type = apiv1.OpenShiftClusterType
-		}
+	if ok && isOpenShift == "true" {
+		cluster.Type = apiv1.OpenShiftClusterType
 	}
 
 	return cluster
