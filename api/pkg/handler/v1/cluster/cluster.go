@@ -293,6 +293,18 @@ func isStatus(err error, status int32) bool {
 	return ok && status == kubernetesError.Status().Code
 }
 
+// patchClusterSpec is equivalent of ClusterSpec but it uses default JSON marshalling method instead of custom
+// MarshalJSON defined for ClusterSpec type. This means it should be only used internally as it may contain
+// sensitive cloud provider authentication data.
+type patchClusterSpec apiv1.ClusterSpec
+
+// patchCluster is equivalent of Cluster but it uses patchClusterSpec instead of original ClusterSpec.
+// This means it should be only used internally as it may contain sensitive cloud provider authentication data.
+type patchCluster struct {
+	apiv1.Cluster `json:",inline"`
+	Spec          patchClusterSpec `json:"spec"`
+}
+
 func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
@@ -303,14 +315,23 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		oldInternalCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		// We cannot use internal type here as we are not exposing it directly.
-		// API uses its own type and we cannot ensure compatibility here.
-		existingClusterJSON, err := json.Marshal(convertInternalClusterToExternal(existingCluster))
+		// Converting to API type as it is the type exposed externally.
+		externalCluster := convertInternalClusterToExternal(oldInternalCluster)
+
+		// Changing the type to patchCluster as during marshalling it doesn't remove the cloud provider authentication
+		// data that is required here for validation.
+		externalClusterSpec := (patchClusterSpec)(externalCluster.Spec)
+		clusterToPatch := patchCluster{
+			Cluster: *externalCluster,
+			Spec:    externalClusterSpec,
+		}
+
+		existingClusterJSON, err := json.Marshal(clusterToPatch)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode existing cluster: %v", err)
 		}
@@ -326,19 +347,20 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
 		}
 
-		// Only specific fields from existing internal cluster will be updated by a patch.
+		// Only specific fields from old internal cluster will be updated by a patch.
 		// It prevents user from changing other fields like resource ID or version that should not be modified.
-		existingCluster.Spec.HumanReadableName = patchedCluster.Name
-		existingCluster.Labels = patchedCluster.Labels
-		existingCluster.Spec.Cloud = patchedCluster.Spec.Cloud
-		existingCluster.Spec.MachineNetworks = patchedCluster.Spec.MachineNetworks
-		existingCluster.Spec.Version = patchedCluster.Spec.Version
-		existingCluster.Spec.OIDC = patchedCluster.Spec.OIDC
-		existingCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = patchedCluster.Spec.UsePodSecurityPolicyAdmissionPlugin
-		existingCluster.Spec.AuditLogging = patchedCluster.Spec.AuditLogging
-		existingCluster.Spec.Openshift = patchedCluster.Spec.Openshift
+		newInternalCluster := oldInternalCluster.DeepCopy()
+		newInternalCluster.Spec.HumanReadableName = patchedCluster.Name
+		newInternalCluster.Labels = patchedCluster.Labels
+		newInternalCluster.Spec.Cloud = patchedCluster.Spec.Cloud
+		newInternalCluster.Spec.MachineNetworks = patchedCluster.Spec.MachineNetworks
+		newInternalCluster.Spec.Version = patchedCluster.Spec.Version
+		newInternalCluster.Spec.OIDC = patchedCluster.Spec.OIDC
+		newInternalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = patchedCluster.Spec.UsePodSecurityPolicyAdmissionPlugin
+		newInternalCluster.Spec.AuditLogging = patchedCluster.Spec.AuditLogging
+		newInternalCluster.Spec.Openshift = patchedCluster.Spec.Openshift
 
-		incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfo, clusterProvider, existingCluster)
+		incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfo, clusterProvider, newInternalCluster)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check existing nodes' version skew: %v", err)
 		}
@@ -350,7 +372,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 		if err != nil {
 			return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
-		_, dc, err := provider.DatacenterFromSeedMap(seeds, existingCluster.Spec.Cloud.DatacenterName)
+		_, dc, err := provider.DatacenterFromSeedMap(seeds, newInternalCluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
@@ -359,11 +381,11 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 		if !ok {
 			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 		}
-		if err := validation.ValidateUpdateCluster(ctx, existingCluster, existingCluster, dc, assertedClusterProvider); err != nil {
+		if err := validation.ValidateUpdateCluster(ctx, newInternalCluster, oldInternalCluster, dc, assertedClusterProvider); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
-		updatedCluster, err := clusterProvider.Update(project, userInfo, existingCluster)
+		updatedCluster, err := clusterProvider.Update(project, userInfo, newInternalCluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -642,10 +664,8 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 	}
 
 	isOpenShift, ok := internalCluster.Annotations["kubermatic.io/openshift"]
-	if ok {
-		if isOpenShift == "true" {
-			cluster.Type = apiv1.OpenShiftClusterType
-		}
+	if ok && isOpenShift == "true" {
+		cluster.Type = apiv1.OpenShiftClusterType
 	}
 
 	return cluster
