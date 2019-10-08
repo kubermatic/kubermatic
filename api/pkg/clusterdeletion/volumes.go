@@ -68,7 +68,7 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Clu
 }
 
 func (d *Deletion) disablePVCreation(ctx context.Context, userClusterClient controllerruntimeclient.Client) error {
-	// Prevent re-creation of PVs and PVCsby using an intentionally defunct admissionWebhook
+	// Prevent re-creation of PVs and PVCs by using an intentionally defunct admissionWebhook
 	creatorGetters := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		creationPreventingWebhook("", []string{"persistentvolumes", "persistentvolumeclaims"}),
 	}

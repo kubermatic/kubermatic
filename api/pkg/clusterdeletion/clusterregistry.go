@@ -46,11 +46,11 @@ func (d *Deletion) cleanupImageRegistryConfigs(ctx context.Context, log *zap.Sug
 		return false, nil
 	}
 
-	log.Debug("Found ImageRegistryConfigs", "num-image-registry-configs", len(imageRegistryConfigs.Items))
+	log.Debugw("Found ImageRegistryConfigs", "num-image-registry-configs", len(imageRegistryConfigs.Items))
 
 	for _, imageRegistry := range imageRegistryConfigs.Items {
 		if err := userClusterClient.Delete(ctx, &imageRegistry); err != nil {
-			return false, fmt.Errorf("failed to delete ImageRegistryConfig: %v", err)
+			return false, fmt.Errorf("failed to delete ImageRegistryConfig %q: %v", imageRegistry.GetName(), err)
 		}
 
 		// The registry operator doesn't remove its finalizer when the registry has no storage config
@@ -91,7 +91,7 @@ func (d *Deletion) disableImageRegistryConfigsCreation(ctx context.Context, user
 	return nil
 }
 
-// simplifiedRegistryConfig is a minimal subet of the ImageRegistryConfig that contains
+// simplifiedRegistryConfig is a minimal subset of the ImageRegistryConfig that contains
 // only the fields we care about. Since we only read from it but don't update its body,
 // dropping the rest is fine.
 type simplifiedRegistryConfig struct {
