@@ -116,7 +116,6 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 		}
 		deletedSomeResource = deletedSomeResource || deletedSomeCredentialsRequests
 	}
-	return nil
 
 	// If we deleted something it is implied that there was still something left. Just return
 	// here so the finalizers stay, it will make the cluster controller requeue us after a delay

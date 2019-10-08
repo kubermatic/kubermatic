@@ -91,6 +91,9 @@ func (d *Deletion) disableImageRegistryConfigsCreation(ctx context.Context, user
 	return nil
 }
 
+// simplifiedRegistryConfig is a minimal subet of the ImageRegistryConfig that contains
+// only the fields we care about. Since we only read from it but don't update its body,
+// dropping the rest is fine.
 type simplifiedRegistryConfig struct {
 	Spec struct {
 		Storage map[string]interface{} `json:"storage"`
