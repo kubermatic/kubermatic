@@ -330,6 +330,7 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 		resources.MachineControllerWebhookServingCertSecretName,
 		resources.InternalUserClusterAdminKubeconfigSecretName,
 		resources.ClusterAutoscalerKubeconfigSecretName,
+		resources.KubernetesDashboardKubeconfigSecretName,
 		metricsserver.ServingCertSecretName,
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
