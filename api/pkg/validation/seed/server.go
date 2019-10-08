@@ -89,6 +89,10 @@ func (s *Server) Start(_ <-chan struct{}) error {
 
 func (s *Server) handleSeedValidationRequests(resp http.ResponseWriter, req *http.Request) {
 	admissionRequest, validationErr := s.handle(req)
+	if validationErr != nil {
+		s.log.Warnw("Seed admission failed", zap.Error(validationErr))
+	}
+
 	var uid types.UID
 	if admissionRequest != nil {
 		uid = admissionRequest.UID
