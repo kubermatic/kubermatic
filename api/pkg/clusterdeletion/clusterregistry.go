@@ -2,21 +2,30 @@ package clusterdeletion
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const openshiftImageRegistryFinalizer = "imageregistry.operator.openshift.io/finalizer"
+
 func (d *Deletion) cleanupImageRegistryConfigs(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (deletedSomething bool, err error) {
 	log = log.Named("ImageRegistryConfigCleanup")
 	userClusterClient, err := d.userClusterClientGetter()
 	if err != nil {
+		return false, err
+	}
+
+	if err := d.disableImageRegistryConfigsCreation(ctx, userClusterClient); err != nil {
 		return false, err
 	}
 
@@ -43,8 +52,60 @@ func (d *Deletion) cleanupImageRegistryConfigs(ctx context.Context, log *zap.Sug
 		if err := userClusterClient.Delete(ctx, &imageRegistry); err != nil {
 			return false, fmt.Errorf("failed to delete ImageRegistryConfig: %v", err)
 		}
+
+		// The registry operator doesn't remove its finalizer when the registry has no storage config
+		storageConfigEmpty, err := hasEmptyStorageConfig(imageRegistry)
+		if err != nil {
+			return false, fmt.Errorf("failed to check if storage config is empty for registryConfig %q: %v", imageRegistry.GetName(), err)
+		}
+
+		if !storageConfigEmpty {
+			continue
+		}
+
+		if !kuberneteshelper.HasFinalizer(&imageRegistry, openshiftImageRegistryFinalizer) {
+			continue
+		}
+
+		log.Debugw("ImageregistryConfig has no storage configured but finalizer, removing it", "name", imageRegistry.GetName())
+		kuberneteshelper.RemoveFinalizer(&imageRegistry, openshiftImageRegistryFinalizer)
+		if err := userClusterClient.Update(ctx, &imageRegistry); err != nil {
+			return false, fmt.Errorf("failed to remove %q finalizer from imageRegistryConfig %q: %v", openshiftImageRegistryFinalizer, imageRegistry.GetName(), err)
+		}
+
 	}
 
 	log.Debug("Successfully issued DELETE for all ImageRegistryConfigs")
 	return true, nil
+}
+
+func (d *Deletion) disableImageRegistryConfigsCreation(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
+	// Prevent re-creation of ImageRegistryConfigs by using an intentionally defunct admissionWebhook
+	creatorGetters := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
+		creationPreventingWebhook("imageregistry.operator.openshift.io", []string{"configs"}),
+	}
+	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creatorGetters, "", userClusterClient); err != nil {
+		return fmt.Errorf("failed to create ValidatingWebhookConfiguration to prevent creation of ImageRegistgryConfigs: %v", err)
+	}
+
+	return nil
+}
+
+type simplifiedRegistryConfig struct {
+	Spec struct {
+		Storage map[string]interface{} `json:"storage"`
+	} `json:"spec"`
+}
+
+func hasEmptyStorageConfig(u unstructured.Unstructured) (bool, error) {
+	rawData, err := u.MarshalJSON()
+	if err != nil {
+		return false, fmt.Errorf("failed to marshal Unstructured: %v", err)
+	}
+
+	registryConfig := &simplifiedRegistryConfig{}
+	if err := json.Unmarshal(rawData, registryConfig); err != nil {
+		return false, fmt.Errorf("failed to unmarshal registry config: %v", err)
+	}
+	return len(registryConfig.Spec.Storage) == 0, nil
 }

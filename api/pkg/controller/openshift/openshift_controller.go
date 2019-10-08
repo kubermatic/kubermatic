@@ -227,7 +227,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			if err != nil {
 				return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 			}
-			log.Debug("Getting client for cluster %q", cluster.Name)
+			log.Debugw("Getting client for cluster", "cluster", cluster.Name)
 			return userClusterClient, nil
 		}
 
