@@ -124,7 +124,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		r,
 		cluster,
 		&datacenter,
-		seed.Name,
+		seed.DeepCopy(),
 		r.overwriteRegistry,
 		r.nodePortRange,
 		r.nodeAccessNetwork,

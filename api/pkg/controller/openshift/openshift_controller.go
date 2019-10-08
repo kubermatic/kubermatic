@@ -273,7 +273,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return r.userClusterConnProvider.GetClient(cluster)
 		},
 		externalURL: r.externalURL,
-		seedName:    seed.Name,
+		seed:        seed.DeepCopy(),
 	}
 
 	if err := r.networkDefaults(ctx, cluster); err != nil {

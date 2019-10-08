@@ -82,7 +82,7 @@ const prometheusConfig = `global:
   scrape_interval: 30s
   external_labels:
     cluster: "{{ .TemplateData.Cluster.Name }}"
-    seed_cluster: "{{ .TemplateData.SeedDC }}"
+    seed_cluster: "{{ .TemplateData.Seed.Name }}"
 rule_files:
 - "/etc/prometheus/config/rules*.yaml"
 scrape_configs:

@@ -43,6 +43,14 @@ spec:
           value: aws-access-key-id
         - name: AWS_SECRET_ACCESS_KEY
           value: aws-secret-access-key
+        - name: HTTP_PROXY
+          value: http://my-corp
+        - name: HTTPS_PROXY
+          value: http://my-corp
+        - name: http_proxy
+          value: http://my-corp
+        - name: https_proxy
+          value: http://my-corp
         - name: KUBECONFIG
           value: /etc/kubernetes/kubeconfig/kubeconfig
         image: docker.io/kubermatic/machine-controller:v1.5.7
