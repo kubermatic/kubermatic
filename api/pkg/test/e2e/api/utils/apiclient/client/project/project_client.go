@@ -1491,6 +1491,35 @@ func (a *Client) PatchClusterRole(params *PatchClusterRoleParams, authInfo runti
 }
 
 /*
+PatchClusterRoleBinding Update cluster role binding
+*/
+func (a *Client) PatchClusterRoleBinding(params *PatchClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterRoleBindingOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchClusterRoleBindingParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "patchClusterRoleBinding",
+		Method:             "PATCH",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings/{binding_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchClusterRoleBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*PatchClusterRoleBindingOK), nil
+
+}
+
+/*
 PatchNodeDeployment Patches a node deployment that is assigned to the given cluster. Please note that at the moment only
 node deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.
 */
