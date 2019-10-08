@@ -96,19 +96,19 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 		deletedSomeResource = deletedSomeResource || deletedSomeVolumes
 	}
 
-	//	if shouldDeleteImageRegistryConfigs {
-	//		deletedSomeImageRegistryConfigs, err := d.cleanupImageRegistryConfigs(ctx, log, cluster)
-	//		if err != nil {
-	//			return fmt.Errorf("failed to cleanup ImageRegistryConfigs: %v", err)
-	//		}
-	//		// Prevent the credentials from getting invalidated before cleanup finished
-	//		if deletedSomeImageRegistryConfigs {
-	//			return nil
-	//		}
-	//	}
+	if shouldDeleteImageRegistryConfigs {
+		deletedSomeImageRegistryConfigs, err := d.cleanupImageRegistryConfigs(ctx, log, cluster)
+		if err != nil {
+			return fmt.Errorf("failed to cleanup ImageRegistryConfigs: %v", err)
+		}
+		// Prevent the credentials from getting invalidated before cleanup finished
+		if deletedSomeImageRegistryConfigs {
+			return nil
+		}
+	}
 
 	// This must come after the ImageRegistryConfigs deletion, as it uses a credential
-	// optainted via a CredentialsRequest
+	// obtainted via a CredentialsRequest
 	if shouldDeleteCredentialsRequests {
 		deletedSomeCredentialsRequests, err := d.cleanupCredentialsRequests(ctx, log, cluster)
 		if err != nil {

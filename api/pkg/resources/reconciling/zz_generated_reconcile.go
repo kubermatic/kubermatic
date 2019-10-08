@@ -604,6 +604,40 @@ func ReconcileMutatingWebhookConfigurations(ctx context.Context, namedGetters []
 	return nil
 }
 
+// ValidatingWebhookConfigurationCreator defines an interface to create/update ValidatingWebhookConfigurations
+type ValidatingWebhookConfigurationCreator = func(existing *admissionregistrationv1beta1.ValidatingWebhookConfiguration) (*admissionregistrationv1beta1.ValidatingWebhookConfiguration, error)
+
+// NamedValidatingWebhookConfigurationCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedValidatingWebhookConfigurationCreatorGetter = func() (name string, create ValidatingWebhookConfigurationCreator)
+
+// ValidatingWebhookConfigurationObjectWrapper adds a wrapper so the ValidatingWebhookConfigurationCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func ValidatingWebhookConfigurationObjectWrapper(create ValidatingWebhookConfigurationCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*admissionregistrationv1beta1.ValidatingWebhookConfiguration))
+		}
+		return create(&admissionregistrationv1beta1.ValidatingWebhookConfiguration{})
+	}
+}
+
+// ReconcileValidatingWebhookConfigurations will create and update the ValidatingWebhookConfigurations coming from the passed ValidatingWebhookConfigurationCreator slice
+func ReconcileValidatingWebhookConfigurations(ctx context.Context, namedGetters []NamedValidatingWebhookConfigurationCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := ValidatingWebhookConfigurationObjectWrapper(create)
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ValidatingWebhookConfiguration %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
 // APIServiceCreator defines an interface to create/update APIServices
 type APIServiceCreator = func(existing *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error)
 

@@ -5,13 +5,10 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	utilpointer "k8s.io/utils/pointer"
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -70,58 +67,13 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Clu
 	return deletedSomeResource, nil
 }
 
-func terminatingAdmissionWebhook() (string, *admissionregistrationv1beta1.ValidatingWebhookConfiguration) {
-	name := "kubernetes-cluster-cleanup"
-	failurePolicy := admissionregistrationv1beta1.Fail
-	return name, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			Annotations: map[string]string{
-				annotationKeyDescription: "This webhook configuration exists to prevent creation of any new stateful resources in a cluster that is currently being terminated",
-			},
-		},
-		Webhooks: []admissionregistrationv1beta1.Webhook{
-			{
-				// Must be a domain with at least three segments separated by dots
-				Name: "kubernetes.cluster.cleanup",
-				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
-					URL: utilpointer.StringPtr("https://127.0.0.1:1"),
-				},
-				Rules: []admissionregistrationv1beta1.RuleWithOperations{
-					{
-						Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create},
-						Rule: admissionregistrationv1beta1.Rule{
-							APIGroups:   []string{""},
-							APIVersions: []string{"*"},
-							Resources:   []string{"persistentvolumes", "persistentvolumeclaims"},
-						},
-					},
-					{
-						Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create},
-						Rule: admissionregistrationv1beta1.Rule{
-							APIGroups:   []string{"policy"},
-							APIVersions: []string{"*"},
-							Resources:   []string{"poddisruptionbudgets"},
-						},
-					},
-				},
-				FailurePolicy: &failurePolicy,
-			},
-		},
-	}
-}
-
 func (d *Deletion) disablePVCreation(ctx context.Context, userClusterClient controllerruntimeclient.Client) error {
 	// Prevent re-creation of PVs, PVCs and PDBs by using an intentionally defunct admissionWebhook
-	admissionWebhookName, admissionWebhook := terminatingAdmissionWebhook()
-	err := userClusterClient.Get(ctx, types.NamespacedName{Name: admissionWebhookName}, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{})
-	if err != nil && !kerrors.IsNotFound(err) {
-		return fmt.Errorf("error checking if %q webhook configuration already exists: %v", admissionWebhookName, err)
+	creatorGetters := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
+		creationPreventingWebhook("", []string{"persistentvolumes", "persistentvolumeclaims"}),
 	}
-	if kerrors.IsNotFound(err) {
-		if err := userClusterClient.Create(ctx, admissionWebhook); err != nil {
-			return fmt.Errorf("failed to create %q webhook configuration: %v", admissionWebhookName, err)
-		}
+	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creatorGetters, "", userClusterClient); err != nil {
+		return fmt.Errorf("failed to create ValidatingWebhookConfiguration to prevent creation of PVs/PVCs: %v", err)
 	}
 
 	return nil
