@@ -162,18 +162,17 @@ func TestMigrateDatacenters(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+	for idx := range testCases {
+		t.Run(testCases[idx].name, func(t *testing.T) {
 			t.Parallel()
-			seeds, err := DatacenterMetasToSeeds(tc.datacenters)
+			seeds, err := DatacenterMetasToSeeds(testCases[idx].datacenters)
 			if err != nil {
 				t.Fatalf("Failed to convert datacenters to seeds: %v", err)
 			}
 
 			for _, seed := range seeds {
-				if err := ValidateSeed(seed); (err != nil) != tc.errExpected {
-					t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
+				if err := ValidateSeed(seed); (err != nil) != testCases[idx].errExpected {
+					t.Fatalf("Expected err: %t, but got err: %v", testCases[idx].errExpected, err)
 				}
 			}
 		})
