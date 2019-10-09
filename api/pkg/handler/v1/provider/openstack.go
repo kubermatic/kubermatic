@@ -28,13 +28,8 @@ func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, credentialManager c
 			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
 		}
 
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-
 		datacenterName := req.DatacenterName
-		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+		_, datacenter, err := provider.DatacenterFromSeedMap(seedsGetter, datacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
@@ -57,12 +52,7 @@ func OpenstackSizeWithClusterCredentialsEndpoint(projectProvider provider.Projec
 
 		datacenterName := cluster.Spec.Cloud.DatacenterName
 
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-
-		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+		_, datacenter, err := provider.DatacenterFromSeedMap(seedsGetter, datacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
@@ -162,12 +152,7 @@ func OpenstackTenantWithClusterCredentialsEndpoint(projectProvider provider.Proj
 }
 
 func getOpenstackTenants(seedsGetter provider.SeedsGetter, username, password, domain, tenant, tenantID, datacenterName string) ([]apiv1.OpenstackTenant, error) {
-	seeds, err := seedsGetter()
-	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-	}
-
-	authURL, region, err := getOpenstackAuthURLAndRegion(seeds, datacenterName)
+	authURL, region, err := getOpenstackAuthURLAndRegion(seedsGetter, datacenterName)
 	if err != nil {
 		return nil, err
 	}
@@ -234,12 +219,7 @@ func OpenstackNetworkWithClusterCredentialsEndpoint(projectProvider provider.Pro
 }
 
 func getOpenstackNetworks(seedsGetter provider.SeedsGetter, username, password, tenant, tenantID, domain, datacenterName string) ([]apiv1.OpenstackNetwork, error) {
-	seeds, err := seedsGetter()
-	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-	}
-
-	authURL, region, err := getOpenstackAuthURLAndRegion(seeds, datacenterName)
+	authURL, region, err := getOpenstackAuthURLAndRegion(seedsGetter, datacenterName)
 	if err != nil {
 		return nil, err
 	}
@@ -307,12 +287,7 @@ func OpenstackSecurityGroupWithClusterCredentialsEndpoint(projectProvider provid
 }
 
 func getOpenstackSecurityGroups(seedsGetter provider.SeedsGetter, username, password, tenant, tenantID, domain, datacenterName string) ([]apiv1.OpenstackSecurityGroup, error) {
-	seeds, err := seedsGetter()
-	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-	}
-
-	authURL, region, err := getOpenstackAuthURLAndRegion(seeds, datacenterName)
+	authURL, region, err := getOpenstackAuthURLAndRegion(seedsGetter, datacenterName)
 	if err != nil {
 		return nil, err
 	}
@@ -379,12 +354,7 @@ func OpenstackSubnetsWithClusterCredentialsEndpoint(projectProvider provider.Pro
 }
 
 func getOpenstackSubnets(seedsGetter provider.SeedsGetter, username, password, domain, tenant, tenantID, networkID, datacenterName string) ([]apiv1.OpenstackSubnet, error) {
-	seeds, err := seedsGetter()
-	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-	}
-
-	authURL, region, err := getOpenstackAuthURLAndRegion(seeds, datacenterName)
+	authURL, region, err := getOpenstackAuthURLAndRegion(seedsGetter, datacenterName)
 	if err != nil {
 		return nil, err
 	}
@@ -549,8 +519,8 @@ func getOpenstackCredentials(userInfo *provider.UserInfo, credentialName, userna
 	return username, password, domain, tenant, tenantID, nil
 }
 
-func getOpenstackAuthURLAndRegion(seeds map[string]*kubermaticv1.Seed, datacenterName string) (string, string, error) {
-	_, dc, err := provider.DatacenterFromSeedMap(seeds, datacenterName)
+func getOpenstackAuthURLAndRegion(seedsGetter provider.SeedsGetter, datacenterName string) (string, string, error) {
+	_, dc, err := provider.DatacenterFromSeedMap(seedsGetter, datacenterName)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to find datacenter %q: %v", datacenterName, err)
 	}

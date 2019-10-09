@@ -2,8 +2,10 @@ package provider
 
 import (
 	"fmt"
+	"net/http"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 // We can not convert a single DatacenterMeta as the SeedDatacenter contains its NodeDatacenter
@@ -75,7 +77,11 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 // once we support datacenters as CRDs.
 // TODO: Find a way to lift the current requirement of unique nodeDatacenter names. It is needed
 // only because we put the nodeDatacenter name on the cluster but not the seed
-func DatacenterFromSeedMap(seeds map[string]*kubermaticv1.Seed, datacenterName string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
+func DatacenterFromSeedMap(seedsGetter SeedsGetter, datacenterName string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
 
 	var foundDatacenters []kubermaticv1.Datacenter
 	var foundSeeds []*kubermaticv1.Seed
