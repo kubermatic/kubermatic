@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd/etcdrunning"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -161,7 +162,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
 			}
 
-			envVars, err := getAPIServerEnvVars(data)
+			envVars, err := apiserver.GetEnvVars(data)
 			if err != nil {
 				return nil, err
 			}
@@ -422,22 +423,6 @@ func getAPIServerVolumes() []corev1.Volume {
 			},
 		},
 	}
-}
-
-func getAPIServerEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
-	credentials, err := resources.GetCredentials(data)
-	if err != nil {
-		return nil, err
-	}
-	cluster := data.Cluster()
-
-	var vars []corev1.EnvVar
-	if cluster.Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
-	}
-	return vars, nil
 }
 
 func openshiftKubeAPIServerImage(openshiftVersion string) (string, error) {

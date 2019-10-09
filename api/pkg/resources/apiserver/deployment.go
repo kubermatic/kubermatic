@@ -127,7 +127,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
 			}
 
-			envVars, err := getEnvVars(data)
+			envVars, err := GetEnvVars(data)
 			if err != nil {
 				return nil, err
 			}
@@ -523,7 +523,7 @@ type kubeAPIServerEnvData interface {
 	Seed() *kubermaticv1.Seed
 }
 
-func getEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
+func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
 	credentials, err := resources.GetCredentials(data)
 	if err != nil {
 		return nil, err
