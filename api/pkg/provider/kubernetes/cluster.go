@@ -91,13 +91,6 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 
 	cluster.Spec.HumanReadableName = strings.TrimSpace(cluster.Spec.HumanReadableName)
 
-	labels := map[string]string{
-		kubermaticv1.ProjectIDLabelKey: project.Name,
-	}
-	if len(p.workerName) > 0 {
-		labels[kubermaticv1.WorkerNameLabelKey] = p.workerName
-	}
-
 	var name string
 	if cluster.Name != "" {
 		name = cluster.Name
@@ -108,7 +101,7 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 	newCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: cluster.Annotations,
-			Labels:      labels,
+			Labels:      getClusterLabels(cluster.Labels, project.Name, p.workerName),
 			Name:        name,
 		},
 		Spec: cluster.Spec,
@@ -131,6 +124,22 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 	}
 
 	return newCluster, nil
+}
+
+func getClusterLabels(specifiedLabels map[string]string, projectName, workerName string) map[string]string {
+	resultLabels := map[string]string{}
+
+	if specifiedLabels != nil {
+		resultLabels = specifiedLabels
+	}
+
+	resultLabels[kubermaticv1.ProjectIDLabelKey] = projectName
+
+	if len(workerName) > 0 {
+		resultLabels[kubermaticv1.WorkerNameLabelKey] = workerName
+	}
+
+	return resultLabels
 }
 
 // List gets all clusters that belong to the given project
@@ -199,13 +208,14 @@ func (p *ClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string
 }
 
 // Update updates a cluster
-func (p *ClusterProvider) Update(userInfo *provider.UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (p *ClusterProvider) Update(project *kubermaticv1.Project, userInfo *provider.UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
 	newCluster.Status.KubermaticVersion = resources.KUBERMATICCOMMIT
+	newCluster.Labels = getClusterLabels(newCluster.Labels, project.Name, "") // Do not update worker name.
 	return seedImpersonatedClient.Clusters().Update(newCluster)
 }
 

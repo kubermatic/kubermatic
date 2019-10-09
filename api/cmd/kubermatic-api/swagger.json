@@ -7010,6 +7010,13 @@
           "type": "string",
           "x-go-name": "ID"
         },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
         "name": {
           "description": "Name represents human readable name for the resource",
           "type": "string",

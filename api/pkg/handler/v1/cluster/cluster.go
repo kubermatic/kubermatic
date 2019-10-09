@@ -112,6 +112,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		}
 
 		partialCluster := &kubermaticv1.Cluster{}
+		partialCluster.Labels = req.Body.Cluster.Labels
 		partialCluster.Spec = *spec
 		if req.Body.Cluster.Type == "openshift" {
 			if req.Body.Cluster.Spec.Openshift == nil || req.Body.Cluster.Spec.Openshift.ImagePullSecret == "" {
@@ -292,22 +293,45 @@ func isStatus(err error, status int32) bool {
 	return ok && status == kubernetesError.Status().Code
 }
 
+// patchClusterSpec is equivalent of ClusterSpec but it uses default JSON marshalling method instead of custom
+// MarshalJSON defined for ClusterSpec type. This means it should be only used internally as it may contain
+// sensitive cloud provider authentication data.
+type patchClusterSpec apiv1.ClusterSpec
+
+// patchCluster is equivalent of Cluster but it uses patchClusterSpec instead of original ClusterSpec.
+// This means it should be only used internally as it may contain sensitive cloud provider authentication data.
+type patchCluster struct {
+	apiv1.Cluster `json:",inline"`
+	Spec          patchClusterSpec `json:"spec"`
+}
+
 func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		oldInternalCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingClusterJSON, err := json.Marshal(existingCluster)
+		// Converting to API type as it is the type exposed externally.
+		externalCluster := convertInternalClusterToExternal(oldInternalCluster)
+
+		// Changing the type to patchCluster as during marshalling it doesn't remove the cloud provider authentication
+		// data that is required here for validation.
+		externalClusterSpec := (patchClusterSpec)(externalCluster.Spec)
+		clusterToPatch := patchCluster{
+			Cluster: *externalCluster,
+			Spec:    externalClusterSpec,
+		}
+
+		existingClusterJSON, err := json.Marshal(clusterToPatch)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode existing cluster: %v", err)
 		}
@@ -317,13 +341,26 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 			return nil, errors.NewBadRequest("cannot patch cluster: %v", err)
 		}
 
-		var patchedCluster *kubermaticv1.Cluster
+		var patchedCluster *apiv1.Cluster
 		err = json.Unmarshal(patchedClusterJSON, &patchedCluster)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
 		}
 
-		incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfo, clusterProvider, patchedCluster)
+		// Only specific fields from old internal cluster will be updated by a patch.
+		// It prevents user from changing other fields like resource ID or version that should not be modified.
+		newInternalCluster := oldInternalCluster.DeepCopy()
+		newInternalCluster.Spec.HumanReadableName = patchedCluster.Name
+		newInternalCluster.Labels = patchedCluster.Labels
+		newInternalCluster.Spec.Cloud = patchedCluster.Spec.Cloud
+		newInternalCluster.Spec.MachineNetworks = patchedCluster.Spec.MachineNetworks
+		newInternalCluster.Spec.Version = patchedCluster.Spec.Version
+		newInternalCluster.Spec.OIDC = patchedCluster.Spec.OIDC
+		newInternalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = patchedCluster.Spec.UsePodSecurityPolicyAdmissionPlugin
+		newInternalCluster.Spec.AuditLogging = patchedCluster.Spec.AuditLogging
+		newInternalCluster.Spec.Openshift = patchedCluster.Spec.Openshift
+
+		incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfo, clusterProvider, newInternalCluster)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check existing nodes' version skew: %v", err)
 		}
@@ -335,7 +372,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 		if err != nil {
 			return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
-		_, dc, err := provider.DatacenterFromSeedMap(seeds, patchedCluster.Spec.Cloud.DatacenterName)
+		_, dc, err := provider.DatacenterFromSeedMap(seeds, newInternalCluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
@@ -344,11 +381,11 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 		if !ok {
 			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 		}
-		if err := validation.ValidateUpdateCluster(ctx, patchedCluster, existingCluster, dc, assertedClusterProvider); err != nil {
+		if err := validation.ValidateUpdateCluster(ctx, newInternalCluster, oldInternalCluster, dc, assertedClusterProvider); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
-		updatedCluster, err := clusterProvider.Update(userInfo, patchedCluster)
+		updatedCluster, err := clusterProvider.Update(project, userInfo, newInternalCluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -438,7 +475,7 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			}
 		}
 
-		if _, err = clusterProvider.Update(userInfo, existingCluster); err != nil {
+		if _, err = clusterProvider.Update(project, userInfo, existingCluster); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -611,6 +648,7 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 				return nil
 			}(),
 		},
+		Labels: internalCluster.Labels,
 		Spec: apiv1.ClusterSpec{
 			Cloud:                               internalCluster.Spec.Cloud,
 			Version:                             internalCluster.Spec.Version,
@@ -626,10 +664,8 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 	}
 
 	isOpenShift, ok := internalCluster.Annotations["kubermatic.io/openshift"]
-	if ok {
-		if isOpenShift == "true" {
-			cluster.Type = apiv1.OpenShiftClusterType
-		}
+	if ok && isOpenShift == "true" {
+		cluster.Type = apiv1.OpenShiftClusterType
 	}
 
 	return cluster
@@ -1020,7 +1056,7 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider) endpoint
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -1032,7 +1068,7 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider) endpoint
 
 		cluster.Address.AdminToken = kuberneteshelper.GenerateToken()
 
-		_, err = clusterProvider.Update(userInfo, cluster)
+		_, err = clusterProvider.Update(project, userInfo, cluster)
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 }

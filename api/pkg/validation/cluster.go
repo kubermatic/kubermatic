@@ -152,6 +152,9 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 		return errors.New("changing the status is not allowed")
 	}
 
+	// Editing labels is allowed even though it is part of metadata.
+	oldCluster.Labels = newCluster.Labels
+
 	if !equality.Semantic.DeepEqual(newCluster.ObjectMeta, oldCluster.ObjectMeta) {
 		return errors.New("changing the metadata is not allowed")
 	}
