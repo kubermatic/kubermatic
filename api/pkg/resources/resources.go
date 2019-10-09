@@ -884,9 +884,9 @@ func GetHTTPProxyEnvVarsFromSeed(seed *kubermaticv1.Seed, inClusterAPIServerURL 
 			},
 		}
 	}
-	noProxyValue := inClusterAPIServerURL + ","
+	noProxyValue := inClusterAPIServerURL
 	if seed.Spec.ProxySettings.NoProxy != nil {
-		noProxyValue += *seed.Spec.ProxySettings.NoProxy
+		noProxyValue += "," + *seed.Spec.ProxySettings.NoProxy
 	}
 	envVars = append(envVars,
 		corev1.EnvVar{Name: "NO_PROXY", Value: noProxyValue},
