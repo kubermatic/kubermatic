@@ -557,10 +557,11 @@ const (
 // swagger:model Cluster
 type Cluster struct {
 	ObjectMeta `json:",inline"`
-	Type       string        `json:"type"`
-	Credential string        `json:"credential,omitempty"`
-	Spec       ClusterSpec   `json:"spec"`
-	Status     ClusterStatus `json:"status"`
+	Labels     map[string]string `json:"labels,omitempty"`
+	Type       string            `json:"type"`
+	Credential string            `json:"credential,omitempty"`
+	Spec       ClusterSpec       `json:"spec"`
+	Status     ClusterStatus     `json:"status"`
 }
 
 // ClusterSpec defines the cluster specification
