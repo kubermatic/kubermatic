@@ -119,6 +119,8 @@ type DatacenterSpec struct {
 	Hetzner      *HetznerDatacenterSpec       `json:"hetzner,omitempty"`
 	VSphere      *VSphereDatacenterSpec       `json:"vsphere,omitempty"`
 	Kubevirt     *KubevirtDatacenterSpec      `json:"kubevirt,omitempty"`
+
+	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
 }
 
 // DatacenterList represents a list of datacenters

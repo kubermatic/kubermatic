@@ -67,12 +67,18 @@ func init() {
 }
 
 const (
-	// UserID holds the test user ID
+	// UserID holds a test user ID
 	UserID = "1233"
-	// UserName holds the test user name
+	// UserID2 holds a test user ID
+	UserID2 = "1523"
+	// UserName holds a test user name
 	UserName = "user1"
-	// UserEmail holds the test user email
+	// UserName2 holds a test user name
+	UserName2 = "user2"
+	// UserEmail holds a test user email
 	UserEmail = "john@acme.com"
+	// UserEmail2 holds a test user email
+	UserEmail2 = "bob@example.com"
 	// ClusterID holds the test cluster ID
 	ClusterID = "AbcClusterID"
 	// DefaultClusterID holds the test default cluster ID
@@ -336,6 +342,14 @@ func buildSeeds() provider.SeedsGetter {
 								Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 									Region: "ams2",
 								},
+							},
+						},
+						"restricted-fake-dc": {
+							Country:  "NL",
+							Location: "Amsterdam",
+							Spec: kubermaticv1.DatacenterSpec{
+								Fake:                &kubermaticv1.DatacenterSpecFake{},
+								RequiredEmailDomain: "example.com",
 							},
 						},
 						"fake-dc": {

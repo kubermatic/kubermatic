@@ -1041,6 +1041,7 @@ func (r Routing) datacentersHandler() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(dc.ListEndpoint(r.seedsGetter)),
 		dc.DecodeDatacentersReq,
 		encodeJSON,
@@ -1062,6 +1063,7 @@ func (r Routing) datacenterHandler() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(dc.GetEndpoint(r.seedsGetter)),
 		dc.DecodeLegacyDcReq,
 		encodeJSON,

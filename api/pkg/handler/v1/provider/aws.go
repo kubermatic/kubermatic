@@ -151,7 +151,7 @@ func AWSSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seed
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		dc, err := dc.GetDatacenter(seedsGetter, cluster.Spec.Cloud.DatacenterName)
+		dc, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}

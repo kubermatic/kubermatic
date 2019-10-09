@@ -296,7 +296,7 @@ func GCPZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provid
 			}
 		}
 
-		return listGCPZones(ctx, sa, req.DC, seedsGetter)
+		return listGCPZones(ctx, userInfo, sa, req.DC, seedsGetter)
 	}
 }
 
@@ -327,12 +327,12 @@ func GCPZoneWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvi
 		if err != nil {
 			return nil, err
 		}
-		return listGCPZones(ctx, sa, cluster.Spec.Cloud.DatacenterName, seedsGetter)
+		return listGCPZones(ctx, userInfo, sa, cluster.Spec.Cloud.DatacenterName, seedsGetter)
 	}
 }
 
-func listGCPZones(ctx context.Context, sa, datacenterName string, seedsGetter provider.SeedsGetter) (apiv1.GCPZoneList, error) {
-	datacenter, err := dc.GetDatacenter(seedsGetter, datacenterName)
+func listGCPZones(ctx context.Context, userInfo *provider.UserInfo, sa, datacenterName string, seedsGetter provider.SeedsGetter) (apiv1.GCPZoneList, error) {
+	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, datacenterName)
 	if err != nil {
 		return nil, errors.NewBadRequest("%v", err)
 	}
