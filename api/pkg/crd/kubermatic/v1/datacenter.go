@@ -59,7 +59,7 @@ type SeedSpec struct {
 	// Optional: Overwrite the DNS domain for this seed
 	SeedDNSOverwrite *string `json:"seed_dns_overwrite,omitempty"`
 	// Optional: Configure a http proxy for this seed
-	ProxySettings *ProxySettings `json:"proxy_settings,omitempty`
+	ProxySettings *ProxySettings `json:"proxy_settings,omitempty"`
 }
 
 type Datacenter struct {
