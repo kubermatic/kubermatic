@@ -3,6 +3,7 @@ package provider
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -77,7 +78,7 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 // once we support datacenters as CRDs.
 // TODO: Find a way to lift the current requirement of unique nodeDatacenter names. It is needed
 // only because we put the nodeDatacenter name on the cluster but not the seed
-func DatacenterFromSeedMap(seedsGetter SeedsGetter, datacenterName string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
+func DatacenterFromSeedMap(userInfo *UserInfo, seedsGetter SeedsGetter, datacenterName string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
@@ -89,6 +90,13 @@ func DatacenterFromSeedMap(seedsGetter SeedsGetter, datacenterName string) (*kub
 		datacenter, exists := seed.Spec.Datacenters[datacenterName]
 		if !exists {
 			continue
+		}
+
+		if datacenter.Spec.RequiredEmailDomain != "" {
+			userDomain := strings.Split(userInfo.Email, "@")
+			if len(userDomain) != 2 || !strings.EqualFold(userDomain[1], datacenter.Spec.RequiredEmailDomain) {
+				continue
+			}
 		}
 
 		foundSeeds = append(foundSeeds, seed)

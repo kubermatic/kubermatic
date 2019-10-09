@@ -75,9 +75,9 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			return nil, errors.New(int(http.StatusBadRequest), "cluster.ID is read-only")
 		}
 
-		_, dc, err := provider.DatacenterFromSeedMap(seedsGetter, req.Body.Cluster.Spec.Cloud.DatacenterName)
+		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.Body.Cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
-			return nil, fmt.Errorf("error getting dc: %v", err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		credentialName := req.Body.Cluster.Credential
@@ -207,7 +207,7 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 		return err
 	}
 
-	_, dc, err := provider.DatacenterFromSeedMap(seedsGetter, cluster.Spec.Cloud.DatacenterName)
+	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
 		return fmt.Errorf("error getting dc: %v", err)
 	}
@@ -239,6 +239,7 @@ func getNodeDeploymentDisplayName(nd *apiv1.NodeDeployment) string {
 
 func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		fmt.Println("asa")
 		req := request.(common.GetClusterReq)
 
 		cluster, err := GetCluster(ctx, req, projectProvider)
@@ -363,7 +364,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 			return nil, errors.NewBadRequest("Cluster contains nodes running the following incompatible kubelet versions: %v. Upgrade your nodes before you upgrade the cluster.", incompatibleKubelets)
 		}
 
-		_, dc, err := provider.DatacenterFromSeedMap(seedsGetter, newInternalCluster.Spec.Cloud.DatacenterName)
+		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, newInternalCluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
