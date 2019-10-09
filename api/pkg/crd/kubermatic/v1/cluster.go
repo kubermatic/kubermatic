@@ -188,9 +188,8 @@ type ClusterStatus struct {
 // the existence.
 func (cs *ClusterStatus) HasConditionValue(conditionType ClusterConditionType, conditionStatus corev1.ConditionStatus) bool {
 	for _, clusterCondition := range cs.Conditions {
-		if clusterCondition.Type == conditionType &&
-			clusterCondition.Status == conditionStatus {
-			return true
+		if clusterCondition.Type == conditionType {
+			return clusterCondition.Status == conditionStatus
 		}
 	}
 
