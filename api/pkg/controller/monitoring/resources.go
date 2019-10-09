@@ -31,7 +31,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		client,
 		cluster,
 		&datacenter,
-		seed.Name,
+		seed.DeepCopy(),
 		r.overwriteRegistry,
 		r.nodePortRange,
 		r.nodeAccessNetwork,

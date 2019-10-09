@@ -41,7 +41,7 @@ type openshiftData struct {
 	supportsFailureDomainZoneAntiAffinity bool
 	userClusterClient                     func() (ctrlruntimeclient.Client, error)
 	externalURL                           string
-	seedName                              string
+	seed                                  *kubermaticv1.Seed
 }
 
 func (od *openshiftData) DC() *kubermaticv1.Datacenter {
@@ -337,10 +337,6 @@ func (od *openshiftData) ExternalURL() string {
 	return od.externalURL
 }
 
-func (od *openshiftData) SeedName() string {
-	return od.seedName
-}
-
 func (od *openshiftData) GetKubernetesCloudProviderName() string {
 	return kubernetesresources.GetKubernetesCloudProviderName(od.Cluster())
 }
@@ -371,4 +367,8 @@ func (od *openshiftData) CloudCredentialSecretTemplate() ([]byte, error) {
 		return nil, fmt.Errorf("failed to marshal secret: %v", err)
 	}
 	return serializedSecret, nil
+}
+
+func (od *openshiftData) Seed() *kubermaticv1.Seed {
+	return od.seed
 }

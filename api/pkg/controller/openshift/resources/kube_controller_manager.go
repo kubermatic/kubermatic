@@ -178,6 +178,7 @@ type kubeControllerManagerData interface {
 	ImageRegistry(defaultRegistry string) string
 	GetPodTemplateLabels(appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error)
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+	Seed() *kubermaticv1.Seed
 }
 
 func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerData) reconciling.NamedDeploymentCreatorGetter {
