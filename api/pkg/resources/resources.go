@@ -858,7 +858,7 @@ func GlobalSecretKeySelectorValueGetterFactory(ctx context.Context, client ctrlr
 	}
 }
 
-func GetHTTPPRoxyEnvVarsFromSeed(seed *kubermaticv1.Seed, inClusterAPIServerURL string) []corev1.EnvVar {
+func GetHTTPProxyEnvVarsFromSeed(seed *kubermaticv1.Seed, inClusterAPIServerURL string) []corev1.EnvVar {
 	if seed.Spec.ProxySettings == nil {
 		return nil
 	}

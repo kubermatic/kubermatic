@@ -210,7 +210,7 @@ func TestSeedGetterFactorySetsDefaults(t *testing.T) {
 	}
 }
 
-func TestSeedSGetterFactorySetsDefaults(t *testing.T) {
+func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 	t.Parallel()
 	initSeed := &kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{

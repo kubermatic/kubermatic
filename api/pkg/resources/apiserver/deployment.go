@@ -536,7 +536,7 @@ func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 	}
-	return append(vars, resources.GetHTTPPRoxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...), nil
+	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...), nil
 }
 
 func getDexCASecretVolume() corev1.Volume {
