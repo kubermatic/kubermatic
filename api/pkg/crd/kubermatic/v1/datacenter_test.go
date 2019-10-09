@@ -23,11 +23,11 @@ func TestSetSeedDefaults(t *testing.T) {
 						NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
 					},
 					Datacenters: map[string]Datacenter{
-						"a": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+						"a": {Node: NodeSettings{ProxySettings: ProxySettings{
 							HTTPProxy: utilpointer.StringPtr("dc-proxy"),
 							NoProxy:   utilpointer.StringPtr("dc-no-proxy"),
 						}}},
-						"b": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+						"b": {Node: NodeSettings{ProxySettings: ProxySettings{
 							HTTPProxy: utilpointer.StringPtr("dc-proxy"),
 							NoProxy:   utilpointer.StringPtr("dc-no-proxy"),
 						}}},
@@ -35,11 +35,11 @@ func TestSetSeedDefaults(t *testing.T) {
 				},
 			},
 			expected: map[string]Datacenter{
-				"a": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+				"a": {Node: NodeSettings{ProxySettings: ProxySettings{
 					HTTPProxy: utilpointer.StringPtr("dc-proxy"),
 					NoProxy:   utilpointer.StringPtr("dc-no-proxy"),
 				}}},
-				"b": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+				"b": {Node: NodeSettings{ProxySettings: ProxySettings{
 					HTTPProxy: utilpointer.StringPtr("dc-proxy"),
 					NoProxy:   utilpointer.StringPtr("dc-no-proxy"),
 				}}},
@@ -54,17 +54,17 @@ func TestSetSeedDefaults(t *testing.T) {
 						NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
 					},
 					Datacenters: map[string]Datacenter{
-						"a": Datacenter{},
-						"b": Datacenter{},
+						"a": {},
+						"b": {},
 					},
 				},
 			},
 			expected: map[string]Datacenter{
-				"a": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+				"a": {Node: NodeSettings{ProxySettings: ProxySettings{
 					HTTPProxy: utilpointer.StringPtr("seed-proxy"),
 					NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
 				}}},
-				"b": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+				"b": {Node: NodeSettings{ProxySettings: ProxySettings{
 					HTTPProxy: utilpointer.StringPtr("seed-proxy"),
 					NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
 				}}},
@@ -79,21 +79,21 @@ func TestSetSeedDefaults(t *testing.T) {
 						NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
 					},
 					Datacenters: map[string]Datacenter{
-						"a": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+						"a": {Node: NodeSettings{ProxySettings: ProxySettings{
 							NoProxy: utilpointer.StringPtr("dc-no-proxy"),
 						}}},
-						"b": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+						"b": {Node: NodeSettings{ProxySettings: ProxySettings{
 							NoProxy: utilpointer.StringPtr("dc-no-proxy"),
 						}}},
 					},
 				},
 			},
 			expected: map[string]Datacenter{
-				"a": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+				"a": {Node: NodeSettings{ProxySettings: ProxySettings{
 					HTTPProxy: utilpointer.StringPtr("seed-proxy"),
 					NoProxy:   utilpointer.StringPtr("dc-no-proxy"),
 				}}},
-				"b": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+				"b": {Node: NodeSettings{ProxySettings: ProxySettings{
 					HTTPProxy: utilpointer.StringPtr("seed-proxy"),
 					NoProxy:   utilpointer.StringPtr("dc-no-proxy"),
 				}}},
@@ -108,21 +108,21 @@ func TestSetSeedDefaults(t *testing.T) {
 						NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
 					},
 					Datacenters: map[string]Datacenter{
-						"a": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+						"a": {Node: NodeSettings{ProxySettings: ProxySettings{
 							HTTPProxy: utilpointer.StringPtr("dc-proxy"),
 						}}},
-						"b": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+						"b": {Node: NodeSettings{ProxySettings: ProxySettings{
 							HTTPProxy: utilpointer.StringPtr("dc-proxy"),
 						}}},
 					},
 				},
 			},
 			expected: map[string]Datacenter{
-				"a": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+				"a": {Node: NodeSettings{ProxySettings: ProxySettings{
 					HTTPProxy: utilpointer.StringPtr("dc-proxy"),
 					NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
 				}}},
-				"b": Datacenter{Node: NodeSettings{ProxySettings: ProxySettings{
+				"b": {Node: NodeSettings{ProxySettings: ProxySettings{
 					HTTPProxy: utilpointer.StringPtr("dc-proxy"),
 					NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
 				}}},
