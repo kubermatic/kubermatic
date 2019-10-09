@@ -5,33 +5,16 @@ import (
 	"testing"
 )
 
-func TestDocumenter(t *testing.T) {
-	tests := []struct {
-		name      string
-		path      string
-		content   string
-		shallFail bool
-		expected  string
-	}{
-		{
-			name:     "empty file",
-			path:     "/my/empty.yaml",
-			expected: "",
-		}, {
-			name: "non-matching single block",
-			path: "/my/single/non-matching-block.yaml",
-			content: `apiVersion: v1
+const (
+	blockA = `apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
     k8s-app: kubernetes-dashboard
   name: kubernetes-dashboard
-  namespace: kube-system`,
-			expected: "",
-		}, {
-			name: "matching single block",
-			path: "/my/single/matching-block.yaml",
-			content: `apiVersion: apps/v1
+  namespace: kube-system`
+
+	blockB = `apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -86,15 +69,137 @@ spec:
       serviceAccountName: kubernetes-dashboard
       tolerations:
       - key: node-role.kubernetes.io/master
-        effect: NoSchedule`,
+        effect: NoSchedule`
+
+	blockC = `apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+  namespace: kube-system
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+    app.kubernetes.io/name: node-exporter
+    app.kubernetes.io/version: v0.18.0
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      name: node-exporter
+      labels:
+        app.kubernetes.io/name: node-exporter
+    spec:
+      hostNetwork: true
+      hostPID: true
+      serviceAccountName: node-exporter
+      containers:
+      - name: node-exporter
+        image: '{{ Registry "quay.io" }}/prometheus/node-exporter:v0.18.0'
+        args:
+        - '--path.procfs=/host/proc'
+        - '--path.sysfs=/host/sys'
+        - '--path.rootfs=/host/root'
+        - '--web.listen-address=127.0.0.1:9100'
+        resources:
+          requests:
+            cpu: 10m
+            memory: 24Mi
+          limits:
+            cpu: 25m
+            memory: 48Mi
+        volumeMounts:
+        - name: proc
+          readOnly:  true
+          mountPath: /host/proc
+        - name: sys
+          readOnly: true
+          mountPath: /host/sys
+        - name: root
+          readOnly: true
+          mountPath: /host/root
+          mountPropagation: HostToContainer
+
+      - name: kube-rbac-proxy
+        image: 'quay.io/coreos/kube-rbac-proxy:v0.4.1'
+        args:
+        - '--logtostderr'
+        - '--secure-listen-address=$(IP):9100'
+        - '--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256'
+        - '--upstream=http://127.0.0.1:9100/'
+        env:
+        - name: IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        ports:
+        - containerPort: 9100
+          hostPort: 9100
+          name: https
+        resources:
+          requests:
+            cpu: 10m
+            memory: 24Mi
+          limits:
+            cpu: 20m
+            memory: 48Mi
+
+      tolerations:
+      - effect: NoExecute
+        operator: Exists
+      - effect: NoSchedule
+        operator: Exists
+      volumes:
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: root
+        hostPath:
+          path: /
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534`
+
+	blockZ = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bad-deployment
+  namespace: kube-system
+spec:
+  illegal v - a - l - u - e
+  has-to: crash`
+)
+
+func TestDocumenter(t *testing.T) {
+	tests := []struct {
+		name      string
+		path      string
+		content   string
+		shallFail bool
+		expected  string
+	}{
+		{
+			name:     "empty file",
+			path:     "/my/empty.yaml",
+			expected: "",
+		}, {
+			name:     "non-matching single block",
+			path:     "/my/single/non-matching-block.yaml",
+			content:  blockA,
+			expected: "",
+		}, {
+			name:    "matching single block",
+			path:    "/my/single/matching-block.yaml",
+			content: blockB,
 			expected: `
 
 #### Addon: single / File: matching-block.yaml
 
 ##### Container: kubernetes-dashboard
 
-` + "```yaml" +
-				`
+` + "```yaml" + `
 limits:
   cpu: "75m"
   memory: "50Mi"
@@ -102,6 +207,41 @@ requests:
   cpu: "75m"
   memory: "50Mi"
 ` + "```",
+		}, {
+			name:    "matching multiple blocks",
+			path:    "/my/multiple/matching-blocks.yaml",
+			content: blockA + "\n---\n" + blockC,
+			expected: `
+
+#### Addon: multiple / File: matching-blocks.yaml
+
+##### Container: node-exporter
+
+` + "```yaml" + `
+limits:
+  cpu: "25m"
+  memory: "48Mi"
+requests:
+  cpu: "10m"
+  memory: "24Mi"
+` + "```" + `
+
+##### Container: kube-rbac-proxy
+
+` + "```yaml" + `
+limits:
+  cpu: "20m"
+  memory: "48Mi"
+requests:
+  cpu: "10m"
+  memory: "24Mi"
+` + "```",
+		}, {
+			name:      "failing blocks",
+			path:      "/my/multiple/failing-blocks.yaml",
+			content:   blockA + "\n---\n" + blockZ,
+			shallFail: true,
+			expected:  "error converting YAML to JSON",
 		},
 	}
 
@@ -110,8 +250,8 @@ requests:
 		docr := newDocumenter(test.path, []byte(test.content))
 		if test.shallFail {
 			err := docr.scanAll()
-			if err == nil || err.Error() != test.expected {
-				t.Errorf("did not fail like expected: %v <> %s", err, test.expected)
+			if err == nil || !strings.Contains(err.Error(), test.expected) {
+				t.Errorf("did not fail like expected: %v", err)
 			}
 			continue
 		}
@@ -125,7 +265,7 @@ requests:
 			t.Errorf("writing failed: %v", err)
 		}
 		if builder.String() != test.expected {
-			t.Errorf("documenter result doesn't match expected: %s <> %s", builder.String(), test.expected)
+			t.Errorf("documenter result doesn't match expected: %q <> %q", builder.String(), test.expected)
 		}
 	}
 }

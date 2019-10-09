@@ -66,7 +66,7 @@ func TestBuffer(t *testing.T) {
 			t.Errorf("writing failed: %v", err)
 		}
 		if builder.String() != test.expected {
-			t.Errorf("buffer content doesn't match expected: %s <> %s", builder.String(), test.expected)
+			t.Errorf("buffer content doesn't match expected: %q <> %q", builder.String(), test.expected)
 		}
 	}
 }
