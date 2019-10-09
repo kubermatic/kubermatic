@@ -211,7 +211,7 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	if data.Cluster().Spec.Cloud.Kubevirt != nil {
 		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", Value: credentials.Kubevirt.KubeConfig})
 	}
-	vars = append(vars, resources.GetHTTPPRoxyEnvVarsFromSeed(data.Seed())...)
+	vars = append(vars, resources.GetHTTPPRoxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
 	return vars, nil
 }
 
