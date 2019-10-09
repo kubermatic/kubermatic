@@ -3,7 +3,6 @@ package usercluster
 import (
 	"context"
 	"fmt"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/usersshkeys"
 
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/clusterautoscaler"
@@ -18,6 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/user-auth"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/usersshkeys"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
