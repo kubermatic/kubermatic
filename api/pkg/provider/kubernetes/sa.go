@@ -65,7 +65,6 @@ func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *ku
 		},
 	}
 	sa.Labels = map[string]string{ServiceAccountLabelGroup: group}
-	sa.Spec.Projects = []kubermaticv1.ProjectGroup{}
 
 	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
