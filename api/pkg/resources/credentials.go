@@ -1,8 +1,13 @@
 package resources
 
 import (
+	"context"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Credentials struct {
@@ -60,6 +65,26 @@ type KubevirtCredentials struct {
 type CredentialsData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+}
+
+func NewCredentialsData(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) CredentialsData {
+	return &credentialsData{
+		cluster:                          cluster,
+		globalSecretKeySelectorValueFunc: provider.SecretKeySelectorValueFuncFactory(ctx, client),
+	}
+}
+
+type credentialsData struct {
+	cluster                          *kubermaticv1.Cluster
+	globalSecretKeySelectorValueFunc provider.SecretKeySelectorValueFunc
+}
+
+func (cd *credentialsData) Cluster() *kubermaticv1.Cluster {
+	return cd.cluster
+}
+
+func (cd *credentialsData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+	return cd.globalSecretKeySelectorValueFunc(configVar, key)
 }
 
 func GetCredentials(data CredentialsData) (Credentials, error) {
