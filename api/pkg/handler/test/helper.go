@@ -399,8 +399,16 @@ users:
 
 // APIUserToKubermaticUser simply converts apiv1.User to kubermaticv1.User type
 func APIUserToKubermaticUser(user apiv1.User) *kubermaticv1.User {
+	var deletionTimestamp *metav1.Time
+	if user.DeletionTimestamp != nil {
+		deletionTimestamp = &metav1.Time{Time: user.DeletionTimestamp.Time}
+	}
 	return &kubermaticv1.User{
-		ObjectMeta: metav1.ObjectMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              user.Name,
+			CreationTimestamp: metav1.Time{Time: user.CreationTimestamp.Time},
+			DeletionTimestamp: deletionTimestamp,
+		},
 		Spec: kubermaticv1.UserSpec{
 			Name:  user.Name,
 			Email: user.Email,
