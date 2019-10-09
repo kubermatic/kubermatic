@@ -72,9 +72,22 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 	return len(nodeList.Items) != 0, nil
 }
 
-// ConcurrencyLimitReached checks all the clusters inside the seed cluster and checks for
-// ClusterConditionControllerFinishedUpdatingSuccessfully. If the count of clusters which doesn't have that condition
-// is more than the limit, then it will return true, which means the concurrency limit has reached.
+// ClusterAvailableForReconciling returns true if the given cluster can be reconciled. This is true if
+// the cluster does not yet have the SeedResourcesUpToDate condition or if the concurrency limit of the
+// controller is not yet reached. This ensures that not too many cluster updates are running at the same
+// time, but also makes sure that un-UpToDate clusters will continue to be reconciled.
+func ClusterAvailableForReconciling(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, concurrencyLimit int) (bool, error) {
+	if !cluster.Status.HasConditionValue(kubermaticv1.SeedResourcesUpToDate, corev1.ConditionTrue) {
+		return true, nil
+	}
+
+	limitReached, err := ConcurrencyLimitReached(ctx, client, concurrencyLimit)
+	return !limitReached, err
+}
+
+// ConcurrencyLimitReached checks all the clusters inside the seed cluster and checks for the
+// SeedResourcesUpToDate condition. Returns true if the number of clusters without this condition
+// is equal or larger than the given limit.
 func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Client, limit int) (bool, error) {
 	clusters := &kubermaticv1.ClusterList{}
 	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, clusters); err != nil {
@@ -83,23 +96,20 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 
 	finishedUpdatingClustersCount := 0
 	for _, cluster := range clusters.Items {
-		if hasConditionValue(cluster, kubermaticv1.ClusterConditionControllerFinishedUpdatingSuccessfully, corev1.ConditionTrue) {
+		if cluster.Status.HasConditionValue(kubermaticv1.SeedResourcesUpToDate, corev1.ConditionTrue) {
 			finishedUpdatingClustersCount++
 		}
 	}
 
 	clustersUpdatingInProgressCount := len(clusters.Items) - finishedUpdatingClustersCount
-	if clustersUpdatingInProgressCount < limit {
-		return false, nil
-	}
 
-	return true, nil
+	return clustersUpdatingInProgressCount >= limit, nil
 }
 
-// SetClusterUpdatedSuccessfullyCondition updates the cluster status condition based on the deployment and statefulSet
+// SetSeedResourcesUpToDateCondition updates the cluster status condition based on the deployment and statefulSet
 // replicas. if both statefulSet and deployment spec replica are equal to all replicas in the status object, then the
 // ClusterControllerFinishedUpdatingSuccessfully will be added to the cluster status.
-func SetClusterUpdatedSuccessfullyCondition(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, successfullyReconciled bool) error {
+func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, successfullyReconciled bool) error {
 	if successfullyReconciled {
 		var (
 			statefulSets = &appv1.StatefulSetList{}
@@ -146,17 +156,6 @@ func SetClusterUpdatedSuccessfullyCondition(ctx context.Context, cluster *kuberm
 		}
 	}
 
-	cluster.Status.ClearCondition(kubermaticv1.ClusterConditionControllerFinishedUpdatingSuccessfully)
+	cluster.Status.ClearCondition(kubermaticv1.SeedResourcesUpToDate)
 	return client.Update(ctx, cluster)
-}
-
-func hasConditionValue(cluster kubermaticv1.Cluster, conditionType kubermaticv1.ClusterConditionType, conditionStatus corev1.ConditionStatus) bool {
-	for _, clusterCondition := range cluster.Status.Conditions {
-		if clusterCondition.Type == conditionType &&
-			clusterCondition.Status == conditionStatus {
-			return true
-		}
-	}
-
-	return false
 }

@@ -2,7 +2,6 @@ package util
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/runtime"
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -10,8 +9,8 @@ import (
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	utilpointer "k8s.io/utils/pointer"
-
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -48,7 +47,7 @@ func TestConcurrencyLimitReached(t *testing.T) {
 	}
 }
 
-func TestSetClusterUpdatedSuccessfullyCondition(t *testing.T) {
+func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 	var (
 		cluster = &kubermaticv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
@@ -63,7 +62,7 @@ func TestSetClusterUpdatedSuccessfullyCondition(t *testing.T) {
 			Status: kubermaticv1.ClusterStatus{
 				Conditions: []kubermaticv1.ClusterCondition{
 					{
-						Type:   kubermaticv1.ClusterConditionControllerFinishedUpdatingSuccessfully,
+						Type:   kubermaticv1.SeedResourcesUpToDate,
 						Status: corev1.ConditionTrue,
 					},
 				},
@@ -122,7 +121,7 @@ func TestSetClusterUpdatedSuccessfullyCondition(t *testing.T) {
 			},
 		}
 	)
-	setClusterUpdatedSuccessfullyConditionTestCases := []struct {
+	testcases := []struct {
 		name                      string
 		resources                 []runtime.Object
 		successfullyReconciled    bool
@@ -166,17 +165,19 @@ func TestSetClusterUpdatedSuccessfullyCondition(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range setClusterUpdatedSuccessfullyConditionTestCases {
+	for _, testCase := range testcases {
 		t.Run(testCase.name, func(t *testing.T) {
-			err := SetClusterUpdatedSuccessfullyCondition(context.Background(), testCase.resources[0].(*kubermaticv1.Cluster), fake.NewFakeClient(testCase.resources...), testCase.successfullyReconciled)
+			cluster, ok := testCase.resources[0].(*kubermaticv1.Cluster)
+			if !ok {
+				t.Fatalf("expected first resource in testcase %v to be a cluster, but was %T", testCase.name, testCase.resources[0])
+			}
+
+			err := SetSeedResourcesUpToDateCondition(context.Background(), cluster, fake.NewFakeClient(testCase.resources...), testCase.successfullyReconciled)
 			if err != nil {
 				t.Fatalf("failed to run test: %v with error: %v", testCase.name, err)
 			}
 
-			clusterConditionValue := hasConditionValue(*testCase.resources[0].(*kubermaticv1.Cluster),
-				kubermaticv1.ClusterConditionControllerFinishedUpdatingSuccessfully,
-				corev1.ConditionTrue)
-
+			clusterConditionValue := cluster.Status.HasConditionValue(kubermaticv1.SeedResourcesUpToDate, corev1.ConditionTrue)
 			if clusterConditionValue != testCase.expectedHasConditionValue {
 				t.Fatalf("failed to run test: %v, expects: %v, got: %v", testCase.name, testCase.expectedHasConditionValue, clusterConditionValue)
 			}

@@ -204,7 +204,8 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, nil
 	}
 
-	if limitReached, err := controllerutil.ConcurrencyLimitReached(ctx, r, r.concurrentClusterUpdates); limitReached || err != nil {
+	// only reconcile this cluster if there are not yet too many updates running
+	if available, err := controllerutil.ClusterAvailableForReconciling(ctx, r, cluster, r.concurrentClusterUpdates); !available || err != nil {
 		log.Infow("Concurrency limit reached, checking again in 10 seconds", "concurrency-limit", r.concurrentClusterUpdates)
 		return reconcile.Result{
 			RequeueAfter: 10 * time.Second,
@@ -224,7 +225,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		result = &reconcile.Result{}
 	}
 
-	if err := controllerutil.SetClusterUpdatedSuccessfullyCondition(ctx, cluster, r, successfullyReconciled); err != nil {
+	if err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r, successfullyReconciled); err != nil {
 		log.Errorw("failed to update clusters status conditions", zap.Error(err))
 		reconcileErr = fmt.Errorf("failed to set cluster status: %v after reconciliation was done with err=%v", err, reconcileErr)
 	}
