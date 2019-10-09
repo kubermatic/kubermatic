@@ -58,6 +58,43 @@ func AdminKubeconfigCreator(data adminKubeconfigCreatorData, modifier ...func(*c
 	}
 }
 
+// ViewerKubeconfigCreator returns a function to create/update the secret with the viewer kubeconfig
+func ViewerKubeconfigCreator(data *TemplateData, modifier ...func(*clientcmdapi.Config)) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return ViewerKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+			if se.Data == nil {
+				se.Data = map[string][]byte{}
+			}
+
+			ca, err := data.GetRootCA()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
+			}
+
+			config := getBaseKubeconfig(ca.Cert, data.Cluster().Address.URL, data.Cluster().Name)
+
+			config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
+				KubeconfigDefaultContextKey: {
+					Token: data.GetViewerToken(),
+				},
+			}
+
+			for _, m := range modifier {
+				m(config)
+			}
+
+			b, err := clientcmd.Write(*config)
+			if err != nil {
+				return nil, err
+			}
+
+			se.Data[KubeconfigSecretKey] = b
+
+			return se, nil
+		}
+	}
+}
+
 type internalKubeconfigCreatorData interface {
 	GetRootCA() (*triple.KeyPair, error)
 	Cluster() *kubermaticv1.Cluster

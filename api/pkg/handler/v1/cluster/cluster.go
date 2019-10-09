@@ -1019,8 +1019,8 @@ func DecodeDetachSSHKeysReq(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-// AdminTokenReq defines HTTP request data for revokeClusterAdminToken endpoints.
-// swagger:parameters revokeClusterAdminToken
+// AdminTokenReq defines HTTP request data for revokeClusterAdminToken and revokeClusterViewerToken endpoints.
+// swagger:parameters revokeClusterAdminToken revokeClusterViewerToken
 type AdminTokenReq struct {
 	common.DCReq
 	// in: path
@@ -1063,6 +1063,24 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider) endpoint
 		cluster.Address.AdminToken = kuberneteshelper.GenerateToken()
 
 		_, err = clusterProvider.Update(project, userInfo, cluster)
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+}
+
+func RevokeViewerTokenEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AdminTokenReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		err = clusterProvider.RevokeViewerKubeconfig(cluster)
+
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 }

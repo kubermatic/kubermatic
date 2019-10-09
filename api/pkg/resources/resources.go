@@ -104,6 +104,8 @@ const (
 
 	//AdminKubeconfigSecretName is the name for the secret containing the private ca key
 	AdminKubeconfigSecretName = "admin-kubeconfig"
+	//ViewerKubeconfigSecretName is the name for the secret containing the viewer kubeconfig
+	ViewerKubeconfigSecretName = "viewer-kubeconfig"
 	//SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
 	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
 	//KubeletDnatControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubeletdnatcontroller
@@ -146,6 +148,8 @@ const (
 	ServiceAccountKeySecretName = "service-account-key"
 	//TokensSecretName is the name for the secret containing the user tokens
 	TokensSecretName = "tokens"
+	//ViewerTokenSecretName is the name for the secret containing the viewer token
+	ViewerTokenSecretName = "viewer-token"
 	// OpenVPNCASecretName is the name of the secret that contains the OpenVPN CA
 	OpenVPNCASecretName = "openvpn-ca"
 	//OpenVPNServerCertificatesSecretName is the name for the secret containing the openvpn server certificates
@@ -350,6 +354,8 @@ const (
 	KubeconfigSecretKey = "kubeconfig"
 	// TokensSecretKey tokens.csv
 	TokensSecretKey = "tokens.csv"
+	// ViewersTokenSecretKey viewersToken
+	ViewerTokenSecretKey = "viewerToken"
 	// OpenVPNCACertKey cert.pem, must match CACertSecretKey, otherwise getClusterCAFromLister doesnt work as it has
 	// the key hardcoded
 	OpenVPNCACertKey = CACertSecretKey

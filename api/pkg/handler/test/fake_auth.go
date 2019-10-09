@@ -16,9 +16,10 @@ const (
 	// TODO: consider injecting it into IssuerVerifier
 	AuthorizationCode = "fakeCode"
 	// IDToken represents a shared fake token
-	IDToken      = "fakeTokenId"
-	refreshToken = "fakeRefreshToken"
-	tokenURL     = "url:tokenURL"
+	IDToken       = "fakeTokenId"
+	IDViewerToken = "fakeViewerTokenId"
+	refreshToken  = "fakeRefreshToken"
+	tokenURL      = "url:tokenURL"
 
 	// IssuerURL holds test issuer URL
 	IssuerURL = "url://dex"

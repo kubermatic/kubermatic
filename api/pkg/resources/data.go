@@ -44,6 +44,7 @@ type TemplateData struct {
 	kubermaticImage                                  string
 	dnatControllerImage                              string
 	supportsFailureDomainZoneAntiAffinity            bool
+	viewerToken                                      string
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -68,7 +69,8 @@ func NewTemplateData(
 	nodeLocalDNSCacheEnabled bool,
 	kubermaticImage string,
 	dnatControllerImage string,
-	supportsFailureDomainZoneAntiAffinity bool) *TemplateData {
+	supportsFailureDomainZoneAntiAffinity bool,
+	viewerToken string) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
 		client:                                 client,
@@ -91,7 +93,18 @@ func NewTemplateData(
 		kubermaticImage:                                  kubermaticImage,
 		dnatControllerImage:                              dnatControllerImage,
 		supportsFailureDomainZoneAntiAffinity:            supportsFailureDomainZoneAntiAffinity,
+		viewerToken:                                      viewerToken,
 	}
+}
+
+// GetViewerToken returns the viewer token
+func (d *TemplateData) GetViewerToken() string {
+	return d.viewerToken
+}
+
+// GetClient returns the client
+func (d *TemplateData) GetClient() ctrlruntimeclient.Client {
+	return d.client
 }
 
 // GetDexCA returns the chain of public certificates of the Dex
