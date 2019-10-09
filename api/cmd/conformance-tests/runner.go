@@ -1156,7 +1156,7 @@ func junitReporterWrapper(
 	testCaseName string,
 	report *reporters.JUnitTestSuite,
 	executor func() error,
-	extraOutputFn ...func() string,
+	extraErrOutputFn ...func() string,
 ) error {
 	junitTestCase := reporters.JUnitTestCase{
 		Name:      testCaseName,
@@ -1169,10 +1169,11 @@ func junitReporterWrapper(
 	if err != nil {
 		junitTestCase.FailureMessage = &reporters.JUnitFailureMessage{Message: err.Error()}
 		report.Failures++
-	}
-
-	for _, extraOut := range extraOutputFn {
-		junitTestCase.SystemOut = junitTestCase.SystemOut + "\n" + extraOut()
+		for _, extraOut := range extraErrOutputFn {
+			extraOutString := extraOut()
+			err = fmt.Errorf("%v\n%s", err, extraOutString)
+			junitTestCase.FailureMessage.Message += "\n" + extraOutString
+		}
 	}
 
 	report.TestCases = append(report.TestCases, junitTestCase)
