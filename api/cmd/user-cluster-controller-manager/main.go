@@ -59,6 +59,7 @@ type controllerRunOptions struct {
 	openvpnServerPort             int
 	openvpnCACertFilePath         string
 	openvpnCAKeyFilePath          string
+	userSSHKeysDirPath            string
 	overwriteRegistry             string
 	cloudProviderName             string
 	cloudCredentialSecretTemplate string
@@ -81,6 +82,7 @@ func main() {
 	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
 	flag.StringVar(&runOp.openvpnCACertFilePath, "openvpn-ca-cert-file", "", "Path to the OpenVPN CA cert file")
 	flag.StringVar(&runOp.openvpnCAKeyFilePath, "openvpn-ca-key-file", "", "Path to the OpenVPN CA key file")
+	flag.StringVar(&runOp.userSSHKeysDirPath, "user-ssh-keys-dir-path", "", "Path to the user ssh keys dir")
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.BoolVar(&runOp.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&runOp.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
@@ -226,6 +228,7 @@ func main() {
 		runOp.openvpnServerPort,
 		healthHandler.AddReadinessCheck,
 		openVPNCACert,
+		runOp.userSSHKeysDirPath,
 		cloudCredentialSecretTemplate,
 		log); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))

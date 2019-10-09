@@ -114,6 +114,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
 				fmt.Sprintf("-openvpn-ca-cert-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCACertKey),
 				fmt.Sprintf("-openvpn-ca-key-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCAKeyKey),
+				fmt.Sprintf("-user-ssh-keys-dir-path=%s", userSSHKeysMountDir),
 			}, getNetworkArgs(data)...)
 
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())

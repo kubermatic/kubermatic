@@ -3,6 +3,7 @@ package usercluster
 import (
 	"context"
 	"fmt"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/usersshkeys"
 
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/clusterautoscaler"
@@ -372,6 +373,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context) error {
 func (r *reconciler) reconcileSecrets(ctx context.Context) error {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		openvpn.ClientCertificate(r.openVPNCA),
+		usersshkeys.CreateUserSSHKeysSecrets(r.userSSHKeyDirPath),
 	}
 	if r.openshift {
 		if r.cloudCredentialSecretTemplate != nil {

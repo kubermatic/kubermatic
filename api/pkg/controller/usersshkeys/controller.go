@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
@@ -37,7 +36,6 @@ type Reconciler struct {
 	log            *zap.SugaredLogger
 	workerName     string
 	recorder       record.EventRecorder
-	seedGetter     provider.SeedGetter
 }
 
 func Add(
@@ -114,10 +112,6 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 	}
 
 	keys := buildUserSSHKeysForCluster(cluster.Name, userSSHKeys)
-	if len(keys) == 0 {
-		r.log.Debugw("No user ssh keys are assigned to cluster", "cluster", cluster.Name)
-		return nil
-	}
 
 	return r.reconcileClustersUserSSHKeys(ctx, keys, cluster)
 }
@@ -144,8 +138,8 @@ func (r *Reconciler) reconcileClustersUserSSHKeys(ctx context.Context, sshKeys [
 func buildUserSSHKeysForCluster(clusterName string, list *kubermaticv1.UserSSHKeyList) []kubermaticv1.UserSSHKey {
 	var clusterKeys []kubermaticv1.UserSSHKey
 	for _, item := range list.Items {
-		for _, clusterId := range item.Spec.Clusters {
-			if clusterName == clusterId {
+		for _, clusterID := range item.Spec.Clusters {
+			if clusterName == clusterID {
 				clusterKeys = append(clusterKeys, item)
 			}
 		}
