@@ -96,7 +96,6 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 	user.Spec.Email = email
 	user.Spec.Name = name
 	user.Spec.ID = id
-	user.Spec.Projects = []kubermaticv1.ProjectGroup{}
 
 	return p.client.KubermaticV1().Users().Create(&user)
 }
