@@ -87,7 +87,8 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 
 	if kuberneteshelper.HasFinalizer(cluster, firewallSelfCleanupFinalizer) {
 		_, err = firewallService.Delete(projectID, selfRuleName).Do()
-		if err != nil {
+		// we ignore a Google API "not found" error
+		if err != nil && !isHTTPError(err, http.StatusNotFound) {
 			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", selfRuleName, err)
 		}
 
@@ -101,8 +102,9 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 
 	if kuberneteshelper.HasFinalizer(cluster, firewallICMPCleanupFinalizer) {
 		_, err = firewallService.Delete(projectID, icmpRuleName).Do()
-		if err != nil {
-			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", icmpRuleName, err)
+		// we ignore a Google API "not found" error
+		if err != nil && !isHTTPError(err, http.StatusNotFound) {
+			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", selfRuleName, err)
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -191,18 +193,16 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 			TargetTags: []string{tag},
 			SourceTags: []string{tag},
 		}).Do()
-		if err != nil {
-			// we ignore a Google API "already exists" error
-			if ge, ok := err.(*googleapi.Error); !ok || ge.Code != http.StatusConflict {
-				return err
-			}
+		// we ignore a Google API "already exists" error
+		if err != nil && !isHTTPError(err, http.StatusConflict) {
+			return fmt.Errorf("failed to create firewall rule %s: %v", selfRuleName, err)
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, firewallSelfCleanupFinalizer)
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to add %s finalizer: %v", firewallSelfCleanupFinalizer, err)
 		}
 	}
 
@@ -218,18 +218,16 @@ func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider
 			},
 			TargetTags: []string{tag},
 		}).Do()
-		if err != nil {
-			// we ignore a Google API "already exists" error
-			if ge, ok := err.(*googleapi.Error); !ok || ge.Code != http.StatusConflict {
-				return err
-			}
+		// we ignore a Google API "already exists" error
+		if err != nil && !isHTTPError(err, http.StatusConflict) {
+			return fmt.Errorf("failed to create firewall rule %s: %v", icmpRuleName, err)
 		}
 
 		newCluster, err := update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, firewallICMPCleanupFinalizer)
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to add %s finalizer: %v", firewallICMPCleanupFinalizer, err)
 		}
 		*cluster = *newCluster
 	}
@@ -257,4 +255,10 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	}
 
 	return serviceAccount, nil
+}
+
+// isHTTPError returns true if the given error is of a specific HTTP status code.
+func isHTTPError(err error, status int) bool {
+	gerr, ok := err.(*googleapi.Error)
+	return ok && gerr.Code == status
 }
