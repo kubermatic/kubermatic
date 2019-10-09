@@ -76,7 +76,7 @@ metadata:
   name: hcloud-csi
   namespace: kube-system
 data:
-  token: {{ .Cluster.Spec.Cloud.Hetzner.Token|b64enc }}
+  token: {{ .Credentials.Hetzner.Token|b64enc }}
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
