@@ -47,6 +47,7 @@ type machinecontrollerData interface {
 	ClusterIPByServiceName(string) (string, error)
 	DC() *kubermaticv1.Datacenter
 	NodeLocalDNSCacheEnabled() bool
+	Seed() *kubermaticv1.Seed
 }
 
 // DeploymentCreator returns the function to create and update the machine controller deployment
@@ -210,6 +211,7 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	if data.Cluster().Spec.Cloud.Kubevirt != nil {
 		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", Value: credentials.Kubevirt.KubeConfig})
 	}
+	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
 	return vars, nil
 }
 
@@ -224,11 +226,11 @@ func getFlags(clusterDNSIP string, nodeSettings kubermaticv1.NodeSettings) []str
 	if len(nodeSettings.InsecureRegistries) > 0 {
 		flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
 	}
-	if nodeSettings.HTTPProxy != "" {
-		flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy)
+	if nodeSettings.HTTPProxy != nil {
+		flags = append(flags, "-node-http-proxy", *nodeSettings.HTTPProxy)
 	}
-	if nodeSettings.NoProxy != "" {
-		flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy)
+	if nodeSettings.NoProxy != nil {
+		flags = append(flags, "-node-no-proxy", *nodeSettings.NoProxy)
 	}
 	if nodeSettings.PauseImage != "" {
 		flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)

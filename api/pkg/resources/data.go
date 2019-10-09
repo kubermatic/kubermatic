@@ -27,7 +27,7 @@ type TemplateData struct {
 	client                                           ctrlruntimeclient.Client
 	cluster                                          *kubermaticv1.Cluster
 	dc                                               *kubermaticv1.Datacenter
-	SeedDC                                           string
+	seed                                             *kubermaticv1.Seed
 	OverwriteRegistry                                string
 	nodePortRange                                    string
 	nodeAccessNetwork                                string
@@ -52,7 +52,7 @@ func NewTemplateData(
 	client ctrlruntimeclient.Client,
 	cluster *kubermaticv1.Cluster,
 	dc *kubermaticv1.Datacenter,
-	seedDatacenter string,
+	seed *kubermaticv1.Seed,
 	overwriteRegistry string,
 	nodePortRange string,
 	nodeAccessNetwork string,
@@ -74,7 +74,7 @@ func NewTemplateData(
 		client:                                 client,
 		cluster:                                cluster,
 		dc:                                     dc,
-		SeedDC:                                 seedDatacenter,
+		seed:                                   seed,
 		OverwriteRegistry:                      overwriteRegistry,
 		nodePortRange:                          nodePortRange,
 		nodeAccessNetwork:                      nodeAccessNetwork,
@@ -334,4 +334,8 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
 	}
 
 	return ""
+}
+
+func (d *TemplateData) Seed() *kubermaticv1.Seed {
+	return d.seed
 }

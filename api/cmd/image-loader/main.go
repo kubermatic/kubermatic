@@ -354,7 +354,7 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 		fakeDynamicClient,
 		fakeCluster,
 		&kubermaticv1.Datacenter{},
-		"",
+		&kubermaticv1.Seed{},
 		"",
 		"",
 		"192.0.2.0/24",

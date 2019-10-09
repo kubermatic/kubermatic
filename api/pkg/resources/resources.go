@@ -857,3 +857,40 @@ func GlobalSecretKeySelectorValueGetterFactory(ctx context.Context, client ctrlr
 		return "", nil
 	}
 }
+
+func GetHTTPProxyEnvVarsFromSeed(seed *kubermaticv1.Seed, inClusterAPIServerURL string) []corev1.EnvVar {
+	if seed.Spec.ProxySettings == nil {
+		return nil
+	}
+	var envVars []corev1.EnvVar
+
+	if seed.Spec.ProxySettings.HTTPProxy != nil {
+		envVars = []corev1.EnvVar{
+			{
+				Name:  "HTTP_PROXY",
+				Value: *seed.Spec.ProxySettings.HTTPProxy,
+			},
+			{
+				Name:  "HTTPS_PROXY",
+				Value: *seed.Spec.ProxySettings.HTTPProxy,
+			},
+			{
+				Name:  "http_proxy",
+				Value: *seed.Spec.ProxySettings.HTTPProxy,
+			},
+			{
+				Name:  "https_proxy",
+				Value: *seed.Spec.ProxySettings.HTTPProxy,
+			},
+		}
+	}
+	noProxyValue := inClusterAPIServerURL
+	if seed.Spec.ProxySettings.NoProxy != nil {
+		noProxyValue += "," + *seed.Spec.ProxySettings.NoProxy
+	}
+	envVars = append(envVars,
+		corev1.EnvVar{Name: "NO_PROXY", Value: noProxyValue},
+		corev1.EnvVar{Name: "no_proxy", Value: noProxyValue},
+	)
+	return envVars
+}
