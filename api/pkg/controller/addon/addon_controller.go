@@ -268,9 +268,15 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 		return nil, err
 	}
 
+	credentials, err := resources.GetCredentials(resources.NewCredentialsData(context.Background(), cluster, r.Client))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get credentials: %v", err)
+	}
+
 	data := &addonutils.TemplateData{
 		Variables:    make(map[string]interface{}),
 		Cluster:      cluster,
+		Credentials:  credentials,
 		Addon:        addon,
 		Kubeconfig:   string(kubeconfig),
 		DNSClusterIP: clusterIP,
