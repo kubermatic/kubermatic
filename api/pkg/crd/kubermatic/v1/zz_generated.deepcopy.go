@@ -556,6 +556,13 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 	out.Version = in.Version.DeepCopy()
 	in.ComponentsOverride.DeepCopyInto(&out.ComponentsOverride)
 	out.OIDC = in.OIDC
+	if in.Features != nil {
+		in, out := &in.Features, &out.Features
+		*out = make(map[string]bool, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.Openshift != nil {
 		in, out := &in.Openshift, &out.Openshift
 		*out = new(Openshift)

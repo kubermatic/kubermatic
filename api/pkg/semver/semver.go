@@ -2,6 +2,7 @@ package semver
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	semverlib "github.com/Masterminds/semver"
@@ -58,6 +59,11 @@ func (s *Semver) String() string {
 		return ""
 	}
 	return s.Version.String()
+}
+
+// MajorMinor returns a string like "Major.Minor"
+func (s *Semver) MajorMinor() string {
+	return fmt.Sprintf("%d.%d", s.Major(), s.Minor())
 }
 
 // UnmarshalJSON converts JSON to Semver struct

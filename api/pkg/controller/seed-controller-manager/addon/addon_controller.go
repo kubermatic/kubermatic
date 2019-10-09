@@ -287,13 +287,14 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 	}
 
 	data := &addonutils.TemplateData{
-		Variables:    make(map[string]interface{}),
-		Cluster:      cluster,
-		Credentials:  credentials,
-		Addon:        addon,
-		Kubeconfig:   string(kubeconfig),
-		DNSClusterIP: clusterIP,
-		ClusterCIDR:  cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
+		Variables:         make(map[string]interface{}),
+		Cluster:           cluster,
+		Credentials:       credentials,
+		MajorMinorVersion: cluster.Spec.Version.MajorMinor(),
+		Addon:             addon,
+		Kubeconfig:        string(kubeconfig),
+		DNSClusterIP:      clusterIP,
+		ClusterCIDR:       cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 	}
 
 	// Add addon variables if available.

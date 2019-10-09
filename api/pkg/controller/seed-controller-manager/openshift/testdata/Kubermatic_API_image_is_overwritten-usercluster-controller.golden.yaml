@@ -23,6 +23,7 @@ spec:
       creationTimestamp: null
       labels:
         app: usercluster-controller
+        cloud-config-configmap-revision: ""
         cluster: test-cluster
         internal-admin-kubeconfig-secret-revision: ""
     spec:
@@ -72,6 +73,9 @@ spec:
         - mountPath: /etc/kubernetes/kubeconfig
           name: internal-admin-kubeconfig
           readOnly: true
+        - mountPath: /etc/kubernetes/cloud
+          name: cloud-config
+          readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
       imagePullSecrets:
@@ -96,6 +100,10 @@ spec:
         secret:
           defaultMode: 420
           secretName: internal-admin-kubeconfig
+      - configMap:
+          defaultMode: 420
+          name: cloud-config
+        name: cloud-config
       - emptyDir: {}
         name: http-prober-bin
 status: {}

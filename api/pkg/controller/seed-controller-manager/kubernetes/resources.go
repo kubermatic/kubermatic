@@ -10,6 +10,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/clusterautoscaler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
@@ -227,6 +228,9 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		data.Cluster().Spec.Version.Minor() > 13 {
 		deployments = append(deployments, clusterautoscaler.DeploymentCreator(data))
 	}
+	if flag := data.Cluster().Spec.Features[resources.FeatureNameExternalCloudProvider]; flag {
+		deployments = append(deployments, cloudcontroller.DeploymentCreator(data))
+	}
 
 	return deployments
 }
@@ -271,6 +275,12 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 
 	if data.Cluster().Spec.Version.Minor() > 13 {
 		creators = append(creators, resources.GetInternalKubeconfigCreator(resources.ClusterAutoscalerKubeconfigSecretName, resources.ClusterAutoscalerCertUsername, nil, data))
+	}
+
+	if flag := data.Cluster().Spec.Features[resources.FeatureNameExternalCloudProvider]; flag {
+		creators = append(creators, resources.GetInternalKubeconfigCreator(
+			resources.CloudControllerManagerKubeconfigSecretName, resources.CloudControllerManagerCertUsername, nil, data,
+		))
 	}
 
 	if len(data.OIDCCAFile()) > 0 {

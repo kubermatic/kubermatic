@@ -300,7 +300,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	}
 
 	cloudProviderName := data.GetKubernetesCloudProviderName()
-	if cloudProviderName != "" {
+	if cloudProviderName != "" && cloudProviderName != "external" {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}

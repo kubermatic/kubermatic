@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,10 +23,11 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/ipam"
 	nodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/nodecsrapprover"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/nodelabel"
 	openshiftmasternodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-master-node-labeler"
 	openshiftseedsyncer "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-seed-syncer"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/rbac"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources"
+	rbacusercluster "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/rbac"
+	usercluster "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources"
 	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/pprof"
@@ -57,6 +59,7 @@ type controllerRunOptions struct {
 	overwriteRegistry             string
 	cloudProviderName             string
 	cloudCredentialSecretTemplate string
+	cloudConfig                   string
 	nodelabels                    string
 	seedKubeconfig                string
 	openshiftConsoleCallbackURI   string
@@ -84,6 +87,7 @@ func main() {
 	flag.StringVar(&runOp.nodelabels, "node-labels", "", "A json-encoded map of node labels. If set, those labels will be enforced on all nodes.")
 	flag.StringVar(&runOp.seedKubeconfig, "seed-kubeconfig", "", "Path to the seed kubeconfig. In-Cluster config will be used if unset")
 	flag.StringVar(&runOp.openshiftConsoleCallbackURI, "openshift-console-callback-uri", "", "The callback uri for the openshift console")
+	flag.StringVar(&runOp.cloudConfig, "cloud-config", "", "Path to cloud config")
 
 	flag.Parse()
 
@@ -107,6 +111,14 @@ func main() {
 	}
 	if runOp.openvpnServerPort == 0 {
 		log.Fatal("-openvpn-server-port must be set")
+	}
+
+	var cloudConfig []byte
+	if runOp.cloudConfig != "" {
+		cloudConfig, err = ioutil.ReadFile(runOp.cloudConfig)
+		if err != nil {
+			log.Fatalf("Failed to read cloud-config: %v", err)
+		}
 	}
 
 	var cloudCredentialSecretTemplate *corev1.Secret
@@ -197,6 +209,7 @@ func main() {
 		healthHandler.AddReadinessCheck,
 		cloudCredentialSecretTemplate,
 		runOp.openshiftConsoleCallbackURI,
+		cloudConfig,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
@@ -259,6 +272,10 @@ func main() {
 		log.Fatalw("Failed to register clusterrolelabeler controller", zap.Error(err))
 	}
 	log.Info("Registered clusterrolelabeler controller")
+
+	if err := nodelabel.Add(log, mgr); err != nil {
+		log.Fatalf("Failed to register the node label controller: %v", err)
+	}
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{

@@ -117,6 +117,8 @@ const (
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
 	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
+	//CloudControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the external cloud provider
+	CloudControllerManagerKubeconfigSecretName = "cloud-controller-manager-kubeconfig"
 	//MachineControllerWebhookServingCertSecretName is the name for the secret containing the serving cert for the
 	//machine-controller webhook
 	MachineControllerWebhookServingCertSecretName = "machinecontroller-webhook-serving-cert"
@@ -155,6 +157,8 @@ const (
 	OpenVPNServerCertificatesSecretName = "openvpn-server-certificates"
 	//OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates
 	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
+	//CloudConfigSecretName is the name for the secret containing the cloud-config inside the user cluster.
+	CloudConfigSecretName = "cloud-config"
 	//EtcdTLSCertificateSecretName is the name for the secret containing the etcd tls certificate used for transport security
 	EtcdTLSCertificateSecretName = "etcd-tls-certificate"
 	//ApiserverEtcdClientCertificateSecretName is the name for the secret containing the client certificate used by the apiserver for authenticating against etcd
@@ -200,6 +204,9 @@ const (
 	//PrometheusRoleBindingName is the name for the Prometheus rolebinding
 	PrometheusRoleBindingName = "prometheus"
 
+	//CloudControllerManagerRoleBindingName is the name for the cloud controller manager rolebinding.
+	CloudControllerManagerRoleBindingName = "cloud-controller-manager"
+
 	//MachineControllerCertUsername is the name of the user coming from kubeconfig cert
 	MachineControllerCertUsername = "machine-controller"
 	//KubeStateMetricsCertUsername is the name of the user coming from kubeconfig cert
@@ -208,6 +215,8 @@ const (
 	MetricsServerCertUsername = "metrics-server"
 	//ControllerManagerCertUsername is the name of the user coming from kubeconfig cert
 	ControllerManagerCertUsername = "system:kube-controller-manager"
+	//CloudControllerManagerCertUsername is the name of the user coming from kubeconfig cert
+	CloudControllerManagerCertUsername = "system:cloud-controller-manager"
 	//SchedulerCertUsername is the name of the user coming from kubeconfig cert
 	SchedulerCertUsername = "system:kube-scheduler"
 	//KubeletDnatControllerCertUsername is the name of the user coming from kubeconfig cert
@@ -330,6 +339,11 @@ const (
 	IPVSProxyMode = "ipvs"
 	// IPTablesProxyMode defines the iptables kube-proxy mode.
 	IPTablesProxyMode = "iptables"
+
+	// Feature flags, maybe move inside own const block.
+
+	// FeatureNameExternalCloudProvider enables external cloud provider support.
+	FeatureNameExternalCloudProvider = "externalCloudProvider"
 )
 
 const (
@@ -401,6 +415,9 @@ const (
 	ServingCertSecretKey = "serving.crt"
 	// ServingCertKeySecretKey is the secret key for the key of a generic serving cert
 	ServingCertKeySecretKey = "serving.key"
+
+	// CloudConfigSecretKey is the secret key for cloud-config
+	CloudConfigSecretKey = "config"
 )
 
 const (
