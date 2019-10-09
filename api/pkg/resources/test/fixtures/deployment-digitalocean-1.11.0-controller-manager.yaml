@@ -110,6 +110,19 @@ spec:
         - '{"command":"/hyperkube","args":["kube-controller-manager","--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--service-account-private-key-file","/etc/kubernetes/service-account-key/sa.key","--root-ca-file","/etc/kubernetes/pki/ca/ca.crt","--cluster-signing-cert-file","/etc/kubernetes/pki/ca/ca.crt","--cluster-signing-key-file","/etc/kubernetes/pki/ca/ca.key","--cluster-cidr","172.25.0.0/16","--allocate-node-cidrs=true","--controllers","*,bootstrapsigner,tokencleaner","--use-service-account-credentials=true","--feature-gates","RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true"]}'
         command:
         - /http-prober-bin/http-prober
+        env:
+        - name: HTTP_PROXY
+          value: http://my-corp
+        - name: HTTPS_PROXY
+          value: http://my-corp
+        - name: http_proxy
+          value: http://my-corp
+        - name: https_proxy
+          value: http://my-corp
+        - name: NO_PROXY
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.,
+        - name: no_proxy
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.,
         image: gcr.io/google_containers/hyperkube-amd64:v1.11.0
         livenessProbe:
           failureThreshold: 8
