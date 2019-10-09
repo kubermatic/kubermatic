@@ -1,32 +1,32 @@
 {{ if .Cluster.Spec.Cloud.AWS }}
-apiVersion: imageregistry.operator.openshift.io/v1
-kind: Config
-metadata:
-  name: cluster
-spec:
-  defaultRoute: false
-  logging: 2
-  managementState: Managed
-  proxy:
-    http: ""
-    https: ""
-    noProxy: ""
-  readOnly: false
-  replicas: 1
-  requests:
-    read:
-      maxInQueue: 0
-      maxRunning: 0
-      maxWaitInQueue: 0s
-    write:
-      maxInQueue: 0
-      maxRunning: 0
-      maxWaitInQueue: 0s
-  storage:
-    s3:
-      encrypt: true
-      keyID: ""
-      region: {{ index .Cluster.Annotations "kubermatic.io/aws-region" }}
+#apiVersion: imageregistry.operator.openshift.io/v1
+#kind: Config
+#metadata:
+#  name: cluster
+#spec:
+#  defaultRoute: false
+#  logging: 2
+#  managementState: Managed
+#  proxy:
+#    http: ""
+#    https: ""
+#    noProxy: ""
+#  readOnly: false
+#  replicas: 1
+#  requests:
+#    read:
+#      maxInQueue: 0
+#      maxRunning: 0
+#      maxWaitInQueue: 0s
+#    write:
+#      maxInQueue: 0
+#      maxRunning: 0
+#      maxWaitInQueue: 0s
+#  storage:
+#    s3:
+#      encrypt: true
+#      keyID: ""
+#      region: {{ index .Cluster.Annotations "kubermatic.io/aws-region" }}
 ---
 apiVersion: cloudcredential.openshift.io/v1
 kind: CredentialsRequest
