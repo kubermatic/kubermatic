@@ -94,7 +94,7 @@ spec:
 ##### Container: kubernetes-dashboard
 
 ` + "```yaml" +
-`
+				`
 limits:
   cpu: "75m"
   memory: "50Mi"
