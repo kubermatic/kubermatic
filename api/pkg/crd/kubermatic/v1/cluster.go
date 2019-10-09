@@ -98,7 +98,10 @@ type ClusterSpec struct {
 type ClusterConditionType string
 
 const (
-	ClusterConditionControllerFinishedUpdatingSuccessfully ClusterConditionType = "ClusterControllerFinishedUpdatingSuccessfully"
+	// SeedResourcesUpToDate indicates that alle controllers have finished setting up the
+	// resources for a user clusters that run inside the seed cluster, i.e. this ignores
+	// the status of cloud provider resources for a given cluster.
+	SeedResourcesUpToDate ClusterConditionType = "SeedResourcesUpToDate"
 
 	ClusterUpdateInProgressReason = "Current Cluster is updating its resources"
 )
@@ -180,8 +183,22 @@ type ClusterStatus struct {
 	CloudMigrationRevision int `json:"cloudMigrationRevision"`
 }
 
+// HasConditionValue returns true if the cluster status has the given condition with the given status.
+// It does not verify that the condition has been set by a certain Kubermatic version, it just checks
+// the existence.
+func (cs *ClusterStatus) HasConditionValue(conditionType ClusterConditionType, conditionStatus corev1.ConditionStatus) bool {
+	for _, clusterCondition := range cs.Conditions {
+		if clusterCondition.Type == conditionType &&
+			clusterCondition.Status == conditionStatus {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (cs *ClusterStatus) SetClusterFinishedUpdatingSuccessfullyCondition(message string) {
-	condition := newClusterCondition(ClusterConditionControllerFinishedUpdatingSuccessfully, corev1.ConditionTrue,
+	condition := newClusterCondition(SeedResourcesUpToDate, corev1.ConditionTrue,
 		ClusterUpdateInProgressReason, message, cs.KubermaticVersion)
 	cs.setClusterCondition(*condition)
 }

@@ -7,7 +7,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	v1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
@@ -117,7 +117,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	// Give the controller time to do the update
 	// TODO: This is not really safe. We should add a `Version` to the status
 	// that gets incremented when the controller does this. Combined with a
-	// `ClusterUpdatedSuccessfully` condition, that should do the trick
+	// `SeedResourcesUpToDate` condition, that should do the trick
 	if updated {
 		return &reconcile.Result{RequeueAfter: time.Minute}, nil
 	}
