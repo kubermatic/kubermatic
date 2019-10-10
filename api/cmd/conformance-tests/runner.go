@@ -343,7 +343,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		return report, fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
-	overallTimeout := 10 * time.Minute
+	var overallTimeout time.Duration = 10 * time.Minute
 	if cluster.Annotations["kubermatic.io/openshift"] == "true" {
 		// Openshift installs a lot more during node provisioning, hence this may take longer
 		overallTimeout = 15 * time.Minute
@@ -359,7 +359,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 	); err != nil {
 		return report, fmt.Errorf("failed to wait for machines to get a node: %v", err)
 	}
-	timeoutLeft := time.Duration(overallTimeout.Minutes() - time.Since(startTime).Minutes())
+	timeoutLeft := overallTimeout - time.Since(startTime)
 
 	startTime = time.Now()
 	if err := junitReporterWrapper(
@@ -373,7 +373,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 	); err != nil {
 		return report, fmt.Errorf("failed to wait for all nodes to be ready: %v", err)
 	}
-	timeoutLeft = time.Duration(timeoutLeft.Minutes() - time.Since(startTime).Minutes())
+	timeoutLeft = timeoutLeft - time.Since(startTime)
 
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for Pods inside usercluster to be ready",
