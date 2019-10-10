@@ -4,6 +4,15 @@ import (
 	"fmt"
 )
 
+func cliImage(openshiftVersion string) (string, error) {
+	switch openshiftVersion {
+	case openshiftVersion419:
+		return openshiftImage + "@sha256:59a731fdbb6c36b02cf4f4068e2ee9052e7f79b7e7a8b09d6db156fb0b84fd85", nil
+	default:
+		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
+	}
+}
+
 func cloudCredentialOperatorImage(openshiftVersion string) (string, error) {
 	switch openshiftVersion {
 	case openshiftVersion419:
@@ -49,6 +58,33 @@ func consoleImage(openshiftVersion string) (string, error) {
 	}
 }
 
+func containerNetworkingPluginsSupportedImage(openshiftVersion string) (string, error) {
+	switch openshiftVersion {
+	case openshiftVersion419:
+		return openshiftImage + "@sha256:473d03cbfa265d2a6def817f8ec5bd1c6536d3e39cf8c2f8223dd41ed2bd4541", nil
+	default:
+		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
+	}
+}
+
+func containerNetworkingPluginsUnsupportedImage(openshiftVersion string) (string, error) {
+	switch openshiftVersion {
+	case openshiftVersion419:
+		return openshiftImage + "@sha256:d7c6701150c7ad12fc6dd26f2c6b093da5e9e3b43dea89196a77da1c6ef6904b", nil
+	default:
+		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
+	}
+}
+
+func corednsImage(openshiftVersion string) (string, error) {
+	switch openshiftVersion {
+	case openshiftVersion419:
+		return openshiftImage + "@sha256:390cc1784aba986fad6315142d1d2524b2707a91eea3705d448367b51a112438", nil
+	default:
+		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
+	}
+}
+
 func deployerImage(openshiftVersion string) (string, error) {
 	switch openshiftVersion {
 	case openshiftVersion419:
@@ -67,6 +103,15 @@ func dockerBuilderImage(openshiftVersion string) (string, error) {
 	}
 }
 
+func dockerRegistryImage(openshiftVersion string) (string, error) {
+	switch openshiftVersion {
+	case openshiftVersion419:
+		return openshiftImage + "@sha256:5c0b76746c2f86177b5a0fdce866cf41dbb752af58b96daa8fa7b033fa2c4fc9", nil
+	default:
+		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
+	}
+}
+
 func hyperkubeImage(openshiftVersion string) (string, error) {
 	switch openshiftVersion {
 	case openshiftVersion419:
@@ -80,6 +125,51 @@ func hypershiftImage(openshiftVersion string) (string, error) {
 	switch openshiftVersion {
 	case openshiftVersion419:
 		return openshiftImage + "@sha256:86255c4efe6bbc141a0f41444f863bbd5cd832ffca21d2b737a4f9c225ed00ad", nil
+	default:
+		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
+	}
+}
+
+func multusCniImage(openshiftVersion string) (string, error) {
+	switch openshiftVersion {
+	case openshiftVersion419:
+		return openshiftImage + "@sha256:6766e62f61307e7c5a187f61d33b99ba90390b2f43351f591bb8da951915ce04", nil
+	default:
+		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
+	}
+}
+
+func nodeImage(openshiftVersion string) (string, error) {
+	switch openshiftVersion {
+	case openshiftVersion419:
+		return openshiftImage + "@sha256:ff8982824514711d392a6f5f49bb8d28772afbb887d59405ae0441303bdd9688", nil
+	default:
+		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
+	}
+}
+
+func ovnKubernetesImage(openshiftVersion string) (string, error) {
+	switch openshiftVersion {
+	case openshiftVersion419:
+		return openshiftImage + "@sha256:81088a1f27ff88e7e4a65dd3ca47513aad76bfbfc44af359887baa1d3fa60eba", nil
+	default:
+		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
+	}
+}
+
+func sriovCniImage(openshiftVersion string) (string, error) {
+	switch openshiftVersion {
+	case openshiftVersion419:
+		return openshiftImage + "@sha256:9d332f4b42997f917fa7660d85975c579ee4abe354473acbd45fc2a093b12e3b", nil
+	default:
+		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
+	}
+}
+
+func sriovNetworkDevicePluginImage(openshiftVersion string) (string, error) {
+	switch openshiftVersion {
+	case openshiftVersion419:
+		return openshiftImage + "@sha256:21c668c419662bf1a5c1f38d55f6ab20b4e22b807d076f927efb1ac954beed60", nil
 	default:
 		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
 	}
