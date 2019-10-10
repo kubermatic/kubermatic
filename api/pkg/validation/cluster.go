@@ -386,6 +386,10 @@ func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 
 func validateDigitaloceanCloudSpec(spec *kubermaticv1.DigitaloceanCloudSpec) error {
 	if spec.Token == "" {
+		if spec.CredentialsReference == nil {
+			return errors.New("no token or credentials reference specified")
+		}
+
 		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.DigitaloceanToken); err != nil {
 			return err
 		}
