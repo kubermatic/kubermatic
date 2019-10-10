@@ -398,14 +398,16 @@ type AzureCloudSpec struct {
 
 // VSphereCredentials credentials represents a credential for accessing vSphere
 type VSphereCredentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 // VSphereCloudSpec specifies access data to VSphere cloud.
 type VSphereCloudSpec struct {
-	Username  string `json:"username"`
-	Password  string `json:"password"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	Username  string `json:"username,omitempty"`
+	Password  string `json:"password,omitempty"`
 	VMNetName string `json:"vmNetName"`
 	Folder    string `json:"folder,omitempty"`
 
@@ -584,6 +586,9 @@ func (cluster *Cluster) GetSecretName() string {
 	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
 		return fmt.Sprintf("%s-kubevirt-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.VSphere != nil {
+		return fmt.Sprintf("%s-vsphere-%s", CredentialPrefix, cluster.Name)
 	}
 	return ""
 }

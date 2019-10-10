@@ -9716,6 +9716,9 @@
       "type": "object",
       "title": "VSphereCloudSpec specifies access data to VSphere cloud.",
       "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "folder": {
           "type": "string",
           "x-go-name": "Folder"
