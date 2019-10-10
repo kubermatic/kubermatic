@@ -302,7 +302,6 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 func createUserSSHKeyController(ctrlCtx *controllerContext) error {
 	return usersshkeys.Add(
 		ctrlCtx.mgr,
-		nil,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.workerCount)

@@ -7,7 +7,6 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -32,26 +31,23 @@ const (
 // Reconciler is a controller which is responsible for managing clusters
 type Reconciler struct {
 	ctrlruntimeclient.Client
-	sshKeyProvdier *kubernetesprovider.SSHKeyProvider
-	log            *zap.SugaredLogger
-	workerName     string
-	recorder       record.EventRecorder
+	log        *zap.SugaredLogger
+	workerName string
+	recorder   record.EventRecorder
 }
 
 func Add(
 	mgr manager.Manager,
-	sshProvdier *kubernetesprovider.SSHKeyProvider,
 	log *zap.SugaredLogger,
 	workerName string,
 	numWorkers int,
 ) error {
 
 	reconciler := &Reconciler{
-		sshKeyProvdier: sshProvdier,
-		log:            log,
-		workerName:     workerName,
-		Client:         mgr.GetClient(),
-		recorder:       mgr.GetRecorder(ControllerName),
+		log:        log,
+		workerName: workerName,
+		Client:     mgr.GetClient(),
+		recorder:   mgr.GetRecorder(ControllerName),
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -81,7 +77,8 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != "" &&
+		cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
 		log.Debugw(
 			"Skipping because the cluster has a different worker name set",
 			"cluster-worker-name", cluster.Labels[kubermaticv1.WorkerNameLabelKey],
