@@ -95,7 +95,10 @@ func DatacenterFromSeedMap(seedsGetter SeedsGetter, datacenterName string) (*kub
 		foundDatacenters = append(foundDatacenters, datacenter)
 	}
 
-	if n := len(foundDatacenters); n != 1 {
+	if len(foundDatacenters) == 0 {
+		return nil, nil, errors.New(http.StatusNotFound, fmt.Sprintf("datacenter %q not found", datacenterName))
+	}
+	if n := len(foundDatacenters); n > 1 {
 		return nil, nil, fmt.Errorf("expected to find exactly one datacenter with name %q, got %d", datacenterName, n)
 	}
 
