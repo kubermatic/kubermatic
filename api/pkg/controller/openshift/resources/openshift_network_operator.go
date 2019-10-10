@@ -34,7 +34,7 @@ const openshiftNetworkOperatorDeploymentName = "openshift-network-operator"
 func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return openshiftNetworkOperatorDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			image, err := openshiftNeworkOperatorImage(data.Cluster().Spec.Version.String())
+			image, err := clusterNetworkOperatorImage(data.Cluster().Spec.Version.String())
 			if err != nil {
 				return nil, err
 			}
@@ -106,15 +106,6 @@ func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.Name
 
 			return d, nil
 		}
-	}
-}
-
-func openshiftNeworkOperatorImage(openshiftVersion string) (string, error) {
-	switch openshiftVersion {
-	case openshiftVersion419:
-		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:541465dbff9e28b303c533f5d86cea7a4f5ef1c920736a655380bb5b64954182", nil
-	default:
-		return "", fmt.Errorf("no network operator image found for openshift %q", openshiftVersion)
 	}
 }
 
