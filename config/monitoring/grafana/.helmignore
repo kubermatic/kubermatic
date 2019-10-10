@@ -1,3 +1,6 @@
-dashboards/
+# ignore as many files as possible to keep Tiller's state small enough
+# for Kubernetes' 1MB size limit for ConfigMaps
+
+dashboards/*/*.json
 hack/
 README.md
