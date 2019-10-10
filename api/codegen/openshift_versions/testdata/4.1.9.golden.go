@@ -84,12 +84,3 @@ func hypershiftImage(openshiftVersion string) (string, error) {
 		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
 	}
 }
-
-func oauthProxyImage(openshiftVersion string) (string, error) {
-	switch openshiftVersion {
-	case openshiftVersion419:
-		return openshiftImage + "@sha256:1548a38e03059c6acd7eba3340b0ad3719f35a2295e5681c4051d561e52a70ed", nil
-	default:
-		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
-	}
-}

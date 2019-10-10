@@ -18,7 +18,6 @@ var (
 	components               = []string{
 		"console",
 		"hyperkube",
-		"oauth-proxy",
 		"docker-builder",
 		"deployer",
 		"cluster-image-registry-operator",
