@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	blockA = `apiVersion: v1
+	serviceAccountManifest = `apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
@@ -14,7 +14,7 @@ metadata:
   name: kubernetes-dashboard
   namespace: kube-system`
 
-	blockB = `apiVersion: apps/v1
+	deploymentManifest = `apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -71,7 +71,7 @@ spec:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule`
 
-	blockC = `apiVersion: extensions/v1beta1
+	daemonSetManifest = `apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   name: node-exporter
@@ -162,7 +162,7 @@ spec:
         runAsNonRoot: true
         runAsUser: 65534`
 
-	blockZ = `apiVersion: apps/v1
+	defunctDeploymentManifest = `apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: bad-deployment
@@ -187,12 +187,12 @@ func TestDocumenter(t *testing.T) {
 		}, {
 			name:     "non-matching single block",
 			path:     "/my/single/non-matching-block.yaml",
-			content:  blockA,
+			content:  serviceAccountManifest,
 			expected: "",
 		}, {
 			name:    "matching single block",
 			path:    "/my/single/matching-block.yaml",
-			content: blockB,
+			content: deploymentManifest,
 			expected: `
 
 #### Addon: single / File: matching-block.yaml
@@ -210,7 +210,7 @@ requests:
 		}, {
 			name:    "matching multiple blocks",
 			path:    "/my/multiple/matching-blocks.yaml",
-			content: blockA + "\n---\n" + blockC,
+			content: serviceAccountManifest + "\n---\n" + daemonSetManifest,
 			expected: `
 
 #### Addon: multiple / File: matching-blocks.yaml
@@ -239,7 +239,7 @@ requests:
 		}, {
 			name:      "failing blocks",
 			path:      "/my/multiple/failing-blocks.yaml",
-			content:   blockA + "\n---\n" + blockZ,
+			content:   serviceAccountManifest + "\n---\n" + defunctDeploymentManifest,
 			shallFail: true,
 			expected:  "error converting YAML to JSON",
 		},
@@ -248,16 +248,18 @@ requests:
 	for i, test := range tests {
 		t.Logf("#%d: %s", i, test.name)
 		docr := newDocumenter(test.path, []byte(test.content))
-		if test.shallFail {
-			err := docr.scanAll()
-			if err == nil || !strings.Contains(err.Error(), test.expected) {
-				t.Errorf("did not fail like expected: %v", err)
-			}
-			continue
-		}
 		err := docr.scanAll()
 		if err != nil {
-			t.Errorf("scanning failed: %v", err)
+			if !test.shallFail {
+				// Scanning shall not fail.
+				t.Fatalf("scanning did not expect error %v", err)
+			}
+			if !strings.Contains(err.Error(), test.expected) {
+				// Scanning shall fail different.
+				t.Fatalf("scanning failed %s but shall %s", err.Error(), test.expected)
+			}
+			// Failed as expected.
+			continue
 		}
 		var builder strings.Builder
 		err = docr.document().writeAll(&builder)
