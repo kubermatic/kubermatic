@@ -136,8 +136,8 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 	case cloud.VSphere != nil:
 		vsphereCloudConfig := &vsphere.CloudConfig{
 			Global: vsphere.GlobalOpts{
-				User:             cloud.VSphere.Username,
-				Password:         cloud.VSphere.Password,
+				User:             credentials.VSphere.Username,
+				Password:         credentials.VSphere.Password,
 				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
 				VCenterPort:      "443",
 				InsecureFlag:     dc.Spec.VSphere.AllowInsecure,

@@ -346,10 +346,14 @@ func validatePacketCloudSpec(spec *kubermaticv1.PacketCloudSpec) error {
 
 func validateVSphereCloudSpec(spec *kubermaticv1.VSphereCloudSpec) error {
 	if spec.Username == "" {
-		return errors.New("no username specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.VsphereUsername); err != nil {
+			return err
+		}
 	}
 	if spec.Password == "" {
-		return errors.New("no password specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.VspherePassword); err != nil {
+			return err
+		}
 	}
 
 	return nil

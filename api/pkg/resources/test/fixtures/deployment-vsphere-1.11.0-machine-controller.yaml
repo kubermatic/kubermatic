@@ -42,7 +42,9 @@ spec:
         - name: VSPHERE_ADDRESS
           value: https://vs-endpoint.io
         - name: VSPHERE_USERNAME
+          value: vs-username
         - name: VSPHERE_PASSWORD
+          value: vs-password
         - name: HTTP_PROXY
           value: http://my-corp
         - name: HTTPS_PROXY
