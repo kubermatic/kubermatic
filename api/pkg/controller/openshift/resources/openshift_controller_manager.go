@@ -145,7 +145,7 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			image, err := hyperkubeImage(data.Cluster().Spec.Version.String())
+			image, err := hypershiftImage(data.Cluster().Spec.Version.String())
 			if err != nil {
 				return nil, err
 			}

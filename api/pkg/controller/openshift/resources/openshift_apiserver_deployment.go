@@ -179,7 +179,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 			}
 
 			// TODO: Make it cope with our registry overwriting
-			image, err := hyperkubeImage(data.Cluster().Spec.Version.String())
+			image, err := hypershiftImage(data.Cluster().Spec.Version.String())
 			if err != nil {
 				return nil, err
 			}
