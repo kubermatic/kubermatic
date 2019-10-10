@@ -103,7 +103,7 @@ func ProxyEndpoint(
 				return nil, nil
 			}
 
-			proxyUrl := &url.URL{
+			proxyURL := &url.URL{
 				Scheme: "http",
 				Host:   fmt.Sprintf("127.0.0.1:%d", port),
 			}
@@ -112,8 +112,8 @@ func ProxyEndpoint(
 			w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; object-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; media-src 'self'; frame-ancestors 'self'; frame-src 'self'; connect-src 'self'; font-src 'self' data:")
 
 			// Proxy the request
-			proxy := httputil.NewSingleHostReverseProxy(proxyUrl)
-			proxy.Director = newDashboardProxyDirector(proxyUrl, token, r).director()
+			proxy := httputil.NewSingleHostReverseProxy(proxyURL)
+			proxy.Director = newDashboardProxyDirector(proxyURL, token, r).director()
 			proxy.ServeHTTP(w, r)
 
 			return nil, nil
@@ -128,27 +128,27 @@ func ProxyEndpoint(
 
 // It's responsible for adjusting proxy request, so we can properly access Kubernetes Dashboard
 type dashboardProxyDirector struct {
-	proxyUrl        *url.URL
+	proxyURL        *url.URL
 	token           string
 	originalRequest *http.Request
 }
 
-func (self *dashboardProxyDirector) director() func(*http.Request) {
+func (director *dashboardProxyDirector) director() func(*http.Request) {
 	return func(req *http.Request) {
-		req.URL.Scheme = self.proxyUrl.Scheme
-		req.URL.Host = self.proxyUrl.Host
-		req.URL.Path = self.getBasePath(self.originalRequest.URL.Path)
+		req.URL.Scheme = director.proxyURL.Scheme
+		req.URL.Host = director.proxyURL.Host
+		req.URL.Path = director.getBasePath(director.originalRequest.URL.Path)
 
-		req.Header.Set("Authorization", self.getAuthorizationHeader())
+		req.Header.Set("Authorization", director.getAuthorizationHeader())
 	}
 }
 
-func (self *dashboardProxyDirector) getAuthorizationHeader() string {
-	return fmt.Sprintf("Bearer %s", self.token)
+func (director *dashboardProxyDirector) getAuthorizationHeader() string {
+	return fmt.Sprintf("Bearer %s", director.token)
 }
 
 // We need to get proper path to Dashboard API and strip the URL from the Kubermatic API request part.
-func (self *dashboardProxyDirector) getBasePath(path string) string {
+func (director *dashboardProxyDirector) getBasePath(path string) string {
 	separator := "proxy"
 	if !strings.Contains(path, separator) {
 		return "/"
@@ -162,9 +162,9 @@ func (self *dashboardProxyDirector) getBasePath(path string) string {
 	return parts[1]
 }
 
-func newDashboardProxyDirector(proxyUrl *url.URL, token string, request *http.Request) *dashboardProxyDirector {
+func newDashboardProxyDirector(proxyURL *url.URL, token string, request *http.Request) *dashboardProxyDirector {
 	return &dashboardProxyDirector{
-		proxyUrl:        proxyUrl,
+		proxyURL:        proxyURL,
 		token:           token,
 		originalRequest: request,
 	}
