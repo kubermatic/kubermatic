@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/evanphx/json-patch"
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
@@ -105,11 +105,7 @@ func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		seeds, err := seedsGetter()
-		if err != nil {
-			return apiv1.Datacenter{}, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-		_, dc, err := provider.DatacenterFromSeedMap(seeds, cluster.Spec.Cloud.DatacenterName)
+		_, dc, err := provider.DatacenterFromSeedMap(seedsGetter, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
@@ -690,11 +686,7 @@ func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 			return nil, k8cerrors.NewBadRequest(err.Error())
 		}
 
-		seeds, err := seedsGetter()
-		if err != nil {
-			return apiv1.Datacenter{}, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-		_, dc, err := provider.DatacenterFromSeedMap(seeds, cluster.Spec.Cloud.DatacenterName)
+		_, dc, err := provider.DatacenterFromSeedMap(seedsGetter, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
