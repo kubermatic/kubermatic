@@ -224,11 +224,7 @@ func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter prov
 			}
 		}
 
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-		_, dc, err := provider.DatacenterFromSeedMap(seeds, req.DC)
+		_, dc, err := provider.DatacenterFromSeedMap(seedsGetter, req.DC)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -255,11 +251,7 @@ func AWSSubnetWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-		_, dc, err := provider.DatacenterFromSeedMap(seeds, cluster.Spec.Cloud.DatacenterName)
+		_, dc, err := provider.DatacenterFromSeedMap(seedsGetter, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -354,11 +346,7 @@ func AWSVPCEndpoint(credentialManager common.PresetsManager, seedsGetter provide
 			}
 		}
 
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, req.DC)
+		_, datacenter, err := provider.DatacenterFromSeedMap(seedsGetter, req.DC)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
