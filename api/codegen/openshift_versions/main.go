@@ -143,6 +143,9 @@ func getTagsFromOut(out string) (map[string]string, error) {
 			if n := len(fields); n != 2 {
 				return nil, fmt.Errorf("expected two string fields, but string %q contained %d", line, n)
 			}
+			if fields[0] != component {
+				continue
+			}
 			componentTagMap[component] = fields[1]
 		}
 	}

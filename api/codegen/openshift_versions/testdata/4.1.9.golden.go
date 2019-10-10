@@ -7,7 +7,7 @@ import (
 func cliImage(openshiftVersion string) (string, error) {
 	switch openshiftVersion {
 	case openshiftVersion419:
-		return openshiftImage + "@sha256:59a731fdbb6c36b02cf4f4068e2ee9052e7f79b7e7a8b09d6db156fb0b84fd85", nil
+		return openshiftImage + "@sha256:52ef9f5ade93e32f85e13bb9f588b2e126717256789023f8eb455b1147761562", nil
 	default:
 		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
 	}
@@ -52,7 +52,7 @@ func clusterNetworkOperatorImage(openshiftVersion string) (string, error) {
 func consoleImage(openshiftVersion string) (string, error) {
 	switch openshiftVersion {
 	case openshiftVersion419:
-		return openshiftImage + "@sha256:d85be45a7acd5a84ce2e0ccd0d4e48b4b92e7c304b66ce1a7f0f64ce001d9bd7", nil
+		return openshiftImage + "@sha256:9e554ac4505edd925eb73fec52e33d7418e2cfaf8058b59d8246ed478337748d", nil
 	default:
 		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
 	}
@@ -142,7 +142,7 @@ func multusCniImage(openshiftVersion string) (string, error) {
 func nodeImage(openshiftVersion string) (string, error) {
 	switch openshiftVersion {
 	case openshiftVersion419:
-		return openshiftImage + "@sha256:ff8982824514711d392a6f5f49bb8d28772afbb887d59405ae0441303bdd9688", nil
+		return openshiftImage + "@sha256:472dd90bc413a9bcb99be23f7296763468ebbeb985c10b26d1c44c4b04f57a77", nil
 	default:
 		return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
 	}
