@@ -1,6 +1,8 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-cd $(dirname $0)/../dashboards
+set -euo pipefail
+
+cd $(dirname $0)/../../config/monitoring/grafana/dashboards
 
 for dashboard in */*.json; do
   echo "$dashboard"
@@ -34,3 +36,5 @@ for dashboard in */*.json; do
 
   mv "$tmpfile" "$dashboard"
 done
+
+tar vcjf ../dashboards.tar.bz2 */*.json

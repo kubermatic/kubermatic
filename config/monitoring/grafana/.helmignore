@@ -2,4 +2,3 @@
 # for Kubernetes' 1MB size limit for ConfigMaps
 
 dashboards/*/*.json
-hack/

@@ -1,4 +1,4 @@
-default: prometheus grafana
+default: prometheus
 
 prometheus: build-rules check-rules
 
@@ -8,11 +8,3 @@ build-rules:
 
 check-rules:
 	promtool check rules prometheus/rules/*.yaml
-
-grafana: format-dashboards package-dashboards
-
-format-dashboards:
-	./grafana/hack/cleanup-dashboards.sh
-
-package-dashboards:
-	./grafana/hack/package-dashboards.sh
