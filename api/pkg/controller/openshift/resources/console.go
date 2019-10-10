@@ -73,7 +73,7 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabel(consoleDeploymentName, nil),
 			}
-			image, err := getConsoleImage(data.Cluster().Spec.Version.String())
+			image, err := consoleImage(data.Cluster().Spec.Version.String())
 			if err != nil {
 				return nil, err
 			}
@@ -284,15 +284,6 @@ func generateNewSecret() (string, error) {
 		return "", fmt.Errorf("failed to read from crypto/rand: %v", err)
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil
-}
-
-func getConsoleImage(openshiftVersion string) (string, error) {
-	switch openshiftVersion {
-	case openshiftVersion419:
-		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:9e554ac4505edd925eb73fec52e33d7418e2cfaf8058b59d8246ed478337748d", nil
-	default:
-		return "", fmt.Errorf("no openshhift console image available for version %q", openshiftVersion)
-	}
 }
 
 func BootStrapPasswordSecretGenerator(data openshiftData) reconciling.NamedSecretCreatorGetter {

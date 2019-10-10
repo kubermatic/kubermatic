@@ -16,5 +16,9 @@ versions:
   default: false
 # OpenShift 4.1.9
 - version: "v4.1.9"
+  default: false
+  type: "openshift"
+# OpenShift 4.1.18
+- version: "v4.1.18"
   default: true
   type: "openshift"
