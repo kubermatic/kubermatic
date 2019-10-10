@@ -80,12 +80,3 @@ func CloudCredentialOperator(data openshiftData) reconciling.NamedDeploymentCrea
 
 	}
 }
-
-func cloudCredentialOperatorImage(openshiftVersion string) (string, error) {
-	switch openshiftVersion {
-	case openshiftVersion419:
-		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:1071e05a8fd4e13630be9097f4e412356af481af4568bf241f208e337665864f", nil
-	default:
-		return "", fmt.Errorf("no cloud credential operator image available for openshift version %q", openshiftVersion)
-	}
-}

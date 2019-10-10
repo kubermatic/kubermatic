@@ -44,3 +44,5 @@ issues:
   - singleCaseSwitch # in most cases this is the beginning of a lookup table and should be kept an obvious table
   # govet
   - struct field Spec repeats json tag "spec"
+  # Generated code
+  - func clusterDnsOperatorImage should be clusterDNSOperatorImage

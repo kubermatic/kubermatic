@@ -308,7 +308,7 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 				{Name: openshiftImagePullSecretName},
 			}
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = utilpointer.BoolPtr(false)
-			image, err := getOauthImage(data.Cluster().Spec.Version.String())
+			image, err := hypershiftImage(data.Cluster().Spec.Version.String())
 			if err != nil {
 				return nil, err
 			}
@@ -434,14 +434,5 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 			dep.Spec.Template.Spec = *wrappedPodSpec
 			return dep, nil
 		}
-	}
-}
-
-func getOauthImage(openshiftVersion string) (string, error) {
-	switch openshiftVersion {
-	case openshiftVersion419:
-		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:86255c4efe6bbc141a0f41444f863bbd5cd832ffca21d2b737a4f9c225ed00ad", nil
-	default:
-		return "", fmt.Errorf("no image for openshift version %q", openshiftVersion)
 	}
 }
