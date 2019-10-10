@@ -343,16 +343,20 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		return report, fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
-	nodeJoinTimeout := 5 * time.Minute
+	var overallTimeout = 10 * time.Minute
+	var timeoutLeft time.Duration
 	if cluster.Annotations["kubermatic.io/openshift"] == "true" {
 		// Openshift installs a lot more during node provisioning, hence this may take longer
-		nodeJoinTimeout = 10 * time.Minute
+		overallTimeout = 15 * time.Minute
 	}
+
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for machines to get a node",
 		report,
 		func() error {
-			return waitForMachinesToJoinCluster(log, userClusterClient, nodeJoinTimeout)
+			var err error
+			timeoutLeft, err = waitForMachinesToJoinCluster(log, userClusterClient, overallTimeout)
+			return err
 		},
 	); err != nil {
 		return report, fmt.Errorf("failed to wait for machines to get a node: %v", err)
@@ -364,7 +368,9 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		func() error {
 			// Getting ready just implies starting the CNI deamonset, so that should
 			// be quick.
-			return waitForNodesToBeReady(log, userClusterClient, 2*time.Minute)
+			var err error
+			timeoutLeft, err = waitForNodesToBeReady(log, userClusterClient, timeoutLeft)
+			return err
 		},
 	); err != nil {
 		return report, fmt.Errorf("failed to wait for all nodes to be ready: %v", err)
@@ -374,7 +380,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		"[Kubermatic] Wait for Pods inside usercluster to be ready",
 		report,
 		func() error {
-			return r.waitUntilAllPodsAreReady(log, userClusterClient, 2*time.Minute)
+			return r.waitUntilAllPodsAreReady(log, userClusterClient, timeoutLeft)
 		},
 	); err != nil {
 		return nil, fmt.Errorf("failed to wait for all pods to get ready: %v", err)
@@ -1074,9 +1080,9 @@ func (r *testRunner) controlplaneWaitFailureStdout(clusterName string) string {
 // waitForMachinesToJoinCluster waits for machines to join the cluster. It does so by checking
 // if the machines have a nodeRef. It does not check if the nodeRef is valid.
 // All errors are swallowed, only the timeout error is returned.
-func waitForMachinesToJoinCluster(log *zap.SugaredLogger, client ctrlruntimeclient.Client, timeout time.Duration) error {
+func waitForMachinesToJoinCluster(log *zap.SugaredLogger, client ctrlruntimeclient.Client, timeout time.Duration) (time.Duration, error) {
 	startTime := time.Now()
-	return wait.Poll(10*time.Second, timeout, func() (bool, error) {
+	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
 		machineList := &clusterv1alpha1.MachineList{}
 		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, machineList); err != nil {
 			log.Warnw("Failed to list machines", zap.Error(err))
@@ -1091,6 +1097,7 @@ func waitForMachinesToJoinCluster(log *zap.SugaredLogger, client ctrlruntimeclie
 		log.Infow("All machines got a Node", "duration-in-seconds", time.Since(startTime).Seconds())
 		return true, nil
 	})
+	return timeout - time.Since(startTime), err
 }
 
 func machineHasNodeRef(machine clusterv1alpha1.Machine) bool {
@@ -1099,9 +1106,9 @@ func machineHasNodeRef(machine clusterv1alpha1.Machine) bool {
 
 // WaitForNodesToBeReady waits for all nodes to be ready. It does so by checking the Nodes "Ready"
 // condition. It swallows all errors except for the timeout.
-func waitForNodesToBeReady(log *zap.SugaredLogger, client ctrlruntimeclient.Client, timeout time.Duration) error {
+func waitForNodesToBeReady(log *zap.SugaredLogger, client ctrlruntimeclient.Client, timeout time.Duration) (time.Duration, error) {
 	startTime := time.Now()
-	return wait.Poll(10*time.Second, timeout, func() (bool, error) {
+	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
 		nodeList := &corev1.NodeList{}
 		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
 			log.Warnw("Failed to list nodes", zap.Error(err))
@@ -1116,6 +1123,7 @@ func waitForNodesToBeReady(log *zap.SugaredLogger, client ctrlruntimeclient.Clie
 		log.Infow("All nodes got ready", "duration-in-seconds", time.Since(startTime).Seconds())
 		return true, nil
 	})
+	return timeout - time.Since(startTime), err
 }
 
 func nodeIsReady(node corev1.Node) bool {
