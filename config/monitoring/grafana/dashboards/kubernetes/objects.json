@@ -2,10 +2,10 @@
   "annotations": {
     "list": []
   },
-  "editable": "<< editable | default false | toJson >>",
+  "editable": true,
   "gnetId": null,
   "graphTooltip": 1,
-  "hideControls": "<< hideControls | default false | toJson >>",
+  "hideControls": false,
   "links": [],
   "panels": [
     {
@@ -14,7 +14,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -67,7 +67,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -100,7 +100,7 @@
       }
     }
   ],
-  "refresh": "<< refresh | default `30s` | toJson >>",
+  "refresh": "30s",
   "schemaVersion": 18,
   "style": "dark",
   "tags": [],
@@ -217,7 +217,7 @@
     ]
   },
   "time": {
-    "from": "<< defaultRange | toJson >>",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {

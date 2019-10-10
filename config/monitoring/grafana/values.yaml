@@ -100,21 +100,3 @@ grafana:
   #- name: initech-secret-dashboards
   #  mountPath: /initech/secret-dashboards
   #  secretName: initech-dashboards-secret
-
-  # These values are injected into the dashboard JSON files,
-  # see the README.md for more information on how templating
-  # works.
-  dashboards:
-    editable: false
-    transparentPanels: true
-    refresh: 30s
-    defaultRange: now-1h
-
-    # Filter the namespaces shown in the Kubernetes/Volume
-    # dashboard, e.g. to not show customer clusters by setting
-    #
-    #     namespace!~'cluster-.*'
-    #
-    # Do not use double quotes inside this value.
-    volumeDashboardNamespaceFilter: ""
-    datasourceHide: 2
