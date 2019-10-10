@@ -117,12 +117,14 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", metav1.NamespaceSystem, err)
 	}
 
-	// Kubernetes Dashboard and related resources
-	creators = []reconciling.NamedServiceAccountCreatorGetter{
-		kubernetesdashboard.ServiceAccountCreator(),
-	}
-	if err := reconciling.ReconcileServiceAccounts(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", kubernetesdashboard.Namespace, err)
+	if !r.openshift {
+		// Kubernetes Dashboard and related resources
+		creators = []reconciling.NamedServiceAccountCreatorGetter{
+			kubernetesdashboard.ServiceAccountCreator(),
+		}
+		if err := reconciling.ReconcileServiceAccounts(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", kubernetesdashboard.Namespace, err)
+		}
 	}
 
 	return nil
@@ -159,12 +161,14 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", metav1.NamespaceDefault, err)
 	}
 
-	// Kubernetes Dashboard and related resources
-	creators = []reconciling.NamedRoleCreatorGetter{
-		kubernetesdashboard.RoleCreator(),
-	}
-	if err := reconciling.ReconcileRoles(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", kubernetesdashboard.Namespace, err)
+	if !r.openshift {
+		// Kubernetes Dashboard and related resources
+		creators = []reconciling.NamedRoleCreatorGetter{
+			kubernetesdashboard.RoleCreator(),
+		}
+		if err := reconciling.ReconcileRoles(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", kubernetesdashboard.Namespace, err)
+		}
 	}
 
 	if r.openshift {
@@ -220,12 +224,14 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile RoleBindings in default Namespace: %v", err)
 	}
 
-	// Kubernetes Dashboard and related resources
-	creators = []reconciling.NamedRoleBindingCreatorGetter{
-		kubernetesdashboard.RoleBindingCreator(),
-	}
-	if err := reconciling.ReconcileRoleBindings(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile RoleBindings in the namespace: %s: %v", kubernetesdashboard.Namespace, err)
+	if !r.openshift {
+		// Kubernetes Dashboard and related resources
+		creators = []reconciling.NamedRoleBindingCreatorGetter{
+			kubernetesdashboard.RoleBindingCreator(),
+		}
+		if err := reconciling.ReconcileRoleBindings(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile RoleBindings in the namespace: %s: %v", kubernetesdashboard.Namespace, err)
+		}
 	}
 
 	if r.openshift {
@@ -322,13 +328,15 @@ func (r *reconciler) reconcileServices(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile Services in kube-system namespace: %v", err)
 	}
 
-	// Kubernetes Dashboard and related resources
-	creators := []reconciling.NamedServiceCreatorGetter{
-		kubernetesdashboard.ServiceCreator(),
-	}
+	if !r.openshift {
+		// Kubernetes Dashboard and related resources
+		creators := []reconciling.NamedServiceCreatorGetter{
+			kubernetesdashboard.ServiceCreator(),
+		}
 
-	if err := reconciling.ReconcileServices(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Services in namespace %s: %v", kubernetesdashboard.Namespace, err)
+		if err := reconciling.ReconcileServices(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Services in namespace %s: %v", kubernetesdashboard.Namespace, err)
+		}
 	}
 
 	if r.openshift {
@@ -375,14 +383,16 @@ func (r *reconciler) reconcileSecrets(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile Secrets in kube-system Namespace: %v", err)
 	}
 
-	// Kubernetes Dashboard and related resources
-	creators = []reconciling.NamedSecretCreatorGetter{
-		kubernetesdashboard.KeyHolderSecretCreator(),
-		kubernetesdashboard.CsrfTokenSecretCreator(),
-	}
+	if !r.openshift {
+		// Kubernetes Dashboard and related resources
+		creators = []reconciling.NamedSecretCreatorGetter{
+			kubernetesdashboard.KeyHolderSecretCreator(),
+			kubernetesdashboard.CsrfTokenSecretCreator(),
+		}
 
-	if err := reconciling.ReconcileSecrets(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", kubernetesdashboard.Namespace, err)
+		if err := reconciling.ReconcileSecrets(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", kubernetesdashboard.Namespace, err)
+		}
 	}
 
 	if r.openshift {
@@ -396,18 +406,18 @@ func (r *reconciler) reconcileSecrets(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
-	creators := []reconciling.NamedNamespaceCreatorGetter{
-		kubernetesdashboard.NamespaceCreator,
-	}
-	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile namespaces: %v", err)
-	}
 
 	if !r.openshift {
+		creators := []reconciling.NamedNamespaceCreatorGetter{
+			kubernetesdashboard.NamespaceCreator,
+		}
+		if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile namespaces: %v", err)
+		}
 		return nil
 	}
 
-	creators = []reconciling.NamedNamespaceCreatorGetter{
+	creators := []reconciling.NamedNamespaceCreatorGetter{
 		openshift.APIServerNSCreatorGetter,
 		openshift.ControllerManagerNSCreatorGetter,
 		openshift.KubeSchedulerNSCreatorGetter,
@@ -457,13 +467,15 @@ type ctrlruntimeclientClient struct {
 }
 
 func (r *reconciler) reconcileDeployments(ctx context.Context) error {
-	// Kubernetes Dashboard and related resources
-	creators := []reconciling.NamedDeploymentCreatorGetter{
-		kubernetesdashboard.DeploymentCreator(),
-	}
+	if !r.openshift {
+		// Kubernetes Dashboard and related resources
+		creators := []reconciling.NamedDeploymentCreatorGetter{
+			kubernetesdashboard.DeploymentCreator(),
+		}
 
-	if err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", kubernetesdashboard.Namespace, err)
+		if err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", kubernetesdashboard.Namespace, err)
+		}
 	}
 
 	return nil
