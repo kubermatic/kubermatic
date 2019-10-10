@@ -7356,6 +7356,10 @@
           "type": "string",
           "x-go-name": "Provider"
         },
+        "requiredEmailDomain": {
+          "type": "string",
+          "x-go-name": "RequiredEmailDomain"
+        },
         "seed": {
           "type": "string",
           "x-go-name": "Seed"
