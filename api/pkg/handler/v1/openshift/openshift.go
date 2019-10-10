@@ -125,18 +125,11 @@ func ConsoleProxyEndpoint(
 			}
 			defer portforwarder.Close()
 
-			// This is blocking so we have to do it in a distinct goroutine
-			errorChan := make(chan error)
-			go func() {
-				log.Debug("Starting to forward port")
-				if err := portforwarder.ForwardPorts(); err != nil {
-					errorChan <- err
-				}
-			}()
-			if err := common.WaitForPortForwarder(portforwarder, errorChan); err != nil {
+			if err = common.ForwardPort(log, portforwarder); err != nil {
 				common.WriteHTTPError(log, w, err)
 				return nil, nil
 			}
+
 			// PortForwarder does have a `GetPorts` but its plain broken in case the portforwarder picks
 			// a random port and always returns 0.
 			// TODO @alvaroaleman: Fix upstream

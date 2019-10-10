@@ -20,8 +20,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesdashboard "github.com/kubermatic/kubermatic/api/pkg/resources/kubernetes-dashboard"
 	kubermaticerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
-
-	"k8s.io/client-go/tools/portforward"
 )
 
 // Minimal wrapper to implement the http.Handler interface
@@ -94,7 +92,7 @@ func ProxyEndpoint(
 			}
 			defer portforwarder.Close()
 
-			if err = forwardPort(log, portforwarder); err != nil {
+			if err = common.ForwardPort(log, portforwarder); err != nil {
 				common.WriteHTTPError(log, w, err)
 				return nil, nil
 			}
@@ -180,21 +178,4 @@ func extractBearerToken(kubeconfig *api.Config) (string, error) {
 	}
 
 	return "", errors.New("could not find bearer token in kubeconfig file")
-}
-
-func forwardPort(log *zap.SugaredLogger, forwarder *portforward.PortForwarder) error {
-	// This is blocking so we have to do it in a distinct goroutine
-	errorChan := make(chan error)
-	go func() {
-		log.Debug("Starting to forward port")
-		if err := forwarder.ForwardPorts(); err != nil {
-			errorChan <- err
-		}
-	}()
-
-	if err := common.WaitForPortForwarder(forwarder, errorChan); err != nil {
-		return err
-	}
-
-	return nil
 }

@@ -149,8 +149,6 @@ func GetPortForwarder(
 		return nil, nil, err
 	}
 
-	fmt.Println(pod)
-
 	dialer, err := getDialerForPod(pod, coreClient.RESTClient(), cfg)
 	if err != nil {
 		return nil, nil, err
@@ -255,4 +253,21 @@ func WriteHTTPError(log *zap.SugaredLogger, w http.ResponseWriter, err error) {
 	if _, wErr := w.Write([]byte(httpErr.Error())); wErr != nil {
 		log.Errorw("Failed to write body", zap.Error(err))
 	}
+}
+
+func ForwardPort(log *zap.SugaredLogger, forwarder *portforward.PortForwarder) error {
+	// This is blocking so we have to do it in a distinct goroutine
+	errorChan := make(chan error)
+	go func() {
+		log.Debug("Starting to forward port")
+		if err := forwarder.ForwardPorts(); err != nil {
+			errorChan <- err
+		}
+	}()
+
+	if err := WaitForPortForwarder(forwarder, errorChan); err != nil {
+		return err
+	}
+
+	return nil
 }
