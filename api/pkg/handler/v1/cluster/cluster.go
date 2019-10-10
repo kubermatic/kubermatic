@@ -26,6 +26,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	kubermaticerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	corev1 "k8s.io/api/core/v1"
@@ -1177,4 +1178,30 @@ func ListNamespaceEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 
 		return apiNamespaces, nil
 	}
+}
+
+// GetClusterProviderFromRequest returns cluster and cluster provider based on the provided request.
+func GetClusterProviderFromRequest(
+	ctx context.Context,
+	request interface{},
+	projectProvider provider.ProjectProvider) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
+
+	req, ok := request.(common.GetClusterReq)
+	if !ok {
+		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")
+	}
+	cluster, err := GetCluster(ctx, req, projectProvider)
+	if err != nil {
+		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+	}
+
+	rawClusterProvider, ok := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+	if !ok {
+		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, "no clusterProvider in request")
+	}
+	clusterProvider, ok := rawClusterProvider.(*kubernetesprovider.ClusterProvider)
+	if !ok {
+		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+	}
+	return cluster, clusterProvider, nil
 }
