@@ -114,7 +114,7 @@ func openshiftNetworkOperatorEnv(openshiftVersion string) ([]corev1.EnvVar, erro
 	if err != nil {
 		return nil, err
 	}
-	hypershiftImageValue, err := hyperkubeImage(openshiftVersion)
+	hypershiftImageValue, err := hypershiftImage(openshiftVersion)
 	if err != nil {
 		return nil, err
 	}
