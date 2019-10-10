@@ -3,7 +3,10 @@ kind: Deployment
 metadata:
   name: grafana
   labels:
-    app: grafana
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/version: '{{ .Values.grafana.image.tag }}'
+    app.kubernetes.io/managed-by: helm
 spec:
   replicas: {{ .Values.grafana.replicas }}
   selector:
@@ -16,8 +19,10 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
     spec:
-      {{ if .Values.grafana.provisioning.datasources.paths }}
       initContainers:
+      {{ if .Values.grafana.provisioning.datasources.paths }}
+      # This container copies datasource definition files from various volumes onto the
+      # final /etc/grafana/provisioning/datasources location.
       - image: '{{ .Values.grafana.utilImage.repository }}:{{ .Values.grafana.utilImage.tag }}'
         name: datasource-assembler
         command: [/bin/bash]
@@ -33,7 +38,7 @@ spec:
             local base="$(realpath $2)"
 
             if [ ! -d "$base" ]; then
-              echo "Error: directory $1 does not exist, check your Helm chart configuration and mounts!"
+              echo "Error: directory $base does not exist, check your Helm chart configuration and mounts!"
               exit 1
             fi
 
@@ -45,6 +50,7 @@ spec:
             done
           }
 
+          echo "Preparing datasources..."
           mkdir -p "$target"
           rm -rf "$target/*"
 
@@ -55,12 +61,11 @@ spec:
           echo "Datasource provisioning completed successfully."
 
         volumeMounts:
+        - mountPath: /etc/grafana/provisioning/default-datasources
+          name: grafana-provisioning-datasources
+          readOnly: true
         - mountPath: /etc/grafana/provisioning/datasources
           name: grafana-datasources
-          readOnly: false
-        - mountPath: /etc/grafana/provisioning/default-datasources
-          name: grafana-default-datasources
-          readOnly: true
         {{- if .Values.grafana.volumes }}
         {{- range .Values.grafana.volumes }}
         - mountPath: {{ .mountPath }}
@@ -69,6 +74,42 @@ spec:
         {{- end }}
         {{- end }}
       {{ end }}
+
+      # This container extracts the tar.bz2 archive in the scratch volume.
+      - image: '{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}'
+        name: dashboard-extractor
+        command: [/bin/bash]
+        args:
+        - -c
+        - |
+          set -euo pipefail
+          echo "Extracting dashboards..."
+          cd /tmp/dashboards
+          tar vxjf *.tar.bz2 -C /etc/grafana/dashboards
+        volumeMounts:
+        - mountPath: /tmp/dashboards
+          name: grafana-dashboards
+          readOnly: true
+        - mountPath: /etc/grafana/dashboards
+          name: grafana-dashboards-scratch
+
+      {{- with .Values.grafana.provisioning.plugins }}
+      # This container installs some additional plugins.
+      - image: '{{ $.Values.grafana.image.repository }}:{{ $.Values.grafana.image.tag }}'
+        name: plugin-installer
+        command: [/bin/bash]
+        args:
+        - -c
+        - |
+          set -euo pipefail
+          echo "Installing plugins..."
+          {{- range . }}
+          grafana-cli plugins install {{ . }}
+          {{- end }}
+        volumeMounts:
+        - mountPath: /var/lib/grafana
+          name: grafana-storage
+      {{- end }}
 
       containers:
       - image: '{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}'
@@ -85,17 +126,17 @@ spec:
         - mountPath: /etc/grafana
           name: grafana-config
           readOnly: true
+        # this volume is prepared by the init container
         - mountPath: /etc/grafana/provisioning/datasources
           name: grafana-datasources
-          readOnly: false
-        - mountPath: /etc/grafana/provisioning/default-datasources
-          name: grafana-default-datasources
           readOnly: true
+        # there is no special preparation for dashboard provisioning, so we mount the ConfigMap directly
         - mountPath: /etc/grafana/provisioning/dashboards
-          name: grafana-dashboards
+          name: grafana-provisioning-dashboards
           readOnly: true
-        - mountPath: /grafana-dashboard-definitions
-          name: grafana-dashboard-definitions
+        # this contains the extracted and assembled dashboards
+        - mountPath: /etc/grafana/dashboards
+          name: grafana-dashboards-scratch
           readOnly: true
         {{- if .Values.grafana.volumes }}
         {{- range .Values.grafana.volumes }}
@@ -114,23 +155,24 @@ spec:
         name: grafana-storage
       - emptyDir: {}
         name: grafana-datasources
+      - emptyDir: {}
+        name: grafana-dashboards-scratch
+
       - name: grafana-config
         secret:
           secretName: grafana-config
-      - name: grafana-default-datasources
+
+      - name: grafana-provisioning-datasources
         configMap:
-          name: grafana-datasources
+          name: grafana-provisioning-datasources
+      - name: grafana-provisioning-dashboards
+        configMap:
+          name: grafana-provisioning-dashboards
+
       - name: grafana-dashboards
         configMap:
           name: grafana-dashboards
-      - name: grafana-dashboard-definitions
-        configMap:
-          name: grafana-dashboard-definitions
-          items:
-          {{- range $file, $content := (.Files.Glob "dashboards/**") }}
-          - key: {{ $file | replace "dashboards/" "" | replace "/" "-" }}
-            path: {{ $file | replace "dashboards/" "" }}
-          {{- end }}
+
       {{- if .Values.grafana.volumes }}
       {{- range .Values.grafana.volumes }}
       - name: {{ .name }}

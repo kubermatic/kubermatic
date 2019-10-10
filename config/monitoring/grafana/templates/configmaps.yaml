@@ -1,7 +1,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-datasources
+  name: grafana-provisioning-datasources
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/version: '{{ .Values.grafana.image.tag }}'
+    app.kubernetes.io/managed-by: helm
 data:
 {{- if .Values.grafana.provisioning.datasources.source }}
 {{- range $filename, $_ := (.Files.Glob .Values.grafana.provisioning.datasources.source) }}
@@ -20,7 +25,12 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-dashboards
+  name: grafana-provisioning-dashboards
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/version: '{{ .Values.grafana.image.tag }}'
+    app.kubernetes.io/managed-by: helm
 data:
 {{- if .Values.grafana.provisioning.dashboards.source }}
 {{- range $filename, $_ := (.Files.Glob .Values.grafana.provisioning.dashboards.source) }}
@@ -39,10 +49,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-dashboard-definitions
-data:
-  # See the README.md for more details on how dashboards are treated as templates.
-  {{- range $file, $content := (.Files.Glob "dashboards/**") }}
-  {{ $file | replace "dashboards/" "" | replace "/" "-" }}: |
-{{ ((tpl (($.Files.Get $file) | replace "{{" "_{_{" | replace "}}" "_}_}" | replace "[[ " "{{ .Values.grafana.dashboards." | replace "]]" "}}" | replace "\"<< " "{{ .Values.grafana.dashboards." | replace ">>\"" "}}") $) | replace "_{_{" "{{" | replace "_}_}" "}}") | fromJson | toJson | indent 4 }}
-  {{- end }}
+  name: grafana-dashboards
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/version: '{{ .Values.grafana.image.tag }}'
+    app.kubernetes.io/managed-by: helm
+binaryData:
+  dashboards.tar.bz2: {{ .Files.Get "dashboards.tar.bz2" | b64enc | quote }}

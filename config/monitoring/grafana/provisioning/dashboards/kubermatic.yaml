@@ -3,6 +3,6 @@ providers:
 - folder: "Kubermatic"
   name: "kubermatic"
   options:
-    path: /grafana-dashboard-definitions/kubermatic
+    path: /etc/grafana/dashboards/kubermatic
   org_id: 1
   type: file

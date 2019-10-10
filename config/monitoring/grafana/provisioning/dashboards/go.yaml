@@ -3,6 +3,6 @@ providers:
 - folder: "Go Applications"
   name: "go"
   options:
-    path: /grafana-dashboard-definitions/go
+    path: /etc/grafana/dashboards/go
   org_id: 1
   type: file

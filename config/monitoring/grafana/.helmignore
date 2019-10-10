@@ -1,1 +1,3 @@
-dashboards/*.sh
+dashboards/
+hack/
+README.md

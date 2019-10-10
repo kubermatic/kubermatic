@@ -2,6 +2,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: grafana
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/version: '{{ .Values.grafana.image.tag }}'
+    app.kubernetes.io/managed-by: helm
 spec:
   ports:
   - name: http

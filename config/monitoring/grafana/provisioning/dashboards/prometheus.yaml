@@ -3,6 +3,6 @@ providers:
 - folder: "Prometheus"
   name: "prometheus"
   options:
-    path: /grafana-dashboard-definitions/prometheus
+    path: /etc/grafana/dashboards/prometheus
   org_id: 1
   type: file

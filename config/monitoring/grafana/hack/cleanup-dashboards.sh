@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-cd $(dirname $0)
+cd $(dirname $0)/../dashboards
 
 for dashboard in */*.json; do
   echo "$dashboard"

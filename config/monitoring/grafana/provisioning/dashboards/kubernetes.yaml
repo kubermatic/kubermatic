@@ -3,6 +3,6 @@ providers:
 - folder: "Kubernetes"
   name: "kubernetes"
   options:
-    path: /grafana-dashboard-definitions/kubernetes
+    path: /etc/grafana/dashboards/kubernetes
   org_id: 1
   type: file

@@ -3,6 +3,6 @@ providers:
 - folder: "Elasticsearch"
   name: "elasticsearch"
   options:
-    path: /grafana-dashboard-definitions/elasticsearch
+    path: /etc/grafana/dashboards/elasticsearch
   org_id: 1
   type: file

@@ -2,6 +2,11 @@ apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   name: grafana
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/version: '{{ .Values.grafana.image.tag }}'
+    app.kubernetes.io/managed-by: helm
 spec:
   maxUnavailable: 1
   selector:
