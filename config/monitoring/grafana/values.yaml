@@ -37,7 +37,8 @@ grafana:
   # into the directories.
   provisioning:
     # These plugins will be dynamically installed from the Internet
-    # when the Grafana pod is starting.
+    # when the Grafana pod is starting. Note that this is considered
+    # experimental and likely to change in future versions of this chart.
     plugins:
     #- grafana-piechart-panel
 
