@@ -2,10 +2,10 @@
   "annotations": {
     "list": []
   },
-  "editable": "<< editable | default false | toJson >>",
+  "editable": true,
   "gnetId": null,
   "graphTooltip": 1,
-  "hideControls": "<< hideControls | default false | toJson >>",
+  "hideControls": false,
   "links": [],
   "panels": [
     {
@@ -31,7 +31,7 @@
       },
       "datasource": "prometheus",
       "decimals": 0,
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fontSize": "80%",
       "format": "short",
       "gridPos": {
@@ -67,7 +67,7 @@
       "timeRegions": [],
       "timeShift": null,
       "title": "Cluster Types",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "grafana-piechart-panel",
       "valueName": "current"
     },
@@ -81,7 +81,7 @@
       },
       "datasource": "prometheus",
       "decimals": 0,
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fontSize": "80%",
       "format": "short",
       "gridPos": {
@@ -116,7 +116,7 @@
       "timeRegions": [],
       "timeShift": null,
       "title": "Cloud Providers",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "grafana-piechart-panel",
       "valueName": "current"
     },
@@ -130,7 +130,7 @@
       },
       "datasource": "prometheus",
       "decimals": 0,
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fontSize": "80%",
       "format": "short",
       "gridPos": {
@@ -165,7 +165,7 @@
       "timeRegions": [],
       "timeShift": null,
       "title": "Datacenters",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "grafana-piechart-panel",
       "valueName": "current"
     },
@@ -175,7 +175,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -228,7 +228,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -267,7 +267,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -320,7 +320,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -359,7 +359,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -412,7 +412,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -467,7 +467,7 @@
         "threshold": 0
       },
       "datasource": "prometheus",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fontSize": "80%",
       "format": "short",
       "gridPos": {
@@ -501,7 +501,7 @@
       "timeRegions": [],
       "timeShift": null,
       "title": "Minor Releases",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "grafana-piechart-panel",
       "valueName": "current"
     },
@@ -514,7 +514,7 @@
         "threshold": 0
       },
       "datasource": "prometheus",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fontSize": "80%",
       "format": "short",
       "gridPos": {
@@ -548,7 +548,7 @@
       "timeRegions": [],
       "timeShift": null,
       "title": "Releases",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "grafana-piechart-panel",
       "valueName": "current"
     },
@@ -558,7 +558,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -611,7 +611,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -650,7 +650,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -703,7 +703,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -758,7 +758,7 @@
         "threshold": 0
       },
       "datasource": "prometheus",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fontSize": "80%",
       "format": "short",
       "gridPos": {
@@ -792,7 +792,7 @@
       "timeRegions": [],
       "timeShift": null,
       "title": "Minor Releases",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "grafana-piechart-panel",
       "valueName": "current"
     },
@@ -805,7 +805,7 @@
         "threshold": 0
       },
       "datasource": "prometheus",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fontSize": "80%",
       "format": "short",
       "gridPos": {
@@ -839,7 +839,7 @@
       "timeRegions": [],
       "timeShift": null,
       "title": "Releases",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "grafana-piechart-panel",
       "valueName": "current"
     },
@@ -849,7 +849,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -902,7 +902,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -941,7 +941,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "prometheus",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -994,7 +994,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1028,7 +1028,7 @@
       }
     }
   ],
-  "refresh": "<< refresh | default `30s` | toJson >>",
+  "refresh": "30s",
   "schemaVersion": 19,
   "style": "dark",
   "tags": [],
@@ -1036,7 +1036,7 @@
     "list": []
   },
   "time": {
-    "from": "<< defaultRange | toJson >>",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
