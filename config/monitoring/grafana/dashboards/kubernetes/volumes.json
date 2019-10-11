@@ -2,10 +2,10 @@
   "annotations": {
     "list": []
   },
-  "editable": "<< editable | default false | toJson >>",
+  "editable": true,
   "gnetId": null,
   "graphTooltip": 1,
-  "hideControls": "<< hideControls | default false | toJson >>",
+  "hideControls": false,
   "links": [],
   "panels": [
     {
@@ -31,7 +31,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "percentunit",
       "gauge": {
         "maxValue": 1,
@@ -92,7 +92,7 @@
       "thresholds": "0.7,0.9",
       "timeRegions": [],
       "title": "Total Disk Usage",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -114,7 +114,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -175,7 +175,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Total Disk Capacity",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "70%",
       "valueMaps": [
@@ -197,7 +197,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -258,7 +258,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Total Available Disk Space",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "70%",
       "valueMaps": [
@@ -280,7 +280,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -341,7 +341,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Total Used Disk Space",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "70%",
       "valueMaps": [
@@ -378,7 +378,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "percentunit",
       "gauge": {
         "maxValue": 1,
@@ -440,7 +440,7 @@
       "thresholds": "0.7,0.9",
       "timeRegions": [],
       "title": "Disk Usage",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -462,7 +462,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -524,7 +524,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Capacity",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "70%",
       "valueMaps": [
@@ -545,7 +545,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 0,
       "gridPos": {
         "h": 8,
@@ -597,7 +597,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -639,7 +639,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -701,7 +701,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Available",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "70%",
       "valueMaps": [
@@ -723,7 +723,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "bytes",
       "gauge": {
         "maxValue": 100,
@@ -785,7 +785,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Used",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "70%",
       "valueMaps": [
@@ -798,7 +798,7 @@
       "valueName": "current"
     }
   ],
-  "refresh": "<< refresh | default `30s` | toJson >>",
+  "refresh": "30s",
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],
@@ -806,7 +806,7 @@
     "list": [
       {
         "current": {},
-        "hide": "<< datasourceHide | toJson >>",
+        "hide": 2,
         "label": null,
         "name": "datasource",
         "options": [],
@@ -825,7 +825,7 @@
         "multi": true,
         "name": "namespace",
         "options": [],
-        "query": "label_values(kubelet_volume_stats_used_bytes{ [[ volumeDashboardNamespaceFilter ]] }, namespace)",
+        "query": "label_values(kubelet_volume_stats_used_bytes, namespace)",
         "refresh": 2,
         "regex": "",
         "sort": 1,
@@ -838,7 +838,7 @@
     ]
   },
   "time": {
-    "from": "<< defaultRange | toJson >>",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
