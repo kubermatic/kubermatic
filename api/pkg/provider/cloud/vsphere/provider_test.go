@@ -21,13 +21,13 @@ func TestGetCredentialsForCluster(t *testing.T) {
 	}{
 		{
 			name:            "User from cluster",
-			cloudspec:       testVsphereCloudSpec("user", "pass", "a", "b", true),
+			cloudspec:       testVsphereCloudSpec("user", "pass", "", "", true),
 			expectedUser:    "user",
 			expectedPasword: "pass",
 		},
 		{
 			name:      "User from secret",
-			cloudspec: testVsphereCloudSpec("", "", "a", "b", true),
+			cloudspec: testVsphereCloudSpec("", "", "", "", true),
 			secretKeySelector: testSecretKeySelectorValueFuncFactory(map[string]string{
 				resources.VsphereUsername: "user",
 				resources.VspherePassword: "pass",
@@ -49,7 +49,7 @@ func TestGetCredentialsForCluster(t *testing.T) {
 		},
 		{
 			name:      "InfraManagementUser from secrets InfraManagementUser field",
-			cloudspec: testVsphereCloudSpec("a", "b", "", "", true),
+			cloudspec: testVsphereCloudSpec("", "", "", "", true),
 			secretKeySelector: testSecretKeySelectorValueFuncFactory(map[string]string{
 				resources.VsphereInfraManagementUserUsername: "user",
 				resources.VsphereInfraManagementUserPassword: "pass",
@@ -83,20 +83,38 @@ func TestGetCredentialsForCluster(t *testing.T) {
 			expectedUser:    "dc-user",
 			expectedPasword: "dc-pass",
 		},
+		{
+			name:      "InfraManagementUser from DC takes precedence over InfraMangementUser from cluster",
+			cloudspec: testVsphereCloudSpec("", "", "cluster-infra-user", "cluster-infra-pass", true),
+			dc: &kubermaticv1.DatacenterSpecVSphere{
+				InfraManagementUser: &kubermaticv1.VSphereCredentials{
+					Username: "dc-user",
+					Password: "dc-pass",
+				},
+			},
+			expectedUser:    "dc-user",
+			expectedPasword: "dc-pass",
+		},
 	}
 
-	for idx := range tcs {
-		t.Run(tcs[idx].name, func(t *testing.T) {
+	for _, tc := range tcs {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			user, password, err := GetCredentialsForCluster(tcs[idx].cloudspec, tcs[idx].secretKeySelector, tcs[idx].dc)
-			if (tcs[idx].expectedError == "" && err != nil) || (tcs[idx].expectedError != "" && err == nil) {
-				t.Fatalf("Expected error %q, got error %v", tcs[idx].expectedError, err)
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic in test %q: %v", tc.name, r)
+				}
+			}()
+			user, password, err := GetCredentialsForCluster(tc.cloudspec, tc.secretKeySelector, tc.dc)
+			if (tc.expectedError == "" && err != nil) || (tc.expectedError != "" && err == nil) {
+				t.Fatalf("Expected error %q, got error %v", tc.expectedError, err)
 			}
-			if user != tcs[idx].expectedUser {
-				t.Errorf("expected user %q, got user %q", tcs[idx].expectedUser, user)
+			if user != tc.expectedUser {
+				t.Errorf("expected user %q, got user %q", tc.expectedUser, user)
 			}
-			if password != tcs[idx].expectedPasword {
-				t.Errorf("expected password %q, got password %q", tcs[idx].expectedPasword, password)
+			if password != tc.expectedPasword {
+				t.Errorf("expected password %q, got password %q", tc.expectedPasword, password)
 			}
 		})
 	}
