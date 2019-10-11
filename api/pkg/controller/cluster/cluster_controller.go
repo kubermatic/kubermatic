@@ -225,9 +225,14 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		result = &reconcile.Result{}
 	}
 
-	if _, err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r.Client, successfullyReconciled); err != nil {
+	hasUnfinishedUpdates, err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r.Client, successfullyReconciled)
+	if err != nil {
 		log.Errorw("failed to update clusters status conditions", zap.Error(err))
 		reconcileErr = fmt.Errorf("failed to set cluster status: %v after reconciliation was done with err=%v", err, reconcileErr)
+	}
+
+	if !hasUnfinishedUpdates {
+		cluster.Status.SetClusterCondition()
 	}
 
 	return *result, reconcileErr

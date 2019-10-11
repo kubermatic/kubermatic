@@ -108,6 +108,10 @@ const (
 	// the status of cloud provider resources for a given cluster.
 	SeedResourcesUpToDate ClusterConditionType = "SeedResourcesUpToDate"
 
+	// ClusterControllerFinishedReconcilingSuccessfully indicates that the cluster controller finished
+	// reconciling successfully
+	ClusterControllerFinishedReconcilingSuccessfully ClusterConditionType = "ClusterControllerFinishedReconcilingSuccessfully"
+
 	ClusterUpdateInProgressReason = "Current Cluster is updating its resources"
 )
 
@@ -204,10 +208,10 @@ func (cs *ClusterStatus) HasConditionValue(conditionType ClusterConditionType, c
 func (cs *ClusterStatus) SetClusterFinishedUpdatingSuccessfullyCondition(message string) {
 	condition := newClusterCondition(SeedResourcesUpToDate, corev1.ConditionTrue,
 		ClusterUpdateInProgressReason, message, cs.KubermaticVersion)
-	cs.setClusterCondition(*condition)
+	cs.SetClusterCondition(*condition)
 }
 
-func (cs *ClusterStatus) setClusterCondition(c ClusterCondition) {
+func (cs *ClusterStatus) SetClusterCondition(c ClusterCondition) {
 	pos, clusterCondition := cs.getClusterCondition(c.Type)
 	if clusterCondition != nil &&
 		clusterCondition.KubermaticVersion == c.KubermaticVersion &&
