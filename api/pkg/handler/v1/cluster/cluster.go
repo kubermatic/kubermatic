@@ -654,6 +654,7 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 			Version:                             internalCluster.Spec.Version,
 			MachineNetworks:                     internalCluster.Spec.MachineNetworks,
 			OIDC:                                internalCluster.Spec.OIDC,
+			AuditLogging:                        internalCluster.Spec.AuditLogging,
 			UsePodSecurityPolicyAdmissionPlugin: internalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
 		},
 		Status: apiv1.ClusterStatus{
