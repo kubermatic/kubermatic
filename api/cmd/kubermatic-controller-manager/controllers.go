@@ -26,10 +26,10 @@ import (
 	utilpointer "k8s.io/utils/pointer"
 )
 
-// allControllers stores the list of all controllers that we want to run,
+// AllControllers stores the list of all controllers that we want to run,
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
-var allControllers = map[string]controllerCreator{
+var AllControllers = map[string]controllerCreator{
 	cluster.ControllerName:                   createClusterController,
 	updatecontroller.ControllerName:          createUpdateController,
 	addon.ControllerName:                     createAddonController,
@@ -44,7 +44,7 @@ var allControllers = map[string]controllerCreator{
 type controllerCreator func(*controllerContext) error
 
 func createAllControllers(ctrlCtx *controllerContext) error {
-	for name, create := range allControllers {
+	for name, create := range AllControllers {
 		if err := create(ctrlCtx); err != nil {
 			return fmt.Errorf("failed to create %q controller: %v", name, err)
 		}

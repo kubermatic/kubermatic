@@ -172,8 +172,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				t.Fatalf("expected first resource in testcase %v to be a cluster, but was %T", testCase.name, testCase.resources[0])
 			}
 
-			err := SetSeedResourcesUpToDateCondition(context.Background(), cluster, fake.NewFakeClient(testCase.resources...), testCase.successfullyReconciled)
-			if err != nil {
+			if _, err := SetSeedResourcesUpToDateCondition(context.Background(), cluster, fake.NewFakeClient(testCase.resources...), testCase.successfullyReconciled); err != nil {
 				t.Fatalf("failed to run test: %v with error: %v", testCase.name, err)
 			}
 
