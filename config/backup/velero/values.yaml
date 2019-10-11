@@ -4,19 +4,17 @@ velero:
   # that also contains the restic binary
   image:
     repository: gcr.io/heptio-images/velero
-    tag: v1.0.0
+    tag: v1.1.0
     pullPolicy: IfNotPresent
 
   # CLI flags to pass to velero server; note that the two flags
   # `default-backup-storage-location` and `default-volume-snapshot-locations`
   # are automatically set via the configuration below
-  serverFlags:
-  - --metrics-address=:8085
-  - --backup-sync-period=1m
+  serverFlags: []
 
   # whether or not to create a restic daemonset
   restic:
-    deploy: true
+    deploy: false
     resources:
       requests:
         cpu: 100m
@@ -58,7 +56,7 @@ velero:
   # define one of your backupStorageLocations as the default
   #defaultBackupStorageLocation: aws
 
-  # see https://heptio.github.io/velero/v0.11.0/api-types/backupstoragelocation.html
+  # see https://velero.io/docs/v1.1.0/api-types/backupstoragelocation/
   #backupStorageLocations:
   #  aws:
   #    provider: aws
@@ -72,7 +70,7 @@ velero:
   #defaultVolumeSnapshotLocations:
   #  - aws:aws
 
-  # see https://heptio.github.io/velero/v0.11.0/api-types/volumesnapshotlocation.html
+  # see https://velero.io/docs/v1.1.0/api-types/volumesnapshotlocation/
   #volumeSnapshotLocations:
   #  aws:
   #    provider: aws
