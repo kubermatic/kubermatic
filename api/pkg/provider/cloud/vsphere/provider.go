@@ -265,6 +265,13 @@ func getUsernameAndPassword(cloud kubermaticv1.CloudSpec, secretKeySelector prov
 		if err != nil {
 			return "", "", err
 		}
+
+		if username == "" && infraManagementUser {
+			username, err = secretKeySelector(cloud.VSphere.CredentialsReference, resources.VsphereUsername)
+			if err != nil {
+				return "", "", err
+			}
+		}
 	}
 
 	if password == "" && cloud.VSphere.CredentialsReference != nil && cloud.VSphere.CredentialsReference.Name != "" {
@@ -278,6 +285,12 @@ func getUsernameAndPassword(cloud kubermaticv1.CloudSpec, secretKeySelector prov
 		password, err = secretKeySelector(cloud.VSphere.CredentialsReference, key)
 		if err != nil {
 			return "", "", err
+		}
+		if password == "" && infraManagementUser {
+			password, err = secretKeySelector(cloud.VSphere.CredentialsReference, key)
+			if err != nil {
+				return "", "", err
+			}
 		}
 	}
 
