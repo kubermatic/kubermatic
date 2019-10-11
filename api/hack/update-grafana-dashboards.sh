@@ -1,6 +1,8 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-cd $(dirname $0)
+set -euo pipefail
+
+cd $(dirname $0)/../../config/monitoring/grafana/dashboards
 
 for dashboard in */*.json; do
   echo "$dashboard"
@@ -14,16 +16,16 @@ for dashboard in */*.json; do
     jq '(.templating.list[] | select(.type=="datasource") | .current) = {}' | \
     jq '(.templating.list[] | select(.type=="interval") | .current) = {}' | \
     jq '(.panels[] | select(.scopedVars!=null) | .scopedVars) = {}' | \
-    jq '(.templating.list[] | select(.type=="datasource") | .hide) = "<< datasourceHide | toJson >>"' | \
+    jq '(.templating.list[] | select(.type=="datasource") | .hide) = 2' | \
     jq '(.annotations.list) = []' | \
     jq '(.links) = []' | \
-    jq '(.refresh) = "<< refresh | default `30s` | toJson >>"' | \
-    jq '(.time.from) = "<< defaultRange | toJson >>"' | \
-    jq '(.editable) = "<< editable | default false | toJson >>"' | \
-    jq '(.panels[] | select(.type!="row") | .editable) = "<< editable | default false | toJson >>"' | \
-    jq '(.panels[] | select(.type!="row") | .transparent) = "<< transparentPanels | default true | toJson >>"' | \
+    jq '(.refresh) = "30s"' | \
+    jq '(.time.from) = "now-6h"' | \
+    jq '(.editable) = true' | \
+    jq '(.panels[] | select(.type!="row") | .editable) = true' | \
+    jq '(.panels[] | select(.type!="row") | .transparent) = true' | \
     jq '(.panels[] | select(.type!="row") | .timeRegions) = []' | \
-    jq '(.hideControls) = "<< hideControls | default false | toJson >>"' | \
+    jq '(.hideControls) = false' | \
     jq '(.time.to) = "now"' | \
     jq '(.timezone) = ""' | \
     jq '(.graphTooltip) = 1' | \

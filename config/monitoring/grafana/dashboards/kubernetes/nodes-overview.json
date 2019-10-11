@@ -2,10 +2,10 @@
   "annotations": {
     "list": []
   },
-  "editable": "<< editable | default false | toJson >>",
+  "editable": true,
   "gnetId": null,
   "graphTooltip": 1,
-  "hideControls": "<< hideControls | default false | toJson >>",
+  "hideControls": false,
   "links": [],
   "panels": [
     {
@@ -14,7 +14,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -68,7 +68,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -110,7 +110,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "percent",
       "gauge": {
         "maxValue": 100,
@@ -171,7 +171,7 @@
       "thresholds": "80, 90",
       "timeRegions": [],
       "title": "Total CPU Usage",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -194,7 +194,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -246,7 +246,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -288,7 +288,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "percent",
       "gauge": {
         "maxValue": 100,
@@ -349,7 +349,7 @@
       "thresholds": "80, 90",
       "timeRegions": [],
       "title": "Total Memory Usage",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -367,7 +367,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -419,7 +419,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -457,7 +457,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -508,7 +508,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -546,7 +546,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -598,7 +598,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -636,7 +636,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -687,7 +687,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -725,7 +725,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -776,7 +776,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -814,7 +814,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -865,7 +865,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -898,7 +898,7 @@
       }
     }
   ],
-  "refresh": "<< refresh | default `30s` | toJson >>",
+  "refresh": "30s",
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],
@@ -906,7 +906,7 @@
     "list": [
       {
         "current": {},
-        "hide": "<< datasourceHide | toJson >>",
+        "hide": 2,
         "label": null,
         "name": "datasource",
         "options": [],
@@ -941,7 +941,7 @@
     ]
   },
   "time": {
-    "from": "<< defaultRange | toJson >>",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {

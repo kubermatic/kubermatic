@@ -2,10 +2,10 @@
   "annotations": {
     "list": []
   },
-  "editable": "<< editable | default false | toJson >>",
+  "editable": true,
   "gnetId": null,
   "graphTooltip": 1,
-  "hideControls": "<< hideControls | default false | toJson >>",
+  "hideControls": false,
   "links": [],
   "panels": [
     {
@@ -31,7 +31,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -94,7 +94,7 @@
       "thresholds": "2,3",
       "timeRegions": [],
       "title": "Cluster Status",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "120%",
       "valueMaps": [
@@ -131,7 +131,7 @@
         "rgba(50, 172, 45, 0.97)"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "format": "none",
       "gauge": {
@@ -199,7 +199,7 @@
       "timeRegions": [],
       "timeShift": null,
       "title": "Running Nodes",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "120%",
       "valueMaps": [
@@ -221,7 +221,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -282,7 +282,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Active Data Nodes",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "120%",
       "valueMaps": [
@@ -304,7 +304,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -365,7 +365,7 @@
       "thresholds": "0.5,1",
       "timeRegions": [],
       "title": "Pending Tasks",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "120%",
       "valueMaps": [
@@ -400,7 +400,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -461,7 +461,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Active Shards",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "120%",
       "valueMaps": [
@@ -483,7 +483,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -544,7 +544,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Active Primary Shards",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "120%",
       "valueMaps": [
@@ -566,7 +566,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -627,7 +627,7 @@
       "thresholds": "0.5,1",
       "timeRegions": [],
       "title": "Initializing Shards",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "120%",
       "valueMaps": [
@@ -649,7 +649,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -710,7 +710,7 @@
       "thresholds": "0.5,1",
       "timeRegions": [],
       "title": "Relocating Shards",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "120%",
       "valueMaps": [
@@ -732,7 +732,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -793,7 +793,7 @@
       "thresholds": "0.5,1",
       "timeRegions": [],
       "title": "Unassigned Shards",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "120%",
       "valueMaps": [
@@ -815,7 +815,7 @@
         "#d44a3a"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -876,7 +876,7 @@
       "thresholds": "0.5,1",
       "timeRegions": [],
       "title": "Delayed Unassigned Shards",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "120%",
       "valueMaps": [
@@ -907,7 +907,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "fill": 1,
       "grid": {},
@@ -961,7 +961,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -997,7 +997,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "fill": 1,
       "grid": {},
@@ -1051,7 +1051,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1087,7 +1087,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -1137,7 +1137,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1175,7 +1175,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 9,
@@ -1225,7 +1225,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1263,7 +1263,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "fill": 1,
       "grid": {},
@@ -1318,7 +1318,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1367,7 +1367,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "fill": 1,
       "grid": {},
@@ -1421,7 +1421,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1457,7 +1457,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "fill": 1,
       "grid": {},
@@ -1511,7 +1511,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1547,7 +1547,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "fill": 1,
       "grid": {},
@@ -1601,7 +1601,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1637,7 +1637,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "fill": 1,
       "grid": {},
@@ -1693,7 +1693,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1731,7 +1731,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "fill": 1,
       "grid": {},
@@ -1793,7 +1793,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1824,7 +1824,7 @@
       }
     }
   ],
-  "refresh": "<< refresh | default `30s` | toJson >>",
+  "refresh": "30s",
   "schemaVersion": 18,
   "style": "dark",
   "tags": [],
@@ -1832,7 +1832,7 @@
     "list": [
       {
         "current": {},
-        "hide": "<< datasourceHide | toJson >>",
+        "hide": 2,
         "includeAll": false,
         "label": null,
         "multi": false,
@@ -1869,7 +1869,7 @@
     ]
   },
   "time": {
-    "from": "<< defaultRange | toJson >>",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
