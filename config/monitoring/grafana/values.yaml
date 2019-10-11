@@ -9,6 +9,9 @@ grafana:
   utilImage:
     repository: quay.io/kubermatic/util
     tag: 1.1.3
+  pluginImage:
+    repository: quay.io/kubermatic/grafana-plugins
+    tag: 1.0.0
   resources:
     requests:
       cpu: 100m
