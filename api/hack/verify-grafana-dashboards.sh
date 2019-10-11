@@ -15,15 +15,11 @@ function cleanup() {
 trap cleanup EXIT SIGINT SIGTERM
 
 cleanup
-mkdir -p $tmpdir
+cp -r dashboards $tmpdir
 
-echodate "Verifying dashboard file format..."
-for dashboard in dashboards/*/*.json; do
-  folder=$(basename $(dirname "$dashboard"))
-  name=$(basename "$dashboard")
-
-  mkdir -p "$tmpdir/$folder"
-  cat "$dashboard" | jq --sort-keys '.' > "$tmpdir/$folder/$name"
+echodate "Verifying dashboards..."
+for dashboard in $tmpdir/*/*.json; do
+  format_dashboard "$dashboard"
 done
 diff -rdu dashboards $tmpdir
 echodate "Dashboards are properly formatted."
