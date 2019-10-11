@@ -7,7 +7,3 @@ build-rules:
 
 check-rules:
 	promtool check rules prometheus/rules/*.yaml
-
-.PHONY: format-dashboards
-format-dashboards:
-	./grafana/dashboards/cleanup.sh

@@ -1,6 +1,8 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-cd $(dirname $0)
+set -euo pipefail
+
+cd $(dirname $0)/../../config/monitoring/grafana/dashboards
 
 for dashboard in */*.json; do
   echo "$dashboard"
