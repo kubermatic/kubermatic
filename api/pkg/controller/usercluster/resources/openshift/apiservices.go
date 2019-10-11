@@ -13,7 +13,6 @@ import (
 func GetAPIServicesForOpenshiftVersion(openshiftVersion string, caBundle []byte) ([]reconciling.NamedAPIServiceCreatorGetter, error) {
 	switch {
 	case strings.HasPrefix(openshiftVersion, "4.1."):
-		// do stuff
 		return []reconciling.NamedAPIServiceCreatorGetter{
 			apiServiceFactory(caBundle, "v1.apps.openshift.io", "apps.openshift.io", 9900, "v1", 15),
 			apiServiceFactory(caBundle, "v1.authorization.openshift.io", "authorization.openshift.io", 9900, "v1", 15),
