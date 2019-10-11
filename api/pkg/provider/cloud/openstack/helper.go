@@ -3,6 +3,7 @@ package openstack
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/gophercloud/gophercloud"
@@ -217,6 +218,11 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, cluster
 	for _, opts := range rules {
 		rres := osecuritygrouprules.Create(netClient, opts)
 		if rres.Err != nil {
+			if e, ok := rres.Err.(gophercloud.ErrUnexpectedResponseCode); ok && e.Actual == http.StatusConflict {
+				// already exists
+				continue
+			}
+
 			return "", rres.Err
 		}
 
