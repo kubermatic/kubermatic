@@ -244,41 +244,67 @@ func (v *Provider) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSp
 	return nil
 }
 
+// Precedence if not infraManagementUser:
+// * User from cluster
+// * User from Secret
+// Precedence if infraManagementUser:
+// * User from clusters infraManagementUser
+// * User from cluster
+// * User form clusters secret infraManagementUser
+// * User from clusters secret
 func getUsernameAndPassword(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc, infraManagementUser bool) (username, password string, err error) {
 	if infraManagementUser {
 		username = cloud.VSphere.InfraManagementUser.Username
 		password = cloud.VSphere.InfraManagementUser.Password
-	} else {
+	}
+	if username == "" {
 		username = cloud.VSphere.Username
+	}
+	if password == "" {
 		password = cloud.VSphere.Password
 	}
 
-	if username == "" && cloud.VSphere.CredentialsReference != nil && cloud.VSphere.CredentialsReference.Name != "" {
-		var key string
-		if infraManagementUser {
-			key = resources.VsphereInfraManagementUserUsername
-		} else {
-			key = resources.VsphereUsername
-		}
+	if username != "" && password != "" {
+		return username, password, nil
+	}
 
-		username, err = secretKeySelector(cloud.VSphere.CredentialsReference, key)
+	if cloud.VSphere.CredentialsReference == nil {
+		return "", "", errors.New("cluster contains no password an and empty credentialsReference")
+	}
+
+	if username == "" && infraManagementUser {
+		username, err = secretKeySelector(cloud.VSphere.CredentialsReference, resources.VsphereInfraManagementUserUsername)
+		if err != nil {
+			return "", "", err
+		}
+	}
+	if username == "" {
+		username, err = secretKeySelector(cloud.VSphere.CredentialsReference, resources.VsphereUsername)
 		if err != nil {
 			return "", "", err
 		}
 	}
 
-	if password == "" && cloud.VSphere.CredentialsReference != nil && cloud.VSphere.CredentialsReference.Name != "" {
-		var key string
-		if infraManagementUser {
-			key = resources.VsphereInfraManagementUserPassword
-		} else {
-			key = resources.VspherePassword
-		}
-
-		password, err = secretKeySelector(cloud.VSphere.CredentialsReference, key)
+	if password == "" && infraManagementUser {
+		password, err = secretKeySelector(cloud.VSphere.CredentialsReference, resources.VsphereInfraManagementUserPassword)
 		if err != nil {
 			return "", "", err
 		}
+	}
+
+	if password == "" {
+		password, err = secretKeySelector(cloud.VSphere.CredentialsReference, resources.VspherePassword)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	if username == "" {
+		return "", "", errors.New("unable to get username")
+	}
+
+	if password == "" {
+		return "", "", errors.New("unable to get password")
 	}
 
 	return username, password, nil
@@ -288,15 +314,6 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	var username, password string
 	var err error
 
-	// InfraManagementUser from Cluster
-	username, password, err = getUsernameAndPassword(cloud, secretKeySelector, true)
-	if err != nil {
-		return "", "", err
-	}
-	if username != "" && password != "" {
-		return username, password, nil
-	}
-
 	// InfraManagementUser from Datacenter
 	if dc != nil && dc.InfraManagementUser != nil {
 		if dc.InfraManagementUser.Username != "" && dc.InfraManagementUser.Password != "" {
@@ -304,8 +321,8 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 		}
 	}
 
-	// Normal user from cluster
-	username, password, err = getUsernameAndPassword(cloud, secretKeySelector, false)
+	// InfraManagementUser from Cluster
+	username, password, err = getUsernameAndPassword(cloud, secretKeySelector, true)
 	if err != nil {
 		return "", "", err
 	}
