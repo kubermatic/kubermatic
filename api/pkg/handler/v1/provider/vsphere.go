@@ -40,7 +40,7 @@ func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, credentialManager
 			}
 		}
 
-		return getVsphereNetworks(seedsGetter, username, password, req.DatacenterName)
+		return getVsphereNetworks(userInfo, seedsGetter, username, password, req.DatacenterName)
 	}
 }
 
@@ -69,7 +69,7 @@ func VsphereNetworksWithClusterCredentialsEndpoint(projectProvider provider.Proj
 		}
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
 
-		_, datacenter, err := provider.DatacenterFromSeedMap(seedsGetter, datacenterName)
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 		}
@@ -78,12 +78,12 @@ func VsphereNetworksWithClusterCredentialsEndpoint(projectProvider provider.Proj
 		if err != nil {
 			return nil, err
 		}
-		return getVsphereNetworks(seedsGetter, username, password, datacenterName)
+		return getVsphereNetworks(userInfo, seedsGetter, username, password, datacenterName)
 	}
 }
 
-func getVsphereNetworks(seedsGetter provider.SeedsGetter, username, password, datacenterName string) ([]apiv1.VSphereNetwork, error) {
-	_, datacenter, err := provider.DatacenterFromSeedMap(seedsGetter, datacenterName)
+func getVsphereNetworks(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password, datacenterName string) ([]apiv1.VSphereNetwork, error) {
+	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
@@ -130,7 +130,7 @@ func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, credentialManager 
 			}
 		}
 
-		return getVsphereFolders(seedsGetter, username, password, req.DatacenterName)
+		return getVsphereFolders(userInfo, seedsGetter, username, password, req.DatacenterName)
 	}
 }
 
@@ -158,7 +158,7 @@ func VsphereFoldersWithClusterCredentialsEndpoint(projectProvider provider.Proje
 		}
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
 
-		_, datacenter, err := provider.DatacenterFromSeedMap(seedsGetter, datacenterName)
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 		}
@@ -167,12 +167,12 @@ func VsphereFoldersWithClusterCredentialsEndpoint(projectProvider provider.Proje
 		if err != nil {
 			return nil, err
 		}
-		return getVsphereFolders(seedsGetter, username, password, datacenterName)
+		return getVsphereFolders(userInfo, seedsGetter, username, password, datacenterName)
 	}
 }
 
-func getVsphereFolders(seedsGetter provider.SeedsGetter, username, password, datacenterName string) ([]apiv1.VSphereFolder, error) {
-	_, datacenter, err := provider.DatacenterFromSeedMap(seedsGetter, datacenterName)
+func getVsphereFolders(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password, datacenterName string) ([]apiv1.VSphereFolder, error) {
+	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}

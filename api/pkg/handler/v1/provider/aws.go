@@ -151,7 +151,7 @@ func AWSSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seed
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		dc, err := dc.GetDatacenter(seedsGetter, cluster.Spec.Cloud.DatacenterName)
+		dc, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
@@ -224,7 +224,7 @@ func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter prov
 			}
 		}
 
-		_, dc, err := provider.DatacenterFromSeedMap(seedsGetter, req.DC)
+		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -251,7 +251,7 @@ func AWSSubnetWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		_, dc, err := provider.DatacenterFromSeedMap(seedsGetter, cluster.Spec.Cloud.DatacenterName)
+		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -346,7 +346,7 @@ func AWSVPCEndpoint(credentialManager common.PresetsManager, seedsGetter provide
 			}
 		}
 
-		_, datacenter, err := provider.DatacenterFromSeedMap(seedsGetter, req.DC)
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}

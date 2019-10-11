@@ -85,6 +85,8 @@ type DatacenterSpec struct {
 	GCP          *DatacenterSpecGCP          `json:"gcp,omitempty"`
 	Fake         *DatacenterSpecFake         `json:"fake,omitempty"`
 	Kubevirt     *DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
+
+	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
 }
 
 // ImageList defines a map of operating system and the image to use

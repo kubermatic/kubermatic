@@ -25,6 +25,9 @@ type DatacenterSpec struct {
 	// provider
 	Provider string `json:"provider,omitempty"`
 
+	// required email domain
+	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
+
 	// seed
 	Seed string `json:"seed,omitempty"`
 
