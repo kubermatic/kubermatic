@@ -16,8 +16,8 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
     spec:
-      {{ if .Values.grafana.provisioning.datasources.paths }}
       initContainers:
+      {{- if .Values.grafana.provisioning.datasources.paths }}
       - image: '{{ .Values.grafana.utilImage.repository }}:{{ .Values.grafana.utilImage.tag }}'
         name: datasource-assembler
         command: [/bin/bash]
@@ -68,7 +68,21 @@ spec:
           readOnly: true
         {{- end }}
         {{- end }}
-      {{ end }}
+      {{- end }}
+
+      - image: '{{ $.Values.grafana.pluginImage.repository }}:{{ $.Values.grafana.pluginImage.tag }}'
+        name: plugin-installer
+        command: [/bin/sh]
+        args:
+        - -c
+        - |
+          set -euo pipefail
+          echo "Installing plugins..."
+          cp -r /plugins /var/lib/grafana
+          ls -1 /var/lib/grafana/plugins
+        volumeMounts:
+        - mountPath: /var/lib/grafana
+          name: grafana-storage
 
       containers:
       - image: '{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}'
