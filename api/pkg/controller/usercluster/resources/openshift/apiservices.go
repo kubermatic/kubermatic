@@ -2,6 +2,7 @@ package openshift
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
@@ -10,8 +11,8 @@ import (
 // GetAPIServicesForOpenshiftVersion returns all the NamedAPIServiceCreatorGetters for the given Openshift version
 // or an error
 func GetAPIServicesForOpenshiftVersion(openshiftVersion string, caBundle []byte) ([]reconciling.NamedAPIServiceCreatorGetter, error) {
-	switch openshiftVersion {
-	case "4.1.9":
+	switch {
+	case strings.HasPrefix(openshiftVersion, "4.1."):
 		// do stuff
 		return []reconciling.NamedAPIServiceCreatorGetter{
 			apiServiceFactory(caBundle, "v1.apps.openshift.io", "apps.openshift.io", 9900, "v1", 15),
