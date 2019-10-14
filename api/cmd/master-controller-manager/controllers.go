@@ -181,6 +181,9 @@ func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcont
 				continue
 			}
 			seedManagerMap[seedName] = seedMgr
+			if err := mgr.Add(seedMgr); err != nil {
+				return fmt.Errorf("faild to add controller manager for seed %q to mgr: %v", seedName, err)
+			}
 		}
 
 		return projectlabelsynchronizer.Add(
