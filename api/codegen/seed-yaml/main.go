@@ -108,9 +108,13 @@ func validateReflect(value reflect.Value, path []string) error {
 
 	// resolve pointer types to their underlying value
 	if typ.Kind() == reflect.Ptr {
-		// nil-pointers are not allowed for complex types
-		if value.IsNil() && isComplexType(typ) {
-			return fmt.Errorf("%s is invalid: field is nil", strings.Join(path, "."))
+		if value.IsNil() {
+			// nil-pointers are not allowed for complex types
+			if isComplexType(typ) {
+				return fmt.Errorf("%s is invalid: field is nil", strings.Join(path, "."))
+			}
+
+			return nil
 		}
 
 		value = value.Elem()
