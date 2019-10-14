@@ -27,7 +27,7 @@ func main() {
 		Spec: kubermaticv1.SeedSpec{
 			Country: "foo",
 			Datacenters: map[string]kubermaticv1.Datacenter{
-				"exampleseed1": kubermaticv1.Datacenter{
+				"exampleseed1": {
 					Node: kubermaticv1.NodeSettings{
 						ProxySettings: kubermaticv1.ProxySettings{
 							HTTPProxy: pointer.StringPtr("external.com"),
