@@ -15,7 +15,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	ctrlruntimecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -31,28 +33,27 @@ const (
 
 type Reconciler struct {
 	ctx                  context.Context
+	masterKubeCFG        *rest.Config
+	masterClient         ctrlruntimeclient.Client
+	masterCache          cache.Cache
 	log                  *zap.SugaredLogger
 	seedsGetter          provider.SeedsGetter
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
-	controllerFactories  []func() (manager.Runnable, error)
+	controllerFactories  []ControllerFactory
 	enqueue              func()
-	activeControllers    controllerInstanceSet
+	activeManager        *managerInstance
 }
 
-// controllerInstanceSet represents a set of running
-// controllers.
-type controllerInstanceSet struct {
-	config      map[string]rest.Config
-	controllers []*controllerInstance
-	stopChan    chan struct{}
+// controllerInstance represents an instance of controllerManager
+type managerInstance struct {
+	config   map[string]rest.Config
+	mgr      manager.Manager
+	running  bool
+	stopChan chan struct{}
 }
 
-// controllerInstance represents an instance of a running
-// controller
-type controllerInstance struct {
-	controller manager.Runnable
-	running    bool
-}
+// ControllerFactory is a function to create a new controller instance
+type ControllerFactory func(manager.Manager) (controllerName string, err error)
 
 func Add(
 	ctx context.Context,
@@ -61,18 +62,21 @@ func Add(
 	namespace string,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
-	controllerFactories ...func() (manager.Runnable, error),
+	controllerFactories ...ControllerFactory,
 ) error {
 
 	reconciler := &Reconciler{
 		ctx:                  ctx,
+		masterKubeCFG:        mgr.GetConfig(),
+		masterClient:         mgr.GetClient(),
+		masterCache:          mgr.GetCache(),
 		log:                  log.Named(ControllerName),
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,
 		controllerFactories:  controllerFactories,
 	}
-	c, err := ctrlruntimecontroller.New(ControllerName, mgr,
-		ctrlruntimecontroller.Options{Reconciler: reconciler, MaxConcurrentReconciles: 1})
+	c, err := controller.New(ControllerName, mgr,
+		controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: 1})
 	if err != nil {
 		return fmt.Errorf("failed to construct controller: %v", err)
 	}
@@ -126,53 +130,56 @@ func (r *Reconciler) reconcile() error {
 		seedKubeconfigMap[seed.Name] = *cfg
 	}
 
-	var allControllersRunning bool
-	for _, controller := range r.activeControllers.controllers {
-		if !controller.running {
-			allControllersRunning = false
-			break
-		}
-	}
-
-	if allControllersRunning && reflect.DeepEqual(r.activeControllers.config, seedKubeconfigMap) {
+	if r.activeManager != nil && r.activeManager.running && reflect.DeepEqual(r.activeManager.config, seedKubeconfigMap) {
 		r.log.Debug("All controllers running and config up-to-date, nothing to do.")
 		return nil
 	}
 
-	var controllers []manager.Runnable
-	for _, factory := range r.controllerFactories {
-		runnable, err := factory()
-		if err != nil {
-			return fmt.Errorf("failed to construct controller: %v", err)
-		}
-		controllers = append(controllers, runnable)
+	// We let a controller manager run the controllers for us.
+	mgr, err := manager.New(r.masterKubeCFG, manager.Options{
+		LeaderElection:     false,
+		MetricsBindAddress: "0",
+		// Avoid duplicating caches or client for master cluster, as its static.
+		NewCache: func(_ *rest.Config, _ cache.Options) (cache.Cache, error) {
+			return r.masterCache, nil
+		},
+		NewClient: func(_ cache.Cache, _ *rest.Config, _ ctrlruntimeclient.Options) (ctrlruntimeclient.Client, error) {
+			return r.masterClient, nil
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create controller manager: %v", err)
 	}
 
-	r.log.Info("Stopping old version of controllers")
-	close(r.activeControllers.stopChan)
+	for _, factory := range r.controllerFactories {
+		controllerName, err := factory(mgr)
+		if err != nil {
+			return fmt.Errorf("failed to construct controller %s: %v", controllerName, err)
+		}
+	}
 
-	r.activeControllers = controllerInstanceSet{
+	if r.activeManager != nil {
+		r.log.Info("Stopping old instance of controller manager")
+		close(r.activeManager.stopChan)
+	}
+
+	mi := &managerInstance{
 		config:   seedKubeconfigMap,
+		mgr:      mgr,
 		stopChan: make(chan struct{}),
 	}
-
-	for idx := range controllers {
-		controller := controllers[idx]
-		ci := &controllerInstance{
-			controller: controller,
+	go func() {
+		r.log.Info("Starting controller manager")
+		mi.running = true
+		if err := mi.mgr.Start(mi.stopChan); err != nil {
+			r.log.Errorw("Controller manager stopped with error", zap.Error(err))
 		}
-		r.activeControllers.controllers = append(r.activeControllers.controllers, ci)
-		go func() {
-			r.log.Info("Starting controller")
-			ci.running = true
-			if err := ci.controller.Start(r.activeControllers.stopChan); err != nil {
-				r.log.Errorw("Controller stopped with error", zap.Error(err))
-			}
-			r.log.Info("Controller stopped")
-			ci.running = false
-			// Make sure we check on this
-			r.enqueue()
-		}()
-	}
+		mi.running = false
+		r.log.Info("Controller manager stopped")
+		// Make sure we check on this
+		r.enqueue()
+	}()
+
+	r.activeManager = mi
 	return nil
 }
