@@ -11,7 +11,6 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"github.com/kubernetes/test-infra/pkg/genyaml"
-	"k8s.io/utils/pointer"
 )
 
 func main() {
@@ -21,18 +20,22 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to find go files: %v", err)
 	}
+
+	files = append(
+		files,
+		"vendor/k8s.io/api/core/v1/types.go",
+	)
+
 	cm := genyaml.NewCommentMap(files...)
 
 	mySeed := kubermaticv1.Seed{
 		Spec: kubermaticv1.SeedSpec{
-			Country: "foo",
+			Country:  "DE",
+			Location: "Hamburg",
 			Datacenters: map[string]kubermaticv1.Datacenter{
 				"exampleseed1": {
 					Node: kubermaticv1.NodeSettings{
-						ProxySettings: kubermaticv1.ProxySettings{
-							HTTPProxy: pointer.StringPtr("external.com"),
-							NoProxy:   pointer.StringPtr("localhost,internal.example.com"),
-						},
+						ProxySettings:      kubermaticv1.ProxySettings{},
 						InsecureRegistries: []string{},
 					},
 					Spec: kubermaticv1.DatacenterSpec{
@@ -48,9 +51,7 @@ func main() {
 							Images: kubermaticv1.ImageList{
 								providerconfig.OperatingSystemCoreos: "foo",
 							},
-							ManageSecurityGroups: pointer.BoolPtr(true),
-							TrustDevicePath:      pointer.BoolPtr(true),
-							DNSServers:           []string{},
+							DNSServers: []string{},
 						},
 						Packet: &kubermaticv1.DatacenterSpecPacket{
 							Facilities: []string{},
@@ -70,11 +71,7 @@ func main() {
 					},
 				},
 			},
-			SeedDNSOverwrite: pointer.StringPtr("foo.example.com"),
-			ProxySettings: &kubermaticv1.ProxySettings{
-				HTTPProxy: pointer.StringPtr("external.com"),
-				NoProxy:   pointer.StringPtr("localhost,internal.example.com"),
-			},
+			ProxySettings: &kubermaticv1.ProxySettings{},
 		},
 	}
 

@@ -17,7 +17,7 @@ cleanup
 echodate "Recreating example CRs..."
 
 cp -ar docs $tmpdir
-rm -f docs/*.generated.yaml
+rm -f docs/zz_generated.*.yaml
 ./api/hack/update-crd-examples.sh
 diff -rdu docs $tmpdir
 
