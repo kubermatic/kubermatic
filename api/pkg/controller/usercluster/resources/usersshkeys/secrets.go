@@ -24,11 +24,18 @@ func createSecretsFromUserSSHDirPath(path string) reconciling.SecretCreator {
 			return nil, err
 		}
 
-		existing.Data = map[string][]byte{}
+		if existing.Data == nil {
+			existing.Data = map[string][]byte{}
+		}
+
 		for _, file := range files {
+			if _, ok := existing.Data[file.Name()]; ok {
+				continue
+			}
+
 			data, err := ioutil.ReadFile(fmt.Sprintf("%v/%v", path, file.Name()))
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to read file %v during secret creation", file.Name())
 			}
 			existing.Data[file.Name()] = data
 		}

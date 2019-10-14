@@ -6,12 +6,13 @@ import (
 
 	"go.uber.org/zap"
 
+	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -59,6 +60,10 @@ func Add(
 		return fmt.Errorf("failed to create watcher for userSSHKey: %v", err)
 	}
 
+	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
+		return fmt.Errorf("failed to create watcher for secrets: %v", err)
+	}
+
 	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{})
 }
 
@@ -77,8 +82,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != "" &&
-		cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
 		log.Debugw(
 			"Skipping because the cluster has a different worker name set",
 			"cluster-worker-name", cluster.Labels[kubermaticv1.WorkerNameLabelKey],
@@ -101,11 +105,11 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 
 	userSSHKeys := &kubermaticv1.UserSSHKeyList{}
 	if err := r.Client.List(ctx, &ctrlruntimeclient.ListOptions{}, userSSHKeys); err != nil {
-		if kubeapierrors.IsNotFound(err) {
-			r.log.Debug("Could not find user ssh keys")
-			return nil
-		}
 		return err
+	}
+
+	if len(userSSHKeys.Items) == 0 {
+		return nil
 	}
 
 	keys := buildUserSSHKeysForCluster(cluster.Name, userSSHKeys)
@@ -146,23 +150,8 @@ func buildUserSSHKeysForCluster(clusterName string, list *kubermaticv1.UserSSHKe
 }
 
 func (r *Reconciler) ensureUserSSHKeySecretCreation(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	key := types.NamespacedName{
-		Namespace: cluster.Status.NamespaceName,
-		Name:      resources.UserSSHKeys,
-	}
-
-	secret := &corev1.Secret{}
-	if err := r.Get(ctx, key, secret); err != nil {
-		if kubeapierrors.IsNotFound(err) {
-			secret = &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      key.Name,
-					Namespace: key.Namespace,
-				},
-				Type: corev1.SecretTypeOpaque,
-			}
-			return r.Create(ctx, secret)
-		}
+	secreteGetter := createUserSSHKeysSecrets()
+	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{secreteGetter}, cluster.Status.NamespaceName, r.Client); err != nil {
 		return err
 	}
 
@@ -185,4 +174,19 @@ func enqueueAllClusters(client ctrlruntimeclient.Client) *handler.EnqueueRequest
 
 		return clustersRequests
 	})}
+}
+
+// createUserSSHKeysSecrets creates a secret in the seed cluster from the user ssh keys.
+func createUserSSHKeysSecrets() reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return resources.UserSSHKeys, func(existing *corev1.Secret) (secret *corev1.Secret, e error) {
+			if existing.Data == nil {
+				existing.Data = map[string][]byte{}
+			}
+
+			existing.Type = corev1.SecretTypeOpaque
+
+			return existing, nil
+		}
+	}
 }
