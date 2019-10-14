@@ -94,8 +94,8 @@ func main() {
 	fmt.Println(yaml)
 }
 
-// validateSeed checks recursively that all fields relevant to the documentation
-// are filled in with example values.
+// validateAllFieldsAreDefined recursively checks that all fields relevant
+// to the documentation are filled in with example values.
 func validateAllFieldsAreDefined(item interface{}) error {
 	return validateReflect(reflect.ValueOf(item), []string{})
 }
