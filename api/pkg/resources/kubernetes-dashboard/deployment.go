@@ -69,7 +69,7 @@ func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeployment
 			}
 
 			dep.Spec.Template.Spec.Volumes = volumes
-			dep.Spec.Template.Spec.Containers = getContainers(data)
+			dep.Spec.Template.Spec.Containers = getContainers(data, dep.Spec.Template.Spec.Containers)
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
@@ -83,43 +83,47 @@ func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeployment
 	}
 }
 
-func getContainers(data kubernetesDashboardData) []corev1.Container {
-	return []corev1.Container{
-		{
-			Name:            name,
-			Image:           fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryDocker), imageName, tag),
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"/dashboard"},
-			Args: []string{
-				"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-				"--namespace", namespace,
-				"--enable-insecure-login",
-			},
-			Resources: defaultResourceRequirements,
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      resources.KubernetesDashboardKubeconfigSecretName,
-					MountPath: "/etc/kubernetes/kubeconfig",
-					ReadOnly:  true,
-				}, {
-					Name:      "tmp-volume",
-					MountPath: "/tmp",
-				},
-			},
-			Ports: []corev1.ContainerPort{
-				{
-					ContainerPort: ContainerPort,
-					Protocol:      corev1.ProtocolTCP,
-				},
-			},
-			SecurityContext: &corev1.SecurityContext{
-				RunAsUser:                pointer.Int64Ptr(1001),
-				RunAsGroup:               pointer.Int64Ptr(2001),
-				ReadOnlyRootFilesystem:   pointer.BoolPtr(true),
-				AllowPrivilegeEscalation: pointer.BoolPtr(false),
+func getContainers(data kubernetesDashboardData, existingContainers []corev1.Container) []corev1.Container {
+	// We must do some hoops there because SecurityContext.RunAsGroup
+	// does not exit in all Kubernetes versions. We must keep it if it
+	// exists but never set it ourselves. The APIServer defaults
+	// RunAsGroup to the RunAsUser setting
+	securityContext := &corev1.SecurityContext{}
+	if len(existingContainers) == 1 && existingContainers[0].SecurityContext != nil {
+		securityContext = existingContainers[0].SecurityContext
+	}
+	securityContext.RunAsUser = pointer.Int64Ptr(1001)
+	securityContext.ReadOnlyRootFilesystem = pointer.BoolPtr(true)
+	securityContext.AllowPrivilegeEscalation = pointer.BoolPtr(false)
+	return []corev1.Container{{
+		Name:            name,
+		Image:           fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryDocker), imageName, tag),
+		ImagePullPolicy: corev1.PullIfNotPresent,
+		Command:         []string{"/dashboard"},
+		Args: []string{
+			"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+			"--namespace", namespace,
+			"--enable-insecure-login",
+		},
+		Resources: defaultResourceRequirements,
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      resources.KubernetesDashboardKubeconfigSecretName,
+				MountPath: "/etc/kubernetes/kubeconfig",
+				ReadOnly:  true,
+			}, {
+				Name:      "tmp-volume",
+				MountPath: "/tmp",
 			},
 		},
-	}
+		Ports: []corev1.ContainerPort{
+			{
+				ContainerPort: ContainerPort,
+				Protocol:      corev1.ProtocolTCP,
+			},
+		},
+		SecurityContext: securityContext,
+	}}
 }
 
 func getVolumes() []corev1.Volume {
