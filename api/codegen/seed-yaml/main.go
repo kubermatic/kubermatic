@@ -11,6 +11,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"github.com/kubernetes/test-infra/pkg/genyaml"
+	"k8s.io/utils/pointer"
 )
 
 func main() {
@@ -29,8 +30,8 @@ func main() {
 				"exampleseed1": kubermaticv1.Datacenter{
 					Node: kubermaticv1.NodeSettings{
 						ProxySettings: kubermaticv1.ProxySettings{
-							HTTPProxy: strptr("external.com"),
-							NoProxy:   strptr("localhost,internal.example.com"),
+							HTTPProxy: pointer.StringPtr("external.com"),
+							NoProxy:   pointer.StringPtr("localhost,internal.example.com"),
 						},
 						InsecureRegistries: []string{},
 					},
@@ -47,8 +48,8 @@ func main() {
 							Images: kubermaticv1.ImageList{
 								providerconfig.OperatingSystemCoreos: "foo",
 							},
-							ManageSecurityGroups: boolptr(true),
-							TrustDevicePath:      boolptr(true),
+							ManageSecurityGroups: pointer.BoolPtr(true),
+							TrustDevicePath:      pointer.BoolPtr(true),
 							DNSServers:           []string{},
 						},
 						Packet: &kubermaticv1.DatacenterSpecPacket{
@@ -69,10 +70,10 @@ func main() {
 					},
 				},
 			},
-			SeedDNSOverwrite: strptr("foo.example.com"),
+			SeedDNSOverwrite: pointer.StringPtr("foo.example.com"),
 			ProxySettings: &kubermaticv1.ProxySettings{
-				HTTPProxy: strptr("external.com"),
-				NoProxy:   strptr("localhost,internal.example.com"),
+				HTTPProxy: pointer.StringPtr("external.com"),
+				NoProxy:   pointer.StringPtr("localhost,internal.example.com"),
 			},
 		},
 	}
@@ -93,16 +94,8 @@ func main() {
 	fmt.Println(yaml)
 }
 
-func strptr(s string) *string {
-	return &s
-}
-
-func boolptr(b bool) *bool {
-	return &b
-}
-
-// validateSeed checks recursively that no nil values are used for pointer types.
-// This ensures that the generated YAML contains all possible fields and comments.
+// validateSeed checks recursively that all fields relevant to the documentation
+// are filled in with example values.
 func validateAllFieldsAreDefined(item interface{}) error {
 	return validateReflect(reflect.ValueOf(item), []string{})
 }
