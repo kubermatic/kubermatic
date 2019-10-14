@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"go.uber.org/zap"
+
+	projectlabelsynchronizer "github.com/kubermatic/kubermatic/api/pkg/controller/project-label-synchronizer"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-lifecycle"
 	seedproxy "github.com/kubermatic/kubermatic/api/pkg/controller/seed-proxy"
@@ -30,6 +33,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.seedKubeconfigGetter,
 		ctrlCtx.workerCount,
 		ctrlCtx.labelSelectorFunc)
+	projectLabelSynchronizerFactory := projectLabelSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		kubermaticlog.Logger,
@@ -37,7 +41,8 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.namespace,
 		ctrlCtx.seedsGetter,
 		ctrlCtx.seedKubeconfigGetter,
-		rbacControllerFactory); err != nil {
+		rbacControllerFactory,
+		projectLabelSynchronizerFactory); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %v", err)
 	}
@@ -62,7 +67,7 @@ func rbacControllerFactoryCreator(
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 	workerCount int,
 	selectorOps func(*metav1.ListOptions),
-) func(manager.Manager) (string, error) {
+) seedcontrollerlifecycle.ControllerFactory {
 
 	rbacMetrics := rbac.NewMetrics()
 	seedKubeconfigRetrievalSuccessMetric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -149,4 +154,44 @@ func rbacClusterProvider(cfg *rest.Config, name string, master bool, labelSelect
 	kubeInformerProvider := rbac.NewInformerProvider(kubeClient, time.Minute*5)
 
 	return rbac.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, name), kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory), nil
+}
+
+func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	log := ctrlCtx.log.Named("project-label-synchronizer-factory")
+	factory := func(mgr manager.Manager) error {
+		seeds, err := ctrlCtx.seedsGetter()
+		if err != nil {
+			log.Errorw("Failed to get seeds", zap.Error(err))
+			return fmt.Errorf("failed to get seeds: %v", err)
+		}
+
+		seedManagerMap := map[string]manager.Manager{}
+		for seedName, seed := range seeds {
+			log := ctrlCtx.log.With("seed", seed.Name)
+			kubeconfig, err := ctrlCtx.seedKubeconfigGetter(seed)
+			if err != nil {
+				log.Errorw("Failed to get kubeconfig for seed", zap.Error(err))
+				// Don't let one defunct seed break everything. We have a metric for this
+				// in the rbac controller factory, so jsut log it here
+				continue
+			}
+			seedMgr, err := manager.New(kubeconfig, manager.Options{})
+			if err != nil {
+				log.Errorw("Failed to construct mgr for seed", zap.Error(err))
+				continue
+			}
+			seedManagerMap[seedName] = seedMgr
+		}
+
+		return projectlabelsynchronizer.Add(
+			ctrlCtx.ctx,
+			mgr,
+			seedManagerMap,
+			ctrlCtx.log,
+			ctrlCtx.workerCount,
+			ctrlCtx.workerName)
+	}
+	return func(mgr manager.Manager) (string, error) {
+		return projectlabelsynchronizer.ControllerName, factory(mgr)
+	}
 }

@@ -49,6 +49,7 @@ type controllerContext struct {
 	mgr                  manager.Manager
 	log                  *zap.SugaredLogger
 	workerCount          int
+	workerName           string
 	seedsGetter          provider.SeedsGetter
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
 	labelSelectorFunc    func(*metav1.ListOptions)
@@ -82,6 +83,7 @@ func main() {
 	}()
 	kubermaticlog.Logger = log
 	ctrlCtx.log = log
+	ctrlCtx.workerName = runOpts.workerName
 
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)
 	if err != nil {
