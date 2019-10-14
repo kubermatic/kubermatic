@@ -313,7 +313,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(setSecureHeaders)
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
-	r.RegisterV1(v1Router, metrics)
+	r.RegisterV1(v1Router, metrics, options.accessibleAddons)
 	r.RegisterV1Legacy(v1Router)
 	r.RegisterV1Optional(v1Router,
 		options.featureGates.Enabled(OIDCKubeCfgEndpoint),

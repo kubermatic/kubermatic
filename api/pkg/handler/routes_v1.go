@@ -23,10 +23,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/ssh"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/user"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // RegisterV1 declares all router paths for v1
-func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
+func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics, accessibleAddons sets.String) {
 	//
 	// no-op endpoint that always returns HTTP 200
 	mux.Methods(http.MethodGet).
@@ -346,6 +348,13 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}").
 		Handler(r.deleteNodeDeployment())
+
+	//
+	// Defines a set of HTTP endpoints for managing addons
+
+	mux.Methods(http.MethodGet).
+		Path("/addons").
+		Handler(r.listAccessibleAddons(accessibleAddons))
 
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons").
@@ -2666,6 +2675,34 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 	)
 }
 
+// swagger:route POST /api/v1/addons addon listAccessibleAddons
+//
+//     Lists names of addons that can be configured inside the user clusters
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []string
+//       401: empty
+//       403: empty
+func (r Routing) listAccessibleAddons(accessibleAddons sets.String) http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(addon.ListAccessibleAddons(accessibleAddons)),
+		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons addon createAddon
 //
 //     Creates an addon that will belong to the given cluster
@@ -2736,7 +2773,6 @@ func (r Routing) listAddons() http.Handler {
 //       401: empty
 //       403: empty
 func (r Routing) getAddon() http.Handler {
-
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
