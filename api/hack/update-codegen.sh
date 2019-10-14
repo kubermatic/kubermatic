@@ -34,3 +34,5 @@ GOPATH=$(go env GOPATH) $(go env GOPATH)/bin/deepcopy-gen \
 rm /tmp/headerfile
 
 go generate pkg/resources/reconciling/ensure.go
+
+go run codegen/seed-yaml/main.go > ../docs/seed-cr.generated.yaml
