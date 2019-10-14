@@ -1,4 +1,4 @@
-# Title of the Poposal: e.g. **kube-node**
+# Title of the Proposal: e.g. **kube-node**
 
 **Author**: Sebastian Scheele (@scheeles)
 
