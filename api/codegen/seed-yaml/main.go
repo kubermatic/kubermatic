@@ -91,6 +91,9 @@ func main() {
 	// fix ugly double newlines
 	yaml = strings.Replace(yaml, "\n\n\n", "\n\n", -1)
 
+	// reduce indentation
+	yaml = strings.Replace(yaml, "    ", "  ", -1)
+
 	fmt.Println(yaml)
 }
 

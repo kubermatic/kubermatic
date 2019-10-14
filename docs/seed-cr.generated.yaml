@@ -3,87 +3,87 @@ country: foo
 
 # The possible datacenters for the nodes
 datacenters:
-    exampleseed1:
-        # Node holds node-specific settings, like e.g. HTTP proxy, insecure registries and the like
-        node:
-            http_proxy: external.com
-            no_proxy: localhost,internal.example.com
-        spec:
-            aws:
-                images:
-                    coreos: foo
-                region: ""
-            azure:
-                location: ""
-            bringyourown: {}
-            digitalocean:
-                region: ""
-            fake: {}
-            gcp:
-                region: ""
-                zone_suffixes: []
-            hetzner:
-                datacenter: ""
-                location: ""
-            kubevirt: {}
-            openstack:
-                auth_url: ""
-                availability_zone: ""
+  exampleseed1:
+    # Node holds node-specific settings, like e.g. HTTP proxy, insecure registries and the like
+    node:
+      http_proxy: external.com
+      no_proxy: localhost,internal.example.com
+    spec:
+      aws:
+        images:
+          coreos: foo
+        region: ""
+      azure:
+        location: ""
+      bringyourown: {}
+      digitalocean:
+        region: ""
+      fake: {}
+      gcp:
+        region: ""
+        zone_suffixes: []
+      hetzner:
+        datacenter: ""
+        location: ""
+      kubevirt: {}
+      openstack:
+        auth_url: ""
+        availability_zone: ""
 
-                # Used for automatic network creation
-                dns_servers: []
-                enforce_floating_ip: false
-                ignore_volume_az: false
-                images:
-                    coreos: foo
+        # Used for automatic network creation
+        dns_servers: []
+        enforce_floating_ip: false
+        ignore_volume_az: false
+        images:
+          coreos: foo
 
-                # Gets mapped to the "manage-security-groups" setting in the cloud config.
-                # See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
-                # To make this change backwards compatible, this will default to true.
-                manage_security_groups: true
-                node_size_requirements:
-                    # MinimumMemory is the minimum required amount of memory, measured in MB
-                    minimum_memory: 0
+        # Gets mapped to the "manage-security-groups" setting in the cloud config.
+        # See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
+        # To make this change backwards compatible, this will default to true.
+        manage_security_groups: true
+        node_size_requirements:
+          # MinimumMemory is the minimum required amount of memory, measured in MB
+          minimum_memory: 0
 
-                    # VCPUs is the minimum required amount of (virtual) CPUs
-                    minimum_vcpus: 0
-                region: ""
+          # VCPUs is the minimum required amount of (virtual) CPUs
+          minimum_vcpus: 0
+        region: ""
 
-                # Gets mapped to the "trust-device-path" setting in the cloud config.
-                # See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
-                trust_device_path: true
-            packet:
-                facilities: []
-            vsphere:
-                allow_insecure: false
-                cluster: ""
-                datacenter: ""
-                datastore: ""
-                endpoint: ""
+        # Gets mapped to the "trust-device-path" setting in the cloud config.
+        # See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
+        trust_device_path: true
+      packet:
+        facilities: []
+      vsphere:
+        allow_insecure: false
+        cluster: ""
+        datacenter: ""
+        datastore: ""
+        endpoint: ""
 
-                # Infra management user is an optional user that will be used only
-                # for everything except the cloud provider functionality which will
-                # still use the credentials passed in via the frontend/api
-                infra_management_user: {}
+        # Infra management user is an optional user that will be used only
+        # for everything except the cloud provider functionality which will
+        # still use the credentials passed in via the frontend/api
+        infra_management_user: {}
 
-                # Optional root path for cluster specific VM folders.
-                # Each cluster gets a own folder below the root folder.
-                # Must be the FQDN (example: /datacenter-1/vm/all-kubermatic-vms-in-here )
-                # Defaults to the root VM folder: /datacenter-1/vm
-                root_path: ""
-                templates:
-                    coreos: foo
+        # Optional root path for cluster specific VM folders.
+        # Each cluster gets a own folder below the root folder.
+        # Must be the FQDN (example: /datacenter-1/vm/all-kubermatic-vms-in-here )
+        # Defaults to the root VM folder: /datacenter-1/vm
+        root_path: ""
+        templates:
+          coreos: foo
 
 # A reference to the Kubeconfig of this cluster
 kubeconfig: {}
 
 # Optional: Configure a http proxy for this seed
 proxy_settings:
-    # If set, this proxy will be configured for both http and https.
-    http_proxy: external.com
+  # If set, this proxy will be configured for both http and https.
+  http_proxy: external.com
 
-    # If set this will be set as NO_PROXY on the node
-    no_proxy: localhost,internal.example.com
+  # If set this will be set as NO_PROXY on the node
+  no_proxy: localhost,internal.example.com
 
 # Optional: Overwrite the DNS domain for this seed
 seed_dns_overwrite: foo.example.com
