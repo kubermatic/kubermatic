@@ -62,7 +62,7 @@ func rbacControllerFactoryCreator(
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 	workerCount int,
 	selectorOps func(*metav1.ListOptions),
-) func() (manager.Runnable, error) {
+) func(manager.Manager) (string, error) {
 
 	rbacMetrics := rbac.NewMetrics()
 	seedKubeconfigRetrievalSuccessMetric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -77,14 +77,14 @@ func rbacControllerFactoryCreator(
 	seedsWithMetrics := sets.NewString()
 	prometheus.MustRegister(rbacMetrics.Workers, seedKubeconfigRetrievalSuccessMetric)
 
-	return func() (manager.Runnable, error) {
+	factory := func(mgr manager.Manager) error {
 		seeds, err := seedsGetter()
 		if err != nil {
-			return nil, fmt.Errorf("failed to get seeds: %v", err)
+			return fmt.Errorf("failed to get seeds: %v", err)
 		}
 		masterClusterProvider, err := rbacClusterProvider(mastercfg, "master", true, selectorOps)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create master rbac provider: %v", err)
+			return fmt.Errorf("failed to create master rbac provider: %v", err)
 		}
 		allClusterProviders := []*rbac.ClusterProvider{masterClusterProvider}
 
@@ -100,7 +100,7 @@ func rbacControllerFactoryCreator(
 			seedKubeconfigRetrievalSuccessMetric.WithLabelValues(seed.Name).Set(1)
 			clusterProvider, err := rbacClusterProvider(kubeConfig, seed.Name, false, selectorOps)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create rbac provider for seed %q: %v", seed.Name, err)
+				return fmt.Errorf("failed to create rbac provider for seed %q: %v", seed.Name, err)
 			}
 			allClusterProviders = append(allClusterProviders, clusterProvider)
 		}
@@ -111,12 +111,12 @@ func rbacControllerFactoryCreator(
 
 		ctrl, err := rbac.New(rbacMetrics, allClusterProviders, workerCount)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create rbac controller: %v", err)
+			return fmt.Errorf("failed to create rbac controller: %v", err)
 		}
 
-		// This is an implementation of sigs.k8s.io/controller-runtime/pkg/manager.Runnable
-		// It wraps the actual controllers implementation to make sure informers are started first
-		runnableFunc := func(stopCh <-chan struct{}) error {
+		return mgr.Add(manager.RunnableFunc(func(stopCh <-chan struct{}) error {
+			// This is an implementation of sigs.k8s.io/controller-runtime/pkg/manager.Runnable
+			// It wraps the actual controllers implementation to make sure informers are started first
 			for _, clusterProvider := range allClusterProviders {
 				clusterProvider.StartInformers(stopCh)
 				if err := clusterProvider.WaitForCachesToSync(stopCh); err != nil {
@@ -124,8 +124,10 @@ func rbacControllerFactoryCreator(
 				}
 			}
 			return ctrl.Start(stopCh)
-		}
-		return manager.RunnableFunc(runnableFunc), nil
+		}))
+	}
+	return func(mgr manager.Manager) (string, error) {
+		return "rbac-controller", factory(mgr)
 	}
 }
 
