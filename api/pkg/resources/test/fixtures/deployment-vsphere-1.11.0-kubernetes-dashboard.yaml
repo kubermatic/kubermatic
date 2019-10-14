@@ -64,7 +64,6 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
-          runAsGroup: 2001
           runAsUser: 1001
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
