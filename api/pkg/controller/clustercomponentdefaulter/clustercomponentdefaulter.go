@@ -93,6 +93,13 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, cluster *kubermaticv1.Clu
 	if targetComponentsOverride.Apiserver.Resources == nil {
 		targetComponentsOverride.Apiserver.Resources = r.defaults.Apiserver.Resources
 	}
+	if targetComponentsOverride.Apiserver.EndpointReconcilingDisabled == nil {
+		if r.defaults.Apiserver.EndpointReconcilingDisabled != nil {
+			log.Debugf("setting ComponentsOverride.Apiserver.EndpointReconcilingDisabled to %s",
+				*r.defaults.Apiserver.EndpointReconcilingDisabled)
+		}
+		targetComponentsOverride.Apiserver.EndpointReconcilingDisabled = r.defaults.Apiserver.EndpointReconcilingDisabled
+	}
 	if targetComponentsOverride.ControllerManager.Replicas == nil {
 		targetComponentsOverride.ControllerManager.Replicas = r.defaults.ControllerManager.Replicas
 	}

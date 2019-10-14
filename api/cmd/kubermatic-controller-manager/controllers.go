@@ -57,7 +57,7 @@ func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
 	defaultCompontentsOverrides := kubermaticv1.ComponentSettings{
 		Apiserver: kubermaticv1.APIServerSettings{
 			DeploymentSettings:          kubermaticv1.DeploymentSettings{Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.apiServerDefaultReplicas))},
-			EndpointReconcilingDisabled: ctrlCtx.runOptions.apiServerEndpointReconcilingDisabled,
+			EndpointReconcilingDisabled: utilpointer.BoolPtr(ctrlCtx.runOptions.apiServerEndpointReconcilingDisabled),
 		},
 		ControllerManager: kubermaticv1.DeploymentSettings{
 			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.controllerManagerDefaultReplicas))},
