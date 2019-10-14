@@ -13,6 +13,38 @@
     "version": "2.11"
   },
   "paths": {
+    "/api/v1/addons": {
+      "post": {
+        "description": "Lists names of addons that can be configured inside the user clusters",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "addon"
+        ],
+        "operationId": "listAccessibleAddons",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/string"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/dc": {
       "get": {
         "produces": [
