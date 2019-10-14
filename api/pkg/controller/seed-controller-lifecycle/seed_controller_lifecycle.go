@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
+	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
@@ -17,7 +18,6 @@ import (
 	ctrlruntimecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -34,18 +34,24 @@ type Reconciler struct {
 	log                  *zap.SugaredLogger
 	seedsGetter          provider.SeedsGetter
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
-	controllerFactory    func() (manager.Runnable, error)
+	controllerFactories  []func() (manager.Runnable, error)
 	enqueue              func()
-	activeController     controllerInstance
+	activeControllers    controllerInstanceSet
+}
+
+// controllerInstanceSet represents a set of running
+// controllers.
+type controllerInstanceSet struct {
+	config      map[string]rest.Config
+	controllers []*controllerInstance
+	stopChan    chan struct{}
 }
 
 // controllerInstance represents an instance of a running
 // controller
 type controllerInstance struct {
-	config     map[string]rest.Config
 	controller manager.Runnable
 	running    bool
-	stopChan   chan struct{}
 }
 
 func Add(
@@ -55,7 +61,7 @@ func Add(
 	namespace string,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
-	controllerFactory func() (manager.Runnable, error),
+	controllerFactories ...func() (manager.Runnable, error),
 ) error {
 
 	reconciler := &Reconciler{
@@ -63,7 +69,7 @@ func Add(
 		log:                  log.Named(ControllerName),
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,
-		controllerFactory:    controllerFactory,
+		controllerFactories:  controllerFactories,
 	}
 	c, err := ctrlruntimecontroller.New(ControllerName, mgr,
 		ctrlruntimecontroller.Options{Reconciler: reconciler, MaxConcurrentReconciles: 1})
@@ -71,23 +77,12 @@ func Add(
 		return fmt.Errorf("failed to construct controller: %v", err)
 	}
 
-	nsPredicate := predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			return e.Meta.GetNamespace() == namespace
-		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			return e.MetaNew.GetNamespace() == namespace
-		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			return e.Meta.GetNamespace() == namespace
-		},
-		GenericFunc: func(e event.GenericEvent) bool {
-			return e.Meta.GetNamespace() == namespace
-		},
-	}
-
 	for _, t := range []runtime.Object{&kubermaticv1.Seed{}, &corev1.Secret{}} {
-		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueConst(queueKey), nsPredicate); err != nil {
+		if err := c.Watch(
+			&source.Kind{Type: t},
+			controllerutil.EnqueueConst(queueKey),
+			predicateutil.ByNamespace(namespace),
+		); err != nil {
 			return fmt.Errorf("failed to create watch for type %T: %v", t, err)
 		}
 	}
@@ -131,37 +126,53 @@ func (r *Reconciler) reconcile() error {
 		seedKubeconfigMap[seed.Name] = *cfg
 	}
 
-	if r.activeController.running && reflect.DeepEqual(r.activeController.config, seedKubeconfigMap) {
-		r.log.Debug("found running controller instance with up-to-date config, nothing to do")
+	var allControllersRunning bool
+	for _, controller := range r.activeControllers.controllers {
+		if !controller.running {
+			allControllersRunning = false
+			break
+		}
+	}
+
+	if allControllersRunning && reflect.DeepEqual(r.activeControllers.config, seedKubeconfigMap) {
+		r.log.Debug("All controllers running and config up-to-date, nothing to do.")
 		return nil
 	}
 
-	controller, err := r.controllerFactory()
-	if err != nil {
-		return fmt.Errorf("failed to construct controllers: %v", err)
-	}
-
-	if r.activeController.running {
-		r.log.Info("Stopping old version of controllers")
-		close(r.activeController.stopChan)
-	}
-
-	r.activeController = controllerInstance{
-		config:     seedKubeconfigMap,
-		controller: controller,
-		stopChan:   make(chan struct{}),
-	}
-	go func() {
-		r.log.Info("starting controllers")
-		r.activeController.running = true
-		if err := r.activeController.controller.Start(r.activeController.stopChan); err != nil {
-			r.log.Errorw("controllers stopped with error", zap.Error(err))
+	var controllers []manager.Runnable
+	for _, factory := range r.controllerFactories {
+		runnable, err := factory()
+		if err != nil {
+			return fmt.Errorf("failed to construct controller: %v", err)
 		}
-		r.log.Info("controllers stopped")
-		// Make sure we check on this
-		r.activeController.running = false
-		r.enqueue()
-	}()
+		controllers = append(controllers, runnable)
+	}
 
+	r.log.Info("Stopping old version of controllers")
+	close(r.activeControllers.stopChan)
+
+	r.activeControllers = controllerInstanceSet{
+		config:   seedKubeconfigMap,
+		stopChan: make(chan struct{}),
+	}
+
+	for idx := range controllers {
+		controller := controllers[idx]
+		ci := &controllerInstance{
+			controller: controller,
+		}
+		r.activeControllers.controllers = append(r.activeControllers.controllers, ci)
+		go func() {
+			r.log.Info("Starting controller")
+			ci.running = true
+			if err := ci.controller.Start(r.activeControllers.stopChan); err != nil {
+				r.log.Errorw("Controller stopped with error", zap.Error(err))
+			}
+			r.log.Info("Controller stopped")
+			ci.running = false
+			// Make sure we check on this
+			r.enqueue()
+		}()
+	}
 	return nil
 }
