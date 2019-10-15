@@ -192,7 +192,7 @@ func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcont
 			seedManagerMap,
 			ctrlCtx.log,
 			ctrlCtx.workerCount,
-			ctrlCtx.workerName)
+			ctrlCtx.workerNameLabelSelector)
 	}
 	return func(mgr manager.Manager) (string, error) {
 		return projectlabelsynchronizer.ControllerName, factory(mgr)

@@ -21,6 +21,7 @@ import (
 	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
@@ -45,15 +46,16 @@ type controllerRunOptions struct {
 }
 
 type controllerContext struct {
-	ctx                  context.Context
-	mgr                  manager.Manager
-	log                  *zap.SugaredLogger
-	workerCount          int
-	workerName           string
-	seedsGetter          provider.SeedsGetter
-	seedKubeconfigGetter provider.SeedKubeconfigGetter
-	labelSelectorFunc    func(*metav1.ListOptions)
-	namespace            string
+	ctx                     context.Context
+	mgr                     manager.Manager
+	log                     *zap.SugaredLogger
+	workerCount             int
+	workerName              string
+	workerNameLabelSelector labels.Selector
+	seedsGetter             provider.SeedsGetter
+	seedKubeconfigGetter    provider.SeedKubeconfigGetter
+	labelSelectorFunc       func(*metav1.ListOptions)
+	namespace               string
 }
 
 func main() {
@@ -89,6 +91,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to create the label selector for the given worker", "workerName", runOpts.workerName, zap.Error(err))
 	}
+	ctrlCtx.workerNameLabelSelector = selector
 
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_master_controller_manager", prometheus.DefaultRegisterer)

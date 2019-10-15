@@ -10,6 +10,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -26,12 +27,12 @@ import (
 const ControllerName = "kubermatic_project_label_synchronizer"
 
 type reconciler struct {
-	ctx          context.Context
-	log          *zap.SugaredLogger
-	workerName   string
-	masterClient ctrlruntimeclient.Client
-	seedClients  map[string]ctrlruntimeclient.Client
-	seedCaches   map[string]cache.Cache
+	ctx                     context.Context
+	log                     *zap.SugaredLogger
+	masterClient            ctrlruntimeclient.Client
+	seedClients             map[string]ctrlruntimeclient.Client
+	seedCaches              map[string]cache.Cache
+	workerNameLabelSelector labels.Selector
 }
 
 // requestFromCluster returns a reconcile.Request for the project the given
@@ -62,16 +63,16 @@ func Add(
 	seedManagers map[string]manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
-	workerName string) error {
+	workerNameLabelSelector labels.Selector) error {
 
 	log = log.Named(ControllerName)
 	r := &reconciler{
-		ctx:          ctx,
-		log:          log,
-		workerName:   workerName,
-		masterClient: masterManager.GetClient(),
-		seedClients:  map[string]ctrlruntimeclient.Client{},
-		seedCaches:   map[string]cache.Cache{},
+		ctx:                     ctx,
+		log:                     log,
+		masterClient:            masterManager.GetClient(),
+		seedClients:             map[string]ctrlruntimeclient.Client{},
+		seedCaches:              map[string]cache.Cache{},
+		workerNameLabelSelector: workerNameLabelSelector,
 	}
 
 	ctrlOpts := controller.Options{
@@ -138,18 +139,17 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 	for seedName, seedClient := range r.seedClients {
 		log := log.With("seed", seedName)
 
-		// TODO: Filter by worker-name label
-		listOpts := &ctrlruntimeclient.ListOptions{}
+		listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: r.workerNameLabelSelector}
 		unfilteredClusters := &kubermaticv1.ClusterList{}
 		if err := seedClient.List(r.ctx, listOpts, unfilteredClusters); err != nil {
 			errs = append(errs, fmt.Errorf("failed to list clusters in seed %q: %v", seedName, err))
 			continue
 		}
 
-		filteredClusters := r.filterClustersByWorkerNameAndProjectID(log, project.Name, unfilteredClusters)
+		filteredClusters := r.filterClustersByProjectID(log, project.Name, unfilteredClusters)
 		for _, cluster := range filteredClusters {
 			log := log.With("cluster", cluster.Name)
-			changed, newClusterLabels := getLabelsForCluster(log, cluster.Labels, projectLabels)
+			changed, newClusterLabels := getLabelsForCluster(log, cluster.Labels, project.Labels)
 			if !changed {
 				log.Debug("Labels on cluster are already up to date")
 				continue
@@ -191,7 +191,7 @@ func (r *reconciler) waitForSeedCacheSync() error {
 	return nil
 }
 
-func (r *reconciler) filterClustersByWorkerNameAndProjectID(
+func (r *reconciler) filterClustersByProjectID(
 	log *zap.SugaredLogger,
 	projectID string,
 	clusters *kubermaticv1.ClusterList,
@@ -200,11 +200,6 @@ func (r *reconciler) filterClustersByWorkerNameAndProjectID(
 
 	for idx, cluster := range clusters.Items {
 		log := log.With("cluster", cluster.Name)
-		if val := cluster.Labels[kubermaticv1.WorkerNameLabelKey]; val != r.workerName {
-			log.Debugw("Ignoring cluster because it has the wrong worker-name label", "cluster-worker-name", val)
-			continue
-		}
-
 		if val := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; val != projectID {
 			log.Debugw("Ignoring cluster because it has the wrong project-id", "cluster-project-id", val)
 			continue
