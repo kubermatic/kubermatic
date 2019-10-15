@@ -8,16 +8,18 @@ import (
 	"go.uber.org/zap"
 
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
+	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	ctrlruntimecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -31,22 +33,27 @@ const (
 
 type Reconciler struct {
 	ctx                  context.Context
+	masterKubeCfg        *rest.Config
+	masterClient         ctrlruntimeclient.Client
+	masterCache          cache.Cache
 	log                  *zap.SugaredLogger
 	seedsGetter          provider.SeedsGetter
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
-	controllerFactory    func() (manager.Runnable, error)
+	controllerFactories  []ControllerFactory
 	enqueue              func()
-	activeController     controllerInstance
+	activeManager        *managerInstance
 }
 
-// controllerInstance represents an instance of a running
-// controller
-type controllerInstance struct {
-	config     map[string]rest.Config
-	controller manager.Runnable
-	running    bool
-	stopChan   chan struct{}
+// managerInstance represents an instance of controllerManager
+type managerInstance struct {
+	config   map[string]rest.Config
+	mgr      manager.Manager
+	running  bool
+	stopChan chan struct{}
 }
+
+// ControllerFactory is a function to create a new controller instance
+type ControllerFactory func(manager.Manager) (controllerName string, err error)
 
 func Add(
 	ctx context.Context,
@@ -55,39 +62,31 @@ func Add(
 	namespace string,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
-	controllerFactory func() (manager.Runnable, error),
+	controllerFactories ...ControllerFactory,
 ) error {
 
 	reconciler := &Reconciler{
 		ctx:                  ctx,
+		masterKubeCfg:        mgr.GetConfig(),
+		masterClient:         mgr.GetClient(),
+		masterCache:          mgr.GetCache(),
 		log:                  log.Named(ControllerName),
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,
-		controllerFactory:    controllerFactory,
+		controllerFactories:  controllerFactories,
 	}
-	c, err := ctrlruntimecontroller.New(ControllerName, mgr,
-		ctrlruntimecontroller.Options{Reconciler: reconciler, MaxConcurrentReconciles: 1})
+	c, err := controller.New(ControllerName, mgr,
+		controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: 1})
 	if err != nil {
 		return fmt.Errorf("failed to construct controller: %v", err)
 	}
 
-	nsPredicate := predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			return e.Meta.GetNamespace() == namespace
-		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			return e.MetaNew.GetNamespace() == namespace
-		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			return e.Meta.GetNamespace() == namespace
-		},
-		GenericFunc: func(e event.GenericEvent) bool {
-			return e.Meta.GetNamespace() == namespace
-		},
-	}
-
 	for _, t := range []runtime.Object{&kubermaticv1.Seed{}, &corev1.Secret{}} {
-		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueConst(queueKey), nsPredicate); err != nil {
+		if err := c.Watch(
+			&source.Kind{Type: t},
+			controllerutil.EnqueueConst(queueKey),
+			predicateutil.ByNamespace(namespace),
+		); err != nil {
 			return fmt.Errorf("failed to create watch for type %T: %v", t, err)
 		}
 	}
@@ -131,37 +130,56 @@ func (r *Reconciler) reconcile() error {
 		seedKubeconfigMap[seed.Name] = *cfg
 	}
 
-	if r.activeController.running && reflect.DeepEqual(r.activeController.config, seedKubeconfigMap) {
-		r.log.Debug("found running controller instance with up-to-date config, nothing to do")
+	if r.activeManager != nil && r.activeManager.running && reflect.DeepEqual(r.activeManager.config, seedKubeconfigMap) {
+		r.log.Debug("All controllers running and config up-to-date, nothing to do.")
 		return nil
 	}
 
-	controller, err := r.controllerFactory()
+	// We let a controller manager run the controllers for us.
+	mgr, err := manager.New(r.masterKubeCfg, manager.Options{
+		LeaderElection:     false,
+		MetricsBindAddress: "0",
+		// Avoid duplicating caches or client for master cluster, as its static.
+		NewCache: func(_ *rest.Config, _ cache.Options) (cache.Cache, error) {
+			return r.masterCache, nil
+		},
+		NewClient: func(_ cache.Cache, _ *rest.Config, _ ctrlruntimeclient.Options) (ctrlruntimeclient.Client, error) {
+			return r.masterClient, nil
+		},
+	})
 	if err != nil {
-		return fmt.Errorf("failed to construct controllers: %v", err)
+		return fmt.Errorf("failed to create controller manager: %v", err)
 	}
 
-	if r.activeController.running {
-		r.log.Info("Stopping old version of controllers")
-		close(r.activeController.stopChan)
+	for _, factory := range r.controllerFactories {
+		controllerName, err := factory(mgr)
+		if err != nil {
+			return fmt.Errorf("failed to construct controller %s: %v", controllerName, err)
+		}
 	}
 
-	r.activeController = controllerInstance{
-		config:     seedKubeconfigMap,
-		controller: controller,
-		stopChan:   make(chan struct{}),
+	if r.activeManager != nil {
+		r.log.Info("Stopping old instance of controller manager")
+		close(r.activeManager.stopChan)
+	}
+
+	mi := &managerInstance{
+		config:   seedKubeconfigMap,
+		mgr:      mgr,
+		stopChan: make(chan struct{}),
 	}
 	go func() {
-		r.log.Info("starting controllers")
-		r.activeController.running = true
-		if err := r.activeController.controller.Start(r.activeController.stopChan); err != nil {
-			r.log.Errorw("controllers stopped with error", zap.Error(err))
+		r.log.Info("Starting controller manager")
+		mi.running = true
+		if err := mi.mgr.Start(mi.stopChan); err != nil {
+			r.log.Errorw("Controller manager stopped with error", zap.Error(err))
 		}
-		r.log.Info("controllers stopped")
+		mi.running = false
+		r.log.Info("Controller manager stopped")
 		// Make sure we check on this
-		r.activeController.running = false
 		r.enqueue()
 	}()
 
+	r.activeManager = mi
 	return nil
 }
