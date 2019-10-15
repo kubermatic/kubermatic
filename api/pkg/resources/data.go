@@ -94,6 +94,15 @@ func NewTemplateData(
 	}
 }
 
+// GetViewerToken returns the viewer token
+func (d *TemplateData) GetViewerToken() (string, error) {
+	viewerTokenSecret := &corev1.Secret{}
+	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ViewerTokenSecretName, Namespace: d.cluster.Status.NamespaceName}, viewerTokenSecret); err != nil {
+		return "", err
+	}
+	return string(viewerTokenSecret.Data[ViewerTokenSecretKey]), nil
+}
+
 // GetDexCA returns the chain of public certificates of the Dex
 func (d *TemplateData) GetDexCA() ([]*x509.Certificate, error) {
 	return GetDexCAFromFile(d.oidcCAFile)

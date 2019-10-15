@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/securecookie"
@@ -35,6 +36,7 @@ func GetAdminKubeconfigEndpoint(projectProvider provider.ProjectProvider) endpoi
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
 		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -44,11 +46,21 @@ func GetAdminKubeconfigEndpoint(projectProvider provider.ProjectProvider) endpoi
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		adminClientCfg, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
+
+		filePrefix := "admin"
+		var adminClientCfg *clientcmdapi.Config
+		if strings.HasPrefix(userInfo.Group, "viewers") {
+			filePrefix = "viewer"
+			adminClientCfg, err = clusterProvider.GetViewerKubeconfigForCustomerCluster(cluster)
+		} else {
+			adminClientCfg, err = clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
+		}
+
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return &encodeKubeConifgResponse{clientCfg: adminClientCfg, filePrefix: "admin"}, nil
+
+		return &encodeKubeConifgResponse{clientCfg: adminClientCfg, filePrefix: filePrefix}, nil
 	}
 }
 

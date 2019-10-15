@@ -252,7 +252,9 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		resources.GetInternalKubeconfigCreator(resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, data),
 		resources.GetInternalKubeconfigCreator(resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data),
 		resources.AdminKubeconfigCreator(data),
+		apiserver.TokenViewerCreator(),
 		apiserver.TokenUsersCreator(data),
+		resources.ViewerKubeconfigCreator(data),
 	}
 
 	if data.Cluster().Spec.Version.Minor() > 13 {

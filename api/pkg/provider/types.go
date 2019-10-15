@@ -137,6 +137,12 @@ type ClusterProvider interface {
 	// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
 	GetAdminKubeconfigForCustomerCluster(cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
 
+	// GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster
+	GetViewerKubeconfigForCustomerCluster(cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
+
+	// RevokeViewerKubeconfig revokes viewer token and kubeconfig
+	RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error
+
 	// GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
 	//
 	// Note that the client you will get has admin privileges
