@@ -275,7 +275,9 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 	if kubernetes.HasFinalizer(cluster, SecurityGroupCleanupFinalizer) {
 		for _, g := range strings.Split(cluster.Spec.Cloud.Openstack.SecurityGroups, ",") {
 			if err := deleteSecurityGroup(netClient, strings.TrimSpace(g)); err != nil {
-				return nil, fmt.Errorf("failed to delete security group %q: %v", g, err)
+				if !isNotFoundErr(err) {
+					return nil, fmt.Errorf("failed to delete security group %q: %v", g, err)
+				}
 			}
 		}
 
@@ -303,7 +305,9 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 
 	if kubernetes.HasFinalizer(cluster, SubnetCleanupFinalizer) || kubernetes.HasFinalizer(cluster, OldNetworkCleanupFinalizer) {
 		if err := deleteSubnet(netClient, cluster.Spec.Cloud.Openstack.SubnetID); err != nil {
-			return nil, fmt.Errorf("failed to delete subnet '%s': %v", cluster.Spec.Cloud.Openstack.SubnetID, err)
+			if !isNotFoundErr(err) {
+				return nil, fmt.Errorf("failed to delete subnet '%s': %v", cluster.Spec.Cloud.Openstack.SubnetID, err)
+			}
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kubernetes.RemoveFinalizer(cluster, SubnetCleanupFinalizer)
