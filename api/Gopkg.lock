@@ -204,6 +204,14 @@
   version = "v0.2.1"
 
 [[projects]]
+  digest = "1:fb1b50551aafa28a63211526c22e7eff13bdc1c69f9b18e86a2c809c44b93d8e"
+  name = "github.com/clarketm/json"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "da4a3a00a4ad1d0e6f5419ea62d34f1a35337ebf"
+  version = "v1.13.1"
+
+[[projects]]
   digest = "1:15173ac9caac43ba3a8990716158f5fd08174293e259d0a9e67f6fc98cc39d35"
   name = "github.com/coreos/container-linux-config-transpiler"
   packages = [
@@ -934,6 +942,14 @@
   version = "v1.5.8"
 
 [[projects]]
+  branch = "master"
+  digest = "1:eed15f596c1bc871e6a5c1d6e6e5a1829fa58eebea2e85782f3046ad1e7dec48"
+  name = "github.com/kubernetes/test-infra"
+  packages = ["pkg/genyaml"]
+  pruneopts = "NUT"
+  revision = "456ae688b3168481a131141959c648375b60b382"
+
+[[projects]]
   digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"
   name = "github.com/lyft/protoc-gen-validate"
   packages = ["validate"]
@@ -1640,6 +1656,14 @@
   revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
 
 [[projects]]
+  branch = "v3"
+  digest = "1:f5bc459b9d05d40706a7260f825ecc5e5c458b8a3fd0a4fcc3348027ef04a246"
+  name = "gopkg.in/yaml.v3"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "fc94e3f7165204dd261b8d39d39a1e1773b931c9"
+
+[[projects]]
   branch = "release-1.13"
   digest = "1:50c54ca27ed4d58993d9f104f7c00478a210c3f3deccddee43ef8ff22f9072d7"
   name = "k8s.io/api"
@@ -2197,6 +2221,7 @@
     "github.com/kubermatic/machine-controller/pkg/userdata/helper",
     "github.com/kubermatic/machine-controller/pkg/userdata/plugin",
     "github.com/kubermatic/machine-controller/pkg/userdata/ubuntu",
+    "github.com/kubernetes/test-infra/pkg/genyaml",
     "github.com/minio/minio-go",
     "github.com/oklog/run",
     "github.com/onsi/ginkgo/reporters",
