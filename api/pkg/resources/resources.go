@@ -869,11 +869,16 @@ func GlobalSecretKeySelectorValueGetterFactory(ctx context.Context, client ctrlr
 }
 
 func GetHTTPProxyEnvVarsFromSeed(seed *kubermaticv1.Seed, inClusterAPIServerURL string) []corev1.EnvVar {
-	if seed.Spec.ProxySettings == nil {
+	if seed.Spec.ProxySettings.Empty() {
 		return nil
 	}
 	var envVars []corev1.EnvVar
 
+	// TODO: How do we replicate the "is nil or empty string" check here?
+	//       a) We could turn the HTTPPRoxy from *string into a custom type that has an IsEmpty() function
+	//       b) We could splatter the logic for determining if this is set throughout the codebase (i.e. copy-paste)
+	//       c) When defaulting the Seed at runtime, we ensure that empty values are set to nil,
+	//          so the rest of the codebase can rely on a "clean" ProxySettings struct.
 	if seed.Spec.ProxySettings.HTTPProxy != nil {
 		envVars = []corev1.EnvVar{
 			{

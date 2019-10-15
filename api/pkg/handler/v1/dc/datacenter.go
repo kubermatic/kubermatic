@@ -99,14 +99,14 @@ func filterDCsByEmail(userInfo *provider.UserInfo, list []apiv1.Datacenter) ([]a
 
 	for _, dc := range list {
 		requiredEmailDomain := dc.Spec.RequiredEmailDomain
-		// find preset for specific email domain
+		// find datacenter for specific email domain
 		if requiredEmailDomain != "" {
 			userDomain := strings.Split(userInfo.Email, "@")
 			if len(userDomain) == 2 && strings.EqualFold(userDomain[1], requiredEmailDomain) {
 				dcList = append(dcList, dc)
 			}
 		} else {
-			// find preset for "all" without RequiredEmailDomain field
+			// find datacenter for "all" without RequiredEmailDomain field
 			dcList = append(dcList, dc)
 		}
 	}

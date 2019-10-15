@@ -4,42 +4,73 @@ metadata:
   name: <<exampleseed>>
   namespace: kubermatic
 spec:
-  # Country of the seed. For informational purposes only
+  # Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
+  # For informational purposes in the Kubermatic dashboard only.
   country: DE
-  # The possible datacenters for the nodes
+  # Datacenters contains a map of the possible datacenters (DCs) in this seed.
+  # Each DC must have a globally unique identifier (i.e. names must be unique
+  # across all seeds).
   datacenters:
     <<exampledc>>:
-      # Country of the seed. For informational purposes only
+      # Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
+      # For informational purposes in the Kubermatic dashboard only.
       country: ""
-      # Detailed location of the cluster. For informational purposes only
+      # Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
+      # For informational purposes in the Kubermatic dashboard only.
       location: ""
-      # Node holds node-specific settings, like e.g. HTTP proxy, insecure registries and the like
+      # Node holds node-specific settings, like e.g. HTTP proxy and Docker
+      # registries and the like. Proxy settings are inherited from the seed if
+      # not specified here.
       node:
         http_proxy: null
         # The hyperkube image to use. Currently only Container Linux uses it
         hyperkube_image: ""
-        # If set, this image registry will be configured as insecure on the container runtime.
+        # If set, these image registries will be configured as insecure on the container runtime.
         insecure_registries: []
         no_proxy: null
         # Translates to --pod-infra-container-image on the kubelet. If not set, the kubelet will default it
         pause_image: ""
+      # Spec describes the cloud provider settings used to manage resources
+      # in this datacenter. Exactly one cloud provider must be defined and it
+      # must not be the internal "fake" provider.
       spec:
         aws:
+          # List of AMIs to use for a given operating system.
           images:
-            coreos: foo
+            centos: ""
+            coreos: ""
+            ubuntu: ""
+          # The AWS region to use, e.g. "us-east-1". For a list of available regions, see
+          # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
           region: ""
         azure:
+          # Region to use, for example "westeurope". A list of available regions can be
+          # found at https://azure.microsoft.com/en-us/global-infrastructure/locations/
           location: ""
+        # BringYourOwn contains settings for clusters using manually created
+        # nodes via kubeadm.
         bringyourown: {}
         digitalocean:
+          # Datacenter location, e.g. "ams3". A list of existing datacenters can be found
+          # at https://www.digitalocean.com/docs/platform/availability-matrix/
           region: ""
-        fake: null
         gcp:
+          # Region to use, for example "europe-west3", for a full list of regions see
+          # https://cloud.google.com/compute/docs/regions-zones/
           region: ""
+          # Regional clusters spread their resources across multiple availability zones.
+          # Refer to the official documentation for more details on this:
+          # https://cloud.google.com/kubernetes-engine/docs/concepts/regional-clusters
           regional: false
+          # List of enabled zones, for example [a, c]. See the link above for the available
+          # zones in your chosen region.
           zone_suffixes: []
         hetzner:
+          # Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
+          # at https://wiki.hetzner.de/index.php/Rechenzentren_und_Anbindung/en
           datacenter: ""
+          # Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
+          # For informational purposes only.
           location: ""
         kubevirt: {}
         openstack:
@@ -50,7 +81,9 @@ spec:
           enforce_floating_ip: false
           ignore_volume_az: false
           images:
-            coreos: foo
+            centos: ""
+            coreos: ""
+            ubuntu: ""
           # Gets mapped to the "manage-security-groups" setting in the cloud config.
           # See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
           # To make this change backwards compatible, this will default to true.
@@ -65,28 +98,44 @@ spec:
           # See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
           trust_device_path: null
         packet:
+          # The list of enabled facilities, for example "ams1", for a full list of available
+          # facilities see https://support.packet.com/kb/articles/data-centers
           facilities: []
+        # By specifying a required email domain, only users with an e-mail
+        # address on the given domain can make use of this datacenter. You
+        # can define exactly one domain, e.g. "example.com".
         requiredEmailDomain: ""
         vsphere:
+          # If set to true, disables the TLS certificate check against the endpoint.
           allow_insecure: false
+          # The name of the cluster to use.
           cluster: ""
+          # The name of the datacenter to use.
           datacenter: ""
+          # The name of the datastore to use.
           datastore: ""
+          # Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
           endpoint: ""
-          # Infra management user is an optional user that will be used only
-          # for everything except the cloud provider functionality which will
-          # still use the credentials passed in via the frontend/api
+          # Infra management user is an optional user that will be used for everything
+          # except the cloud provider functionality which will still use the credentials
+          # passed in via the Kubermatic dashboard/API.
           infra_management_user:
             password: ""
             username: ""
-          # Optional root path for cluster specific VM folders.
-          # Each cluster gets a own folder below the root folder.
-          # Must be the FQDN (example: /datacenter-1/vm/all-kubermatic-vms-in-here )
-          # Defaults to the root VM folder: /datacenter-1/vm
+          # Optional root path for cluster specific VM folders. Each cluster gets its own
+          # folder below the root folder. Must be the FQDN (for example
+          # "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM
+          # folder: "/datacenter-1/vm"
           root_path: ""
+          # A list con templates to use for a given operating system. You must define at
+          # least one template.
           templates:
-            coreos: foo
-  # A reference to the Kubeconfig of this cluster
+            centos: ""
+            coreos: ""
+            ubuntu: ""
+  # A reference to the Kubeconfig of this cluster. The Kubeconfig must
+  # have cluster-admin privileges. This field is mandatory for every
+  # seed, even if there are no datacenters defined yet.
   kubeconfig:
     # API version of the referent.
     apiVersion: ""
@@ -113,13 +162,19 @@ spec:
     # UID of the referent.
     # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
     uid: ""
-  # Detailed location of the cluster. For informational purposes only
+  # Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
+  # For informational purposes in the Kubermatic dashboard only.
   location: Hamburg
-  # Optional: Configure a http proxy for this seed
+  # ProxySettings can optionally be used to configure HTTP proxy settings on the
+  # worker nodes in user clusters. However, proxy settings on nodes take
+  # precedence.
   proxy_settings:
-    # If set, this proxy will be configured for both http and https.
+    # If set, this proxy will be configured for both HTTP and HTTPS.
     http_proxy: null
-    # If set this will be set as NO_PROXY on the node
+    # If set this will be set as NO_PROXY environment variable on the node;
+    # The value must be a comma-separated list of domains for which no proxy
+    # should be used, e.g. "*.example.com,internal.dev"
     no_proxy: null
-  # Optional: Overwrite the DNS domain for this seed
+  # SeedDNSOverwrite can be used to override the DNS name used for this seed.
+  # This field is optional and defaults to the seed name.
   seed_dns_overwrite: null

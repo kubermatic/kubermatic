@@ -84,7 +84,10 @@ func createExampleSeed() *kubermaticv1.Seed {
 			Datacenters: map[string]kubermaticv1.Datacenter{
 				"<<exampledc>>": {
 					Node: kubermaticv1.NodeSettings{
-						ProxySettings:      kubermaticv1.ProxySettings{},
+						ProxySettings: kubermaticv1.ProxySettings{
+							HTTPProxy: pointer.StringPtr(""),
+							NoProxy:   pointer.StringPtr(""),
+						},
 						InsecureRegistries: []string{},
 					},
 					Spec: kubermaticv1.DatacenterSpec{
@@ -92,13 +95,17 @@ func createExampleSeed() *kubermaticv1.Seed {
 						BringYourOwn: &kubermaticv1.DatacenterSpecBringYourOwn{},
 						AWS: &kubermaticv1.DatacenterSpecAWS{
 							Images: kubermaticv1.ImageList{
-								providerconfig.OperatingSystemCoreos: "foo",
+								providerconfig.OperatingSystemCoreos: "",
+								providerconfig.OperatingSystemUbuntu: "",
+								providerconfig.OperatingSystemCentOS: "",
 							},
 						},
 						Azure: &kubermaticv1.DatacenterSpecAzure{},
 						Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 							Images: kubermaticv1.ImageList{
-								providerconfig.OperatingSystemCoreos: "foo",
+								providerconfig.OperatingSystemCoreos: "",
+								providerconfig.OperatingSystemUbuntu: "",
+								providerconfig.OperatingSystemCentOS: "",
 							},
 							ManageSecurityGroups: pointer.BoolPtr(false),
 							DNSServers:           []string{},
@@ -109,19 +116,23 @@ func createExampleSeed() *kubermaticv1.Seed {
 						Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
 						VSphere: &kubermaticv1.DatacenterSpecVSphere{
 							Templates: kubermaticv1.ImageList{
-								providerconfig.OperatingSystemCoreos: "foo",
+								providerconfig.OperatingSystemCoreos: "",
+								providerconfig.OperatingSystemUbuntu: "",
+								providerconfig.OperatingSystemCentOS: "",
 							},
 							InfraManagementUser: &kubermaticv1.VSphereCredentials{},
 						},
 						GCP: &kubermaticv1.DatacenterSpecGCP{
 							ZoneSuffixes: []string{},
 						},
-						// Fake:     &kubermaticv1.DatacenterSpecFake{},
 						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{},
 					},
 				},
 			},
-			ProxySettings: &kubermaticv1.ProxySettings{},
+			ProxySettings: &kubermaticv1.ProxySettings{
+				HTTPProxy: pointer.StringPtr(""),
+				NoProxy:   pointer.StringPtr(""),
+			},
 		},
 	}
 

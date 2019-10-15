@@ -8,6 +8,9 @@ cd $(dirname $0)/..
 sed -i 's/,omitempty//g' pkg/crd/kubermatic/v1/*.go
 sed -i 's/,omitempty//g' vendor/k8s.io/api/core/v1/*.go
 
+# there are some fields that we do actually want to ignore
+sed -i 's/omitgenyaml/omitempty/g' pkg/crd/kubermatic/v1/*.go
+
 go run cmd/example-yaml-generator/main.go . ../docs
 
 # revert our changes
