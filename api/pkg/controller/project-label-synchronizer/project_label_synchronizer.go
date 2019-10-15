@@ -198,21 +198,18 @@ func getLabelsForCluster(
 	if clusterLabels == nil {
 		clusterLabels = map[string]string{}
 	}
-	if projectLabels == nil {
-		projectLabels = map[string]string{}
-	}
-	newClusterLabels = map[string]string{}
+	newClusterLabels = clusterLabels
 
 	for projectLabelKey, projectLabelValue := range projectLabels {
 		if kubermaticv1.ProtectedClusterLabels.Has(projectLabelKey) {
-			log.Info("Project wants to set protected label %q on cluster, skipping", projectLabelKey)
+			log.Infof("Project wants to set protected label %q on cluster, skipping", projectLabelKey)
 			continue
 		}
 		if clusterLabels[projectLabelKey] == projectLabelValue {
 			log.Debugf("Label %q on cluster already has value of %q, nothing to do", projectLabelKey, projectLabelValue)
 			continue
 		}
-		log.Debug("Setting label %q to value %q on cluster", projectLabelKey, projectLabelValue)
+		log.Debugf("Setting label %q to value %q on cluster", projectLabelKey, projectLabelValue)
 		clusterLabels[projectLabelKey] = projectLabelValue
 		changed = true
 	}
