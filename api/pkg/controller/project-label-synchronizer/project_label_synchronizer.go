@@ -10,6 +10,7 @@ import (
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -123,13 +124,19 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 		return nil
 	}
 
+	workerNameLabelSelectorRequirements, _ := r.workerNameLabelSelector.Requirements()
+	projectLabelRequirement, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{project.Name})
+	if err != nil {
+		return fmt.Errorf("failed to consturct label requirement for project: %v", err)
+	}
+	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(append(workerNameLabelSelectorRequirements, *projectLabelRequirement)...)}
+
 	// We use an error aggregate to make sure we return an error if we encountered one but
 	// still continue processing everything we can.
 	var errs []error
 	for seedName, seedClient := range r.seedClients {
 		log := log.With("seed", seedName)
 
-		listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: r.workerNameLabelSelector}
 		unfilteredClusters := &kubermaticv1.ClusterList{}
 		if err := seedClient.List(r.ctx, listOpts, unfilteredClusters); err != nil {
 			errs = append(errs, fmt.Errorf("failed to list clusters in seed %q: %v", seedName, err))
