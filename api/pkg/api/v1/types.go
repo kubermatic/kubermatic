@@ -787,6 +787,10 @@ type ClusterHealth struct {
 	UserClusterControllerManager kubermaticv1.HealthStatus `json:"userClusterControllerManager"`
 }
 
+// AccessibleAddons represents an array of addons that can be configured in the user clusters.
+// swagger:model AccessibleAddons
+type AccessibleAddons []string
+
 // Addon represents a predefined addon that users may install into their cluster
 // swagger:model Addon
 type Addon struct {
