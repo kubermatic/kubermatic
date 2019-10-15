@@ -378,6 +378,13 @@ func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticv1.Cluster) 
 	return []byte(generateTestKubeconfig(ClusterID, IDToken)), nil
 }
 
+func (f *fakeUserClusterConnection) GetViewerKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
+	return []byte(generateTestKubeconfig(ClusterID, IDViewerToken)), nil
+}
+func (f *fakeUserClusterConnection) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error {
+	return nil
+}
+
 // ClientsSets a simple wrapper that holds fake client sets
 type ClientsSets struct {
 	FakeKubermaticClient *kubermaticfakeclentset.Clientset

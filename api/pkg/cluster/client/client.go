@@ -7,6 +7,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,6 +21,8 @@ import (
 type UserClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster, ...ConfigOption) (ctrlruntimeclient.Client, error)
 	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
+	GetViewerKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
+	RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error
 }
 
 // NewInternal returns a new instance of the client connection provider that
@@ -71,6 +74,36 @@ func (p *provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
 		return nil, fmt.Errorf("no kubeconfig found")
 	}
 	return d, nil
+}
+
+// GetViewerKubeconfig returns the viewer kubeconfig for the given cluster
+func (p *provider) GetViewerKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
+	s := &corev1.Secret{}
+
+	if err := p.seedClient.Get(context.Background(), types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.ViewerKubeconfigSecretName}, s); err != nil {
+		return nil, err
+	}
+
+	d := s.Data[resources.KubeconfigSecretKey]
+	if len(d) == 0 {
+		return nil, fmt.Errorf("no kubeconfig found")
+	}
+	return d, nil
+}
+
+// RevokeViewerKubeconfig deletes viewer token to deploy new one and regenerate viewer-kubeconfig
+func (p *provider) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error {
+	s := &corev1.Secret{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      resources.ViewerTokenSecretName,
+			Namespace: c.Status.NamespaceName,
+		},
+	}
+
+	if err := p.seedClient.Delete(context.Background(), s); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ConfigOption defines a function that applies additional configuration to restclient.Config in a generic way.
