@@ -69,11 +69,12 @@ func NewTestRouting(
 		eventRecorderProvider,
 		credentialManager,
 		corev1.ServiceTypeNodePort,
+		sets.String{},
 	)
 
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
-	r.RegisterV1(v1Router, generateDefaultMetrics(), sets.String{})
+	r.RegisterV1(v1Router, generateDefaultMetrics())
 	r.RegisterV1Legacy(v1Router)
 	r.RegisterV1Optional(v1Router,
 		true,

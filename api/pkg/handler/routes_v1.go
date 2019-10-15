@@ -23,12 +23,10 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/ssh"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/user"
-
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // RegisterV1 declares all router paths for v1
-func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics, accessibleAddons sets.String) {
+func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	//
 	// no-op endpoint that always returns HTTP 200
 	mux.Methods(http.MethodGet).
@@ -354,7 +352,7 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics, acces
 
 	mux.Methods(http.MethodGet).
 		Path("/addons").
-		Handler(r.listAccessibleAddons(accessibleAddons))
+		Handler(r.listAccessibleAddons())
 
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons").
@@ -2690,13 +2688,13 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 //       200: AccessibleAddons
 //       401: empty
 //       403: empty
-func (r Routing) listAccessibleAddons(accessibleAddons sets.String) http.Handler {
+func (r Routing) listAccessibleAddons() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(addon.ListAccessibleAddons(accessibleAddons)),
+		)(addon.ListAccessibleAddons(r.accessibleAddons)),
 		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
