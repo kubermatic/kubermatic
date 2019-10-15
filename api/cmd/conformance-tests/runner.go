@@ -33,9 +33,11 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	utilerror "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -110,6 +112,7 @@ type testRunner struct {
 	clusterParallelCount         int
 
 	seedClusterClient     ctrlruntimeclient.Client
+	seedGeneratedClient   kubernetes.Interface
 	clusterClientProvider clusterclient.UserClusterConnectionProvider
 	seed                  *kubermaticv1.Seed
 
@@ -1053,23 +1056,11 @@ func (r *testRunner) controlplaneWaitFailureStdout(clusterName string) string {
 		var ret string
 		clusterHealthStatus, err := json.Marshal(cluster.Status.ExtendedHealth)
 		if err == nil {
-			ret = fmt.Sprintf("ClusterHealthStatus: '%s'", clusterHealthStatus)
+			ret = fmt.Sprintf("ClusterHealthStatus: '%s'\n", clusterHealthStatus)
 		}
 
-		controlPlanePods := &corev1.PodList{}
-		listOpts := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
-		if err := r.seedClusterClient.List(ctx, listOpts, controlPlanePods); err != nil {
-			return ret, fmt.Errorf("failed to list pods: %v", err)
-		}
-
-		notReadyControlPlanePods := sets.NewString()
-		for _, pod := range controlPlanePods.Items {
-			if !podIsReady(&pod) {
-				notReadyControlPlanePods.Insert(pod.Name)
-			}
-		}
-		// TODO: Getting events and logs for not ready pods would be pretty nifty
-		return fmt.Sprintf("%s\nNot ready pods: %v", ret, notReadyControlPlanePods.List()), nil
+		eventsAndLogs, err := getEventsAndLogsOfUnreadyPods(ctx, r.seedClusterClient, r.seedGeneratedClient, cluster.Status.NamespaceName)
+		return ret + eventsAndLogs, err
 	}()
 	if err != nil {
 		return fmt.Sprintf("Encountered error getting controlplane timeout output: %v\n%s", err, res)
@@ -1188,4 +1179,85 @@ func junitReporterWrapper(
 	report.Tests++
 
 	return err
+}
+
+func getEventsAndLogsOfUnreadyPods(ctx context.Context, client ctrlruntimeclient.Client, k8sclient kubernetes.Interface, namespace string) (string, error) {
+	listOpts := &ctrlruntimeclient.ListOptions{
+		Namespace: namespace,
+	}
+
+	pods := &corev1.PodList{}
+	if err := client.List(ctx, listOpts, pods); err != nil {
+		return "", fmt.Errorf("failed to list pods: %v", err)
+	}
+
+	var errs []error
+	builder := &strings.Builder{}
+	var notReadPods []corev1.Pod
+	for _, pod := range pods.Items {
+		if podIsReady(&pod) {
+			continue
+		}
+		_, _ = builder.WriteString(fmt.Sprintf("\nERROR: pod %s is not ready\n", pod.Name))
+		if err := printEventsForPod(ctx, builder, client, &pod); err != nil {
+			errs = append(errs, err)
+		}
+		if err := printLogsForPod(builder, k8sclient, &pod); err != nil {
+			errs = append(errs, err...)
+		}
+	}
+
+	return builder.String(), utilerror.NewAggregate(err)
+}
+
+func printLogsForPod(builder *strings.Builder, k8sclient kubernetes.Interface, pod *corev1.Pod) []error {
+	builder.WriteString(fmt.Sprint("\nGetting logs for pod %s\n", pod.Name))
+	var errs []error
+	for _, container := range pod.Spec.Containers {
+		if err := printLogsForContainer(builder, k8sclient, pod, container.Name); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	for _, initContainer := range pod.Spec.InitContainers {
+		if err := printLogsForContainer(builder, k8sclient, pod, initContainer.Name); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
+}
+
+func printLogsForContainer(builder *strings.Builder, k8sclient kubernetes.Interface, pod *corev1.Pod, containerName string) error {
+	opts := &corev1.PodLogOptions{Container: containerName}
+	result, err := k8sclient.CoreV1().Pods(pod.Namespace).GetLogs().DoRaw()
+	if err != nil {
+		return fmt.Errorf("failed to get logs for container %s: %v", containerName, err)
+	}
+	_, _ = builder.WriteString(fmt.Sprintf("Logs for container %s\n", containerName))
+	_, _ = builder.Write(result)
+	_, _ = builder.WriteString("\n-----\n")
+	return nil
+}
+
+func printEventsForPod(
+	ctx context.Context,
+	builder *strings.Builder,
+	client ctrlruntimeclient.Client,
+	pod *corev1.Pod,
+) error {
+	events := &corev1.EventList{}
+	listOpts := &ctrlruntimeclient.ListOptions{
+		Namespace:     pod.Namespace,
+		FieldSelector: fields.OneTermEqualSelector("involvedObject.uid", string(pod.GetUID())),
+	}
+	if err := client.List(ctx, listOpts, events); err != nil {
+		return fmt.Errorf("failed to get events for pod %s: %v", pod.Name, error)
+	}
+
+	builder.WriteString(fmt.Sprintf("\nEvents for pod %s\n", pod.Name))
+	for _, event := range events.Items {
+		_, _ = builder.WriteString(fmt.Sprintf("EventType: %s Number: %d, Reason: %s, Message: %s\n",
+			event.Type, event.Count, event.Reason, event.Message),
+		)
+	}
+	return nil
 }
