@@ -306,6 +306,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.eventRecorderProvider,
 		presetsManager,
 		options.exposeStrategy,
+		options.accessibleAddons,
 	)
 
 	registerMetrics()

@@ -15,7 +15,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
 	k8sjson "k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // addonReq defines HTTP request for getAddon and deleteAddon
@@ -120,6 +122,12 @@ func decodeAddonID(c context.Context, r *http.Request) (string, error) {
 	}
 
 	return addonID, nil
+}
+
+func ListAccessibleAddons(accessibleAddons sets.String) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		return accessibleAddons.UnsortedList(), nil
+	}
 }
 
 func GetAddonEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {

@@ -347,6 +347,13 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}").
 		Handler(r.deleteNodeDeployment())
 
+	//
+	// Defines a set of HTTP endpoints for managing addons
+
+	mux.Methods(http.MethodGet).
+		Path("/addons").
+		Handler(r.listAccessibleAddons())
+
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons").
 		Handler(r.createAddon())
@@ -2666,6 +2673,34 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 	)
 }
 
+// swagger:route POST /api/v1/addons addon
+//
+//     Lists names of addons that can be configured inside the user clusters
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AccessibleAddons
+//       401: empty
+//       403: empty
+func (r Routing) listAccessibleAddons() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.UserInfoExtractor(r.userProjectMapper),
+		)(addon.ListAccessibleAddons(r.accessibleAddons)),
+		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons addon createAddon
 //
 //     Creates an addon that will belong to the given cluster
@@ -2736,7 +2771,6 @@ func (r Routing) listAddons() http.Handler {
 //       401: empty
 //       403: empty
 func (r Routing) getAddon() http.Handler {
-
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),

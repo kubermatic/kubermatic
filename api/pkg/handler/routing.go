@@ -1,12 +1,11 @@
 package handler
 
 import (
-	"os"
-
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"go.uber.org/zap"
+	"os"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
@@ -15,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // Routing represents an object which binds endpoints to http handlers.
@@ -42,6 +42,7 @@ type Routing struct {
 	eventRecorderProvider       provider.EventRecorderProvider
 	presetsManager              common.PresetsManager
 	exposeStrategy              corev1.ServiceType
+	accessibleAddons            sets.String
 }
 
 // NewRouting creates a new Routing.
@@ -68,6 +69,7 @@ func NewRouting(
 	eventRecorderProvider provider.EventRecorderProvider,
 	presetsManager common.PresetsManager,
 	exposeStrategy corev1.ServiceType,
+	accessibleAddons sets.String,
 ) Routing {
 	return Routing{
 		log:                         logger,
@@ -93,6 +95,7 @@ func NewRouting(
 		eventRecorderProvider:       eventRecorderProvider,
 		presetsManager:              presetsManager,
 		exposeStrategy:              exposeStrategy,
+		accessibleAddons:            accessibleAddons,
 	}
 }
 

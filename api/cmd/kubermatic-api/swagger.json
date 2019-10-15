@@ -13,6 +13,38 @@
     "version": "2.11"
   },
   "paths": {
+    "/api/v1/addons": {
+      "post": {
+        "description": "Lists names of addons that can be configured inside the user clusters",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "addon",
+        "responses": {
+          "200": {
+            "description": "AccessibleAddons",
+            "schema": {
+              "$ref": "#/definitions/AccessibleAddons"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/dc": {
       "get": {
         "produces": [
@@ -6613,6 +6645,14 @@
           "type": "string",
           "x-go-name": "StatusMessage"
         }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AccessibleAddons": {
+      "type": "array",
+      "title": "AccessibleAddons represents an array of addons that can be configured in the user clusters.",
+      "items": {
+        "type": "string"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
