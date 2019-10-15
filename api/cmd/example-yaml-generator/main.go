@@ -13,9 +13,9 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
-	"github.com/kubernetes/test-infra/pkg/genyaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/test-infra/pkg/genyaml"
 	"k8s.io/utils/pointer"
 )
 
@@ -49,8 +49,7 @@ func main() {
 
 	cm := genyaml.NewCommentMap(files...)
 	examples := map[string]runtime.Object{
-		"seed":    createExampleSeed(),
-		"cluster": createExampleCluster(),
+		"seed": createExampleSeed(),
 	}
 
 	for name, data := range examples {
@@ -131,25 +130,6 @@ func createExampleSeed() *kubermaticv1.Seed {
 	}
 
 	return seed
-}
-
-func createExampleCluster() *kubermaticv1.Cluster {
-	cluster := &kubermaticv1.Cluster{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "kubermatic.k8s.io/v1",
-			Kind:       "Cluster",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "<<cluster-abc123>>",
-		},
-		Spec: kubermaticv1.ClusterSpec{},
-	}
-
-	// if err := validateAllFieldsAreDefined(&cluster.Spec); err != nil {
-	// 	log.Fatalf("Cluster struct is incomplete: %v", err)
-	// }
-
-	return cluster
 }
 
 // validateAllFieldsAreDefined recursively checks that all fields relevant

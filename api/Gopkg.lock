@@ -942,14 +942,6 @@
   version = "v1.5.8"
 
 [[projects]]
-  branch = "master"
-  digest = "1:eed15f596c1bc871e6a5c1d6e6e5a1829fa58eebea2e85782f3046ad1e7dec48"
-  name = "github.com/kubernetes/test-infra"
-  packages = ["pkg/genyaml"]
-  pruneopts = "NUT"
-  revision = "456ae688b3168481a131141959c648375b60b382"
-
-[[projects]]
   digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"
   name = "github.com/lyft/protoc-gen-validate"
   packages = ["validate"]
@@ -2046,6 +2038,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:eed15f596c1bc871e6a5c1d6e6e5a1829fa58eebea2e85782f3046ad1e7dec48"
+  name = "k8s.io/test-infra"
+  packages = ["pkg/genyaml"]
+  pruneopts = "NUT"
+  revision = "87f764370df9a69bc668462ab0c62812401993cf"
+
+[[projects]]
+  branch = "master"
   digest = "1:0d7ddfe00c608fe323c58050e1541c2e0e72608ca86df20ed469f2647212abf5"
   name = "k8s.io/utils"
   packages = ["pointer"]
@@ -2221,7 +2221,6 @@
     "github.com/kubermatic/machine-controller/pkg/userdata/helper",
     "github.com/kubermatic/machine-controller/pkg/userdata/plugin",
     "github.com/kubermatic/machine-controller/pkg/userdata/ubuntu",
-    "github.com/kubernetes/test-infra/pkg/genyaml",
     "github.com/minio/minio-go",
     "github.com/oklog/run",
     "github.com/onsi/ginkgo/reporters",
@@ -2329,6 +2328,7 @@
     "k8s.io/klog",
     "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1",
     "k8s.io/metrics/pkg/apis/metrics/v1beta1",
+    "k8s.io/test-infra/pkg/genyaml",
     "k8s.io/utils/pointer",
     "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1",
     "sigs.k8s.io/controller-runtime/pkg/cache",
