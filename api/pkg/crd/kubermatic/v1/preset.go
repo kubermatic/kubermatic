@@ -83,6 +83,7 @@ type AWS struct {
 	RouteTableID        string `json:"routeTableId,omitempty"`
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 	SecurityGroupID     string `json:"securityGroupID,omitempty"`
+	ControlPlaneRoleARN string `json:"roleARN,omitempty"`
 }
 
 type Openstack struct {
