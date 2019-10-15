@@ -2675,7 +2675,7 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/addons addon listAccessibleAddons
+// swagger:route POST /api/v1/addons addon
 //
 //     Lists names of addons that can be configured inside the user clusters
 //
@@ -2687,7 +2687,7 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []string
+//       200: AccessibleAddons
 //       401: empty
 //       403: empty
 func (r Routing) listAccessibleAddons(accessibleAddons sets.String) http.Handler {

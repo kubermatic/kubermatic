@@ -22,13 +22,13 @@
         "produces": [
           "application/json"
         ],
-        "tags": [
-          "addon"
-        ],
-        "operationId": "listAccessibleAddons",
+        "operationId": "addon",
         "responses": {
           "200": {
-            "$ref": "#/responses/string"
+            "description": "AccessibleAddons",
+            "schema": {
+              "$ref": "#/definitions/AccessibleAddons"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -6645,6 +6645,14 @@
           "type": "string",
           "x-go-name": "StatusMessage"
         }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AccessibleAddons": {
+      "type": "array",
+      "title": "AccessibleAddons represents an array of addons that can be configured in the user clusters.",
+      "items": {
+        "type": "string"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
