@@ -24,6 +24,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/nodecsrapprover"
 	rbacusercluster "github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
+	nodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler"
 	openshiftmasternodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-master-node-labeler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
 	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
@@ -60,6 +61,7 @@ type controllerRunOptions struct {
 	overwriteRegistry             string
 	cloudProviderName             string
 	cloudCredentialSecretTemplate string
+	nodelabels                    string
 	log                           kubermaticlog.Options
 }
 
@@ -82,6 +84,7 @@ func main() {
 	flag.StringVar(&runOp.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.StringVar(&runOp.cloudProviderName, "cloud-provider-name", "", "Name of the cloudprovider")
 	flag.StringVar(&runOp.cloudCredentialSecretTemplate, "cloud-credential-secret-template", "", "A serialized Kubernetes secret whose Name and Data fields will be used to create a secret for the openshift cloud credentials operator.")
+	flag.StringVar(&runOp.nodelabels, "node-labels", "", "A json-encoded map of node labels. If set, those labels will be enforced on all nodes.")
 
 	flag.Parse()
 
@@ -165,6 +168,13 @@ func main() {
 		cloudCredentialSecretTemplate = &corev1.Secret{}
 		if err := json.Unmarshal([]byte(runOp.cloudCredentialSecretTemplate), cloudCredentialSecretTemplate); err != nil {
 			log.Fatalw("Failed to unmarshal value of --cloud-credential-secret-template flag into secret", zap.Error(err))
+		}
+	}
+
+	nodeLabels := map[string]string{}
+	if runOp.nodelabels != "" {
+		if err := json.Unmarshal(runOp.nodelabels, &nodelabels); err != nil {
+			log.Fatalw("Failed to unmarshal value if --node-labels arg", zap.Error(err))
 		}
 	}
 
@@ -257,6 +267,10 @@ func main() {
 
 	if err := containerlinux.Add(mgr, runOp.overwriteRegistry); err != nil {
 		log.Fatalw("Failed to register the ContainerLinux controller", zap.Error(err))
+	}
+
+	if err := nodelabeler.Add(ctx, log, mgr, nodelabels); err != nil {
+		log.Fatalw("Failed to register nodelabel controller", zap.Error(err))
 	}
 
 	// This group is forever waiting in a goroutine for signals to stop
