@@ -174,7 +174,7 @@ func main() {
 	nodeLabels := map[string]string{}
 	if runOp.nodelabels != "" {
 		if err := json.Unmarshal([]byte(runOp.nodelabels), &nodeLabels); err != nil {
-			log.Fatalw("Failed to unmarshal value if --node-labels arg", zap.Error(err))
+			log.Fatalw("Failed to unmarshal value of --node-labels arg", zap.Error(err))
 		}
 	}
 
@@ -228,6 +228,7 @@ func main() {
 		log); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
 	}
+	log.Info("Registered usercluster controller")
 
 	if len(runOp.networks) > 0 {
 		if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
@@ -254,6 +255,7 @@ func main() {
 	if err := rbacusercluster.Add(mgr, healthHandler.AddReadinessCheck); err != nil {
 		log.Fatalw("Failed to add user RBAC controller to mgr", zap.Error(err))
 	}
+	log.Info("Registerd user RBAC controller")
 
 	if runOp.openshift {
 		if err := nodecsrapprover.Add(mgr, 4, cfg, log); err != nil {
@@ -268,10 +270,12 @@ func main() {
 	if err := containerlinux.Add(mgr, runOp.overwriteRegistry); err != nil {
 		log.Fatalw("Failed to register the ContainerLinux controller", zap.Error(err))
 	}
+	log.Info("Registered ContainerLinux controller")
 
 	if err := nodelabeler.Add(ctx, log, mgr, nodeLabels); err != nil {
 		log.Fatalw("Failed to register nodelabel controller", zap.Error(err))
 	}
+	log.Info("Registered nodelabel controller")
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{

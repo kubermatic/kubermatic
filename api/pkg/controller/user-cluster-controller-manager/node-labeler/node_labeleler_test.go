@@ -64,7 +64,7 @@ func TestReconcile(t *testing.T) {
 				labels:   tc.reconcilerLabels,
 			}
 
-			request := reconcile.Request{types.NamespacedName{Name: requestName}}
+			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: requestName}}
 			if _, err := r.Reconcile(request); err != nil {
 				t.Fatalf("reconciling failed: %v", err)
 			}
