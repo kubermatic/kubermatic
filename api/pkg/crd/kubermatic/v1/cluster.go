@@ -11,6 +11,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -33,6 +34,10 @@ const (
 	WorkerNameLabelKey = "worker-name"
 	ProjectIDLabelKey  = "project-id"
 )
+
+// ProtectedClusterLabels is a set of labels that must not be set by users on clusters,
+// as they are security relevant.
+var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKey)
 
 //+genclient
 //+genclient:nonNamespaced

@@ -147,15 +147,16 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 		}
 
 		filteredClusters := r.filterClustersByWorkerNameAndProjectID(log, project.Name, unfilteredClusters)
-		// TODO: Factor this out and only update on changes. Also emit a log when there were changes.
 		for _, cluster := range filteredClusters {
+			log := log.With("cluster", cluster.Name)
+			changed, newClusterLabels := getLabelsForCluster(log, cluster.Labels, projectLabels)
+			if !changed {
+				log.Debug("Labels on cluster are already up to date")
+				continue
+			}
+			log.Debug("Updating labels on cluster")
 			if err := r.updateCluster(cluster.Name, seedClient, func(c *kubermaticv1.Cluster) {
-				if c.Labels == nil {
-					c.Labels = map[string]string{}
-				}
-				for projectLabelKey, projectLabelValue := range project.Labels {
-					c.Labels[projectLabelKey] = projectLabelValue
-				}
+				c.Labels = newClusterLabels
 			}); err != nil {
 				errs = append(errs, fmt.Errorf("failed to update cluster %q", cluster.Name))
 			}
@@ -213,4 +214,36 @@ func (r *reconciler) filterClustersByWorkerNameAndProjectID(
 	}
 
 	return result
+}
+
+func getLabelsForCluster(
+	log *zap.SugaredLogger,
+	clusterLabels map[string]string,
+	projectLabels map[string]string,
+) (changed bool, newClusterLabels map[string]string) {
+	// They shouldn't be nil as we skip projects without labels
+	// and need a label on the cluster to associate it to a project
+	// but better be safe than panicing.
+	if clusterLabels == nil {
+		clusterLabels = map[string]string{}
+	}
+	if projectLabels == nil {
+		projectLabels = map[string]string{}
+	}
+	newClusterLabels = map[string]string{}
+
+	for projectLabelKey, projectLabelValue := range projectLabels {
+		if kubermaticv1.ProtectedClusterLabels.Has(projectLabelKey) {
+			log.Info("Project wants to set protected label %q on cluster, skipping", projectLabelKey)
+			continue
+		}
+		if clusterLabels[projectLabelKey] == projectLabelValue {
+			log.Debugf("Label %q on cluster already has value of %q, nothing to do", projectLabelKey, projectLabelValue)
+			continue
+		}
+		log.Debug("Setting label %q to value %q on cluster", projectLabelKey, projectLabelValue)
+		clusterLabels[projectLabelKey] = projectLabelValue
+		changed = true
+	}
+	return
 }
