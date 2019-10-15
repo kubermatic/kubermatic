@@ -173,7 +173,7 @@ func main() {
 
 	nodeLabels := map[string]string{}
 	if runOp.nodelabels != "" {
-		if err := json.Unmarshal(runOp.nodelabels, &nodelabels); err != nil {
+		if err := json.Unmarshal([]byte(runOp.nodelabels), &nodeLabels); err != nil {
 			log.Fatalw("Failed to unmarshal value if --node-labels arg", zap.Error(err))
 		}
 	}
@@ -269,7 +269,7 @@ func main() {
 		log.Fatalw("Failed to register the ContainerLinux controller", zap.Error(err))
 	}
 
-	if err := nodelabeler.Add(ctx, log, mgr, nodelabels); err != nil {
+	if err := nodelabeler.Add(ctx, log, mgr, nodeLabels); err != nil {
 		log.Fatalw("Failed to register nodelabel controller", zap.Error(err))
 	}
 
