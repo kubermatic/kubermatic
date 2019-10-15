@@ -3,7 +3,6 @@ package projectlabelsynchronizer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 
@@ -15,7 +14,6 @@ import (
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/util/retry"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -31,7 +29,6 @@ type reconciler struct {
 	log                     *zap.SugaredLogger
 	masterClient            ctrlruntimeclient.Client
 	seedClients             map[string]ctrlruntimeclient.Client
-	seedCaches              map[string]cache.Cache
 	workerNameLabelSelector labels.Selector
 }
 
@@ -71,7 +68,6 @@ func Add(
 		log:                     log,
 		masterClient:            masterManager.GetClient(),
 		seedClients:             map[string]ctrlruntimeclient.Client{},
-		seedCaches:              map[string]cache.Cache{},
 		workerNameLabelSelector: workerNameLabelSelector,
 	}
 
@@ -86,7 +82,6 @@ func Add(
 
 	for seedName, seedManager := range seedManagers {
 		r.seedClients[seedName] = seedManager.GetClient()
-		r.seedCaches[seedName] = seedManager.GetCache()
 
 		seedClusterWatch := &source.Kind{Type: &kubermaticv1.Cluster{}}
 		if err := seedClusterWatch.InjectCache(seedManager.GetCache()); err != nil {
@@ -126,11 +121,6 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 	if len(project.Labels) == 0 {
 		log.Debug("Project has no labels, nothing to do")
 		return nil
-	}
-
-	// The main manager starts the seed managers, so we have to wait for them to be synced
-	if err := r.waitForSeedCacheSync(); err != nil {
-		return err
 	}
 
 	// We use an error aggregate to make sure we return an error if we encountered one but
@@ -175,20 +165,6 @@ func (r *reconciler) updateCluster(name string, client ctrlruntimeclient.Client,
 		modify(cluster)
 		return client.Update(r.ctx, cluster)
 	})
-}
-
-// Wait for cache sync waits up to 30s for all seed caches to be synced.
-func (r *reconciler) waitForSeedCacheSync() error {
-	// TODO: Does this timeout actually stop the cache or just waiting for the cache?
-	ctx, cancel := context.WithTimeout(r.ctx, 30*time.Second)
-	defer cancel()
-	for seedName, cache := range r.seedCaches {
-		if success := cache.WaitForCacheSync(ctx.Done()); !success {
-			return fmt.Errorf("failed waiting for cache of seed %q", seedName)
-		}
-	}
-
-	return nil
 }
 
 func (r *reconciler) filterClustersByProjectID(
