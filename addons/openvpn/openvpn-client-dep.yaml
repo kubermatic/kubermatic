@@ -10,8 +10,6 @@ spec:
   selector:
     matchLabels:
       role: openvpn-client
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
@@ -39,7 +37,7 @@ spec:
               - "-w"
               - "5"
               - "10.20.0.1"
-          initialDelaySeconds: 90
+          initialDelaySeconds: 60
         readinessProbe:
           exec:
             command:
@@ -106,7 +104,6 @@ spec:
             cpu: 100m
             memory: 50Mi
       restartPolicy: Always
-      hostNetwork: true
       terminationGracePeriodSeconds: 5
       volumes:
       - name: openvpn-client-certificates
