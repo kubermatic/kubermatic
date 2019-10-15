@@ -203,6 +203,9 @@ func TestLoadFiles(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "de-test-01",
 						UID:  types.UID("1234567890"),
+						Labels: map[string]string{
+							"my-label": "my-value",
+						},
 					},
 					Spec: kubermaticv1.ClusterSpec{
 						ExposeStrategy: corev1.ServiceTypeLoadBalancer,
