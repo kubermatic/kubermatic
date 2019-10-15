@@ -3,6 +3,8 @@ package usersshkeys
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -28,14 +30,32 @@ func createSecretsFromUserSSHDirPath(path string) reconciling.SecretCreator {
 			existing.Data = map[string][]byte{}
 		}
 
+		if err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+
+			}
+			fmt.Printf("Path: %v, File name: %v, IsDir: %v", path, info.Name(), info.IsDir())
+			return nil
+		}); err != nil {
+			return nil, fmt.Errorf("failed to walk directory: %v", err)
+		}
+
 		for _, file := range files {
+			if file.IsDir() {
+				continue
+			}
+
 			if _, ok := existing.Data[file.Name()]; ok {
 				continue
 			}
 
 			data, err := ioutil.ReadFile(fmt.Sprintf("%v/%v", path, file.Name()))
 			if err != nil {
-				return nil, fmt.Errorf("failed to read file %v during secret creation", file.Name())
+				return nil, fmt.Errorf("failed to read file %v during secret creation: %v", file.Name(), err)
 			}
 			existing.Data[file.Name()] = data
 		}
