@@ -59,7 +59,7 @@ func AdminKubeconfigCreator(data adminKubeconfigCreatorData, modifier ...func(*c
 }
 
 // ViewerKubeconfigCreator returns a function to create/update the secret with the viewer kubeconfig
-func ViewerKubeconfigCreator(data *TemplateData, modifier ...func(*clientcmdapi.Config)) reconciling.NamedSecretCreatorGetter {
+func ViewerKubeconfigCreator(data *TemplateData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return ViewerKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -80,10 +80,6 @@ func ViewerKubeconfigCreator(data *TemplateData, modifier ...func(*clientcmdapi.
 				KubeconfigDefaultContextKey: {
 					Token: token,
 				},
-			}
-
-			for _, m := range modifier {
-				m(config)
 			}
 
 			b, err := clientcmd.Write(*config)

@@ -3,13 +3,12 @@ package apiserver
 import (
 	"bytes"
 	"encoding/csv"
-
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // TokenUsers returns a secret containing the tokens csv
@@ -44,22 +43,17 @@ func TokenUsersCreator(data *resources.TemplateData) reconciling.NamedSecretCrea
 }
 
 // TokenViewerCreator returns a secret containing the viewer token
-func TokenViewerCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
+func TokenViewerCreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.ViewerTokenSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
 			}
 
-			viewerToken, err := data.GetViewerToken()
-			if err != nil {
-				if kerrors.IsNotFound(err) {
-					se.Data[resources.ViewerTokenSecretKey] = []byte(kubernetes.GenerateToken())
-					return se, nil
-				}
-				return nil, err
+			if _, ok := se.Data[resources.ViewerTokenSecretKey]; !ok {
+				se.Data[resources.ViewerTokenSecretKey] = []byte(kubernetes.GenerateToken())
 			}
-			se.Data[resources.ViewerTokenSecretKey] = []byte(viewerToken)
+
 			return se, nil
 		}
 	}

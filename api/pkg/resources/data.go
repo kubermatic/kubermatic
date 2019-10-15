@@ -103,11 +103,6 @@ func (d *TemplateData) GetViewerToken() (string, error) {
 	return string(viewerTokenSecret.Data[ViewerTokenSecretKey]), nil
 }
 
-// GetClient returns the client
-func (d *TemplateData) GetClient() ctrlruntimeclient.Client {
-	return d.client
-}
-
 // GetDexCA returns the chain of public certificates of the Dex
 func (d *TemplateData) GetDexCA() ([]*x509.Certificate, error) {
 	return GetDexCAFromFile(d.oidcCAFile)

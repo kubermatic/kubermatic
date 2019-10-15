@@ -233,6 +233,10 @@ func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticv1.C
 
 // GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster
 func (p *ClusterProvider) GetViewerKubeconfigForCustomerCluster(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
+	isOpenShift, ok := c.Annotations["kubermatic.io/openshift"]
+	if ok && isOpenShift == "true" {
+		return nil, fmt.Errorf("not implemented")
+	}
 	b, err := p.userClusterConnProvider.GetViewerKubeconfig(c)
 	if err != nil {
 		return nil, err
@@ -243,6 +247,10 @@ func (p *ClusterProvider) GetViewerKubeconfigForCustomerCluster(c *kubermaticv1.
 
 // RevokeViewerKubeconfig revokes the viewer token and kubeconfig
 func (p *ClusterProvider) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error {
+	isOpenShift, ok := c.Annotations["kubermatic.io/openshift"]
+	if ok && isOpenShift == "true" {
+		return fmt.Errorf("not implemented")
+	}
 	return p.userClusterConnProvider.RevokeViewerKubeconfig(c)
 }
 

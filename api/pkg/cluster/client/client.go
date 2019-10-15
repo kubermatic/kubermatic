@@ -78,11 +78,6 @@ func (p *provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
 
 // GetViewerKubeconfig returns the viewer kubeconfig for the given cluster
 func (p *provider) GetViewerKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
-	isOpenShift, ok := c.Annotations["kubermatic.io/openshift"]
-	if ok && isOpenShift == "true" {
-		return nil, fmt.Errorf("not implemented")
-	}
-
 	s := &corev1.Secret{}
 
 	if err := p.seedClient.Get(context.Background(), types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.ViewerKubeconfigSecretName}, s); err != nil {
@@ -98,10 +93,6 @@ func (p *provider) GetViewerKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) 
 
 // RevokeViewerKubeconfig deletes viewer token to deploy new one and regenerate viewer-kubeconfig
 func (p *provider) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error {
-	isOpenShift, ok := c.Annotations["kubermatic.io/openshift"]
-	if ok && isOpenShift == "true" {
-		return fmt.Errorf("not implemented")
-	}
 	s := &corev1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      resources.ViewerTokenSecretName,
