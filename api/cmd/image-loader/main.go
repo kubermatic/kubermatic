@@ -372,7 +372,6 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 		resources.DefaultKubermaticImage,
 		resources.DefaultDNATControllerImage,
 		false,
-		"",
 	), nil
 }
 

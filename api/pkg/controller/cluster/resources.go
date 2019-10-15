@@ -6,7 +6,6 @@ import (
 
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
@@ -26,11 +25,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -123,22 +119,6 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, err
 	}
 
-	viewerTokenSecret := &corev1.Secret{}
-	if err := r.Client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: resources.ViewerTokenSecretName, Namespace: cluster.Status.NamespaceName}, viewerTokenSecret); err != nil {
-		if kerrors.IsNotFound(err) {
-			viewerTokenSecret.Data = map[string][]byte{}
-			viewerTokenSecret.Data[resources.ViewerTokenSecretKey] = []byte(kubernetes.GenerateToken())
-		} else {
-			return nil, err
-		}
-	}
-
-	viewerToken, ok := viewerTokenSecret.Data[resources.ViewerTokenSecretKey]
-	if !ok {
-		return nil, fmt.Errorf("viewer token is missing for the %s secret", resources.ViewerTokenSecretKey)
-	}
-	viewerTokenString := string(viewerToken)
-
 	return resources.NewTemplateData(
 		ctx,
 		r,
@@ -161,7 +141,6 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		r.kubermaticImage,
 		r.dnatControllerImage,
 		supportsFailureDomainZoneAntiAffinity,
-		viewerTokenString,
 	), nil
 }
 
@@ -258,7 +237,6 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		apiserver.TLSServingCertificateCreator(data),
 		apiserver.KubeletClientCertificateCreator(data),
 		apiserver.ServiceAccountKeyCreator(),
-		apiserver.TokenViewerCreator(data),
 		openvpn.TLSServingCertificateCreator(data),
 		openvpn.InternalClientCertificateCreator(data),
 		machinecontroller.TLSServingCertificateCreator(data),
@@ -274,6 +252,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		resources.GetInternalKubeconfigCreator(resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, data),
 		resources.GetInternalKubeconfigCreator(resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data),
 		resources.AdminKubeconfigCreator(data),
+		apiserver.TokenViewerCreator(data),
 		apiserver.TokenUsersCreator(data),
 		resources.ViewerKubeconfigCreator(data),
 	}

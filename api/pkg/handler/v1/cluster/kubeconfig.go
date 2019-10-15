@@ -52,14 +52,12 @@ func GetAdminKubeconfigEndpoint(projectProvider provider.ProjectProvider) endpoi
 		if strings.HasPrefix(userInfo.Group, "viewers") {
 			filePrefix = "viewer"
 			adminClientCfg, err = clusterProvider.GetViewerKubeconfigForCustomerCluster(cluster)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
 		} else {
 			adminClientCfg, err = clusterProvider.GetAdminKubeconfigForCustomerCluster(cluster)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
+		}
+
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		return &encodeKubeConifgResponse{clientCfg: adminClientCfg, filePrefix: filePrefix}, nil

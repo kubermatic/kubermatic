@@ -72,10 +72,13 @@ func ViewerKubeconfigCreator(data *TemplateData, modifier ...func(*clientcmdapi.
 			}
 
 			config := getBaseKubeconfig(ca.Cert, data.Cluster().Address.URL, data.Cluster().Name)
-
+			token, err := data.GetViewerToken()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get token: %v", err)
+			}
 			config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
 				KubeconfigDefaultContextKey: {
-					Token: data.GetViewerToken(),
+					Token: token,
 				},
 			}
 

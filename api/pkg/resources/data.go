@@ -44,7 +44,6 @@ type TemplateData struct {
 	kubermaticImage                                  string
 	dnatControllerImage                              string
 	supportsFailureDomainZoneAntiAffinity            bool
-	viewerToken                                      string
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -69,8 +68,7 @@ func NewTemplateData(
 	nodeLocalDNSCacheEnabled bool,
 	kubermaticImage string,
 	dnatControllerImage string,
-	supportsFailureDomainZoneAntiAffinity bool,
-	viewerToken string) *TemplateData {
+	supportsFailureDomainZoneAntiAffinity bool) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
 		client:                                 client,
@@ -93,13 +91,16 @@ func NewTemplateData(
 		kubermaticImage:                                  kubermaticImage,
 		dnatControllerImage:                              dnatControllerImage,
 		supportsFailureDomainZoneAntiAffinity:            supportsFailureDomainZoneAntiAffinity,
-		viewerToken:                                      viewerToken,
 	}
 }
 
 // GetViewerToken returns the viewer token
-func (d *TemplateData) GetViewerToken() string {
-	return d.viewerToken
+func (d *TemplateData) GetViewerToken() (string, error) {
+	viewerTokenSecret := &corev1.Secret{}
+	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ViewerTokenSecretName, Namespace: d.cluster.Status.NamespaceName}, viewerTokenSecret); err != nil {
+		return "", err
+	}
+	return string(viewerTokenSecret.Data[ViewerTokenSecretKey]), nil
 }
 
 // GetClient returns the client

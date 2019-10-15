@@ -48,7 +48,6 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		"",
 		"",
 		false,
-		"",
 	), nil
 }
 
