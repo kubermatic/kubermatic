@@ -9,7 +9,7 @@ cd $(dirname $0)/..
 sed -i 's/,omitempty//g' pkg/crd/kubermatic/v1/*.go
 sed -i 's/,omitempty//g' vendor/k8s.io/api/core/v1/*.go
 
-go run codegen/seed-yaml/main.go > ../docs/zz_generated.seed-cr.yaml
+go run cmd/seed-yaml-generator/main.go > ../docs/zz_generated.seed-cr.yaml
 
 git checkout pkg/crd/kubermatic/v1
 git checkout vendor/k8s.io/api/core/v1
