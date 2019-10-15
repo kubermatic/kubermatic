@@ -40,7 +40,7 @@ func requestFromCluster(log *zap.SugaredLogger) *handler.EnqueueRequestsFromMapF
 	toRequestFunc := handler.ToRequestsFunc(func(mo handler.MapObject) []reconcile.Request {
 		cluster, ok := mo.Object.(*kubermaticv1.Cluster)
 		if !ok {
-			err := fmt.Errorf("Object was not a cluster but a %t", mo.Object)
+			err := fmt.Errorf("Object was not a cluster but a %T", mo.Object)
 			log.Error(err)
 			utilruntime.HandleError(err)
 			return nil
@@ -119,6 +119,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 			log.Debug("Didn't find project, returning")
 			return nil
 		}
+		return fmt.Errorf("failed to get project %s: %v", request.Name, err)
 	}
 
 	if len(project.Labels) == 0 {
@@ -136,11 +137,6 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 	var errs []error
 	for seedName, seedClient := range r.seedClients {
 		log := log.With("seed", seedName)
-		client, ok := r.seedClients[seedName]
-		if !ok {
-			errs = append(errs, fmt.Errorf("no client available for seed %q", seedName))
-			continue
-		}
 
 		// TODO: Filter by worker-name label
 		listOpts := &ctrlruntimeclient.ListOptions{}
@@ -153,7 +149,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 		filteredClusters := r.filterClustersByWorkerNameAndProjectID(log, project.Name, unfilteredClusters)
 		// TODO: Factor this out and only update on changes. Also emit a log when there were changes.
 		for _, cluster := range filteredClusters {
-			if err := r.updateCluster(cluster.Name, client, func(c *kubermaticv1.Cluster) {
+			if err := r.updateCluster(cluster.Name, seedClient, func(c *kubermaticv1.Cluster) {
 				if c.Labels == nil {
 					c.Labels = map[string]string{}
 				}

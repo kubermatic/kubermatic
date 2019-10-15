@@ -172,7 +172,7 @@ func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcont
 			if err != nil {
 				log.Errorw("Failed to get kubeconfig for seed", zap.Error(err))
 				// Don't let one defunct seed break everything. We have a metric for this
-				// in the rbac controller factory, so jsut log it here
+				// in the rbac controller factory, so just log it here
 				continue
 			}
 			seedMgr, err := manager.New(kubeconfig, manager.Options{})

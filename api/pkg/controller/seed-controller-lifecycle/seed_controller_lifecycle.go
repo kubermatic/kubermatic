@@ -33,7 +33,7 @@ const (
 
 type Reconciler struct {
 	ctx                  context.Context
-	masterKubeCFG        *rest.Config
+	masterKubeCfg        *rest.Config
 	masterClient         ctrlruntimeclient.Client
 	masterCache          cache.Cache
 	log                  *zap.SugaredLogger
@@ -44,7 +44,7 @@ type Reconciler struct {
 	activeManager        *managerInstance
 }
 
-// controllerInstance represents an instance of controllerManager
+// managerInstance represents an instance of controllerManager
 type managerInstance struct {
 	config   map[string]rest.Config
 	mgr      manager.Manager
@@ -67,7 +67,7 @@ func Add(
 
 	reconciler := &Reconciler{
 		ctx:                  ctx,
-		masterKubeCFG:        mgr.GetConfig(),
+		masterKubeCfg:        mgr.GetConfig(),
 		masterClient:         mgr.GetClient(),
 		masterCache:          mgr.GetCache(),
 		log:                  log.Named(ControllerName),
@@ -136,7 +136,7 @@ func (r *Reconciler) reconcile() error {
 	}
 
 	// We let a controller manager run the controllers for us.
-	mgr, err := manager.New(r.masterKubeCFG, manager.Options{
+	mgr, err := manager.New(r.masterKubeCfg, manager.Options{
 		LeaderElection:     false,
 		MetricsBindAddress: "0",
 		// Avoid duplicating caches or client for master cluster, as its static.
