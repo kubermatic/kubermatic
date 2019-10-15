@@ -4,12 +4,12 @@ set -euo pipefail
 
 cd $(dirname $0)/..
 
-# remove omitempty tags from structs so that goyaml
-# will not skip fields
+# remove omitempty tags from structs so that genyaml will not skip fields
 sed -i 's/,omitempty//g' pkg/crd/kubermatic/v1/*.go
 sed -i 's/,omitempty//g' vendor/k8s.io/api/core/v1/*.go
 
-go run cmd/seed-yaml-generator/main.go > ../docs/zz_generated.seed-cr.yaml
+go run cmd/example-yaml-generator/main.go . ../docs
 
+# revert our changes
 git checkout pkg/crd/kubermatic/v1
 git checkout vendor/k8s.io/api/core/v1

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -11,29 +14,76 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"github.com/kubernetes/test-infra/pkg/genyaml"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 )
 
 func main() {
+	flag.Parse()
+
+	if flag.NArg() < 2 {
+		log.Fatal("Usage: go run main.go SRC_ROOT TARGET")
+	}
+
+	root := flag.Arg(0)
+	target := flag.Arg(1)
+
+	if _, err := os.Stat(target); err != nil {
+		if err := os.MkdirAll(target, 0755); err != nil {
+			log.Fatalf("Failed to create target directory %s: %v", target, err)
+		}
+	}
+
 	// find all .go files in kubermatic/v1, just in case a definition is split
 	// into multiple files
-	files, err := filepath.Glob("pkg/crd/kubermatic/v1/*.go")
+	files, err := filepath.Glob(filepath.Join(root, "pkg/crd/kubermatic/v1/*.go"))
 	if err != nil {
 		log.Fatalf("Failed to find go files: %v", err)
 	}
 
 	files = append(
 		files,
-		"vendor/k8s.io/api/core/v1/types.go",
+		filepath.Join(root, "vendor/k8s.io/api/core/v1/types.go"),
 	)
 
 	cm := genyaml.NewCommentMap(files...)
+	examples := map[string]runtime.Object{
+		"seed":    createExampleSeed(),
+		"cluster": createExampleCluster(),
+	}
 
-	mySeed := kubermaticv1.Seed{
+	for name, data := range examples {
+		yaml, err := cm.GenYaml(data)
+		if err != nil {
+			log.Fatalf("Failed to create YAML: %v", err)
+		}
+
+		// reduce indentation
+		yaml = strings.Replace(yaml, "    ", "  ", -1)
+
+		filename := filepath.Join(target, fmt.Sprintf("zz_generated.%s.yaml", name))
+		if err := ioutil.WriteFile(filename, []byte(yaml), 0644); err != nil {
+			log.Fatalf("Failed to write %s: %v", filename, err)
+		}
+	}
+}
+
+func createExampleSeed() *kubermaticv1.Seed {
+	seed := &kubermaticv1.Seed{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "kubermatic.k8s.io/v1",
+			Kind:       "Seed",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "<<exampleseed>>",
+			Namespace: "kubermatic",
+		},
 		Spec: kubermaticv1.SeedSpec{
 			Country:  "DE",
 			Location: "Hamburg",
 			Datacenters: map[string]kubermaticv1.Datacenter{
-				"exampleseed1": {
+				"<<exampledc>>": {
 					Node: kubermaticv1.NodeSettings{
 						ProxySettings:      kubermaticv1.ProxySettings{},
 						InsecureRegistries: []string{},
@@ -51,7 +101,8 @@ func main() {
 							Images: kubermaticv1.ImageList{
 								providerconfig.OperatingSystemCoreos: "foo",
 							},
-							DNSServers: []string{},
+							ManageSecurityGroups: pointer.BoolPtr(false),
+							DNSServers:           []string{},
 						},
 						Packet: &kubermaticv1.DatacenterSpecPacket{
 							Facilities: []string{},
@@ -66,7 +117,7 @@ func main() {
 						GCP: &kubermaticv1.DatacenterSpecGCP{
 							ZoneSuffixes: []string{},
 						},
-						Fake:     &kubermaticv1.DatacenterSpecFake{},
+						// Fake:     &kubermaticv1.DatacenterSpecFake{},
 						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{},
 					},
 				},
@@ -75,20 +126,30 @@ func main() {
 		},
 	}
 
-	err = validateAllFieldsAreDefined(&mySeed.Spec)
-	if err != nil {
+	if err := validateAllFieldsAreDefined(&seed.Spec); err != nil {
 		log.Fatalf("Seed struct is incomplete: %v", err)
 	}
 
-	yaml, err := cm.GenYaml(mySeed.Spec)
-	if err != nil {
-		log.Fatalf("Failed to create YAML: %v", err)
+	return seed
+}
+
+func createExampleCluster() *kubermaticv1.Cluster {
+	cluster := &kubermaticv1.Cluster{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "kubermatic.k8s.io/v1",
+			Kind:       "Cluster",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "<<cluster-abc123>>",
+		},
+		Spec: kubermaticv1.ClusterSpec{},
 	}
 
-	// reduce indentation
-	yaml = strings.Replace(yaml, "    ", "  ", -1)
+	// if err := validateAllFieldsAreDefined(&cluster.Spec); err != nil {
+	// 	log.Fatalf("Cluster struct is incomplete: %v", err)
+	// }
 
-	fmt.Println(yaml)
+	return cluster
 }
 
 // validateAllFieldsAreDefined recursively checks that all fields relevant
@@ -118,10 +179,14 @@ func validateReflect(value reflect.Value, path []string) error {
 	switch typ.Kind() {
 	case reflect.Struct:
 		for i := 0; i < typ.NumField(); i++ {
-			p := append(path, typ.Field(i).Name)
+			fieldName := typ.Field(i).Name
+			p := append(path, fieldName)
 
 			if err := validateReflect(value.Field(i), p); err != nil {
-				return err
+				// super special exception: allow not defining the Fake cloud provider
+				if typ.Name() == "DatacenterSpec" && fieldName != "Fake" {
+					return err
+				}
 			}
 		}
 
