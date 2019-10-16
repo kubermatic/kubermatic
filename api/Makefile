@@ -65,7 +65,7 @@ clean:
 	rm -f $(TARGET)
 	@echo "Cleaned $(BUILD_DEST)"
 
-docker-build:
+docker-build: build
 	docker build $(DOCKER_BUILD_FLAG) .
 
 docker-push:

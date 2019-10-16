@@ -1,6 +1,7 @@
 package usercluster
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -114,6 +115,14 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				fmt.Sprintf("-openvpn-ca-key-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCAKeyKey),
 			}, getNetworkArgs(data)...)
 
+			labelArgsValue, err := getLabelsArgValue(data.Cluster())
+			if err != nil {
+				return nil, fmt.Errorf("faild to get label args value: %v", err)
+			}
+			if labelArgsValue != "" {
+				args = append(args, "-node-labels", labelArgsValue)
+			}
+
 			cloudCredentialSecretTemplate, err := data.CloudCredentialSecretTemplate()
 			if err != nil {
 				return nil, fmt.Errorf("failed to get cloud-credential-secret-template: %v", err)
@@ -225,4 +234,24 @@ func getNetworkArgs(data userclusterControllerData) []string {
 	}
 
 	return networkFlags
+}
+
+func getLabelsArgValue(cluster *kubermaticv1.Cluster) (string, error) {
+	labelsToApply := map[string]string{}
+	for key, value := range cluster.Labels {
+		if kubermaticv1.ProtectedClusterLabels.Has(key) {
+			continue
+		}
+		labelsToApply[key] = value
+	}
+
+	if len(labelsToApply) == 0 {
+		return "", nil
+	}
+
+	bytes, err := json.Marshal(labelsToApply)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal labels: %v", err)
+	}
+	return string(bytes), nil
 }

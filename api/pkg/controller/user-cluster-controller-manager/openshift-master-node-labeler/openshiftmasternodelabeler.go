@@ -72,7 +72,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error
 }
 
 func (r *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
-	r.log.Info("Reconciling")
+	r.log.Debug("Reconciling")
 	result, err := r.reconcile()
 	if err != nil {
 		r.log.Errorw("Failed to reconcile", zap.Error(err))
