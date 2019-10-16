@@ -214,6 +214,7 @@ func (m *Manager) setAWSCredentials(userInfo *provider.UserInfo, presetName stri
 	cloud.AWS.RouteTableID = credentials.RouteTableID
 	cloud.AWS.SecurityGroupID = credentials.SecurityGroupID
 	cloud.AWS.VPCID = credentials.VPCID
+	cloud.AWS.ControlPlaneRoleARN = credentials.ControlPlaneRoleARN
 	return &cloud, nil
 }
 
