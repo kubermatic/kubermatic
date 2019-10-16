@@ -402,7 +402,7 @@ spec:
 $(cat $OPENSTACK_DATACENTER_FILE)
 EOF
 TEST_NAME="Deploy Seed Manifest"
-retry 5 kubectl apply -f $SEED_MANIFEST
+retry 7 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing seed"
 
 # We build the CLI after deploying to make sure we fail fast if the helm deployment fails
