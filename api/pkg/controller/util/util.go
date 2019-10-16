@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	appv1 "k8s.io/api/apps/v1"
@@ -12,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -77,7 +79,7 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 // controller is not yet reached. This ensures that not too many cluster updates are running at the same
 // time, but also makes sure that un-UpToDate clusters will continue to be reconciled.
 func ClusterAvailableForReconciling(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, concurrencyLimit int) (bool, error) {
-	if !cluster.Status.HasConditionValue(kubermaticv1.SeedResourcesUpToDate, corev1.ConditionTrue) {
+	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionSeedResourcesUpToDate, corev1.ConditionTrue) {
 		return true, nil
 	}
 
@@ -96,7 +98,7 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 
 	finishedUpdatingClustersCount := 0
 	for _, cluster := range clusters.Items {
-		if cluster.Status.HasConditionValue(kubermaticv1.SeedResourcesUpToDate, corev1.ConditionTrue) {
+		if cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionSeedResourcesUpToDate, corev1.ConditionTrue) {
 			finishedUpdatingClustersCount++
 		}
 	}
@@ -109,16 +111,17 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 // SetSeedResourcesUpToDateCondition updates the cluster status condition based on the deployment and statefulSet
 // replicas. if both statefulSet and deployment spec replica are equal to all replicas in the status object, then the
 // SeedResourcesUpToDate, will be added to the cluster conditions.
-func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, successfullyReconciled bool) (hasUnfinishedUpdates bool, err error) {
+func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, successfullyReconciled bool) error {
 	if successfullyReconciled {
 		var (
-			statefulSets = &appv1.StatefulSetList{}
-			opts         = &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
-			deployments  = &appv1.DeploymentList{}
+			statefulSets         = &appv1.StatefulSetList{}
+			opts                 = &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
+			deployments          = &appv1.DeploymentList{}
+			hasUnfinishedUpdates bool
 		)
 
 		if err := client.List(ctx, opts, statefulSets); err != nil {
-			return hasUnfinishedUpdates, fmt.Errorf("failed to list statefulSets: %v", err)
+			return fmt.Errorf("failed to list statefulSets: %v", err)
 		}
 
 		for _, statefulSet := range statefulSets.Items {
@@ -132,7 +135,7 @@ func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv
 		}
 
 		if err := client.List(ctx, opts, deployments); err != nil {
-			return hasUnfinishedUpdates, fmt.Errorf("failed to list deployments: %v", err)
+			return fmt.Errorf("failed to list deployments: %v", err)
 		}
 
 		for _, deployment := range deployments.Items {
@@ -146,13 +149,35 @@ func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv
 		}
 
 		if !hasUnfinishedUpdates {
-			cluster.Status.
-				SetClusterFinishedUpdatingSuccessfullyCondition(fmt.Sprintf("cluster %v has finished updating resources successfully",
-					cluster.Name))
-			return hasUnfinishedUpdates, client.Update(ctx, cluster)
+			return updateCluster(ctx, client, cluster.Name, func(c *kubermaticv1.Cluster) {
+				kubermaticv1helper.SetClusterCondition(c,
+					kubermaticv1.ClusterConditionSeedResourcesUpToDate,
+					corev1.ConditionTrue,
+					kubermaticv1.ReasonClusterUpdateSuccessful,
+					"All controlplane components are up to date")
+			})
 		}
 	}
 
-	cluster.Status.ClearCondition(kubermaticv1.SeedResourcesUpToDate)
-	return hasUnfinishedUpdates, client.Update(ctx, cluster)
+	return updateCluster(ctx, client, cluster.Name, func(c *kubermaticv1.Cluster) {
+		kubermaticv1helper.SetClusterCondition(c,
+			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
+			corev1.ConditionFalse,
+			kubermaticv1.ReasonClusterUpdateSuccessful,
+			"Some controlplane componends did not finish updating")
+	})
+}
+
+func updateCluster(ctx context.Context, client ctrlruntimeclient.Client, clusterName string, modify func(*kubermaticv1.Cluster)) error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+		//Get latest version
+		cluster := &kubermaticv1.Cluster{}
+		if err := client.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
+			return err
+		}
+		// Apply modifications
+		modify(cluster)
+		// Update the cluster
+		return client.Update(ctx, cluster)
+	})
 }

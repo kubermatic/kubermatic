@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
@@ -106,13 +105,14 @@ const (
 	// SeedResourcesUpToDate indicates that alle controllers have finished setting up the
 	// resources for a user clusters that run inside the seed cluster, i.e. this ignores
 	// the status of cloud provider resources for a given cluster.
-	SeedResourcesUpToDate ClusterConditionType = "SeedResourcesUpToDate"
+	ClusterConditionSeedResourcesUpToDate ClusterConditionType = "SeedResourcesUpToDate"
 
 	// ClusterControllerFinishedReconcilingSuccessfully indicates that the cluster controller finished
 	// reconciling successfully
 	ClusterControllerFinishedReconcilingSuccessfully ClusterConditionType = "ClusterControllerFinishedReconcilingSuccessfully"
 
-	ClusterUpdateInProgressReason = "Current Cluster is updating its resources"
+	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
+	ReasonClusterUpadteInProgress = "ClusterUpdateInProgress"
 )
 
 type ClusterCondition struct {
@@ -134,22 +134,6 @@ type ClusterCondition struct {
 	// Human readable message indicating details about last transition.
 	// +optional
 	Message string `json:"message,omitempty"`
-}
-
-func newClusterCondition(condType ClusterConditionType, status corev1.ConditionStatus, reason, message, kubermaticVersion string) *ClusterCondition {
-	now := metav1.Time{
-		Time: time.Now(),
-	}
-
-	return &ClusterCondition{
-		Type:               condType,
-		Status:             status,
-		LastHeartbeatTime:  now,
-		LastTransitionTime: now,
-		Reason:             reason,
-		Message:            message,
-		KubermaticVersion:  kubermaticVersion,
-	}
 }
 
 // ClusterStatus stores status information about a cluster.
@@ -203,44 +187,6 @@ func (cs *ClusterStatus) HasConditionValue(conditionType ClusterConditionType, c
 	}
 
 	return false
-}
-
-func (cs *ClusterStatus) SetClusterFinishedUpdatingSuccessfullyCondition(message string) {
-	condition := newClusterCondition(SeedResourcesUpToDate, corev1.ConditionTrue,
-		ClusterUpdateInProgressReason, message, cs.KubermaticVersion)
-	cs.SetClusterCondition(*condition)
-}
-
-func (cs *ClusterStatus) SetClusterCondition(c ClusterCondition) {
-	pos, clusterCondition := cs.getClusterCondition(c.Type)
-	if clusterCondition != nil &&
-		clusterCondition.KubermaticVersion == c.KubermaticVersion &&
-		clusterCondition.Status == c.Status && clusterCondition.Reason == c.Reason && clusterCondition.Message == c.Message {
-		return
-	}
-
-	if clusterCondition != nil {
-		cs.Conditions[pos] = c
-	} else {
-		cs.Conditions = append(cs.Conditions, c)
-	}
-}
-
-func (cs *ClusterStatus) getClusterCondition(conditionType ClusterConditionType) (int, *ClusterCondition) {
-	for i, c := range cs.Conditions {
-		if conditionType == c.Type {
-			return i, &c
-		}
-	}
-	return -1, nil
-}
-
-func (cs *ClusterStatus) ClearCondition(conditionType ClusterConditionType) {
-	pos, _ := cs.getClusterCondition(conditionType)
-	if pos == -1 {
-		return
-	}
-	cs.Conditions = append(cs.Conditions[:pos], cs.Conditions[pos+1:]...)
 }
 
 type ClusterStatusError string

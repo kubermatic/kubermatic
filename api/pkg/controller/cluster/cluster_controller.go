@@ -22,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
@@ -214,28 +215,32 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	successfullyReconciled := true
 	// Add a wrapping here so we can emit an event on error
-	result, reconcileErr := r.reconcile(ctx, log, cluster)
-	if reconcileErr != nil {
+	var errs []error
+	result, err := r.reconcile(ctx, log, cluster)
+	if err != nil {
 		successfullyReconciled = false
-		log.Errorw("Reconciling failed", zap.Error(reconcileErr))
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", reconcileErr)
+		log.Errorw("Reconciling failed", zap.Error(err))
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		errs = append(errs, err)
+	} else {
+		if err := r.updateCluster(context.Background(), cluster, func(c *kubermaticv1.Cluster) {
+			cluster.Status.SetClusterCondition(kubermaticv1.ClusterControllerFinishedReconcilingSuccessfully)
+		}); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	if result == nil {
 		result = &reconcile.Result{}
 	}
 
-	hasUnfinishedUpdates, err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r.Client, successfullyReconciled)
+	err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r.Client, successfullyReconciled)
 	if err != nil {
 		log.Errorw("failed to update clusters status conditions", zap.Error(err))
-		reconcileErr = fmt.Errorf("failed to set cluster status: %v after reconciliation was done with err=%v", err, reconcileErr)
+		errs = append(errs, err)
 	}
 
-	if !hasUnfinishedUpdates {
-		cluster.Status.SetClusterCondition()
-	}
-
-	return *result, reconcileErr
+	return *result, utilerrors.NewAggregate(errs)
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
