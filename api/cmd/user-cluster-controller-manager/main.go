@@ -255,7 +255,7 @@ func main() {
 	if err := rbacusercluster.Add(mgr, healthHandler.AddReadinessCheck); err != nil {
 		log.Fatalw("Failed to add user RBAC controller to mgr", zap.Error(err))
 	}
-	log.Info("Registerd user RBAC controller")
+	log.Info("Registered user RBAC controller")
 
 	if runOp.openshift {
 		if err := nodecsrapprover.Add(mgr, 4, cfg, log); err != nil {
