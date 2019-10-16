@@ -32,10 +32,6 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	ErrOSNotSupported = errors.New("os not supported")
-)
-
 type OperatingSystem string
 
 const (
@@ -50,14 +46,40 @@ const (
 	CloudProviderAWS          CloudProvider = "aws"
 	CloudProviderAzure        CloudProvider = "azure"
 	CloudProviderDigitalocean CloudProvider = "digitalocean"
-	CloudProviderOpenstack    CloudProvider = "openstack"
 	CloudProviderGoogle       CloudProvider = "gce"
-	CloudProviderPacket       CloudProvider = "packet"
 	CloudProviderHetzner      CloudProvider = "hetzner"
+	CloudProviderKubeVirt     CloudProvider = "kubevirt"
 	CloudProviderLinode       CloudProvider = "linode"
+	CloudProviderOpenstack    CloudProvider = "openstack"
+	CloudProviderPacket       CloudProvider = "packet"
 	CloudProviderVsphere      CloudProvider = "vsphere"
 	CloudProviderFake         CloudProvider = "fake"
-	CloudProviderKubeVirt     CloudProvider = "kubevirt"
+)
+
+var (
+	ErrOSNotSupported = errors.New("os not supported")
+
+	// AllOperatingSystems is a slice containing all supported operating system identifiers.
+	AllOperatingSystems = []OperatingSystem{
+		OperatingSystemCoreos,
+		OperatingSystemUbuntu,
+		OperatingSystemCentOS,
+	}
+
+	// AllCloudProviders is a slice containing all supported cloud providers.
+	AllCloudProviders = []CloudProvider{
+		CloudProviderAWS,
+		CloudProviderAzure,
+		CloudProviderDigitalocean,
+		CloudProviderGoogle,
+		CloudProviderHetzner,
+		CloudProviderKubeVirt,
+		CloudProviderLinode,
+		CloudProviderOpenstack,
+		CloudProviderPacket,
+		CloudProviderVsphere,
+		CloudProviderFake,
+	}
 )
 
 // DNSConfig contains a machine's DNS configuration

@@ -28,14 +28,12 @@ import (
 	"os/exec"
 	"text/template"
 
-	"github.com/golang/glog"
-
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/klog"
 )
 
 const (
@@ -178,7 +176,7 @@ func createClonedVM(ctx context.Context, vmName string, config *Config, session 
 			return nil, err
 		}
 
-		glog.V(4).Infof("Increasing disk size to %d GB", *config.DiskSizeGB)
+		klog.V(4).Infof("Increasing disk size to %d GB", *config.DiskSizeGB)
 		disk := disks[0]
 		disk.CapacityInBytes = *config.DiskSizeGB * int64(math.Pow(1024, 3))
 		diskspec := &types.VirtualDeviceConfigSpec{Operation: types.VirtualDeviceConfigSpecOperationEdit, Device: disk}
@@ -227,11 +225,11 @@ func uploadAndAttachISO(ctx context.Context, session *Session, vmRef *object.Vir
 	}
 	p := soap.DefaultUpload
 	remoteIsoFilePath := fmt.Sprintf("%s/%s", vmRef.Name(), "cloud-init.iso")
-	glog.V(3).Infof("Uploading userdata ISO to datastore %+v, destination iso is %s\n", datastore, remoteIsoFilePath)
+	klog.V(3).Infof("Uploading userdata ISO to datastore %+v, destination iso is %s\n", datastore, remoteIsoFilePath)
 	if err := datastore.UploadFile(ctx, localIsoFilePath, remoteIsoFilePath, &p); err != nil {
 		return fmt.Errorf("failed to upload iso: %v", err)
 	}
-	glog.V(3).Infof("Uploaded ISO file %s", localIsoFilePath)
+	klog.V(3).Infof("Uploaded ISO file %s", localIsoFilePath)
 
 	// Find the cd-rom device and insert the cloud init iso file into it.
 	devices, err := vmRef.Device(ctx)
