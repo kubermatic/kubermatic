@@ -113,6 +113,10 @@ function cleanup {
   kubectl delete clusterrolebinding -l prowjob=$BUILD_ID
   kubectl delete namespace $NAMESPACE --wait=false
 
+  # Cleanup the endpoints objects created by the leader election
+  kubectl delete endpoints -n kube-system \
+    kubermatic-master-controller-manager-leader-election-$BUILD_ID kubermatic-controller-manager-$BUILD_ID
+
   # Upload the JUNIT files
   mv /reports/* ${ARTIFACTS}/
   echodate "Finished cleanup"
