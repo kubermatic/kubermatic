@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "etcd metrics (cluster overview)",
+  "description": "etcd metrics",
   "editable": true,
   "gnetId": null,
   "graphTooltip": 1,
@@ -30,7 +30,7 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 0,
+      "fill": 1,
       "gridPos": {
         "h": 7,
         "w": 6,
@@ -49,9 +49,12 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -64,8 +67,9 @@
         {
           "expr": "sum(job:process_cpu_seconds_total:rate5m{instance=~\"etcd-.+\"}) by (cluster)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "process_resident_memory_bytes",
           "refId": "A",
           "step": 4
@@ -122,7 +126,7 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 0,
+      "fill": 1,
       "gridPos": {
         "h": 7,
         "w": 6,
@@ -141,9 +145,12 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -156,8 +163,9 @@
         {
           "expr": "sum(job:process_resident_memory_bytes:clone{instance=~\"etcd-.+\"}) by (cluster)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "process_resident_memory_bytes",
           "refId": "A",
           "step": 4
@@ -214,7 +222,7 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 0,
+      "fill": 1,
       "gridPos": {
         "h": 7,
         "w": 6,
@@ -233,9 +241,12 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -248,8 +259,9 @@
         {
           "expr": "sum(job:process_open_fds:clone{instance=~\"etcd-.+\"}) by (cluster)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "process_resident_memory_bytes",
           "refId": "A",
           "step": 4
@@ -306,7 +318,7 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 0,
+      "fill": 1,
       "gridPos": {
         "h": 7,
         "w": 6,
@@ -325,9 +337,12 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -340,8 +355,9 @@
         {
           "expr": "job:etcd_server_has_leader:sum",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "process_resident_memory_bytes",
           "refId": "A",
           "step": 4
@@ -397,7 +413,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 8
       },
       "id": 53,
       "panels": [],
@@ -413,13 +429,13 @@
       "decimals": null,
       "editable": true,
       "error": false,
-      "fill": 0,
+      "fill": 1,
       "grid": {},
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 10
+        "y": 9
       },
       "id": 1,
       "legend": {
@@ -432,9 +448,12 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -448,9 +467,9 @@
           "expr": "sum(job:etcd_debugging_mvcc_db_total_size_in_bytes:clone) by (cluster)",
           "format": "time_series",
           "hide": false,
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "",
           "refId": "A",
           "step": 4
@@ -505,13 +524,13 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 0,
+      "fill": 1,
       "grid": {},
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 10
+        "y": 9
       },
       "id": 3,
       "interval": "30s",
@@ -525,9 +544,12 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 1,
       "points": false,
@@ -535,14 +557,14 @@
       "seriesOverrides": [],
       "spaceLength": 10,
       "stack": false,
-      "steppedLine": true,
+      "steppedLine": false,
       "targets": [
         {
           "expr": "sum(job:etcd_disk_wal_fsync_duration_seconds_bucket:99percentile) by (cluster)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
-          "legendFormat": "{{cluster}} WAL fsync",
+          "legendFormat": "{{ cluster }} WAL fsync",
           "metric": "etcd_disk_wal_fsync_duration_seconds_bucket",
           "refId": "A",
           "step": 4
@@ -551,7 +573,7 @@
           "expr": "sum(job:etcd_disk_backend_commit_duration_seconds_bucket:99percentile) by (cluster)",
           "format": "time_series",
           "intervalFactor": 2,
-          "legendFormat": "{{cluster}} DB fsync",
+          "legendFormat": "{{ cluster }} DB fsync",
           "metric": "etcd_disk_backend_commit_duration_seconds_bucket",
           "refId": "B",
           "step": 4
@@ -604,7 +626,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 17
       },
       "id": 49,
       "panels": [],
@@ -619,12 +641,12 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 5,
+      "fill": 1,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 19
+        "y": 18
       },
       "id": 22,
       "isNew": true,
@@ -638,23 +660,27 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
           "expr": "sum(job:etcd_network_client_grpc_received_bytes_total:rate5m) by (cluster)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "etcd_network_client_grpc_received_bytes_total",
           "refId": "A",
           "step": 4
@@ -711,12 +737,12 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 5,
+      "fill": 1,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 19
+        "y": 18
       },
       "id": 21,
       "isNew": true,
@@ -730,23 +756,27 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
           "expr": "sum(job:etcd_network_client_grpc_sent_bytes_total:rate5m) by (cluster)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "etcd_network_client_grpc_sent_bytes_total",
           "refId": "A",
           "step": 4
@@ -803,12 +833,12 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 0,
+      "fill": 1,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 19
+        "y": 18
       },
       "id": 20,
       "isNew": true,
@@ -822,9 +852,12 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -837,8 +870,9 @@
         {
           "expr": "sum(job:etcd_network_peer_received_bytes_total:rate5msum) by (cluster)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "etcd_network_peer_received_bytes_total",
           "refId": "A",
           "step": 4
@@ -896,13 +930,13 @@
       "decimals": null,
       "editable": true,
       "error": false,
-      "fill": 0,
+      "fill": 1,
       "grid": {},
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 19
+        "y": 18
       },
       "id": 16,
       "legend": {
@@ -915,9 +949,12 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -931,9 +968,9 @@
           "expr": "sum(job:etcd_network_peer_sent_bytes_total:rate5msum) by (cluster)",
           "format": "time_series",
           "hide": false,
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "etcd_network_peer_sent_bytes_total",
           "refId": "A",
           "step": 4
@@ -986,7 +1023,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 26
       },
       "id": 55,
       "panels": [],
@@ -1001,12 +1038,12 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 5,
+      "fill": 1,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 28
+        "y": 27
       },
       "id": 45,
       "isNew": true,
@@ -1020,23 +1057,27 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
           "expr": "sum(job:etcd_debugging_mvcc_txn_total:rate5m) by (cluster)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "etcd_network_client_grpc_received_bytes_total",
           "refId": "A",
           "step": 4
@@ -1093,12 +1134,12 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 5,
+      "fill": 1,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 28
+        "y": 27
       },
       "id": 42,
       "isNew": true,
@@ -1112,23 +1153,27 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
           "expr": "sum(job:etcd_debugging_mvcc_put_total:rate5m) by (cluster)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "etcd_network_client_grpc_received_bytes_total",
           "refId": "A",
           "step": 4
@@ -1185,12 +1230,12 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 5,
+      "fill": 1,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 28
+        "y": 27
       },
       "id": 57,
       "isNew": true,
@@ -1204,23 +1249,27 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
           "expr": "sum(job:etcd_debugging_mvcc_range_total:rate5m) by (cluster)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "etcd_network_client_grpc_received_bytes_total",
           "refId": "A",
           "step": 4
@@ -1277,12 +1326,12 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 5,
+      "fill": 1,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 28
+        "y": 27
       },
       "id": 44,
       "isNew": true,
@@ -1296,23 +1345,27 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
           "expr": "sum(job:etcd_debugging_mvcc_delete_total:rate5m) by (cluster)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "etcd_network_client_grpc_received_bytes_total",
           "refId": "A",
           "step": 4
@@ -1369,12 +1422,12 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 5,
+      "fill": 1,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 36
+        "y": 35
       },
       "id": 43,
       "isNew": true,
@@ -1388,23 +1441,27 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
           "expr": "sum(job:etcd_debugging_mvcc_keys_total:clone) by (cluster)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "etcd_network_client_grpc_received_bytes_total",
           "refId": "A",
           "step": 4
@@ -1461,12 +1518,12 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 5,
+      "fill": 1,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 36
+        "y": 35
       },
       "id": 56,
       "isNew": true,
@@ -1480,23 +1537,27 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(job:etcd_debugging_store_reads_total:rate5m) by (cluster)",
+          "expr": "sum(job:etcd_debugging_store_reads_total:rate5m) by (cluster, action)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }} {{ action }} ops",
           "metric": "etcd_network_client_grpc_received_bytes_total",
           "refId": "A",
           "step": 4
@@ -1553,12 +1614,12 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 5,
+      "fill": 1,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 12,
-        "y": 36
+        "y": 35
       },
       "id": 58,
       "isNew": true,
@@ -1572,23 +1633,27 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
           "expr": "sum(job:etcd_debugging_store_writes_total:rate5m) by (cluster, action)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}} {{action}} ops",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }} {{ action }} ops",
           "metric": "etcd_network_client_grpc_received_bytes_total",
           "refId": "A",
           "step": 4
@@ -1645,12 +1710,12 @@
       "datasource": "$datasource",
       "editable": true,
       "error": false,
-      "fill": 5,
+      "fill": 1,
       "gridPos": {
         "h": 8,
         "w": 6,
         "x": 18,
-        "y": 36
+        "y": 35
       },
       "id": 59,
       "isNew": true,
@@ -1664,23 +1729,27 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 2,
+      "linewidth": 1,
       "links": [],
       "nullPointMode": "connected",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
           "expr": "sum(job:etcd_debugging_store_expires_total:rate5m) by (cluster)",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{cluster}}",
+          "interval": "$interval",
+          "intervalFactor": 1,
+          "legendFormat": "{{ cluster }}",
           "metric": "etcd_network_client_grpc_received_bytes_total",
           "refId": "A",
           "step": 4
@@ -1731,7 +1800,7 @@
     }
   ],
   "refresh": "30s",
-  "schemaVersion": 16,
+  "schemaVersion": 19,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -1739,13 +1808,86 @@
       {
         "current": {},
         "hide": 2,
+        "includeAll": false,
         "label": "Data Source",
+        "multi": false,
         "name": "datasource",
         "options": [],
         "query": "prometheus",
         "refresh": 1,
         "regex": "",
+        "skipUrlSync": false,
         "type": "datasource"
+      },
+      {
+        "auto": false,
+        "auto_count": 30,
+        "auto_min": "10s",
+        "current": {},
+        "hide": 0,
+        "label": "Interval",
+        "name": "interval",
+        "options": [
+          {
+            "selected": true,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": false,
+            "text": "5m",
+            "value": "5m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "selected": false,
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "12h",
+            "value": "12h"
+          },
+          {
+            "selected": false,
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "selected": false,
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "14d",
+            "value": "14d"
+          },
+          {
+            "selected": false,
+            "text": "30d",
+            "value": "30d"
+          }
+        ],
+        "query": "1m,5m,10m,30m,1h,6h,12h,1d,7d,14d,30d",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
       }
     ]
   },
@@ -1780,7 +1922,7 @@
     ]
   },
   "timezone": "",
-  "title": "etcd (cluster overview)",
+  "title": "etcd Cluster Overview",
   "uid": "aa6e22781c60",
-  "version": 2
+  "version": 1
 }
