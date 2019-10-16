@@ -89,7 +89,7 @@ func TestGenerateVerbsForGroup(t *testing.T) {
 		{
 			name:          "scenario 3: generate verbs for viewers",
 			resurceName:   genResourceName(rbac.ViewerGroupNamePrefix),
-			expectedVerbs: []string{"list", "get"},
+			expectedVerbs: []string{"list", "get", "watch"},
 			expectError:   false,
 		},
 		{
