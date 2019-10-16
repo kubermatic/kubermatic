@@ -87,15 +87,6 @@ function cleanup {
     # Except for vSphere
     TMP_KUBECONFIG=$(mktemp);
     USERCLUSTER_NS=$(kubectl get cluster -o name -l worker-name=${BUILD_ID} |sed 's#.kubermatic.k8s.io/#-#g')
-
-    for i in $(kubectl get pods -n ${USERCLUSTER_NS} -o go-template="$GOTEMPLATE"); do
-      local POD="${i%,*}"
-      local CONTAINER="${i#*,}"
-
-      echo " [*] User Cluster Pod $POD, container $CONTAINER:"
-      kubectl logs -n ${USERCLUSTER_NS} "$POD" "$CONTAINER"
-    done
-
     kubectl get secret -n ${USERCLUSTER_NS} admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' | base64 -d > $TMP_KUBECONFIG
     kubectl --kubeconfig=${TMP_KUBECONFIG} describe machine -n kube-system|egrep -vi 'password|user'
   fi
