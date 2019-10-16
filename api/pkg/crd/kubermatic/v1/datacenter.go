@@ -247,7 +247,7 @@ type ProxySettings struct {
 	NoProxy *string `json:"no_proxy,omitempty"`
 }
 
-// Empty returns true if p or any of its children are nil or empty strings.
+// Empty returns true if p or all of its children are nil or empty strings.
 func (p *ProxySettings) Empty() bool {
 	return p == nil || (emptyStr(p.HTTPProxy) && emptyStr(p.NoProxy))
 }
