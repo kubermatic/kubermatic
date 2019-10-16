@@ -36,4 +36,4 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -log-debug=true \
   -log-format=Console \
   -logtostderr \
-  -v=8 $@
+  -v=4 $@
