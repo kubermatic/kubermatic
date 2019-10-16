@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
-
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -15,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog"
 )
 
 const (
@@ -110,7 +109,7 @@ func (c *projectController) run(workerCount int, stopCh <-chan struct{}) {
 		c.metrics.Workers.Inc()
 	}
 
-	glog.Info("RBAC generator for project controller started")
+	klog.Info("RBAC generator for project controller started")
 	<-stopCh
 }
 
@@ -152,7 +151,7 @@ func handleErr(err error, key interface{}, queue workqueue.RateLimitingInterface
 		return
 	}
 
-	glog.Errorf("Error syncing %v: %v", key, err)
+	klog.Errorf("Error syncing %v: %v", key, err)
 
 	// Re-enqueue an item, based on the rate limiter on the
 	// queue and the re-enqueueProject history, the key will be processed later again.

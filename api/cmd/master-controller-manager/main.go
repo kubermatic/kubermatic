@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
 	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -62,6 +63,7 @@ func main() {
 	var g run.Group
 	ctrlCtx := &controllerContext{}
 	runOpts := controllerRunOptions{}
+	klog.InitFlags(nil)
 	runOpts.seedvalidationHook.AddFlags(flag.CommandLine)
 	flag.StringVar(&runOpts.kubeconfig, "kubeconfig", "", "Path to a kubeconfig.")
 	flag.StringVar(&runOpts.dcFile, "datacenters", "", "The datacenters.yaml file path.")

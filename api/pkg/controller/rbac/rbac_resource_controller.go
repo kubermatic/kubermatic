@@ -5,8 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
-
 	kubermaticsharedinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -17,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	kcache "k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog"
 )
 
 const projectResourcesResyncTime = 5 * time.Minute
@@ -57,14 +56,14 @@ func newResourcesController(metrics *Metrics, allClusterProviders []*ClusterProv
 	}
 
 	for _, clusterProvider := range allClusterProviders {
-		glog.V(4).Infof("considering %s provider for resources", clusterProvider.providerName)
+		klog.V(4).Infof("considering %s provider for resources", clusterProvider.providerName)
 		for _, resource := range c.projectResources {
 			if len(resource.destination) == 0 && !strings.HasPrefix(clusterProvider.providerName, MasterProviderPrefix) {
-				glog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the master cluster provider", resource.gvr.String(), clusterProvider.providerName)
+				klog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the master cluster provider", resource.gvr.String(), clusterProvider.providerName)
 				continue
 			}
 			if resource.destination == destinationSeed && !strings.HasPrefix(clusterProvider.providerName, SeedProviderPrefix) {
-				glog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the seed cluster provider", resource.gvr.String(), clusterProvider.providerName)
+				klog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the seed cluster provider", resource.gvr.String(), clusterProvider.providerName)
 				continue
 			}
 			if resource.gvr.Group == kubermaticv1.GroupName {
@@ -94,7 +93,7 @@ func (c *resourcesController) run(workerCount int, stopCh <-chan struct{}) {
 		c.metrics.Workers.Inc()
 	}
 
-	glog.Info("RBAC generator for resources controller started")
+	klog.Info("RBAC generator for resources controller started")
 	<-stopCh
 }
 
@@ -113,7 +112,7 @@ func (c *resourcesController) processProjectResourcesNextItem() bool {
 
 	runObj, err := qItem.cache.Get(qItem.indexKey)
 	if err != nil {
-		glog.V(4).Infof("won't process the resource %q because it's no longer in the queue", qItem.name)
+		klog.V(4).Infof("won't process the resource %q because it's no longer in the queue", qItem.name)
 		return true
 	}
 	resMeta, err := meta.Accessor(runObj)
@@ -178,7 +177,7 @@ func (c *resourcesController) registerInformerIndexerForKubermaticResource(share
 	}
 	shared, err := sharedInformers.ForResource(resource.gvr)
 	if err == nil {
-		glog.V(4).Infof("using a shared informer and indexer for %q resource, provider %q", resource.gvr.String(), clusterProvider.providerName)
+		klog.V(4).Infof("using a shared informer and indexer for %q resource, provider %q", resource.gvr.String(), clusterProvider.providerName)
 		shared.Informer().AddEventHandlerWithResyncPeriod(handlers, projectResourcesResyncTime)
 		genLister = shared.Lister()
 		return shared.Informer().GetIndexer(), nil
@@ -205,12 +204,12 @@ func (c *resourcesController) registerInformerForKubeResource(kubeInformerProvid
 	}
 	shared, err := kubeInformerProvider.KubeInformerFactoryFor(resource.namespace).ForResource(resource.gvr)
 	if err == nil {
-		glog.V(4).Infof("using a shared informer for %q resource, provider %q in namespace %q", resource.gvr.String(), clusterProvider.providerName, resource.namespace)
+		klog.V(4).Infof("using a shared informer for %q resource, provider %q in namespace %q", resource.gvr.String(), clusterProvider.providerName, resource.namespace)
 		shared.Informer().AddEventHandlerWithResyncPeriod(handlers, projectResourcesResyncTime)
 		genLister = shared.Lister()
 
 		if len(resource.namespace) > 0 {
-			glog.V(4).Infof("registering Roles and RoleBindings informers in %q namespace for provider %s for resource %q", resource.namespace, clusterProvider.providerName, resource.gvr.String())
+			klog.V(4).Infof("registering Roles and RoleBindings informers in %q namespace for provider %s for resource %q", resource.namespace, clusterProvider.providerName, resource.gvr.String())
 			_ = kubeInformerProvider.KubeInformerFactoryFor(resource.namespace).Rbac().V1().Roles().Lister()
 			_ = kubeInformerProvider.KubeInformerFactoryFor(resource.namespace).Rbac().V1().RoleBindings().Lister()
 		}
@@ -229,7 +228,7 @@ func (c *resourcesController) handleErr(err error, key interface{}) {
 		return
 	}
 
-	glog.Errorf("Error syncing %v: %v", key, err)
+	klog.Errorf("Error syncing %v: %v", key, err)
 
 	// Re-enqueue an item, based on the rate limiter on the
 	// queue and the re-enqueueProject history, the key will be processed later again.

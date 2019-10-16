@@ -3,11 +3,11 @@ package reconciling
 import (
 	"encoding/json"
 	"github.com/go-test/deep"
-	"github.com/golang/glog"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/klog"
 )
 
 func init() {
@@ -37,19 +37,19 @@ func DeepEqual(a, b metav1.Object) bool {
 		diff = deep.Equal(b, a)
 	}
 
-	glog.V(4).Infof("Object %T %s/%s differs from the generated one: %v", a, a.GetNamespace(), a.GetName(), diff)
+	klog.V(4).Infof("Object %T %s/%s differs from the generated one: %v", a, a.GetNamespace(), a.GetName(), diff)
 	return false
 }
 
 func jsonEqual(a, b interface{}) bool {
 	aJSON, err := json.Marshal(a)
 	if err != nil {
-		glog.Errorf("failed to marshal aJSON: %v", err)
+		klog.Errorf("failed to marshal aJSON: %v", err)
 		return false
 	}
 	bJSON, err := json.Marshal(b)
 	if err != nil {
-		glog.Errorf("failed to marshal bJSON: %v", err)
+		klog.Errorf("failed to marshal bJSON: %v", err)
 		return false
 	}
 	return string(aJSON) == string(bJSON)
