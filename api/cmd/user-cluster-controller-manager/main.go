@@ -24,6 +24,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/nodecsrapprover"
 	rbacusercluster "github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
+	nodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler"
 	openshiftmasternodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-master-node-labeler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
 	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
@@ -60,6 +61,7 @@ type controllerRunOptions struct {
 	overwriteRegistry             string
 	cloudProviderName             string
 	cloudCredentialSecretTemplate string
+	nodelabels                    string
 	log                           kubermaticlog.Options
 }
 
@@ -82,6 +84,7 @@ func main() {
 	flag.StringVar(&runOp.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.StringVar(&runOp.cloudProviderName, "cloud-provider-name", "", "Name of the cloudprovider")
 	flag.StringVar(&runOp.cloudCredentialSecretTemplate, "cloud-credential-secret-template", "", "A serialized Kubernetes secret whose Name and Data fields will be used to create a secret for the openshift cloud credentials operator.")
+	flag.StringVar(&runOp.nodelabels, "node-labels", "", "A json-encoded map of node labels. If set, those labels will be enforced on all nodes.")
 
 	flag.Parse()
 
@@ -168,6 +171,13 @@ func main() {
 		}
 	}
 
+	nodeLabels := map[string]string{}
+	if runOp.nodelabels != "" {
+		if err := json.Unmarshal([]byte(runOp.nodelabels), &nodeLabels); err != nil {
+			log.Fatalw("Failed to unmarshal value of --node-labels arg", zap.Error(err))
+		}
+	}
+
 	var g run.Group
 
 	healthHandler := healthcheck.NewHandler()
@@ -218,6 +228,7 @@ func main() {
 		log); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
 	}
+	log.Info("Registered usercluster controller")
 
 	if len(runOp.networks) > 0 {
 		if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
@@ -244,6 +255,7 @@ func main() {
 	if err := rbacusercluster.Add(mgr, healthHandler.AddReadinessCheck); err != nil {
 		log.Fatalw("Failed to add user RBAC controller to mgr", zap.Error(err))
 	}
+	log.Info("Registered user RBAC controller")
 
 	if runOp.openshift {
 		if err := nodecsrapprover.Add(mgr, 4, cfg, log); err != nil {
@@ -258,6 +270,12 @@ func main() {
 	if err := containerlinux.Add(mgr, runOp.overwriteRegistry); err != nil {
 		log.Fatalw("Failed to register the ContainerLinux controller", zap.Error(err))
 	}
+	log.Info("Registered ContainerLinux controller")
+
+	if err := nodelabeler.Add(ctx, log, mgr, nodeLabels); err != nil {
+		log.Fatalw("Failed to register nodelabel controller", zap.Error(err))
+	}
+	log.Info("Registered nodelabel controller")
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
