@@ -24,8 +24,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
-
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/bootfromvolume"
@@ -45,7 +43,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
-
+	"k8s.io/klog"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
 	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
@@ -156,7 +154,7 @@ func (p *provider) getConfig(s v1alpha1.ProviderSpec) (*Config, *providerconfig.
 	// Ignore Region not found as Region might not be found and we can default it later
 	c.Region, err = p.configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Region, "OS_REGION_NAME")
 	if err != nil {
-		glog.V(6).Infof("Region from configuration or environment variable not found")
+		klog.V(6).Infof("Region from configuration or environment variable not found")
 	}
 
 	// We ignore errors here because the OS domain is only required when using Identity API V3
@@ -269,13 +267,13 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 	}
 
 	if c.Region == "" {
-		glog.V(3).Infof("Trying to default region for machine '%s'...", spec.Name)
+		klog.V(3).Infof("Trying to default region for machine '%s'...", spec.Name)
 		regions, err := getRegions(client)
 		if err != nil {
 			return spec, osErrorToTerminalError(err, "failed to get regions")
 		}
 		if len(regions) == 1 {
-			glog.V(3).Infof("Defaulted region for machine '%s' to '%s'", spec.Name, regions[0].ID)
+			klog.V(3).Infof("Defaulted region for machine '%s' to '%s'", spec.Name, regions[0].ID)
 			rawConfig.Region.Value = regions[0].ID
 		} else {
 			return spec, fmt.Errorf("could not default region because got '%v' results", len(regions))
@@ -283,25 +281,25 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 	}
 
 	if c.AvailabilityZone == "" {
-		glog.V(3).Infof("Trying to default availability zone for machine '%s'...", spec.Name)
+		klog.V(3).Infof("Trying to default availability zone for machine '%s'...", spec.Name)
 		availabilityZones, err := getAvailabilityZones(client, c.Region)
 		if err != nil {
 			return spec, osErrorToTerminalError(err, "failed to get availability zones")
 		}
 		if len(availabilityZones) == 1 {
-			glog.V(3).Infof("Defaulted availability zone for machine '%s' to '%s'", spec.Name, availabilityZones[0].ZoneName)
+			klog.V(3).Infof("Defaulted availability zone for machine '%s' to '%s'", spec.Name, availabilityZones[0].ZoneName)
 			rawConfig.AvailabilityZone.Value = availabilityZones[0].ZoneName
 		}
 	}
 
 	if c.Network == "" {
-		glog.V(3).Infof("Trying to default network for machine '%s'...", spec.Name)
+		klog.V(3).Infof("Trying to default network for machine '%s'...", spec.Name)
 		net, err := getDefaultNetwork(client, c.Region)
 		if err != nil {
 			return spec, osErrorToTerminalError(err, "failed to default network")
 		}
 		if net != nil {
-			glog.V(3).Infof("Defaulted network for machine '%s' to '%s'", spec.Name, net.Name)
+			klog.V(3).Infof("Defaulted network for machine '%s' to '%s'", spec.Name, net.Name)
 			// Use the id as the name may not be unique
 			rawConfig.Network.Value = net.ID
 		}
@@ -322,7 +320,7 @@ func (p *provider) AddDefaults(spec v1alpha1.MachineSpec) (v1alpha1.MachineSpec,
 			return spec, osErrorToTerminalError(err, "error defaulting subnet")
 		}
 		if subnet != nil {
-			glog.V(3).Infof("Defaulted subnet for machine '%s' to '%s'", spec.Name, *subnet)
+			klog.V(3).Infof("Defaulted subnet for machine '%s' to '%s'", spec.Name, *subnet)
 			rawConfig.Subnet.Value = *subnet
 		}
 	}
@@ -455,7 +453,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, data *cloudprovidertypes.Pr
 
 	securityGroups := c.SecurityGroups
 	if len(securityGroups) == 0 {
-		glog.V(2).Infof("creating security group %s for worker nodes", securityGroupName)
+		klog.V(2).Infof("creating security group %s for worker nodes", securityGroupName)
 		err = ensureKubernetesSecurityGroupExist(client, c.Region, securityGroupName)
 		if err != nil {
 			return nil, err
@@ -525,7 +523,7 @@ func (p *provider) Create(machine *v1alpha1.Machine, data *cloudprovidertypes.Pr
 
 func waitUntilInstanceIsActive(computeClient *gophercloud.ServiceClient, serverID string) error {
 	started := time.Now()
-	glog.V(2).Infof("Waiting for the instance %s to become active...", serverID)
+	klog.V(2).Infof("Waiting for the instance %s to become active...", serverID)
 
 	instanceIsReady := func() (bool, error) {
 		currentServer, err := osservers.Get(computeClient, serverID).Extract()
@@ -535,7 +533,7 @@ func waitUntilInstanceIsActive(computeClient *gophercloud.ServiceClient, serverI
 				return true, tErr
 			}
 			// Only log the error but don't exit. in case of a network failure we want to retry
-			glog.V(2).Infof("failed to get current instance %s: %v", serverID, err)
+			klog.V(2).Infof("failed to get current instance %s: %v", serverID, err)
 			return false, nil
 		}
 		if currentServer.Status == "ACTIVE" {
@@ -553,17 +551,17 @@ func waitUntilInstanceIsActive(computeClient *gophercloud.ServiceClient, serverI
 		return fmt.Errorf("failed to wait for instance to become active: %v", err)
 	}
 
-	glog.V(2).Infof("Instance %s became active after %f seconds", serverID, time.Since(started).Seconds())
+	klog.V(2).Infof("Instance %s became active after %f seconds", serverID, time.Since(started).Seconds())
 	return nil
 }
 
 func deleteInstanceDueToFatalLogged(computeClient *gophercloud.ServiceClient, serverID string) {
-	glog.V(0).Infof("Deleting instance %s due to fatal error during machine creation...", serverID)
+	klog.V(0).Infof("Deleting instance %s due to fatal error during machine creation...", serverID)
 	if err := osservers.Delete(computeClient, serverID).ExtractErr(); err != nil {
 		utilruntime.HandleError(fmt.Errorf("failed to delete the instance %s. Please take care of manually deleting the instance: %v", serverID, err))
 		return
 	}
-	glog.V(0).Infof("Instance %s got deleted", serverID)
+	klog.V(0).Infof("Instance %s got deleted", serverID)
 }
 
 func (p *provider) Cleanup(machine *v1alpha1.Machine, data *cloudprovidertypes.ProviderData) (bool, error) {
@@ -817,7 +815,7 @@ func osErrorToTerminalError(err error, msg string) error {
 		info := &forbiddenResponse{}
 		if err := json.Unmarshal(errForbidden.Body, info); err != nil {
 			// We just log here as we just do this to make the response more pretty
-			glog.V(0).Infof("failed to unmarshal response body from 403 response from OpenStack API: %v\n%s", err, errForbidden.Body)
+			klog.V(0).Infof("failed to unmarshal response body from 403 response from OpenStack API: %v\n%s", err, errForbidden.Body)
 			return terr
 		}
 
@@ -898,7 +896,7 @@ func assignFloatingIPToInstance(machineUpdater cloudprovidertypes.MachineUpdater
 
 	// We're only interested in the part which is vulnerable to concurrent access
 	started := time.Now()
-	glog.V(2).Infof("Assigning a floating IP to instance %s", instanceID)
+	klog.V(2).Infof("Assigning a floating IP to instance %s", instanceID)
 
 	floatingIPAssignLock.Lock()
 	defer floatingIPAssignLock.Unlock()
@@ -945,7 +943,7 @@ func assignFloatingIPToInstance(machineUpdater cloudprovidertypes.MachineUpdater
 	}
 	secondsTook := time.Since(started).Seconds()
 
-	glog.V(2).Infof("Successfully assigned the FloatingIP %s to instance %s. Took %f seconds(without the recheck wait period %f seconds). ", ip.FloatingIP, instanceID, secondsTook, floatingReassignIPCheckPeriod.Seconds())
+	klog.V(2).Infof("Successfully assigned the FloatingIP %s to instance %s. Took %f seconds(without the recheck wait period %f seconds). ", ip.FloatingIP, instanceID, secondsTook, floatingReassignIPCheckPeriod.Seconds())
 	return nil
 }
 
