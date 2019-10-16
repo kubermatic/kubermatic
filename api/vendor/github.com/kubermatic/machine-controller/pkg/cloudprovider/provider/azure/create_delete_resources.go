@@ -24,8 +24,9 @@ import (
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-06-01/network"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/Azure/go-autorest/autorest/to"
-	"github.com/golang/glog"
+
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog"
 )
 
 // deleteInterfacesByMachineUID will remove all network interfaces tagged with the specific machine's UID.
@@ -192,7 +193,7 @@ func getDisksByMachineUID(ctx context.Context, disksClient *compute.DisksClient,
 }
 
 func createOrUpdatePublicIPAddress(ctx context.Context, ipName string, machineUID types.UID, c *config) (*network.PublicIPAddress, error) {
-	glog.Infof("Creating public IP %q", ipName)
+	klog.Infof("Creating public IP %q", ipName)
 	ipClient, err := getIPClient(c)
 	if err != nil {
 		return nil, err
@@ -221,7 +222,7 @@ func createOrUpdatePublicIPAddress(ctx context.Context, ipName string, machineUI
 		return nil, fmt.Errorf("failed to create public IP address: %v", err)
 	}
 
-	glog.Infof("Fetching info for IP address %q", ipName)
+	klog.Infof("Fetching info for IP address %q", ipName)
 	ip, err := getPublicIPAddress(ctx, ipName, c.ResourceGroup, ipClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch info about public IP %q: %v", ipName, err)
@@ -298,7 +299,7 @@ func createOrUpdateNetworkInterface(ctx context.Context, ifName string, machineU
 		}
 		ifSpec.NetworkSecurityGroup = &secGroup
 	}
-	glog.Infof("Creating/Updating public network interface %q", ifName)
+	klog.Infof("Creating/Updating public network interface %q", ifName)
 	future, err := ifClient.CreateOrUpdate(ctx, config.ResourceGroup, ifName, ifSpec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create interface: %v", err)
@@ -314,7 +315,7 @@ func createOrUpdateNetworkInterface(ctx context.Context, ifName string, machineU
 		return nil, fmt.Errorf("failed to get interface creation result: %v", err)
 	}
 
-	glog.Infof("Fetching info about network interface %q", ifName)
+	klog.Infof("Fetching info about network interface %q", ifName)
 	iface, err := ifClient.Get(ctx, config.ResourceGroup, ifName, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch info about interface %q: %v", ifName, err)
