@@ -601,14 +601,14 @@ func (in *DatacenterSpec) DeepCopyInto(out *DatacenterSpec) {
 		*out = new(DatacenterSpecGCP)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Fake != nil {
-		in, out := &in.Fake, &out.Fake
-		*out = new(DatacenterSpecFake)
-		**out = **in
-	}
 	if in.Kubevirt != nil {
 		in, out := &in.Kubevirt, &out.Kubevirt
 		*out = new(DatacenterSpecKubevirt)
+		**out = **in
+	}
+	if in.Fake != nil {
+		in, out := &in.Fake, &out.Fake
+		*out = new(DatacenterSpecFake)
 		**out = **in
 	}
 	return
