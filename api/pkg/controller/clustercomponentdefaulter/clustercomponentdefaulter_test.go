@@ -39,22 +39,6 @@ func TestReconciliation(t *testing.T) {
 		verify   func(error, *kubermaticv1.Cluster) error
 	}{
 		{
-			name:    "Defaulting without EndpointReconcilingDisabled",
-			cluster: kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: clusterName}},
-			override: kubermaticv1.ComponentSettings{
-				Apiserver: kubermaticv1.APIServerSettings{},
-			},
-			verify: func(err error, cluster *kubermaticv1.Cluster) error {
-				if err != nil {
-					return fmt.Errorf("expected err to be nil, was: %v", err)
-				}
-				if val := cluster.Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled; val != nil {
-					return fmt.Errorf("expected EndpointReconcilingDisabled to be nil, was %v", val)
-				}
-				return nil
-			},
-		},
-		{
 			name:    "Defaulting without EndpointReconcilingDisabled with Replicas",
 			cluster: kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: clusterName}},
 			override: kubermaticv1.ComponentSettings{
