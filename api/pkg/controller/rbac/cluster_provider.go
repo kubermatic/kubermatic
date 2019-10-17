@@ -3,8 +3,6 @@ package rbac
 import (
 	"fmt"
 
-	"github.com/golang/glog"
-
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1listers "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -14,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/klog"
 )
 
 // ClusterProvider holds set of clients that allow for communication with the cluster and
@@ -42,7 +41,7 @@ func NewClusterProvider(providerName string, kubeClient kubernetes.Interface, ku
 	}
 
 	// registering Listers for RBAC Cluster Roles and Bindings
-	glog.V(4).Infof("registering ClusterRoles and ClusterRoleBindings informers in all namespaces for provider %s", providerName)
+	klog.V(4).Infof("registering ClusterRoles and ClusterRoleBindings informers in all namespaces for provider %s", providerName)
 	_ = cp.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()
 	_ = cp.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()
 
@@ -77,6 +76,6 @@ func (p *ClusterProvider) WaitForCachesToSync(stopCh <-chan struct{}) error {
 func (p *ClusterProvider) AddIndexerFor(indexer cache.Indexer, gvr schema.GroupVersionResource) {
 	if gvr.Resource == kubermaticv1.ClusterResourceName {
 		p.clusterResourceLister = kubermaticv1listers.NewClusterLister(indexer)
-		glog.V(4).Infof("creating a lister for resource %q for provider %q", gvr.String(), p.providerName)
+		klog.V(4).Infof("creating a lister for resource %q for provider %q", gvr.String(), p.providerName)
 	}
 }

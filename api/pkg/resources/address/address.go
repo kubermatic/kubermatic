@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/golang/glog"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -57,7 +56,7 @@ func SyncClusterAddress(ctx context.Context,
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.ExternalName = externalName
 		})
-		glog.V(2).Infof("Set external name for cluster %s to %q", cluster.Name, externalName)
+		klog.V(2).Infof("Set external name for cluster %s to %q", cluster.Name, externalName)
 	}
 
 	// Internal name
@@ -66,7 +65,7 @@ func SyncClusterAddress(ctx context.Context,
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.InternalName = internalName
 		})
-		glog.V(2).Infof("Set internal name for cluster %s to '%s'", cluster.Name, internalName)
+		klog.V(2).Infof("Set internal name for cluster %s to '%s'", cluster.Name, internalName)
 	}
 
 	// IP
@@ -85,7 +84,7 @@ func SyncClusterAddress(ctx context.Context,
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.IP = ip
 		})
-		glog.V(2).Infof("Set IP for cluster %s to '%s'", cluster.Name, ip)
+		klog.V(2).Infof("Set IP for cluster %s to '%s'", cluster.Name, ip)
 	}
 
 	service := &corev1.Service{}
@@ -103,7 +102,7 @@ func SyncClusterAddress(ctx context.Context,
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.Port = port
 		})
-		glog.V(2).Infof("Set port for cluster %s to %d", cluster.Name, port)
+		klog.V(2).Infof("Set port for cluster %s to %d", cluster.Name, port)
 	}
 
 	// URL
@@ -112,7 +111,7 @@ func SyncClusterAddress(ctx context.Context,
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.URL = url
 		})
-		glog.V(2).Infof("Set URL for cluster %s to '%s'", cluster.Name, url)
+		klog.V(2).Infof("Set URL for cluster %s to '%s'", cluster.Name, url)
 	}
 
 	return modifiers, nil
@@ -136,7 +135,7 @@ func getExternalIPv4(hostname string) (string, error) {
 
 	//Just one ipv4
 	if len(ips) > 1 {
-		glog.V(4).Infof("lookup of %s returned multiple ipv4 addresses (%v). Picking the first one after sorting: %s", hostname, ips, ips[0])
+		klog.V(4).Infof("lookup of %s returned multiple ipv4 addresses (%v). Picking the first one after sorting: %s", hostname, ips, ips[0])
 	}
 	return ips[0], nil
 }

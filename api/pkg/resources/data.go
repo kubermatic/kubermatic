@@ -7,7 +7,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
@@ -18,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -209,7 +209,7 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 func (d *TemplateData) ProviderName() string {
 	p, err := provider.ClusterCloudProviderName(d.cluster.Spec.Cloud)
 	if err != nil {
-		glog.Errorf("could not identify cloud provider: %v", err)
+		klog.Errorf("could not identify cloud provider: %v", err)
 	}
 	return p
 }

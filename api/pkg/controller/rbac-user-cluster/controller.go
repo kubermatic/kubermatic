@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/golang/glog"
 	"github.com/heptiolabs/healthcheck"
 	"k8s.io/apimachinery/pkg/types"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -90,7 +90,7 @@ func (r *reconcileRBAC) Reconcile(request reconcile.Request) (reconcile.Result, 
 	rdr := reconciler{client: r.Client, ctx: r.ctx}
 
 	if err := rdr.Reconcile(request.Name); err != nil {
-		glog.Errorf("RBAC reconciliation failed: %v", err)
+		klog.Errorf("RBAC reconciliation failed: %v", err)
 		return reconcile.Result{}, err
 	}
 

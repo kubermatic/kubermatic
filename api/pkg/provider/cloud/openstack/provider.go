@@ -6,7 +6,6 @@ import (
 	"net"
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
@@ -21,6 +20,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
+	"k8s.io/klog"
 )
 
 const (
@@ -513,7 +514,7 @@ func addICMPRulesToSecurityGroupIfNecesary(cluster *kubermaticv1.Cluster, secGro
 			SecGroupID: secGroup.ID,
 			Protocol:   osecuritygrouprules.ProtocolICMP,
 		})
-		glog.Infof("Adding ICMP allow rule to cluster %q", cluster.Name)
+		klog.Infof("Adding ICMP allow rule to cluster %q", cluster.Name)
 	}
 	if !hasIPV6Rule {
 		rulesToCreate = append(rulesToCreate, osecuritygrouprules.CreateOpts{
@@ -522,7 +523,7 @@ func addICMPRulesToSecurityGroupIfNecesary(cluster *kubermaticv1.Cluster, secGro
 			SecGroupID: secGroup.ID,
 			Protocol:   osecuritygrouprules.ProtocolIPv6ICMP,
 		})
-		glog.Infof("Adding ICMP6 allow rule to cluster %q", cluster.Name)
+		klog.Infof("Adding ICMP6 allow rule to cluster %q", cluster.Name)
 	}
 
 	for _, rule := range rulesToCreate {

@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
-
 	"k8s.io/api/apps/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -77,7 +76,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 			return fmt.Errorf("failed waiting for the cache to contain our newly created object: %v", err)
 		}
 
-		glog.V(2).Infof("Created %T %s in Namespace %q", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
+		klog.V(2).Infof("Created %T %s in Namespace %q", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 		return nil
 	}
 
@@ -121,7 +120,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 		return fmt.Errorf("failed waiting for the cache to contain our latest changes: %v", err)
 	}
 
-	glog.V(2).Infof("Updated %T %s in Namespace %q", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
+	klog.V(2).Infof("Updated %T %s in Namespace %q", obj, obj.(metav1.Object).GetName(), obj.(metav1.Object).GetNamespace())
 
 	return nil
 }
@@ -137,7 +136,7 @@ func waitUntilUpdateIsInCacheConditionFunc(
 		currentObj := oldObj.DeepCopyObject()
 
 		if err := client.Get(ctx, namespacedName, currentObj); err != nil {
-			glog.Errorf("failed retrieving object %T %s while waiting for the cache to contain our latest changes: %v", currentObj, namespacedName, err)
+			klog.Errorf("failed retrieving object %T %s while waiting for the cache to contain our latest changes: %v", currentObj, namespacedName, err)
 			return false, nil
 		}
 		// Check if the object from the store differs the old object
@@ -160,7 +159,7 @@ func waitUntilObjectExistsInCacheConditionFunc(
 			if kubeerrors.IsNotFound(err) {
 				return false, nil
 			}
-			glog.Errorf("failed retrieving object %T %s while waiting for the cache to contain our newly created object: %v", newObj, namespacedName, err)
+			klog.Errorf("failed retrieving object %T %s while waiting for the cache to contain our newly created object: %v", newObj, namespacedName, err)
 			return false, nil
 		}
 		return true, nil
