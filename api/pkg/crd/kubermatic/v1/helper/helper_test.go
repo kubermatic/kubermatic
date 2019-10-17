@@ -47,7 +47,7 @@ func TestGetClusterCondition(t *testing.T) {
 			t.Parallel()
 			index, condition := GetClusterCondition(tc.cluster, tc.conditionType)
 			if index != tc.expectedIndex {
-				t.Errorf("expected index %d, got index %d", index, tc.expectedIndex)
+				t.Errorf("expected index %d, got index %d", tc.expectedIndex, index)
 			}
 			if !apiequality.Semantic.DeepEqual(condition, tc.expectedCondition) {
 				t.Error("conditions are not equal")
