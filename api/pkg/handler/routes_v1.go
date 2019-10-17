@@ -3559,7 +3559,7 @@ func (r Routing) patchClusterRoleBinding() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: LabelList
+//       200: ResourceLabelMap
 //       401: empty
 //       403: empty
 func (r Routing) listSystemLabels() http.Handler {

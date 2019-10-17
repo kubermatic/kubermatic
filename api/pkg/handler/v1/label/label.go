@@ -17,7 +17,7 @@ const (
 
 // List of labels restricted by the Kubermatic, that should not be used by the users.
 // Each resource type has its' own list.
-var systemLabels apiv1.LabelList = map[apiv1.ResourceType][]string{
+var systemLabels apiv1.ResourceLabelMap = map[apiv1.ResourceType]apiv1.LabelKeyList{
 	ProjectResourceType: {},
 	ClusterResourceType: {
 		kubermaticcrdv1.WorkerNameLabelKey,
@@ -35,7 +35,7 @@ func ListSystemLabels() endpoint.Endpoint {
 
 // GetSystemLabels returns restricted system labels object. We do not want anyone to modify original object outside of
 // this package. That is why only getter is exposed.
-func GetSystemLabels() apiv1.LabelList {
+func GetSystemLabels() apiv1.ResourceLabelMap {
 	return systemLabels
 }
 

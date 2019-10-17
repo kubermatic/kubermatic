@@ -158,9 +158,9 @@
         "operationId": "listSystemLabels",
         "responses": {
           "200": {
-            "description": "LabelList",
+            "description": "ResourceLabelMap",
             "schema": {
-              "$ref": "#/definitions/LabelList"
+              "$ref": "#/definitions/ResourceLabelMap"
             }
           },
           "401": {
@@ -8230,8 +8230,11 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "LabelList": {
-      "title": "LabelList defines list of labels grouped by specific resource types.",
+    "LabelKeyList": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "LegacyObjectMeta": {
@@ -9515,6 +9518,10 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/runtime"
+    },
+    "ResourceLabelMap": {
+      "title": "ResourceLabelMap defines list of labels grouped by specific resource types.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "ResourceType": {
       "type": "string",

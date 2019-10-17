@@ -1247,12 +1247,16 @@ type Namespace struct {
 	Name string `json:"name"`
 }
 
+// swagger:model ResourceType
 type ResourceType string
 
-// LabelList defines list of labels grouped by specific resource types.
+// swagger:model LabelKeyList
+type LabelKeyList []string
+
+// ResourceLabelMap defines list of labels grouped by specific resource types.
 //
-// swagger:model LabelList
-type LabelList map[ResourceType][]string
+// swagger:model ResourceLabelMap
+type ResourceLabelMap map[ResourceType]LabelKeyList
 
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup
