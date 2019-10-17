@@ -14,6 +14,11 @@ import (
 func (in *APIServerSettings) DeepCopyInto(out *APIServerSettings) {
 	*out = *in
 	in.DeploymentSettings.DeepCopyInto(&out.DeploymentSettings)
+	if in.EndpointReconcilingDisabled != nil {
+		in, out := &in.EndpointReconcilingDisabled, &out.EndpointReconcilingDisabled
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 
