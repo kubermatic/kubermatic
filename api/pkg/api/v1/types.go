@@ -1247,6 +1247,17 @@ type Namespace struct {
 	Name string `json:"name"`
 }
 
+// swagger:model ResourceType
+type ResourceType string
+
+// swagger:model LabelKeyList
+type LabelKeyList []string
+
+// ResourceLabelMap defines list of labels grouped by specific resource types.
+//
+// swagger:model ResourceLabelMap
+type ResourceLabelMap map[ResourceType]LabelKeyList
+
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup
 	NodeDeletionFinalizer = "kubermatic.io/delete-nodes"
