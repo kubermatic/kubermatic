@@ -89,8 +89,6 @@ func createExampleSeed() *kubermaticv1.Seed {
 			Namespace: "kubermatic",
 		},
 		Spec: kubermaticv1.SeedSpec{
-			Country:  "DE",
-			Location: "Hamburg",
 			Datacenters: map[string]kubermaticv1.Datacenter{
 				"<<exampledc>>": {
 					Node: kubermaticv1.NodeSettings{

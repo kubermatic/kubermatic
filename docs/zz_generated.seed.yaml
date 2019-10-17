@@ -6,7 +6,7 @@ metadata:
 spec:
   # Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
   # For informational purposes in the Kubermatic dashboard only.
-  country: DE
+  country: ""
   # Datacenters contains a map of the possible datacenters (DCs) in this seed.
   # Each DC must have a globally unique identifier (i.e. names must be unique
   # across all seeds).
@@ -168,7 +168,7 @@ spec:
     uid: ""
   # Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
   # For informational purposes in the Kubermatic dashboard only.
-  location: Hamburg
+  location: ""
   # ProxySettings can optionally be used to configure HTTP proxy settings on the
   # worker nodes in user clusters. However, proxy settings on nodes take
   # precedence.
