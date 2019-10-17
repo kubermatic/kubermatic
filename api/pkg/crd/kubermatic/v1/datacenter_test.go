@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-
-	utilpointer "k8s.io/utils/pointer"
 )
 
 func TestSetSeedDefaults(t *testing.T) {
@@ -19,29 +17,29 @@ func TestSetSeedDefaults(t *testing.T) {
 			seed: &Seed{
 				Spec: SeedSpec{
 					ProxySettings: &ProxySettings{
-						HTTPProxy: utilpointer.StringPtr("seed-proxy"),
-						NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
+						HTTPProxy: NewProxyValue("seed-proxy"),
+						NoProxy:   NewProxyValue("seed-no-proxy"),
 					},
 					Datacenters: map[string]Datacenter{
 						"a": {Node: NodeSettings{ProxySettings: ProxySettings{
-							HTTPProxy: utilpointer.StringPtr("dc-proxy"),
-							NoProxy:   utilpointer.StringPtr("dc-no-proxy"),
+							HTTPProxy: NewProxyValue("dc-proxy"),
+							NoProxy:   NewProxyValue("dc-no-proxy"),
 						}}},
 						"b": {Node: NodeSettings{ProxySettings: ProxySettings{
-							HTTPProxy: utilpointer.StringPtr("dc-proxy"),
-							NoProxy:   utilpointer.StringPtr("dc-no-proxy"),
+							HTTPProxy: NewProxyValue("dc-proxy"),
+							NoProxy:   NewProxyValue("dc-no-proxy"),
 						}}},
 					},
 				},
 			},
 			expected: map[string]Datacenter{
 				"a": {Node: NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: utilpointer.StringPtr("dc-proxy"),
-					NoProxy:   utilpointer.StringPtr("dc-no-proxy"),
+					HTTPProxy: NewProxyValue("dc-proxy"),
+					NoProxy:   NewProxyValue("dc-no-proxy"),
 				}}},
 				"b": {Node: NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: utilpointer.StringPtr("dc-proxy"),
-					NoProxy:   utilpointer.StringPtr("dc-no-proxy"),
+					HTTPProxy: NewProxyValue("dc-proxy"),
+					NoProxy:   NewProxyValue("dc-no-proxy"),
 				}}},
 			},
 		},
@@ -50,8 +48,8 @@ func TestSetSeedDefaults(t *testing.T) {
 			seed: &Seed{
 				Spec: SeedSpec{
 					ProxySettings: &ProxySettings{
-						HTTPProxy: utilpointer.StringPtr("seed-proxy"),
-						NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
+						HTTPProxy: NewProxyValue("seed-proxy"),
+						NoProxy:   NewProxyValue("seed-no-proxy"),
 					},
 					Datacenters: map[string]Datacenter{
 						"a": {},
@@ -61,12 +59,12 @@ func TestSetSeedDefaults(t *testing.T) {
 			},
 			expected: map[string]Datacenter{
 				"a": {Node: NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: utilpointer.StringPtr("seed-proxy"),
-					NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
+					HTTPProxy: NewProxyValue("seed-proxy"),
+					NoProxy:   NewProxyValue("seed-no-proxy"),
 				}}},
 				"b": {Node: NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: utilpointer.StringPtr("seed-proxy"),
-					NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
+					HTTPProxy: NewProxyValue("seed-proxy"),
+					NoProxy:   NewProxyValue("seed-no-proxy"),
 				}}},
 			},
 		},
@@ -75,27 +73,27 @@ func TestSetSeedDefaults(t *testing.T) {
 			seed: &Seed{
 				Spec: SeedSpec{
 					ProxySettings: &ProxySettings{
-						HTTPProxy: utilpointer.StringPtr("seed-proxy"),
-						NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
+						HTTPProxy: NewProxyValue("seed-proxy"),
+						NoProxy:   NewProxyValue("seed-no-proxy"),
 					},
 					Datacenters: map[string]Datacenter{
 						"a": {Node: NodeSettings{ProxySettings: ProxySettings{
-							NoProxy: utilpointer.StringPtr("dc-no-proxy"),
+							NoProxy: NewProxyValue("dc-no-proxy"),
 						}}},
 						"b": {Node: NodeSettings{ProxySettings: ProxySettings{
-							NoProxy: utilpointer.StringPtr("dc-no-proxy"),
+							NoProxy: NewProxyValue("dc-no-proxy"),
 						}}},
 					},
 				},
 			},
 			expected: map[string]Datacenter{
 				"a": {Node: NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: utilpointer.StringPtr("seed-proxy"),
-					NoProxy:   utilpointer.StringPtr("dc-no-proxy"),
+					HTTPProxy: NewProxyValue("seed-proxy"),
+					NoProxy:   NewProxyValue("dc-no-proxy"),
 				}}},
 				"b": {Node: NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: utilpointer.StringPtr("seed-proxy"),
-					NoProxy:   utilpointer.StringPtr("dc-no-proxy"),
+					HTTPProxy: NewProxyValue("seed-proxy"),
+					NoProxy:   NewProxyValue("dc-no-proxy"),
 				}}},
 			},
 		},
@@ -104,27 +102,27 @@ func TestSetSeedDefaults(t *testing.T) {
 			seed: &Seed{
 				Spec: SeedSpec{
 					ProxySettings: &ProxySettings{
-						HTTPProxy: utilpointer.StringPtr("seed-proxy"),
-						NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
+						HTTPProxy: NewProxyValue("seed-proxy"),
+						NoProxy:   NewProxyValue("seed-no-proxy"),
 					},
 					Datacenters: map[string]Datacenter{
 						"a": {Node: NodeSettings{ProxySettings: ProxySettings{
-							HTTPProxy: utilpointer.StringPtr("dc-proxy"),
+							HTTPProxy: NewProxyValue("dc-proxy"),
 						}}},
 						"b": {Node: NodeSettings{ProxySettings: ProxySettings{
-							HTTPProxy: utilpointer.StringPtr("dc-proxy"),
+							HTTPProxy: NewProxyValue("dc-proxy"),
 						}}},
 					},
 				},
 			},
 			expected: map[string]Datacenter{
 				"a": {Node: NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: utilpointer.StringPtr("dc-proxy"),
-					NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
+					HTTPProxy: NewProxyValue("dc-proxy"),
+					NoProxy:   NewProxyValue("seed-no-proxy"),
 				}}},
 				"b": {Node: NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: utilpointer.StringPtr("dc-proxy"),
-					NoProxy:   utilpointer.StringPtr("seed-no-proxy"),
+					HTTPProxy: NewProxyValue("dc-proxy"),
+					NoProxy:   NewProxyValue("seed-no-proxy"),
 				}}},
 			},
 		},

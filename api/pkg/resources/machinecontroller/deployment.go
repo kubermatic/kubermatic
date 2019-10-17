@@ -226,11 +226,11 @@ func getFlags(clusterDNSIP string, nodeSettings kubermaticv1.NodeSettings) []str
 	if len(nodeSettings.InsecureRegistries) > 0 {
 		flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
 	}
-	if nodeSettings.HTTPProxy != nil {
-		flags = append(flags, "-node-http-proxy", *nodeSettings.HTTPProxy)
+	if !nodeSettings.HTTPProxy.Empty() {
+		flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy.String())
 	}
-	if nodeSettings.NoProxy != nil {
-		flags = append(flags, "-node-no-proxy", *nodeSettings.NoProxy)
+	if !nodeSettings.NoProxy.Empty() {
+		flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy.String())
 	}
 	if nodeSettings.PauseImage != "" {
 		flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)

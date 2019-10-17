@@ -74,6 +74,11 @@ func createExampleSeed() *kubermaticv1.Seed {
 		imageList[os] = ""
 	}
 
+	proxySettings := kubermaticv1.ProxySettings{
+		HTTPProxy: kubermaticv1.NewProxyValue(""),
+		NoProxy:   kubermaticv1.NewProxyValue(""),
+	}
+
 	seed := &kubermaticv1.Seed{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "kubermatic.k8s.io/v1",
@@ -89,10 +94,7 @@ func createExampleSeed() *kubermaticv1.Seed {
 			Datacenters: map[string]kubermaticv1.Datacenter{
 				"<<exampledc>>": {
 					Node: kubermaticv1.NodeSettings{
-						ProxySettings: kubermaticv1.ProxySettings{
-							HTTPProxy: pointer.StringPtr(""),
-							NoProxy:   pointer.StringPtr(""),
-						},
+						ProxySettings:      proxySettings,
 						InsecureRegistries: []string{},
 					},
 					Spec: kubermaticv1.DatacenterSpec{
@@ -122,10 +124,7 @@ func createExampleSeed() *kubermaticv1.Seed {
 					},
 				},
 			},
-			ProxySettings: &kubermaticv1.ProxySettings{
-				HTTPProxy: pointer.StringPtr(""),
-				NoProxy:   pointer.StringPtr(""),
-			},
+			ProxySettings: &proxySettings,
 		},
 	}
 

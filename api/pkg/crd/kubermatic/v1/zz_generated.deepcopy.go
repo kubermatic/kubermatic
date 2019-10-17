@@ -1548,12 +1548,12 @@ func (in *ProxySettings) DeepCopyInto(out *ProxySettings) {
 	*out = *in
 	if in.HTTPProxy != nil {
 		in, out := &in.HTTPProxy, &out.HTTPProxy
-		*out = new(string)
+		*out = new(ProxyValue)
 		**out = **in
 	}
 	if in.NoProxy != nil {
 		in, out := &in.NoProxy, &out.NoProxy
-		*out = new(string)
+		*out = new(ProxyValue)
 		**out = **in
 	}
 	return

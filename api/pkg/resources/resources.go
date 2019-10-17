@@ -874,38 +874,36 @@ func GetHTTPProxyEnvVarsFromSeed(seed *kubermaticv1.Seed, inClusterAPIServerURL 
 	}
 	var envVars []corev1.EnvVar
 
-	// TODO: How do we replicate the "is nil or empty string" check here?
-	//       a) We could turn the HTTPPRoxy from *string into a custom type that has an IsEmpty() function
-	//       b) We could splatter the logic for determining if this is set throughout the codebase (i.e. copy-paste)
-	//       c) When defaulting the Seed at runtime, we ensure that empty values are set to nil,
-	//          so the rest of the codebase can rely on a "clean" ProxySettings struct.
-	if seed.Spec.ProxySettings.HTTPProxy != nil {
+	if !seed.Spec.ProxySettings.HTTPProxy.Empty() {
+		value := seed.Spec.ProxySettings.HTTPProxy.String()
 		envVars = []corev1.EnvVar{
 			{
 				Name:  "HTTP_PROXY",
-				Value: *seed.Spec.ProxySettings.HTTPProxy,
+				Value: value,
 			},
 			{
 				Name:  "HTTPS_PROXY",
-				Value: *seed.Spec.ProxySettings.HTTPProxy,
+				Value: value,
 			},
 			{
 				Name:  "http_proxy",
-				Value: *seed.Spec.ProxySettings.HTTPProxy,
+				Value: value,
 			},
 			{
 				Name:  "https_proxy",
-				Value: *seed.Spec.ProxySettings.HTTPProxy,
+				Value: value,
 			},
 		}
 	}
+
 	noProxyValue := inClusterAPIServerURL
-	if seed.Spec.ProxySettings.NoProxy != nil {
-		noProxyValue += "," + *seed.Spec.ProxySettings.NoProxy
+	if !seed.Spec.ProxySettings.NoProxy.Empty() {
+		noProxyValue += "," + seed.Spec.ProxySettings.NoProxy.String()
 	}
 	envVars = append(envVars,
 		corev1.EnvVar{Name: "NO_PROXY", Value: noProxyValue},
 		corev1.EnvVar{Name: "no_proxy", Value: noProxyValue},
 	)
+
 	return envVars
 }

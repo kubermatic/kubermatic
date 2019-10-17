@@ -236,35 +236,50 @@ type DatacenterSpecFake struct {
 type DatacenterSpecKubevirt struct {
 }
 
+type ProxyValue string
+
+func NewProxyValue(value string) *ProxyValue {
+	val := ProxyValue(value)
+	return &val
+}
+
+func (p *ProxyValue) Empty() bool {
+	return p == nil || *p == ""
+}
+
+func (p *ProxyValue) String() string {
+	if p.Empty() {
+		return ""
+	}
+
+	return string(*p)
+}
+
 // ProxySettings allow configuring a HTTP proxy for the controlplanes
 // and nodes
 type ProxySettings struct {
 	// If set, this proxy will be configured for both HTTP and HTTPS.
-	HTTPProxy *string `json:"http_proxy,omitempty"`
+	HTTPProxy *ProxyValue `json:"http_proxy,omitempty"`
 	// If set this will be set as NO_PROXY environment variable on the node;
 	// The value must be a comma-separated list of domains for which no proxy
 	// should be used, e.g. "*.example.com,internal.dev"
-	NoProxy *string `json:"no_proxy,omitempty"`
+	NoProxy *ProxyValue `json:"no_proxy,omitempty"`
 }
 
 // Empty returns true if p or all of its children are nil or empty strings.
 func (p *ProxySettings) Empty() bool {
-	return p == nil || (emptyStr(p.HTTPProxy) && emptyStr(p.NoProxy))
+	return p == nil || (p.HTTPProxy.Empty() && p.NoProxy.Empty())
 }
 
 // Merge applies the settings from p into dst if the corresponding setting
 // in dst is nil or an empty string.
 func (p *ProxySettings) Merge(dst *ProxySettings) {
-	if emptyStr(dst.HTTPProxy) {
+	if dst.HTTPProxy.Empty() {
 		dst.HTTPProxy = p.HTTPProxy
 	}
-	if emptyStr(dst.NoProxy) {
+	if dst.NoProxy.Empty() {
 		dst.NoProxy = p.NoProxy
 	}
-}
-
-func emptyStr(s *string) bool {
-	return s == nil || *s == ""
 }
 
 // NodeSettings are node specific flags which can be configured on datacenter level
