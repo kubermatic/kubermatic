@@ -11,6 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/clusterdeletion"
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -230,6 +231,17 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	if err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r.Client, successfullyReconciled); err != nil {
 		log.Errorw("failed to update clusters status conditions", zap.Error(err))
+		errs = append(errs, err)
+	}
+
+	if err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		status := corev1.ConditionFalse
+		if successfullyReconciled {
+			status = corev1.ConditionTrue
+		}
+		kubermaticv1helper.SetClusterCondition(c, kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess, status, "", "")
+	}); err != nil {
+		log.Errorw("Failed to update ReconcilingSuccess condition", zap.Error(err))
 		errs = append(errs, err)
 	}
 

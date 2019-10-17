@@ -107,6 +107,10 @@ const (
 	// the status of cloud provider resources for a given cluster.
 	ClusterConditionSeedResourcesUpToDate ClusterConditionType = "SeedResourcesUpToDate"
 
+	// ClusterConditionClusterControllerReconcilingSuccess indicates whether the cluster
+	// controller successfully finished reconciling this cluster.
+	ClusterConditionClusterControllerReconcilingSuccess ClusterConditionType = "ClusterControllerReconciledSuccessfully"
+
 	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
 	ReasonClusterUpadteInProgress = "ClusterUpdateInProgress"
 )
