@@ -13,6 +13,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
@@ -197,7 +198,7 @@ func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project
 				return nil
 			}(),
 		},
-		Labels: kubermaticProject.Labels,
+		Labels: label.FilterLabels(label.ProjectResourceType, kubermaticProject.Labels),
 		Status: kubermaticProject.Status.Phase,
 		Owners: projectOwners,
 	}

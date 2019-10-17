@@ -192,6 +192,7 @@ func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, o
 			return nil, kerrors.NewServiceUnavailable("Cluster components are not ready yet")
 		}
 	}
+
 	return cluster, nil
 }
 

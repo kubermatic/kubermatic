@@ -19,6 +19,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -641,7 +642,7 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 				return nil
 			}(),
 		},
-		Labels: internalCluster.Labels,
+		Labels: label.FilterLabels(label.ClusterResourceType, internalCluster.Labels),
 		Spec: apiv1.ClusterSpec{
 			Cloud:                               internalCluster.Spec.Cloud,
 			Version:                             internalCluster.Spec.Version,
