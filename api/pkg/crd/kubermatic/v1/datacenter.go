@@ -80,8 +80,7 @@ type Datacenter struct {
 	// not specified here.
 	Node NodeSettings `json:"node"`
 	// Spec describes the cloud provider settings used to manage resources
-	// in this datacenter. Exactly one cloud provider must be defined and it
-	// must not be the internal "fake" provider.
+	// in this datacenter. Exactly one cloud provider must be defined.
 	Spec DatacenterSpec `json:"spec"`
 }
 

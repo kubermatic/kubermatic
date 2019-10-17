@@ -35,8 +35,7 @@ spec:
         # Translates to --pod-infra-container-image on the kubelet. If not set, the kubelet will default it
         pause_image: ""
       # Spec describes the cloud provider settings used to manage resources
-      # in this datacenter. Exactly one cloud provider must be defined and it
-      # must not be the internal "fake" provider.
+      # in this datacenter. Exactly one cloud provider must be defined.
       spec:
         aws:
           # List of AMIs to use for a given operating system.
