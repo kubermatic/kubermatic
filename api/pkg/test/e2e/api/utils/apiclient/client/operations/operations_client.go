@@ -95,7 +95,7 @@ func (a *Client) ListSystemLabels(params *ListSystemLabelsParams, authInfo runti
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "listSystemLabels",
 		Method:             "PATCH",
-		PathPattern:        "/api/v1/label/system",
+		PathPattern:        "/api/v1/labels/system",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

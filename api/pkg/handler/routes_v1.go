@@ -530,7 +530,7 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.getCurrentUser())
 
 	mux.Methods(http.MethodGet).
-		Path("/label/system").
+		Path("/labels/system").
 		Handler(r.listSystemLabels())
 }
 
@@ -3549,7 +3549,7 @@ func (r Routing) patchClusterRoleBinding() http.Handler {
 	)
 }
 
-// swagger:route PATCH /api/v1/label/system listSystemLabels
+// swagger:route PATCH /api/v1/labels/system listSystemLabels
 //
 //    List restricted system labels
 //

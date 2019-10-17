@@ -149,7 +149,7 @@
         }
       }
     },
-    "/api/v1/label/system": {
+    "/api/v1/labels/system": {
       "patch": {
         "description": "List restricted system labels",
         "produces": [

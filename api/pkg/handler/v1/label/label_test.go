@@ -28,7 +28,7 @@ func TestListSystemLabels(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:            "scenario 1: list clusters that belong to the given project",
+			Name:            "scenario 1: list system labels",
 			ExpectedLabels:  label.GetSystemLabels(),
 			HTTPStatus:      http.StatusOK,
 			ExistingAPIUser: test.GenDefaultAPIUser(),
@@ -37,7 +37,7 @@ func TestListSystemLabels(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/label/system"), strings.NewReader(""))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/labels/system"), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj)
