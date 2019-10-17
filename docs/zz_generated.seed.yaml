@@ -22,12 +22,16 @@ spec:
       # registries and the like. Proxy settings are inherited from the seed if
       # not specified here.
       node:
-        http_proxy: null
+        # If set, this proxy will be configured for both HTTP and HTTPS.
+        http_proxy: ""
         # The hyperkube image to use. Currently only Container Linux uses it
         hyperkube_image: ""
         # If set, these image registries will be configured as insecure on the container runtime.
         insecure_registries: []
-        no_proxy: null
+        # If set this will be set as NO_PROXY environment variable on the node;
+        # The value must be a comma-separated list of domains for which no proxy
+        # should be used, e.g. "*.example.com,internal.dev"
+        no_proxy: ""
         # Translates to --pod-infra-container-image on the kubelet. If not set, the kubelet will default it
         pause_image: ""
       # Spec describes the cloud provider settings used to manage resources
@@ -170,11 +174,11 @@ spec:
   # precedence.
   proxy_settings:
     # If set, this proxy will be configured for both HTTP and HTTPS.
-    http_proxy: null
+    http_proxy: ""
     # If set this will be set as NO_PROXY environment variable on the node;
     # The value must be a comma-separated list of domains for which no proxy
     # should be used, e.g. "*.example.com,internal.dev"
-    no_proxy: null
+    no_proxy: ""
   # SeedDNSOverwrite can be used to override the DNS name used for this seed.
   # This field is optional and defaults to the seed name.
   seed_dns_overwrite: null
