@@ -35,4 +35,6 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
   -monitoring-scrape-annotation-prefix='kubermatic.io' \
   -log-debug=true \
   -log-format=Console \
-  -max-parallel-reconcile=10
+  -max-parallel-reconcile=10 \
+	-logtostderr \
+	-v=4 # Log-level for the Kube dependencies. Increase up to 9 to get request-level logs.

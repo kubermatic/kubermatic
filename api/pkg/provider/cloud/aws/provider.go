@@ -4,18 +4,18 @@ import (
 	"errors"
 	"fmt"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-
-	"github.com/golang/glog"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/iam"
+
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
+	"k8s.io/klog"
 )
 
 const (
@@ -105,7 +105,7 @@ func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster, clusterUpdat
 // It is a part of a migration for older clusers (migrationRevision < 1) that didn't have these rules.
 func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
-		glog.Infof("Not adding ICMP allow rules for cluster %q as it has no securityGroupID set",
+		klog.Infof("Not adding ICMP allow rules for cluster %q as it has no securityGroupID set",
 			cluster.Name)
 		return nil
 	}
@@ -146,7 +146,7 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 
 	var secGroupRules []*ec2.IpPermission
 	if !hasIPV4ICMPRule {
-		glog.Infof("Adding allow rule for icmp to cluster %q", cluster.Name)
+		klog.Infof("Adding allow rule for icmp to cluster %q", cluster.Name)
 		secGroupRules = append(secGroupRules,
 			(&ec2.IpPermission{}).
 				SetIpProtocol("icmp").
@@ -157,7 +157,7 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 				}))
 	}
 	if !hasIPV6ICMPRule {
-		glog.Infof("Adding allow rule for icmpv6 to cluster %q", cluster.Name)
+		klog.Infof("Adding allow rule for icmpv6 to cluster %q", cluster.Name)
 		secGroupRules = append(secGroupRules,
 			(&ec2.IpPermission{}).
 				SetIpProtocol("icmpv6").
@@ -338,7 +338,7 @@ func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (str
 		return "", fmt.Errorf("failed to create security group %s: %v", newSecurityGroupName, err)
 	}
 	sgid := aws.StringValue(csgOut.GroupId)
-	glog.V(2).Infof("Security group %s for cluster %s created with id %s.", newSecurityGroupName, clusterName, sgid)
+	klog.V(2).Infof("Security group %s for cluster %s created with id %s.", newSecurityGroupName, clusterName, sgid)
 
 	// Add permissions.
 	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{

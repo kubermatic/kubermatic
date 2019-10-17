@@ -18,6 +18,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/klog"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -42,6 +43,7 @@ const (
 )
 
 func main() {
+	klog.InitFlags(nil)
 	flag.BoolVar(&debug, "debug", false, "Use debug logging")
 	flag.StringVar(&listenAddress, "listen-address", ":8001", "Address to serve on")
 	flag.StringVar(&envoyNodeName, "envoy-node-name", "kube", "Name of the envoy nodes to apply the config to via xds")

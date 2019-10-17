@@ -13,7 +13,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -27,8 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/klog"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
-
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -619,7 +618,7 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 	}
 	if _, err := cert.Verify(verifyOptions); err != nil {
-		glog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
+		klog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
 		return false
 	}
 
@@ -651,7 +650,7 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	}
 	if _, err := cert.Verify(verifyOptions); err != nil {
-		glog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
+		klog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
 		return false
 	}
 
@@ -717,7 +716,7 @@ func GetDexCAFromFile(caBundleFilePath string) ([]*x509.Certificate, error) {
 	defer func() {
 		err := f.Close()
 		if err != nil {
-			glog.Fatal(err)
+			klog.Fatal(err)
 		}
 	}()
 

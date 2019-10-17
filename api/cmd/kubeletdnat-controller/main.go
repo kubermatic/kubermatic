@@ -16,12 +16,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
 func main() {
+	klog.InitFlags(nil)
 	kubeconfigFlag := flag.String("kubeconfig", "", "Path to a kubeconfig.")
 	master := flag.String("master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig")
 	networkFlag := flag.String("node-access-network", "", "The network in CIDR notation to translate to.")
