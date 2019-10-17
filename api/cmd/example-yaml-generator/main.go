@@ -69,6 +69,12 @@ func main() {
 }
 
 func createExampleSeed() *kubermaticv1.Seed {
+	imageList := kubermaticv1.ImageList{}
+
+	for _, os := range providerconfig.AllOperatingSystems {
+		imageList[os] = ""
+	}
+
 	seed := &kubermaticv1.Seed{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "kubermatic.k8s.io/v1",
@@ -94,19 +100,11 @@ func createExampleSeed() *kubermaticv1.Seed {
 						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
 						BringYourOwn: &kubermaticv1.DatacenterSpecBringYourOwn{},
 						AWS: &kubermaticv1.DatacenterSpecAWS{
-							Images: kubermaticv1.ImageList{
-								providerconfig.OperatingSystemCoreos: "",
-								providerconfig.OperatingSystemUbuntu: "",
-								providerconfig.OperatingSystemCentOS: "",
-							},
+							Images: imageList,
 						},
 						Azure: &kubermaticv1.DatacenterSpecAzure{},
 						Openstack: &kubermaticv1.DatacenterSpecOpenstack{
-							Images: kubermaticv1.ImageList{
-								providerconfig.OperatingSystemCoreos: "",
-								providerconfig.OperatingSystemUbuntu: "",
-								providerconfig.OperatingSystemCentOS: "",
-							},
+							Images:               imageList,
 							ManageSecurityGroups: pointer.BoolPtr(false),
 							DNSServers:           []string{},
 						},
@@ -115,11 +113,7 @@ func createExampleSeed() *kubermaticv1.Seed {
 						},
 						Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
 						VSphere: &kubermaticv1.DatacenterSpecVSphere{
-							Templates: kubermaticv1.ImageList{
-								providerconfig.OperatingSystemCoreos: "",
-								providerconfig.OperatingSystemUbuntu: "",
-								providerconfig.OperatingSystemCentOS: "",
-							},
+							Templates:           imageList,
 							InfraManagementUser: &kubermaticv1.VSphereCredentials{},
 						},
 						GCP: &kubermaticv1.DatacenterSpecGCP{

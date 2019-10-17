@@ -25,9 +25,15 @@ import (
 )
 
 var (
-	// AllOperatingSystems defines all available operating systems
-	AllOperatingSystems = sets.NewString(string(providerconfig.OperatingSystemCoreos), string(providerconfig.OperatingSystemCentOS), string(providerconfig.OperatingSystemUbuntu))
+	allOperatingSystems = sets.NewString()
 )
+
+func init() {
+	// build a quicker, convenient lookup mechanism
+	for _, os := range providerconfig.AllOperatingSystems {
+		allOperatingSystems.Insert(string(os))
+	}
+}
 
 // SeedGetter is a function to retrieve a single seed
 type SeedGetter = func() (*kubermaticv1.Seed, error)
@@ -107,8 +113,8 @@ func LoadSeed(path, datacenterName string) (*kubermaticv1.Seed, error) {
 
 func validateImageList(images kubermaticv1.ImageList) error {
 	for s := range images {
-		if !AllOperatingSystems.Has(string(s)) {
-			return fmt.Errorf("invalid operating system defined '%s'. Possible values: %s", s, strings.Join(AllOperatingSystems.List(), ","))
+		if !allOperatingSystems.Has(string(s)) {
+			return fmt.Errorf("invalid operating system defined '%s'. Possible values: %s", s, strings.Join(allOperatingSystems.List(), ","))
 		}
 	}
 
