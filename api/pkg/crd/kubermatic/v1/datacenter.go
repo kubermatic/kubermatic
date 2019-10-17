@@ -61,7 +61,7 @@ type SeedSpec struct {
 	Datacenters map[string]Datacenter `json:"datacenters,omitempty"`
 	// SeedDNSOverwrite can be used to override the DNS name used for this seed.
 	// This field is optional and defaults to the seed name.
-	SeedDNSOverwrite *string `json:"seed_dns_overwrite,omitempty"`
+	SeedDNSOverwrite string `json:"seed_dns_overwrite,omitempty"`
 	// ProxySettings can optionally be used to configure HTTP proxy settings on the
 	// worker nodes in user clusters. However, proxy settings on nodes take
 	// precedence.

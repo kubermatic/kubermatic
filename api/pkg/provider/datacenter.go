@@ -60,7 +60,7 @@ type DatacenterMeta struct {
 	Country          string                      `json:"country"`
 	Spec             kubermaticv1.DatacenterSpec `json:"spec"`
 	IsSeed           bool                        `json:"is_seed"`
-	SeedDNSOverwrite *string                     `json:"seed_dns_overwrite,omitempty"`
+	SeedDNSOverwrite string                      `json:"seed_dns_overwrite,omitempty"`
 	Node             kubermaticv1.NodeSettings   `json:"node,omitempty"`
 }
 
@@ -138,9 +138,9 @@ func ValidateSeed(seed *kubermaticv1.Seed) error {
 
 	// invalid DNS overwrites can happen when a seed was freshly converted from
 	// the datacenters.yaml and has not yet been validated
-	if seed.Spec.SeedDNSOverwrite != nil && *seed.Spec.SeedDNSOverwrite != "" {
-		if errs := validation.IsDNS1123Subdomain(*seed.Spec.SeedDNSOverwrite); errs != nil {
-			return fmt.Errorf("DNS overwrite %q is not a valid DNS name: %v", *seed.Spec.SeedDNSOverwrite, errs)
+	if seed.Spec.SeedDNSOverwrite != "" {
+		if errs := validation.IsDNS1123Subdomain(seed.Spec.SeedDNSOverwrite); errs != nil {
+			return fmt.Errorf("DNS overwrite %q is not a valid DNS name: %v", seed.Spec.SeedDNSOverwrite, errs)
 		}
 	} else {
 		if errs := validation.IsDNS1123Subdomain(seed.Name); errs != nil {

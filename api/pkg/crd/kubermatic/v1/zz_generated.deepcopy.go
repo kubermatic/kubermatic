@@ -1687,11 +1687,6 @@ func (in *SeedSpec) DeepCopyInto(out *SeedSpec) {
 			(*out)[key] = *val.DeepCopy()
 		}
 	}
-	if in.SeedDNSOverwrite != nil {
-		in, out := &in.SeedDNSOverwrite, &out.SeedDNSOverwrite
-		*out = new(string)
-		**out = **in
-	}
 	if in.ProxySettings != nil {
 		in, out := &in.ProxySettings, &out.ProxySettings
 		*out = new(ProxySettings)

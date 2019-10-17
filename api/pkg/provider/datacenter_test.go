@@ -12,7 +12,6 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilpointer "k8s.io/utils/pointer"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -146,7 +145,7 @@ func TestMigrateDatacenters(t *testing.T) {
 			datacenters: map[string]DatacenterMeta{
 				"&invalid": {
 					IsSeed:           true,
-					SeedDNSOverwrite: utilpointer.StringPtr("valid"),
+					SeedDNSOverwrite: "valid",
 				},
 			},
 		},
@@ -155,7 +154,7 @@ func TestMigrateDatacenters(t *testing.T) {
 			datacenters: map[string]DatacenterMeta{
 				"valid": {
 					IsSeed:           true,
-					SeedDNSOverwrite: utilpointer.StringPtr("&invalid"),
+					SeedDNSOverwrite: "&invalid",
 				},
 			},
 			errExpected: true,

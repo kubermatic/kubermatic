@@ -181,4 +181,4 @@ spec:
     no_proxy: ""
   # SeedDNSOverwrite can be used to override the DNS name used for this seed.
   # This field is optional and defaults to the seed name.
-  seed_dns_overwrite: null
+  seed_dns_overwrite: ""
