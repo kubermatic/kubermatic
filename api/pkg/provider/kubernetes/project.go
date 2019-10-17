@@ -150,7 +150,6 @@ func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName s
 		return nil, kerrors.NewServiceUnavailable("Project is not initialized yet")
 	}
 
-	project.Labels = label.FilterLabels(label.ProjectResourceType, project.Labels)
 	return project, nil
 }
 
