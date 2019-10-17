@@ -123,7 +123,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.BoolVar(&c.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "The default number of replicas for usercluster api servers")
-	flag.BoolVar(&c.apiServerEndpointReconcilingDisabled, "apiserver-endpoint-reconciling-disabled", false, "Whether to disable reconciling for the apiserver endpoints")
+	flag.BoolVar(&c.apiServerEndpointReconcilingDisabled, "apiserver-reconciling-disabled-by-default", false, "Whether to disable reconciling for the apiserver endpoints by default")
 	flag.IntVar(&c.controllerManagerDefaultReplicas, "controller-manager-default-replicas", 1, "The default number of replicas for usercluster controller managers")
 	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
