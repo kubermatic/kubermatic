@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilpointer "k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -167,7 +168,11 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				t.Fatalf("Error calling SetSeedResourcesUpToDateCondition: %v", err)
 			}
 
-			clusterConditionValue := testCase.cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionSeedResourcesUpToDate, corev1.ConditionTrue)
+			newCluster := &kubermaticv1.Cluster{}
+			if err := client.Get(ctx, types.NamespacedName{Name: testCase.cluster.Name}, newCluster); err != nil {
+				t.Fatalf("failed to get cluster after it was updated: %v", err)
+			}
+			clusterConditionValue := newCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionSeedResourcesUpToDate, corev1.ConditionTrue)
 			if clusterConditionValue != testCase.expectedHasConditionValue {
 				t.Fatalf("condition doesn't have expected value, expects: %v, got: %v", testCase.expectedHasConditionValue, clusterConditionValue)
 			}

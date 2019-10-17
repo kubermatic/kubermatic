@@ -112,64 +112,72 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 // replicas. if both statefulSet and deployment spec replica are equal to all replicas in the status object, then the
 // SeedResourcesUpToDate, will be added to the cluster conditions.
 func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, successfullyReconciled bool) error {
-	if successfullyReconciled {
-		var (
-			statefulSets         = &appv1.StatefulSetList{}
-			opts                 = &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
-			deployments          = &appv1.DeploymentList{}
-			hasUnfinishedUpdates bool
-		)
-
-		if err := client.List(ctx, opts, statefulSets); err != nil {
-			return fmt.Errorf("failed to list statefulSets: %v", err)
-		}
-
-		for _, statefulSet := range statefulSets.Items {
-			if statefulSet.Spec.Replicas != nil {
-				if *statefulSet.Spec.Replicas != statefulSet.Status.UpdatedReplicas ||
-					*statefulSet.Spec.Replicas != statefulSet.Status.CurrentReplicas ||
-					*statefulSet.Spec.Replicas != statefulSet.Status.ReadyReplicas {
-					hasUnfinishedUpdates = true
-				}
-			}
-		}
-
-		if err := client.List(ctx, opts, deployments); err != nil {
-			return fmt.Errorf("failed to list deployments: %v", err)
-		}
-
-		for _, deployment := range deployments.Items {
-			if deployment.Spec.Replicas != nil {
-				if *deployment.Spec.Replicas != deployment.Status.UpdatedReplicas ||
-					*deployment.Spec.Replicas != deployment.Status.AvailableReplicas ||
-					*deployment.Spec.Replicas != deployment.Status.ReadyReplicas {
-					hasUnfinishedUpdates = true
-				}
-			}
-		}
-
-		if !hasUnfinishedUpdates {
-			return updateCluster(ctx, client, cluster.Name, func(c *kubermaticv1.Cluster) {
-				kubermaticv1helper.SetClusterCondition(c,
-					kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-					corev1.ConditionTrue,
-					kubermaticv1.ReasonClusterUpdateSuccessful,
-					"All controlplane components are up to date")
-			})
-		}
+	upToDate, err := seedResourcesUpToDate(ctx, cluster, client, successfullyReconciled)
+	if err != nil {
+		return err
+	}
+	if !upToDate {
+		return updateCluster(ctx, client, cluster.Name, func(c *kubermaticv1.Cluster) {
+			kubermaticv1helper.SetClusterCondition(c,
+				kubermaticv1.ClusterConditionSeedResourcesUpToDate,
+				corev1.ConditionFalse,
+				kubermaticv1.ReasonClusterUpdateSuccessful,
+				"All controlplane components are up to date")
+		})
 	}
 
 	return updateCluster(ctx, client, cluster.Name, func(c *kubermaticv1.Cluster) {
 		kubermaticv1helper.SetClusterCondition(c,
 			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-			corev1.ConditionFalse,
+			corev1.ConditionTrue,
 			kubermaticv1.ReasonClusterUpdateSuccessful,
 			"Some controlplane componends did not finish updating")
 	})
 }
 
+func seedResourcesUpToDate(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, successfullyReconciled bool) (bool, error) {
+	if !successfullyReconciled {
+		return false, nil
+	}
+
+	listOpts := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
+
+	statefulSets := &appv1.StatefulSetList{}
+	if err := client.List(ctx, listOpts, statefulSets); err != nil {
+		return false, fmt.Errorf("failed to list statefulSets: %v", err)
+	}
+	for _, statefulSet := range statefulSets.Items {
+		if statefulSet.Spec.Replicas == nil {
+			return false, nil
+		}
+		if *statefulSet.Spec.Replicas != statefulSet.Status.UpdatedReplicas ||
+			*statefulSet.Spec.Replicas != statefulSet.Status.CurrentReplicas ||
+			*statefulSet.Spec.Replicas != statefulSet.Status.ReadyReplicas {
+			return false, nil
+		}
+	}
+
+	deployments := &appv1.DeploymentList{}
+	if err := client.List(ctx, listOpts, deployments); err != nil {
+		return false, fmt.Errorf("failed to list deployments: %v", err)
+	}
+
+	for _, deployment := range deployments.Items {
+		if deployment.Spec.Replicas == nil {
+			return false, nil
+		}
+		if *deployment.Spec.Replicas != deployment.Status.UpdatedReplicas ||
+			*deployment.Spec.Replicas != deployment.Status.AvailableReplicas ||
+			*deployment.Spec.Replicas != deployment.Status.ReadyReplicas {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
 func updateCluster(ctx context.Context, client ctrlruntimeclient.Client, clusterName string, modify func(*kubermaticv1.Cluster)) error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		//Get latest version
 		cluster := &kubermaticv1.Cluster{}
 		if err := client.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
