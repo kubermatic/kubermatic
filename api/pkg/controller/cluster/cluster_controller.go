@@ -222,20 +222,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		errs = append(errs, err)
-	} else {
-		if err := r.updateCluster(context.Background(), cluster, func(c *kubermaticv1.Cluster) {
-			cluster.Status.SetClusterCondition(kubermaticv1.ClusterControllerFinishedReconcilingSuccessfully)
-		}); err != nil {
-			errs = append(errs, err)
-		}
 	}
 
 	if result == nil {
 		result = &reconcile.Result{}
 	}
 
-	err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r.Client, successfullyReconciled)
-	if err != nil {
+	if err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r.Client, successfullyReconciled); err != nil {
 		log.Errorw("failed to update clusters status conditions", zap.Error(err))
 		errs = append(errs, err)
 	}

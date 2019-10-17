@@ -108,9 +108,9 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 	return clustersUpdatingInProgressCount >= limit, nil
 }
 
-// SetSeedResourcesUpToDateCondition updates the cluster status condition based on the deployment and statefulSet
-// replicas. if both statefulSet and deployment spec replica are equal to all replicas in the status object, then the
-// SeedResourcesUpToDate, will be added to the cluster conditions.
+// SetSeedResourcesUpToDateCondition updates the cluster status condition based on the Deployment and StatefulSet
+// replicas. If both StatefulSet and Deployment spec replica are equal to all replicas in the status object, then the
+// ClusterConditionSeedResourcesUpToDate will be set to true, else it will be set to false.
 func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, successfullyReconciled bool) error {
 	upToDate, err := seedResourcesUpToDate(ctx, cluster, client, successfullyReconciled)
 	if err != nil {

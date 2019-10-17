@@ -102,14 +102,10 @@ type ClusterSpec struct {
 type ClusterConditionType string
 
 const (
-	// SeedResourcesUpToDate indicates that alle controllers have finished setting up the
+	// ClusterConditionSeedResourcesUpToDate indicates that alle controllers have finished setting up the
 	// resources for a user clusters that run inside the seed cluster, i.e. this ignores
 	// the status of cloud provider resources for a given cluster.
 	ClusterConditionSeedResourcesUpToDate ClusterConditionType = "SeedResourcesUpToDate"
-
-	// ClusterControllerFinishedReconcilingSuccessfully indicates that the cluster controller finished
-	// reconciling successfully
-	ClusterControllerFinishedReconcilingSuccessfully ClusterConditionType = "ClusterControllerFinishedReconcilingSuccessfully"
 
 	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
 	ReasonClusterUpadteInProgress = "ClusterUpdateInProgress"
