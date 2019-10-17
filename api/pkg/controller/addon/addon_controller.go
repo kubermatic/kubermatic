@@ -17,6 +17,7 @@ import (
 
 	addonutils "github.com/kubermatic/kubermatic/api/pkg/addon"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
@@ -26,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
@@ -149,42 +151,47 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	log = r.log.With("cluster", addon.Spec.Cluster.Name)
 
-	// Add a wrapping here so we can emit an event on error
-	result, err := r.reconcile(ctx, log, addon)
-	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(addon, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
-		reconcilingError := err
-		//Get the cluster so we can report an event to it
-		cluster := &kubermaticv1.Cluster{}
-		if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
-			log.Errorw("failed to get cluster for reporting error onto it", zap.Error(err))
-		} else {
-			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
-				"failed to reconcile Addon %q: %v", addon.Name, reconcilingError)
-		}
-	}
-	if result == nil {
-		result = &reconcile.Result{}
-	}
-	return *result, err
-}
-
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) (*reconcile.Result, error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
 		// If its not a NotFound return it
 		if !kerrors.IsNotFound(err) {
-			return nil, err
+			return reconcile.Result{}, err
 		}
+		return reconcile.Result{}, nil
+	}
 
-		// Cluster does not exist - If the addon has the deletion timestamp - we shall delete it
-		if addon.DeletionTimestamp != nil {
-			if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-				return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
-			}
+	// Add a wrapping here so we can emit an event on error
+	var errs []error
+	reconcilingStatus := corev1.ConditionFalse
+	result, err := r.reconcile(ctx, log, addon, cluster)
+	if err != nil {
+		errs = append(errs, err)
+		log.Errorw("Reconciling failed", zap.Error(err))
+		r.recorder.Eventf(addon, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+		reconcilingError := err
+		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
+			"failed to reconcile Addon %q: %v", addon.Name, reconcilingError)
+	} else if result == nil {
+		reconcilingStatus = corev1.ConditionTrue
+	}
+	if result == nil {
+		result = &reconcile.Result{}
+	}
+
+	kubermaticv1helper.SetClusterCondition(cluster, kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess, reconcilingStatus, "", "")
+	if err := r.Update(ctx, cluster); err != nil {
+		log.Errorw("Failed to update ReconcilingSuccess condition", zap.Error(err))
+		errs = append(errs, err)
+	}
+	return *result, utilerrors.NewAggregate(errs)
+}
+
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	// If the addon has a deletion timestamp, delete it
+	if addon.DeletionTimestamp != nil {
+		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
+			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
 		}
-		return nil, nil
 	}
 
 	if err := r.markDefaultAddons(ctx, log, addon, cluster); err != nil {

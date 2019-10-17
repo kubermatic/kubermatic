@@ -236,7 +236,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	if err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 		status := corev1.ConditionFalse
-		if successfullyReconciled {
+		if successfullyReconciled && !result.Requeue && result.RequeueAfter == 0 {
 			status = corev1.ConditionTrue
 		}
 		kubermaticv1helper.SetClusterCondition(c, kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess, status, "", "")
