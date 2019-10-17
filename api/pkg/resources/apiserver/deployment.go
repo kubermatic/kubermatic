@@ -116,8 +116,11 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 			}
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
-			endpointReconcilingDisabled := data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableDexCA, auditLogEnabled, *endpointReconcilingDisabled)
+			endpointReconcilingDisabled := false
+			if data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled != nil {
+				endpointReconcilingDisabled = *data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled
+			}
+			flags, err := getApiserverFlags(data, etcdEndpoints, enableDexCA, auditLogEnabled, endpointReconcilingDisabled)
 			if err != nil {
 				return nil, err
 			}
