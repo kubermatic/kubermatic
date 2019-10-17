@@ -6,6 +6,7 @@ import (
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -148,6 +149,8 @@ func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName s
 	if !options.IncludeUninitialized && project.Status.Phase != kubermaticapiv1.ProjectActive {
 		return nil, kerrors.NewServiceUnavailable("Project is not initialized yet")
 	}
+
+	project.Labels = label.FilterLabels(label.ProjectResourceType, project.Labels)
 	return project, nil
 }
 
@@ -195,5 +198,12 @@ func (p *ProjectProvider) List(options *provider.ProjectListOptions) ([]*kuberma
 
 		ret = append(ret, project.DeepCopy())
 	}
+
+	// Filter out restricted labels
+	for i, project := range ret {
+		project.Labels = label.FilterLabels(label.ClusterResourceType, project.Labels)
+		ret[i] = project
+	}
+
 	return ret, nil
 }

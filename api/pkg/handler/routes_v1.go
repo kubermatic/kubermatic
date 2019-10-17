@@ -15,6 +15,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	kubernetesdashboard "github.com/kubermatic/kubermatic/api/pkg/handler/v1/kubernetes-dashboard"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/node"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/openshift"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/presets"
@@ -527,6 +528,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/me").
 		Handler(r.getCurrentUser())
+
+	mux.Methods(http.MethodGet).
+		Path("/label/system").
+		Handler(r.listSystemLabels())
 }
 
 // swagger:route GET /api/v1/projects/{project_id}/sshkeys project listSSHKeys
@@ -3539,6 +3544,30 @@ func (r Routing) patchClusterRoleBinding() http.Handler {
 			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(cluster.PatchClusterRoleBindingEndpoint()),
 		cluster.DecodePatchClusterRoleBindingReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v1/label/system listSystemLabels
+//
+//    List restricted system labels
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: LabelList
+//       401: empty
+//       403: empty
+func (r Routing) listSystemLabels() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+		)(label.ListSystemLabels()),
+		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

@@ -149,6 +149,35 @@
         }
       }
     },
+    "/api/v1/label/system": {
+      "patch": {
+        "description": "List restricted system labels",
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "listSystemLabels",
+        "responses": {
+          "200": {
+            "description": "LabelList",
+            "schema": {
+              "$ref": "#/definitions/LabelList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me": {
       "get": {
         "produces": [
@@ -8201,6 +8230,10 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "LabelList": {
+      "title": "LabelList defines list of labels grouped by specific resource types.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "LegacyObjectMeta": {
       "description": "Deprecated: LegacyObjectMeta is deprecated use ObjectMeta instead.",
       "type": "object",
@@ -9482,6 +9515,10 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/runtime"
+    },
+    "ResourceType": {
+      "type": "string",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "Role": {
       "description": "Role defines RBAC role for the user cluster",

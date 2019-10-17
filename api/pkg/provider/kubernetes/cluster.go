@@ -12,6 +12,7 @@ import (
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
@@ -162,6 +163,12 @@ func (p *ClusterProvider) List(project *kubermaticv1.Project, options *provider.
 		return nil, fmt.Errorf("failed to list clusters: %v", err)
 	}
 
+	// Filter out restricted labels
+	for i, cluster := range projectClusters.Items {
+		cluster.Labels = label.FilterLabels(label.ClusterResourceType, cluster.Labels)
+		projectClusters.Items[i] = cluster
+	}
+
 	if options == nil || len(options.ClusterSpecName) == 0 {
 		return projectClusters, nil
 	}
@@ -192,6 +199,8 @@ func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, o
 			return nil, kerrors.NewServiceUnavailable("Cluster components are not ready yet")
 		}
 	}
+
+	cluster.Labels = label.FilterLabels(label.ClusterResourceType, cluster.Labels)
 	return cluster, nil
 }
 

@@ -18,6 +18,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -177,7 +178,7 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 		Spec: apiv1.NodeDeploymentSpec{
 			Replicas: *md.Spec.Replicas,
 			Template: apiv1.NodeSpec{
-				Labels: md.Spec.Template.Spec.Labels,
+				Labels: label.FilterLabels(label.NodeDeploymentResourceType, md.Spec.Template.Spec.Labels),
 				Taints: taints,
 				Versions: apiv1.NodeVersionInfo{
 					Kubelet: md.Spec.Template.Spec.Versions.Kubelet,
