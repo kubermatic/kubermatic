@@ -119,9 +119,9 @@ spec:
         - -seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/serverCert.pem
         - -seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/serverKey.pem
         {{- if .Values.kubermatic.apiserverEndpointReconcilingDisabled }}
-        - -apiserver-endpoint-reconciling-disabled=true
+        - -apiserver-reconciling-disabled-by-default=true
         {{- else }}
-        - -apiserver-endpoint-reconciling-disabled=false
+        - -apiserver-reconciling-disabled-by-default=false
         {{- end }}
         image: '{{ .Values.kubermatic.controller.image.repository }}:{{ .Values.kubermatic.controller.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.image.pullPolicy }}
