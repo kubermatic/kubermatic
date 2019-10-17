@@ -35,8 +35,7 @@ func main() {
 		}
 	}
 
-	// find all .go files in kubermatic/v1, just in case a definition is split
-	// into multiple files
+	// find all .go files in kubermatic/v1
 	files, err := filepath.Glob(filepath.Join(root, "pkg/crd/kubermatic/v1/*.go"))
 	if err != nil {
 		log.Fatalf("Failed to find go files: %v", err)
