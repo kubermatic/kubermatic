@@ -90,7 +90,7 @@ func TestReconciliation(t *testing.T) {
 				t.Fatalf("failed to get reconciledCluster: %v", err)
 			}
 			if diff := tc.verify(&tc.cluster.Spec.ComponentsOverride, tc.override, &reconciledCluster.Spec.ComponentsOverride); diff != nil {
-				t.Fatalf("unexpected difference in cluster after reconcilation: %v", diff)
+				t.Fatalf("unexpected difference in cluster after reconciliation: %v", diff)
 			}
 		})
 	}
