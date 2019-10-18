@@ -22,6 +22,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	utilpointer "k8s.io/utils/pointer"
 )
@@ -245,6 +246,18 @@ func createUpdateController(ctrlCtx *controllerContext) error {
 }
 
 func createAddonController(ctrlCtx *controllerContext) error {
+	kubernetesAddons := strings.Split(ctrlCtx.runOptions.kubernetesAddonsList, ",")
+	kubernetesAddonsSet := sets.String{}
+	for _, a := range kubernetesAddons {
+		kubernetesAddonsSet.Insert(strings.TrimSpace(a))
+	}
+
+	openshiftAddons := strings.Split(ctrlCtx.runOptions.openshiftAddonsList, ",")
+	openshiftAddonsSet := sets.String{}
+	for _, a := range openshiftAddons {
+		openshiftAddonsSet.Insert(strings.TrimSpace(a))
+	}
+
 	return addon.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
@@ -255,6 +268,8 @@ func createAddonController(ctrlCtx *controllerContext) error {
 				"NodeAccessNetwork": ctrlCtx.runOptions.nodeAccessNetwork,
 			},
 		},
+		kubernetesAddonsSet,
+		openshiftAddonsSet,
 		ctrlCtx.runOptions.kubernetesAddonsPath,
 		ctrlCtx.runOptions.openshiftAddonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
@@ -263,7 +278,6 @@ func createAddonController(ctrlCtx *controllerContext) error {
 }
 
 func createAddonInstallerController(ctrlCtx *controllerContext) error {
-
 	kubernetesAddons := strings.Split(ctrlCtx.runOptions.kubernetesAddonsList, ",")
 	for i, a := range kubernetesAddons {
 		kubernetesAddons[i] = strings.TrimSpace(a)

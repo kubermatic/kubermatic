@@ -6773,6 +6773,11 @@
       "description": "AddonSpec addon specification",
       "type": "object",
       "properties": {
+        "isDefault": {
+          "description": "IsDefault indicates whether the addon is default",
+          "type": "boolean",
+          "x-go-name": "IsDefault"
+        },
         "variables": {
           "description": "Variables is free form data to use for parsing the manifest templates",
           "type": "object",
