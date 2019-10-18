@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	utilpointer "k8s.io/utils/pointer"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 )
 
@@ -80,7 +78,7 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 					IsSeed:           true,
 					Location:         "Hamburg",
 					Country:          "Germany",
-					SeedDNSOverwrite: utilpointer.StringPtr("dns-overwrite"),
+					SeedDNSOverwrite: "dns-overwrite",
 				},
 			},
 			verify: func(seeds map[string]*kubermaticv1.Seed, err error) error {
@@ -99,8 +97,8 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 				if seeds["my-seed"].Spec.Country != "Germany" {
 					return fmt.Errorf("expected .Spec.Country to be 'Germany', was %q", seeds["my-seed"].Spec.Country)
 				}
-				if seeds["my-seed"].Spec.SeedDNSOverwrite == nil || *seeds["my-seed"].Spec.SeedDNSOverwrite != "dns-overwrite" {
-					return fmt.Errorf("Expected .Spec.SeedDNSOverwrite to be 'dns-overwrite', was %v", seeds["my-seed"].Spec.SeedDNSOverwrite)
+				if seeds["my-seed"].Spec.SeedDNSOverwrite != "dns-overwrite" {
+					return fmt.Errorf("Expected .Spec.SeedDNSOverwrite to be 'dns-overwrite', was %q", seeds["my-seed"].Spec.SeedDNSOverwrite)
 				}
 				return nil
 			},

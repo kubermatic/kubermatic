@@ -23,8 +23,8 @@ func SyncClusterAddress(ctx context.Context,
 	var modifiers []func(*kubermaticv1.Cluster)
 
 	subdomain := seed.Name
-	if seed.Spec.SeedDNSOverwrite != nil && *seed.Spec.SeedDNSOverwrite != "" {
-		subdomain = *seed.Spec.SeedDNSOverwrite
+	if seed.Spec.SeedDNSOverwrite != "" {
+		subdomain = seed.Spec.SeedDNSOverwrite
 	}
 
 	frontProxyLoadBalancerServiceIP := ""

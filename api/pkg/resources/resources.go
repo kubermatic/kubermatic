@@ -869,38 +869,41 @@ func GlobalSecretKeySelectorValueGetterFactory(ctx context.Context, client ctrlr
 }
 
 func GetHTTPProxyEnvVarsFromSeed(seed *kubermaticv1.Seed, inClusterAPIServerURL string) []corev1.EnvVar {
-	if seed.Spec.ProxySettings == nil {
+	if seed.Spec.ProxySettings.Empty() {
 		return nil
 	}
 	var envVars []corev1.EnvVar
 
-	if seed.Spec.ProxySettings.HTTPProxy != nil {
+	if !seed.Spec.ProxySettings.HTTPProxy.Empty() {
+		value := seed.Spec.ProxySettings.HTTPProxy.String()
 		envVars = []corev1.EnvVar{
 			{
 				Name:  "HTTP_PROXY",
-				Value: *seed.Spec.ProxySettings.HTTPProxy,
+				Value: value,
 			},
 			{
 				Name:  "HTTPS_PROXY",
-				Value: *seed.Spec.ProxySettings.HTTPProxy,
+				Value: value,
 			},
 			{
 				Name:  "http_proxy",
-				Value: *seed.Spec.ProxySettings.HTTPProxy,
+				Value: value,
 			},
 			{
 				Name:  "https_proxy",
-				Value: *seed.Spec.ProxySettings.HTTPProxy,
+				Value: value,
 			},
 		}
 	}
+
 	noProxyValue := inClusterAPIServerURL
-	if seed.Spec.ProxySettings.NoProxy != nil {
-		noProxyValue += "," + *seed.Spec.ProxySettings.NoProxy
+	if !seed.Spec.ProxySettings.NoProxy.Empty() {
+		noProxyValue += "," + seed.Spec.ProxySettings.NoProxy.String()
 	}
 	envVars = append(envVars,
 		corev1.EnvVar{Name: "NO_PROXY", Value: noProxyValue},
 		corev1.EnvVar{Name: "no_proxy", Value: noProxyValue},
 	)
+
 	return envVars
 }

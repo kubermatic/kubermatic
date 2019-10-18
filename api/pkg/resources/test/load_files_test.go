@@ -36,7 +36,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	utilpointer "k8s.io/utils/pointer"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -545,7 +544,7 @@ func TestLoadFiles(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{Name: "testdc"},
 						Spec: kubermaticv1.SeedSpec{
 							ProxySettings: &kubermaticv1.ProxySettings{
-								HTTPProxy: utilpointer.StringPtr("http://my-corp"),
+								HTTPProxy: kubermaticv1.NewProxyValue("http://my-corp"),
 							},
 						},
 					},

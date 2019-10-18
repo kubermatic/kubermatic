@@ -606,14 +606,14 @@ func (in *DatacenterSpec) DeepCopyInto(out *DatacenterSpec) {
 		*out = new(DatacenterSpecGCP)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Fake != nil {
-		in, out := &in.Fake, &out.Fake
-		*out = new(DatacenterSpecFake)
-		**out = **in
-	}
 	if in.Kubevirt != nil {
 		in, out := &in.Kubevirt, &out.Kubevirt
 		*out = new(DatacenterSpecKubevirt)
+		**out = **in
+	}
+	if in.Fake != nil {
+		in, out := &in.Fake, &out.Fake
+		*out = new(DatacenterSpecFake)
 		**out = **in
 	}
 	return
@@ -1553,12 +1553,12 @@ func (in *ProxySettings) DeepCopyInto(out *ProxySettings) {
 	*out = *in
 	if in.HTTPProxy != nil {
 		in, out := &in.HTTPProxy, &out.HTTPProxy
-		*out = new(string)
+		*out = new(ProxyValue)
 		**out = **in
 	}
 	if in.NoProxy != nil {
 		in, out := &in.NoProxy, &out.NoProxy
-		*out = new(string)
+		*out = new(ProxyValue)
 		**out = **in
 	}
 	return
@@ -1691,11 +1691,6 @@ func (in *SeedSpec) DeepCopyInto(out *SeedSpec) {
 		for key, val := range *in {
 			(*out)[key] = *val.DeepCopy()
 		}
-	}
-	if in.SeedDNSOverwrite != nil {
-		in, out := &in.SeedDNSOverwrite, &out.SeedDNSOverwrite
-		*out = new(string)
-		**out = **in
 	}
 	if in.ProxySettings != nil {
 		in, out := &in.ProxySettings, &out.ProxySettings

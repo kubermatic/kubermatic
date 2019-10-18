@@ -174,7 +174,7 @@ func TestSyncClusterAddress(t *testing.T) {
 					Name: fakeDCName,
 				},
 				Spec: kubermaticv1.SeedSpec{
-					SeedDNSOverwrite: &tc.seedDNSOverwrite,
+					SeedDNSOverwrite: tc.seedDNSOverwrite,
 				},
 			}
 

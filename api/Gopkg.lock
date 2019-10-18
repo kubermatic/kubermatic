@@ -204,6 +204,14 @@
   version = "v0.2.1"
 
 [[projects]]
+  digest = "1:fb1b50551aafa28a63211526c22e7eff13bdc1c69f9b18e86a2c809c44b93d8e"
+  name = "github.com/clarketm/json"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "da4a3a00a4ad1d0e6f5419ea62d34f1a35337ebf"
+  version = "v1.13.1"
+
+[[projects]]
   digest = "1:15173ac9caac43ba3a8990716158f5fd08174293e259d0a9e67f6fc98cc39d35"
   name = "github.com/coreos/container-linux-config-transpiler"
   packages = [
@@ -1640,6 +1648,14 @@
   revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
 
 [[projects]]
+  branch = "v3"
+  digest = "1:f5bc459b9d05d40706a7260f825ecc5e5c458b8a3fd0a4fcc3348027ef04a246"
+  name = "gopkg.in/yaml.v3"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "fc94e3f7165204dd261b8d39d39a1e1773b931c9"
+
+[[projects]]
   branch = "release-1.13"
   digest = "1:50c54ca27ed4d58993d9f104f7c00478a210c3f3deccddee43ef8ff22f9072d7"
   name = "k8s.io/api"
@@ -2022,6 +2038,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:dd5150268c07fe9a2374db6edc35b09af88591184328bccade10f6153a975261"
+  name = "k8s.io/test-infra"
+  packages = ["pkg/genyaml"]
+  pruneopts = "NUT"
+  revision = "ac78417555d691a218c703d82c336c86529deafc"
+
+[[projects]]
+  branch = "master"
   digest = "1:0d7ddfe00c608fe323c58050e1541c2e0e72608ca86df20ed469f2647212abf5"
   name = "k8s.io/utils"
   packages = ["pointer"]
@@ -2304,6 +2328,7 @@
     "k8s.io/klog",
     "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1",
     "k8s.io/metrics/pkg/apis/metrics/v1beta1",
+    "k8s.io/test-infra/pkg/genyaml",
     "k8s.io/utils/pointer",
     "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1",
     "sigs.k8s.io/controller-runtime/pkg/cache",
