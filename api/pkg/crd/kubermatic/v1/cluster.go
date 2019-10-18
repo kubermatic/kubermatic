@@ -113,8 +113,9 @@ const (
 
 	// ClusterConditionAddonControllerReconcilingSuccess indicates whether the addon controller
 	// succeeded in reconciling the cluster.
-	ClusterConditionAddonControllerReconcilingSuccess          ClusterConditionType = "AddonControllerReconcilledSuccessfully"
-	ClusterConditionAddonInstallerControllerReconcilingSuccess ClusterConditionType = "AddonInstallerControllerReconcilledSuccessfully"
+	ClusterConditionAddonControllerReconcilingSuccess          ClusterConditionType = "AddonControllerReconciledSuccessfully"
+	ClusterConditionAddonInstallerControllerReconcilingSuccess ClusterConditionType = "AddonInstallerControllerReconciledSuccessfully"
+	ClusterConditionBackupControllerReconcilingSuccessful      ClusterConditionType = "BackupControllerReconciledSuccessfully"
 
 	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
 	ReasonClusterUpadteInProgress = "ClusterUpdateInProgress"
