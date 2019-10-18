@@ -44,7 +44,7 @@ Supported Kubernetes versions:
 - Added new KubermaticClusterPaused alert with &#34;none&#34; severity for inhibiting alerts from paused clusters [#3846](https://github.com/kubermatic/kubermatic/issues/3846) ([xrstf](https://github.com/xrstf))
 - Removed Helm-based templating in Grafana dashboards [#4475](https://github.com/kubermatic/kubermatic/issues/4475) ([xrstf](https://github.com/xrstf))
 - Added type label (kubernetes/openshift) to kubermatic_cluster_info metric. [#4452](https://github.com/kubermatic/kubermatic/issues/4452) ([xrstf](https://github.com/xrstf))
-- Added metrics for cluster control plane:GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics [#4208](https://github.com/kubermatic/kubermatic/issues/4208) ([zreigz](https://github.com/zreigz))
+- Added metrics endpoint for cluster control plane:GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics [#4208](https://github.com/kubermatic/kubermatic/issues/4208) ([zreigz](https://github.com/zreigz))
 - Added a new endpoint for node deployment metrics:GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/metrics [#4176](https://github.com/kubermatic/kubermatic/issues/4176) ([zreigz](https://github.com/zreigz))
 
 **Cloud providers:**
