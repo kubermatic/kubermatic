@@ -291,6 +291,9 @@ func convertInternalAddonToExternal(internalAddon *kubermaticapiv1.Addon) (*apiv
 				return nil
 			}(),
 		},
+		Spec: apiv1.AddonSpec{
+			IsDefault: internalAddon.Spec.IsDefault,
+		},
 	}
 	if len(internalAddon.Spec.Variables.Raw) > 0 {
 		if err := k8sjson.Unmarshal(internalAddon.Spec.Variables.Raw, &result.Spec.Variables); err != nil {

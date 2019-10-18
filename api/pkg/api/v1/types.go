@@ -804,6 +804,8 @@ type Addon struct {
 type AddonSpec struct {
 	// Variables is free form data to use for parsing the manifest templates
 	Variables map[string]interface{} `json:"variables,omitempty"`
+	// IsDefault indicates whether the addon is default
+	IsDefault bool `json:"isDefault,omitempty"`
 }
 
 // ClusterList represents a list of clusters
