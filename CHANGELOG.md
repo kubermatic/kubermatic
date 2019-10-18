@@ -26,6 +26,7 @@ Supported Kubernetes versions:
 - ACTION REQUIRED: The literal credentials on the `Cluster` object are being deprecated in favor of storing them in a secret. If you have addons that use credentials, replace `.Cluster.Spec.Cloud` with `.Credentials`. [#4463](https://github.com/kubermatic/kubermatic/issues/4463) ([alvaroaleman](https://github.com/alvaroaleman))
 - ACTION REQUIRED: Kubermatic now doesn&#39;t accept unknown keys in its config files anymore and will crash if an unknown key is present
 - ACTION REQUIRED: BYO datacenters now need to be specific in the `datacenters.yaml` with a value of `{}`, e.G `bringyourown: {}` [#3794](https://github.com/kubermatic/kubermatic/issues/3794) ([alvaroaleman](https://github.com/alvaroaleman))
+- ACTION REQUIRED: Velero does not backup Prometheus, Elasticsearch and Minio by default anymore. [#4482](https://github.com/kubermatic/kubermatic/issues/4482) ([xrstf](https://github.com/xrstf))
 - The deprecated nodePortPoxy key for Helm values has been removed. [#3830](https://github.com/kubermatic/kubermatic/issues/3830) ([xrstf](https://github.com/xrstf))
 - Support setting oidc authentication settings on cluster [#3751](https://github.com/kubermatic/kubermatic/issues/3751) ([bashofmann](https://github.com/bashofmann))
 - The worker-count of controller-manager and master-controller are now configurable [#3918](https://github.com/kubermatic/kubermatic/issues/3918) ([bashofmann](https://github.com/bashofmann))
@@ -78,7 +79,6 @@ Supported Kubernetes versions:
 **Misc:**
 - The share cluster feature now allows to use groups, if passed by the IDP. All groups are prefixed with `oidc:` [#4244](https://github.com/kubermatic/kubermatic/issues/4244) ([alvaroaleman](https://github.com/alvaroaleman))
 - The kube-proxy mode (ipvs/iptables) can now be configured. If not specified, it defaults to ipvs. [#4247](https://github.com/kubermatic/kubermatic/issues/4247) ([nikhita](https://github.com/nikhita))
-- Velero does not backup Prometheus, Elasticsearch and Minio by default anymore. [#4482](https://github.com/kubermatic/kubermatic/issues/4482) ([xrstf](https://github.com/xrstf))
 - Addons can now read the AWS region  from the `kubermatic.io/aws-region` annotation on the cluster [#4434](https://github.com/kubermatic/kubermatic/issues/4434) ([alvaroaleman](https://github.com/alvaroaleman))
 - Allow disabling of apiserver endpoint reconciling. [#4396](https://github.com/kubermatic/kubermatic/issues/4396) ([thz](https://github.com/thz))
 - Allow cluster owner to manage RBACs from Kubermatic API [#4321](https://github.com/kubermatic/kubermatic/issues/4321) ([zreigz](https://github.com/zreigz))
