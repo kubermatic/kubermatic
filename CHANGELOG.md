@@ -97,7 +97,7 @@ Supported Kubernetes versions:
 - Updated Dex to 2.19 [#4343](https://github.com/kubermatic/kubermatic/issues/4343) ([xrstf](https://github.com/xrstf))
 - Updated Envoy to 1.11.1 [#4075](https://github.com/kubermatic/kubermatic/issues/4075) ([xrstf](https://github.com/xrstf))
 - Updated etcd to 3.3.15 [#4199](https://github.com/kubermatic/kubermatic/issues/4199) ([bashofmann](https://github.com/bashofmann))
-- Updated FluentBit got updated to v1.2.2 [#4022](https://github.com/kubermatic/kubermatic/issues/4022) ([mrIncompetent](https://github.com/mrIncompetent))
+- Updated FluentBit to v1.2.2 [#4022](https://github.com/kubermatic/kubermatic/issues/4022) ([mrIncompetent](https://github.com/mrIncompetent))
 - Updated Grafana to 6.3.5 [#4342](https://github.com/kubermatic/kubermatic/issues/4342) ([xrstf](https://github.com/xrstf))
 - Updated helm-exporter to 0.4.2 [#4124](https://github.com/kubermatic/kubermatic/issues/4124) ([xrstf](https://github.com/xrstf))
 - Updated kube-state-metrics to 1.7.2 [#4129](https://github.com/kubermatic/kubermatic/issues/4129) ([xrstf](https://github.com/xrstf))
