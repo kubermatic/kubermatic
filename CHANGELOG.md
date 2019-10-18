@@ -19,6 +19,7 @@ Supported Kubernetes versions:
 - An option to use AWS Route53 DNS validation was added to the `certs` chart. [#4397](https://github.com/kubermatic/kubermatic/issues/4397) ([alvaroaleman](https://github.com/alvaroaleman))
 - Added possibility to add labels to projects and clusters and have these labels inherited by node objects.
 - Added support for Kubernetes audit logging [#4151](https://github.com/kubermatic/kubermatic/issues/4151) ([eqrx](https://github.com/eqrx))
+- Connect button on cluster details will now open Kubernetes Dashboard/Openshift Console [#1667](https://github.com/kubermatic/dashboard-v2/issues/1667) ([floreks](https://github.com/floreks))
 
 **Installation and updating:**
 - ACTION REQUIRED: the `zone_character` field must be removed from all AWS datacenters in `datacenters.yaml` [#3986](https://github.com/kubermatic/kubermatic/issues/3986) ([kdomanski](https://github.com/kdomanski))
@@ -120,7 +121,6 @@ Supported Kubernetes versions:
 - OIDC client id is now configurable [#1505](https://github.com/kubermatic/dashboard-v2/issues/1505) ([bashofmann](https://github.com/bashofmann))
 - Replaced particles with a static background. [#1578](https://github.com/kubermatic/dashboard-v2/issues/1578) ([maciaszczykm](https://github.com/maciaszczykm))
 - Pod Security Policy can now be activated from the wizard. [#1647](https://github.com/kubermatic/dashboard-v2/issues/1647) ([maciaszczykm](https://github.com/maciaszczykm))
-- Connect button on cluster details will now open Kubernetes Dashboard/Openshift Console [#1667](https://github.com/kubermatic/dashboard-v2/issues/1667) ([floreks](https://github.com/floreks))
 - Various security improvements in authentication
 - Various other visual improvements
 
