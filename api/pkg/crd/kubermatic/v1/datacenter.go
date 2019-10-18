@@ -74,7 +74,7 @@ type Datacenter struct {
 	// Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
 	// For informational purposes in the Kubermatic dashboard only.
 	Location string `json:"location,omitempty"`
-	// Node holds node-specific settings, like e.g. HTTP proxy and Docker
+	// Node holds node-specific settings, like e.g. HTTP proxy, Docker
 	// registries and the like. Proxy settings are inherited from the seed if
 	// not specified here.
 	Node NodeSettings `json:"node"`
@@ -174,7 +174,7 @@ type DatacenterSpecVSphere struct {
 	Datastore string `json:"datastore"`
 	// The name of the datacenter to use.
 	Datacenter string `json:"datacenter"`
-	// The name of the cluster to use.
+	// The name of the Kubernetes cluster to use.
 	Cluster string `json:"cluster"`
 	// Optional: The root path for cluster specific VM folders. Each cluster gets its own
 	// folder below the root folder. Must be the FQDN (for example
@@ -198,6 +198,9 @@ type DatacenterSpecAWS struct {
 	Region string `json:"region"`
 
 	// List of AMIs to use for a given operating system.
+	// This gets defaulted by querying for the latest AMI for the given distribution
+	// when machines are created, so under normal circumstances it is not necessary
+	// to define the AMIs statically.
 	Images ImageList `json:"images"`
 }
 
