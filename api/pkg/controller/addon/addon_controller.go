@@ -53,6 +53,8 @@ type Reconciler struct {
 	log                *zap.SugaredLogger
 	workerName         string
 	addonVariables     map[string]interface{}
+	kubernetesAddons   []string
+	openshiftAddons    []string
 	kubernetesAddonDir string
 	openshiftAddonDir  string
 	overwriteRegistry  string
@@ -70,8 +72,10 @@ func Add(
 	numWorkers int,
 	workerName string,
 	addonCtxVariables map[string]interface{},
-	kubernetesAddonDir string,
-	openshiftAddonDir string,
+	kubernetesAddons,
+	openshiftAddons []string,
+	kubernetesAddonDir,
+	openshiftAddonDir,
 	overwriteRegistey string,
 	kubeconfigProvider KubeconfigProvider,
 ) error {
@@ -81,6 +85,8 @@ func Add(
 	reconciler := &Reconciler{
 		log:                log,
 		addonVariables:     addonCtxVariables,
+		kubernetesAddons:   kubernetesAddons,
+		openshiftAddons:    openshiftAddons,
 		kubernetesAddonDir: kubernetesAddonDir,
 		openshiftAddonDir:  openshiftAddonDir,
 		KubeconfigProvider: kubeconfigProvider,
@@ -180,6 +186,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		return nil, nil
 	}
 
+	if err := r.markDefaultAddons(ctx, log, addon, cluster); err != nil {
+		return nil, fmt.Errorf("failed to ensure that the isDefault field is up to date in the addon: %v", err)
+	}
+
 	if cluster.DeletionTimestamp != nil {
 		log.Debug("Skipping addon because cluster is deleted")
 		return nil, nil
@@ -239,6 +249,34 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	}
 
 	return nil, nil
+}
+
+func (r *Reconciler) markDefaultAddons(ctx context.Context, log *zap.SugaredLogger,
+	addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
+	var defaultAddons []string
+	if cluster.Annotations["kubermatic.io/openshift"] != "" {
+		defaultAddons = r.openshiftAddons
+	} else {
+		defaultAddons = r.kubernetesAddons
+	}
+
+	isDefault := false
+	for _, defaultAddon := range defaultAddons {
+		if defaultAddon == addon.Name {
+			isDefault = true
+			break
+		}
+	}
+
+	// Update only when the value was incorrect
+	if isDefault != addon.Spec.IsDefault {
+		addon.Spec.IsDefault = isDefault
+		if err := r.Client.Update(ctx, addon); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {

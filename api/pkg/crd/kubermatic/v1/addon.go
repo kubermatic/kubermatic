@@ -33,6 +33,8 @@ type AddonSpec struct {
 	Cluster corev1.ObjectReference `json:"cluster"`
 	// Variables is free form data to use for parsing the manifest templates
 	Variables runtime.RawExtension `json:"variables,omitempty"`
+	// IsDefault indicates whether the addon is default
+	IsDefault bool `json:"isDefault,omitempty"`
 }
 
 // AddonList is a list of addons
