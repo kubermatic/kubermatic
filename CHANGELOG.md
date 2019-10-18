@@ -23,8 +23,7 @@ Supported Kubernetes versions:
 **Installation and updating:**
 - ACTION REQUIRED: the `zone_character` field must be removed from all AWS datacenters in `datacenters.yaml` [#3986](https://github.com/kubermatic/kubermatic/issues/3986) ([kdomanski](https://github.com/kdomanski))
 - ACTION REQUIRED: The default number of apiserver replicas was increased to 2. You can revert to the old behavior by setting `.Kubermatic.apiserverDefaultReplicas` in the `values.yaml` [#3885](https://github.com/kubermatic/kubermatic/issues/3885) ([alvaroaleman](https://github.com/alvaroaleman))
-- ACTION REQUIRED: The literal credentials on the `Cluster` object are being deprecated in favor of storing them in a secret. If you have addons that use credentials, replace `.Cluster.Spec.Cloud` with `.Credentials`. [#4463](https://github.com/kubermatic/kubermatic/issues/4463) ([alvaroaleman](https://gith
-ub.com/alvaroaleman))
+- ACTION REQUIRED: The literal credentials on the `Cluster` object are being deprecated in favor of storing them in a secret. If you have addons that use credentials, replace `.Cluster.Spec.Cloud` with `.Credentials`. [#4463](https://github.com/kubermatic/kubermatic/issues/4463) ([alvaroaleman](https://github.com/alvaroaleman))
 - ACTION REQUIRED: Kubermatic now doesn&#39;t accept unknown keys in its config files anymore and will crash if an unknown key is present
 - ACTION REQUIRED: BYO datacenters now need to be specific in the `datacenters.yaml` with a value of `{}`, e.G `bringyourown: {}` [#3794](https://github.com/kubermatic/kubermatic/issues/3794) ([alvaroaleman](https://github.com/alvaroaleman))
 - The deprecated nodePortPoxy key for Helm values has been removed. [#3830](https://github.com/kubermatic/kubermatic/issues/3830) ([xrstf](https://github.com/xrstf))
