@@ -65,6 +65,10 @@ updates:
 - from: 1.16.*
   to: 1.16.*
   automatic: false
+# CVE-2019-11253
+- from: <= 1.16.1, >= 1.16.0
+  to: 1.16.2
+  automatic: true
 # Allow to next minor release
 - from: 1.16.*
   to: 1.17.*
