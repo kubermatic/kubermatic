@@ -20,6 +20,7 @@ Supported Kubernetes versions:
 - Added possibility to add labels to projects and clusters and have these labels inherited by node objects.
 - Added support for Kubernetes audit logging [#4151](https://github.com/kubermatic/kubermatic/issues/4151) ([eqrx](https://github.com/eqrx))
 - Connect button on cluster details will now open Kubernetes Dashboard/Openshift Console [#1667](https://github.com/kubermatic/dashboard-v2/issues/1667) ([floreks](https://github.com/floreks))
+- Pod Security Policies can now be enabled [#4062](https://github.com/kubermatic/kubermatic/issues/4062) ([bashofmann](https://github.com/bashofmann))
 
 **Installation and updating:**
 - ACTION REQUIRED: the `zone_character` field must be removed from all AWS datacenters in `datacenters.yaml` [#3986](https://github.com/kubermatic/kubermatic/issues/3986) ([kdomanski](https://github.com/kdomanski))
@@ -86,7 +87,6 @@ Supported Kubernetes versions:
 - The default service CIDR for new clusters was increased and changed from 10.10.10.0/24 to 10.240.16.0/20 [#4227](https://github.com/kubermatic/kubermatic/issues/4227) ([alvaroaleman](https://github.com/alvaroaleman))
 - Retries of the initial node deployment creation do not create an event anymore but continue to be logged at debug level. [#4226](https://github.com/kubermatic/kubermatic/issues/4226) ([alvaroaleman](https://github.com/alvaroaleman))
 - Added option to enforce cluster cleanup in UI [#3966](https://github.com/kubermatic/kubermatic/issues/3966) ([kgroschoff](https://github.com/kgroschoff))
-- Additional apiserver admission plugins are configurable per cluster [#4062](https://github.com/kubermatic/kubermatic/issues/4062) ([bashofmann](https://github.com/bashofmann))
 - Support PodSecurityPolicies in addons [#4174](https://github.com/kubermatic/kubermatic/issues/4174) ([bashofmann](https://github.com/bashofmann))
 - Kubernetes versions affected by CVE-2019-9512 and CVE-2019-9514 have been dropped [#4113](https://github.com/kubermatic/kubermatic/issues/4113) ([kdomanski](https://github.com/kdomanski))
 - Kubernetes versions affected by CVE-2019-11247 and CVE-2019-11249 have been dropped [#4066](https://github.com/kubermatic/kubermatic/issues/4066) ([kdomanski](https://github.com/kdomanski))
