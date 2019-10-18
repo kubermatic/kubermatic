@@ -9,6 +9,3 @@ the available options for Seed CRDs.
 Use the scripts in `hack/` to update the generated YAML files in `docs/`:
 
     ./hack/update-yaml-examples.sh
-
-Note that this needs to patch your local sources to strip out the
-`omitempty` tag, so make sure to only run this on a clean working copy.
