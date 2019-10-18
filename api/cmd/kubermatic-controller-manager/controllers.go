@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"strings"
 	"time"
 
@@ -23,6 +22,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	utilpointer "k8s.io/utils/pointer"
 )
