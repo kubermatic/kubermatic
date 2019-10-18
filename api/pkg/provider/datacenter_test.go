@@ -12,7 +12,6 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilpointer "k8s.io/utils/pointer"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -146,7 +145,7 @@ func TestMigrateDatacenters(t *testing.T) {
 			datacenters: map[string]DatacenterMeta{
 				"&invalid": {
 					IsSeed:           true,
-					SeedDNSOverwrite: utilpointer.StringPtr("valid"),
+					SeedDNSOverwrite: "valid",
 				},
 			},
 		},
@@ -155,7 +154,7 @@ func TestMigrateDatacenters(t *testing.T) {
 			datacenters: map[string]DatacenterMeta{
 				"valid": {
 					IsSeed:           true,
-					SeedDNSOverwrite: utilpointer.StringPtr("&invalid"),
+					SeedDNSOverwrite: "&invalid",
 				},
 			},
 			errExpected: true,
@@ -189,7 +188,7 @@ func TestSeedGetterFactorySetsDefaults(t *testing.T) {
 		},
 		Spec: kubermaticv1.SeedSpec{
 			ProxySettings: &kubermaticv1.ProxySettings{
-				HTTPProxy: utilpointer.StringPtr("seed-proxy"),
+				HTTPProxy: kubermaticv1.NewProxyValue("seed-proxy"),
 			},
 			Datacenters: map[string]kubermaticv1.Datacenter{"a": {}},
 		},
@@ -204,8 +203,7 @@ func TestSeedGetterFactorySetsDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed calling seedGetter: %v", err)
 	}
-	if seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy == nil ||
-		*seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy != "seed-proxy" {
+	if seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy.String() != "seed-proxy" {
 		t.Errorf("expected the datacenters http proxy setting to get set but was %v",
 			seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy)
 	}
@@ -220,7 +218,7 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 		},
 		Spec: kubermaticv1.SeedSpec{
 			ProxySettings: &kubermaticv1.ProxySettings{
-				HTTPProxy: utilpointer.StringPtr("seed-proxy"),
+				HTTPProxy: kubermaticv1.NewProxyValue("seed-proxy"),
 			},
 			Datacenters: map[string]kubermaticv1.Datacenter{"a": {}},
 		},
@@ -239,8 +237,7 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 		t.Fatalf("expceted to get a map with exactly one key `my-seed`, got %v", seeds)
 	}
 	seed := seeds["my-seed"]
-	if seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy == nil ||
-		*seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy != "seed-proxy" {
+	if seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy.String() != "seed-proxy" {
 		t.Errorf("expected the datacenters http proxy setting to get set but was %v",
 			seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy)
 	}
