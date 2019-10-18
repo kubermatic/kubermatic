@@ -17,8 +17,7 @@ Supported Kubernetes versions:
 - Access to datacenters can now be restricted based on the user&#39;s email domain. [#4470](https://github.com/kubermatic/kubermatic/issues/4470) ([kdomanski](https://github.com/kdomanski))
 - Add a new proxy endpoint to access Kubernetes Dashboard for the user cluster. [#4460](https://github.com/kubermatic/kubermatic/issues/4460) ([floreks](https://github.com/floreks))
 - An option to use AWS Route53 DNS validaiton was added to the `certs` chart. [#4397](https://github.com/kubermatic/kubermatic/issues/4397) ([alvaroaleman](https://github.com/alvaroaleman))
-- Added possibility to add labels to projects. [#4410](https://github.com/kubermatic/kubermatic/issues/4410) ([maciaszczykm](https://github.com/maciaszczykm))
-- Added possibility to add labels to clusters. [#4450](https://github.com/kubermatic/kubermatic/issues/4450) ([maciaszczykm](https://github.com/maciaszczykm))
+- Added possibility to add labels to projects and clusters and have these labels inherited by node objects.
 - Add support for Kubernetes audit loggign [#4151](https://github.com/kubermatic/kubermatic/issues/4151) ([eqrx](https://github.com/eqrx))
 
 **Installation and updating:**
