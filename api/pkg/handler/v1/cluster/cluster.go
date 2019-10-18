@@ -575,7 +575,7 @@ func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvide
 				}
 			}
 			if !found {
-				return nil, fmt.Errorf(fmt.Sprintf("the given ssh key %s does not belong to the given project %s (%s)", req.KeyID, project.Spec.Name, project.Name))
+				return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", req.KeyID, project.Spec.Name, project.Name)
 			}
 		}
 

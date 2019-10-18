@@ -90,6 +90,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, nil
 	}
 
+	if cluster.Spec.Pause {
+		log.Debug("Skipping cluster reconciling because it was set to paused")
+		return reconcile.Result{}, nil
+	}
+
 	if err := r.reconcileCluster(ctx, cluster); err != nil {
 		log.Errorw("Failed reconciling clusters user ssh secrets", "cluster", cluster.Name, zap.Error(err))
 		return reconcile.Result{}, err
@@ -99,41 +104,14 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	if err := r.ensureUserSSHKeySecretCreation(ctx, cluster); err != nil {
-		return err
-	}
-
 	userSSHKeys := &kubermaticv1.UserSSHKeyList{}
 	if err := r.Client.List(ctx, &ctrlruntimeclient.ListOptions{}, userSSHKeys); err != nil {
 		return err
 	}
 
-	if len(userSSHKeys.Items) == 0 {
-		return nil
-	}
-
 	keys := buildUserSSHKeysForCluster(cluster.Name, userSSHKeys)
 
-	return r.reconcileClustersUserSSHKeys(ctx, keys, cluster)
-}
-
-func (r *Reconciler) reconcileClustersUserSSHKeys(ctx context.Context, sshKeys []kubermaticv1.UserSSHKey, cluster *kubermaticv1.Cluster) error {
-	key := types.NamespacedName{
-		Namespace: cluster.Status.NamespaceName,
-		Name:      resources.UserSSHKeys,
-	}
-
-	secret := &corev1.Secret{}
-	if err := r.Get(ctx, key, secret); err != nil {
-		return err
-	}
-
-	secret.Data = map[string][]byte{}
-	for _, sshKey := range sshKeys {
-		secret.Data[sshKey.Name] = []byte(sshKey.Spec.PublicKey)
-	}
-
-	return r.Update(ctx, secret)
+	return reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{updateUserSSHKeysSecrets(keys)}, cluster.Status.NamespaceName, r.Client)
 }
 
 func buildUserSSHKeysForCluster(clusterName string, list *kubermaticv1.UserSSHKeyList) []kubermaticv1.UserSSHKey {
@@ -147,15 +125,6 @@ func buildUserSSHKeysForCluster(clusterName string, list *kubermaticv1.UserSSHKe
 	}
 
 	return clusterKeys
-}
-
-func (r *Reconciler) ensureUserSSHKeySecretCreation(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	secreteGetter := createUserSSHKeysSecrets()
-	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{secreteGetter}, cluster.Status.NamespaceName, r.Client); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // enqueueAllClusters enqueues all clusters
@@ -176,12 +145,14 @@ func enqueueAllClusters(client ctrlruntimeclient.Client) *handler.EnqueueRequest
 	})}
 }
 
-// createUserSSHKeysSecrets creates a secret in the seed cluster from the user ssh keys.
-func createUserSSHKeysSecrets() reconciling.NamedSecretCreatorGetter {
+// updateUserSSHKeysSecrets creates a secret in the seed cluster from the user ssh keys.
+func updateUserSSHKeysSecrets(list []kubermaticv1.UserSSHKey) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.UserSSHKeys, func(existing *corev1.Secret) (secret *corev1.Secret, e error) {
-			if existing.Data == nil {
-				existing.Data = map[string][]byte{}
+			existing.Data = map[string][]byte{}
+
+			for _, key := range list {
+				existing.Data[key.Name] = []byte(key.Spec.PublicKey)
 			}
 
 			existing.Type = corev1.SecretTypeOpaque
