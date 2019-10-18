@@ -15,7 +15,7 @@ Supported Kubernetes versions:
 8) ([alvaroaleman](https://github.com/alvaroaleman))
 - Cloud credentials can now be configured as presets [#3723](https://github.com/kubermatic/kubermatic/issues/3723) ([zreigz](https://github.com/zreigz))
 - Access to datacenters can now be restricted based on the user&#39;s email domain. [#4470](https://github.com/kubermatic/kubermatic/issues/4470) ([kdomanski](https://github.com/kdomanski))
-- Added a new proxy endpoint to access Kubernetes Dashboard for the user cluster. [#4460](https://github.com/kubermatic/kubermatic/issues/4460) ([floreks](https://github.com/floreks))
+- It is now possible to open the Kubernetes Dashboard from the Kubermatic UI. [#4460](https://github.com/kubermatic/kubermatic/issues/4460) ([floreks](https://github.com/floreks))
 - An option to use AWS Route53 DNS validaiton was added to the `certs` chart. [#4397](https://github.com/kubermatic/kubermatic/issues/4397) ([alvaroaleman](https://github.com/alvaroaleman))
 - Added possibility to add labels to projects and clusters and have these labels inherited by node objects.
 - Added support for Kubernetes audit logging [#4151](https://github.com/kubermatic/kubermatic/issues/4151) ([eqrx](https://github.com/eqrx))
