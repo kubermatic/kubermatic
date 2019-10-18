@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -50,14 +51,14 @@ type KubeconfigProvider interface {
 
 // Reconciler stores necessary components that are required to manage in-cluster Add-On's
 type Reconciler struct {
-	log                *zap.SugaredLogger
-	workerName         string
-	addonVariables     map[string]interface{}
-	kubernetesAddons   []string
-	openshiftAddons    []string
-	kubernetesAddonDir string
-	openshiftAddonDir  string
-	overwriteRegistry  string
+	log                     *zap.SugaredLogger
+	workerName              string
+	addonVariables          map[string]interface{}
+	defaultKubernetesAddons sets.String
+	defaultOpenshiftAddons  sets.String
+	kubernetesAddonDir      string
+	openshiftAddonDir       string
+	overwriteRegistry       string
 	ctrlruntimeclient.Client
 	recorder record.EventRecorder
 
@@ -72,8 +73,8 @@ func Add(
 	numWorkers int,
 	workerName string,
 	addonCtxVariables map[string]interface{},
-	kubernetesAddons,
-	openshiftAddons []string,
+	defaultKubernetesAddons,
+	defaultOpenshiftAddons sets.String,
 	kubernetesAddonDir,
 	openshiftAddonDir,
 	overwriteRegistey string,
@@ -83,17 +84,17 @@ func Add(
 	client := mgr.GetClient()
 
 	reconciler := &Reconciler{
-		log:                log,
-		addonVariables:     addonCtxVariables,
-		kubernetesAddons:   kubernetesAddons,
-		openshiftAddons:    openshiftAddons,
-		kubernetesAddonDir: kubernetesAddonDir,
-		openshiftAddonDir:  openshiftAddonDir,
-		KubeconfigProvider: kubeconfigProvider,
-		Client:             client,
-		workerName:         workerName,
-		recorder:           mgr.GetRecorder(ControllerName),
-		overwriteRegistry:  overwriteRegistey,
+		log:                     log,
+		addonVariables:          addonCtxVariables,
+		defaultKubernetesAddons: defaultKubernetesAddons,
+		defaultOpenshiftAddons:  defaultOpenshiftAddons,
+		kubernetesAddonDir:      kubernetesAddonDir,
+		openshiftAddonDir:       openshiftAddonDir,
+		KubeconfigProvider:      kubeconfigProvider,
+		Client:                  client,
+		workerName:              workerName,
+		recorder:                mgr.GetRecorder(ControllerName),
+		overwriteRegistry:       overwriteRegistey,
 	}
 
 	ctrlOptions := controller.Options{
@@ -253,23 +254,15 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 
 func (r *Reconciler) markDefaultAddons(ctx context.Context, log *zap.SugaredLogger,
 	addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	var defaultAddons []string
+	var defaultAddons sets.String
 	if cluster.Annotations["kubermatic.io/openshift"] != "" {
-		defaultAddons = r.openshiftAddons
+		defaultAddons = r.defaultOpenshiftAddons
 	} else {
-		defaultAddons = r.kubernetesAddons
-	}
-
-	isDefault := false
-	for _, defaultAddon := range defaultAddons {
-		if defaultAddon == addon.Name {
-			isDefault = true
-			break
-		}
+		defaultAddons = r.defaultKubernetesAddons
 	}
 
 	// Update only when the value was incorrect
-	if isDefault != addon.Spec.IsDefault {
+	if isDefault := defaultAddons.Has(addon.Name); addon.Spec.IsDefault != isDefault {
 		addon.Spec.IsDefault = isDefault
 		if err := r.Client.Update(ctx, addon); err != nil {
 			return err

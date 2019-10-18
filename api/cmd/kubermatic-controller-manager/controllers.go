@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"strings"
 	"time"
 
@@ -246,13 +247,15 @@ func createUpdateController(ctrlCtx *controllerContext) error {
 
 func createAddonController(ctrlCtx *controllerContext) error {
 	kubernetesAddons := strings.Split(ctrlCtx.runOptions.kubernetesAddonsList, ",")
-	for i, a := range kubernetesAddons {
-		kubernetesAddons[i] = strings.TrimSpace(a)
+	kubernetesAddonsSet := sets.String{}
+	for _, a := range kubernetesAddons {
+		kubernetesAddonsSet.Insert(strings.TrimSpace(a))
 	}
 
 	openshiftAddons := strings.Split(ctrlCtx.runOptions.openshiftAddonsList, ",")
-	for i, a := range openshiftAddons {
-		openshiftAddons[i] = strings.TrimSpace(a)
+	openshiftAddonsSet := sets.String{}
+	for _, a := range openshiftAddons {
+		openshiftAddonsSet.Insert(strings.TrimSpace(a))
 	}
 
 	return addon.Add(
@@ -265,8 +268,8 @@ func createAddonController(ctrlCtx *controllerContext) error {
 				"NodeAccessNetwork": ctrlCtx.runOptions.nodeAccessNetwork,
 			},
 		},
-		kubernetesAddons,
-		openshiftAddons,
+		kubernetesAddonsSet,
+		openshiftAddonsSet,
 		ctrlCtx.runOptions.kubernetesAddonsPath,
 		ctrlCtx.runOptions.openshiftAddonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
