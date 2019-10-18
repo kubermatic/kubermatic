@@ -6556,6 +6556,10 @@
           "type": "string",
           "x-go-name": "IPv6CIDR"
         },
+        "isDefaultSubnet": {
+          "type": "boolean",
+          "x-go-name": "IsDefaultSubnet"
+        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
