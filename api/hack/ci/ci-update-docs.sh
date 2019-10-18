@@ -25,4 +25,4 @@ make runbook
 # update repo
 git add .
 git commit -m "update data files to kubermatic@$REVISION"
-git push
+# git push
