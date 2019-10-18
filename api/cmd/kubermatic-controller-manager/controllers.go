@@ -245,6 +245,16 @@ func createUpdateController(ctrlCtx *controllerContext) error {
 }
 
 func createAddonController(ctrlCtx *controllerContext) error {
+	kubernetesAddons := strings.Split(ctrlCtx.runOptions.kubernetesAddonsList, ",")
+	for i, a := range kubernetesAddons {
+		kubernetesAddons[i] = strings.TrimSpace(a)
+	}
+
+	openshiftAddons := strings.Split(ctrlCtx.runOptions.openshiftAddonsList, ",")
+	for i, a := range openshiftAddons {
+		openshiftAddons[i] = strings.TrimSpace(a)
+	}
+
 	return addon.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
@@ -255,6 +265,8 @@ func createAddonController(ctrlCtx *controllerContext) error {
 				"NodeAccessNetwork": ctrlCtx.runOptions.nodeAccessNetwork,
 			},
 		},
+		kubernetesAddons,
+		openshiftAddons,
 		ctrlCtx.runOptions.kubernetesAddonsPath,
 		ctrlCtx.runOptions.openshiftAddonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
@@ -263,7 +275,6 @@ func createAddonController(ctrlCtx *controllerContext) error {
 }
 
 func createAddonInstallerController(ctrlCtx *controllerContext) error {
-
 	kubernetesAddons := strings.Split(ctrlCtx.runOptions.kubernetesAddonsList, ",")
 	for i, a := range kubernetesAddons {
 		kubernetesAddons[i] = strings.TrimSpace(a)
