@@ -31,7 +31,7 @@ ub.com/alvaroaleman))
 - Support setting oidc authentication settings on cluster [#3751](https://github.com/kubermatic/kubermatic/issues/3751) ([bashofmann](https://github.com/bashofmann))
 - The worker-count of controller-manager and master-controller are now configurable [#3918](https://github.com/kubermatic/kubermatic/issues/3918) ([bashofmann](https://github.com/bashofmann))
 - master-controller-manager can now be deployed with multiple replicas [#4307](https://github.com/kubermatic/kubermatic/issues/4307) ([xrstf](https://github.com/xrstf))
-- It is now possible to configure an http proxy on a Seed. This will result in the proxy being used forall control plane pods in that seed that talk to a cloudprovider and for all machines in that Seed, unless its overriden on Datacenter level. [#4459](https://github.com/kubermatic/kubermatic/issues/4459) ([alvaroaleman](https://github.com/alvaroaleman))
+- It is now possible to configure an http proxy on a Seed. This will result in the proxy being used for all control plane pods in that seed that talk to a cloudprovider and for all machines in that Seed, unless its overriden on Datacenter level. [#4459](https://github.com/kubermatic/kubermatic/issues/4459) ([alvaroaleman](https://github.com/alvaroaleman))
 - The cert-manager Helm chart now allows configuring extra values for its controllers args and env vars. [#4398](https://github.com/kubermatic/kubermatic/issues/4398) ([alvaroaleman](https://github.com/alvaroaleman))
 
 **Monitoring and logging:**
