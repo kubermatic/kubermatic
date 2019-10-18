@@ -45,10 +45,10 @@ func (s *Seed) SetDefaults() {
 
 // The spec for a seed data
 type SeedSpec struct {
-	// Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
+	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
 	// For informational purposes in the Kubermatic dashboard only.
 	Country string `json:"country,omitempty"`
-	// Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
+	// Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
 	// For informational purposes in the Kubermatic dashboard only.
 	Location string `json:"location,omitempty"`
 	// A reference to the Kubeconfig of this cluster. The Kubeconfig must
@@ -59,20 +59,19 @@ type SeedSpec struct {
 	// Each DC must have a globally unique identifier (i.e. names must be unique
 	// across all seeds).
 	Datacenters map[string]Datacenter `json:"datacenters,omitempty"`
-	// SeedDNSOverwrite can be used to override the DNS name used for this seed.
-	// This field is optional and defaults to the seed name.
+	// Optional: This can be used to override the DNS name used for this seed.
+	// By default the seed name is used.
 	SeedDNSOverwrite string `json:"seed_dns_overwrite,omitempty"`
-	// ProxySettings can optionally be used to configure HTTP proxy settings on the
-	// worker nodes in user clusters. However, proxy settings on nodes take
-	// precedence.
+	// Optional: ProxySettings can be used to configure HTTP proxy settings on the
+	// worker nodes in user clusters. However, proxy settings on nodes take precedence.
 	ProxySettings *ProxySettings `json:"proxy_settings,omitempty"`
 }
 
 type Datacenter struct {
-	// Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
+	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
 	// For informational purposes in the Kubermatic dashboard only.
 	Country string `json:"country,omitempty"`
-	// Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
+	// Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
 	// For informational purposes in the Kubermatic dashboard only.
 	Location string `json:"location,omitempty"`
 	// Node holds node-specific settings, like e.g. HTTP proxy and Docker
@@ -98,13 +97,12 @@ type DatacenterSpec struct {
 	VSphere      *DatacenterSpecVSphere      `json:"vsphere,omitempty"`
 	GCP          *DatacenterSpecGCP          `json:"gcp,omitempty"`
 	Kubevirt     *DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
+	Fake         *DatacenterSpecFake         `json:"fake,omitempty,omitgenyaml"` // omitgenyaml is used by the example-yaml-generator
 
-	// This is only for internal use and must not be set externally.
-	Fake *DatacenterSpecFake `json:"fake,omitempty,omitgenyaml"` // omitgenyaml is used by the example-yaml-generator
-
-	// By specifying a required email domain, only users with an e-mail
-	// address on the given domain can make use of this datacenter. You
-	// can define exactly one domain, e.g. "example.com".
+	// Optional: When defined, only users with an e-mail address on the
+	// given domain can make use of this datacenter. You can define exactly
+	// one domain, e.g. "example.com", which must match the email domain
+	// exactly (i.e. "example.com" will not match "user@test.example.com").
 	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
 }
 
@@ -116,7 +114,7 @@ type DatacenterSpecHetzner struct {
 	// Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
 	// at https://wiki.hetzner.de/index.php/Rechenzentren_und_Anbindung/en
 	Datacenter string `json:"datacenter"`
-	// Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
+	// Optional: Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
 	// For informational purposes only.
 	Location string `json:"location"`
 }
@@ -128,22 +126,26 @@ type DatacenterSpecDigitalocean struct {
 	Region string `json:"region"`
 }
 
-// DatacenterSpecOpenstack describes an Openstack datacenter
+// DatacenterSpecOpenstack describes an OpenStack datacenter
 type DatacenterSpecOpenstack struct {
-	AuthURL           string `json:"auth_url"`
-	AvailabilityZone  string `json:"availability_zone"`
-	Region            string `json:"region"`
-	IgnoreVolumeAZ    bool   `json:"ignore_volume_az"`
-	EnforceFloatingIP bool   `json:"enforce_floating_ip"`
+	AuthURL          string `json:"auth_url"`
+	AvailabilityZone string `json:"availability_zone"`
+	Region           string `json:"region"`
+	// Optional
+	IgnoreVolumeAZ bool `json:"ignore_volume_az"`
+	// Optional
+	EnforceFloatingIP bool `json:"enforce_floating_ip"`
 	// Used for automatic network creation
-	DNSServers []string  `json:"dns_servers"`
-	Images     ImageList `json:"images"`
-	// Gets mapped to the "manage-security-groups" setting in the cloud config.
+	DNSServers []string `json:"dns_servers"`
+	// Images to use for each supported operating system.
+	Images ImageList `json:"images"`
+	// Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
-	// To make this change backwards compatible, this will default to true.
+	// This setting defaults to true.
 	ManageSecurityGroups *bool `json:"manage_security_groups"`
-	// Gets mapped to the "trust-device-path" setting in the cloud config.
+	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
+	// This setting defaults to false.
 	TrustDevicePath      *bool                         `json:"trust_device_path"`
 	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"node_size_requirements"`
 }
@@ -174,17 +176,17 @@ type DatacenterSpecVSphere struct {
 	Datacenter string `json:"datacenter"`
 	// The name of the cluster to use.
 	Cluster string `json:"cluster"`
-	// Optional root path for cluster specific VM folders. Each cluster gets its own
+	// Optional: The root path for cluster specific VM folders. Each cluster gets its own
 	// folder below the root folder. Must be the FQDN (for example
 	// "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM
 	// folder: "/datacenter-1/vm"
 	RootPath string `json:"root_path"`
-	// A list con templates to use for a given operating system. You must define at
+	// A list of templates to use for a given operating system. You must define at
 	// least one template.
 	Templates ImageList `json:"templates"`
 
-	// Infra management user is an optional user that will be used for everything
-	// except the cloud provider functionality which will still use the credentials
+	// Optional: Infra management user is the user that will be used for everything
+	// except the cloud provider functionality, which will still use the credentials
 	// passed in via the Kubermatic dashboard/API.
 	InfraManagementUser *VSphereCredentials `json:"infra_management_user,omitempty"`
 }
@@ -196,7 +198,6 @@ type DatacenterSpecAWS struct {
 	Region string `json:"region"`
 
 	// List of AMIs to use for a given operating system.
-	// TODO: Explain how the default for this is assembled.
 	Images ImageList `json:"images"`
 }
 
@@ -220,7 +221,7 @@ type DatacenterSpecGCP struct {
 	// zones in your chosen region.
 	ZoneSuffixes []string `json:"zone_suffixes"`
 
-	// Regional clusters spread their resources across multiple availability zones.
+	// Optional: Regional clusters spread their resources across multiple availability zones.
 	// Refer to the official documentation for more details on this:
 	// https://cloud.google.com/kubernetes-engine/docs/concepts/regional-clusters
 	Regional bool `json:"regional,omitempty"`
@@ -257,11 +258,13 @@ func (p *ProxyValue) String() string {
 // ProxySettings allow configuring a HTTP proxy for the controlplanes
 // and nodes
 type ProxySettings struct {
-	// If set, this proxy will be configured for both HTTP and HTTPS.
+	// Optional: If set, this proxy will be configured for both HTTP and HTTPS.
 	HTTPProxy *ProxyValue `json:"http_proxy,omitempty"`
-	// If set this will be set as NO_PROXY environment variable on the node;
+	// Optional: If set this will be set as NO_PROXY environment variable on the node;
 	// The value must be a comma-separated list of domains for which no proxy
-	// should be used, e.g. "*.example.com,internal.dev"
+	// should be used, e.g. "*.example.com,internal.dev".
+	// Note that the in-cluster apiserver URL will be automatically prepended
+	// to this value.
 	NoProxy *ProxyValue `json:"no_proxy,omitempty"`
 }
 
@@ -283,13 +286,16 @@ func (p *ProxySettings) Merge(dst *ProxySettings) {
 
 // NodeSettings are node specific flags which can be configured on datacenter level
 type NodeSettings struct {
-	// ProxySettings for the Nodes in this datacenter. Defaults to the HTTPProxy setting
-	// on Seed level.
+	// Optional: Proxy settings for the Nodes in this datacenter.
+	// Defaults to the Proxy settings of the seed.
 	ProxySettings `json:",inline"`
-	// If set, these image registries will be configured as insecure on the container runtime.
+	// Optional: These image registries will be configured as insecure
+	// on the container runtime.
 	InsecureRegistries []string `json:"insecure_registries,omitempty"`
-	// Translates to --pod-infra-container-image on the kubelet. If not set, the kubelet will default it
+	// Optional: Translates to --pod-infra-container-image on the kubelet.
+	// If not set, the kubelet will default it.
 	PauseImage string `json:"pause_image,omitempty"`
-	// The hyperkube image to use. Currently only Container Linux uses it
+	// Optional: The hyperkube image to use. Currently only Container Linux
+	// makes use of this option.
 	HyperkubeImage string `json:"hyperkube_image,omitempty"`
 }

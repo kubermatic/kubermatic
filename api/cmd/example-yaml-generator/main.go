@@ -104,8 +104,9 @@ func createExampleSeed() *kubermaticv1.Seed {
 						Azure: &kubermaticv1.DatacenterSpecAzure{},
 						Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 							Images:               imageList,
-							ManageSecurityGroups: pointer.BoolPtr(false),
+							ManageSecurityGroups: pointer.BoolPtr(true),
 							DNSServers:           []string{},
+							TrustDevicePath:      pointer.BoolPtr(false),
 						},
 						Packet: &kubermaticv1.DatacenterSpecPacket{
 							Facilities: []string{},
