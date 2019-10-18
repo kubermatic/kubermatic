@@ -18,7 +18,7 @@ Supported Kubernetes versions:
 - Add a new proxy endpoint to access Kubernetes Dashboard for the user cluster. [#4460](https://github.com/kubermatic/kubermatic/issues/4460) ([floreks](https://github.com/floreks))
 - An option to use AWS Route53 DNS validaiton was added to the `certs` chart. [#4397](https://github.com/kubermatic/kubermatic/issues/4397) ([alvaroaleman](https://github.com/alvaroaleman))
 - Added possibility to add labels to projects and clusters and have these labels inherited by node objects.
-- Add support for Kubernetes audit loggign [#4151](https://github.com/kubermatic/kubermatic/issues/4151) ([eqrx](https://github.com/eqrx))
+- Add support for Kubernetes audit logging [#4151](https://github.com/kubermatic/kubermatic/issues/4151) ([eqrx](https://github.com/eqrx))
 
 **Installation and updating:**
 - ACTION REQUIRED: the `zone_character` field must be removed from all AWS datacenters in `datacenters.yaml` [#3986](https://github.com/kubermatic/kubermatic/issues/3986) ([kdomanski](https://github.com/kdomanski))
