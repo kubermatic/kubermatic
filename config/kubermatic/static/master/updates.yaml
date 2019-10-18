@@ -51,9 +51,9 @@ updates:
 - from: 1.15.*
   to: 1.15.*
   automatic: false
-# CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514
-- from: <= 1.15.2, >= 1.15.0
-  to: 1.15.3
+# CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
+- from: <= 1.15.4, >= 1.15.0
+  to: 1.15.5
   automatic: true
 # Allow to next minor release
 - from: 1.15.*
