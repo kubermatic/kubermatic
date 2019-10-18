@@ -15,10 +15,10 @@ Supported Kubernetes versions:
 8) ([alvaroaleman](https://github.com/alvaroaleman))
 - Cloud credentials can now be configured as presets [#3723](https://github.com/kubermatic/kubermatic/issues/3723) ([zreigz](https://github.com/zreigz))
 - Access to datacenters can now be restricted based on the user&#39;s email domain. [#4470](https://github.com/kubermatic/kubermatic/issues/4470) ([kdomanski](https://github.com/kdomanski))
-- Add a new proxy endpoint to access Kubernetes Dashboard for the user cluster. [#4460](https://github.com/kubermatic/kubermatic/issues/4460) ([floreks](https://github.com/floreks))
+- Added a new proxy endpoint to access Kubernetes Dashboard for the user cluster. [#4460](https://github.com/kubermatic/kubermatic/issues/4460) ([floreks](https://github.com/floreks))
 - An option to use AWS Route53 DNS validaiton was added to the `certs` chart. [#4397](https://github.com/kubermatic/kubermatic/issues/4397) ([alvaroaleman](https://github.com/alvaroaleman))
 - Added possibility to add labels to projects and clusters and have these labels inherited by node objects.
-- Add support for Kubernetes audit logging [#4151](https://github.com/kubermatic/kubermatic/issues/4151) ([eqrx](https://github.com/eqrx))
+- Added support for Kubernetes audit logging [#4151](https://github.com/kubermatic/kubermatic/issues/4151) ([eqrx](https://github.com/eqrx))
 
 **Installation and updating:**
 - ACTION REQUIRED: the `zone_character` field must be removed from all AWS datacenters in `datacenters.yaml` [#3986](https://github.com/kubermatic/kubermatic/issues/3986) ([kdomanski](https://github.com/kdomanski))
@@ -36,16 +36,16 @@ ub.com/alvaroaleman))
 
 **Monitoring and logging:**
 - Alertmanager&#39;s inhibition feature is now used to hide consequential alerts. [#3833](https://github.com/kubermatic/kubermatic/issues/3833) ([xrstf](https://github.com/xrstf))
-- removed cluster owner name and email labels from kubermatic_cluster_info metric to prevent leaking PII [#3854](https://github.com/kubermatic/kubermatic/issues/3854) ([xrstf](https://github.com/xrstf))
+- Removed cluster owner name and email labels from kubermatic_cluster_info metric to prevent leaking PII [#3854](https://github.com/kubermatic/kubermatic/issues/3854) ([xrstf](https://github.com/xrstf))
 - New Prometheus metrics kubermatic_addon_created and kubermatic_addon_deletedNew alert KubermaticAddonDeletionTakesTooLong [#3941](https://github.com/kubermatic/kubermatic/issues/3941) ([bashofmann](https://github.com/bashofmann))
 - FluentBit will now collect the journald logs [#4001](https://github.com/kubermatic/kubermatic/issues/4001) ([mrIncompetent](https://github.com/mrIncompetent))
 - FluentBit can now collect the kernel messages [#4007](https://github.com/kubermatic/kubermatic/issues/4007) ([mrIncompetent](https://github.com/mrIncompetent))
 - FluentBit now always sets the node name in logs [#4010](https://github.com/kubermatic/kubermatic/issues/4010) ([mrIncompetent](https://github.com/mrIncompetent))
-- add new KubermaticClusterPaused alert with &#34;none&#34; severity for inhibiting alerts from paused clusters [#3846](https://github.com/kubermatic/kubermatic/issues/3846) ([xrstf](https://github.com/xrstf))
+- Added new KubermaticClusterPaused alert with &#34;none&#34; severity for inhibiting alerts from paused clusters [#3846](https://github.com/kubermatic/kubermatic/issues/3846) ([xrstf](https://github.com/xrstf))
 - Removed Helm-based templating in Grafana dashboards [#4475](https://github.com/kubermatic/kubermatic/issues/4475) ([xrstf](https://github.com/xrstf))
-- Add type label (kubernetes/openshift) to kubermatic_cluster_info metric. [#4452](https://github.com/kubermatic/kubermatic/issues/4452) ([xrstf](https://github.com/xrstf))
-- add metrics for cluster control plane:GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics [#4208](https://github.com/kubermatic/kubermatic/issues/4208) ([zreigz](https://github.com/zreigz))
-- add a new endpoint for node deployment metrics:GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/metrics [#4176](https://github.com/kubermatic/kubermatic/issues/4176) ([zreigz](https://github.com/zreigz))
+- Added type label (kubernetes/openshift) to kubermatic_cluster_info metric. [#4452](https://github.com/kubermatic/kubermatic/issues/4452) ([xrstf](https://github.com/xrstf))
+- Added metrics for cluster control plane:GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics [#4208](https://github.com/kubermatic/kubermatic/issues/4208) ([zreigz](https://github.com/zreigz))
+- Added a new endpoint for node deployment metrics:GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/metrics [#4176](https://github.com/kubermatic/kubermatic/issues/4176) ([zreigz](https://github.com/zreigz))
 
 **Cloud providers:**
 - Openstack: A bug that could result in many securtiy groups being created when the creation of security group rules failed was fixed [#3848](https://github.com/kubermatic/kubermatic/issues/3848) ([alvaroaleman](https://github.com/alvaroaleman))
@@ -70,7 +70,7 @@ ub.com/alvaroaleman))
 - `kubeadm join` has been fixed for v1.15 clusters [#4161](https://github.com/kubermatic/kubermatic/issues/4161) ([kdomanski](https://github.com/kdomanski))
 - Fixed a bug that could cause intermittent delays when using kubectl logs/exec with `exposeStrategy: LoadBalancer` [#4278](https://github.com/kubermatic/kubermatic/issues/4278) ([alvaroaleman](https://github.com/alvaroaleman))
 - A bug that prevented node Labels, Taints and Annotations from getting applied correctly was fixed. [#4368](https://github.com/kubermatic/kubermatic/issues/4368) ([alvaroaleman](https://github.com/alvaroaleman))
-- Fix worker nodes provisioning for instances with a Kernel &gt;= 4.19 [#4178](https://github.com/kubermatic/kubermatic/issues/4178) ([alvaroaleman](https://github.com/alvaroaleman))
+- Fixed worker nodes provisioning for instances with a Kernel &gt;= 4.19 [#4178](https://github.com/kubermatic/kubermatic/issues/4178) ([alvaroaleman](https://github.com/alvaroaleman))
 - Fixed an issue that kept clusters stuck if their creation didn&#39;t succeed and they got deleted with LB and/or PV cleanup enabled [#3973](https://github.com/kubermatic/kubermatic/issues/3973) ([alvaroaleman](https://github.com/alvaroaleman))
 - Fixed an issue where deleted project owners would come back after a while [#4025](https://github.com/kubermatic/kubermatic/issues/4025) ([zreigz](https://github.com/zreigz))
 - Enabling the OIDC feature flag in clusters has been fixed. [#4127](https://github.com/kubermatic/kubermatic/issues/4127) ([zreigz](https://github.com/zreigz))
@@ -109,7 +109,7 @@ ub.com/alvaroaleman))
 
 
 **Dashboard:**
-- Add Swagger UI for Kubermatic API [#1418](https://github.com/kubermatic/dashboard-v2/issues/1418) ([bashofmann](https://github.com/bashofmann))
+- Added Swagger UI for Kubermatic API [#1418](https://github.com/kubermatic/dashboard-v2/issues/1418) ([bashofmann](https://github.com/bashofmann))
 - Redesign dialog to manage SSH keys on cluster [#1353](https://github.com/kubermatic/dashboard-v2/issues/1353) ([kgroschoff](https://github.com/kgroschoff))
 - GCP zones are now fetched from API. [#1379](https://github.com/kubermatic/dashboard-v2/issues/1379) ([maciaszczykm](https://github.com/maciaszczykm))
 - Redesign Wizard: Summary [#1409](https://github.com/kubermatic/dashboard-v2/issues/1409) ([kgroschoff](https://github.com/kgroschoff))
