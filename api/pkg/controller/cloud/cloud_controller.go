@@ -8,6 +8,7 @@ import (
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
@@ -20,6 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
@@ -97,20 +99,36 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, nil
 	}
 
+	var errs []error
+	reconcilingStatus := corev1.ConditionTrue
 	// Add a wrapping here so we can emit an event on error
 	result, err := r.reconcile(ctx, log, cluster)
 	if result == nil {
 		result = &reconcile.Result{}
 	}
+	if result != nil || err != nil {
+		reconcilingStatus = corev1.ConditionFalse
+	}
 	if err != nil {
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		log.Errorw("Reconciling failed", zap.Error(err))
+		errs = append(errs, err)
+	}
+	kubermaticv1helper.SetClusterCondition(cluster, kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess, reconcilingStatus, "", "")
+	if err := r.Update(ctx, cluster); err != nil {
+		log.Errorw("Failed to update ReconcilingSuccess condition", zap.Error(err))
+		errs = append(errs, err)
+	}
+	// Return before setting the health status
+	if err := utilerrors.NewAggregate(errs); err != nil {
 		return *result, err
 	}
-	_, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+	if _, err := r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.CloudProviderInfrastructure = kubermaticv1.HealthStatusUp
-	})
-	return *result, err
+	}); err != nil {
+		errs = append(errs, err)
+	}
+	return *result, utilerrors.NewAggregate(errs)
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
