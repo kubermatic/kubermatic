@@ -36,7 +36,8 @@ Supported Kubernetes versions:
 **Monitoring and logging:**
 - Alertmanager&#39;s inhibition feature is now used to hide consequential alerts. [#3833](https://github.com/kubermatic/kubermatic/issues/3833) ([xrstf](https://github.com/xrstf))
 - Removed cluster owner name and email labels from kubermatic_cluster_info metric to prevent leaking PII [#3854](https://github.com/kubermatic/kubermatic/issues/3854) ([xrstf](https://github.com/xrstf))
-- New Prometheus metrics kubermatic_addon_created and kubermatic_addon_deletedNew alert KubermaticAddonDeletionTakesTooLong [#3941](https://github.com/kubermatic/kubermatic/issues/3941) ([bashofmann](https://github.com/bashofmann))
+- New Prometheus metrics kubermatic_addon_created kubermatic_addon_deleted
+- New alert KubermaticAddonDeletionTakesTooLong [#3941](https://github.com/kubermatic/kubermatic/issues/3941) ([bashofmann](https://github.com/bashofmann))
 - FluentBit will now collect the journald logs [#4001](https://github.com/kubermatic/kubermatic/issues/4001) ([mrIncompetent](https://github.com/mrIncompetent))
 - FluentBit can now collect the kernel messages [#4007](https://github.com/kubermatic/kubermatic/issues/4007) ([mrIncompetent](https://github.com/mrIncompetent))
 - FluentBit now always sets the node name in logs [#4010](https://github.com/kubermatic/kubermatic/issues/4010) ([mrIncompetent](https://github.com/mrIncompetent))
