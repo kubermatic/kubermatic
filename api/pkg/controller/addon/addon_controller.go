@@ -484,28 +484,6 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	return err
 }
 
-func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(log, addon, cluster)
-	if err != nil {
-		return err
-	}
-	defer done()
-
-	cmd := r.getDeleteCommand(ctx, kubeconfigFilename, manifestFilename, isOpenshift(cluster))
-	cmdLog := log.With("cmd", strings.Join(cmd.Args, " "))
-
-	cmdLog.Debug("Deleting resources...")
-	out, err := cmd.CombinedOutput()
-	cmdLog.Debugw("Finished executing command", "output", string(out))
-	if err != nil {
-		if wasKubectlDeleteSuccessful(string(out)) {
-			return nil
-		}
-		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
-	}
-	return nil
-}
-
 func isOpenshift(c *kubermaticv1.Cluster) bool {
 	return c.Annotations["kubermatic.io/openshift"] != ""
 }
