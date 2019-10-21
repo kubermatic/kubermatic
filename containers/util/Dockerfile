@@ -15,6 +15,8 @@ RUN apk add --no-cache -U \
     iptables \
     ipvsadm \
     jq \
+    make \
+    openssh-client \
     rsync \
     socat \
     unzip
