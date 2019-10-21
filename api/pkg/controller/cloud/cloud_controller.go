@@ -105,12 +105,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			return r.reconcile(ctx, log, cluster)
 		},
 	)
+	if result == nil {
+		result = &reconcile.Result{}
+	}
 	if err != nil {
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		log.Errorw("Reconciling failed", zap.Error(err))
-	}
-	if result == nil {
-		result = &reconcile.Result{}
 	}
 	return *result, err
 }
@@ -156,7 +156,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
-	_, err = prov.InitializeCloudProvider(cluster, r.updateCluster)
+	if _, err := prov.InitializeCloudProvider(cluster, r.updateCluster); err != nil {
+		return nil, err
+	}
+
+	_, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+		c.Status.ExtendedHealth.CloudProviderInfrastructure = kubermaticv1.HealthStatusUp
+	})
 	return nil, err
 }
 
