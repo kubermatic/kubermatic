@@ -215,6 +215,17 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		return nil, err
 	}
 
+	// Addon got deleted - remove all manifests
+	if addon.DeletionTimestamp != nil {
+		if err := r.cleanupManifests(ctx, log, addon, cluster); err != nil {
+			return nil, fmt.Errorf("failed to delete manifests from cluster: %v", err)
+		}
+		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
+			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
+		}
+		return nil, nil
+	}
+
 	// Reconciling
 	if err := r.ensureIsInstalled(ctx, log, addon, cluster); err != nil {
 		return nil, fmt.Errorf("failed to deploy the addon manifests into the cluster: %v", err)
@@ -482,6 +493,28 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 	return err
+}
+
+func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
+	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(log, addon, cluster)
+	if err != nil {
+		return err
+	}
+	defer done()
+
+	cmd := r.getDeleteCommand(ctx, kubeconfigFilename, manifestFilename, isOpenshift(cluster))
+	cmdLog := log.With("cmd", strings.Join(cmd.Args, " "))
+
+	cmdLog.Debug("Deleting resources...")
+	out, err := cmd.CombinedOutput()
+	cmdLog.Debugw("Finished executing command", "output", string(out))
+	if err != nil {
+		if wasKubectlDeleteSuccessful(string(out)) {
+			return nil
+		}
+		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
+	}
+	return nil
 }
 
 func isOpenshift(c *kubermaticv1.Cluster) bool {
