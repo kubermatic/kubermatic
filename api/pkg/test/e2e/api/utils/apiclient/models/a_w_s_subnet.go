@@ -39,6 +39,9 @@ type AWSSubnet struct {
 	// ipv6 c ID r
 	IPV6CIDR string `json:"ipv6cidr,omitempty"`
 
+	// is default subnet
+	IsDefaultSubnet bool `json:"isDefaultSubnet,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 
