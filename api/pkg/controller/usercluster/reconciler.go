@@ -16,6 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/scheduler"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/system-basic-user"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/user-auth"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -286,6 +287,7 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 		scheduler.ClusterRoleBindingAuthDelegatorCreator(),
 		controllermanager.ClusterRoleBindingAuthDelegator(),
 		clusterautoscaler.ClusterRoleBindingCreator(),
+		systembasicuser.ClusterRoleBinding,
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
