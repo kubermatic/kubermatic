@@ -166,6 +166,7 @@ type AWSSubnet struct {
 	State                   string   `json:"state"`
 	AvailableIPAddressCount int64    `json:"available_ip_address_count"`
 	DefaultForAz            bool     `json:"default"`
+	IsDefaultSubnet         bool     `json:"isDefaultSubnet"`
 }
 
 // AWSTag represents a object of AWS tags.
