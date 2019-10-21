@@ -59,6 +59,7 @@ type controllerRunOptions struct {
 	openvpnServerPort             int
 	openvpnCACertFilePath         string
 	openvpnCAKeyFilePath          string
+	userSSHKeysDirPath            string
 	overwriteRegistry             string
 	cloudProviderName             string
 	cloudCredentialSecretTemplate string
@@ -81,6 +82,7 @@ func main() {
 	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
 	flag.StringVar(&runOp.openvpnCACertFilePath, "openvpn-ca-cert-file", "", "Path to the OpenVPN CA cert file")
 	flag.StringVar(&runOp.openvpnCAKeyFilePath, "openvpn-ca-key-file", "", "Path to the OpenVPN CA key file")
+	flag.StringVar(&runOp.userSSHKeysDirPath, "user-ssh-keys-dir-path", "", "Path to the user ssh keys dir")
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.BoolVar(&runOp.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&runOp.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
@@ -164,6 +166,10 @@ func main() {
 		log.Fatal("The openVPN private key is not an ECDSA key")
 	}
 	openVPNCACert := &resources.ECDSAKeyPair{Cert: openVPNCACerts[0], Key: openVPNECSDAKey}
+	userSSHKeys, err := getUserSSHKeys(runOp.userSSHKeysDirPath)
+	if err != nil {
+		log.Fatalw("Failed reading userSSHKey files", zap.Error(err))
+	}
 
 	var cloudCredentialSecretTemplate *corev1.Secret
 	if runOp.cloudCredentialSecretTemplate != "" {
@@ -224,8 +230,10 @@ func main() {
 		caCert,
 		clusterURL,
 		runOp.openvpnServerPort,
+		userSSHKeys,
 		healthHandler.AddReadinessCheck,
 		openVPNCACert,
+		runOp.userSSHKeysDirPath,
 		cloudCredentialSecretTemplate,
 		log); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
@@ -320,4 +328,33 @@ func main() {
 		log.Fatalw("Failed running user cluster controller", zap.Error(err))
 	}
 
+}
+
+func getUserSSHKeys(path string) (map[string][]byte, error) {
+	secretsDir, err := os.Readlink(fmt.Sprintf("%v/%v", path, "..data"))
+	if err != nil {
+		return nil, err
+	}
+
+	files, err := ioutil.ReadDir(fmt.Sprintf("%v/%v", path, secretsDir))
+	if err != nil {
+		return nil, err
+	}
+
+	var data = make(map[string][]byte, len(files))
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		secret, err := ioutil.ReadFile(fmt.Sprintf("%v/%v", path, file.Name()))
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file %v during secret creation: %v", file.Name(), err)
+		}
+
+		data[file.Name()] = secret
+	}
+
+	return data, nil
 }

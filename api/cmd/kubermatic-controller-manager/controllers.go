@@ -17,6 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
 	openshiftcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/openshift"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeys"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
@@ -40,6 +41,7 @@ var allControllers = map[string]controllerCreator{
 	cloudcontroller.ControllerName:           createCloudController,
 	openshiftcontroller.ControllerName:       createOpenshiftController,
 	clustercomponentdefaulter.ControllerName: createClusterComponentDefaulter,
+	usersshkeys.ControllerName:               createUserSSHKeyController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -295,4 +297,12 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		kubernetesAddons,
 		openshiftAddons)
+}
+
+func createUserSSHKeyController(ctrlCtx *controllerContext) error {
+	return usersshkeys.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.runOptions.workerCount)
 }
