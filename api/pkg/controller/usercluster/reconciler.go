@@ -18,6 +18,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/system-basic-user"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/user-auth"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/usersshkeys"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -374,6 +375,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context) error {
 func (r *reconciler) reconcileSecrets(ctx context.Context) error {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		openvpn.ClientCertificate(r.openVPNCA),
+		usersshkeys.CreateUserSSHKeysSecrets(r.userSSHKeys),
 	}
 	if r.openshift {
 		if r.cloudCredentialSecretTemplate != nil {
