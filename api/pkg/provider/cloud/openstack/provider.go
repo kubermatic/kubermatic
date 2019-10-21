@@ -242,9 +242,9 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	// If we created the subnet, but have not created the router-subnet-link finalizer, we need to attach the subnet to the router
+	// If we created the router, but have not created the router-subnet-link finalizer, we need to attach the subnet to the router
 	// Otherwise the vm's won't have connectivity
-	if kubernetes.HasFinalizer(cluster, SubnetCleanupFinalizer) && !kubernetes.HasFinalizer(cluster, RouterSubnetLinkCleanupFinalizer) {
+	if kubernetes.HasFinalizer(cluster, RouterCleanupFinalizer) && !kubernetes.HasFinalizer(cluster, RouterSubnetLinkCleanupFinalizer) {
 		if _, err = attachSubnetToRouter(netClient, cluster.Spec.Cloud.Openstack.SubnetID, cluster.Spec.Cloud.Openstack.RouterID); err != nil {
 			return nil, fmt.Errorf("failed to attach subnet to router: %v", err)
 		}
