@@ -27,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
@@ -161,29 +160,26 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	var errs []error
-	reconcilingStatus := corev1.ConditionFalse
-	result, err := r.reconcile(ctx, log, addon, cluster)
+	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+		ctx,
+		r.Client,
+		r.workerName,
+		cluster,
+		kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess,
+		func() (*reconcile.Result, error) {
+			return r.reconcile(ctx, log, addon, cluster)
+		},
+	)
 	if err != nil {
-		errs = append(errs, err)
 		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(addon, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
-		reconcilingError := err
+		r.recorder.Event(addon, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
-			"failed to reconcile Addon %q: %v", addon.Name, reconcilingError)
-	} else if result == nil {
-		reconcilingStatus = corev1.ConditionTrue
+			"failed to reconcile Addon %q: %v", addon.Name, err)
 	}
 	if result == nil {
 		result = &reconcile.Result{}
 	}
-
-	kubermaticv1helper.SetClusterCondition(cluster, kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess, reconcilingStatus, "", "")
-	if err := r.Update(ctx, cluster); err != nil {
-		log.Errorw("Failed to update ReconcilingSuccess condition", zap.Error(err))
-		errs = append(errs, err)
-	}
-	return *result, utilerrors.NewAggregate(errs)
+	return *result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
@@ -203,24 +199,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		return nil, nil
 	}
 
-	if cluster.Spec.Pause {
-		log.Debug("Skipping because the cluster is paused")
-		return nil, nil
-	}
-
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
-		log.Debug("Skipping because the cluster has a different worker name set")
-		return nil, nil
-	}
-
-	// When a cluster gets deleted - we can skip it - not worth the effort.
-	// This could lead though to a potential leak of resources in case addons deploy LB's or PV's.
-	// The correct way of handling it though should be a optional cleanup routine in the cluster controller, which will delete all PV's and LB's inside the cluster cluster.
-	if cluster.DeletionTimestamp != nil {
-		log.Debug("Skipping because the cluster is being deleted")
-		return nil, nil
-	}
-
 	// When the apiserver is not healthy, we must skip it
 	if kubermaticv1.HealthStatusDown == cluster.Status.ExtendedHealth.Apiserver {
 		log.Debug("Skipping because the API server is not running")
@@ -235,17 +213,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 		return nil, err
-	}
-
-	// Addon got deleted - remove all manifests
-	if addon.DeletionTimestamp != nil {
-		if err := r.cleanupManifests(ctx, log, addon, cluster); err != nil {
-			return nil, fmt.Errorf("failed to delete manifests from cluster: %v", err)
-		}
-		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
-		}
-		return nil, nil
 	}
 
 	// Reconciling

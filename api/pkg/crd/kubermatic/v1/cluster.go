@@ -115,10 +115,12 @@ const (
 	// succeeded in reconciling the cluster.
 	ClusterConditionAddonControllerReconcilingSuccess          ClusterConditionType = "AddonControllerReconciledSuccessfully"
 	ClusterConditionAddonInstallerControllerReconcilingSuccess ClusterConditionType = "AddonInstallerControllerReconciledSuccessfully"
-	ClusterConditionBackupControllerReconcilingSuccessful      ClusterConditionType = "BackupControllerReconciledSuccessfully"
-	ClusterConditionCloudControllerReconcilingSuccessful       ClusterConditionType = "CloudControllerReconcilledSuccessfully"
-	ClusterConditionComponentDefaulterReconcilingSuccessful    ClusterConditionType = "ComponentDefaulterReconciledSuccessfully"
-	ClusterConditionUpdateControllerReconcilingSuccessful      ClusterConditionType = "UpdateControllerReconciledSuccessfully"
+	ClusterConditionBackupControllerReconcilingSuccess         ClusterConditionType = "BackupControllerReconciledSuccessfully"
+	ClusterConditionCloudControllerReconcilingSuccess          ClusterConditionType = "CloudControllerReconcilledSuccessfully"
+	ClusterConditionComponentDefaulterReconcilingSuccess       ClusterConditionType = "ComponentDefaulterReconciledSuccessfully"
+	ClusterConditionUpdateControllerReconcilingSuccess         ClusterConditionType = "UpdateControllerReconciledSuccessfully"
+	ClusterConditionMonitoringControllerReconcilingSuccess     ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
+	ClusterConditionOpenshiftControllerReconcilingSuccess      ClusterConditionType = "OpenshiftControllerReconciledSuccessfully"
 
 	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
 	ReasonClusterUpadteInProgress = "ClusterUpdateInProgress"

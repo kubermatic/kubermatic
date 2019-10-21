@@ -26,7 +26,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -212,35 +211,25 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
-	reconcilingStatus := corev1.ConditionTrue
-	var errs []error
 	// Add a wrapping here so we can emit an event on error
-	err := r.reconcile(ctx, log, cluster)
+	_, err := kubermaticv1helper.ClusterReconcileWrapper(
+		ctx,
+		r.Client,
+		r.workerName,
+		cluster,
+		kubermaticv1.ClusterConditionBackupControllerReconcilingSuccess,
+		func() (*reconcile.Result, error) {
+			return nil, r.reconcile(ctx, log, cluster)
+		},
+	)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
-		reconcilingStatus = corev1.ConditionFalse
-		errs = append(errs, err)
 	}
-	kubermaticv1helper.SetClusterCondition(cluster, kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess, reconcilingStatus, "", "")
-	if err := r.Update(ctx, cluster); err != nil {
-		log.Errorw("Failed to update ReconcilingSuccess condition", zap.Error(err))
-		errs = append(errs, err)
-	}
-	return reconcile.Result{}, utilerrors.NewAggregate(errs)
+	return reconcile.Result{}, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	if cluster.Spec.Pause {
-		log.Debug("Skipping because the cluster is paused")
-		return nil
-	}
-
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
-		log.Debug("Skipping because the cluster has a different worker name set")
-		return nil
-	}
-
 	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
 	if cluster.DeletionTimestamp != nil {
 		// Need to cleanup

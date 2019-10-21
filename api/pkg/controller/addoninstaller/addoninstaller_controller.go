@@ -102,22 +102,20 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
-	reconcilingStatus := corev1.ConditionFalse
-	var errs []error
 	// Add a wrapping here so we can emit an event on error
-	result, err := r.reconcile(ctx, log, cluster)
+	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+		ctx,
+		r.Client,
+		r.workerName,
+		cluster,
+		kubermaticv1.ClusterConditionAddonInstallerControllerReconcilingSuccess,
+		func() (*reconcile.Result, error) {
+			return r.reconcile(ctx, log, cluster)
+		},
+	)
 	if err != nil {
-		errs = append(errs, err)
 		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
-	}
-	if result == nil && err == nil {
-		reconcilingStatus = corev1.ConditionTrue
-	}
-	kubermaticv1helper.SetClusterCondition(cluster, kubermaticv1.ClusterConditionAddonInstallerControllerReconcilingSuccess, reconcilingStatus, "", "")
-	if err := r.Update(ctx, cluster); err != nil {
-		log.Errorw("Failed to update ReconcilingSuccess condition", zap.Error(err))
-		errs = append(errs, err)
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 	if result == nil {
 		result = &reconcile.Result{}
@@ -135,16 +133,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	} else {
 		log = log.With("clustertype", "kubernetes")
 		addonsToInstall = r.kubernetesAddons
-	}
-
-	if cluster.Spec.Pause {
-		log.Debug("Skipping because the cluster is paused")
-		return nil, nil
-	}
-
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
-		log.Debug("Skipping because the cluster has a different worker name set")
-		return nil, nil
 	}
 
 	// Wait until the Apiserver is running to ensure the namespace exists at least.

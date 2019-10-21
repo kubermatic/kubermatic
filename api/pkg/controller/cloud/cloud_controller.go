@@ -21,7 +21,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
@@ -29,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -56,6 +54,7 @@ type Reconciler struct {
 	log        *zap.SugaredLogger
 	recorder   record.EventRecorder
 	seedGetter provider.SeedGetter
+	workerName string
 }
 
 func Add(
@@ -63,20 +62,21 @@ func Add(
 	log *zap.SugaredLogger,
 	numWorkers int,
 	seedGetter provider.SeedGetter,
-	clusterPredicates predicate.Predicate,
+	workerName string,
 ) error {
 	reconciler := &Reconciler{
 		Client:     mgr.GetClient(),
 		log:        log.Named(ControllerName),
 		recorder:   mgr.GetRecorder(ControllerName),
 		seedGetter: seedGetter,
+		workerName: workerName,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
 	if err != nil {
 		return err
 	}
-	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, clusterPredicates)
+	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{})
 }
 
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -94,41 +94,25 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	log = log.With("cluster", cluster.Name)
 
-	if cluster.Spec.Pause {
-		log.Debug("Skipping because the cluster is paused")
-		return reconcile.Result{}, nil
-	}
-
-	var errs []error
-	reconcilingStatus := corev1.ConditionTrue
 	// Add a wrapping here so we can emit an event on error
-	result, err := r.reconcile(ctx, log, cluster)
-	if result == nil {
-		result = &reconcile.Result{}
-	}
-	if result != nil || err != nil {
-		reconcilingStatus = corev1.ConditionFalse
-	}
+	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+		ctx,
+		r.Client,
+		r.workerName,
+		cluster,
+		kubermaticv1.ClusterConditionCloudControllerReconcilingSuccess,
+		func() (*reconcile.Result, error) {
+			return r.reconcile(ctx, log, cluster)
+		},
+	)
 	if err != nil {
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		log.Errorw("Reconciling failed", zap.Error(err))
-		errs = append(errs, err)
 	}
-	kubermaticv1helper.SetClusterCondition(cluster, kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess, reconcilingStatus, "", "")
-	if err := r.Update(ctx, cluster); err != nil {
-		log.Errorw("Failed to update ReconcilingSuccess condition", zap.Error(err))
-		errs = append(errs, err)
+	if result == nil {
+		result = &reconcile.Result{}
 	}
-	// Return before setting the health status
-	if err := utilerrors.NewAggregate(errs); err != nil {
-		return *result, err
-	}
-	if _, err := r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-		c.Status.ExtendedHealth.CloudProviderInfrastructure = kubermaticv1.HealthStatusUp
-	}); err != nil {
-		errs = append(errs, err)
-	}
-	return *result, utilerrors.NewAggregate(errs)
+	return *result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {

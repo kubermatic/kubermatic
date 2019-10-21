@@ -9,29 +9,41 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// ClusterConditionSettingReconcileWrapper is a wrapper around
-// a controllers reconcile that sets the ReconcileSuccess condition
-// for that controller.
-func ClusterConditionSettingReconcileWrapper(
+// ClusterReconcileWrapper is a wrapper that should be used around
+// any cluster reconciliaton. It:
+// * Checks if the cluster is paused
+// * Checks if the worker-name matches
+// * Sets the ReconcileSuccess condition for the controller
+func ClusterReconcileWrapper(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
-	clusterName string,
+	workerName string,
+	cluster *kubermaticv1.Cluster,
 	conditionType kubermaticv1.ClusterConditionType,
 	reconcile func() (*reconcile.Result, error)) (*reconcile.Result, error) {
 
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != workerName {
+		return nil, nil
+	}
+	if cluster.Spec.Pause {
+		return nil, nil
+	}
+
 	reconcilingStatus := corev1.ConditionFalse
 	result, err := reconcile()
-	// Only set to true if we are completely done with this cluster
-	if result != nil && !result.Requeue && result.RequeueAfter != 0 && err == nil {
+	// Only set to true if we had no error and don't want to reqeue the cluster
+	if err == nil && (result == nil || (!result.Requeue && result.RequeueAfter == 0)) {
 		reconcilingStatus = corev1.ConditionTrue
 	}
 	errs := []error{err}
-	errs = append(errs, clusterUpdater(ctx, client, clusterName, func(c *kubermaticv1.Cluster) {
+	errs = append(errs, clusterUpdater(ctx, client, cluster.Name, func(c *kubermaticv1.Cluster) {
 		SetClusterCondition(c, conditionType, reconcilingStatus, "", "")
 	}))
 	return result, utilerrors.NewAggregate(errs)
@@ -43,7 +55,17 @@ func clusterUpdater(
 	name string,
 	modify func(*kubermaticv1.Cluster),
 ) error {
-	return nil
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		//Get latest version
+		c := &kubermaticv1.Cluster{}
+		if err := client.Get(ctx, types.NamespacedName{Name: name}, c); err != nil {
+			return err
+		}
+		// Apply modifications
+		modify(c)
+		// Update the cluster
+		return client.Update(ctx, c)
+	})
 }
 
 // GetClusterCondition returns the index of the given condition or -1 and the condition itself

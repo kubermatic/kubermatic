@@ -79,11 +79,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterConditionSettingReconcileWrapper(
+	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
-		cluster.Name,
-		kubermaticv1.ClusterConditionUpdateControllerReconcilingSuccessful,
+		r.workerName,
+		cluster,
+		kubermaticv1.ClusterConditionUpdateControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
 			return r.reconcile(ctx, cluster)
 		},
@@ -99,13 +100,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
-		return nil, nil
-	}
-
-	if cluster.Spec.Pause {
-		return nil, nil
-	}
 
 	if !cluster.Status.ExtendedHealth.AllHealthy() {
 		// Cluster not healthy yet. Nothing to do.
