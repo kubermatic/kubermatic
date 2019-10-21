@@ -117,7 +117,8 @@ const (
 	ClusterConditionAddonInstallerControllerReconcilingSuccess ClusterConditionType = "AddonInstallerControllerReconciledSuccessfully"
 	ClusterConditionBackupControllerReconcilingSuccessful      ClusterConditionType = "BackupControllerReconciledSuccessfully"
 	ClusterConditionCloudControllerReconcilingSuccessful       ClusterConditionType = "CloudControllerReconcilledSuccessfully"
-	ClusterConditionComponentDefaulterReconciledSuffessful     ClusterConditionType = "ComponentDefaulterReconciledSuccessfully"
+	ClusterConditionComponentDefaulterReconcilingSuccessful    ClusterConditionType = "ComponentDefaulterReconciledSuccessfully"
+	ClusterConditionUpdateControllerReconcilingSuccessful      ClusterConditionType = "UpdateControllerReconciledSuccessfully"
 
 	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
 	ReasonClusterUpadteInProgress = "ClusterUpdateInProgress"
