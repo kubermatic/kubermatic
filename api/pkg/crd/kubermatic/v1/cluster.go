@@ -107,12 +107,7 @@ const (
 	// the status of cloud provider resources for a given cluster.
 	ClusterConditionSeedResourcesUpToDate ClusterConditionType = "SeedResourcesUpToDate"
 
-	// ClusterConditionClusterControllerReconcilingSuccess indicates whether the cluster
-	// controller successfully finished reconciling this cluster.
-	ClusterConditionClusterControllerReconcilingSuccess ClusterConditionType = "ClusterControllerReconciledSuccessfully"
-
-	// ClusterConditionAddonControllerReconcilingSuccess indicates whether the addon controller
-	// succeeded in reconciling the cluster.
+	ClusterConditionClusterControllerReconcilingSuccess        ClusterConditionType = "ClusterControllerReconciledSuccessfully"
 	ClusterConditionAddonControllerReconcilingSuccess          ClusterConditionType = "AddonControllerReconciledSuccessfully"
 	ClusterConditionAddonInstallerControllerReconcilingSuccess ClusterConditionType = "AddonInstallerControllerReconciledSuccessfully"
 	ClusterConditionBackupControllerReconcilingSuccess         ClusterConditionType = "BackupControllerReconciledSuccessfully"
