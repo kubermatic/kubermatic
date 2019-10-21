@@ -21,7 +21,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -284,32 +283,37 @@ func AWSSubnetWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 		if err != nil {
 			return nil, err
 		}
-		return setDefaultSubnet(ctx, cluster, userInfo, clusterProvider, subnetList)
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return SetDefaultSubnet(machineDeployments, subnetList)
 	}
 }
 
-func setDefaultSubnet(ctx context.Context, cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo, clusterProvider provider.ClusterProvider, subnets apiv1.AWSSubnetList) (apiv1.AWSSubnetList, error) {
+func SetDefaultSubnet(machineDeployments *clusterv1alpha1.MachineDeploymentList, subnets apiv1.AWSSubnetList) (apiv1.AWSSubnetList, error) {
 	if len(subnets) == 0 {
 		return nil, fmt.Errorf("the subnet list can not be empty")
 	}
-
-	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+	if machineDeployments == nil {
+		return nil, fmt.Errorf("the machine deployment list can not be nil")
 	}
 
-	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	machinesForAZ := map[string]int{}
+	machinesForAZ := map[string]int32{}
 
 	for _, subnet := range subnets {
 		machinesForAZ[subnet.AvailabilityZone] = 0
 	}
 
-	machineCounter := 0
+	var machineCounter int32
+	var replicas int32
 	for _, md := range machineDeployments.Items {
 		cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(md.Spec.Template.Spec)
 		if err != nil {
@@ -318,12 +322,12 @@ func setDefaultSubnet(ctx context.Context, cluster *kubermaticv1.Cluster, userIn
 		if cloudSpec.AWS == nil {
 			return nil, errors.NewBadRequest("cloud spec missing")
 		}
-		machines := &clusterv1alpha1.MachineList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(md.Spec.Selector.MatchLabels)}, machines); err != nil {
-			return nil, err
+		if md.Spec.Replicas != nil {
+			replicas = *md.Spec.Replicas
 		}
-		machinesForAZ[cloudSpec.AWS.AvailabilityZone] += len(machines.Items)
-		machineCounter += len(machines.Items)
+
+		machinesForAZ[cloudSpec.AWS.AvailabilityZone] += replicas
+		machineCounter += replicas
 	}
 	// If no machines exist, set the first as a default
 	if machineCounter == 0 {
