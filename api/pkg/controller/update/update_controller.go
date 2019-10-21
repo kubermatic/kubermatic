@@ -16,7 +16,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/record"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -79,25 +78,24 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
-	reconcilingStatus := corev1.ConditionTrue
 	// Add a wrapping here so we can emit an event on error
-	result, err := r.reconcile(ctx, cluster)
+	result, err := kubermaticv1helper.ClusterConditionSettingReconcileWrapper(
+		ctx,
+		r.Client,
+		cluster.Name,
+		kubermaticv1.ClusterConditionUpdateControllerReconcilingSuccessful,
+		func() (*reconcile.Result, error) {
+			return r.reconcile(ctx, cluster)
+		},
+	)
 	if err != nil {
 		r.log.Errorw("Failed to reconcile cluster", "namespace", request.NamespacedName.String(), zap.Error(err))
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
-	}
-	if result != nil || err != nil {
-		reconcilingStatus = corev1.ConditionFalse
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 	if result == nil {
 		result = &reconcile.Result{}
 	}
-	errs := []error{err}
-	kubermaticv1helper.SetClusterCondition(cluster, kubermaticv1.ClusterConditionUpdateControllerReconcilingSuccessful, reconcilingStatus, "", "")
-	if err := r.Update(ctx, cluster); err != nil {
-		errs = append(errs, err)
-	}
-	return *result, utilerrors.NewAggregate(errs)
+	return *result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {

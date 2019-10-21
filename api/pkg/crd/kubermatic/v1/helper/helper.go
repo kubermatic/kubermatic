@@ -1,13 +1,50 @@
 package helper
 
 import (
+	"context"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+// ClusterConditionSettingReconcileWrapper is a wrapper around
+// a controllers reconcile that sets the ReconcileSuccess condition
+// for that controller.
+func ClusterConditionSettingReconcileWrapper(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	clusterName string,
+	conditionType kubermaticv1.ClusterConditionType,
+	reconcile func() (*reconcile.Result, error)) (*reconcile.Result, error) {
+
+	reconcilingStatus := corev1.ConditionFalse
+	result, err := reconcile()
+	// Only set to true if we are completely done with this cluster
+	if result != nil && !result.Requeue && result.RequeueAfter != 0 && err == nil {
+		reconcilingStatus = corev1.ConditionTrue
+	}
+	errs := []error{err}
+	errs = append(errs, clusterUpdater(ctx, client, clusterName, func(c *kubermaticv1.Cluster) {
+		SetClusterCondition(c, conditionType, reconcilingStatus, "", "")
+	}))
+	return result, utilerrors.NewAggregate(errs)
+}
+
+func clusterUpdater(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	name string,
+	modify func(*kubermaticv1.Cluster),
+) error {
+	return nil
+}
 
 // GetClusterCondition returns the index of the given condition or -1 and the condition itself
 // or a nilpointer.
