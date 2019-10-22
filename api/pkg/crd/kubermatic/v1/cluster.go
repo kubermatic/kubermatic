@@ -127,7 +127,7 @@ type ClusterCondition struct {
 	// Status of the condition, one of True, False, Unknown.
 	Status corev1.ConditionStatus `json:"status"`
 	// KubermaticVersion current kubermatic version.
-	KubermaticVersion string `json:"kubermatic_version"`
+	KubermaticVersion string `json:"kubermaticVersion"`
 	// Last time we got an update on a given condition.
 	// +optional
 	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty"`
@@ -149,7 +149,7 @@ type ClusterStatus struct {
 	// Extends standard health status for new states.
 	ExtendedHealth ExtendedClusterHealth `json:"extendedHealth,omitempty"`
 	// KubermaticVersion is the current kubermatic version in a cluster.
-	KubermaticVersion string `json:"kubermatic_version"`
+	KubermaticVersion string `json:"kubermaticVersion"`
 	// Deprecated
 	RootCA *KeyCert `json:"rootCA,omitempty"`
 	// Deprecated
