@@ -13,7 +13,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -27,8 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/klog"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
-
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -65,8 +64,14 @@ const (
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
 	// UserClusterControllerDeploymentName is the name of the usercluster-controller deployment
 	UserClusterControllerDeploymentName = "usercluster-controller"
-	// ClusterAutoscalerDeploymentName is the name of the cluster-autoscaler depoyment
+	// ClusterAutoscalerDeploymentName is the name of the cluster-autoscaler deployment
 	ClusterAutoscalerDeploymentName = "cluster-autoscaler"
+	// KubernetesDashboardDeploymentName is the name of the Kubernetes Dashboard deployment
+	KubernetesDashboardDeploymentName = "kubernetes-dashboard"
+	// MetricsScraperDeploymentName is the name of dashboard-metrics-scraper deployment
+	MetricsScraperDeploymentName = "dashboard-metrics-scraper"
+	// MetricsScraperServiceName is the name of dashboard-metrics-scraper service
+	MetricsScraperServiceName = "dashboard-metrics-scraper"
 
 	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
 	PrometheusStatefulSetName = "prometheus"
@@ -98,6 +103,8 @@ const (
 
 	//AdminKubeconfigSecretName is the name for the secret containing the private ca key
 	AdminKubeconfigSecretName = "admin-kubeconfig"
+	//ViewerKubeconfigSecretName is the name for the secret containing the viewer kubeconfig
+	ViewerKubeconfigSecretName = "viewer-kubeconfig"
 	//SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
 	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
 	//KubeletDnatControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubeletdnatcontroller
@@ -122,6 +129,8 @@ const (
 	// ClusterAutoscalerKubeconfigSecretName is the name of the kubeconfig secret used for
 	// the cluster-autoscaler
 	ClusterAutoscalerKubeconfigSecretName = "cluster-autoscaler-kubeconfig"
+	// KubernetesDashboardKubeconfigSecretName is the name of the kubeconfig secret user for Kubernetes Dashboard
+	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
@@ -138,6 +147,8 @@ const (
 	ServiceAccountKeySecretName = "service-account-key"
 	//TokensSecretName is the name for the secret containing the user tokens
 	TokensSecretName = "tokens"
+	//ViewerTokenSecretName is the name for the secret containing the viewer token
+	ViewerTokenSecretName = "viewer-token"
 	// OpenVPNCASecretName is the name of the secret that contains the OpenVPN CA
 	OpenVPNCASecretName = "openvpn-ca"
 	//OpenVPNServerCertificatesSecretName is the name for the secret containing the openvpn server certificates
@@ -160,6 +171,12 @@ const (
 	GoogleServiceAccountVolumeName = "google-service-account-volume"
 	// AuditLogVolumeName is the name of the volume that hold the audit log of the apiserver.
 	AuditLogVolumeName = "audit-log"
+	// KubernetesDashboardKeyHolderSecretName is the name of the secret that contains JWE token encryption key
+	// used by the Kubernetes Dashboard
+	KubernetesDashboardKeyHolderSecretName = "kubernetes-dashboard-key-holder"
+	// KubernetesDashboardCsrfTokenSecretName is the name of the secret that contains CSRF token used by
+	// the Kubernetes Dashboard
+	KubernetesDashboardCsrfTokenSecretName = "kubernetes-dashboard-csrf"
 
 	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
@@ -199,6 +216,10 @@ const (
 	PrometheusCertUsername = "prometheus"
 	// ClusterAutoscalerCertUsername is the name of the user coming from the CA kubeconfig cert
 	ClusterAutoscalerCertUsername = "kubermatic:cluster-autoscaler"
+	// KubernetesDashboardCertUsername is the name of the user coming from kubeconfig cert
+	KubernetesDashboardCertUsername = "kubermatic:kubernetes-dashboard"
+	// MetricsScraperServiceAccountUsername is the name of the user coming from kubeconfig cert
+	MetricsScraperServiceAccountUsername = "dashboard-metrics-scraper"
 
 	// KubeletDnatControllerClusterRoleName is the name for the KubeletDnatController cluster role
 	KubeletDnatControllerClusterRoleName = "system:kubermatic-kubeletdnat-controller"
@@ -235,6 +256,14 @@ const (
 	ClusterAutoscalerClusterRoleName = "system:kubermatic-cluster-autoscaler"
 	// ClusterAutoscalerClusterRoleBindingName is the name of the clusterrolebinding for the CA
 	ClusterAutoscalerClusterRoleBindingName = "system:kubermatic-cluster-autoscaler"
+	// KubernetesDashboardRoleName is the name of the role for the Kubernetes Dashboard
+	KubernetesDashboardRoleName = "system:kubernetes-dashboard"
+	// KubernetesDashboardRoleBindingName is the name of the role binding for the Kubernetes Dashboard
+	KubernetesDashboardRoleBindingName = "system:kubernetes-dashboard"
+	// MetricsScraperClusterRoleName is the name of the role for the dashboard-metrics-scraper
+	MetricsScraperClusterRoleName = "system:dashboard-metrics-scraper"
+	// MetricsScraperClusterRoleBindingName is the name of the role binding for the dashboard-metrics-scraper
+	MetricsScraperClusterRoleBindingName = "system:dashboard-metrics-scraper"
 
 	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd StatefulSet
 	EtcdPodDisruptionBudgetName = "etcd"
@@ -324,6 +353,8 @@ const (
 	KubeconfigSecretKey = "kubeconfig"
 	// TokensSecretKey tokens.csv
 	TokensSecretKey = "tokens.csv"
+	// ViewersTokenSecretKey viewersToken
+	ViewerTokenSecretKey = "viewerToken"
 	// OpenVPNCACertKey cert.pem, must match CACertSecretKey, otherwise getClusterCAFromLister doesnt work as it has
 	// the key hardcoded
 	OpenVPNCACertKey = CACertSecretKey
@@ -380,14 +411,34 @@ const (
 	AWSAccessKeyID     = "accessKeyId"
 	AWSSecretAccessKey = "secretAccessKey"
 
+	AzureTenantID       = "tenantID"
+	AzureSubscriptionID = "subscriptionID"
+	AzureClientID       = "clientID"
+	AzureClientSecret   = "clientSecret"
+
 	DigitaloceanToken = "token"
 
+	GCPServiceAccount = "serviceAccount"
+
 	HetznerToken = "token"
+
+	OpenstackUsername = "username"
+	OpenstackPassword = "password"
+	OpenstackTenant   = "tenant"
+	OpenstackTenantID = "tenantID"
+	OpenstackDomain   = "domain"
 
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"
 
 	KubevirtKubeConfig = "kubeConfig"
+
+	VsphereUsername                    = "username"
+	VspherePassword                    = "password"
+	VsphereInfraManagementUserUsername = "infraManagementUserUsername"
+	VsphereInfraManagementUserPassword = "infraManagementUserPassword"
+
+	UserSSHKeys = "usersshkeys"
 )
 
 // ECDSAKeyPair is a ECDSA x509 certifcate and private key
@@ -569,7 +620,7 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 	}
 	if _, err := cert.Verify(verifyOptions); err != nil {
-		glog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
+		klog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
 		return false
 	}
 
@@ -601,7 +652,7 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 		KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	}
 	if _, err := cert.Verify(verifyOptions); err != nil {
-		glog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
+		klog.Errorf("Certificate verification for CN %s failed due to: %v", commonName, err)
 		return false
 	}
 
@@ -667,7 +718,7 @@ func GetDexCAFromFile(caBundleFilePath string) ([]*x509.Certificate, error) {
 	defer func() {
 		err := f.Close()
 		if err != nil {
-			glog.Fatal(err)
+			klog.Fatal(err)
 		}
 	}()
 
@@ -817,4 +868,44 @@ func GlobalSecretKeySelectorValueGetterFactory(ctx context.Context, client ctrlr
 		}
 		return "", nil
 	}
+}
+
+func GetHTTPProxyEnvVarsFromSeed(seed *kubermaticv1.Seed, inClusterAPIServerURL string) []corev1.EnvVar {
+	if seed.Spec.ProxySettings.Empty() {
+		return nil
+	}
+	var envVars []corev1.EnvVar
+
+	if !seed.Spec.ProxySettings.HTTPProxy.Empty() {
+		value := seed.Spec.ProxySettings.HTTPProxy.String()
+		envVars = []corev1.EnvVar{
+			{
+				Name:  "HTTP_PROXY",
+				Value: value,
+			},
+			{
+				Name:  "HTTPS_PROXY",
+				Value: value,
+			},
+			{
+				Name:  "http_proxy",
+				Value: value,
+			},
+			{
+				Name:  "https_proxy",
+				Value: value,
+			},
+		}
+	}
+
+	noProxyValue := inClusterAPIServerURL
+	if !seed.Spec.ProxySettings.NoProxy.Empty() {
+		noProxyValue += "," + seed.Spec.ProxySettings.NoProxy.String()
+	}
+	envVars = append(envVars,
+		corev1.EnvVar{Name: "NO_PROXY", Value: noProxyValue},
+		corev1.EnvVar{Name: "no_proxy", Value: noProxyValue},
+	)
+
+	return envVars
 }

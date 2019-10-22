@@ -68,11 +68,11 @@ func NewListNodeDeploymentMetricsOK() *ListNodeDeploymentMetricsOK {
 NodeMetric
 */
 type ListNodeDeploymentMetricsOK struct {
-	Payload []*models.NodeMetric
+	Payload []*models.NodesMetric
 }
 
 func (o *ListNodeDeploymentMetricsOK) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/metrics][%d] listNodeDeploymentMetricsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetricsOK  %+v", 200, o.Payload)
 }
 
 func (o *ListNodeDeploymentMetricsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,7 +98,7 @@ type ListNodeDeploymentMetricsUnauthorized struct {
 }
 
 func (o *ListNodeDeploymentMetricsUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/metrics][%d] listNodeDeploymentMetricsUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetricsUnauthorized ", 401)
 }
 
 func (o *ListNodeDeploymentMetricsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -119,7 +119,7 @@ type ListNodeDeploymentMetricsForbidden struct {
 }
 
 func (o *ListNodeDeploymentMetricsForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/metrics][%d] listNodeDeploymentMetricsForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetricsForbidden ", 403)
 }
 
 func (o *ListNodeDeploymentMetricsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -150,7 +150,7 @@ func (o *ListNodeDeploymentMetricsDefault) Code() int {
 }
 
 func (o *ListNodeDeploymentMetricsDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/metrics][%d] listNodeDeploymentMetrics default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics][%d] listNodeDeploymentMetrics default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *ListNodeDeploymentMetricsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

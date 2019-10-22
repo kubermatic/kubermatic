@@ -112,7 +112,7 @@ func KubeSchedulerDeploymentCreator(data openshiftData) reconciling.NamedDeploym
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			image, err := getKubeSchedulerImage(data.Cluster().Spec.Version.String())
+			image, err := hyperkubeImage(data.Cluster().Spec.Version.String())
 			if err != nil {
 				return nil, err
 			}
@@ -272,14 +272,5 @@ func getSchedulerHealthGetAction() *corev1.HTTPGetAction {
 		Path:   "/healthz",
 		Scheme: corev1.URISchemeHTTPS,
 		Port:   intstr.FromInt(10259),
-	}
-}
-
-func getKubeSchedulerImage(openshiftVersion string) (string, error) {
-	switch openshiftVersion {
-	case openshiftVersion419:
-		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:155ef40a64608c946ca9ca0310bbf88f5a4664b2925502b3acac86847bc158e6", nil
-	default:
-		return "", fmt.Errorf("no scheduler available for openshift version %q", openshiftVersion)
 	}
 }

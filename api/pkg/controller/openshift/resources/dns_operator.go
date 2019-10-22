@@ -37,7 +37,7 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 	return func() (string, reconciling.DeploymentCreator) {
 		return openshiftDNSOperatorDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 
-			image, err := openshiftDNSOperatorImage(data.Cluster().Spec.Version.String())
+			image, err := clusterDnsOperatorImage(data.Cluster().Spec.Version.String())
 			if err != nil {
 				return nil, err
 			}
@@ -65,9 +65,12 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 			}
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
-				Name:    openshiftDNSOperatorContainerName,
-				Image:   image,
-				Env:     env,
+				Name:  openshiftDNSOperatorContainerName,
+				Image: image,
+				Env: append(env, corev1.EnvVar{
+					Name:  "KUBECONFIG",
+					Value: "/etc/kubernetes/kubeconfig/kubeconfig",
+				}),
 				Command: []string{"dns-operator"},
 				VolumeMounts: []corev1.VolumeMount{{
 					Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
@@ -92,7 +95,7 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 				return nil, err
 			}
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString(openshiftDNSOperatorContainerName))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString(openshiftDNSOperatorContainerName), "DNS,operator.openshift.io/v1", "Network,config.openshift.io/v1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}
@@ -104,23 +107,18 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 }
 
 func openshiftDNSOperatorEnv(openshiftVersion string) ([]corev1.EnvVar, error) {
-	switch openshiftVersion {
-	case openshiftVersion419:
-		return []corev1.EnvVar{
-			{Name: "RELEASE_VERSION", Value: "4.1.9"},
-			{Name: "IMAGE", Value: "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:390cc1784aba986fad6315142d1d2524b2707a91eea3705d448367b51a112438"},
-			{Name: "OPENSHIFT_CLI_IMAGE", Value: "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:52ef9f5ade93e32f85e13bb9f588b2e126717256789023f8eb455b1147761562"},
-		}, nil
-	default:
-		return nil, fmt.Errorf("can not find env vars for openshift version %q", openshiftVersion)
+	cliImageValue, err := cliImage(openshiftVersion)
+	if err != nil {
+		return nil, err
 	}
-}
+	coreDNSImageValue, err := corednsImage(openshiftVersion)
+	if err != nil {
+		return nil, err
+	}
 
-func openshiftDNSOperatorImage(openshiftVersion string) (string, error) {
-	switch openshiftVersion {
-	case openshiftVersion419:
-		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:2aca09bcf2d705c8fe457e21507319550d4363fd07012db6403f59c314ecc7e0", nil
-	default:
-		return "", fmt.Errorf("no image available for openshift version %q", openshiftVersion)
-	}
+	return []corev1.EnvVar{
+		{Name: "RELEASE_VERSION", Value: openshiftVersion},
+		{Name: "IMAGE", Value: coreDNSImageValue},
+		{Name: "OPENSHIFT_CLI_IMAGE", Value: cliImageValue},
+	}, nil
 }

@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
-
-	"github.com/golang/glog"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -25,7 +25,7 @@ type loopbackKubeconfigCreatorData interface {
 // GetLoopbackKubeconfigCreator is a function to return a secret generator to create a kubeconfig which must only by the openshift-apiserver itself as it uses 127.0.0.1 as address
 // It is required because the Apiserver tries to talk to itself before it is ready, hence it
 // doesn't appear as valid endpoint on the service
-func GetLoopbackKubeconfigCreator(ctx context.Context, data loopbackKubeconfigCreatorData) reconciling.NamedSecretCreatorGetter {
+func GetLoopbackKubeconfigCreator(ctx context.Context, data loopbackKubeconfigCreatorData, log *zap.SugaredLogger) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return apiserverLoopbackKubeconfigName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -50,9 +50,9 @@ func GetLoopbackKubeconfigCreator(ctx context.Context, data loopbackKubeconfigCr
 			valid, err := resources.IsValidKubeconfig(b, ca.Cert, url, commonName, organizations, data.Cluster().Name)
 			if err != nil || !valid {
 				if err != nil {
-					glog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
+					log.Infow("failed to validate existing kubeconfig. Regenerating it...", "secret-namespace", se.Namespace, "secret-name", se.Name, zap.Error(err))
 				} else {
-					glog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
+					log.Infow("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", "secret-namespace", se.Namespace, "secret-name", se.Name)
 				}
 
 				se.Data[resources.KubeconfigSecretKey], err = resources.BuildNewKubeconfigAsByte(ca, url, commonName, organizations, data.Cluster().Name)

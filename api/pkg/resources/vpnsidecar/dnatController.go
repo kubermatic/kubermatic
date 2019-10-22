@@ -32,8 +32,6 @@ func DnatControllerContainer(data dnatControllerData, name, apiserverAddress str
 	args := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-node-access-network", data.NodeAccessNetwork(),
-		"-v", "4",
-		"-logtostderr",
 	}
 	if apiserverAddress != "" {
 		args = append(args, "-master", apiserverAddress)

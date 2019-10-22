@@ -28,7 +28,9 @@ import (
 )
 
 const (
-	OauthName                  = "openshift-oauth"
+	OauthName = "openshift-oauth"
+	// OAuthServiceName is the name of the OAuthService
+	OAuthServiceName           = OauthName
 	oauthSessionSecretName     = "openshift-oauth-session-secret"
 	oauthServingCertSecretName = "openshift-oauth-serving-cert"
 	oauthCLIConfigTemplateRaw  = `
@@ -133,12 +135,11 @@ var (
 	oauthCLIConfigTemplate = template.Must(template.New("base").Funcs(sprig.TxtFuncMap()).Parse(oauthCLIConfigTemplateRaw))
 )
 
-func OauthTLSServingCertCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretCreatorGetter {
-	return servingcerthelper.ServingCertSecretCreator(caGetter,
+func OauthTLSServingCertCreator(data openshiftData) reconciling.NamedSecretCreatorGetter {
+	return servingcerthelper.ServingCertSecretCreator(data.GetRootCA,
 		oauthServingCertSecretName,
-		// TODO: Update this to use the external name
-		"oauth-openshift.apps.alvaro-test.aws.k8c.io",
-		[]string{"oauth-openshift.apps.alvaro-test.aws.k8c.io"},
+		data.Cluster().Address.ExternalName,
+		[]string{data.Cluster().Address.ExternalName},
 		nil)
 }
 
@@ -177,7 +178,7 @@ func OauthConfigMapCreator(data openshiftData) reconciling.NamedConfigMapCreator
 // OauthServiceCreator returns the function to reconcile the external Oauth service
 func OauthServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
-		return OauthName, func(se *corev1.Service) (*corev1.Service, error) {
+		return OAuthServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Labels = resources.BaseAppLabel(name, nil)
 
 			if se.Annotations == nil {
@@ -307,7 +308,7 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 				{Name: openshiftImagePullSecretName},
 			}
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = utilpointer.BoolPtr(false)
-			image, err := getOauthImage(data.Cluster().Spec.Version.String())
+			image, err := hypershiftImage(data.Cluster().Spec.Version.String())
 			if err != nil {
 				return nil, err
 			}
@@ -362,6 +363,10 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 					"--config=/etc/oauth/config.yaml",
 					"--v=2",
 				},
+				Env: []corev1.EnvVar{{
+					Name:  "KUBECONFIG",
+					Value: "/etc/kubernetes/kubeconfig/kubeconfig",
+				}},
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "config",
@@ -422,21 +427,12 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 			}
 			dep.Spec.Template.Labels = podLabels
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OauthName))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OauthName), "OAuthClient,oauth.openshift.io/v1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}
 			dep.Spec.Template.Spec = *wrappedPodSpec
 			return dep, nil
 		}
-	}
-}
-
-func getOauthImage(openshiftVersion string) (string, error) {
-	switch openshiftVersion {
-	case openshiftVersion419:
-		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:86255c4efe6bbc141a0f41444f863bbd5cd832ffca21d2b737a4f9c225ed00ad", nil
-	default:
-		return "", fmt.Errorf("no image for openshift version %q", openshiftVersion)
 	}
 }

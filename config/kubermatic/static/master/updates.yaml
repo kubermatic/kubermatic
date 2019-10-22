@@ -23,10 +23,6 @@ updates:
   automatic: false
 
 # ======= 1.13 =======
-# Allow to change to any patch version
-- from: 1.13.*
-  to: 1.13.*
-  automatic: false
 # CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514
 - from: <= 1.13.9, >= 1.13.0
   to: 1.13.10
@@ -41,9 +37,9 @@ updates:
 - from: 1.14.*
   to: 1.14.*
   automatic: false
-# CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514
-- from: <= 1.14.5, >= 1.14.0
-  to: 1.14.6
+# CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
+- from: <= 1.14.7, >= 1.14.0
+  to: 1.14.8
   automatic: true
 # Allow to next minor release
 - from: 1.14.*
@@ -55,7 +51,37 @@ updates:
 - from: 1.15.*
   to: 1.15.*
   automatic: false
-# CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514
-- from: <= 1.15.2, >= 1.15.0
-  to: 1.15.3
+# CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
+- from: <= 1.15.4, >= 1.15.0
+  to: 1.15.5
   automatic: true
+# Allow to next minor release
+- from: 1.15.*
+  to: 1.16.*
+  automatic: false
+
+# ======= 1.16 =======
+# Allow to change to any patch version
+- from: 1.16.*
+  to: 1.16.*
+  automatic: false
+# CVE-2019-11253
+- from: <= 1.16.1, >= 1.16.0
+  to: 1.16.2
+  automatic: true
+# Allow to next minor release
+- from: 1.16.*
+  to: 1.17.*
+  automatic: false
+
+# ======= Openshift 4.1 =======
+# Allow to change to any patch version
+- from: 4.1.*
+  to: 4.1.*
+  automatic: false
+  type: openshift
+# Allow to next minor release
+- from: 4.1.*
+  to: 2.2.*
+  automatic: false
+  type: openshift

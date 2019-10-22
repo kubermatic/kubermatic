@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -23,8 +25,18 @@ func ListEndpoint(seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
+
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+
+		// Get the DCs and immediately filter out the ones restricted by e-mail domain.
+		dcs, err := filterDCsByEmail(userInfo, getAPIDCsFromSeedMap(seeds))
+		if err != nil {
+			return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list datacenters: %v", err))
+		}
 		// Maintain a stable order. We do not check for duplicate names here
-		dcs := getAPIDCsFromSeedMap(seeds)
 		sort.SliceStable(dcs, func(i, j int) bool {
 			return dcs[i].Metadata.Name < dcs[j].Metadata.Name
 		})
@@ -37,20 +49,33 @@ func ListEndpoint(seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 func GetEndpoint(seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LegacyDCReq)
-		return GetDatacenter(seedsGetter, req.DC)
+
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+
+		return GetDatacenter(userInfo, seedsGetter, req.DC)
 	}
 }
 
 // GetDatacenter a function that gives you a single apiv1.Datacenter object
-func GetDatacenter(seedsGetter provider.SeedsGetter, datacenterToGet string) (apiv1.Datacenter, error) {
+func GetDatacenter(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, datacenterToGet string) (apiv1.Datacenter, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
+
+	// Get the DCs and immediately filter out the ones restricted by e-mail domain.
+	dcs, err := filterDCsByEmail(userInfo, getAPIDCsFromSeedMap(seeds))
+	if err != nil {
+		return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list datacenters: %v", err))
+	}
+
 	// The datacenter endpoints return both node and seed dcs, so we have to iterate through
 	// everything
 	var foundDCs []apiv1.Datacenter
-	for _, unfilteredDC := range getAPIDCsFromSeedMap(seeds) {
+	for _, unfilteredDC := range dcs {
 		if unfilteredDC.Metadata.Name == datacenterToGet {
 			foundDCs = append(foundDCs, unfilteredDC)
 		}
@@ -64,6 +89,28 @@ func GetDatacenter(seedsGetter provider.SeedsGetter, datacenterToGet string) (ap
 	}
 
 	return foundDCs[0], nil
+}
+
+func filterDCsByEmail(userInfo *provider.UserInfo, list []apiv1.Datacenter) ([]apiv1.Datacenter, error) {
+	if list == nil {
+		return nil, fmt.Errorf("filterDCsByEmail: the datacenter list can not be nil")
+	}
+	var dcList []apiv1.Datacenter
+
+	for _, dc := range list {
+		requiredEmailDomain := dc.Spec.RequiredEmailDomain
+		// find datacenter for specific email domain
+		if requiredEmailDomain != "" {
+			userDomain := strings.Split(userInfo.Email, "@")
+			if len(userDomain) == 2 && strings.EqualFold(userDomain[1], requiredEmailDomain) {
+				dcList = append(dcList, dc)
+			}
+		} else {
+			// find datacenter for "all" without RequiredEmailDomain field
+			dcList = append(dcList, dc)
+		}
+	}
+	return dcList, nil
 }
 
 func getAPIDCsFromSeedMap(seeds map[string]*kubermaticv1.Seed) []apiv1.Datacenter {
@@ -165,6 +212,8 @@ func apiSpec(dc *kubermaticv1.Datacenter) (*apiv1.DatacenterSpec, error) {
 	case dc.Spec.Kubevirt != nil:
 		spec.Kubevirt = &apiv1.KubevirtDatacenterSpec{}
 	}
+
+	spec.RequiredEmailDomain = dc.Spec.RequiredEmailDomain
 
 	return spec, nil
 }

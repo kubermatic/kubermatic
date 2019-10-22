@@ -67,7 +67,12 @@ func OpenshiftControllerManagerConfigMapCreator(openshiftVersion string) reconci
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
-			buildImageTemplateFormatImage, deployerImageTemplateFormatImage, err := buildAndDeployerImageTemplateFormatImage(openshiftVersion)
+
+			buildImageTemplateFormatImage, err := dockerBuilderImage(openshiftVersion)
+			if err != nil {
+				return nil, err
+			}
+			deployerImageTemplateFormatImage, err := deployerImage(openshiftVersion)
 			if err != nil {
 				return nil, err
 			}
@@ -140,7 +145,7 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			image, err := getOpenshiftControllerManagerImage(data.Cluster().Spec.Version.String())
+			image, err := hypershiftImage(data.Cluster().Spec.Version.String())
 			if err != nil {
 				return nil, err
 			}
@@ -163,6 +168,10 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 					Command:   []string{"hypershift", "openshift-controller-manager"},
 					Args:      []string{"--config=/etc/origin/master/config.yaml", "-v=2"},
 					Resources: resourceRequirements,
+					Env: []corev1.EnvVar{{
+						Name:  "KUBECONFIG",
+						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
+					}},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
@@ -190,7 +199,7 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(OpenshiftControllerManagerDeploymentName, data.Cluster().Name)
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OpenshiftControllerManagerDeploymentName))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OpenshiftControllerManagerDeploymentName), "OAuthClient,oauth.openshift.io/v1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}
@@ -243,23 +252,5 @@ func getControllerManagerVolumes() []corev1.Volume {
 				},
 			},
 		},
-	}
-}
-
-func buildAndDeployerImageTemplateFormatImage(openshiftVersion string) (string, string, error) {
-	switch openshiftVersion {
-	case openshiftVersion419:
-		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:f4d2df04a0ac1b689bc275c060e5520781f48f007dabf849d92cf1519f16ea82", "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:8b946a142a8ba328ffe04195bb3fc4beeff26aaa4d8d0e99528340e8880eba7e", nil
-	default:
-		return "", "", fmt.Errorf("no build and deployer imageFormatImage available for openshift version %q", openshiftVersion)
-	}
-}
-
-func getOpenshiftControllerManagerImage(version string) (string, error) {
-	switch version {
-	case openshiftVersion419:
-		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:86255c4efe6bbc141a0f41444f863bbd5cd832ffca21d2b737a4f9c225ed00ad", nil
-	default:
-		return "", fmt.Errorf("no openshit controller manager image available for version %q", version)
 	}
 }

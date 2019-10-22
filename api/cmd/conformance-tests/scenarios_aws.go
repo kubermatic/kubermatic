@@ -1,11 +1,19 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	awsapiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/aws"
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+
+	"k8s.io/apimachinery/pkg/util/sets"
+	utilpointer "k8s.io/utils/pointer"
 )
+
+const awsDC = "aws-eu-central-1a"
 
 // Returns a matrix of (version x operating system)
 func getAWSScenarios(versions []*semver.Semver) []testScenario {
@@ -53,7 +61,7 @@ func (s *awsScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 			Type: "kubernetes",
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: "aws-eu-central-1a",
+					DatacenterName: awsDC,
 					Aws: &apimodels.AWSCloudSpec{
 						SecretAccessKey: secrets.AWS.SecretAccessKey,
 						AccessKeyID:     secrets.AWS.AccessKeyID,
@@ -65,10 +73,60 @@ func (s *awsScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	}
 }
 
-func (s *awsScenario) NodeDeployments(num int, secrets secrets) []apimodels.NodeDeployment {
+func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
 	instanceType := "t2.medium"
 	volumeType := "gp2"
 	volumeSize := int64(100)
+
+	listVPCParams := &awsapiclient.ListAWSVPCSParams{
+		AccessKeyID:     utilpointer.StringPtr(secrets.AWS.AccessKeyID),
+		SecretAccessKey: utilpointer.StringPtr(secrets.AWS.SecretAccessKey),
+		Dc:              awsDC,
+	}
+	listVPCParams.SetTimeout(15 * time.Second)
+	vpcResponse, err := secrets.kubermaticClient.Aws.ListAWSVPCS(listVPCParams, secrets.kubermaticAuthenticator)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get vpcs: %s", fmtSwaggerError(err))
+	}
+	if len(vpcResponse.Payload) < 1 {
+		return nil, errors.New("got zero vpcs back")
+	}
+	vpcID := vpcResponse.Payload[0].VpcID
+	for _, vpc := range vpcResponse.Payload {
+		if vpc.IsDefault {
+			vpcID = vpc.VpcID
+			break
+		}
+	}
+
+	listSubnetParams := &awsapiclient.ListAWSSubnetsParams{
+		AccessKeyID:     utilpointer.StringPtr(secrets.AWS.AccessKeyID),
+		SecretAccessKey: utilpointer.StringPtr(secrets.AWS.SecretAccessKey),
+		Dc:              awsDC,
+		Vpc:             utilpointer.StringPtr(vpcID),
+	}
+	listSubnetParams.SetTimeout(15 * time.Second)
+	subnetResponse, err := secrets.kubermaticClient.Aws.ListAWSSubnets(listSubnetParams, secrets.kubermaticAuthenticator)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get subnets: %s", fmtSwaggerError(err))
+	}
+	if n := len(subnetResponse.Payload); n < 3 {
+		return nil, fmt.Errorf("expected to get at least three subnets, got %d", n)
+	}
+
+	// Find three subnets that are in different AZs to preserve the multi az testcase
+	allAZs := sets.String{}
+	var subnets []*apimodels.AWSSubnet
+	for _, subnet := range subnetResponse.Payload {
+		if !allAZs.Has(subnet.AvailabilityZone) {
+			allAZs.Insert(subnet.AvailabilityZone)
+			subnets = append(subnets, subnet)
+		}
+	}
+
+	if n := len(subnets); n < 3 {
+		return nil, fmt.Errorf("wanted three subnets in different AZs, got only %d", n)
+	}
 
 	nds := []apimodels.NodeDeployment{
 		{
@@ -79,8 +137,8 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) []apimodels.Node
 							InstanceType:     &instanceType,
 							VolumeType:       &volumeType,
 							VolumeSize:       &volumeSize,
-							AvailabilityZone: "eu-central-1a",
-							SubnetID:         "subnet-2bff4f43",
+							AvailabilityZone: subnets[0].AvailabilityZone,
+							SubnetID:         subnets[0].ID,
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
@@ -98,8 +156,8 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) []apimodels.Node
 							InstanceType:     &instanceType,
 							VolumeType:       &volumeType,
 							VolumeSize:       &volumeSize,
-							AvailabilityZone: "eu-central-1b",
-							SubnetID:         "subnet-06d1167c",
+							AvailabilityZone: subnets[1].AvailabilityZone,
+							SubnetID:         subnets[1].ID,
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
@@ -117,8 +175,8 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) []apimodels.Node
 							InstanceType:     &instanceType,
 							VolumeType:       &volumeType,
 							VolumeSize:       &volumeSize,
-							AvailabilityZone: "eu-central-1c",
-							SubnetID:         "subnet-f3427db9",
+							AvailabilityZone: subnets[2].AvailabilityZone,
+							SubnetID:         subnets[2].ID,
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
@@ -144,7 +202,7 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) []apimodels.Node
 		nds[i].Spec.Replicas = &replicas
 	}
 
-	return nds
+	return nds, nil
 }
 
 func (s *awsScenario) OS() apimodels.OperatingSystemSpec {

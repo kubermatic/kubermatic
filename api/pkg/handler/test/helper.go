@@ -61,21 +61,24 @@ func init() {
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to add clusterv1alpha1 scheme to scheme.Scheme", "error", err)
 	}
-	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to add kubermaticv1 scheme to scheme.Scheme", "error", err)
-	}
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme v1beta1", "error", err)
 	}
 }
 
 const (
-	// UserID holds the test user ID
+	// UserID holds a test user ID
 	UserID = "1233"
-	// UserName holds the test user name
+	// UserID2 holds a test user ID
+	UserID2 = "1523"
+	// UserName holds a test user name
 	UserName = "user1"
-	// UserEmail holds the test user email
+	// UserName2 holds a test user name
+	UserName2 = "user2"
+	// UserEmail holds a test user email
 	UserEmail = "john@acme.com"
+	// UserEmail2 holds a test user email
+	UserEmail2 = "bob@example.com"
 	// ClusterID holds the test cluster ID
 	ClusterID = "AbcClusterID"
 	// DefaultClusterID holds the test default cluster ID
@@ -96,10 +99,10 @@ const (
 	TestOSuserPass = "OSpass"
 	// TestOSuserName OpenStack user name
 	TestOSuserName = "OSuser"
-	// TestOSCredential OpenStack provider credential name
-	TestOSCredential = "testOpenstack"
 	// TestFakeCredential Fake provider credential name
-	TestFakeCredential = "pluton"
+	TestFakeCredential = "fake"
+	// RequiredEmailDomain required domain for predefined credentials
+	RequiredEmailDomain = "acme.com"
 )
 
 // GetUser is a convenience function for generating apiv1.User
@@ -212,6 +215,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
 	clusterProvider := kubernetes.NewClusterProvider(
+		&restclient.Config{},
 		fakeKubermaticImpersonationClient,
 		fUserClusterConnection,
 		"",
@@ -278,13 +282,24 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 // CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
 func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
-	credentialManager := presets.New()
-	credentialManager.GetPresets().Fake = presets.Fake{Credentials: []presets.FakeCredentials{
-		{Name: TestFakeCredential, Token: "dummy_pluton_token"},
-	}}
-	credentialManager.GetPresets().Openstack = presets.Openstack{Credentials: []presets.OpenstackCredentials{
-		{Name: TestOSCredential, Username: TestOSuserName, Password: TestOSuserPass, Domain: TestOSdomain},
-	}}
+	credentialManager := presets.NewWithPresets(&kubermaticv1.PresetList{
+		Items: []kubermaticv1.Preset{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "fake",
+				},
+				Spec: kubermaticv1.PresetSpec{
+					RequiredEmailDomain: RequiredEmailDomain,
+					Fake: &kubermaticv1.Fake{
+						Token: "dummy_pluton_token",
+					},
+					Openstack: &kubermaticv1.Openstack{
+						Username: TestOSuserName, Password: TestOSuserPass, Domain: TestOSdomain,
+					},
+				},
+			},
+		},
+	})
 	return initTestEndpoint(user, seedsGetter, kubeObjects, machineObjects, kubermaticObjects, versions, updates, credentialManager, routingFunc)
 }
 
@@ -329,6 +344,14 @@ func buildSeeds() provider.SeedsGetter {
 								},
 							},
 						},
+						"restricted-fake-dc": {
+							Country:  "NL",
+							Location: "Amsterdam",
+							Spec: kubermaticv1.DatacenterSpec{
+								Fake:                &kubermaticv1.DatacenterSpecFake{},
+								RequiredEmailDomain: "example.com",
+							},
+						},
 						"fake-dc": {
 							Location: "Henriks basement",
 							Country:  "Germany",
@@ -353,6 +376,13 @@ func (f *fakeUserClusterConnection) GetClient(_ *kubermaticv1.Cluster, _ ...k8cu
 
 func (f *fakeUserClusterConnection) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
 	return []byte(generateTestKubeconfig(ClusterID, IDToken)), nil
+}
+
+func (f *fakeUserClusterConnection) GetViewerKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
+	return []byte(generateTestKubeconfig(ClusterID, IDViewerToken)), nil
+}
+func (f *fakeUserClusterConnection) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error {
+	return nil
 }
 
 // ClientsSets a simple wrapper that holds fake client sets
@@ -390,8 +420,16 @@ users:
 
 // APIUserToKubermaticUser simply converts apiv1.User to kubermaticv1.User type
 func APIUserToKubermaticUser(user apiv1.User) *kubermaticv1.User {
+	var deletionTimestamp *metav1.Time
+	if user.DeletionTimestamp != nil {
+		deletionTimestamp = &metav1.Time{Time: user.DeletionTimestamp.Time}
+	}
 	return &kubermaticv1.User{
-		ObjectMeta: metav1.ObjectMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              user.Name,
+			CreationTimestamp: metav1.Time{Time: user.CreationTimestamp.Time},
+			DeletionTimestamp: deletionTimestamp,
+		},
 		Spec: kubermaticv1.UserSpec{
 			Name:  user.Name,
 			Email: user.Email,
@@ -602,11 +640,13 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 		},
 		Status: kubermaticv1.ClusterStatus{
 			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
-				Apiserver:         kubermaticv1.HealthStatusUp,
-				Scheduler:         kubermaticv1.HealthStatusUp,
-				Controller:        kubermaticv1.HealthStatusUp,
-				MachineController: kubermaticv1.HealthStatusUp,
-				Etcd:              kubermaticv1.HealthStatusUp,
+				Apiserver:                    kubermaticv1.HealthStatusUp,
+				Scheduler:                    kubermaticv1.HealthStatusUp,
+				Controller:                   kubermaticv1.HealthStatusUp,
+				MachineController:            kubermaticv1.HealthStatusUp,
+				Etcd:                         kubermaticv1.HealthStatusUp,
+				UserClusterControllerManager: kubermaticv1.HealthStatusUp,
+				CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 			},
 		},
 	}

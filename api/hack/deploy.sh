@@ -31,6 +31,29 @@ cd "$(dirname "$0")/../../"
 
 source ./api/hack/lib.sh
 
+deployment_disabled() {
+  local release="$1"
+  local name="prow-disable-$release-chart"
+
+  # retrieve a dummy configmap
+  cm=$(kubectl -n kube-system get configmap "$name" -o json --ignore-not-found)
+  if [ -z "$cm" ]; then
+    return 1
+  fi
+
+  # if the ConfigMap is older than a week, assume someone forgot it;
+  # fail the deployment loudly so someone can fix it
+  age=$(echo "$cm" | jq -r 'now - (.metadata.creationTimestamp | fromdateiso8601)')
+  age="${age%.*}"
+
+  if [ "$age" -gt "604800" ]; then
+    echo "ConfigMap $name exists but is older than 7 days. Either remove the ConfigMap or re-create it to get another 7 days of paused deployments."
+    exit 1
+  fi
+
+  return 0
+}
+
 function deploy {
   local name=$1
   local namespace=$2
@@ -39,13 +62,19 @@ function deploy {
 
   TEST_NAME="[Helm] Deploy chart ${name}"
 
+  if deployment_disabled "${name}"; then
+    echodate "Deployment has been manually disabled on this cluster. Skipping this chart."
+    unset TEST_NAME
+    return 0
+  fi
+
   inital_revision="$(retry 5 helm list --tiller-namespace=${TILLER_NAMESPACE} ${name} --output=json|jq '.Releases[0].Revision')"
 
   echodate "Upgrading ${name}..."
   retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --atomic --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
 
   if [ "${CANARY_DEPLOYMENT:-}" = "true" ]; then
-    TEST_NAME="[Helm] Roll back chart ${name}"
+    TEST_NAME="[Helm] Rollback chart ${name}"
     echodate "Rolling back ${name} to revision ${inital_revision} as this was only a canary deployment"
     retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} rollback --wait --timeout $timeout ${name} ${inital_revision}
   fi
@@ -83,6 +112,10 @@ case "${DEPLOY_STACK}" in
     deploy "helm-exporter" "monitoring" ./config/monitoring/helm-exporter/
     if [[ "${DEPLOY_ALERTMANAGER}" = true ]]; then
       deploy "alertmanager" "monitoring" ./config/monitoring/alertmanager/
+
+      if [[ "${1}" = "master" ]]; then
+        deploy "karma" "monitoring" ./config/monitoring/karma/
+      fi
     fi
 
     # Prometheus can take a long time to become ready, depending on the WAL size.

@@ -53,12 +53,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func main() {
+	klog.InitFlags(nil)
 	options, err := newServerRunOptions()
 	if err != nil {
 		fmt.Printf("failed to create server run options due to = %v\n", err)
@@ -77,9 +79,6 @@ func main() {
 	}()
 	kubermaticlog.Logger = log
 
-	if err := kubermaticv1.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
-	}
 	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
@@ -133,7 +132,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 	// We use the manager only to get a lister-backed ctrlruntimeclient.Client. We can not use it for most
 	// other actions, because it doesn't support impersonation (and cant be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
-	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0", LeaderElection: false})
+	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0"})
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to construct manager: %v", err)
 	}
@@ -248,6 +247,7 @@ func createAuthClients(options serverRunOptions, prov providers) (auth.TokenVeri
 		"",
 		auth.NewCombinedExtractor(
 			auth.NewHeaderBearerTokenExtractor("Authorization"),
+			auth.NewCookieHeaderBearerTokenExtractor("token"),
 			auth.NewQueryParamBearerTokenExtractor("token"),
 		),
 		options.oidcSkipTLSVerify,
@@ -286,6 +286,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	serviceAccountTokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey))
 
 	r := handler.NewRouting(
+		kubermaticlog.New(options.log.Debug, kubermaticlog.Format(options.log.Format)).Sugar(),
 		prov.seedsGetter,
 		prov.clusterProviderGetter,
 		prov.addons,
@@ -307,6 +308,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.eventRecorderProvider,
 		presetsManager,
 		options.exposeStrategy,
+		options.accessibleAddons,
 	)
 
 	registerMetrics()
@@ -410,6 +412,7 @@ func clusterProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, 
 		}
 
 		return kubernetesprovider.NewClusterProvider(
+			cfg,
 			defaultImpersonationClientForSeed.CreateImpersonatedKubermaticClientSet,
 			userClusterConnectionProvider,
 			workerName,

@@ -14,10 +14,15 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
+	machineconversions "github.com/kubermatic/kubermatic/api/pkg/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	awsprovider "github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var data *ec2.InstanceData
@@ -38,15 +43,6 @@ type AWSCommonReq struct {
 	// in: header
 	// name: Credential
 	Credential string
-}
-
-// AWSZoneReq represent a request for AWS zones.
-// swagger:parameters listAWSZones
-type AWSZoneReq struct {
-	AWSCommonReq
-	// in: path
-	// required: true
-	DC string `json:"dc"`
 }
 
 // AWSSubnetReq represent a request for AWS subnets.
@@ -90,25 +86,6 @@ func DecodeAWSCommonReq(c context.Context, r *http.Request) (interface{}, error)
 	req.AccessKeyID = r.Header.Get("AccessKeyID")
 	req.SecretAccessKey = r.Header.Get("SecretAccessKey")
 	req.Credential = r.Header.Get("Credential")
-
-	return req, nil
-}
-
-// DecodeAWSZoneReq decodes a request for a list of AWS zones
-func DecodeAWSZoneReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req AWSZoneReq
-
-	commonReq, err := DecodeAWSCommonReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.AWSCommonReq = commonReq.(AWSCommonReq)
-
-	dc, ok := mux.Vars(r)["dc"]
-	if !ok {
-		return req, fmt.Errorf("'dc' parameter is required")
-	}
-	req.DC = dc
 
 	return req, nil
 }
@@ -179,7 +156,7 @@ func AWSSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, seed
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		dc, err := dc.GetDatacenter(seedsGetter, cluster.Spec.Cloud.DatacenterName)
+		dc, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
@@ -226,96 +203,6 @@ func awsSizes(region string) (apiv1.AWSSizeList, error) {
 	return sizes, nil
 }
 
-// AWSZoneEndpoint handles the request to list AWS availability zones in a given region, using provided credentials
-func AWSZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(AWSZoneReq)
-
-		accessKeyID := req.AccessKeyID
-		secretAccessKey := req.SecretAccessKey
-
-		if len(req.Credential) > 0 && credentialManager.GetPresets().AWS.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().AWS.Credentials {
-				if credential.Name == req.Credential {
-					accessKeyID = credential.AccessKeyID
-					secretAccessKey = credential.SecretAccessKey
-					break
-				}
-			}
-		}
-
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, req.DC)
-		if err != nil {
-			return nil, errors.NewBadRequest("%v", err)
-		}
-		return listAWSZones(accessKeyID, secretAccessKey, datacenter)
-	}
-}
-
-// AWSZoneWithClusterCredentialsEndpoint handles the request to list AWS availability zones in a given region, using credentials from a given datacenter
-func AWSZoneWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(common.GetClusterReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		if cluster.Spec.Cloud.AWS == nil {
-			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
-		}
-
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, cluster.Spec.Cloud.DatacenterName)
-		if err != nil {
-			return nil, errors.NewBadRequest("%v", err)
-		}
-
-		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider")
-		}
-
-		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-		accessKeyID, secretAccessKey, err := awsprovider.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
-		if err != nil {
-			return nil, err
-		}
-		return listAWSZones(accessKeyID, secretAccessKey, datacenter)
-	}
-}
-
-func listAWSZones(accessKeyID, secretAccessKey string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSZoneList, error) {
-	zones := apiv1.AWSZoneList{}
-
-	if datacenter.Spec.AWS == nil {
-		return nil, errors.NewBadRequest("cluster is not in an AWS Datacenter")
-	}
-
-	zoneResults, err := awsprovider.GetAvailabilityZonesInRegion(accessKeyID, secretAccessKey, datacenter.Spec.AWS.Region)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, z := range zoneResults {
-		zones = append(zones, apiv1.AWSZone{Name: *z.ZoneName})
-	}
-
-	return zones, err
-}
-
 // AWSSubnetEndpoint handles the request to list AWS availability subnets in a given vpc, using provided credentials
 func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -325,27 +212,37 @@ func AWSSubnetEndpoint(credentialManager common.PresetsManager, seedsGetter prov
 		secretAccessKey := req.SecretAccessKey
 		vpcID := req.VPC
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().AWS.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().AWS.Credentials {
-				if credential.Name == req.Credential {
-					accessKeyID = credential.AccessKeyID
-					secretAccessKey = credential.SecretAccessKey
-					vpcID = credential.VPCID
-					break
-				}
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credential := preset.Spec.AWS; credential != nil {
+				accessKeyID = credential.AccessKeyID
+				secretAccessKey = credential.SecretAccessKey
+				vpcID = credential.VPCID
 			}
 		}
 
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-		_, dc, err := provider.DatacenterFromSeedMap(seeds, req.DC)
+		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		return listAWSSubnets(accessKeyID, secretAccessKey, vpcID, dc)
+		subnetList, err := listAWSSubnets(accessKeyID, secretAccessKey, vpcID, dc)
+		if err != nil {
+			return nil, err
+		}
+		if len(subnetList) > 0 {
+			subnetList[0].IsDefaultSubnet = true
+		}
+
+		return subnetList, nil
 	}
 }
 
@@ -367,11 +264,7 @@ func AWSSubnetWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-		_, dc, err := provider.DatacenterFromSeedMap(seeds, cluster.Spec.Cloud.DatacenterName)
+		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -386,8 +279,74 @@ func AWSSubnetWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 			return nil, err
 		}
 
-		return listAWSSubnets(accessKeyID, secretAccessKey, cluster.Spec.Cloud.AWS.VPCID, dc)
+		subnetList, err := listAWSSubnets(accessKeyID, secretAccessKey, cluster.Spec.Cloud.AWS.VPCID, dc)
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return SetDefaultSubnet(machineDeployments, subnetList)
 	}
+}
+
+func SetDefaultSubnet(machineDeployments *clusterv1alpha1.MachineDeploymentList, subnets apiv1.AWSSubnetList) (apiv1.AWSSubnetList, error) {
+	if len(subnets) == 0 {
+		return nil, fmt.Errorf("the subnet list can not be empty")
+	}
+	if machineDeployments == nil {
+		return nil, fmt.Errorf("the machine deployment list can not be nil")
+	}
+
+	machinesForAZ := map[string]int32{}
+
+	for _, subnet := range subnets {
+		machinesForAZ[subnet.AvailabilityZone] = 0
+	}
+
+	var machineCounter int32
+	var replicas int32
+	for _, md := range machineDeployments.Items {
+		cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(md.Spec.Template.Spec)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get node cloud spec from machine deployment: %v", err)
+		}
+		if cloudSpec.AWS == nil {
+			return nil, errors.NewBadRequest("cloud spec missing")
+		}
+		if md.Spec.Replicas != nil {
+			replicas = *md.Spec.Replicas
+		}
+
+		machinesForAZ[cloudSpec.AWS.AvailabilityZone] += replicas
+		machineCounter += replicas
+	}
+	// If no machines exist, set the first as a default
+	if machineCounter == 0 {
+		subnets[0].IsDefaultSubnet = true
+		return subnets, nil
+	}
+
+	// If machines exist, but there are AZs in the region without machines
+	// set a subnet in an AZ that doesn't yet have machines
+	for i, subnet := range subnets {
+		if machinesForAZ[subnet.AvailabilityZone] == 0 {
+			subnets[i].IsDefaultSubnet = true
+			return subnets, nil
+		}
+	}
+
+	// If we already have machines for all AZs, just set the first
+	subnets[0].IsDefaultSubnet = true
+	return subnets, nil
 }
 
 func listAWSSubnets(accessKeyID, secretAccessKey, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
@@ -450,21 +409,23 @@ func AWSVPCEndpoint(credentialManager common.PresetsManager, seedsGetter provide
 		accessKeyID := req.AccessKeyID
 		secretAccessKey := req.SecretAccessKey
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().AWS.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().AWS.Credentials {
-				if credential.Name == req.Credential {
-					accessKeyID = credential.AccessKeyID
-					secretAccessKey = credential.SecretAccessKey
-					break
-				}
+		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		}
+
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credential := preset.Spec.AWS; credential != nil {
+				accessKeyID = credential.AccessKeyID
+				secretAccessKey = credential.SecretAccessKey
 			}
 		}
 
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-		_, datacenter, err := provider.DatacenterFromSeedMap(seeds, req.DC)
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.DC)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}

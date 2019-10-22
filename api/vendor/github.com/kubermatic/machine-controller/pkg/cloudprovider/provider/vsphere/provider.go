@@ -24,15 +24,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/golang/glog"
-
-	corev1 "k8s.io/api/core/v1"
-	ktypes "k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/property"
@@ -43,6 +34,14 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	cloudprovidertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+
+	corev1 "k8s.io/api/core/v1"
+	ktypes "k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/klog"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
+	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -440,7 +439,7 @@ func (p *provider) Cleanup(machine *v1alpha1.Machine, data *cloudprovidertypes.P
 		}
 	}
 
-	glog.V(2).Infof("Successfully destroyed vm %s", virtualMachine.Name())
+	klog.V(2).Infof("Successfully destroyed vm %s", virtualMachine.Name())
 	return true, nil
 }
 
@@ -478,7 +477,7 @@ func (p *provider) Get(machine *v1alpha1.Machine, data *cloudprovidertypes.Provi
 		}
 		machineCreationCompletedSuccessfully := creationCompleteFieldValue == machine.Spec.Name
 		if !machineCreationCompletedSuccessfully {
-			glog.V(4).Infof("Cleaning up instance %q whose creation didn't complete", machine.Spec.Name)
+			klog.V(4).Infof("Cleaning up instance %q whose creation didn't complete", machine.Spec.Name)
 			if _, err := p.Cleanup(machine, data); err != nil {
 				return nil, fmt.Errorf("failed to delete instance whose creation didn't complete: %v", err)
 			}
@@ -534,7 +533,7 @@ func (p *provider) Get(machine *v1alpha1.Machine, data *cloudprovidertypes.Provi
 				}
 			}
 		} else {
-			glog.V(3).Infof("Can't fetch the IP addresses for machine %s, the VMware guest utils are not running yet. This might take a few minutes", machine.Spec.Name)
+			klog.V(3).Infof("Can't fetch the IP addresses for machine %s, the VMware guest utils are not running yet. This might take a few minutes", machine.Spec.Name)
 		}
 	}
 

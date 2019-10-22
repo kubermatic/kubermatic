@@ -14,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/api/equality"
+	utilerror "k8s.io/apimachinery/pkg/util/errors"
 )
 
 var (
@@ -151,6 +152,9 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 		return errors.New("changing the status is not allowed")
 	}
 
+	// Editing labels is allowed even though it is part of metadata.
+	oldCluster.Labels = newCluster.Labels
+
 	if !equality.Semantic.DeepEqual(newCluster.ObjectMeta, oldCluster.ObjectMeta) {
 		return errors.New("changing the metadata is not allowed")
 	}
@@ -261,17 +265,32 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter)
 
 func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kubermaticv1.Datacenter) error {
 	if spec.Domain == "" {
-		return errors.New("no domain specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackDomain); err != nil {
+			return err
+		}
 	}
 	if spec.Username == "" {
-		return errors.New("no username specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackUsername); err != nil {
+			return err
+		}
 	}
 	if spec.Password == "" {
-		return errors.New("no password specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackPassword); err != nil {
+			return err
+		}
 	}
-	if spec.Tenant == "" && spec.TenantID == "" {
+
+	var errs []error
+	if spec.Tenant == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenant))
+	}
+	if spec.TenantID == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenantID))
+	}
+	if utilerror.NewAggregate(errs) != nil {
 		return errors.New("no tenant name or ID specified")
 	}
+
 	if spec.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
 		return errors.New("no floating ip pool specified")
 	}
@@ -294,7 +313,9 @@ func validateAWSCloudSpec(spec *kubermaticv1.AWSCloudSpec) error {
 
 func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec) error {
 	if spec.ServiceAccount == "" {
-		return errors.New("no serviceaccount specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.GCPServiceAccount); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -325,10 +346,14 @@ func validatePacketCloudSpec(spec *kubermaticv1.PacketCloudSpec) error {
 
 func validateVSphereCloudSpec(spec *kubermaticv1.VSphereCloudSpec) error {
 	if spec.Username == "" {
-		return errors.New("no username specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.VsphereUsername); err != nil {
+			return err
+		}
 	}
 	if spec.Password == "" {
-		return errors.New("no password specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.VspherePassword); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -336,16 +361,24 @@ func validateVSphereCloudSpec(spec *kubermaticv1.VSphereCloudSpec) error {
 
 func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 	if spec.TenantID == "" {
-		return errors.New("no tenant ID specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AzureTenantID); err != nil {
+			return err
+		}
 	}
 	if spec.SubscriptionID == "" {
-		return errors.New("no subscription ID specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AzureSubscriptionID); err != nil {
+			return err
+		}
 	}
 	if spec.ClientID == "" {
-		return errors.New("no client ID specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AzureClientID); err != nil {
+			return err
+		}
 	}
 	if spec.ClientSecret == "" {
-		return errors.New("no client secret specified")
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AzureClientSecret); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -353,6 +386,10 @@ func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 
 func validateDigitaloceanCloudSpec(spec *kubermaticv1.DigitaloceanCloudSpec) error {
 	if spec.Token == "" {
+		if spec.CredentialsReference == nil {
+			return errors.New("no token or credentials reference specified")
+		}
+
 		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.DigitaloceanToken); err != nil {
 			return err
 		}

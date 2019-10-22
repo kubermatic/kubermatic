@@ -39,6 +39,7 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	if err := d.cleanupInClusterResources(ctx, log, cluster); err != nil {
 		return err
 	}
+
 	if err := d.cleanupNodes(ctx, cluster); err != nil {
 		return err
 	}
@@ -66,10 +67,12 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 
 	shouldDeleteLBs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterLBCleanupFinalizer)
 	shouldDeletePVs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterPVCleanupFinalizer)
+	shouldDeleteCredentialsRequests := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer)
+	shouldDeleteImageRegistryConfigs := kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.InClusterImageRegistryConfigCleanupFinalizer)
 
 	// If no relevant finalizer exists, directly return
-	if !shouldDeleteLBs && !shouldDeletePVs {
-		log.Debug("Skipping in-cluster-resources deletion. Neither the LB nor the PV finalizers is set")
+	if !shouldDeleteLBs && !shouldDeletePVs && !shouldDeleteCredentialsRequests && !shouldDeleteImageRegistryConfigs {
+		log.Debug("Skipping in-cluster-resources deletion. None of the in-cluster cleanup finalizers is set.")
 		return nil
 	}
 
@@ -91,6 +94,27 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 			return fmt.Errorf("failed to cleanup LBs: %v", err)
 		}
 		deletedSomeResource = deletedSomeResource || deletedSomeVolumes
+	}
+
+	if shouldDeleteImageRegistryConfigs {
+		deletedSomeImageRegistryConfigs, err := d.cleanupImageRegistryConfigs(ctx, log, cluster)
+		if err != nil {
+			return fmt.Errorf("failed to cleanup ImageRegistryConfigs: %v", err)
+		}
+		// Prevent the credentials from getting invalidated before cleanup finished
+		if deletedSomeImageRegistryConfigs {
+			return nil
+		}
+	}
+
+	// This must come after the ImageRegistryConfigs deletion, as it uses a credential
+	// obtainted via a CredentialsRequest
+	if shouldDeleteCredentialsRequests {
+		deletedSomeCredentialsRequests, err := d.cleanupCredentialsRequests(ctx, log, cluster)
+		if err != nil {
+			return fmt.Errorf("failed to cleanup CredentialsRequests: %v", err)
+		}
+		deletedSomeResource = deletedSomeResource || deletedSomeCredentialsRequests
 	}
 
 	// If we deleted something it is implied that there was still something left. Just return
@@ -115,6 +139,8 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 	return d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.InClusterLBCleanupFinalizer)
 		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.InClusterPVCleanupFinalizer)
+		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer)
+		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.InClusterImageRegistryConfigCleanupFinalizer)
 	})
 }
 

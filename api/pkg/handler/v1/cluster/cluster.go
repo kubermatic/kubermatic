@@ -12,7 +12,6 @@ import (
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
-	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -20,12 +19,14 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	kubermaticerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
 
 	corev1 "k8s.io/api/core/v1"
@@ -34,6 +35,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/klog"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -75,19 +77,14 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			return nil, errors.New(int(http.StatusBadRequest), "cluster.ID is read-only")
 		}
 
-		seeds, err := seedsGetter()
+		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.Body.Cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
-			return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-
-		_, dc, err := provider.DatacenterFromSeedMap(seeds, req.Body.Cluster.Spec.Cloud.DatacenterName)
-		if err != nil {
-			return nil, fmt.Errorf("error getting dc: %v", err)
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		credentialName := req.Body.Cluster.Credential
 		if len(credentialName) > 0 {
-			cloudSpec, err := credentialManager.SetCloudCredentials(credentialName, req.Body.Cluster.Spec.Cloud, dc)
+			cloudSpec, err := credentialManager.SetCloudCredentials(userInfo, credentialName, req.Body.Cluster.Spec.Cloud, dc)
 			if err != nil {
 				return nil, errors.NewBadRequest("invalid credentials: %v", err)
 			}
@@ -112,6 +109,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		}
 
 		partialCluster := &kubermaticv1.Cluster{}
+		partialCluster.Labels = req.Body.Cluster.Labels
 		partialCluster.Spec = *spec
 		if req.Body.Cluster.Type == "openshift" {
 			if req.Body.Cluster.Spec.Openshift == nil || req.Body.Cluster.Spec.Openshift.ImagePullSecret == "" {
@@ -127,6 +125,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		if err := kubernetesprovider.CreateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster, req.ProjectID); err != nil {
 			return nil, err
 		}
+		kuberneteshelper.AddFinalizer(partialCluster, apiv1.CredentialsSecretsCleanupFinalizer)
 
 		newCluster, err := clusterProvider.New(project, userInfo, partialCluster)
 		if err != nil {
@@ -141,7 +140,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 				return nil, errors.NewBadRequest("failed to create an initial node deployment due to an invalid spec: %v", err)
 			}
 			if isBYO {
-				glog.V(5).Infof("KubeAdm provider detected an initial node deployment won't be created for cluster %s", newCluster.Name)
+				klog.V(5).Infof("KubeAdm provider detected an initial node deployment won't be created for cluster %s", newCluster.Name)
 				return convertInternalClusterToExternal(newCluster), nil
 			}
 
@@ -149,14 +148,14 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 				defer utilruntime.HandleCrash()
 				ndName := getNodeDeploymentDisplayName(req.Body.NodeDeployment)
 				eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationStart), "Started creation of initial node deployment %s", ndName)
-				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, seeds, clusterProvider, userInfo)
+				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, seedsGetter, clusterProvider, userInfo)
 				if err != nil {
 					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(nodeDeploymentCreationFail), "Failed to create initial node deployment %s: %v", ndName, err)
-					glog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
+					klog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
 					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "datacenter": req.Body.Cluster.Spec.Cloud.DatacenterName}).Add(1)
 				} else {
 					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationSuccess), "Successfully created initial node deployment %s", ndName)
-					glog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)
+					klog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)
 				}
 			}()
 		}
@@ -167,17 +166,17 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 
 func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
 	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider,
-	seeds map[string]*kubermaticv1.Seed, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
+	seedsGetter provider.SeedsGetter, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
 	return wait.Poll(5*time.Second, 30*time.Minute, func() (bool, error) {
-		err := createInitialNodeDeployment(nodeDeployment, cluster, project, sshKeyProvider, seeds, clusterProvider, userInfo)
+		err := createInitialNodeDeployment(nodeDeployment, cluster, project, sshKeyProvider, seedsGetter, clusterProvider, userInfo)
 		if err != nil {
 			// unrecoverable
 			if strings.Contains(err.Error(), `admission webhook "machine-controller.kubermatic.io-machinedeployments" denied the request`) {
-				glog.V(4).Infof("giving up creating initial Node Deployments for cluster %s (%s) due to an unrecoverabl err %#v", cluster.Name, cluster.Spec.HumanReadableName, err)
+				klog.V(4).Infof("giving up creating initial Node Deployments for cluster %s (%s) due to an unrecoverabl err %#v", cluster.Name, cluster.Spec.HumanReadableName, err)
 				return false, err
 			}
 			// Likely recoverable
-			glog.V(4).Infof("retrying creating initial Node Deployments for cluster %s (%s) due to %v", cluster.Name, cluster.Spec.HumanReadableName, err)
+			klog.V(4).Infof("retrying creating initial Node Deployments for cluster %s (%s) due to %v", cluster.Name, cluster.Spec.HumanReadableName, err)
 			return false, nil
 		}
 		return true, nil
@@ -186,7 +185,7 @@ func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment
 
 func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
 	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider,
-	seeds map[string]*kubermaticv1.Seed, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
+	seedsGetter provider.SeedsGetter, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
 
@@ -210,7 +209,7 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 		return err
 	}
 
-	_, dc, err := provider.DatacenterFromSeedMap(seeds, cluster.Spec.Cloud.DatacenterName)
+	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
 		return fmt.Errorf("error getting dc: %v", err)
 	}
@@ -242,9 +241,10 @@ func getNodeDeploymentDisplayName(nd *apiv1.NodeDeployment) string {
 
 func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		fmt.Println("asa")
 		req := request.(common.GetClusterReq)
 
-		cluster, err := getCluster(ctx, req, projectProvider)
+		cluster, err := GetCluster(ctx, req, projectProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -253,10 +253,17 @@ func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	}
 }
 
-func getCluster(ctx context.Context, req common.GetClusterReq, projectProvider provider.ProjectProvider) (*kubermaticv1.Cluster, error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+// GetCluster returns the cluster for a given request
+func GetCluster(ctx context.Context, req common.GetClusterReq, projectProvider provider.ProjectProvider) (*kubermaticv1.Cluster, error) {
+	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	if !ok {
+		return nil, errors.New(http.StatusInternalServerError, "no cluster in request")
+	}
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-	userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+	userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+	if !ok {
+		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+	}
 	project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -284,22 +291,45 @@ func isStatus(err error, status int32) bool {
 	return ok && status == kubernetesError.Status().Code
 }
 
+// patchClusterSpec is equivalent of ClusterSpec but it uses default JSON marshalling method instead of custom
+// MarshalJSON defined for ClusterSpec type. This means it should be only used internally as it may contain
+// sensitive cloud provider authentication data.
+type patchClusterSpec apiv1.ClusterSpec
+
+// patchCluster is equivalent of Cluster but it uses patchClusterSpec instead of original ClusterSpec.
+// This means it should be only used internally as it may contain sensitive cloud provider authentication data.
+type patchCluster struct {
+	apiv1.Cluster `json:",inline"`
+	Spec          patchClusterSpec `json:"spec"`
+}
+
 func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		oldInternalCluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingClusterJSON, err := json.Marshal(existingCluster)
+		// Converting to API type as it is the type exposed externally.
+		externalCluster := convertInternalClusterToExternal(oldInternalCluster)
+
+		// Changing the type to patchCluster as during marshalling it doesn't remove the cloud provider authentication
+		// data that is required here for validation.
+		externalClusterSpec := (patchClusterSpec)(externalCluster.Spec)
+		clusterToPatch := patchCluster{
+			Cluster: *externalCluster,
+			Spec:    externalClusterSpec,
+		}
+
+		existingClusterJSON, err := json.Marshal(clusterToPatch)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode existing cluster: %v", err)
 		}
@@ -309,13 +339,26 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 			return nil, errors.NewBadRequest("cannot patch cluster: %v", err)
 		}
 
-		var patchedCluster *kubermaticv1.Cluster
+		var patchedCluster *apiv1.Cluster
 		err = json.Unmarshal(patchedClusterJSON, &patchedCluster)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
 		}
 
-		incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfo, clusterProvider, patchedCluster)
+		// Only specific fields from old internal cluster will be updated by a patch.
+		// It prevents user from changing other fields like resource ID or version that should not be modified.
+		newInternalCluster := oldInternalCluster.DeepCopy()
+		newInternalCluster.Spec.HumanReadableName = patchedCluster.Name
+		newInternalCluster.Labels = patchedCluster.Labels
+		newInternalCluster.Spec.Cloud = patchedCluster.Spec.Cloud
+		newInternalCluster.Spec.MachineNetworks = patchedCluster.Spec.MachineNetworks
+		newInternalCluster.Spec.Version = patchedCluster.Spec.Version
+		newInternalCluster.Spec.OIDC = patchedCluster.Spec.OIDC
+		newInternalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = patchedCluster.Spec.UsePodSecurityPolicyAdmissionPlugin
+		newInternalCluster.Spec.AuditLogging = patchedCluster.Spec.AuditLogging
+		newInternalCluster.Spec.Openshift = patchedCluster.Spec.Openshift
+
+		incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfo, clusterProvider, newInternalCluster)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check existing nodes' version skew: %v", err)
 		}
@@ -323,11 +366,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 			return nil, errors.NewBadRequest("Cluster contains nodes running the following incompatible kubelet versions: %v. Upgrade your nodes before you upgrade the cluster.", incompatibleKubelets)
 		}
 
-		seeds, err := seedsGetter()
-		if err != nil {
-			return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
-		}
-		_, dc, err := provider.DatacenterFromSeedMap(seeds, patchedCluster.Spec.Cloud.DatacenterName)
+		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, newInternalCluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
 		}
@@ -336,11 +375,11 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 		if !ok {
 			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 		}
-		if err := validation.ValidateUpdateCluster(ctx, patchedCluster, existingCluster, dc, assertedClusterProvider); err != nil {
+		if err := validation.ValidateUpdateCluster(ctx, newInternalCluster, oldInternalCluster, dc, assertedClusterProvider); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
 
-		updatedCluster, err := clusterProvider.Update(userInfo, patchedCluster)
+		updatedCluster, err := clusterProvider.Update(project, userInfo, newInternalCluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -418,8 +457,6 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		kuberneteshelper.AddFinalizer(existingCluster, apiv1.CredentialsSecretsCleanupFinalizer)
-
 		// Use the NodeDeletionFinalizer to determine if the cluster was ever up, the LB and PV finalizers
 		// will prevent cluster deletion if the APIserver was never created
 		wasUpOnce := kuberneteshelper.HasFinalizer(existingCluster, apiv1.NodeDeletionFinalizer)
@@ -432,7 +469,7 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			}
 		}
 
-		if _, err = clusterProvider.Update(userInfo, existingCluster); err != nil {
+		if _, err = clusterProvider.Update(project, userInfo, existingCluster); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -605,11 +642,13 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 				return nil
 			}(),
 		},
+		Labels: label.FilterLabels(label.ClusterResourceType, internalCluster.Labels),
 		Spec: apiv1.ClusterSpec{
 			Cloud:                               internalCluster.Spec.Cloud,
 			Version:                             internalCluster.Spec.Version,
 			MachineNetworks:                     internalCluster.Spec.MachineNetworks,
 			OIDC:                                internalCluster.Spec.OIDC,
+			AuditLogging:                        internalCluster.Spec.AuditLogging,
 			UsePodSecurityPolicyAdmissionPlugin: internalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
 		},
 		Status: apiv1.ClusterStatus{
@@ -620,10 +659,8 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 	}
 
 	isOpenShift, ok := internalCluster.Annotations["kubermatic.io/openshift"]
-	if ok {
-		if isOpenShift == "true" {
-			cluster.Type = apiv1.OpenShiftClusterType
-		}
+	if ok && isOpenShift == "true" {
+		cluster.Type = apiv1.OpenShiftClusterType
 	}
 
 	return cluster
@@ -693,7 +730,7 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 
-		cluster, err := getCluster(ctx, req, projectProvider)
+		cluster, err := GetCluster(ctx, req, projectProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -742,14 +779,11 @@ func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1b
 	clusterMetrics := &apiv1.ClusterMetrics{
 		Name:                cluster.Name,
 		ControlPlaneMetrics: apiv1.ControlPlaneMetrics{},
-		NodesMetrics:        make([]apiv1.NodeMetric, 0),
+		NodesMetrics:        apiv1.NodesMetric{},
 	}
 
 	for _, m := range nodeMetrics {
 		usage := corev1.ResourceList{}
-		nodeMetric := apiv1.NodeMetric{
-			Name: m.Name,
-		}
 		err := scheme.Scheme.Convert(&m.Usage, &usage, nil)
 		if err != nil {
 			return nil, err
@@ -760,23 +794,22 @@ func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1b
 			Available: availableNodesResources[m.Name],
 		}
 
-		if available, found := resourceMetricsInfo.Available[corev1.ResourceCPU]; found {
+		availableCPU, foundCPU := resourceMetricsInfo.Available[corev1.ResourceCPU]
+		availableMemory, foundMemory := resourceMetricsInfo.Available[corev1.ResourceMemory]
+		if foundCPU && foundMemory {
 			quantityCPU := resourceMetricsInfo.Metrics[corev1.ResourceCPU]
-			nodeMetric.CPUTotalMillicores = quantityCPU.MilliValue()
-			nodeMetric.CPUAvailableMillicores = available.MilliValue()
-			fraction := float64(quantityCPU.MilliValue()) / float64(available.MilliValue()) * 100
-			nodeMetric.CPUUsedPercentage = int64(fraction)
-		}
+			clusterMetrics.NodesMetrics.CPUTotalMillicores += quantityCPU.MilliValue()
+			clusterMetrics.NodesMetrics.CPUAvailableMillicores += availableCPU.MilliValue()
 
-		if available, found := resourceMetricsInfo.Available[corev1.ResourceMemory]; found {
 			quantityM := resourceMetricsInfo.Metrics[corev1.ResourceMemory]
-			nodeMetric.MemoryTotalBytes = quantityM.Value() / (1024 * 1024)
-			nodeMetric.MemoryAvailableBytes = available.Value() / (1024 * 1024)
-			fraction := float64(quantityM.MilliValue()) / float64(available.MilliValue()) * 100
-			nodeMetric.MemoryUsedPercentage = int64(fraction)
+			clusterMetrics.NodesMetrics.MemoryTotalBytes += quantityM.Value() / (1024 * 1024)
+			clusterMetrics.NodesMetrics.MemoryAvailableBytes += availableMemory.Value() / (1024 * 1024)
 		}
-		clusterMetrics.NodesMetrics = append(clusterMetrics.NodesMetrics, nodeMetric)
 	}
+	fractionCPU := float64(clusterMetrics.NodesMetrics.CPUTotalMillicores) / float64(clusterMetrics.NodesMetrics.CPUAvailableMillicores) * 100
+	clusterMetrics.NodesMetrics.CPUUsedPercentage += int64(fractionCPU)
+	fractionMemory := float64(clusterMetrics.NodesMetrics.MemoryTotalBytes) / float64(clusterMetrics.NodesMetrics.MemoryAvailableBytes) * 100
+	clusterMetrics.NodesMetrics.MemoryUsedPercentage += int64(fractionMemory)
 
 	for _, podMetrics := range podMetrics.Items {
 		for _, container := range podMetrics.Containers {
@@ -987,8 +1020,8 @@ func DecodeDetachSSHKeysReq(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-// AdminTokenReq defines HTTP request data for revokeClusterAdminToken endpoints.
-// swagger:parameters revokeClusterAdminToken
+// AdminTokenReq defines HTTP request data for revokeClusterAdminToken and revokeClusterViewerToken endpoints.
+// swagger:parameters revokeClusterAdminToken revokeClusterViewerToken
 type AdminTokenReq struct {
 	common.DCReq
 	// in: path
@@ -1018,7 +1051,7 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider) endpoint
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -1030,7 +1063,25 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider) endpoint
 
 		cluster.Address.AdminToken = kuberneteshelper.GenerateToken()
 
-		_, err = clusterProvider.Update(userInfo, cluster)
+		_, err = clusterProvider.Update(project, userInfo, cluster)
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+}
+
+func RevokeViewerTokenEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AdminTokenReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		err = clusterProvider.RevokeViewerKubeconfig(cluster)
+
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 }
@@ -1117,4 +1168,61 @@ func DecodeGetClusterEvents(c context.Context, r *http.Request) (interface{}, er
 	}
 
 	return req, nil
+}
+
+func ListNamespaceEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(common.GetClusterReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		namespaceList := &corev1.NamespaceList{}
+		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, namespaceList); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var apiNamespaces []apiv1.Namespace
+
+		for _, namespace := range namespaceList.Items {
+			apiNamespace := apiv1.Namespace{Name: namespace.Name}
+			apiNamespaces = append(apiNamespaces, apiNamespace)
+		}
+
+		return apiNamespaces, nil
+	}
+}
+
+// GetClusterProviderFromRequest returns cluster and cluster provider based on the provided request.
+func GetClusterProviderFromRequest(
+	ctx context.Context,
+	request interface{},
+	projectProvider provider.ProjectProvider) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
+
+	req, ok := request.(common.GetClusterReq)
+	if !ok {
+		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")
+	}
+	cluster, err := GetCluster(ctx, req, projectProvider)
+	if err != nil {
+		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+	}
+
+	rawClusterProvider, ok := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+	if !ok {
+		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, "no clusterProvider in request")
+	}
+	clusterProvider, ok := rawClusterProvider.(*kubernetesprovider.ClusterProvider)
+	if !ok {
+		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+	}
+	return cluster, clusterProvider, nil
 }

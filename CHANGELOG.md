@@ -1,3 +1,21 @@
+### [v2.11.6]()
+
+
+- Fixed a bug that could cause intermittent delays when using kubectl logs/exec with `exposeStrategy: LoadBalancer` [#4279](https://github.com/kubermatic/kubermatic/issues/4279) ([kubermatic-bot](https://github.com/kubermatic-bot))
+
+
+
+
+### [v2.11.5]()
+
+
+- Fix a bug that caused setup on nodes with a Kernel &gt; 4.18 to fail [#4180](https://github.com/kubermatic/kubermatic/issues/4180) ([alvaroaleman](https://github.com/alvaroaleman))
+- Fixed fetching the list of tenants on some OpenStack configurations with one region [#4185](https://github.com/kubermatic/kubermatic/issues/4185) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- Fixed a bug that could result in the clusterdeletion sometimes getting stuck [#4202](https://github.com/kubermatic/kubermatic/issues/4202) ([alvaroaleman](https://github.com/alvaroaleman))
+
+
+
+
 ### [v2.11.4]()
 
 

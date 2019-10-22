@@ -4,22 +4,24 @@ import (
 	"errors"
 	"fmt"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-
-	"github.com/golang/glog"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/iam"
+
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
+	"k8s.io/klog"
 )
 
 const (
 	resourceNamePrefix = "kubernetes-"
+
+	regionAnnotationKey = "kubermatic.io/aws-region"
 
 	securityGroupCleanupFinalizer    = "kubermatic.io/cleanup-aws-security-group"
 	instanceProfileCleanupFinalizer  = "kubermatic.io/cleanup-aws-instance-profile"
@@ -103,7 +105,7 @@ func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster, clusterUpdat
 // It is a part of a migration for older clusers (migrationRevision < 1) that didn't have these rules.
 func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
-		glog.Infof("Not adding ICMP allow rules for cluster %q as it has no securityGroupID set",
+		klog.Infof("Not adding ICMP allow rules for cluster %q as it has no securityGroupID set",
 			cluster.Name)
 		return nil
 	}
@@ -144,7 +146,7 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 
 	var secGroupRules []*ec2.IpPermission
 	if !hasIPV4ICMPRule {
-		glog.Infof("Adding allow rule for icmp to cluster %q", cluster.Name)
+		klog.Infof("Adding allow rule for icmp to cluster %q", cluster.Name)
 		secGroupRules = append(secGroupRules,
 			(&ec2.IpPermission{}).
 				SetIpProtocol("icmp").
@@ -155,7 +157,7 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 				}))
 	}
 	if !hasIPV6ICMPRule {
-		glog.Infof("Adding allow rule for icmpv6 to cluster %q", cluster.Name)
+		klog.Infof("Adding allow rule for icmpv6 to cluster %q", cluster.Name)
 		secGroupRules = append(secGroupRules,
 			(&ec2.IpPermission{}).
 				SetIpProtocol("icmpv6").
@@ -336,7 +338,7 @@ func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (str
 		return "", fmt.Errorf("failed to create security group %s: %v", newSecurityGroupName, err)
 	}
 	sgid := aws.StringValue(csgOut.GroupId)
-	glog.V(2).Infof("Security group %s for cluster %s created with id %s.", newSecurityGroupName, clusterName, sgid)
+	klog.V(2).Infof("Security group %s for cluster %s created with id %s.", newSecurityGroupName, clusterName, sgid)
 
 	// Add permissions.
 	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
@@ -481,6 +483,20 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
+	// We put this as an annotation on the cluster to allow addons to read this
+	// information.
+	if cluster.Annotations[regionAnnotationKey] != a.dc.Region {
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			if cluster.Annotations == nil {
+				cluster.Annotations = map[string]string{}
+			}
+			cluster.Annotations[regionAnnotationKey] = a.dc.Region
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return cluster, nil
 }
 
@@ -587,7 +603,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 
 	if kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
 		if err := removeTags(cluster, client.EC2); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to cleanup tags: %v", err)
 		}
 		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinalizer)
@@ -620,25 +636,6 @@ func isNotFound(err error) bool {
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
 func (a *AmazonEC2) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
-}
-
-// GetAvailabilityZonesInRegion returns the list of availability zones in the selected AWS region.
-func GetAvailabilityZonesInRegion(accessKeyID, secretAccessKey, region string) ([]*ec2.AvailabilityZone, error) {
-	client, err := GetClientSet(accessKeyID, secretAccessKey, region)
-	if err != nil {
-		return nil, err
-	}
-
-	filters := []*ec2.Filter{
-		{Name: aws.String("region-name"), Values: []*string{aws.String(region)}},
-	}
-	azinput := &ec2.DescribeAvailabilityZonesInput{Filters: filters}
-	out, err := client.EC2.DescribeAvailabilityZones(azinput)
-	if err != nil {
-		return nil, err
-	}
-
-	return out.AvailabilityZones, nil
 }
 
 // GetSubnets returns the list of subnets for a selected AWS vpc.

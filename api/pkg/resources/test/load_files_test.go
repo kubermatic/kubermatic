@@ -21,6 +21,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
+	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
@@ -201,6 +202,9 @@ func TestLoadFiles(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "de-test-01",
 						UID:  types.UID("1234567890"),
+						Labels: map[string]string{
+							"my-label": "my-value",
+						},
 					},
 					Spec: kubermaticv1.ClusterSpec{
 						ExposeStrategy: corev1.ServiceTypeLoadBalancer,
@@ -239,6 +243,13 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				dynamicClient := ctrlruntimefakeclient.NewFakeClient(
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            metricsserver.ServingCertSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
 					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
@@ -393,6 +404,20 @@ func TestLoadFiles(t *testing.T) {
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.KubernetesDashboardKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.UserSSHKeys,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
 					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
@@ -522,7 +547,14 @@ func TestLoadFiles(t *testing.T) {
 					dynamicClient,
 					cluster,
 					dc,
-					"testdc",
+					&kubermaticv1.Seed{
+						ObjectMeta: metav1.ObjectMeta{Name: "testdc"},
+						Spec: kubermaticv1.SeedSpec{
+							ProxySettings: &kubermaticv1.ProxySettings{
+								HTTPProxy: kubermaticv1.NewProxyValue("http://my-corp"),
+							},
+						},
+					},
 					"",
 					"",
 					"192.0.2.0/24",
@@ -550,11 +582,6 @@ func TestLoadFiles(t *testing.T) {
 						t.Fatalf("failed to create Deployment: %v", err)
 					}
 					fixturePath := fmt.Sprintf("deployment-%s-%s-%s", prov, ver.Version.String(), res.Name)
-
-					// Verify that every Deployment has the ImagePullSecret set
-					if len(res.Spec.Template.Spec.ImagePullSecrets) == 0 {
-						t.Errorf("Deployment %s is missing the ImagePullSecret on the PodTemplate", res.Name)
-					}
 
 					verifyContainerResources(fmt.Sprintf("Deployment/%s", res.Name), res.Spec.Template, t)
 

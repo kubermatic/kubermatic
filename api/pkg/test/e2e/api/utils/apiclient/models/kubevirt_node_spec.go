@@ -19,27 +19,27 @@ type KubevirtNodeSpec struct {
 
 	// CPUs states how many cpus the kubevirt node will have.
 	// Required: true
-	Cpus *string `json:"CPUs"`
+	Cpus *string `json:"cpus"`
 
 	// Memory states the memory that kubevirt node will have.
 	// Required: true
-	Memory *string `json:"Memory"`
+	Memory *string `json:"memory"`
 
 	// Namespace states in which namespace kubevirt node will be provisioned.
 	// Required: true
-	Namespace *string `json:"Namespace"`
+	Namespace *string `json:"namespace"`
 
 	// PVCSize states the size of the provisioned pvc per node.
 	// Required: true
-	PVCSize *string `json:"PVCSize"`
+	PVCSize *string `json:"pvcSize"`
 
 	// SourceURL states the url from which the imported image will be downloaded.
 	// Required: true
-	SourceURL *string `json:"SourceURL"`
+	SourceURL *string `json:"sourceURL"`
 
 	// StorageClassName states the storage class name for the provisioned PVCs.
 	// Required: true
-	StorageClassName *string `json:"StorageClassName"`
+	StorageClassName *string `json:"storageClassName"`
 }
 
 // Validate validates this kubevirt node spec
@@ -78,7 +78,7 @@ func (m *KubevirtNodeSpec) Validate(formats strfmt.Registry) error {
 
 func (m *KubevirtNodeSpec) validateCpus(formats strfmt.Registry) error {
 
-	if err := validate.Required("CPUs", "body", m.Cpus); err != nil {
+	if err := validate.Required("cpus", "body", m.Cpus); err != nil {
 		return err
 	}
 
@@ -87,7 +87,7 @@ func (m *KubevirtNodeSpec) validateCpus(formats strfmt.Registry) error {
 
 func (m *KubevirtNodeSpec) validateMemory(formats strfmt.Registry) error {
 
-	if err := validate.Required("Memory", "body", m.Memory); err != nil {
+	if err := validate.Required("memory", "body", m.Memory); err != nil {
 		return err
 	}
 
@@ -96,7 +96,7 @@ func (m *KubevirtNodeSpec) validateMemory(formats strfmt.Registry) error {
 
 func (m *KubevirtNodeSpec) validateNamespace(formats strfmt.Registry) error {
 
-	if err := validate.Required("Namespace", "body", m.Namespace); err != nil {
+	if err := validate.Required("namespace", "body", m.Namespace); err != nil {
 		return err
 	}
 
@@ -105,7 +105,7 @@ func (m *KubevirtNodeSpec) validateNamespace(formats strfmt.Registry) error {
 
 func (m *KubevirtNodeSpec) validatePVCSize(formats strfmt.Registry) error {
 
-	if err := validate.Required("PVCSize", "body", m.PVCSize); err != nil {
+	if err := validate.Required("pvcSize", "body", m.PVCSize); err != nil {
 		return err
 	}
 
@@ -114,7 +114,7 @@ func (m *KubevirtNodeSpec) validatePVCSize(formats strfmt.Registry) error {
 
 func (m *KubevirtNodeSpec) validateSourceURL(formats strfmt.Registry) error {
 
-	if err := validate.Required("SourceURL", "body", m.SourceURL); err != nil {
+	if err := validate.Required("sourceURL", "body", m.SourceURL); err != nil {
 		return err
 	}
 
@@ -123,7 +123,7 @@ func (m *KubevirtNodeSpec) validateSourceURL(formats strfmt.Registry) error {
 
 func (m *KubevirtNodeSpec) validateStorageClassName(formats strfmt.Registry) error {
 
-	if err := validate.Required("StorageClassName", "body", m.StorageClassName); err != nil {
+	if err := validate.Required("storageClassName", "body", m.StorageClassName); err != nil {
 		return err
 	}
 

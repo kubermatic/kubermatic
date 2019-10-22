@@ -27,10 +27,13 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	kubermaticsignals "github.com/kubermatic/kubermatic/api/pkg/signals"
+	apitest "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api"
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
@@ -69,6 +72,7 @@ type Opts struct {
 	printGinkoLogs               bool
 	onlyTestCreation             bool
 	pspEnabled                   bool
+	createOIDCToken              bool
 	kubermatcProjectID           string
 	kubermaticClient             *apiclient.Kubermatic
 	kubermaticAuthenticator      runtime.ClientAuthInfoWriter
@@ -116,6 +120,8 @@ type secrets struct {
 	Kubevirt struct {
 		Kubeconfig string
 	}
+	kubermaticClient        *apiclient.Kubermatic
+	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
 
 const (
@@ -178,6 +184,7 @@ func main() {
 	flag.BoolVar(&opts.printGinkoLogs, "print-ginkgo-logs", false, "Whether to print ginkgo logs when ginkgo encountered failures")
 	flag.BoolVar(&opts.onlyTestCreation, "only-test-creation", false, "Only test if nodes become ready. Does not perform any extended checks like conformance tests")
 	_ = flag.Bool("debug", false, "No-Op flag kept for compatibility reasons")
+	flag.BoolVar(&opts.createOIDCToken, "create-oidc-token", false, "Whether to create a OIDC token. If false, environment vars for projectID and OIDC token must be set.")
 
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
 	flag.StringVar(&opts.secrets.AWS.SecretAccessKey, "aws-secret-access-key", "", "AWS: SecretAccessKey")
@@ -231,20 +238,39 @@ func main() {
 		opts.versions = append(opts.versions, semver.NewSemverOrDie(s))
 	}
 
-	opts.kubermatcProjectID = os.Getenv("KUBERMATIC_PROJECT_ID")
-	if opts.kubermatcProjectID == "" {
-		log.Fatalf("Kubermatic project id must be set via KUBERMATIC_PROJECT_ID env var")
-	}
-	kubermaticServiceaAccountToken := os.Getenv("KUBERMATIC_SERVICEACCOUNT_TOKEN")
-	if kubermaticServiceaAccountToken == "" {
-		log.Fatalf("A Kubermatic serviceAccountToken must be set via KUBERMATIC_SERVICEACCOUNT_TOKEN env var")
-	}
 	kubermaticAPIServerAddress := os.Getenv("KUBERMATIC_APISERVER_ADDRESS")
 	if kubermaticAPIServerAddress == "" {
 		log.Fatalf("Kubermatic apiserver address must be set via KUBERMATIC_APISERVER_ADDRESS env var")
 	}
 	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{"http"}), nil)
-	opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
+	opts.secrets.kubermaticClient = opts.kubermaticClient
+
+	if !opts.createOIDCToken {
+		opts.kubermatcProjectID = os.Getenv("KUBERMATIC_PROJECT_ID")
+		if opts.kubermatcProjectID == "" {
+			log.Fatalf("Kubermatic project id must be set via KUBERMATIC_PROJECT_ID env var")
+		}
+		kubermaticServiceaAccountToken := os.Getenv("KUBERMATIC_SERVICEACCOUNT_TOKEN")
+		if kubermaticServiceaAccountToken == "" {
+			log.Fatalf("A Kubermatic serviceAccountToken must be set via KUBERMATIC_SERVICEACCOUNT_TOKEN env var")
+		}
+		opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
+	} else {
+		token, err := apitest.GetMasterToken()
+		if err != nil {
+			log.Fatalw("Failed to get master token", zap.Error(err))
+		}
+		log.Info("Successfully got master token")
+
+		opts.kubermaticAuthenticator = httptransport.BearerToken(token)
+
+		projectID, err := createProject(opts.kubermaticClient, opts.kubermaticAuthenticator, log)
+		if err != nil {
+			log.Fatalw("Failed to create project", zap.Error(err))
+		}
+		opts.kubermatcProjectID = projectID
+	}
+	opts.secrets.kubermaticAuthenticator = opts.kubermaticAuthenticator
 
 	if opts.openshift {
 		opts.openshiftPullSecret = os.Getenv("OPENSHIFT_IMAGE_PULL_SECRET")
@@ -308,9 +334,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		log.Fatalf("failed to add kubermatic scheme to mgr: %v", err)
-	}
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		log.Fatalf("failed to add clusterv1alpha1 to scheme: %v", err)
 	}
@@ -486,4 +509,41 @@ func shuffle(vals []testScenario) []testScenario {
 		vals = append(vals[:randIndex], vals[randIndex+1:]...)
 	}
 	return ret
+}
+
+func createProject(client *apiclient.Kubermatic, bearerToken runtime.ClientAuthInfoWriter, log *zap.SugaredLogger) (string, error) {
+	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: "kubermatic-conformance-tester"}}
+	params.WithTimeout(15 * time.Second)
+
+	var projectID string
+	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+		result, err := client.Project.CreateProject(params, bearerToken)
+		if err != nil {
+			log.Errorw("Failed to create project", "error", fmtSwaggerError(err))
+			return false, nil
+		}
+		projectID = result.Payload.ID
+		return true, nil
+	}); err != nil {
+		return "", fmt.Errorf("failed waiting for project to get successfully created: %v", err)
+	}
+
+	getProjectParams := &project.GetProjectParams{ProjectID: projectID}
+	getProjectParams.WithTimeout(15 * time.Second)
+	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+		response, err := client.Project.GetProject(getProjectParams, bearerToken)
+		if err != nil {
+			log.Errorw("Failed to get project", "error", fmtSwaggerError(err))
+			return false, nil
+		}
+		if response.Payload.Status != kubermaticv1.ProjectActive {
+			log.Infof("Project not active yet", "project-status", response.Payload.Status)
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		return "", fmt.Errorf("failed to wait for project to be ready: %v", err)
+	}
+
+	return projectID, nil
 }

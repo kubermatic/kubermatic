@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/zapr"
+
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -14,7 +15,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -86,9 +86,6 @@ func TestReconcilingSeed(t *testing.T) {
 	log := rawLog.Sugar()
 
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
-	if err := kubermaticv1.AddToScheme(scheme.Scheme); err != nil {
-		t.Fatalf("failed to register types in scheme: %v", err)
-	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

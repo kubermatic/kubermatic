@@ -4,13 +4,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -33,6 +33,10 @@ const (
 	WorkerNameLabelKey = "worker-name"
 	ProjectIDLabelKey  = "project-id"
 )
+
+// ProtectedClusterLabels is a set of labels that must not be set by users on clusters,
+// as they are security relevant.
+var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKey)
 
 //+genclient
 //+genclient:nonNamespaced
@@ -98,9 +102,23 @@ type ClusterSpec struct {
 type ClusterConditionType string
 
 const (
-	ClusterConditionControllerFinishedUpdatingSuccessfully ClusterConditionType = "ClusterControllerFinishedUpdatingSuccessfully"
+	// ClusterConditionSeedResourcesUpToDate indicates that alle controllers have finished setting up the
+	// resources for a user clusters that run inside the seed cluster, i.e. this ignores
+	// the status of cloud provider resources for a given cluster.
+	ClusterConditionSeedResourcesUpToDate ClusterConditionType = "SeedResourcesUpToDate"
 
-	ClusterUpdateInProgressReason = "Current Cluster is updating its resources"
+	ClusterConditionClusterControllerReconcilingSuccess        ClusterConditionType = "ClusterControllerReconciledSuccessfully"
+	ClusterConditionAddonControllerReconcilingSuccess          ClusterConditionType = "AddonControllerReconciledSuccessfully"
+	ClusterConditionAddonInstallerControllerReconcilingSuccess ClusterConditionType = "AddonInstallerControllerReconciledSuccessfully"
+	ClusterConditionBackupControllerReconcilingSuccess         ClusterConditionType = "BackupControllerReconciledSuccessfully"
+	ClusterConditionCloudControllerReconcilingSuccess          ClusterConditionType = "CloudControllerReconcilledSuccessfully"
+	ClusterConditionComponentDefaulterReconcilingSuccess       ClusterConditionType = "ComponentDefaulterReconciledSuccessfully"
+	ClusterConditionUpdateControllerReconcilingSuccess         ClusterConditionType = "UpdateControllerReconciledSuccessfully"
+	ClusterConditionMonitoringControllerReconcilingSuccess     ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
+	ClusterConditionOpenshiftControllerReconcilingSuccess      ClusterConditionType = "OpenshiftControllerReconciledSuccessfully"
+
+	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
+	ReasonClusterUpadteInProgress = "ClusterUpdateInProgress"
 )
 
 type ClusterCondition struct {
@@ -122,22 +140,6 @@ type ClusterCondition struct {
 	// Human readable message indicating details about last transition.
 	// +optional
 	Message string `json:"message,omitempty"`
-}
-
-func newClusterCondition(condType ClusterConditionType, status corev1.ConditionStatus, reason, message, kubermaticVersion string) *ClusterCondition {
-	now := metav1.Time{
-		Time: time.Now(),
-	}
-
-	return &ClusterCondition{
-		Type:               condType,
-		Status:             status,
-		LastHeartbeatTime:  now,
-		LastTransitionTime: now,
-		Reason:             reason,
-		Message:            message,
-		KubermaticVersion:  kubermaticVersion,
-	}
 }
 
 // ClusterStatus stores status information about a cluster.
@@ -180,42 +182,17 @@ type ClusterStatus struct {
 	CloudMigrationRevision int `json:"cloudMigrationRevision"`
 }
 
-func (cs *ClusterStatus) SetClusterFinishedUpdatingSuccessfullyCondition(message string) {
-	condition := newClusterCondition(ClusterConditionControllerFinishedUpdatingSuccessfully, corev1.ConditionTrue,
-		ClusterUpdateInProgressReason, message, cs.KubermaticVersion)
-	cs.setClusterCondition(*condition)
-}
-
-func (cs *ClusterStatus) setClusterCondition(c ClusterCondition) {
-	pos, clusterCondition := cs.getClusterCondition(c.Type)
-	if clusterCondition != nil &&
-		clusterCondition.KubermaticVersion == c.KubermaticVersion &&
-		clusterCondition.Status == c.Status && clusterCondition.Reason == c.Reason && clusterCondition.Message == c.Message {
-		return
-	}
-
-	if clusterCondition != nil {
-		cs.Conditions[pos] = c
-	} else {
-		cs.Conditions = append(cs.Conditions, c)
-	}
-}
-
-func (cs *ClusterStatus) getClusterCondition(conditionType ClusterConditionType) (int, *ClusterCondition) {
-	for i, c := range cs.Conditions {
-		if conditionType == c.Type {
-			return i, &c
+// HasConditionValue returns true if the cluster status has the given condition with the given status.
+// It does not verify that the condition has been set by a certain Kubermatic version, it just checks
+// the existence.
+func (cs *ClusterStatus) HasConditionValue(conditionType ClusterConditionType, conditionStatus corev1.ConditionStatus) bool {
+	for _, clusterCondition := range cs.Conditions {
+		if clusterCondition.Type == conditionType {
+			return clusterCondition.Status == conditionStatus
 		}
 	}
-	return -1, nil
-}
 
-func (cs *ClusterStatus) ClearCondition(conditionType ClusterConditionType) {
-	pos, _ := cs.getClusterCondition(conditionType)
-	if pos == -1 {
-		return
-	}
-	cs.Conditions = append(cs.Conditions[:pos], cs.Conditions[pos+1:]...)
+	return false
 }
 
 type ClusterStatusError string
@@ -245,11 +222,17 @@ type AuditLoggingSettings struct {
 }
 
 type ComponentSettings struct {
-	Apiserver         DeploymentSettings  `json:"apiserver"`
+	Apiserver         APIServerSettings   `json:"apiserver"`
 	ControllerManager DeploymentSettings  `json:"controllerManager"`
 	Scheduler         DeploymentSettings  `json:"scheduler"`
 	Etcd              StatefulSetSettings `json:"etcd"`
 	Prometheus        StatefulSetSettings `json:"prometheus"`
+}
+
+type APIServerSettings struct {
+	DeploymentSettings `json:",inline"`
+
+	EndpointReconcilingDisabled *bool `json:"endpointReconcilingDisabled,omitempty"`
 }
 
 type DeploymentSettings struct {
@@ -347,22 +330,24 @@ type FakeCloudSpec struct {
 type DigitaloceanCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	Token string `json:"token"` // Token is used to authenticate with the DigitalOcean API.
+	Token string `json:"token,omitempty"` // Token is used to authenticate with the DigitalOcean API.
 }
 
 // HetznerCloudSpec specifies access data to hetzner cloud.
 type HetznerCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	Token string `json:"token"` // Token is used to authenticate with the Hetzner cloud API.
+	Token string `json:"token,omitempty"` // Token is used to authenticate with the Hetzner cloud API.
 }
 
 // AzureCloudSpec specifies acceess credentials to Azure cloud.
 type AzureCloudSpec struct {
-	TenantID       string `json:"tenantID"`
-	SubscriptionID string `json:"subscriptionID"`
-	ClientID       string `json:"clientID"`
-	ClientSecret   string `json:"clientSecret"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	TenantID       string `json:"tenantID,omitempty"`
+	SubscriptionID string `json:"subscriptionID,omitempty"`
+	ClientID       string `json:"clientID,omitempty"`
+	ClientSecret   string `json:"clientSecret,omitempty"`
 
 	ResourceGroup   string `json:"resourceGroup"`
 	VNetName        string `json:"vnet"`
@@ -374,14 +359,16 @@ type AzureCloudSpec struct {
 
 // VSphereCredentials credentials represents a credential for accessing vSphere
 type VSphereCredentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 // VSphereCloudSpec specifies access data to VSphere cloud.
 type VSphereCloudSpec struct {
-	Username  string `json:"username"`
-	Password  string `json:"password"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	Username  string `json:"username,omitempty"`
+	Password  string `json:"password,omitempty"`
 	VMNetName string `json:"vmNetName"`
 	Folder    string `json:"folder,omitempty"`
 
@@ -396,8 +383,8 @@ type BringYourOwnCloudSpec struct{}
 type AWSCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	AccessKeyID     string `json:"accessKeyId"`
-	SecretAccessKey string `json:"secretAccessKey"`
+	AccessKeyID     string `json:"accessKeyId,omitempty"`
+	SecretAccessKey string `json:"secretAccessKey,omitempty"`
 	VPCID           string `json:"vpcId"`
 	// The IAM role, the control plane will use. The control plane will perform an assume-role
 	ControlPlaneRoleARN string `json:"roleARN"`
@@ -413,11 +400,13 @@ type AWSCloudSpec struct {
 
 // OpenstackCloudSpec specifies access data to an OpenStack cloud.
 type OpenstackCloudSpec struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Tenant   string `json:"tenant"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+	Tenant   string `json:"tenant,omitempty"`
 	TenantID string `json:"tenantID,omitempty"`
-	Domain   string `json:"domain"`
+	Domain   string `json:"domain,omitempty"`
 	// Network holds the name of the internal network
 	// When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created
 	//
@@ -447,7 +436,9 @@ type PacketCloudSpec struct {
 
 // GCPCloudSpec specifies access data to GCP.
 type GCPCloudSpec struct {
-	ServiceAccount string `json:"serviceAccount"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	ServiceAccount string `json:"serviceAccount,omitempty"`
 	Network        string `json:"network"`
 	Subnetwork     string `json:"subnetwork"`
 }
@@ -536,17 +527,29 @@ func (cluster *Cluster) GetSecretName() string {
 	if cluster.Spec.Cloud.AWS != nil {
 		return fmt.Sprintf("%s-aws-%s", CredentialPrefix, cluster.Name)
 	}
+	if cluster.Spec.Cloud.Azure != nil {
+		return fmt.Sprintf("%s-azure-%s", CredentialPrefix, cluster.Name)
+	}
 	if cluster.Spec.Cloud.Digitalocean != nil {
 		return fmt.Sprintf("%s-digitalocean-%s", CredentialPrefix, cluster.Name)
 	}
+	if cluster.Spec.Cloud.GCP != nil {
+		return fmt.Sprintf("%s-gcp-%s", CredentialPrefix, cluster.Name)
+	}
 	if cluster.Spec.Cloud.Hetzner != nil {
 		return fmt.Sprintf("%s-hetzner-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.Openstack != nil {
+		return fmt.Sprintf("%s-openstack-%s", CredentialPrefix, cluster.Name)
 	}
 	if cluster.Spec.Cloud.Packet != nil {
 		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, cluster.Name)
 	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
 		return fmt.Sprintf("%s-kubevirt-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.VSphere != nil {
+		return fmt.Sprintf("%s-vsphere-%s", CredentialPrefix, cluster.Name)
 	}
 	return ""
 }

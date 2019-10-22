@@ -31,6 +31,9 @@ spec:
           readOnly: true
         resources:
 {{ toYaml .Values.kubermatic.ui.resources | indent 10 }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
       imagePullSecrets:
       - name: dockercfg
       volumes:

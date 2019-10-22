@@ -70,7 +70,7 @@ func (s *openStackScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpe
 	}
 }
 
-func (s *openStackScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDeployment {
+func (s *openStackScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	osName := getOSNameFromSpec(s.nodeOsSpec)
 	image := "kubermatic-e2e-" + osName
 	flavor := "m1.small"
@@ -94,7 +94,7 @@ func (s *openStackScenario) NodeDeployments(num int, _ secrets) []apimodels.Node
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func (s *openStackScenario) OS() apimodels.OperatingSystemSpec {

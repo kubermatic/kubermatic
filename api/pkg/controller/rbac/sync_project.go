@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/glog"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 
@@ -19,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	rbaclister "k8s.io/client-go/listers/rbac/v1"
+	"k8s.io/klog"
 )
 
 const (
@@ -29,7 +28,7 @@ func (c *projectController) sync(key string) error {
 	listerProject, err := c.projectLister.Get(key)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			glog.V(4).Infof("project '%s' in queue no longer exists", key)
+			klog.V(4).Infof("project '%s' in queue no longer exists", key)
 			return nil
 		}
 		return err
@@ -211,7 +210,7 @@ func ensureClusterRBACRoleForResource(kubeClient kubernetes.Interface, groupName
 		return err
 	}
 	if generatedClusterRole == nil {
-		glog.V(4).Infof("skipping ClusterRole generation because the resource for group %q and resource %q will not be created", groupName, resource)
+		klog.V(4).Infof("skipping ClusterRole generation because the resource for group %q and resource %q will not be created", groupName, resource)
 		return nil
 	}
 	sharedExistingClusterRole, err := rbacLister.Get(generatedClusterRole.Name)
@@ -320,7 +319,7 @@ func ensureRBACRoleForResource(kubeClient kubernetes.Interface, groupName string
 		return err
 	}
 	if generatedRole == nil {
-		glog.V(4).Infof("skipping Role generation because the resource for group %q and resource %q in namespace %q will not be created", groupName, gvr.Resource, namespace)
+		klog.V(4).Infof("skipping Role generation because the resource for group %q and resource %q in namespace %q will not be created", groupName, gvr.Resource, namespace)
 		return nil
 	}
 	sharedExistingRole, err := rbacLister.Get(generatedRole.Name)
@@ -587,7 +586,7 @@ func shouldSkipClusterRBACRoleBindingFor(groupName, policyResource, policyAPIGro
 		return false, err
 	}
 	if generatedClusterRole == nil {
-		glog.V(4).Infof("skipping operation on ClusterRoleBinding because corresponding ClusterRole was not(will not be) created for group %q and %q resource for project %q", groupName, policyResource, projectName)
+		klog.V(4).Infof("skipping operation on ClusterRoleBinding because corresponding ClusterRole was not(will not be) created for group %q and %q resource for project %q", groupName, policyResource, projectName)
 		return true, nil
 	}
 	return false, nil
@@ -603,7 +602,7 @@ func shouldSkipRBACRoleBindingFor(groupName, policyResource, policyAPIGroups, pr
 		return false, err
 	}
 	if generatedRole == nil {
-		glog.V(4).Infof("skipping operation on RoleBinding because corresponding Role was not(will not be) created for group %q and %q resource for project %q in namespace %q", groupName, policyResource, projectName, namespace)
+		klog.V(4).Infof("skipping operation on RoleBinding because corresponding Role was not(will not be) created for group %q and %q resource for project %q in namespace %q", groupName, policyResource, projectName, namespace)
 		return true, nil
 	}
 	return false, nil

@@ -10,10 +10,15 @@ import (
 )
 
 // ServiceAccountSecretCreator returns a creator function to create a Google Service Account.
-func ServiceAccountSecretCreator(serviceAccount string) reconciling.NamedSecretCreatorGetter {
+func ServiceAccountSecretCreator(data CredentialsData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return GoogleServiceAccountSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
-			b, err := base64.StdEncoding.DecodeString(serviceAccount)
+			credentials, err := GetCredentials(data)
+			if err != nil {
+				return nil, err
+			}
+
+			b, err := base64.StdEncoding.DecodeString(credentials.GCP.ServiceAccount)
 			if err != nil {
 				return nil, fmt.Errorf("error decoding service account: %v", err)
 			}

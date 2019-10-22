@@ -3,6 +3,7 @@ package openstack
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/gophercloud/gophercloud"
@@ -215,8 +216,21 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, cluster
 	}
 
 	for _, opts := range rules {
+	reiterate:
 		rres := osecuritygrouprules.Create(netClient, opts)
 		if rres.Err != nil {
+			if e, ok := rres.Err.(gophercloud.ErrUnexpectedResponseCode); ok && e.Actual == http.StatusConflict {
+				// already exists
+				continue
+			}
+
+			if _, ok := rres.Err.(gophercloud.ErrDefault400); ok && opts.Protocol == osecuritygrouprules.ProtocolIPv6ICMP {
+				// workaround for old versions of Opnestack with different protocol name,
+				// from before https://review.opendev.org/#/c/252155/
+				opts.Protocol = "icmpv6"
+				goto reiterate // I'm very sorry, but this was really the cleanest way.
+			}
+
 			return "", rres.Err
 		}
 

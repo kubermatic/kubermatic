@@ -30,7 +30,6 @@ import (
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -38,24 +37,23 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
+	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	podIsReady = func(p *corev1.Pod) bool {
-		for _, c := range p.Status.Conditions {
-			if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
-				return true
-			}
+func podIsReady(p *corev1.Pod) bool {
+	for _, c := range p.Status.Conditions {
+		if c.Type == corev1.PodReady {
+			return c.Status == corev1.ConditionTrue
 		}
-		return false
 	}
-)
+	return false
+}
 
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *apimodels.CreateClusterSpec
-	NodeDeployments(num int, secrets secrets) []apimodels.NodeDeployment
+	NodeDeployments(num int, secrets secrets) ([]apimodels.NodeDeployment, error)
 	OS() apimodels.OperatingSystemSpec
 }
 
@@ -335,7 +333,6 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		return nil, fmt.Errorf("failed to get the client for the cluster: %v", err)
 	}
 
-	nodeDeployments := scenario.NodeDeployments(r.nodeCount, r.secrets)
 	if err := junitReporterWrapper(
 		"[Kubermatic] Create NodeDeployments",
 		report,
@@ -346,20 +343,47 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		return report, fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
-	podReadyTimeout := 10 * time.Minute
+	var overallTimeout = 10 * time.Minute
+	var timeoutLeft time.Duration
 	if cluster.Annotations["kubermatic.io/openshift"] == "true" {
 		// Openshift installs a lot more during node provisioning, hence this may take longer
-		podReadyTimeout = 15 * time.Minute
+		overallTimeout = 15 * time.Minute
 	}
-	// TODO: Split this up into "Node appears", "Node got ready", "Pods got ready" to provide
-	// better feedback to the user
+
+	if err := junitReporterWrapper(
+		"[Kubermatic] Wait for machines to get a node",
+		report,
+		func() error {
+			var err error
+			timeoutLeft, err = waitForMachinesToJoinCluster(log, userClusterClient, overallTimeout)
+			return err
+		},
+	); err != nil {
+		return report, fmt.Errorf("failed to wait for machines to get a node: %v", err)
+	}
+
+	if err := junitReporterWrapper(
+		"[Kubermatic] Wait for nodes to be ready",
+		report,
+		func() error {
+			// Getting ready just implies starting the CNI deamonset, so that should
+			// be quick.
+			var err error
+			timeoutLeft, err = waitForNodesToBeReady(log, userClusterClient, timeoutLeft)
+			return err
+		},
+	); err != nil {
+		return report, fmt.Errorf("failed to wait for all nodes to be ready: %v", err)
+	}
+
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for Pods inside usercluster to be ready",
 		report,
 		func() error {
-			return r.waitUntilAllPodsAreReady(log, userClusterClient, podReadyTimeout)
-		}); err != nil {
-		return nil, fmt.Errorf("failed to wait until all pods are running after creating the cluster: %v", err)
+			return r.waitUntilAllPodsAreReady(log, userClusterClient, timeoutLeft)
+		},
+	); err != nil {
+		return nil, fmt.Errorf("failed to wait for all pods to get ready: %v", err)
 	}
 
 	if r.onlyTestCreation {
@@ -367,7 +391,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 	}
 
 	if !r.onlyTestCreation {
-		if err := r.testCluster(log, scenario.Name(), cluster, userClusterClient, nodeDeployments, kubeconfigFilename, cloudConfigFilename, report); err != nil {
+		if err := r.testCluster(log, scenario, cluster, userClusterClient, kubeconfigFilename, cloudConfigFilename, report); err != nil {
 			return report, fmt.Errorf("failed to test cluster: %v", err)
 		}
 	}
@@ -448,10 +472,9 @@ func retryNAttempts(maxAttempts int, f func(attempt int) error) error {
 
 func (r *testRunner) testCluster(
 	log *zap.SugaredLogger,
-	scenarioName string,
+	scenario testScenario,
 	cluster *kubermaticv1.Cluster,
 	userClusterClient ctrlruntimeclient.Client,
-	nd []apimodels.NodeDeployment,
 	kubeconfigFilename string,
 	cloudConfigFilename string,
 	report *reporters.JUnitTestSuite,
@@ -465,7 +488,7 @@ func (r *testRunner) testCluster(
 		return nil
 	}
 
-	ginkgoRuns, err := r.getGinkgoRuns(log, scenarioName, kubeconfigFilename, cloudConfigFilename, cluster, nd)
+	ginkgoRuns, err := r.getGinkgoRuns(log, scenario, kubeconfigFilename, cloudConfigFilename, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get Ginkgo runs: %v", err)
 	}
@@ -570,7 +593,18 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *zap.SugaredLogger, run *gi
 
 func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario testScenario, clusterName string) error {
 	log.Info("Creating NodeDeployments via kubermatic API")
-	nodeDeployments := scenario.NodeDeployments(r.nodeCount, r.secrets)
+	var nodeDeployments []apimodels.NodeDeployment
+	var err error
+	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+		nodeDeployments, err = scenario.NodeDeployments(r.nodeCount, r.secrets)
+		if err != nil {
+			log.Info("Getting NodeDeployments from scenario failed", zap.Error(err))
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		return fmt.Errorf("didn't get NodeDeployments from scenario within a minute: %v", err)
+	}
 
 	for _, nd := range nodeDeployments {
 		params := &projectclient.CreateNodeDeploymentParams{
@@ -809,19 +843,22 @@ type ginkgoRun struct {
 
 func (r *testRunner) getGinkgoRuns(
 	log *zap.SugaredLogger,
-	scenarioName,
+	scenario testScenario,
 	kubeconfigFilename,
 	cloudConfigFilename string,
 	cluster *kubermaticv1.Cluster,
-	nd []apimodels.NodeDeployment,
 ) ([]*ginkgoRun, error) {
 	kubeconfigFilename = path.Clean(kubeconfigFilename)
 	repoRoot := path.Clean(r.repoRoot)
 	MajorMinor := fmt.Sprintf("%d.%d", cluster.Spec.Version.Major(), cluster.Spec.Version.Minor())
 
-	nodeNumberTotal := int32(0)
-	for _, ndi := range nd {
-		nodeNumberTotal += *ndi.Spec.Replicas
+	nodeNumberTotal := int32(r.nodeCount)
+
+	ginkgoSkipParallel := `\[Serial\]`
+	if cluster.Spec.Version.Minor() == 16 {
+		// These require the nodes NodePort to be available from the tester, which is not the case for us.
+		// TODO: Maybe add an option to allow the NodePorts in the SecurityGroup?
+		ginkgoSkipParallel += "|Services should be able to change the type from ExternalName to NodePort|Services should be able to create a functioning NodePort service"
 	}
 
 	runs := []struct {
@@ -833,7 +870,7 @@ func (r *testRunner) getGinkgoRuns(
 		{
 			name:          "parallel",
 			ginkgoFocus:   `\[Conformance\]`,
-			ginkgoSkip:    `\[Serial\]`,
+			ginkgoSkip:    ginkgoSkipParallel,
 			parallelTests: int(nodeNumberTotal) * 10,
 		},
 		{
@@ -848,7 +885,7 @@ func (r *testRunner) getGinkgoRuns(
 	var ginkgoRuns []*ginkgoRun
 	for _, run := range runs {
 
-		reportsDir := path.Join("/tmp", scenarioName, run.name)
+		reportsDir := path.Join("/tmp", scenario.Name(), run.name)
 		env := []string{
 			fmt.Sprintf("HOME=%s", r.homeDir),
 			fmt.Sprintf("AWS_SSH_KEY=%s", path.Join(r.homeDir, ".ssh", "google_compute_engine")),
@@ -877,16 +914,7 @@ func (r *testRunner) getGinkgoRuns(
 
 		args = append(args, "--provider=local")
 
-		// verify that all operating system specs are identical
-		var osSpec *apimodels.OperatingSystemSpec
-		for i, ndi := range nd {
-			if osSpec == nil {
-				osSpec = ndi.Spec.Template.OperatingSystem
-			} else if !equality.Semantic.DeepEqual(osSpec, ndi.Spec.Template.OperatingSystem) {
-				return nil, fmt.Errorf("node deployment #%d has OS specification different from node deployment #0: %+v != %+v", i, ndi.Spec.Template.OperatingSystem, osSpec)
-			}
-		}
-
+		osSpec := scenario.OS()
 		switch {
 		case osSpec.Ubuntu != nil:
 			args = append(args, "--node-os-distro=ubuntu")
@@ -1049,6 +1077,64 @@ func (r *testRunner) controlplaneWaitFailureStdout(clusterName string) string {
 	return res
 }
 
+// waitForMachinesToJoinCluster waits for machines to join the cluster. It does so by checking
+// if the machines have a nodeRef. It does not check if the nodeRef is valid.
+// All errors are swallowed, only the timeout error is returned.
+func waitForMachinesToJoinCluster(log *zap.SugaredLogger, client ctrlruntimeclient.Client, timeout time.Duration) (time.Duration, error) {
+	startTime := time.Now()
+	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
+		machineList := &clusterv1alpha1.MachineList{}
+		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, machineList); err != nil {
+			log.Warnw("Failed to list machines", zap.Error(err))
+			return false, nil
+		}
+		for _, machine := range machineList.Items {
+			if !machineHasNodeRef(machine) {
+				log.Infow("Machine has no nodeRef yet", "machine", machine.Name)
+				return false, nil
+			}
+		}
+		log.Infow("All machines got a Node", "duration-in-seconds", time.Since(startTime).Seconds())
+		return true, nil
+	})
+	return timeout - time.Since(startTime), err
+}
+
+func machineHasNodeRef(machine clusterv1alpha1.Machine) bool {
+	return machine.Status.NodeRef != nil && machine.Status.NodeRef.Name != ""
+}
+
+// WaitForNodesToBeReady waits for all nodes to be ready. It does so by checking the Nodes "Ready"
+// condition. It swallows all errors except for the timeout.
+func waitForNodesToBeReady(log *zap.SugaredLogger, client ctrlruntimeclient.Client, timeout time.Duration) (time.Duration, error) {
+	startTime := time.Now()
+	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
+		nodeList := &corev1.NodeList{}
+		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+			log.Warnw("Failed to list nodes", zap.Error(err))
+			return false, nil
+		}
+		for _, node := range nodeList.Items {
+			if !nodeIsReady(node) {
+				log.Infow("Node is not ready", "node", node.Name)
+				return false, nil
+			}
+		}
+		log.Infow("All nodes got ready", "duration-in-seconds", time.Since(startTime).Seconds())
+		return true, nil
+	})
+	return timeout - time.Since(startTime), err
+}
+
+func nodeIsReady(node corev1.Node) bool {
+	for _, c := range node.Status.Conditions {
+		if c.Type == corev1.NodeReady {
+			return c.Status == corev1.ConditionTrue
+		}
+	}
+	return false
+}
+
 func printFileUnbuffered(filename string) error {
 	fd, err := os.Open(filename)
 	if err != nil {
@@ -1078,7 +1164,7 @@ func junitReporterWrapper(
 	testCaseName string,
 	report *reporters.JUnitTestSuite,
 	executor func() error,
-	extraOutputFn ...func() string,
+	extraErrOutputFn ...func() string,
 ) error {
 	junitTestCase := reporters.JUnitTestCase{
 		Name:      testCaseName,
@@ -1091,10 +1177,11 @@ func junitReporterWrapper(
 	if err != nil {
 		junitTestCase.FailureMessage = &reporters.JUnitFailureMessage{Message: err.Error()}
 		report.Failures++
-	}
-
-	for _, extraOut := range extraOutputFn {
-		junitTestCase.SystemOut = junitTestCase.SystemOut + "\n" + extraOut()
+		for _, extraOut := range extraErrOutputFn {
+			extraOutString := extraOut()
+			err = fmt.Errorf("%v\n%s", err, extraOutString)
+			junitTestCase.FailureMessage.Message += "\n" + extraOutString
+		}
 	}
 
 	report.TestCases = append(report.TestCases, junitTestCase)

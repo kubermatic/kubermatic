@@ -1,7 +1,4 @@
 # Kubermatic API
-[Drone](https://drone.loodse.com/kubermatic/kubermatic)
-
----
 
 ## Development environment
 

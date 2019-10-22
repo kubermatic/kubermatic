@@ -27,13 +27,12 @@ spec:
         - master-controller-manager
         args:
         - -internal-address=0.0.0.0:8085
-        - -v=2
-        - -logtostderr
         - -kubeconfig=/opt/.kube/kubeconfig
+        {{- if .Values.kubermatic.datacenters }}
+        - -datacenters=/opt/datacenter/datacenters.yaml
+        {{- end }}
         {{- if .Values.kubermatic.dynamicDatacenters }}
         - -dynamic-datacenters=true
-        {{- else }}
-        - -datacenters=/opt/datacenter/datacenters.yaml
         {{- end }}
         {{- if .Values.kubermatic.worker_name }}
         - -worker-name={{ .Values.kubermatic.worker_name }}
@@ -42,6 +41,13 @@ spec:
         - -namespace=$(NAMESPACE)
         - -seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/serverCert.pem
         - -seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/serverKey.pem
+        - -logtostderr
+        {{- if .Values.kubermatic.masterController.debugLog }}
+        - -log-debug=true
+        - -v=4
+        {{- else }}
+        - -v=2
+        {{- end }}
         image: '{{ .Values.kubermatic.masterController.image.repository }}:{{ .Values.kubermatic.masterController.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.masterController.image.pullPolicy }}
         env:
@@ -53,7 +59,7 @@ spec:
           - name: kubeconfig
             mountPath: "/opt/.kube/"
             readOnly: true
-        {{- if not .Values.kubermatic.dynamicDatacenters }}
+        {{- if .Values.kubermatic.datacenters }}
           - name: datacenters
             mountPath: "/opt/datacenter/"
             readOnly: true
@@ -68,7 +74,7 @@ spec:
       - name: kubeconfig
         secret:
           secretName: kubeconfig
-      {{- if not .Values.kubermatic.dynamicDatacenters }}
+      {{- if .Values.kubermatic.datacenters }}
       - name: datacenters
         secret:
           secretName: datacenters

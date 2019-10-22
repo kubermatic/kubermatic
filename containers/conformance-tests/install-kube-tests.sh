@@ -7,11 +7,12 @@ set -euox pipefail
 TMP_ROOT="./.install-tmp"
 
 declare -A FULL_VERSIONS
-FULL_VERSIONS["1.13"]="v1.13.5"
-FULL_VERSIONS["1.14"]="v1.14.3"
-FULL_VERSIONS["1.15"]="v1.15.0"
+FULL_VERSIONS["1.13"]="v1.13.11"
+FULL_VERSIONS["1.14"]="v1.14.7"
+FULL_VERSIONS["1.15"]="v1.15.4"
+FULL_VERSIONS["1.16"]="v1.16.0"
 
-for VERSION in 1.{13..15}; do
+for VERSION in 1.{13..16}; do
     DIRECTORY="${ROOT_DIR}/${VERSION}"
     if [[ ! -d "${DIRECTORY}" ]]; then
         FULL_VERSION="${FULL_VERSIONS[${VERSION}]}"

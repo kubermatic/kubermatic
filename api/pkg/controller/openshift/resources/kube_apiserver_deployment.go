@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd/etcdrunning"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -33,8 +34,51 @@ var (
 )
 
 const (
-	legacyAppLabelValue = "apiserver"
+	legacyAppLabelValue                 = "apiserver"
+	apiServerOauthMetadataConfigMapName = "openshift-oauth-metadata"
+	apiServerOauthMetadataConfigMapKey  = "oauthMetadata"
 )
+
+func APIServerOauthMetadataConfigMapCreator(data openshiftData) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return apiServerOauthMetadataConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			oauthPort, err := data.GetOauthExternalNodePort()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get external port for oauth service: %v", err)
+			}
+			oauthAddress := fmt.Sprintf("https://%s:%d", data.Cluster().Address.ExternalName, oauthPort)
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
+			cm.Data[apiServerOauthMetadataConfigMapKey] = fmt.Sprintf(`{
+  "issuer": "%s",
+  "authorization_endpoint": "%s/oauth/authorize",
+  "token_endpoint": "%s/oauth/token",
+  "scopes_supported": [
+    "user:check-access",
+    "user:full",
+    "user:info",
+    "user:list-projects",
+    "user:list-scoped-projects"
+  ],
+  "response_types_supported": [
+    "code",
+    "token"
+  ],
+  "grant_types_supported": [
+    "authorization_code",
+    "implicit"
+  ],
+  "code_challenge_methods_supported": [
+    "plain",
+    "S256"
+  ]
+}`, oauthAddress, oauthAddress, oauthAddress)
+
+			return cm, nil
+		}
+	}
+}
 
 // DeploymentCreator returns the function to create and update the API server deployment
 func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.NamedDeploymentCreatorGetter {
@@ -118,12 +162,12 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
 			}
 
-			envVars, err := getAPIServerEnvVars(data)
+			envVars, err := apiserver.GetEnvVars(data)
 			if err != nil {
 				return nil, err
 			}
 
-			image, err := openshiftKubeAPIServerImage(data.Cluster().Spec.Version.String())
+			image, err := hypershiftImage(data.Cluster().Spec.Version.String())
 			if err != nil {
 				return nil, err
 			}
@@ -239,6 +283,10 @@ func getVolumeMounts() []corev1.VolumeMount {
 		{
 			Name:      resources.DexCASecretName,
 			MountPath: "/etc/kubernetes/dex/ca",
+		},
+		{
+			Name:      apiServerOauthMetadataConfigMapName,
+			MountPath: "/etc/kubernetes/oauth-metadata",
 		},
 	}
 
@@ -367,30 +415,12 @@ func getAPIServerVolumes() []corev1.Volume {
 				},
 			},
 		},
-	}
-}
+		{
 
-func getAPIServerEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
-	credentials, err := resources.GetCredentials(data)
-	if err != nil {
-		return nil, err
-	}
-	cluster := data.Cluster()
-
-	var vars []corev1.EnvVar
-	if cluster.Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
-	}
-	return vars, nil
-}
-
-func openshiftKubeAPIServerImage(openshiftVersion string) (string, error) {
-	switch openshiftVersion {
-	case openshiftVersion419:
-		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:86255c4efe6bbc141a0f41444f863bbd5cd832ffca21d2b737a4f9c225ed00ad", nil
-	default:
-		return "", fmt.Errorf("no image available for openshift version %q", openshiftVersion)
+			Name: apiServerOauthMetadataConfigMapName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: apiServerOauthMetadataConfigMapName}},
+			},
+		},
 	}
 }

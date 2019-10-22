@@ -10,17 +10,16 @@ data:
       - 'true'
       cert-dir:
       - /var/run/kubernetes
-      # Must be an explicit empty slice, else the controller-manager panics
-      cloud-provider: []
-      #- aws
+      cloud-provider:
+      - fake-cloud-provider
+      cloud-config:
+      - /etc/kubernetes/cloud/config
       cluster-cidr:
       - 10.240.16.0
       cluster-signing-cert-file:
       - /etc/kubernetes/pki/ca/ca.crt
       cluster-signing-key-file:
       - /etc/kubernetes/pki/ca/ca.key
-      configure-cloud-routes:
-      - 'false'
       controllers:
       - '*'
       - -ttl

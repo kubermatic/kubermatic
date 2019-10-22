@@ -2,10 +2,11 @@ package provider
 
 import (
 	"fmt"
-
-	corev1 "k8s.io/api/core/v1"
+	"net/http"
+	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 // We can not convert a single DatacenterMeta as the SeedDatacenter contains its NodeDatacenter
@@ -37,10 +38,9 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 			seeds[dcName].Name = dcName
 			seeds[dcName].Spec.Country = datacenterSpec.Country
 			seeds[dcName].Spec.Location = datacenterSpec.Location
-			// TODO: What to do about the kubeconfig?
-			seeds[dcName].Spec.Kubeconfig = corev1.ObjectReference{}
 			seeds[dcName].Spec.SeedDNSOverwrite = datacenterSpec.SeedDNSOverwrite
 
+			// Kubeconfig object ref is injected during the automated migration.
 		} else {
 			if _, exists := dm[datacenterSpec.Seed]; !exists {
 				return nil, fmt.Errorf("seedDatacenter %q used by node datacenter %q does not exist", datacenterSpec.Seed, dcName)
@@ -78,7 +78,11 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 // once we support datacenters as CRDs.
 // TODO: Find a way to lift the current requirement of unique nodeDatacenter names. It is needed
 // only because we put the nodeDatacenter name on the cluster but not the seed
-func DatacenterFromSeedMap(seeds map[string]*kubermaticv1.Seed, datacenterName string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
+func DatacenterFromSeedMap(userInfo *UserInfo, seedsGetter SeedsGetter, datacenterName string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
 
 	var foundDatacenters []kubermaticv1.Datacenter
 	var foundSeeds []*kubermaticv1.Seed
@@ -88,11 +92,21 @@ func DatacenterFromSeedMap(seeds map[string]*kubermaticv1.Seed, datacenterName s
 			continue
 		}
 
+		if datacenter.Spec.RequiredEmailDomain != "" {
+			userDomain := strings.Split(userInfo.Email, "@")
+			if len(userDomain) != 2 || !strings.EqualFold(userDomain[1], datacenter.Spec.RequiredEmailDomain) {
+				continue
+			}
+		}
+
 		foundSeeds = append(foundSeeds, seed)
 		foundDatacenters = append(foundDatacenters, datacenter)
 	}
 
-	if n := len(foundDatacenters); n != 1 {
+	if len(foundDatacenters) == 0 {
+		return nil, nil, errors.New(http.StatusNotFound, fmt.Sprintf("datacenter %q not found", datacenterName))
+	}
+	if n := len(foundDatacenters); n > 1 {
 		return nil, nil, fmt.Errorf("expected to find exactly one datacenter with name %q, got %d", datacenterName, n)
 	}
 

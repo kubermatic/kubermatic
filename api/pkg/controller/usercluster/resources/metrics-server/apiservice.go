@@ -13,7 +13,7 @@ const (
 )
 
 // APIServiceCreator returns the func to create/update the APIService used by the metrics-server
-func APIServiceCreator() reconciling.NamedAPIServiceCreatorGetter {
+func APIServiceCreator(caBundle []byte) reconciling.NamedAPIServiceCreatorGetter {
 	return func() (string, reconciling.APIServiceCreator) {
 		return resources.MetricsServerAPIServiceName, func(se *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error) {
 			labels := resources.BaseAppLabel(Name, nil)
@@ -25,7 +25,8 @@ func APIServiceCreator() reconciling.NamedAPIServiceCreatorGetter {
 			}
 			se.Spec.Group = "metrics.k8s.io"
 			se.Spec.Version = "v1beta1"
-			se.Spec.InsecureSkipTLSVerify = true
+			se.Spec.InsecureSkipTLSVerify = false
+			se.Spec.CABundle = caBundle
 			se.Spec.GroupPriorityMinimum = 100
 			se.Spec.VersionPriority = 100
 

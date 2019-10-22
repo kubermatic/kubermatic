@@ -14,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/kubernetes-dashboard"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
@@ -123,7 +124,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		r,
 		cluster,
 		&datacenter,
-		seed.Name,
+		seed.DeepCopy(),
 		r.overwriteRegistry,
 		r.nodePortRange,
 		r.nodeAccessNetwork,
@@ -208,6 +209,7 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		machinecontroller.WebhookDeploymentCreator(data),
 		metricsserver.DeploymentCreator(data),
 		usercluster.DeploymentCreator(data, false),
+		kubernetesdashboard.DeploymentCreator(data),
 	}
 	if data.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" &&
 		data.Cluster().Spec.Version.Minor() > 13 {
@@ -238,6 +240,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		openvpn.TLSServingCertificateCreator(data),
 		openvpn.InternalClientCertificateCreator(data),
 		machinecontroller.TLSServingCertificateCreator(data),
+		metricsserver.TLSServingCertSecretCreator(data.GetRootCA),
 
 		// Kubeconfigs
 		resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data),
@@ -247,8 +250,11 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		resources.GetInternalKubeconfigCreator(resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.MetricsServerKubeconfigSecretName, resources.MetricsServerCertUsername, nil, data),
 		resources.GetInternalKubeconfigCreator(resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, data),
+		resources.GetInternalKubeconfigCreator(resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data),
 		resources.AdminKubeconfigCreator(data),
+		apiserver.TokenViewerCreator(),
 		apiserver.TokenUsersCreator(data),
+		resources.ViewerKubeconfigCreator(data),
 	}
 
 	if data.Cluster().Spec.Version.Minor() > 13 {
@@ -260,7 +266,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 	}
 
 	if data.Cluster().Spec.Cloud.GCP != nil {
-		creators = append(creators, resources.ServiceAccountSecretCreator(data.Cluster().Spec.Cloud.GCP.ServiceAccount))
+		creators = append(creators, resources.ServiceAccountSecretCreator(data))
 	}
 
 	return creators

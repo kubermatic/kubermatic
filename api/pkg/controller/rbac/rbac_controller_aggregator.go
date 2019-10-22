@@ -3,7 +3,6 @@ package rbac
 import (
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -12,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/klog"
 )
 
 // Metrics contains metrics that this controller will collect and expose
@@ -141,9 +141,9 @@ func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
 	go a.rbacProjectController.run(a.workerCount, stopCh)
 	go a.rbacResourceController.run(a.workerCount, stopCh)
 
-	glog.Info("RBAC generator aggregator controller started")
+	klog.Info("RBAC generator aggregator controller started")
 	<-stopCh
-	glog.Info("RBAC generator aggregator controller finished")
+	klog.Info("RBAC generator aggregator controller finished")
 
 	return nil
 }

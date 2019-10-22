@@ -29,8 +29,6 @@ type UserSpec struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
-	// Depreciated: Projects field is depreciated, was replaced by UserProjectBinding
-	Projects []ProjectGroup `json:"projects,omitempty"`
 }
 
 // UserList is a list of users

@@ -55,7 +55,7 @@ func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorG
 					corev1.EnvVar{Name: openshiftuserdata.DockerCFGEnvKey, Value: osData.Cluster().Spec.Openshift.ImagePullSecret})
 			}
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(osData, d.Spec.Template.Spec, sets.NewString(name))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(osData, d.Spec.Template.Spec, sets.NewString(name), "Machine,cluster.k8s.io/v1alpha1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}

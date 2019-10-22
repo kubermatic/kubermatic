@@ -1,0 +1,30 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  labels:
+    app.kubernetes.io/name: kubernetes-dashboard
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: '{{ .Chart.Version }}'
+    app.kubernetes.io/managed-by: helm
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    ingress.kubernetes.io/auth-url: "https://{{ .Values.dashboard.domain }}/{{ .Values.dashboard.oauth.ingress.path }}/auth"
+    ingress.kubernetes.io/auth-signin: "https://{{ .Values.dashboard.domain }}/{{ .Values.dashboard.oauth.ingress.path }}/start?rd=https://$host$request_uri$is_args$args"
+    # Proxy Authentication header to Dashboard
+    ingress.kubernetes.io/configuration-snippet: |
+      auth_request_set $token $upstream_http_authorization;
+      proxy_set_header Authorization "Bearer {{ .Values.dashboard.token }}";
+      proxy_pass_header Authorization;
+  name: '{{ template "dashboard-name" . }}'
+spec:
+  rules:
+    - host: {{ .Values.dashboard.domain }}
+      http:
+        paths:
+          - backend:
+              serviceName: '{{ template "dashboard-name" . }}'
+              servicePort: 80
+            path: {{ .Values.dashboard.ingress.path }}
+  tls:
+    - hosts:
+      - {{ .Values.dashboard.domain }}

@@ -1,0 +1,17 @@
+apiVersion: v1
+name: karma
+version: 0.0.2
+appVersion: v0.43
+description: Dashboard for Prometheus Alertmanager
+keywords:
+- kubermatic
+- monitoring
+- prometheus
+- alertmanager
+- dashboard
+home: https://github.com/prymitive/karma
+sources:
+- https://github.com/kubermatic/kubermatic
+maintainers:
+- name: Loodse GmbH
+  email: support@loodse.com

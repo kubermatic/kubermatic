@@ -86,10 +86,10 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		vnetResourceGroup := cloud.Azure.ResourceGroup
 		azureCloudConfig := &azure.CloudConfig{
 			Cloud:                      "AZUREPUBLICCLOUD",
-			TenantID:                   cloud.Azure.TenantID,
-			SubscriptionID:             cloud.Azure.SubscriptionID,
-			AADClientID:                cloud.Azure.ClientID,
-			AADClientSecret:            cloud.Azure.ClientSecret,
+			TenantID:                   credentials.Azure.TenantID,
+			SubscriptionID:             credentials.Azure.SubscriptionID,
+			AADClientID:                credentials.Azure.ClientID,
+			AADClientSecret:            credentials.Azure.ClientSecret,
 			ResourceGroup:              cloud.Azure.ResourceGroup,
 			Location:                   dc.Spec.Azure.Location,
 			VNetName:                   cloud.Azure.VNetName,
@@ -111,11 +111,11 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		openstackCloudConfig := &openstack.CloudConfig{
 			Global: openstack.GlobalOpts{
 				AuthURL:    dc.Spec.Openstack.AuthURL,
-				Username:   cloud.Openstack.Username,
-				Password:   cloud.Openstack.Password,
-				DomainName: cloud.Openstack.Domain,
-				TenantName: cloud.Openstack.Tenant,
-				TenantID:   cloud.Openstack.TenantID,
+				Username:   credentials.Openstack.Username,
+				Password:   credentials.Openstack.Password,
+				DomainName: credentials.Openstack.Domain,
+				TenantName: credentials.Openstack.Tenant,
+				TenantID:   credentials.Openstack.TenantID,
 				Region:     dc.Spec.Openstack.Region,
 			},
 			BlockStorage: openstack.BlockStorageOpts{
@@ -136,8 +136,8 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 	case cloud.VSphere != nil:
 		vsphereCloudConfig := &vsphere.CloudConfig{
 			Global: vsphere.GlobalOpts{
-				User:             cloud.VSphere.Username,
-				Password:         cloud.VSphere.Password,
+				User:             credentials.VSphere.Username,
+				Password:         credentials.VSphere.Password,
 				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
 				VCenterPort:      "443",
 				InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
@@ -167,7 +167,7 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		}
 
 	case cloud.GCP != nil:
-		b, err := base64.StdEncoding.DecodeString(cloud.GCP.ServiceAccount)
+		b, err := base64.StdEncoding.DecodeString(credentials.GCP.ServiceAccount)
 		if err != nil {
 			return "", fmt.Errorf("error decoding service account: %v", err)
 		}

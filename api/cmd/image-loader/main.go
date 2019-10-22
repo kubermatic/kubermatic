@@ -20,6 +20,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/docker"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	kubermaticversion "github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -37,6 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
@@ -61,6 +63,7 @@ type opts struct {
 }
 
 func main() {
+	klog.InitFlags(nil)
 	o := opts{}
 	flag.StringVar(&o.versionsFile, "versions", "../config/kubermatic/static/master/versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&o.versionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
@@ -329,6 +332,9 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 		resources.MachineControllerWebhookServingCertSecretName,
 		resources.InternalUserClusterAdminKubeconfigSecretName,
 		resources.ClusterAutoscalerKubeconfigSecretName,
+		resources.KubernetesDashboardKubeconfigSecretName,
+		metricsserver.ServingCertSecretName,
+		resources.UserSSHKeys,
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 
@@ -351,7 +357,7 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 		fakeDynamicClient,
 		fakeCluster,
 		&kubermaticv1.Datacenter{},
-		"",
+		&kubermaticv1.Seed{},
 		"",
 		"",
 		"192.0.2.0/24",

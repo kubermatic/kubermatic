@@ -13,6 +13,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
@@ -32,7 +33,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 		}
 
 		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
-		kubermaticProject, err := projectProvider.New(user, projectRq.Body.Name)
+		kubermaticProject, err := projectProvider.New(user, projectRq.Body.Name, projectRq.Body.Labels)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -43,6 +44,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 				CreationTimestamp: apiv1.NewTime(kubermaticProject.CreationTimestamp.Time),
 			},
 			Status: kubermaticProject.Status.Phase,
+			Labels: kubermaticProject.Labels,
 			Owners: []apiv1.User{
 				{
 					ObjectMeta: apiv1.ObjectMeta{
@@ -145,6 +147,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, memberProvider pro
 		}
 
 		kubermaticProject.Spec.Name = req.Body.Name
+		kubermaticProject.Labels = req.Body.Labels
 		project, err := projectProvider.Update(userInfo, kubermaticProject)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -195,6 +198,7 @@ func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project
 				return nil
 			}(),
 		},
+		Labels: label.FilterLabels(label.ProjectResourceType, kubermaticProject.Labels),
 		Status: kubermaticProject.Status.Phase,
 		Owners: projectOwners,
 	}
@@ -265,7 +269,8 @@ func DecodeUpdateRq(c context.Context, r *http.Request) (interface{}, error) {
 type projectReq struct {
 	// in:body
 	Body struct {
-		Name string `json:"name"`
+		Name   string            `json:"name"`
+		Labels map[string]string `json:"labels,omitempty"`
 	}
 }
 

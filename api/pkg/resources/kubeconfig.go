@@ -8,13 +8,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
-	"github.com/golang/glog"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/klog"
 )
 
 type adminKubeconfigCreatorData interface {
@@ -58,6 +57,42 @@ func AdminKubeconfigCreator(data adminKubeconfigCreatorData, modifier ...func(*c
 	}
 }
 
+// ViewerKubeconfigCreator returns a function to create/update the secret with the viewer kubeconfig
+func ViewerKubeconfigCreator(data *TemplateData) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return ViewerKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+			if se.Data == nil {
+				se.Data = map[string][]byte{}
+			}
+
+			ca, err := data.GetRootCA()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
+			}
+
+			config := getBaseKubeconfig(ca.Cert, data.Cluster().Address.URL, data.Cluster().Name)
+			token, err := data.GetViewerToken()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get token: %v", err)
+			}
+			config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
+				KubeconfigDefaultContextKey: {
+					Token: token,
+				},
+			}
+
+			b, err := clientcmd.Write(*config)
+			if err != nil {
+				return nil, err
+			}
+
+			se.Data[KubeconfigSecretKey] = b
+
+			return se, nil
+		}
+	}
+}
+
 type internalKubeconfigCreatorData interface {
 	GetRootCA() (*triple.KeyPair, error)
 	Cluster() *kubermaticv1.Cluster
@@ -81,9 +116,9 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 			valid, err := IsValidKubeconfig(b, ca.Cert, apiserverURL, commonName, organizations, data.Cluster().Name)
 			if err != nil || !valid {
 				if err != nil {
-					glog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
+					klog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
 				} else {
-					glog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
+					klog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
 				}
 
 				se.Data[KubeconfigSecretKey], err = BuildNewKubeconfigAsByte(ca, apiserverURL, commonName, organizations, data.Cluster().Name)

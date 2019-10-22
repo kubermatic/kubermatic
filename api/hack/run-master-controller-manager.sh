@@ -16,5 +16,5 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
   -log-debug=true \
   -log-format=Console \
-  -logtostderr=1 \
-  -v=6 $@
+	-logtostderr \
+	-v=4 # Log-level for the Kube dependencies. Increase up to 9 to get request-level logs.

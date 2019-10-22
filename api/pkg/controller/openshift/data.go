@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	kubernetesresources "github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -21,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	certutil "k8s.io/client-go/util/cert"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // openshiftData implements the openshiftData interface which is
@@ -36,6 +39,9 @@ type openshiftData struct {
 	kubermaticImage                       string
 	dnatControllerImage                   string
 	supportsFailureDomainZoneAntiAffinity bool
+	userClusterClient                     func() (ctrlruntimeclient.Client, error)
+	externalURL                           string
+	seed                                  *kubermaticv1.Seed
 }
 
 func (od *openshiftData) DC() *kubermaticv1.Datacenter {
@@ -150,6 +156,10 @@ func (od *openshiftData) ClusterIPByServiceName(name string) (string, error) {
 func (od *openshiftData) secretRevision(ctx context.Context, name string) (string, error) {
 	secret := &corev1.Secret{}
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, name), secret); err != nil {
+		if kerrors.IsNotFound(err) {
+			// "-1" is not allowed, label values must start and end with an alphanumeric character
+			return "1-1", nil
+		}
 		return "", fmt.Errorf("failed to get secret %s: %v", name, err)
 	}
 	return secret.ResourceVersion, nil
@@ -317,4 +327,48 @@ func (od *openshiftData) GetOauthExternalNodePort() (int32, error) {
 		return 0, fmt.Errorf("expected service to have exactly one port, had %d", n)
 	}
 	return svc.Spec.Ports[0].NodePort, nil
+}
+
+func (od *openshiftData) Client() (ctrlruntimeclient.Client, error) {
+	return od.userClusterClient()
+}
+
+func (od *openshiftData) ExternalURL() string {
+	return od.externalURL
+}
+
+func (od *openshiftData) GetKubernetesCloudProviderName() string {
+	return kubernetesresources.GetKubernetesCloudProviderName(od.Cluster())
+}
+
+func (od *openshiftData) CloudCredentialSecretTemplate() ([]byte, error) {
+	// TODO: Support more providers than just AWS :)
+	if od.Cluster().Spec.Cloud.AWS == nil {
+		return nil, nil
+	}
+	credentials, err := kubernetesresources.GetCredentials(od)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get credentials: %v", err)
+	}
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			// https://github.com/openshift/cloud-credential-operator/blob/ec6f38d73a7921e79d0ca7555da3a864e808e681/pkg/aws/actuator/actuator.go#L51
+			Name: "aws-creds",
+		},
+		// https://github.com/openshift/cloud-credential-operator/blob/ec6f38d73a7921e79d0ca7555da3a864e808e681/pkg/aws/actuator/actuator.go#L671-L682
+		Data: map[string][]byte{
+			"aws_access_key_id":     []byte(credentials.AWS.AccessKeyID),
+			"aws_secret_access_key": []byte(credentials.AWS.SecretAccessKey),
+		},
+	}
+
+	serializedSecret, err := json.Marshal(secret)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal secret: %v", err)
+	}
+	return serializedSecret, nil
+}
+
+func (od *openshiftData) Seed() *kubermaticv1.Seed {
+	return od.seed
 }

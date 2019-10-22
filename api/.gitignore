@@ -17,3 +17,5 @@ handler/swagger/api/index.json
 /codecgen_binary
 /defaulter-gen
 /deepcopy-gen
+download-gocache
+/pkg/handler/routes_v1.go-e

@@ -3,8 +3,6 @@ package rbac
 import (
 	"fmt"
 
-	"github.com/golang/glog"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -14,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	rbaclister "k8s.io/client-go/listers/rbac/v1"
+	"k8s.io/klog"
 )
 
 // syncProjectResource generates RBAC Role and Binding for a resource that belongs to a project.
@@ -92,7 +91,7 @@ func ensureClusterRBACRoleForNamedResource(projectName string, objectResource st
 			return err
 		}
 		if skip {
-			glog.V(4).Infof("skipping ClusterRole generation for named resource for group \"%s\" and resource \"%s\"", groupPrefix, objectResource)
+			klog.V(4).Infof("skipping ClusterRole generation for named resource for group \"%s\" and resource \"%s\"", groupPrefix, objectResource)
 			continue
 		}
 		sharedExistingRole, err := rbacClusterRoleLister.Get(generatedRole.Name)
@@ -130,7 +129,7 @@ func ensureClusterRBACRoleBindingForNamedResource(projectName string, objectReso
 			return err
 		}
 		if skip {
-			glog.V(4).Infof("skipping operation on ClusterRoleBinding because corresponding ClusterRole was not(will not be) created for group %q and %q resource for project %q", groupPrefix, objectResource, projectName)
+			klog.V(4).Infof("skipping operation on ClusterRoleBinding because corresponding ClusterRole was not(will not be) created for group %q and %q resource for project %q", groupPrefix, objectResource, projectName)
 			continue
 		}
 
@@ -204,7 +203,7 @@ func (c *resourcesController) ensureRBACRoleForNamedResource(projectName string,
 			return err
 		}
 		if skip {
-			glog.V(4).Infof("skipping Role generation for named resource for group %q and resource %q in namespace %q", groupPrefix, objectGVR.Resource, namespace)
+			klog.V(4).Infof("skipping Role generation for named resource for group %q and resource %q in namespace %q", groupPrefix, objectGVR.Resource, namespace)
 			continue
 		}
 		sharedExistingRole, err := rbacRoleLister.Get(generatedRole.Name)
@@ -242,7 +241,7 @@ func (c *resourcesController) ensureRBACRoleBindingForNamedResource(projectName 
 			return err
 		}
 		if skip {
-			glog.V(4).Infof("skipping operation on RoleBinding because corresponding Role was not(will not be) created for group %q and %q resource for project %q in namespace %q", groupPrefix, objectGVR.Resource, projectName, namespace)
+			klog.V(4).Infof("skipping operation on RoleBinding because corresponding Role was not(will not be) created for group %q and %q resource for project %q in namespace %q", groupPrefix, objectGVR.Resource, projectName, namespace)
 			continue
 		}
 
@@ -331,7 +330,7 @@ func (c *resourcesController) ensureRBACRoleForClusterAddons(projectName string,
 			return err
 		}
 		if skip {
-			glog.V(4).Infof("skipping Role generation for cluster addons for group %q and cluster namespace %q", groupPrefix, cluster.Status.NamespaceName)
+			klog.V(4).Infof("skipping Role generation for cluster addons for group %q and cluster namespace %q", groupPrefix, cluster.Status.NamespaceName)
 			continue
 		}
 		sharedExistingRole, err := rbacRoleLister.Get(generatedRole.Name, metav1.GetOptions{})
@@ -381,7 +380,7 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAddons(projectName 
 			return err
 		}
 		if skip {
-			glog.V(4).Infof("skipping RoleBinding generation for cluster addons for group %q and cluster namespace %q", groupPrefix, cluster.Status.NamespaceName)
+			klog.V(4).Infof("skipping RoleBinding generation for cluster addons for group %q and cluster namespace %q", groupPrefix, cluster.Status.NamespaceName)
 			continue
 		}
 

@@ -27,10 +27,8 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
+	"k8s.io/klog"
 	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -42,6 +40,7 @@ const (
 )
 
 func main() {
+	klog.InitFlags(nil)
 	options, err := newControllerRunOptions()
 	if err != nil {
 		fmt.Printf("Failed to create controller run options due to = %v\n", err)
@@ -80,14 +79,9 @@ func main() {
 	if err := autoscalingv1beta2.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", autoscalingv1beta2.SchemeGroupVersion), zap.Error(err))
 	}
-	if err := kubermaticv1.SchemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
-	}
 	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
-
-	recorder := mgr.GetRecorder(controllerName)
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if _, err := informer.GetSyncedStoreFromDynamicFactory(mgr.GetCache(), &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
@@ -159,7 +153,8 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 					return nil, fmt.Errorf("can only return kubeconfig for our own seed (%q), got request for %q", options.dc, seed.Name)
 				}
 				return restMapperCache.Client(mgr.GetConfig())
-			})
+			},
+			false)
 		if err != nil {
 			log.Fatalw("Failed to get seedValidationWebhookServer", zap.Error(err))
 		}
@@ -212,47 +207,27 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	{
 		leaderCtx, stopLeaderElection := context.WithCancel(rootCtx)
 		defer stopLeaderElection()
+
 		g.Add(func() error {
-			leaderElectionClient, err := kubernetes.NewForConfig(rest.AddUserAgent(config, "kubermatic-controller-manager-leader-election"))
-			if err != nil {
-				return err
-			}
-			callbacks := kubeleaderelection.LeaderCallbacks{
-				OnStartedLeading: func(ctx context.Context) {
-					log.Info("Acquired the leader lease")
-
-					log.Info("Executing migrations...")
-					if err := migrations.RunAll(ctrlCtx.mgr.GetConfig(), ctrlCtx.runOptions.workerName); err != nil {
-						log.Errorf("failed to run migrations: %v", err)
-						stopLeaderElection()
-						return
-					}
-					log.Info("Migrations executed successfully")
-
-					log.Info("Starting the controller-manager...")
-					if err := mgr.Start(ctx.Done()); err != nil {
-						log.Errorf("The controller-manager stopped with an error: %v", err)
-						stopLeaderElection()
-					}
-				},
-				OnStoppedLeading: func() {
-					// Gets called when we could not renew the lease or the parent context was closed
-					log.Info("Shutting down the controller-manager...")
-					stopLeaderElection()
-				},
-			}
-
-			leaderName := controllerName
+			electionName := controllerName
 			if options.workerName != "" {
-				leaderName = options.workerName + "-" + leaderName
-			}
-			leader, err := leaderelection.New(leaderName, leaderElectionClient, recorder, callbacks)
-			if err != nil {
-				return fmt.Errorf("failed to create a leaderelection: %v", err)
+				electionName += "-" + options.workerName
 			}
 
-			leader.Run(leaderCtx)
-			return nil
+			return leaderelection.RunAsLeader(leaderCtx, log, config, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) error {
+				log.Info("Executing migrations...")
+				if err := migrations.RunAll(ctrlCtx.mgr.GetConfig(), options.workerName); err != nil {
+					return fmt.Errorf("failed to run migrations: %v", err)
+				}
+				log.Info("Migrations executed successfully")
+
+				log.Info("Starting the controller-manager...")
+				if err := mgr.Start(ctx.Done()); err != nil {
+					return fmt.Errorf("the controller-manager stopped with an error: %v", err)
+				}
+
+				return nil
+			})
 		}, func(err error) {
 			stopLeaderElection()
 		})

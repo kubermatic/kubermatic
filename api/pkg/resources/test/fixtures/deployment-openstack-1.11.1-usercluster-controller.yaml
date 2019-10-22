@@ -26,6 +26,7 @@ spec:
         cluster: de-test-01
         internal-admin-kubeconfig-secret-revision: "123456"
         openvpn-ca-secret-revision: "123456"
+        usersshkeys-secret-revision: "123456"
     spec:
       containers:
       - args:
@@ -39,7 +40,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/user-cluster-controller-manager","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-metrics-listen-address","0.0.0.0:8085","-health-listen-address","0.0.0.0:8086","-namespace","$(NAMESPACE)","-ca-cert","/etc/kubernetes/pki/ca/ca.crt","-cluster-url","","-openvpn-server-port","30003","-overwrite-registry","","-openshift=false","-version","1.11.1","-openvpn-ca-cert-file=/etc/kubernetes/pki/openvpn/ca.crt","-openvpn-ca-key-file=/etc/kubernetes/pki/openvpn/ca.key","-logtostderr","-v","2","--ipam-controller-network","192.168.1.1/24,192.168.1.1,8.8.8.8"]}'
+        - '{"command":"/usr/local/bin/user-cluster-controller-manager","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-metrics-listen-address","0.0.0.0:8085","-health-listen-address","0.0.0.0:8086","-namespace","$(NAMESPACE)","-ca-cert","/etc/kubernetes/pki/ca/ca.crt","-ca-key","/etc/kubernetes/pki/ca/ca.key","-cluster-url","","-openvpn-server-port","30003","-overwrite-registry","","-openshift=false","-version","1.11.1","-cloud-provider-name","openstack","-openvpn-ca-cert-file=/etc/kubernetes/pki/openvpn/ca.crt","-openvpn-ca-key-file=/etc/kubernetes/pki/openvpn/ca.key","-user-ssh-keys-dir-path=/etc/kubernetes/usersshkeys","--ipam-controller-network","192.168.1.1/24,192.168.1.1,8.8.8.8","-node-labels","{\"my-label\":\"my-value\"}"]}'
         command:
         - /http-prober-bin/http-prober
         env:
@@ -76,6 +77,9 @@ spec:
         - mountPath: /etc/kubernetes/pki/openvpn
           name: openvpn-ca
           readOnly: true
+        - mountPath: /etc/kubernetes/usersshkeys
+          name: usersshkeys
+          readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
       imagePullSecrets:
@@ -85,7 +89,7 @@ spec:
         - /bin/cp
         - /usr/local/bin/http-prober
         - /http-prober-bin/http-prober
-        image: quay.io/kubermatic/http-prober:v0.2
+        image: quay.io/kubermatic/http-prober:v0.3.1
         name: copy-http-prober
         resources: {}
         volumeMounts:
@@ -97,13 +101,13 @@ spec:
           secretName: internal-admin-kubeconfig
       - name: ca
         secret:
-          items:
-          - key: ca.crt
-            path: ca.crt
           secretName: ca
       - name: openvpn-ca
         secret:
           secretName: openvpn-ca
+      - name: usersshkeys
+        secret:
+          secretName: usersshkeys
       - emptyDir: {}
         name: http-prober-bin
 status: {}

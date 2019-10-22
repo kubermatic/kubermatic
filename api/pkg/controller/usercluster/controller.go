@@ -2,29 +2,33 @@ package usercluster
 
 import (
 	"context"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/url"
 	"sync"
 
-	"github.com/golang/glog"
 	"github.com/heptiolabs/healthcheck"
+	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -39,22 +43,32 @@ func Add(
 	openshift bool,
 	version string,
 	namespace string,
-	caCert *x509.Certificate,
+	cloudProviderName string,
+	caCert *triple.KeyPair,
 	clusterURL *url.URL,
 	openvpnServerPort int,
+	userSSHKeys map[string][]byte,
 	registerReconciledCheck func(name string, check healthcheck.Check),
-	openVPNCA *resources.ECDSAKeyPair) error {
+	openVPNCA *resources.ECDSAKeyPair,
+	userSSHKeyDirPath string,
+	cloudCredentialSecretTemplate *corev1.Secret,
+	log *zap.SugaredLogger) error {
 	reconciler := &reconciler{
-		Client:            mgr.GetClient(),
-		cache:             mgr.GetCache(),
-		openshift:         openshift,
-		version:           version,
-		rLock:             &sync.Mutex{},
-		namespace:         namespace,
-		caCert:            caCert,
-		clusterURL:        clusterURL,
-		openvpnServerPort: openvpnServerPort,
-		openVPNCA:         openVPNCA,
+		Client:                        mgr.GetClient(),
+		cache:                         mgr.GetCache(),
+		openshift:                     openshift,
+		version:                       version,
+		rLock:                         &sync.Mutex{},
+		namespace:                     namespace,
+		caCert:                        caCert,
+		clusterURL:                    clusterURL,
+		openvpnServerPort:             openvpnServerPort,
+		openVPNCA:                     openVPNCA,
+		userSSHKeyDirPath:             userSSHKeyDirPath,
+		cloudCredentialSecretTemplate: cloudCredentialSecretTemplate,
+		log:                           log,
+		platform:                      cloudProviderName,
+		userSSHKeys:                   userSSHKeys,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -62,6 +76,10 @@ func Add(
 	}
 
 	mapFn := handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
+		log.Debugw("Controller got triggered",
+			"type", fmt.Sprintf("%T", o.Object),
+			"name", o.Meta.GetName(),
+			"namespace", o.Meta.GetNamespace())
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{
 				// There is no "parent object" like e.G. a cluster that can be used to reconcile, we just have a random set of resources
@@ -84,8 +102,33 @@ func Add(
 		&admissionregistrationv1beta1.MutatingWebhookConfiguration{},
 		&apiextensionsv1beta1.CustomResourceDefinition{},
 	}
+
+	if openshift {
+		infrastructureConfigKind := &unstructured.Unstructured{}
+		infrastructureConfigKind.SetKind("Infrastructure")
+		infrastructureConfigKind.SetAPIVersion("config.openshift.io/v1")
+		clusterVersionConfigKind := &unstructured.Unstructured{}
+		clusterVersionConfigKind.SetKind("ClusterVersion")
+		clusterVersionConfigKind.SetAPIVersion("config.openshift.io/v1")
+		typesToWatch = append(typesToWatch, infrastructureConfigKind, clusterVersionConfigKind)
+	}
+
+	// Avoid getting triggered by the leader lease AKA: If the annotation exists AND changed on
+	// UPDATE, do not reconcile
+	predicateIgnoreLeaderLeaseRenew := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			if e.MetaOld.GetAnnotations()[resourcelock.LeaderElectionRecordAnnotationKey] == "" {
+				return true
+			}
+			if e.MetaOld.GetAnnotations()[resourcelock.LeaderElectionRecordAnnotationKey] ==
+				e.MetaNew.GetAnnotations()[resourcelock.LeaderElectionRecordAnnotationKey] {
+				return true
+			}
+			return false
+		},
+	}
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}, predicateIgnoreLeaderLeaseRenew); err != nil {
 			return fmt.Errorf("failed to create watch for %T: %v", t, err)
 		}
 	}
@@ -106,23 +149,29 @@ func Add(
 // reconcileUserCluster reconciles objects in the user cluster
 type reconciler struct {
 	client.Client
-	openshift         bool
-	version           string
-	cache             cache.Cache
-	namespace         string
-	caCert            *x509.Certificate
-	clusterURL        *url.URL
-	openvpnServerPort int
-	openVPNCA         *resources.ECDSAKeyPair
+	openshift                     bool
+	version                       string
+	cache                         cache.Cache
+	namespace                     string
+	caCert                        *triple.KeyPair
+	clusterURL                    *url.URL
+	openvpnServerPort             int
+	openVPNCA                     *resources.ECDSAKeyPair
+	userSSHKeyDirPath             string
+	platform                      string
+	cloudCredentialSecretTemplate *corev1.Secret
+	userSSHKeys                   map[string][]byte
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
+
+	log *zap.SugaredLogger
 }
 
 // Reconcile makes changes in response to objects in the user cluster.
 func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	if err := r.reconcile(context.TODO()); err != nil {
-		glog.Errorf("Reconciling failed: %v", err)
+		r.log.Errorw("Reconciling failed", zap.Error(err))
 		return reconcile.Result{}, err
 	}
 

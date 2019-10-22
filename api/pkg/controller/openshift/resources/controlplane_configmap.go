@@ -32,6 +32,7 @@ type masterConfigData interface {
 	OIDCIssuerURL() string
 	OIDCClientID() string
 	OIDCClientSecret() string
+	GetKubernetesCloudProviderName() string
 }
 
 type openshiftAPIServerCreatorData interface {
@@ -81,12 +82,14 @@ func OpenshiftKubeAPIServerConfigMapCreator(data masterConfigData) reconciling.N
 				ListenPort       string
 				ETCDEndpoints    []string
 				AdvertiseAddress string
+				CloudProvider    string
 			}{
 				PodCIDR:          podCIDR,
 				ServiceCIDR:      serviceCIDR,
 				ListenPort:       fmt.Sprint(data.Cluster().Address.Port),
 				ETCDEndpoints:    etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
 				AdvertiseAddress: data.Cluster().Address.IP,
+				CloudProvider:    data.GetKubernetesCloudProviderName(),
 			}
 			if err := openshiftKubeAPIServerTemplate.Execute(&apiServerConfigBuffer, templateInput); err != nil {
 				return nil, fmt.Errorf("failed to execute template: %v", err)
@@ -188,9 +191,12 @@ aggregatorConfig:
     certFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.crt
     keyFile: /etc/kubernetes/pki/front-proxy/client/apiserver-proxy-client.key
 apiServerArguments:
+{{- if .CloudProvider }}
   cloud-provider:
-  # TODO: Re-Enable
-  # - aws
+  - {{ .CloudProvider}}
+  cloud-config:
+  - /etc/kubernetes/cloud/config
+{{- end }}
   enable-aggregator-routing:
   # Thist _must_ stay false, if its true, the kube-apiserver will try to resolve endpoints for
   # the services that service the extension apis and error out because they are of type
@@ -251,8 +257,7 @@ auditConfig:
       omitStages:
       - RequestReceived
 authConfig:
-  # TODO: What is this? Looks like an additional auth webhook source?
-  # oauthMetadataFile: /etc/kubernetes/static-pod-resources/configmaps/oauth-metadata/oauthMetadata
+  oauthMetadataFile: /etc/kubernetes/oauth-metadata/oauthMetadata
   requestHeader:
     clientCA: /etc/kubernetes/pki/front-proxy/client/ca.crt
     clientCommonNames:

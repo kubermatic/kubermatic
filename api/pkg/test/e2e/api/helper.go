@@ -694,6 +694,15 @@ func (r *APIRunner) DeleteUserFromProject(projectID, userID string) error {
 func (r *APIRunner) GetProjectUsers(projectID string) ([]apiv1.User, error) {
 	params := &users.GetUsersForProjectParams{ProjectID: projectID}
 	params.WithTimeout(timeout)
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		_, err := r.client.Users.GetUsersForProject(params, r.bearerToken)
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+
 	responseUsers, err := r.client.Users.GetUsersForProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err

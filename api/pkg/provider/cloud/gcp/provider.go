@@ -15,6 +15,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 )
 
 const (
@@ -24,19 +25,19 @@ const (
 )
 
 type gcp struct {
-	clusterUpdater provider.ClusterUpdater
+	secretKeySelector provider.SecretKeySelectorValueFunc
 }
 
 // NewCloudProvider creates a new gcp provider.
-func NewCloudProvider() provider.CloudProvider {
-	return &gcp{}
+func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provider.CloudProvider {
+	return &gcp{
+		secretKeySelector: secretKeyGetter,
+	}
 }
 
 // TODO: update behaviour of all these methods
 // InitializeCloudProvider initializes a cluster.
 func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	g.clusterUpdater = update
-
 	var err error
 	if cluster.Spec.Cloud.GCP.Network == "" && cluster.Spec.Cloud.GCP.Subnetwork == "" {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -47,7 +48,7 @@ func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update prov
 		}
 	}
 
-	if err := ensureFirewallRules(cluster, update); err != nil {
+	if err := g.ensureFirewallRules(cluster, update); err != nil {
 		return nil, err
 	}
 
@@ -69,9 +70,12 @@ func (g *gcp) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 // CleanUpCloudProvider removes firewall rules and related finalizer.
 func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	g.clusterUpdater = update
+	serviceAccount, err := GetCredentialsForCluster(cluster.Spec.Cloud, g.secretKeySelector)
+	if err != nil {
+		return nil, err
+	}
 
-	svc, projectID, err := ConnectToComputeService(cluster.Spec.Cloud.GCP.ServiceAccount)
+	svc, projectID, err := ConnectToComputeService(serviceAccount)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +87,12 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 
 	if kuberneteshelper.HasFinalizer(cluster, firewallSelfCleanupFinalizer) {
 		_, err = firewallService.Delete(projectID, selfRuleName).Do()
-		if err != nil {
+		// we ignore a Google API "not found" error
+		if err != nil && !isHTTPError(err, http.StatusNotFound) {
 			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", selfRuleName, err)
 		}
 
-		cluster, err = g.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, firewallSelfCleanupFinalizer)
 		})
 		if err != nil {
@@ -97,11 +102,12 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 
 	if kuberneteshelper.HasFinalizer(cluster, firewallICMPCleanupFinalizer) {
 		_, err = firewallService.Delete(projectID, icmpRuleName).Do()
-		if err != nil {
-			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", icmpRuleName, err)
+		// we ignore a Google API "not found" error
+		if err != nil && !isHTTPError(err, http.StatusNotFound) {
+			return nil, fmt.Errorf("failed to delete firewall rule %s: %v", selfRuleName, err)
 		}
 
-		cluster, err = g.clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, firewallICMPCleanupFinalizer)
 		})
 		if err != nil {
@@ -140,8 +146,13 @@ func ConnectToComputeService(serviceAccount string) (*compute.Service, string, e
 	return svc, projectID, nil
 }
 
-func ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {
-	svc, projectID, err := ConnectToComputeService(cluster.Spec.Cloud.GCP.ServiceAccount)
+func (g *gcp) ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {
+	serviceAccount, err := GetCredentialsForCluster(cluster.Spec.Cloud, g.secretKeySelector)
+	if err != nil {
+		return err
+	}
+
+	svc, projectID, err := ConnectToComputeService(serviceAccount)
 	if err != nil {
 		return err
 	}
@@ -182,18 +193,16 @@ func ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterU
 			TargetTags: []string{tag},
 			SourceTags: []string{tag},
 		}).Do()
-		if err != nil {
-			// we ignore a Google API "already exists" error
-			if ge, ok := err.(*googleapi.Error); !ok || ge.Code != http.StatusConflict {
-				return err
-			}
+		// we ignore a Google API "already exists" error
+		if err != nil && !isHTTPError(err, http.StatusConflict) {
+			return fmt.Errorf("failed to create firewall rule %s: %v", selfRuleName, err)
 		}
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, firewallSelfCleanupFinalizer)
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to add %s finalizer: %v", firewallSelfCleanupFinalizer, err)
 		}
 	}
 
@@ -209,18 +218,16 @@ func ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterU
 			},
 			TargetTags: []string{tag},
 		}).Do()
-		if err != nil {
-			// we ignore a Google API "already exists" error
-			if ge, ok := err.(*googleapi.Error); !ok || ge.Code != http.StatusConflict {
-				return err
-			}
+		// we ignore a Google API "already exists" error
+		if err != nil && !isHTTPError(err, http.StatusConflict) {
+			return fmt.Errorf("failed to create firewall rule %s: %v", icmpRuleName, err)
 		}
 
 		newCluster, err := update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, firewallICMPCleanupFinalizer)
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to add %s finalizer: %v", firewallICMPCleanupFinalizer, err)
 		}
 		*cluster = *newCluster
 	}
@@ -231,4 +238,27 @@ func ensureFirewallRules(cluster *kubermaticv1.Cluster, update provider.ClusterU
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
 func (g *gcp) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
+}
+
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (serviceAccount string, err error) {
+	serviceAccount = cloud.GCP.ServiceAccount
+
+	if serviceAccount == "" {
+		if cloud.GCP.CredentialsReference == nil {
+			return "", errors.New("no credentials provided")
+		}
+		serviceAccount, err = secretKeySelector(cloud.GCP.CredentialsReference, resources.GCPServiceAccount)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return serviceAccount, nil
+}
+
+// isHTTPError returns true if the given error is of a specific HTTP status code.
+func isHTTPError(err error, status int) bool {
+	gerr, ok := err.(*googleapi.Error)
+	return ok && gerr.Code == status
 }

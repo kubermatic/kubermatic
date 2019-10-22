@@ -3,10 +3,10 @@
     "list": []
   },
   "description": "ElasticSearch cluster stats",
-  "editable": "<< editable | default false | toJson >>",
+  "editable": true,
   "gnetId": null,
   "graphTooltip": 1,
-  "hideControls": "<< hideControls | default false | toJson >>",
+  "hideControls": false,
   "links": [],
   "panels": [
     {
@@ -33,7 +33,7 @@
         "#299c46"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -97,7 +97,7 @@
       "thresholds": "2,4",
       "timeRegions": [],
       "title": "Cluster health",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -135,7 +135,7 @@
       ],
       "datasource": "$datasource",
       "decimals": null,
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -199,7 +199,7 @@
       "thresholds": "1,2",
       "timeRegions": [],
       "title": "Tripped for breakers",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -231,7 +231,7 @@
         "rgba(245, 54, 54, 0.9)"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "format": "percent",
       "gauge": {
@@ -299,7 +299,7 @@
       "thresholds": "70,80",
       "timeRegions": [],
       "title": "CPU usage Avg.",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -321,7 +321,7 @@
         "rgba(245, 54, 54, 0.9)"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "format": "percent",
       "gauge": {
@@ -389,7 +389,7 @@
       "thresholds": "70,80",
       "timeRegions": [],
       "title": "JVM memory used Avg.",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -412,7 +412,7 @@
       ],
       "datasource": "$datasource",
       "description": "Number of nodes in the cluster",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "format": "none",
       "gauge": {
@@ -480,7 +480,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Nodes",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -503,7 +503,7 @@
       ],
       "datasource": "$datasource",
       "description": "Number of data nodes in the cluster",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "format": "none",
       "gauge": {
@@ -571,7 +571,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Data nodes",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -594,7 +594,7 @@
       ],
       "datasource": "$datasource",
       "description": "Cluster level changes which have not yet been executed",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "format": "none",
       "gauge": {
@@ -663,7 +663,7 @@
       "thresholds": "1,5",
       "timeRegions": [],
       "title": "Pending tasks",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -685,7 +685,7 @@
         "rgba(245, 54, 54, 0.9)"
       ],
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "format": "short",
       "gauge": {
@@ -753,7 +753,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Open file descriptors per cluster",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [],
@@ -784,7 +784,7 @@
       ],
       "datasource": "$datasource",
       "description": "The number of primary shards in your cluster. This is an aggregate total across all indices.",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "format": "none",
       "gauge": {
@@ -852,7 +852,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Active primary shards",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -875,7 +875,7 @@
       ],
       "datasource": "$datasource",
       "description": "Aggregate total of all shards across all indices, which includes replica shards",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "format": "none",
       "gauge": {
@@ -942,7 +942,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Active shards",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -965,7 +965,7 @@
       ],
       "datasource": "$datasource",
       "description": "Count of shards that are being freshly created",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "format": "none",
       "gauge": {
@@ -1032,7 +1032,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Initializing shards",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -1055,7 +1055,7 @@
       ],
       "datasource": "$datasource",
       "description": "The number of shards that are currently moving from one node to another node.",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "format": "none",
       "gauge": {
@@ -1122,7 +1122,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Relocating shards",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -1145,7 +1145,7 @@
       ],
       "datasource": "$datasource",
       "description": "Shards delayed to reduce reallocation overhead",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "format": "none",
       "gauge": {
@@ -1212,7 +1212,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Delayed shards",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -1235,7 +1235,7 @@
       ],
       "datasource": "$datasource",
       "description": "The number of shards that exist in the cluster state, but cannot be found in the cluster itself",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "format": "none",
       "gauge": {
@@ -1302,7 +1302,7 @@
       "thresholds": "",
       "timeRegions": [],
       "title": "Unassigned shards",
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -1335,7 +1335,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "decimals": 2,
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "fill": 1,
       "grid": {},
@@ -1397,7 +1397,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1436,7 +1436,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "fill": 1,
       "grid": {},
@@ -1496,7 +1496,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1535,7 +1535,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "description": "Count of deleted documents on this node",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "fill": 1,
       "grid": {},
@@ -1597,7 +1597,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1636,7 +1636,7 @@
       "dashes": false,
       "datasource": "$datasource",
       "decimals": 2,
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "fill": 1,
       "grid": {},
@@ -1696,7 +1696,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1735,7 +1735,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "error": false,
       "fill": 1,
       "grid": {},
@@ -1795,7 +1795,7 @@
         "sort": 0,
         "value_type": "cumulative"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1848,7 +1848,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1901,7 +1901,7 @@
         "sort": 2,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -1939,7 +1939,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1992,7 +1992,7 @@
         "sort": 2,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -2030,7 +2030,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "$datasource",
-      "editable": "<< editable | default false | toJson >>",
+      "editable": true,
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -2083,7 +2083,7 @@
         "sort": 2,
         "value_type": "individual"
       },
-      "transparent": "<< transparentPanels | default true | toJson >>",
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "buckets": null,
@@ -7245,7 +7245,7 @@
       "type": "row"
     }
   ],
-  "refresh": "<< refresh | default `30s` | toJson >>",
+  "refresh": "30s",
   "schemaVersion": 18,
   "style": "dark",
   "tags": [],
@@ -7253,7 +7253,7 @@
     "list": [
       {
         "current": {},
-        "hide": "<< datasourceHide | toJson >>",
+        "hide": 2,
         "includeAll": false,
         "label": null,
         "multi": false,
@@ -7404,7 +7404,7 @@
     ]
   },
   "time": {
-    "from": "<< defaultRange | toJson >>",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {

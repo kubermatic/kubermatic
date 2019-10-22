@@ -41,8 +41,7 @@ kind: ConfigMap
 metadata:
   name: grafana-dashboard-definitions
 data:
-  # See the README.md for more details on how dashboards are treated as templates.
   {{- range $file, $content := (.Files.Glob "dashboards/**") }}
   {{ $file | replace "dashboards/" "" | replace "/" "-" }}: |
-{{ ((tpl (($.Files.Get $file) | replace "{{" "_{_{" | replace "}}" "_}_}" | replace "[[ " "{{ .Values.grafana.dashboards." | replace "]]" "}}" | replace "\"<< " "{{ .Values.grafana.dashboards." | replace ">>\"" "}}") $) | replace "_{_{" "{{" | replace "_}_}" "}}") | fromJson | toJson | indent 4 }}
+{{ $.Files.Get $file | fromJson | toJson | indent 4 }}
   {{- end }}

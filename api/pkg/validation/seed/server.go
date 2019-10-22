@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -32,13 +33,16 @@ func (opts *WebhookOpts) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&opts.KeyFile, "seed-admissionwebhook-key-file", "", "The location of the certificate key file")
 }
 
-// Server returns a Server that validates AdmissionRequests for Seed CRs
+// Server returns a Server that validates AdmissionRequests for Seed CRs.
+// When migrationModeEnabled is enabled, only creating new seeds is allowed, not
+// changing or deleting existing.
 func (opts *WebhookOpts) Server(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	workerName string,
 	seedsGetter provider.SeedsGetter,
-	seedClientGetter provider.SeedClientGetter) (*Server, error) {
+	seedClientGetter provider.SeedClientGetter,
+	migrationModeEnabled bool) (*Server, error) {
 
 	labelSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
@@ -54,11 +58,12 @@ func (opts *WebhookOpts) Server(
 		Server: &http.Server{
 			Addr: opts.ListenAddress,
 		},
-		log:           log.Named("seed-webhook-server"),
-		listenAddress: opts.ListenAddress,
-		certFile:      opts.CertFile,
-		keyFile:       opts.KeyFile,
-		validator:     newValidator(ctx, seedsGetter, seedClientGetter, listOpts),
+		log:                  log.Named("seed-webhook-server"),
+		listenAddress:        opts.ListenAddress,
+		certFile:             opts.CertFile,
+		keyFile:              opts.KeyFile,
+		validator:            newValidator(ctx, seedsGetter, seedClientGetter, listOpts),
+		migrationModeEnabled: migrationModeEnabled,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", server.handleSeedValidationRequests)
@@ -69,11 +74,12 @@ func (opts *WebhookOpts) Server(
 
 type Server struct {
 	*http.Server
-	log           *zap.SugaredLogger
-	listenAddress string
-	certFile      string
-	keyFile       string
-	validator     *seedValidator
+	log                  *zap.SugaredLogger
+	listenAddress        string
+	certFile             string
+	keyFile              string
+	validator            *seedValidator
+	migrationModeEnabled bool
 }
 
 // Start implements sigs.k8s.io/controller-runtime/pkg/manager.Runnable
@@ -83,6 +89,10 @@ func (s *Server) Start(_ <-chan struct{}) error {
 
 func (s *Server) handleSeedValidationRequests(resp http.ResponseWriter, req *http.Request) {
 	admissionRequest, validationErr := s.handle(req)
+	if validationErr != nil {
+		s.log.Warnw("Seed admission failed", zap.Error(validationErr))
+	}
+
 	var uid types.UID
 	if admissionRequest != nil {
 		uid = admissionRequest.UID
@@ -122,6 +132,17 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 		return nil, fmt.Errorf("failed to unmarshal request body: %v", err)
 	}
 
+	if admissionReview.Request == nil {
+		return nil, errors.New("received malformed admission review: no request defined")
+	}
+
+	s.log.Debugw(
+		"Received admission request",
+		"kind", admissionReview.Request.Kind,
+		"name", admissionReview.Request.Name,
+		"namespace", admissionReview.Request.Namespace,
+		"operation", admissionReview.Request.Operation)
+
 	seed := &kubermaticv1.Seed{}
 	// On DELETE, the admissionReview.Request.Object is unset
 	// Ref: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#webhook-request-and-response
@@ -130,12 +151,22 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 		if err != nil {
 			return nil, fmt.Errorf("failed to get seeds: %v", err)
 		}
+		// when a namespace is deleted, a DELETE call for all seeds in the namespace
+		// is issued; this request has no .Request.Name set, so this check will make
+		// sure that we exit cleanly and allow deleting namespaces without seeds
 		if _, exists := seeds[admissionReview.Request.Name]; !exists {
 			return admissionReview.Request, nil
 		}
 		seed = seeds[admissionReview.Request.Name]
 	} else if err := json.Unmarshal(admissionReview.Request.Object.Raw, seed); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal object from request into a Seed: %v", err)
+	}
+
+	// during datacenters->seed migration we reject any changes, so the seeds can never get
+	// out of sync with the datacenters.yaml; this must happen after the checks above or else
+	// we would block deleting namespaces
+	if s.migrationModeEnabled && admissionReview.Request.Operation != admissionv1beta1.Create {
+		return admissionReview.Request, errors.New("migration is enabled, changes to Seed resources are forbidden; disable migration by removing either -datacenters or -dynamic-datacenters flags from the master-controller-manager")
 	}
 
 	validationErr := s.validator.Validate(seed, admissionReview.Request.Operation == admissionv1beta1.Delete)

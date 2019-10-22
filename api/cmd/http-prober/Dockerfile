@@ -1,4 +1,4 @@
-FROM alpine:3.9
-LABEL maintainer "henrik@loodse.com"
+FROM alpine:3.10
+LABEL maintainer "dev@loodse.com"
 
 COPY ./http-prober /usr/local/bin/

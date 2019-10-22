@@ -18,6 +18,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/utils/pointer"
 )
 
 func secretName(contextName string) string {
@@ -30,10 +31,6 @@ func deploymentName(contextName string) string {
 
 func serviceName(contextName string) string {
 	return fmt.Sprintf("seed-proxy-%s", contextName)
-}
-
-func fullPrometheusService() string {
-	return fmt.Sprintf("%s:%s", SeedPrometheusServiceName, SeedPrometheusServicePort)
 }
 
 func defaultLabels(name string, instance string) map[string]string {
@@ -65,17 +62,20 @@ func seedServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	}
 }
 
-func seedPrometheusRoleCreator() reconciling.NamedRoleCreatorGetter {
+func seedMonitoringRoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
-		return SeedPrometheusRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Labels = defaultLabels(SeedPrometheusRoleName, "")
+		return SeedMonitoringRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+			r.Labels = defaultLabels(SeedMonitoringRoleName, "")
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
-					APIGroups:     []string{""},
-					Resources:     []string{"services/proxy"},
-					ResourceNames: []string{fullPrometheusService()},
-					Verbs:         []string{"get"},
+					APIGroups: []string{""},
+					Verbs:     []string{"get"},
+					Resources: []string{"services/proxy"},
+					ResourceNames: []string{
+						SeedPrometheusService,
+						SeedAlertmanagerService,
+					},
 				},
 			}
 
@@ -84,15 +84,15 @@ func seedPrometheusRoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
-func seedPrometheusRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func seedMonitoringRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
-		return SeedPrometheusRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			rb.Labels = defaultLabels(SeedPrometheusRoleBindingName, "")
+		return SeedMonitoringRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+			rb.Labels = defaultLabels(SeedMonitoringRoleBindingName, "")
 
 			rb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
 				Kind:     "Role",
-				Name:     SeedPrometheusRoleName,
+				Name:     SeedMonitoringRoleName,
 			}
 
 			rb.Subjects = []rbacv1.Subject{
@@ -188,7 +188,7 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 			d.Labels = labels()
 			d.Labels[ManagedByLabel] = ControllerName
 
-			d.Spec.Replicas = i32ptr(1)
+			d.Spec.Replicas = pointer.Int32Ptr(1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: labels(),
 			}
@@ -200,7 +200,7 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "proxy",
-					Image:   "quay.io/kubermatic/util:1.1.2",
+					Image:   "quay.io/kubermatic/util:1.1.3",
 					Command: []string{"/bin/bash"},
 					Args:    []string{"-c", strings.TrimSpace(proxyScript)},
 					Env: []corev1.EnvVar{
@@ -331,8 +331,8 @@ func buildGrafanaDatasource(seedName string) (string, error) {
 		"ServiceName":             serviceName(seedName),
 		"ServiceNamespace":        MasterTargetNamespace,
 		"ProxyPort":               KubectlProxyPort,
-		"SeedPrometheusNamespace": SeedPrometheusNamespace,
-		"SeedPrometheusService":   fullPrometheusService(),
+		"SeedMonitoringNamespace": SeedMonitoringNamespace,
+		"SeedPrometheusService":   SeedPrometheusService,
 	}
 
 	var buffer bytes.Buffer
@@ -341,10 +341,6 @@ func buildGrafanaDatasource(seedName string) (string, error) {
 	err := tpl.Execute(&buffer, data)
 
 	return strings.TrimSpace(buffer.String()), err
-}
-
-func i32ptr(i int32) *int32 {
-	return &i
 }
 
 const proxyScript = `
@@ -367,6 +363,6 @@ datasources:
   org_id: 1
   type: prometheus
   access: proxy
-  url: http://{{ .ServiceName }}.{{ .ServiceNamespace }}.svc.cluster.local:{{ .ProxyPort }}/api/v1/namespaces/{{ .SeedPrometheusNamespace }}/services/{{ .SeedPrometheusService }}/proxy/
+  url: http://{{ .ServiceName }}.{{ .ServiceNamespace }}.svc.cluster.local:{{ .ProxyPort }}/api/v1/namespaces/{{ .SeedMonitoringNamespace }}/services/{{ .SeedPrometheusService }}/proxy/
   editable: false
 `

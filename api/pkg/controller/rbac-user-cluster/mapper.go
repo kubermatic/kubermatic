@@ -8,6 +8,10 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 
+	apps "k8s.io/api/apps/v1"
+	autoscaling "k8s.io/api/autoscaling/v1"
+	batch "k8s.io/api/batch/v1"
+	extensions "k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,13 +28,13 @@ const (
 
 // generateVerbsForGroup generates a set of verbs for a group
 func generateVerbsForGroup(groupName string) ([]string, error) {
-	// verbs for owners or editors
+	// verbs for owners
 	if groupName == rbac.OwnerGroupNamePrefix || groupName == rbac.EditorGroupNamePrefix {
-		return []string{"create", "list", "get", "update", "delete"}, nil
+		return []string{"*"}, nil
 	}
 
 	if groupName == rbac.ViewerGroupNamePrefix {
-		return []string{"list", "get"}, nil
+		return []string{"list", "get", "watch"}, nil
 	}
 
 	// unknown group passed
@@ -61,10 +65,83 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 			},
 			{
 				APIGroups: []string{""},
-				Resources: []string{"nodes"},
-				Verbs:     []string{"get", "list"},
+				Resources: []string{"configmaps",
+					"endpoints",
+					"persistentvolumeclaims",
+					"pods",
+					"replicationcontrollers",
+					"replicationcontrollers/scale",
+					"serviceaccounts",
+					"services",
+					"nodes",
+					"namespaces",
+				},
+				Verbs: verbs,
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"bindings",
+					"events",
+					"limitranges",
+					"namespaces/status",
+					"pods/log",
+					"pods/status",
+					"replicationcontrollers/status",
+					"resourcequotas",
+					"resourcequotas/status",
+				},
+				Verbs: verbs,
+			},
+			{
+				APIGroups: []string{apps.GroupName},
+				Resources: []string{"controllerrevisions",
+					"daemonsets",
+					"deployments",
+					"deployments/scale",
+					"replicasets",
+					"replicasets/scale",
+					"statefulsets",
+					"statefulsets/scale",
+				},
+				Verbs: verbs,
+			},
+			{
+				APIGroups: []string{autoscaling.GroupName},
+				Resources: []string{"horizontalpodautoscalers"},
+				Verbs:     verbs,
+			},
+			{
+				APIGroups: []string{batch.GroupName},
+				Resources: []string{"cronjobs", "jobs"},
+				Verbs:     verbs,
+			},
+			{
+				APIGroups: []string{extensions.GroupName},
+				Resources: []string{"daemonsets",
+					"deployments",
+					"deployments/scale",
+					"ingresses",
+					"networkpolicies",
+					"replicasets",
+					"replicasets/scale",
+					"replicationcontrollers/scale",
+				},
+				Verbs: verbs,
+			},
+			{
+				APIGroups: []string{"networking.k8s.io"},
+				Resources: []string{"ingresses", "networkpolicies"},
+				Verbs:     verbs,
 			},
 		},
+	}
+	if groupName == rbac.OwnerGroupNamePrefix || groupName == rbac.EditorGroupNamePrefix {
+		clusterRole.Rules = []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*"},
+				Verbs:     verbs,
+			}}
 	}
 	return clusterRole, nil
 }

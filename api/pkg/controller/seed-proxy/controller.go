@@ -3,8 +3,9 @@ package seedproxy
 import (
 	"fmt"
 
-	"github.com/golang/glog"
+	"go.uber.org/zap"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -13,10 +14,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -53,25 +52,23 @@ const (
 	// cluster where the service account will be created.
 	SeedServiceAccountNamespace = metav1.NamespaceSystem
 
-	// SeedPrometheusNamespace is the namespace inside the seed
-	// cluster where Prometheus is installed.
-	SeedPrometheusNamespace = "monitoring"
+	// SeedMonitoringNamespace is the namespace inside the seed
+	// cluster where Prometheus, Grafana etc. are installed.
+	SeedMonitoringNamespace = "monitoring"
 
-	// SeedPrometheusServiceName is the service that is provided by
-	// Prometheus inside the seed cluster.
-	SeedPrometheusServiceName = "prometheus-kubermatic"
+	// SeedMonitoringRoleName is the name inside the seed monitoring
+	// namespace used for the new role used for proxying to Prometheus/Grafana/...
+	SeedMonitoringRoleName = "seed-proxy"
 
-	// SeedPrometheusServicePort is the port name that is provided by
-	// Prometheus inside the seed cluster.
-	SeedPrometheusServicePort = "web"
+	// SeedMonitoringRoleBindingName is the name inside the seed
+	// monitoring namespace used for the new role binding.
+	SeedMonitoringRoleBindingName = "seed-proxy"
 
-	// SeedPrometheusRoleName is the name inside the seed
-	// used for the new role used for proxying to Prometheus.
-	SeedPrometheusRoleName = "seed-proxy-prometheus"
+	// SeedPrometheusService is the service exposed by Prometheus.
+	SeedPrometheusService = "prometheus:web"
 
-	// SeedPrometheusRoleBindingName is the name inside the seed
-	// used for the new role binding used for proxying to Prometheus.
-	SeedPrometheusRoleBindingName = "seed-proxy-prometheus"
+	// SeedAlertmanagerService is the service exposed by Alertmanager.
+	SeedAlertmanagerService = "alertmanager:web"
 
 	// KubectlProxyPort is the port used by kubectl to provide the
 	// proxy connection on. This is not the port on which any of the
@@ -99,14 +96,19 @@ const (
 func Add(
 	mgr manager.Manager,
 	numWorkers int,
+	log *zap.SugaredLogger,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 ) error {
+	log = log.Named(ControllerName)
+
 	reconciler := &Reconciler{
 		Client:               mgr.GetClient(),
 		recorder:             mgr.GetRecorder(ControllerName),
+		log:                  log,
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,
+		seedClientGetter:     provider.SeedClientGetterFactory(seedKubeconfigGetter),
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
@@ -118,7 +120,7 @@ func Add(
 	eventHandler := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
-			glog.Errorf("Failed to get seeds: %v", err)
+			log.Errorw("failed to get seeds", zap.Error(err))
 			return nil
 		}
 
@@ -132,23 +134,9 @@ func Add(
 		return requests
 	})}
 
-	ownedByPred := predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			return managedByController(e.Meta)
-		},
-
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			return managedByController(e.MetaOld) || managedByController(e.MetaNew)
-		},
-
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			return managedByController(e.Meta)
-		},
-
-		GenericFunc: func(e event.GenericEvent) bool {
-			return managedByController(e.Meta)
-		},
-	}
+	ownedByController := predicate.Factory(func(meta metav1.Object, _ runtime.Object) bool {
+		return meta.GetLabels()[ManagedByLabel] == ControllerName
+	})
 
 	typesToWatch := []runtime.Object{
 		&appsv1.Deployment{},
@@ -158,15 +146,10 @@ func Add(
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, eventHandler, ownedByPred); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, eventHandler, ownedByController); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}
 
 	return nil
-}
-
-func managedByController(meta metav1.Object) bool {
-	labels := meta.GetLabels()
-	return labels[ManagedByLabel] == ControllerName
 }

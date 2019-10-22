@@ -113,6 +113,10 @@ function cleanup {
   kubectl delete clusterrolebinding -l prowjob=$BUILD_ID
   kubectl delete namespace $NAMESPACE --wait=false
 
+  # Cleanup the endpoints objects created by the leader election
+  kubectl delete endpoints -n kube-system \
+    kubermatic-master-controller-manager-leader-election-$BUILD_ID kubermatic-controller-manager-$BUILD_ID
+
   # Upload the JUNIT files
   mv /reports/* ${ARTIFACTS}/
   echodate "Finished cleanup"
@@ -276,12 +280,10 @@ if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   build_tag_if_not_exists "$UPGRADE_TEST_BASE_HASH"
 fi
 
-# PULL_BASE_REF is the name of the current branch in case of a post-submit
-# or the name of the base branch in case of a PR. It is unset for Periodics, but
-# we default it in that case.
-#
-# The env var is named `UPGRADE_TEST_BASE_HASH`, but we really only specify release branch heads with it.
-LATEST_DASHBOARD="$(get_latest_dashboard_hash "${UPGRADE_TEST_BASE_HASH:-$PULL_BASE_REF}")"
+# Hardcoded as the only thing these tests test about the dashboard is that the pod comes up. In order to
+# not introduce a dependency on the dashboard push postsubmit being successfully run, we just harcode it
+# here.
+LATEST_DASHBOARD=43037e8f118f0e310cfcae713bc2b3bd1a2c8496
 
 # We must delete all templates for cluster-scoped resources
 # because those already exist because of the main Kubermatic installation
@@ -309,6 +311,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
+  --set=kubermatic.datacenters='' \
   --set=kubermatic.dynamicDatacenters=true \
   ${OPENSHIFT_HELM_ARGS:-} \
   --values ${VALUES_FILE} \
@@ -403,7 +406,7 @@ spec:
 $(cat $OPENSTACK_DATACENTER_FILE)
 EOF
 TEST_NAME="Deploy Seed Manifest"
-retry 5 kubectl apply -f $SEED_MANIFEST
+retry 7 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing seed"
 
 # We build the CLI after deploying to make sure we fail fast if the helm deployment fails

@@ -232,6 +232,23 @@ func (e queryParamBearerTokenExtractor) Extract(r *http.Request) (string, error)
 	return val, nil
 }
 
+func NewCookieHeaderBearerTokenExtractor(header string) TokenExtractor {
+	return cookieHeaderBearerTokenExtractor{name: header}
+}
+
+type cookieHeaderBearerTokenExtractor struct {
+	name string
+}
+
+func (e cookieHeaderBearerTokenExtractor) Extract(r *http.Request) (string, error) {
+	cookie, err := r.Cookie("token")
+	if err != nil {
+		return "", fmt.Errorf("haven't found a Bearer token in the Cookie header %s: %v", e.name, err)
+	}
+
+	return cookie.Value, nil
+}
+
 // NewCombinedExtractor returns an token extractor which tries a list of token extractors until it finds a token
 func NewCombinedExtractor(extractors ...TokenExtractor) TokenExtractor {
 	return combinedExtractor{extractors: extractors}

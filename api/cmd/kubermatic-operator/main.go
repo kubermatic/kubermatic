@@ -14,6 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	// Do not import "sigs.k8s.io/controller-runtime/pkg" to prevent
@@ -29,6 +30,7 @@ type controllerRunOptions struct {
 }
 
 func main() {
+	klog.InitFlags(nil)
 	opt := &controllerRunOptions{}
 	flag.StringVar(&opt.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if outside of cluster.")
 	flag.IntVar(&opt.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")

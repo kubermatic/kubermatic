@@ -51,10 +51,6 @@ required = [
   version = "v1.0.1"
 
 [[constraint]]
-  name = "github.com/golang/glog"
-  branch = "master"
-
-[[constraint]]
   name = "github.com/gorilla/handlers"
   version = "v1.3.0"
 
@@ -125,7 +121,7 @@ required = [
 
 [[override]]
   name = "github.com/kubermatic/machine-controller"
-  version = "v1.5.5"
+  version = "v1.5.8"
 
 [[override]]
   name = "kubevirt.io/containerized-data-importer"
@@ -137,7 +133,7 @@ required = [
 
 [[override]]
   name = "github.com/prometheus/client_golang"
-  version = "v0.9.2"
+  version = "v1.1.0"
 
 # For container-linux-config-transpiler
 [[override]]

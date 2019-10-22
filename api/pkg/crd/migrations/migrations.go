@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/golang/glog"
-
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -15,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog"
 )
 
 type cleanupContext struct {
@@ -32,14 +31,14 @@ func RunAll(config *rest.Config, workerName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create kubeClient: %v", err)
 	}
-	kubermatiClient, err := kubermaticclientset.NewForConfig(config)
+	kubermaticClient, err := kubermaticclientset.NewForConfig(config)
 	if err != nil {
 		return fmt.Errorf("failed to create Kubermatic client: %v", err)
 	}
 
 	ctx := &cleanupContext{
 		kubeClient:       kubeClient,
-		kubermaticClient: kubermatiClient,
+		kubermaticClient: kubermaticClient,
 	}
 
 	if err := cleanupClusters(workerName, ctx); err != nil {
@@ -89,11 +88,11 @@ func cleanupClusters(workerName string, ctx *cleanupContext) error {
 
 func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	if cluster.Status.NamespaceName == "" {
-		glog.Infof("Skipping cleanup of cluster %q because its namespace is unset", cluster.Name)
+		klog.Infof("Skipping cleanup of cluster %q because its namespace is unset", cluster.Name)
 		return nil
 	}
 
-	glog.Infof("Cleaning up cluster %s", cluster.Name)
+	klog.Infof("Cleaning up cluster %s", cluster.Name)
 
 	tasks := []ClusterTask{
 		setExposeStrategyIfEmpty,
@@ -111,7 +110,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 			err := t(cluster, ctx)
 
 			if err != nil {
-				glog.Error(err)
+				klog.Error(err)
 				errLock.Lock()
 				defer errLock.Unlock()
 				errs = append(errs, err)

@@ -5,8 +5,7 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd/etcdrunning"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
@@ -15,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 	utilpointer "k8s.io/utils/pointer"
 )
 
@@ -163,11 +163,6 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 				return nil, err
 			}
 
-			etcdEndpoints := etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName)
-			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
-				etcdrunning.Container(etcdEndpoints, data),
-			}
-
 			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
 			if err != nil {
 				return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
@@ -184,7 +179,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 			}
 
 			// TODO: Make it cope with our registry overwriting
-			image, err := openshiftAPIServerImage(data.Cluster().Spec.Version.String())
+			image, err := hypershiftImage(data.Cluster().Spec.Version.String())
 			if err != nil {
 				return nil, err
 			}
@@ -272,17 +267,14 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 			}
 			dep.Spec.Template.Labels = podLabels
 
+			// The openshift apiserver needs the normal apiserver
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OpenshiftAPIServerDeploymentName))
+			if err != nil {
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+			}
+			dep.Spec.Template.Spec = *wrappedPodSpec
+
 			return dep, nil
 		}
 	}
-}
-
-func openshiftAPIServerImage(openshiftVersion string) (string, error) {
-	switch openshiftVersion {
-	case openshiftVersion419:
-		return "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:86255c4efe6bbc141a0f41444f863bbd5cd832ffca21d2b737a4f9c225ed00ad", nil
-	default:
-		return "", fmt.Errorf("no image available for openshift version %q", openshiftVersion)
-	}
-
 }

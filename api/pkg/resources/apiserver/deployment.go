@@ -116,7 +116,11 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 			}
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableDexCA, auditLogEnabled)
+			endpointReconcilingDisabled := false
+			if data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled != nil {
+				endpointReconcilingDisabled = *data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled
+			}
+			flags, err := getApiserverFlags(data, etcdEndpoints, enableDexCA, auditLogEnabled, endpointReconcilingDisabled)
 			if err != nil {
 				return nil, err
 			}
@@ -126,7 +130,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
 			}
 
-			envVars, err := getEnvVars(data)
+			envVars, err := GetEnvVars(data)
 			if err != nil {
 				return nil, err
 			}
@@ -213,7 +217,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableDexCA, auditLogEnabled bool) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableDexCA, auditLogEnabled, endpointReconcilingDisabled bool) ([]string, error) {
 	nodePortRange := data.NodePortRange()
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
@@ -275,6 +279,10 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, "--audit-policy-file", "/etc/kubernetes/audit/policy.yaml")
 	}
 
+	if endpointReconcilingDisabled {
+		flags = append(flags, "--endpoint-reconciler-type=none")
+	}
+
 	if data.Cluster().Spec.Cloud.GCP != nil {
 		flags = append(flags, "--kubelet-preferred-address-types", "InternalIP")
 	} else {
@@ -291,7 +299,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, strings.Join(featureGates, ","))
 	}
 
-	cloudProviderName := GetKubernetesCloudProviderName(data.Cluster())
+	cloudProviderName := data.GetKubernetesCloudProviderName()
 	if cloudProviderName != "" {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
@@ -323,23 +331,6 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	}
 
 	return flags, nil
-}
-
-func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
-	if cluster.Spec.Cloud.AWS != nil {
-		return "aws"
-	}
-	if cluster.Spec.Cloud.Openstack != nil {
-		return "openstack"
-	}
-	if cluster.Spec.Cloud.VSphere != nil {
-		return "vsphere"
-	}
-	if cluster.Spec.Cloud.Azure != nil {
-		return "azure"
-	}
-
-	return ""
 }
 
 func getVolumeMounts(enableDexCA bool) []corev1.VolumeMount {
@@ -530,7 +521,12 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
+type kubeAPIServerEnvData interface {
+	resources.CredentialsData
+	Seed() *kubermaticv1.Seed
+}
+
+func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
 	credentials, err := resources.GetCredentials(data)
 	if err != nil {
 		return nil, err
@@ -543,7 +539,7 @@ func getEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 	}
-	return vars, nil
+	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...), nil
 }
 
 func getDexCASecretVolume() corev1.Volume {
