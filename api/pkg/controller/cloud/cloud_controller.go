@@ -8,6 +8,7 @@ import (
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
@@ -27,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -54,6 +54,7 @@ type Reconciler struct {
 	log        *zap.SugaredLogger
 	recorder   record.EventRecorder
 	seedGetter provider.SeedGetter
+	workerName string
 }
 
 func Add(
@@ -61,20 +62,21 @@ func Add(
 	log *zap.SugaredLogger,
 	numWorkers int,
 	seedGetter provider.SeedGetter,
-	clusterPredicates predicate.Predicate,
+	workerName string,
 ) error {
 	reconciler := &Reconciler{
 		Client:     mgr.GetClient(),
 		log:        log.Named(ControllerName),
 		recorder:   mgr.GetRecorder(ControllerName),
 		seedGetter: seedGetter,
+		workerName: workerName,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
 	if err != nil {
 		return err
 	}
-	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, clusterPredicates)
+	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{})
 }
 
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -92,24 +94,24 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	log = log.With("cluster", cluster.Name)
 
-	if cluster.Spec.Pause {
-		log.Debug("Skipping because the cluster is paused")
-		return reconcile.Result{}, nil
-	}
-
 	// Add a wrapping here so we can emit an event on error
-	result, err := r.reconcile(ctx, log, cluster)
+	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+		ctx,
+		r.Client,
+		r.workerName,
+		cluster,
+		kubermaticv1.ClusterConditionCloudControllerReconcilingSuccess,
+		func() (*reconcile.Result, error) {
+			return r.reconcile(ctx, log, cluster)
+		},
+	)
 	if result == nil {
 		result = &reconcile.Result{}
 	}
 	if err != nil {
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		log.Errorw("Reconciling failed", zap.Error(err))
-		return *result, err
 	}
-	_, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-		c.Status.ExtendedHealth.CloudProviderInfrastructure = kubermaticv1.HealthStatusUp
-	})
 	return *result, err
 }
 
@@ -154,7 +156,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
-	_, err = prov.InitializeCloudProvider(cluster, r.updateCluster)
+	if _, err := prov.InitializeCloudProvider(cluster, r.updateCluster); err != nil {
+		return nil, err
+	}
+
+	_, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+		c.Status.ExtendedHealth.CloudProviderInfrastructure = kubermaticv1.HealthStatusUp
+	})
 	return nil, err
 }
 

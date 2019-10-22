@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -102,13 +103,22 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := r.reconcile(ctx, log, cluster)
-	if result == nil {
-		result = &reconcile.Result{}
-	}
+	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+		ctx,
+		r.Client,
+		r.workerName,
+		cluster,
+		kubermaticv1.ClusterConditionAddonInstallerControllerReconcilingSuccess,
+		func() (*reconcile.Result, error) {
+			return r.reconcile(ctx, log, cluster)
+		},
+	)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+	}
+	if result == nil {
+		result = &reconcile.Result{}
 	}
 	return *result, err
 }
@@ -123,16 +133,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	} else {
 		log = log.With("clustertype", "kubernetes")
 		addonsToInstall = r.kubernetesAddons
-	}
-
-	if cluster.Spec.Pause {
-		log.Debug("Skipping because the cluster is paused")
-		return nil, nil
-	}
-
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
-		log.Debug("Skipping because the cluster has a different worker name set")
-		return nil, nil
 	}
 
 	// Wait until the Apiserver is running to ensure the namespace exists at least.
