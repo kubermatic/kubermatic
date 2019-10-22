@@ -31,6 +31,9 @@ import (
 const (
 	// TestFakeToken signed JWT token with fake data
 	TestFakeToken = "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6IjEiLCJleHAiOjE2NDk3NDg4NTYsImlhdCI6MTU1NTA1NDQ1NiwibmJmIjoxNTU1MDU0NDU2LCJwcm9qZWN0X2lkIjoiMSIsInRva2VuX2lkIjoiMSJ9.Q4qxzOaCvUnWfXneY654YiQjUTd_Lsmw56rE17W2ouo"
+
+	// TestFakeFinalizer is a dummy finalizer with no special meaning
+	TestFakeFinalizer = "test.kubermatic.io/dummy"
 )
 
 // fakeKubernetesImpersonationClient gives kubernetes client set that uses user impersonation
@@ -294,6 +297,7 @@ func genCluster(name, clusterType, projectID, workerName, userEmail string) *kub
 		CloudMigrationRevision: cloud.CurrentMigrationRevision,
 	}
 	cluster.Address = kubermaticv1.ClusterAddress{}
+	cluster.Finalizers = []string{TestFakeFinalizer}
 
 	if clusterType == "openshift" {
 		cluster.Annotations = map[string]string{
