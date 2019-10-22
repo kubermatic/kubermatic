@@ -10,7 +10,6 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -36,17 +35,19 @@ func ClusterReconcileWrapper(
 		return nil, nil
 	}
 
-	reconcilingStatus := corev1.ConditionFalse
-	result, err := reconcile()
-	// Only set to true if we had no error and don't want to reqeue the cluster
-	if err == nil && (result == nil || (!result.Requeue && result.RequeueAfter == 0)) {
-		reconcilingStatus = corev1.ConditionTrue
-	}
-	errs := []error{err}
-	errs = append(errs, clusterUpdater(ctx, client, cluster.Name, func(c *kubermaticv1.Cluster) {
-		SetClusterCondition(c, conditionType, reconcilingStatus, "", "")
-	}))
-	return result, utilerrors.NewAggregate(errs)
+	return reconcile()
+
+	// reconcilingStatus := corev1.ConditionFalse
+	// result, err := reconcile()
+	// // Only set to true if we had no error and don't want to reqeue the cluster
+	// if err == nil && (result == nil || (!result.Requeue && result.RequeueAfter == 0)) {
+	// 	reconcilingStatus = corev1.ConditionTrue
+	// }
+	// errs := []error{err}
+	// errs = append(errs, clusterUpdater(ctx, client, cluster.Name, func(c *kubermaticv1.Cluster) {
+	// 	SetClusterCondition(c, conditionType, reconcilingStatus, "", "")
+	// }))
+	// return result, utilerrors.NewAggregate(errs)
 }
 
 func clusterUpdater(
