@@ -52,7 +52,7 @@ type reconciler struct {
 
 func Add(mgr manager.Manager, cidrRanges []Network, log *zap.SugaredLogger) error {
 	reconciler := &reconciler{Client: mgr.GetClient(),
-		recorder:   mgr.GetRecorder(ControllerName),
+		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		cidrRanges: cidrRanges,
 		log:        log}
 	c, err := controller.New(ControllerName, mgr,
