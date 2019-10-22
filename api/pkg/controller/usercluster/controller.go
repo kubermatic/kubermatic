@@ -51,6 +51,7 @@ func Add(
 	registerReconciledCheck func(name string, check healthcheck.Check),
 	openVPNCA *resources.ECDSAKeyPair,
 	userSSHKeyDirPath string,
+	overwriteRegistry string,
 	cloudCredentialSecretTemplate *corev1.Secret,
 	log *zap.SugaredLogger) error {
 	reconciler := &reconciler{
@@ -69,6 +70,7 @@ func Add(
 		log:                           log,
 		platform:                      cloudProviderName,
 		userSSHKeys:                   userSSHKeys,
+		overwriteRegistry:             overwriteRegistry,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -161,6 +163,7 @@ type reconciler struct {
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
 	userSSHKeys                   map[string][]byte
+	overwriteRegistry             string
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

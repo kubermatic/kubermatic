@@ -438,7 +438,8 @@ const (
 	VsphereInfraManagementUserUsername = "infraManagementUserUsername"
 	VsphereInfraManagementUserPassword = "infraManagementUserPassword"
 
-	UserSSHKeys = "usersshkeys"
+	UserSSHKeys        = "usersshkeys"
+	AuthorizedKeysPath = "/etc/authorized-keys/"
 )
 
 // ECDSAKeyPair is a ECDSA x509 certifcate and private key
