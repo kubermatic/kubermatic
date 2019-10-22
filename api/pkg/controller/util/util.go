@@ -122,7 +122,7 @@ func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv
 				kubermaticv1.ClusterConditionSeedResourcesUpToDate,
 				corev1.ConditionFalse,
 				kubermaticv1.ReasonClusterUpdateSuccessful,
-				"Some controlplane components did not finish updating")
+				"All controlplane components are up to date")
 		})
 	}
 
@@ -131,7 +131,7 @@ func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv
 			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
 			corev1.ConditionTrue,
 			kubermaticv1.ReasonClusterUpdateSuccessful,
-			"All controlplane components are up to date")
+			"Some controlplane components did not finish updating")
 	})
 }
 

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 
 	"go.uber.org/zap"
 
@@ -19,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -26,12 +26,11 @@ import (
 const ControllerName = "clustercomponent_defaulter"
 
 type Reconciler struct {
-	ctx        context.Context
-	log        *zap.SugaredLogger
-	client     ctrlruntimeclient.Client
-	recorder   record.EventRecorder
-	defaults   kubermaticv1.ComponentSettings
-	workerName string
+	ctx      context.Context
+	log      *zap.SugaredLogger
+	client   ctrlruntimeclient.Client
+	recorder record.EventRecorder
+	defaults kubermaticv1.ComponentSettings
 }
 
 func Add(
@@ -40,15 +39,14 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	defaults kubermaticv1.ComponentSettings,
-	workerName string) error {
+	clusterPredicates predicate.Predicate) error {
 
 	reconciler := &Reconciler{
-		ctx:        ctx,
-		log:        log.Named(ControllerName),
-		client:     mgr.GetClient(),
-		recorder:   mgr.GetRecorder(ControllerName),
-		defaults:   defaults,
-		workerName: workerName,
+		ctx:      ctx,
+		log:      log.Named(ControllerName),
+		client:   mgr.GetClient(),
+		recorder: mgr.GetRecorder(ControllerName),
+		defaults: defaults,
 	}
 
 	c, err := controller.New(ControllerName, mgr,
@@ -56,7 +54,7 @@ func Add(
 	if err != nil {
 		return err
 	}
-	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{})
+	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, clusterPredicates)
 }
 
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -73,24 +71,19 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log = r.log.With("cluster", cluster.Name)
 
 	// Add a wrapping here so we can emit an event on error
-	_, err := kubermaticv1helper.ClusterReconcileWrapper(
-		context.Background(),
-		r.client,
-		r.workerName,
-		cluster,
-		kubermaticv1.ClusterConditionComponentDefaulterReconcilingSuccess,
-		func() (*reconcile.Result, error) {
-			return nil, r.reconcile(log, cluster)
-		},
-	)
+	err := r.reconcile(log, cluster)
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 		r.log.With("error", err).With("cluster", request.NamespacedName.Name).Error("failed to reconcile cluster")
 	}
 	return reconcile.Result{}, err
 }
 
 func (r *Reconciler) reconcile(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	if cluster.Spec.Pause {
+		log.Debug("Skipping paused cluster")
+		return nil
+	}
 	log.Debug("Syncing cluster")
 
 	targetComponentsOverride := cluster.Spec.ComponentsOverride.DeepCopy()

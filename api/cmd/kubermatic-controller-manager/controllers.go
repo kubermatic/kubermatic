@@ -19,6 +19,7 @@ import (
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeys"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
@@ -55,6 +56,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 }
 
 func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
+	predicates := workerlabel.Predicates(ctrlCtx.runOptions.workerName)
 	defaultCompontentsOverrides := kubermaticv1.ComponentSettings{
 		Apiserver: kubermaticv1.APIServerSettings{
 			DeploymentSettings:          kubermaticv1.DeploymentSettings{Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.apiServerDefaultReplicas))},
@@ -71,17 +73,18 @@ func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		defaultCompontentsOverrides,
-		ctrlCtx.runOptions.workerName,
+		predicates,
 	)
 }
 
 func createCloudController(ctrlCtx *controllerContext) error {
+	predicates := workerlabel.Predicates(ctrlCtx.runOptions.workerName)
 	if err := cloudcontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.seedGetter,
-		ctrlCtx.runOptions.workerName,
+		predicates,
 	); err != nil {
 		return fmt.Errorf("failed to add cloud controller to mgr: %v", err)
 	}
