@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	ctrlruntimelzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -113,7 +114,7 @@ func New(debug bool, format Format) *zap.Logger {
 		zap.ErrorOutput(sink),
 	}
 
-	coreLog := zapcore.NewCore(&ctrlruntimelog.KubeAwareEncoder{Encoder: enc}, sink, lvl)
+	coreLog := zapcore.NewCore(&ctrlruntimelzap.KubeAwareEncoder{Encoder: enc}, sink, lvl)
 	return zap.New(coreLog, opts...)
 }
 
