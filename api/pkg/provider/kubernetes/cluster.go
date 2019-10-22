@@ -103,6 +103,7 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 	newCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: cluster.Annotations,
+			Finalizers:  cluster.Finalizers,
 			Labels:      getClusterLabels(cluster.Labels, project.Name, p.workerName),
 			Name:        name,
 		},
