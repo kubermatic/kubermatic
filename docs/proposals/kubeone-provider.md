@@ -4,7 +4,7 @@
 
 **Status:** Draft proposal; prototype in progress.
 
-**Abstract:* To be able to support edge compute functionality with Kubermatic there is a need to support the management of user-clusters provisioned by KubeOne within Kubermatic.
+**Abstract:** To be able to support edge compute functionality with Kubermatic there is a need to support the management of user-clusters provisioned by KubeOne within Kubermatic.
 
 ## Motivation and Background
 
