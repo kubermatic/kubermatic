@@ -16,12 +16,24 @@ limitations under the License.
 package triple
 
 import (
+	"crypto"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"crypto/x509/pkix"
+	"errors"
 	"fmt"
+	"math"
+	"math/big"
 	"net"
+	"time"
 
 	certutil "k8s.io/client-go/util/cert"
+)
+
+const (
+	rsaKeySize   = 2048
+	duration365d = time.Hour * 24 * 365
 )
 
 type KeyPair struct {
@@ -30,7 +42,7 @@ type KeyPair struct {
 }
 
 func NewCA(name string) (*KeyPair, error) {
-	key, err := certutil.NewPrivateKey()
+	key, err := newPrivateKey()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create a private key for a new CA: %v", err)
 	}
@@ -51,7 +63,7 @@ func NewCA(name string) (*KeyPair, error) {
 }
 
 func NewServerKeyPair(ca *KeyPair, commonName, svcName, svcNamespace, dnsDomain string, ips, hostnames []string) (*KeyPair, error) {
-	key, err := certutil.NewPrivateKey()
+	key, err := newPrivateKey()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create a server private key: %v", err)
 	}
@@ -79,7 +91,7 @@ func NewServerKeyPair(ca *KeyPair, commonName, svcName, svcNamespace, dnsDomain 
 		AltNames:   altNames,
 		Usages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 	}
-	cert, err := certutil.NewSignedCert(config, key, ca.Cert, ca.Key)
+	cert, err := newSignedCert(config, key, ca.Cert, ca.Key)
 	if err != nil {
 		return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
 	}
@@ -91,7 +103,7 @@ func NewServerKeyPair(ca *KeyPair, commonName, svcName, svcNamespace, dnsDomain 
 }
 
 func NewClientKeyPair(ca *KeyPair, commonName string, organizations []string) (*KeyPair, error) {
-	key, err := certutil.NewPrivateKey()
+	key, err := newPrivateKey()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create a client private key: %v", err)
 	}
@@ -101,7 +113,7 @@ func NewClientKeyPair(ca *KeyPair, commonName string, organizations []string) (*
 		Organization: organizations,
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	}
-	cert, err := certutil.NewSignedCert(config, key, ca.Cert, ca.Key)
+	cert, err := newSignedCert(config, key, ca.Cert, ca.Key)
 	if err != nil {
 		return nil, fmt.Errorf("unable to sign the client certificate: %v", err)
 	}
@@ -110,4 +122,42 @@ func NewClientKeyPair(ca *KeyPair, commonName string, organizations []string) (*
 		Key:  key,
 		Cert: cert,
 	}, nil
+}
+
+// newPrivateKey creates an RSA private key
+func newPrivateKey() (*rsa.PrivateKey, error) {
+	return rsa.GenerateKey(rand.Reader, rsaKeySize)
+}
+
+// newSignedCert creates a signed certificate using the given CA certificate and key
+func newSignedCert(cfg certutil.Config, key crypto.Signer, caCert *x509.Certificate, caKey crypto.Signer) (*x509.Certificate, error) {
+	serial, err := rand.Int(rand.Reader, new(big.Int).SetInt64(math.MaxInt64))
+	if err != nil {
+		return nil, err
+	}
+	if len(cfg.CommonName) == 0 {
+		return nil, errors.New("must specify a CommonName")
+	}
+	if len(cfg.Usages) == 0 {
+		return nil, errors.New("must specify at least one ExtKeyUsage")
+	}
+
+	certTmpl := x509.Certificate{
+		Subject: pkix.Name{
+			CommonName:   cfg.CommonName,
+			Organization: cfg.Organization,
+		},
+		DNSNames:     cfg.AltNames.DNSNames,
+		IPAddresses:  cfg.AltNames.IPs,
+		SerialNumber: serial,
+		NotBefore:    caCert.NotBefore,
+		NotAfter:     time.Now().Add(duration365d).UTC(),
+		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  cfg.Usages,
+	}
+	certDERBytes, err := x509.CreateCertificate(rand.Reader, &certTmpl, caCert, key.Public(), caKey)
+	if err != nil {
+		return nil, err
+	}
+	return x509.ParseCertificate(certDERBytes)
 }
