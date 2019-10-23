@@ -8,11 +8,6 @@
 
 ## Motivation and Background
 
-The current approaches to deploy and manage k8s nodes with Kubermatic won’t work well with the edge computing use-case:
-- Unstable network connectivity to on-premise client infrastructure could break the user-clusters because the connection between master components deployed in the seed cluster to the on-premise nodes will be unstable
-- Clients willing to pay extra for on-premise management of k8s have interest in running the whole k8s infrastructure onsite for data protection/security reasons
-- Innovo needs the client infrastructure setup to be independently timeable of cluster creation in Kubermatic
-
 With the enhancements described in this proposal we want to enable:
 - Independent hardware deployment on the customer site
 - Provision the customer hardware with k8s via a central Kubermatic installation
