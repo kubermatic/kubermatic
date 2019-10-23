@@ -213,6 +213,16 @@ func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	}
 }
 
+// PatchSettingsEndpoint patches settings of the current user
+func PatchSettingsEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		currentSettings := authenticatedUser.Spec.Settings
+
+		return currentSettings, nil
+	}
+}
+
 func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, bindings ...*kubermaticapiv1.UserProjectBinding) *apiv1.User {
 	apiUser := &apiv1.User{
 		ObjectMeta: apiv1.ObjectMeta{
@@ -221,7 +231,7 @@ func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, bindings 
 			CreationTimestamp: apiv1.NewTime(internalUser.CreationTimestamp.Time),
 		},
 		Email: internalUser.Spec.Email,
-		Settings: apiv1.UserSettings{
+		Settings: kubermaticapiv1.UserSettings{
 			SelectedTheme:     internalUser.Spec.Settings.SelectedTheme,
 			ItemsPerPage:      internalUser.Spec.Settings.ItemsPerPage,
 			SelectedProjectID: internalUser.Spec.Settings.SelectedProjectID,

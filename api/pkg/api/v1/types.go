@@ -386,15 +386,7 @@ type User struct {
 	// along with the group names
 	Projects []ProjectGroup `json:"projects,omitempty"`
 
-	Settings UserSettings `json:"userSettings,omitempty"`
-}
-
-// UserSettings represent an API user settings
-// swagger:model UserSettings
-type UserSettings struct {
-	SelectedTheme     string `json:"selectedTheme,omitempty"`
-	ItemsPerPage      int8   `json:"itemsPerPage,omitempty"`
-	SelectedProjectID string `json:"selectedProjectId,omitempty"`
+	Settings kubermaticv1.UserSettings `json:"userSettings,omitempty"`
 }
 
 // ProjectGroup is a helper data structure that
