@@ -21,6 +21,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -28,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -546,10 +548,20 @@ func (r *Reconciler) updateAddon(ctx context.Context, namespace, name string, mo
 		if err := r.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, addon); err != nil {
 			return err
 		}
+		originalAddon := addon.DeepCopy()
 		// Apply modifications
 		modify(addon)
-		// Update the cluster
-		return r.Update(ctx, addon)
+		// Update the addon
+		if err := r.Update(ctx, addon); err != nil {
+			return err
+		}
+		// Block until we have the change in the cache, otherwise subsequent changes will fail
+		return wait.PollImmediate(10*time.Millisecond, 10*time.Second, func() (bool, error) {
+			if err := r.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, addon); err != nil {
+				return false, err
+			}
+			return apiequality.Semantic.DeepEqual(originalAddon, addon), nil
+		})
 	})
 }
 
