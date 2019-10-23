@@ -386,7 +386,7 @@ type User struct {
 	// along with the group names
 	Projects []ProjectGroup `json:"projects,omitempty"`
 
-	Settings kubermaticv1.UserSettings `json:"userSettings,omitempty"`
+	Settings *kubermaticv1.UserSettings `json:"userSettings,omitempty"`
 }
 
 // ProjectGroup is a helper data structure that

@@ -94,10 +94,9 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 			Name: fmt.Sprintf("%x", sha256.Sum256([]byte(email))),
 		},
 		Spec: kubermaticv1.UserSpec{
-			ID:       id,
-			Name:     name,
-			Email:    email,
-			Settings: kubermaticv1.UserSettings{},
+			ID:    id,
+			Name:  name,
+			Email: email,
 		},
 	}
 
