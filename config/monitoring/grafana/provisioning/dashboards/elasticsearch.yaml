@@ -1,8 +1,0 @@
-apiVersion: 1
-providers:
-- folder: "Elasticsearch"
-  name: "elasticsearch"
-  options:
-    path: /grafana-dashboard-definitions/elasticsearch
-  org_id: 1
-  type: file
