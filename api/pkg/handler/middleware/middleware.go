@@ -14,41 +14,38 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kubermaticcontext "github.com/kubermatic/kubermatic/api/pkg/util/context"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/util/hash"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// contextKey defines a dedicated type for keys to use on contexts
-type contextKey string
-
 const (
-	datacenterContextKey contextKey = "datacenter"
+	datacenterContextKey kubermaticcontext.Key = "datacenter"
 
-	// ClusterProviderContextKey key under which the current ClusterProvider is kept in the ctx
-	ClusterProviderContextKey contextKey = "cluster-provider"
-
-	// PrivilegedClusterProviderContextKey key under which the current PrivilegedClusterProvider is kept in the ctx
-	PrivilegedClusterProviderContextKey contextKey = "privileged-cluster-provider"
-
-	// UserInfoContextKey key under which the current UserInfoExtractor is kept in the ctx
-	UserInfoContextKey contextKey = "user-info"
-
-	// UserCRContextKey key under which the current User (from the database) is kept in the ctx
-	UserCRContextKey contextKey = "user-cr"
-
-	// AuthenticatedUserContextKey key under which the current User (from OIDC provider) is kept in the ctx
-	AuthenticatedUserContextKey contextKey = "authenticated-user"
-
-	// rawTokenContextKey key under which the current token (OpenID ID Token) is kept in the ctx
-	rawTokenContextKey contextKey = "raw-auth-token"
+	// RawTokenContextKey key under which the current token (OpenID ID Token) is kept in the ctx
+	rawTokenContextKey kubermaticcontext.Key = "raw-auth-token"
 
 	// noTokenFoundKey key under which an error is kept when no suitable token has been found in a request
-	noTokenFoundKey contextKey = "no-token-found"
+	noTokenFoundKey kubermaticcontext.Key = "no-token-found"
+
+	// ClusterProviderContextKey key under which the current ClusterProvider is kept in the ctx
+	ClusterProviderContextKey kubermaticcontext.Key = "cluster-provider"
+
+	// PrivilegedClusterProviderContextKey key under which the current PrivilegedClusterProvider is kept in the ctx
+	PrivilegedClusterProviderContextKey kubermaticcontext.Key = "privileged-cluster-provider"
+
+	// UserInfoContextKey key under which the current UserInfoExtractor is kept in the ctx
+	UserInfoContextKey kubermaticcontext.Key = "user-info"
+
+	// AuthenticatedUserContextKey key under which the current User (from OIDC provider) is kept in the ctx
+	AuthenticatedUserContextKey kubermaticcontext.Key = "authenticated-user"
 
 	// AddonProviderContextKey key under which the current AddonProvider is kept in the ctx
-	AddonProviderContextKey contextKey = "addon-provider"
+	AddonProviderContextKey kubermaticcontext.Key = "addon-provider"
+
+	UserCRContextKey = kubermaticcontext.UserCRContextKey
 )
 
 //DCGetter defines functionality to retrieve a datacenter name
@@ -115,7 +112,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 					}
 				}
 			}
-			return next(context.WithValue(ctx, UserCRContextKey, user), request)
+			return next(context.WithValue(ctx, kubermaticcontext.UserCRContextKey, user), request)
 		}
 	}
 }
@@ -125,7 +122,7 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 func UserInfoExtractor(userProjectMapper provider.ProjectMemberMapper) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			user, ok := ctx.Value(UserCRContextKey).(*kubermaticapiv1.User)
+			user, ok := ctx.Value(kubermaticcontext.UserCRContextKey).(*kubermaticapiv1.User)
 			if !ok {
 				// This happens if middleware.UserSaver is not enabled.
 				return nil, k8cerrors.New(http.StatusInternalServerError, "unable to get authenticated user object")

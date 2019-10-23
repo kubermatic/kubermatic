@@ -1,11 +1,12 @@
 package handler
 
 import (
+	"os"
+
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"go.uber.org/zap"
-	"os"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
@@ -43,6 +44,7 @@ type Routing struct {
 	presetsManager              common.PresetsManager
 	exposeStrategy              corev1.ServiceType
 	accessibleAddons            sets.String
+	userInfoGetter              provider.UserInfoGetter
 }
 
 // NewRouting creates a new Routing.
@@ -70,6 +72,7 @@ func NewRouting(
 	presetsManager common.PresetsManager,
 	exposeStrategy corev1.ServiceType,
 	accessibleAddons sets.String,
+	userInfoGetter provider.UserInfoGetter,
 ) Routing {
 	return Routing{
 		log:                         logger,
@@ -96,6 +99,7 @@ func NewRouting(
 		presetsManager:              presetsManager,
 		exposeStrategy:              exposeStrategy,
 		accessibleAddons:            accessibleAddons,
+		userInfoGetter:              userInfoGetter,
 	}
 }
 

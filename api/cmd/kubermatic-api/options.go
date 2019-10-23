@@ -151,4 +151,5 @@ type providers struct {
 	clusterProviderGetter                 provider.ClusterProviderGetter
 	seedsGetter                           provider.SeedsGetter
 	addons                                provider.AddonProviderGetter
+	userInfoGetter                        provider.UserInfoGetter
 }
