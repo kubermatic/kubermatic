@@ -57,7 +57,8 @@ var clusterTypes = []string{
 }
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter,
-	initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager common.PresetsManager, exposeStrategy corev1.ServiceType) endpoint.Endpoint {
+	initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager common.PresetsManager,
+	exposeStrategy corev1.ServiceType, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
 		err := req.Validate()
@@ -66,12 +67,15 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		}
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		k8sClient := privilegedClusterProvider.GetSeedClusterAdminClient()
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		k8sClient := privilegedClusterProvider.GetSeedClusterAdminClient()
 
 		if req.Body.Cluster.ID != "" {
 			return nil, errors.New(int(http.StatusBadRequest), "cluster.ID is read-only")
