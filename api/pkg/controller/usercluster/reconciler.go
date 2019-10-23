@@ -6,18 +6,18 @@ import (
 
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/clusterautoscaler"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/controller-manager"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/dnat-controller"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/kube-state-metrics"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/kubernetes-dashboard"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/metrics-server"
+	controllermanager "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/controller-manager"
+	dnatcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/dnat-controller"
+	kubestatemetrics "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/kube-state-metrics"
+	kubernetesdashboard "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/kubernetes-dashboard"
+	machinecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
+	metricsserver "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/openshift"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/scheduler"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/system-basic-user"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/user-auth"
+	systembasicuser "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/system-basic-user"
+	userauth "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/user-auth"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/usersshkeys"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -375,7 +375,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context) error {
 func (r *reconciler) reconcileSecrets(ctx context.Context) error {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		openvpn.ClientCertificate(r.openVPNCA),
-		usersshkeys.CreateUserSSHKeysSecrets(r.userSSHKeys),
+		usersshkeys.SecretCreator(r.userSSHKeys),
 	}
 	if r.openshift {
 		if r.cloudCredentialSecretTemplate != nil {

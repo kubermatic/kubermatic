@@ -233,7 +233,6 @@ func main() {
 		userSSHKeys,
 		healthHandler.AddReadinessCheck,
 		openVPNCACert,
-		runOp.userSSHKeysDirPath,
 		cloudCredentialSecretTemplate,
 		log); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
