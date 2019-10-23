@@ -5,7 +5,7 @@ Supported Kubernetes versions:
 - `1.14.8`
 - `1.15.5`
 - `1.16.2`
-- Openshift `v4.1.18` prewiew
+- Openshift `v4.1.18` preview
 
 
 **Major new features:**
