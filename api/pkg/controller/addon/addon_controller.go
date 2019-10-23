@@ -268,7 +268,7 @@ func (r *Reconciler) markDefaultAddons(
 	// Update only when the value was incorrect
 	if isDefault := defaultAddons.Has(addon.Name); addon.Spec.IsDefault != isDefault {
 		if err := r.updateAddon(ctx, addon.Namespace, addon.Name, func(a *kubermaticv1.Addon) {
-			addon.Spec.IsDefault = isDefault
+			a.Spec.IsDefault = isDefault
 		}); err != nil {
 			return err
 		}
@@ -280,7 +280,7 @@ func (r *Reconciler) markDefaultAddons(
 func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {
 	if kuberneteshelper.HasFinalizer(addon, cleanupFinalizerName) {
 		if err := r.updateAddon(ctx, addon.Namespace, addon.Name, func(a *kubermaticv1.Addon) {
-			kuberneteshelper.RemoveFinalizer(addon, cleanupFinalizerName)
+			kuberneteshelper.RemoveFinalizer(a, cleanupFinalizerName)
 		}); err != nil {
 			return err
 		}
@@ -482,7 +482,7 @@ func (r *Reconciler) ensureFinalizerIsSet(ctx context.Context, addon *kubermatic
 	}
 
 	return r.updateAddon(ctx, addon.Namespace, addon.Name, func(a *kubermaticv1.Addon) {
-		kuberneteshelper.AddFinalizer(addon, cleanupFinalizerName)
+		kuberneteshelper.AddFinalizer(a, cleanupFinalizerName)
 	})
 }
 
