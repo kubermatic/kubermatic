@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-test/deep"
+	"go.uber.org/zap"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
-
-	"go.uber.org/zap"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -137,11 +138,18 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, cluster *kubermaticv1.Clu
 
 func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
 	cluster := &kubermaticv1.Cluster{}
-	return cluster, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	var diff []string
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		if err := r.client.Get(r.ctx, types.NamespacedName{Name: name}, cluster); err != nil {
 			return err
 		}
+		old := cluster.DeepCopy()
 		modify(cluster)
+		diff = deep.Equal(old, cluster)
 		return r.client.Update(r.ctx, cluster)
 	})
+	if err != nil {
+		err = fmt.Errorf("err: %v, diff: %v", err, diff)
+	}
+	return cluster, err
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
@@ -258,16 +259,23 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
 	// Store it here because it may be unset later on if an update request failed
 	name := cluster.Name
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+	var diff []string
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		//Get latest version
 		if err := r.Get(ctx, types.NamespacedName{Name: name}, cluster); err != nil {
 			return err
 		}
+		old := cluster.DeepCopy()
 		// Apply modifications
 		modify(cluster)
+		diff = deep.Equal(old, cluster)
 		// Update the cluster
 		return r.Update(ctx, cluster)
 	})
+	if err != nil {
+		err = fmt.Errorf("err: %v, diff: %v", err, diff)
+	}
+	return err
 }
 
 func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string) error {

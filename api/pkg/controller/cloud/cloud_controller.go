@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-test/deep"
+	"go.uber.org/zap"
+
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
@@ -15,8 +18,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/azure"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
-
-	"go.uber.org/zap"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -216,13 +217,20 @@ func (r *Reconciler) migrateAWSMultiAZ(ctx context.Context, cluster *kubermaticv
 
 func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
 	cluster := &kubermaticv1.Cluster{}
-	return cluster, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	var diff []string
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		if err := r.Get(context.Background(), types.NamespacedName{Name: name}, cluster); err != nil {
 			return err
 		}
+		old := cluster.DeepCopy()
 		modify(cluster)
+		diff = deep.Equal(old, cluster)
 		return r.Update(context.Background(), cluster)
 	})
+	if err != nil {
+		err = fmt.Errorf("err: %v, diff: %v", err, diff)
+	}
+	return cluster, err
 }
 
 func (r *Reconciler) getGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {

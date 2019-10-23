@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -434,16 +435,23 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
 	// Store it here because it may be unset later on if an update request failed
 	name := c.Name
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+	var diff []string
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		//Get latest version
 		if err := r.Get(ctx, nn("", name), c); err != nil {
 			return err
 		}
+		old := c.DeepCopy()
 		// Apply modifications
 		modify(c)
 		// Update the cluster
+		diff = deep.Equal(old, c)
 		return r.Update(ctx, c)
 	})
+	if err != nil {
+		err = fmt.Errorf("err: %v, diff: %v", err, diff)
+	}
+	return err
 }
 
 // Openshift doesn't seem to support a token-file-based authentication at all
