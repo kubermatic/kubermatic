@@ -213,13 +213,18 @@ func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 	}
 }
 
-// PatchSettingsEndpoint patches settings of the current user
-func PatchSettingsEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+// UpdateSettingsEndpoint updates settings of the current user
+func UpdateSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
-		currentSettings := authenticatedUser.Spec.Settings
+		req := request.(UpdateSettingsReq)
+		existingUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		existingUser.Spec.Settings = req.Body
+		updatedUser, err := userProvider.UpdateUser(*existingUser)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
-		return currentSettings, nil
+		return updatedUser.Spec.Settings, nil
 	}
 }
 
@@ -414,6 +419,24 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	req.UserID = userIDReq.UserID
+
+	return req, nil
+}
+
+// UpdateSettingsReq defines HTTP request for updateCurrentUserSettings
+// swagger:parameters updateCurrentUserSettings
+type UpdateSettingsReq struct {
+	// in: body
+	Body kubermaticapiv1.UserSettings
+}
+
+// DecodeDeleteReq  decodes an HTTP request into DeleteReq
+func DecodeUpdateSettingsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req UpdateSettingsReq
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
