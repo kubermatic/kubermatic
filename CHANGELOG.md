@@ -20,6 +20,7 @@ Supported Kubernetes versions:
 - Added support for Kubernetes audit logging [#4151](https://github.com/kubermatic/kubermatic/issues/4151) ([eqrx](https://github.com/eqrx))
 - Connect button on cluster details will now open Kubernetes Dashboard/Openshift Console [#1667](https://github.com/kubermatic/dashboard-v2/issues/1667) ([floreks](https://github.com/floreks))
 - Pod Security Policies can now be enabled [#4062](https://github.com/kubermatic/kubermatic/issues/4062) ([bashofmann](https://github.com/bashofmann))
+- Added support for optional cluster addons [#1683](https://github.com/kubermatic/dashboard-v2/issues/1683) ([maciaszczykm](https://github.com/maciaszczykm)) 
 
 **Installation and updating:**
 - ACTION REQUIRED: the `zone_character` field must be removed from all AWS datacenters in `datacenters.yaml` [#3986](https://github.com/kubermatic/kubermatic/issues/3986) ([kdomanski](https://github.com/kdomanski))
@@ -34,6 +35,7 @@ Supported Kubernetes versions:
 - master-controller-manager can now be deployed with multiple replicas [#4307](https://github.com/kubermatic/kubermatic/issues/4307) ([xrstf](https://github.com/xrstf))
 - It is now possible to configure an http proxy on a Seed. This will result in the proxy being used for all control plane pods in that seed that talk to a cloudprovider and for all machines in that Seed, unless its overriden on Datacenter level. [#4459](https://github.com/kubermatic/kubermatic/issues/4459) ([alvaroaleman](https://github.com/alvaroaleman))
 - The cert-manager Helm chart now allows configuring extra values for its controllers args and env vars. [#4398](https://github.com/kubermatic/kubermatic/issues/4398) ([alvaroaleman](https://github.com/alvaroaleman))
+- A fix for CVE-2019-11253 for clusters that were created with a Kubernetes version &lt; 1.14 was deployed [#4520](https://github.com/kubermatic/kubermatic/issues/4520) ([alvaroaleman](https://github.com/alvaroaleman))
 
 **Monitoring and logging:**
 - Alertmanager&#39;s inhibition feature is now used to hide consequential alerts. [#3833](https://github.com/kubermatic/kubermatic/issues/3833) ([xrstf](https://github.com/xrstf))
@@ -56,7 +58,9 @@ Supported Kubernetes versions:
 - Openstack: Added a security group API compatibility workaround for very old versions of Openstack. [#4479](https://github.com/kubermatic/kubermatic/issues/4479) ([kdomanski](https://github.com/kdomanski))
 - Openstack: Fixed fetching the list of tenants on some OpenStack configurations with one region [#4182](https://github.com/kubermatic/kubermatic/issues/4182) ([zreigz](https://github.com/zreigz))
 - Openstack: Added support for Project ID to the wizard [#1386](https://github.com/kubermatic/dashboard-v2/issues/1386) ([floreks](https://github.com/floreks))
-- Openstack: the project name can now be provided manually [#1423](https://github.com/kubermatic/dashboard-v2/issues/1423) ([floreks](https://github.com/floreks))
+- Openstack: The project name can now be provided manually [#1423](https://github.com/kubermatic/dashboard-v2/issues/1423) ([floreks](https://github.com/floreks))
+- Openstack: Fixed API usage for datacenters with only one region [#4538](https://github.com/kubermatic/kubermatic/issues/4538) ([zreigz](https://github.com/zreigz))
+- Openstack: Fixed a bug that resulted in the router not being attached to the subnet when the subnet was manually created [#4521](https://github.com/kubermatic/kubermatic/issues/4521) ([alvaroaleman](https://github.com/alvaroaleman))
 - AWS: MachineDeployments can now be created in any availability zone of the cluster&#39;s region [#3870](https://github.com/kubermatic/kubermatic/issues/3870) ([kdomanski](https://github.com/kdomanski))
 - AWS: Reduced the role permissions for the control-plane &amp; worker role to the minimum [#3995](https://github.com/kubermatic/kubermatic/issues/3995) ([mrIncompetent](https://github.com/mrIncompetent))
 - AWS: The subnet can now be selected [#1499](https://github.com/kubermatic/dashboard-v2/issues/1499) ([kgroschoff](https://github.com/kgroschoff))
@@ -120,6 +124,7 @@ Supported Kubernetes versions:
 - OIDC client id is now configurable [#1505](https://github.com/kubermatic/dashboard-v2/issues/1505) ([bashofmann](https://github.com/bashofmann))
 - Replaced particles with a static background. [#1578](https://github.com/kubermatic/dashboard-v2/issues/1578) ([maciaszczykm](https://github.com/maciaszczykm))
 - Pod Security Policy can now be activated from the wizard. [#1647](https://github.com/kubermatic/dashboard-v2/issues/1647) ([maciaszczykm](https://github.com/maciaszczykm))
+- Redesigned extended options in wizard [#1609](https://github.com/kubermatic/dashboard-v2/issues/1609) ([kgroschoff](https://github.com/kgroschoff))
 - Various security improvements in authentication
 - Various other visual improvements
 
