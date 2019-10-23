@@ -221,6 +221,11 @@ func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, bindings 
 			CreationTimestamp: apiv1.NewTime(internalUser.CreationTimestamp.Time),
 		},
 		Email: internalUser.Spec.Email,
+		Settings: apiv1.UserSettings{
+			SelectedTheme:     internalUser.Spec.Settings.SelectedTheme,
+			ItemsPerPage:      internalUser.Spec.Settings.ItemsPerPage,
+			SelectedProjectID: internalUser.Spec.Settings.SelectedProjectID,
+		},
 	}
 
 	for _, binding := range bindings {

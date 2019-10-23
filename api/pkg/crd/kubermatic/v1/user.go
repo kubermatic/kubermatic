@@ -26,9 +26,17 @@ type User struct {
 
 // UserSpec specifies a user
 type UserSpec struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	ID       string       `json:"id"`
+	Name     string       `json:"name"`
+	Email    string       `json:"email"`
+	Settings UserSettings `json:"settings"`
+}
+
+// UserSettings represent an user settings
+type UserSettings struct {
+	SelectedTheme     string `json:"selectedTheme,omitempty"`
+	ItemsPerPage      int8   `json:"itemsPerPage,omitempty"`
+	SelectedProjectID string `json:"selectedProjectId,omitempty"`
 }
 
 // UserList is a list of users
