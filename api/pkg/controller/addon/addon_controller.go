@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -252,8 +253,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	return nil, nil
 }
 
-func (r *Reconciler) markDefaultAddons(ctx context.Context, log *zap.SugaredLogger,
-	addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) markDefaultAddons(
+	ctx context.Context,
+	log *zap.SugaredLogger,
+	addon *kubermaticv1.Addon,
+	cluster *kubermaticv1.Cluster) error {
 	var defaultAddons sets.String
 	if cluster.Annotations["kubermatic.io/openshift"] != "" {
 		defaultAddons = r.defaultOpenshiftAddons
@@ -263,8 +267,9 @@ func (r *Reconciler) markDefaultAddons(ctx context.Context, log *zap.SugaredLogg
 
 	// Update only when the value was incorrect
 	if isDefault := defaultAddons.Has(addon.Name); addon.Spec.IsDefault != isDefault {
-		addon.Spec.IsDefault = isDefault
-		if err := r.Client.Update(ctx, addon); err != nil {
+		if err := r.updateAddon(ctx, addon.Namespace, addon.Name, func(a *kubermaticv1.Addon) {
+			addon.Spec.IsDefault = isDefault
+		}); err != nil {
 			return err
 		}
 	}
@@ -274,8 +279,9 @@ func (r *Reconciler) markDefaultAddons(ctx context.Context, log *zap.SugaredLogg
 
 func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {
 	if kuberneteshelper.HasFinalizer(addon, cleanupFinalizerName) {
-		kuberneteshelper.RemoveFinalizer(addon, cleanupFinalizerName)
-		if err := r.Client.Update(ctx, addon); err != nil {
+		if err := r.updateAddon(ctx, addon.Namespace, addon.Name, func(a *kubermaticv1.Addon) {
+			kuberneteshelper.RemoveFinalizer(addon, cleanupFinalizerName)
+		}); err != nil {
 			return err
 		}
 		log.Infow("Removed the cleanup finalizer", "finalizer", cleanupFinalizerName)
@@ -475,8 +481,9 @@ func (r *Reconciler) ensureFinalizerIsSet(ctx context.Context, addon *kubermatic
 		return nil
 	}
 
-	kuberneteshelper.AddFinalizer(addon, cleanupFinalizerName)
-	return r.Client.Update(ctx, addon)
+	return r.updateAddon(ctx, addon.Namespace, addon.Name, func(a *kubermaticv1.Addon) {
+		kuberneteshelper.AddFinalizer(addon, cleanupFinalizerName)
+	})
 }
 
 func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
@@ -530,6 +537,20 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 	return nil
+}
+
+func (r *Reconciler) updateAddon(ctx context.Context, namespace, name string, modify func(*kubermaticv1.Addon)) error {
+	addon := &kubermaticv1.Addon{}
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+		//Get latest version
+		if err := r.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, addon); err != nil {
+			return err
+		}
+		// Apply modifications
+		modify(addon)
+		// Update the cluster
+		return r.Update(ctx, addon)
+	})
 }
 
 func isOpenshift(c *kubermaticv1.Cluster) bool {
