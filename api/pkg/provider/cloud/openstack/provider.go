@@ -447,7 +447,19 @@ func (os *Provider) getNetClient(cloud kubermaticv1.CloudSpec) (*gophercloud.Ser
 		return nil, fmt.Errorf("invalid datacenter %q", cloud.DatacenterName)
 	}
 
-	return goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{Region: dc.Spec.Openstack.Region})
+	serviceClient, err := goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{Region: dc.Spec.Openstack.Region})
+	if err != nil {
+		// this is special case for  services that span only one region.
+		if _, ok := err.(*gophercloud.ErrEndpointNotFound); ok {
+			serviceClient, err = goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{})
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+	return serviceClient, err
 }
 
 // GetSubnets list all available subnet ids fot a given CloudSpec

@@ -337,7 +337,15 @@ func detachSubnetFromRouter(netClient *gophercloud.ServiceClient, subnetID, rout
 func getFlavors(authClient *gophercloud.ProviderClient, region string) ([]osflavors.Flavor, error) {
 	computeClient, err := goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
 	if err != nil {
-		return nil, err
+		// this is special case for  services that span only one region.
+		if _, ok := err.(*gophercloud.ErrEndpointNotFound); ok {
+			computeClient, err = goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{})
+			if err != nil {
+				return nil, fmt.Errorf("couldn't get identity endpoint: %v", err)
+			}
+		} else {
+			return nil, fmt.Errorf("couldn't get identity endpoint: %v", err)
+		}
 	}
 
 	var allFlavors []osflavors.Flavor
