@@ -200,6 +200,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to create privileged project provider due to %v", err)
 	}
 
+	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create user info getter due to %v", err)
+	}
+
 	kubeMasterInformerFactory.Start(wait.NeverStop)
 	kubeMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
@@ -222,7 +227,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		eventRecorderProvider:                 eventRecorderProvider,
 		clusterProviderGetter:                 clusterProviderGetter,
 		seedsGetter:                           seedsGetter,
-		addons:                                addonProviderGetter}, nil
+		addons:                                addonProviderGetter,
+		userInfoGetter:                        userInfoGetter}, nil
 }
 
 func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error) {
@@ -309,6 +315,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		presetsManager,
 		options.exposeStrategy,
 		options.accessibleAddons,
+		prov.userInfoGetter,
 	)
 
 	registerMetrics()
