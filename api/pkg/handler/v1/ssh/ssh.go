@@ -10,19 +10,21 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func CreateEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func CreateEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(CreateReq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -56,14 +58,17 @@ func CreateEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provide
 	}
 }
 
-func DeleteEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func DeleteEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(DeleteReq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -76,7 +81,7 @@ func DeleteEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provide
 	}
 }
 
-func ListEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func ListEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(ListReq)
 		if !ok {
@@ -87,7 +92,10 @@ func ListEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.
 			return nil, errors.NewBadRequest("the name of the project to delete cannot be empty")
 		}
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)

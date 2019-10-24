@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	"net/http"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -25,11 +25,14 @@ var serviceAccountGroupsPrefixes = []string{
 }
 
 // CreateEndpoint adds the given service account to the given project
-func CreateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider) endpoint.Endpoint {
+func CreateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addReq)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		err := req.Validate()
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		err = req.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -60,9 +63,8 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProv
 }
 
 // ListEndpoint returns service accounts of the given project
-func ListEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+func ListEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, memberMapper provider.ProjectMemberMapper, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(common.GetProjectRq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
@@ -72,6 +74,10 @@ func ListEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvid
 			return nil, errors.NewBadRequest("the name of the project cannot be empty")
 		}
 
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -108,9 +114,8 @@ func ListEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvid
 }
 
 // UpdateEndpoint changes the service account group and/or name in the given project
-func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, memberMapper provider.ProjectMemberMapper, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(updateReq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
@@ -120,7 +125,10 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProv
 			return nil, errors.NewBadRequest(err.Error())
 		}
 		saFromRequest := req.Body
-
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 		sa, err := serviceAccountProvider.Get(userInfo, req.ServiceAccountID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -168,9 +176,8 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProv
 }
 
 // DeleteEndpoint deletes the service account for the given project
-func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(deleteReq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
@@ -179,7 +186,10 @@ func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, proj
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 		// check if project exist
 		if _, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)

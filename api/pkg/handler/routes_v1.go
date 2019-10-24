@@ -552,8 +552,7 @@ func (r Routing) listSSHKeys() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(ssh.ListEndpoint(r.sshKeyProvider, r.projectProvider)),
+		)(ssh.ListEndpoint(r.sshKeyProvider, r.projectProvider, r.userInfoGetter)),
 		ssh.DecodeListReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -580,8 +579,7 @@ func (r Routing) createSSHKey() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(ssh.CreateEndpoint(r.sshKeyProvider, r.projectProvider)),
+		)(ssh.CreateEndpoint(r.sshKeyProvider, r.projectProvider, r.userInfoGetter)),
 		ssh.DecodeCreateReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -605,8 +603,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(ssh.DeleteEndpoint(r.sshKeyProvider, r.projectProvider)),
+		)(ssh.DeleteEndpoint(r.sshKeyProvider, r.projectProvider, r.userInfoGetter)),
 		ssh.DecodeDeleteReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1180,8 +1177,7 @@ func (r Routing) getProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(project.GetEndpoint(r.projectProvider, r.projectMemberProvider, r.userProvider)),
+		)(project.GetEndpoint(r.projectProvider, r.projectMemberProvider, r.userProvider, r.userInfoGetter)),
 		common.DecodeGetProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1237,8 +1233,7 @@ func (r Routing) updateProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(project.UpdateEndpoint(r.projectProvider, r.projectMemberProvider, r.userProvider)),
+		)(project.UpdateEndpoint(r.projectProvider, r.projectMemberProvider, r.userProvider, r.userInfoGetter)),
 		project.DecodeUpdateRq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1898,8 +1893,7 @@ func (r Routing) addServiceAccountToProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.CreateEndpoint(r.projectProvider, r.serviceAccountProvider)),
+		)(serviceaccount.CreateEndpoint(r.projectProvider, r.serviceAccountProvider, r.userInfoGetter)),
 		serviceaccount.DecodeAddReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -1923,8 +1917,7 @@ func (r Routing) listServiceAccounts() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.ListEndpoint(r.projectProvider, r.serviceAccountProvider, r.userProjectMapper)),
+		)(serviceaccount.ListEndpoint(r.projectProvider, r.serviceAccountProvider, r.userProjectMapper, r.userInfoGetter)),
 		common.DecodeGetProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1951,8 +1944,7 @@ func (r Routing) updateServiceAccount() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.UpdateEndpoint(r.projectProvider, r.serviceAccountProvider, r.userProjectMapper)),
+		)(serviceaccount.UpdateEndpoint(r.projectProvider, r.serviceAccountProvider, r.userProjectMapper, r.userInfoGetter)),
 		serviceaccount.DecodeUpdateReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1977,8 +1969,7 @@ func (r Routing) deleteServiceAccount() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.DeleteEndpoint(r.serviceAccountProvider, r.projectProvider)),
+		)(serviceaccount.DeleteEndpoint(r.serviceAccountProvider, r.projectProvider, r.userInfoGetter)),
 		serviceaccount.DecodeDeleteReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2005,8 +1996,7 @@ func (r Routing) addTokenToServiceAccount() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.CreateTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator)),
+		)(serviceaccount.CreateTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
 		serviceaccount.DecodeAddTokenReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -2030,8 +2020,7 @@ func (r Routing) listServiceAccountTokens() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.ListTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator)),
+		)(serviceaccount.ListTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.userInfoGetter)),
 		serviceaccount.DecodeTokenReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2058,8 +2047,7 @@ func (r Routing) updateServiceAccountToken() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.UpdateTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator)),
+		)(serviceaccount.UpdateTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
 		serviceaccount.DecodeUpdateTokenReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2086,8 +2074,7 @@ func (r Routing) patchServiceAccountToken() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.PatchTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator)),
+		)(serviceaccount.PatchTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
 		serviceaccount.DecodePatchTokenReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2111,8 +2098,7 @@ func (r Routing) deleteServiceAccountToken() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.DeleteTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider)),
+		)(serviceaccount.DeleteTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.userInfoGetter)),
 		serviceaccount.DecodeDeleteTokenReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
