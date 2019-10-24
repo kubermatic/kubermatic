@@ -14,7 +14,6 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/client-go/tools/clientcmd/api"
 
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -34,6 +33,7 @@ func ProxyEndpoint(
 	log *zap.SugaredLogger,
 	extractor transporthttp.RequestFunc,
 	projectProvider provider.ProjectProvider,
+	userInfoGetter provider.UserInfoGetter,
 	middlewares endpoint.Middleware) http.Handler {
 	return dynamicHTTPHandler(func(w http.ResponseWriter, r *http.Request) {
 
@@ -54,13 +54,21 @@ func ProxyEndpoint(
 				return nil, nil
 			}
 
-			userCluster, clusterProvider, err := cluster.GetClusterProviderFromRequest(ctx, request, projectProvider)
-			userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+			userCluster, clusterProvider, err := cluster.GetClusterProviderFromRequest(ctx, request, projectProvider, userInfoGetter)
 			if err != nil {
 				common.WriteHTTPError(log, w, err)
 				return nil, nil
 			}
-
+			req, ok := request.(common.GetClusterReq)
+			if !ok {
+				common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, "invalid request"))
+				return nil, nil
+			}
+			userInfo, err := userInfoGetter(ctx, req.ProjectID)
+			if err != nil {
+				common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusInternalServerError, "couldn't get userInfo"))
+				return nil, nil
+			}
 			adminClientCfg, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(userCluster)
 			if err != nil {
 				common.WriteHTTPError(log, w, err)

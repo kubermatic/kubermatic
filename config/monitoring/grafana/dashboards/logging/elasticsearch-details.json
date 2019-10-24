@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "ElasticSearch cluster stats",
+  "description": "Elasticsearch cluster stats",
   "editable": true,
   "gnetId": null,
   "graphTooltip": 1,
@@ -7433,7 +7433,7 @@
     ]
   },
   "timezone": "",
-  "title": "Details",
+  "title": "Elasticsearch Details",
   "uid": "hqMSAnWWz",
   "version": 1
 }
