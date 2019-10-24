@@ -243,12 +243,12 @@ func getNodeDeploymentDisplayName(nd *apiv1.NodeDeployment) string {
 	return ""
 }
 
-func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func GetEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		fmt.Println("asa")
 		req := request.(common.GetClusterReq)
 
-		cluster, err := GetCluster(ctx, req, projectProvider)
+		cluster, err := GetCluster(ctx, req, projectProvider, userInfoGetter)
 		if err != nil {
 			return nil, err
 		}
@@ -258,14 +258,14 @@ func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 }
 
 // GetCluster returns the cluster for a given request
-func GetCluster(ctx context.Context, req common.GetClusterReq, projectProvider provider.ProjectProvider) (*kubermaticv1.Cluster, error) {
+func GetCluster(ctx context.Context, req common.GetClusterReq, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) (*kubermaticv1.Cluster, error) {
 	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	if !ok {
 		return nil, errors.New(http.StatusInternalServerError, "no cluster in request")
 	}
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-	userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-	if !ok {
+	userInfo, err := userInfoGetter(ctx, req.ProjectID)
+	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
 	}
 	project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
@@ -307,11 +307,14 @@ type patchCluster struct {
 	Spec          patchClusterSpec `json:"spec"`
 }
 
-func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		}
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -393,11 +396,14 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 }
 
 // ListEndpoint list clusters within the given datacenter
-func ListEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func ListEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ListReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		}
 		apiClusters, err := getClusters(clusterProvider, userInfo, projectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -407,11 +413,14 @@ func ListEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 }
 
 // ListAllEndpoint list clusters for the given project in all datacenters
-func ListAllEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter) endpoint.Endpoint {
+func ListAllEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetProjectRq)
 		allClusters := make([]*apiv1.Cluster, 0)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		}
 
 		seeds, err := seedsGetter()
 		if err != nil {
@@ -434,11 +443,14 @@ func ListAllEndpoint(projectProvider provider.ProjectProvider, seedsGetter provi
 	}
 }
 
-func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DeleteReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		}
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -485,12 +497,15 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 	}
 }
 
-func GetClusterEventsEndpoint() endpoint.Endpoint {
+func GetClusterEventsEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(EventsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		}
 		client := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
@@ -519,12 +534,15 @@ func GetClusterEventsEndpoint() endpoint.Endpoint {
 	}
 }
 
-func HealthEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func HealthEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -545,7 +563,7 @@ func HealthEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 	}
 }
 
-func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AssignSSHKeysReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -553,7 +571,10 @@ func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvide
 			return nil, errors.NewBadRequest("please provide an SSH key")
 		}
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		}
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -609,12 +630,15 @@ func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvide
 	}
 }
 
-func ListSSHKeysEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func ListSSHKeysEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ListSSHKeysReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		}
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -678,11 +702,14 @@ func convertInternalClustersToExternal(internalClusters []kubermaticv1.Cluster) 
 	return apiClusters
 }
 
-func DetachSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func DetachSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DetachSSHKeysReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		}
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -727,14 +754,17 @@ func DetachSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvide
 	}
 }
 
-func GetMetricsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func GetMetricsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		}
 
-		cluster, err := GetCluster(ctx, req, projectProvider)
+		cluster, err := GetCluster(ctx, req, projectProvider, userInfoGetter)
 		if err != nil {
 			return nil, err
 		}
@@ -1049,12 +1079,15 @@ func DecodeAdminTokenReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AdminTokenReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		}
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -1072,12 +1105,15 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider) endpoint
 	}
 }
 
-func RevokeViewerTokenEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func RevokeViewerTokenEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AdminTokenReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
@@ -1174,11 +1210,14 @@ func DecodeGetClusterEvents(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-func ListNamespaceEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func ListNamespaceEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		}
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, err
@@ -1209,13 +1248,14 @@ func ListNamespaceEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 func GetClusterProviderFromRequest(
 	ctx context.Context,
 	request interface{},
-	projectProvider provider.ProjectProvider) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
+	projectProvider provider.ProjectProvider,
+	userInfoGetter provider.UserInfoGetter) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
 
 	req, ok := request.(common.GetClusterReq)
 	if !ok {
 		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")
 	}
-	cluster, err := GetCluster(ctx, req, projectProvider)
+	cluster, err := GetCluster(ctx, req, projectProvider, userInfoGetter)
 	if err != nil {
 		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
 	}
