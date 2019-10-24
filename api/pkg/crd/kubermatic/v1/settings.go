@@ -6,8 +6,8 @@ import (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Settings is the type representing a Settings
-type Settings struct {
+// KubermaticSettings is the type representing a KubermaticSettings
+type KubermaticSettings struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
