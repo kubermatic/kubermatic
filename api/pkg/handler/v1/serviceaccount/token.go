@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
@@ -23,15 +22,17 @@ import (
 )
 
 // CreateTokenEndpoint creates a token for the given service account
-func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator) endpoint.Endpoint {
+func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addTokenReq)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		err := req.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -73,16 +74,18 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccoun
 }
 
 // ListTokenEndpoint gets token for the service account
-func ListTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator) endpoint.Endpoint {
+func ListTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		resultList := make([]*apiv1.PublicServiceAccountToken, 0)
 		req := request.(commonTokenReq)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		err := req.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -118,15 +121,17 @@ func ListTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountP
 }
 
 // UpdateTokenEndpoint updates and regenerates the token for the given service account
-func UpdateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator) endpoint.Endpoint {
+func UpdateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateTokenReq)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		err := req.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 		secret, err := updateToken(projectProvider, serviceAccountProvider, serviceAccountTokenProvider, userInfo, tokenGenerator, req.ProjectID, req.ServiceAccountID, req.TokenID, req.Body.Name, true)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -142,13 +147,16 @@ func UpdateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccoun
 }
 
 // PatchTokenEndpoint patches the token name
-func PatchTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator) endpoint.Endpoint {
+func PatchTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchTokenReq)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		err := req.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
+		}
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		tokenReq := &apiv1.PublicServiceAccountToken{}
 		if err := json.Unmarshal(req.Body, tokenReq); err != nil {
@@ -173,15 +181,17 @@ func PatchTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccount
 }
 
 // DeleteTokenEndpoint deletes the token from service account
-func DeleteTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider) endpoint.Endpoint {
+func DeleteTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteTokenReq)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		err := req.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
