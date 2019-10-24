@@ -18,7 +18,6 @@ import (
 
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -43,6 +42,7 @@ func ConsoleLoginEndpoint(
 	log *zap.SugaredLogger,
 	extractor transporthttp.RequestFunc,
 	projectProvider provider.ProjectProvider,
+	userInfoGetter provider.UserInfoGetter,
 	middlewares endpoint.Middleware) http.Handler {
 	return dynamicHTTPHandler(func(w http.ResponseWriter, r *http.Request) {
 
@@ -57,15 +57,19 @@ func ConsoleLoginEndpoint(
 		// The endpoint the middleware is called with is the innermost one, hence we must
 		// define it as closure and pass it to the middleware() call below.
 		endpoint := func(ctx context.Context, request interface{}) (interface{}, error) {
-			cluster, clusterProvider, err := cluster.GetClusterProviderFromRequest(ctx, request, projectProvider)
+			cluster, clusterProvider, err := cluster.GetClusterProviderFromRequest(ctx, request, projectProvider, userInfoGetter)
 			if err != nil {
 				common.WriteHTTPError(log, w, err)
 				return nil, nil
 			}
 			log = log.With("cluster", cluster.Name)
-
-			userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+			req, ok := request.(common.GetClusterReq)
 			if !ok {
+				common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, "invalid request"))
+				return nil, nil
+			}
+			userInfo, err := userInfoGetter(ctx, req.ProjectID)
+			if err != nil {
 				common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusInternalServerError, "couldn't get userInfo"))
 				return nil, nil
 			}
@@ -91,6 +95,7 @@ func ConsoleProxyEndpoint(
 	log *zap.SugaredLogger,
 	extractor transporthttp.RequestFunc,
 	projectProvider provider.ProjectProvider,
+	userInfoGetter provider.UserInfoGetter,
 	middlewares endpoint.Middleware) http.Handler {
 	return dynamicHTTPHandler(func(w http.ResponseWriter, r *http.Request) {
 
@@ -105,7 +110,7 @@ func ConsoleProxyEndpoint(
 		// The endpoint the middleware is called with is the innermost one, hence we must
 		// define it as closure and pass it to the middleware() call below.
 		endpoint := func(ctx context.Context, request interface{}) (interface{}, error) {
-			cluster, clusterProvider, err := cluster.GetClusterProviderFromRequest(ctx, request, projectProvider)
+			cluster, clusterProvider, err := cluster.GetClusterProviderFromRequest(ctx, request, projectProvider, userInfoGetter)
 			if err != nil {
 				common.WriteHTTPError(log, w, err)
 				return nil, nil
