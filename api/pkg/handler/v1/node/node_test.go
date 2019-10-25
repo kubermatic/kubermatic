@@ -20,14 +20,12 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
-
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestDeleteNodeForCluster(t *testing.T) {
@@ -98,7 +96,7 @@ func TestDeleteNodeForCluster(t *testing.T) {
 			}
 
 			machines := &clusterv1alpha1.MachineList{}
-			if err := clientsSets.FakeClient.List(context.TODO(), &ctrlruntimeclient.ListOptions{}, machines); err != nil {
+			if err := clientsSets.FakeClient.List(context.TODO(), machines); err != nil {
 				t.Fatalf("failed to list machines from fake client: %v", err)
 			}
 
@@ -1232,7 +1230,7 @@ func TestDeleteNodeDeployment(t *testing.T) {
 			}
 
 			machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-			if err := clientsSets.FakeClient.List(context.TODO(), &ctrlruntimeclient.ListOptions{}, machineDeployments); err != nil {
+			if err := clientsSets.FakeClient.List(context.TODO(), machineDeployments); err != nil {
 				t.Fatalf("failed to list MachineDeployments: %v", err)
 			}
 
