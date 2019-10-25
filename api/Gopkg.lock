@@ -882,9 +882,11 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:5457418acb7c11581b0d2276e51b6e9ab34bf4d9609b08c01aca83be389ccf56"
+  digest = "1:b9f869c1b700171979d970cfeb7adf69aefa9dbdc59ff1a6659e0af0cfe0b7cc"
   name = "github.com/kubermatic/machine-controller"
   packages = [
+    "pkg/apis/cluster/common",
+    "pkg/apis/cluster/v1alpha1",
     "pkg/apis/plugin",
     "pkg/cloudprovider/common/ssh",
     "pkg/cloudprovider/errors",
@@ -911,8 +913,7 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "826503ff0aa333035e332da4e1dcf046ed4a661e"
-  version = "v1.5.8"
+  revision = "ecaf41657919495a18c1295543f0e835a63b5309"
 
 [[projects]]
   digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"
@@ -2041,8 +2042,7 @@
   revision = "ac78417555d691a218c703d82c336c86529deafc"
 
 [[projects]]
-  branch = "master"
-  digest = "1:0f33a050a0280c85a0ffe1480f4160e689c6ce9a94109023be5a884218fd1ec1"
+  digest = "1:5011e453320ffdc30c5a06516f4de57df6e1c094b2923a1c7e699ea3f4364bc9"
   name = "k8s.io/utils"
   packages = [
     "buffer",
@@ -2051,7 +2051,19 @@
     "trace",
   ]
   pruneopts = "NUT"
-  revision = "c55fbcfc754a5b2ec2fbae8fb9dcac36bdba6a12"
+  revision = "c2654d5206da6b7b6ace12841e8f359bb89b443c"
+
+[[projects]]
+  digest = "1:e28f5cd99ea2cf75b070d567cde53308d43649f9bb6ed38dd50e4e57bb611313"
+  name = "kubevirt.io/client-go"
+  packages = [
+    "api/v1",
+    "precond",
+  ]
+  pruneopts = "NUT"
+  revision = "f7b247301033cc7dc3da457939d72a129d460021"
+  source = "github.com/kubevirt/client-go"
+  version = "v0.19.0"
 
 [[projects]]
   digest = "1:a662690aaa202e4bb9d05410af32bad7ed7e0ad3145f9a2d427716ce02c26098"
@@ -2064,18 +2076,6 @@
   revision = "3dcef90a28402b4b9cde7dc40dbebc075cc7b6ad"
   source = "github.com/kubevirt/containerized-data-importer"
   version = "v1.10.0"
-
-[[projects]]
-  branch = "release-0.18"
-  digest = "1:6cdfc8fc487edd231f6505a51f806b9dde46d7a182e367ba4724566e2a9d1137"
-  name = "kubevirt.io/kubevirt"
-  packages = [
-    "pkg/api/v1",
-    "pkg/precond",
-  ]
-  pruneopts = "NUT"
-  revision = "4913335bc20764d0d0bec55da00146887726ae15"
-  source = "github.com/kubevirt/kubevirt"
 
 [[projects]]
   digest = "1:63ea39743dfa0c5d53e2ef1551ca6d9b80d868364b098193b7135e032fb3e487"
