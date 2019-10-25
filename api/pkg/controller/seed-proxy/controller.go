@@ -104,7 +104,7 @@ func Add(
 
 	reconciler := &Reconciler{
 		Client:               mgr.GetClient(),
-		recorder:             mgr.GetRecorder(ControllerName),
+		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		log:                  log,
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,

@@ -700,7 +700,7 @@ func getClusterCAFromLister(ctx context.Context, name string, cluster *kubermati
 		return nil, nil, fmt.Errorf("did not find exactly one but %v certificates in the CA secret", len(certs))
 	}
 
-	key, err := certutil.ParsePrivateKeyPEM(caSecret.Data[CAKeySecretKey])
+	key, err := triple.ParsePrivateKeyPEM(caSecret.Data[CAKeySecretKey])
 	if err != nil {
 		return nil, nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", caSecretKey, err)
 	}

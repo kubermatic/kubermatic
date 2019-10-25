@@ -28,7 +28,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	nodes := &corev1.NodeList{}
-	if err := userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, nodes); err != nil {
+	if err := userClusterClient.List(ctx, nodes); err != nil {
 		return fmt.Errorf("failed to get user cluster nodes: %v", err)
 	}
 
@@ -58,7 +58,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 
 	machineDeploymentList := &clusterv1alpha1.MachineDeploymentList{}
 	listOpts := &controllerruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}
-	if err := userClusterClient.List(ctx, listOpts, machineDeploymentList); err != nil && !meta.IsNoMatchError(err) {
+	if err := userClusterClient.List(ctx, machineDeploymentList, listOpts); err != nil && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to list MachineDeployments: %v", err)
 	}
 	if len(machineDeploymentList.Items) > 0 {
@@ -73,7 +73,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	machineSetList := &clusterv1alpha1.MachineSetList{}
-	if err := userClusterClient.List(ctx, listOpts, machineSetList); err != nil && !meta.IsNoMatchError(err) {
+	if err := userClusterClient.List(ctx, machineSetList, listOpts); err != nil && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to list MachineSets: %v", err)
 	}
 	if len(machineSetList.Items) > 0 {
@@ -88,7 +88,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	machineList := &clusterv1alpha1.MachineList{}
-	if err := userClusterClient.List(ctx, listOpts, machineList); err != nil && !meta.IsNoMatchError(err) {
+	if err := userClusterClient.List(ctx, machineList, listOpts); err != nil && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to get Machines: %v", err)
 	}
 	if len(machineList.Items) > 0 {

@@ -158,7 +158,11 @@ func ListRoleBindingEndpoint() endpoint.Endpoint {
 		}
 
 		roleBindingList := &rbacv1.RoleBindingList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector, Namespace: req.Namespace}, roleBindingList); err != nil {
+		if err := client.List(
+			ctx,
+			roleBindingList,
+			&ctrlruntimeclient.ListOptions{LabelSelector: labelSelector, Namespace: req.Namespace},
+		); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -558,7 +562,7 @@ func ListClusterRoleBindingEndpoint() endpoint.Endpoint {
 		}
 
 		clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}, clusterRoleBindingList); err != nil {
+		if err := client.List(ctx, clusterRoleBindingList, &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 

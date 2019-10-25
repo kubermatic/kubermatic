@@ -45,7 +45,7 @@ func Add(
 		ctx:      ctx,
 		log:      log.Named(ControllerName),
 		client:   mgr.GetClient(),
-		recorder: mgr.GetRecorder(ControllerName),
+		recorder: mgr.GetEventRecorderFor(ControllerName),
 		defaults: defaults,
 	}
 

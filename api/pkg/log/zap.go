@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	ctrlruntimelzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
-	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 func init() {

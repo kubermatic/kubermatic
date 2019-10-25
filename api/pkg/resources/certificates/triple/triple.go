@@ -21,6 +21,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"math"
@@ -32,8 +33,14 @@ import (
 )
 
 const (
-	rsaKeySize   = 2048
-	duration365d = time.Hour * 24 * 365
+	rsaKeySize             = 2048
+	duration365d           = time.Hour * 24 * 365
+	certificateBlockType   = "CERTIFICATE"
+	RSAPrivateKeyBlockType = "RSA PRIVATE KEY"
+	// ECPrivateKeyBlockType is a possible value for pem.Block.Type.
+	ECPrivateKeyBlockType = "EC PRIVATE KEY"
+	PrivateKeyBlockType   = "PRIVATE KEY"
+	CertificateBlockType  = "CERTIFICATE"
 )
 
 type KeyPair struct {
@@ -131,6 +138,129 @@ func newPrivateKey() (*rsa.PrivateKey, error) {
 
 // newSignedCert creates a signed certificate using the given CA certificate and key
 func newSignedCert(cfg certutil.Config, key crypto.Signer, caCert *x509.Certificate, caKey crypto.Signer) (*x509.Certificate, error) {
+	serial, err := rand.Int(rand.Reader, new(big.Int).SetInt64(math.MaxInt64))
+	if err != nil {
+		return nil, err
+	}
+	if len(cfg.CommonName) == 0 {
+		return nil, errors.New("must specify a CommonName")
+	}
+	if len(cfg.Usages) == 0 {
+		return nil, errors.New("must specify at least one ExtKeyUsage")
+	}
+
+	certTmpl := x509.Certificate{
+		Subject: pkix.Name{
+			CommonName:   cfg.CommonName,
+			Organization: cfg.Organization,
+		},
+		DNSNames:     cfg.AltNames.DNSNames,
+		IPAddresses:  cfg.AltNames.IPs,
+		SerialNumber: serial,
+		NotBefore:    caCert.NotBefore,
+		NotAfter:     time.Now().Add(duration365d).UTC(),
+		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  cfg.Usages,
+	}
+	certDERBytes, err := x509.CreateCertificate(rand.Reader, &certTmpl, caCert, key.Public(), caKey)
+	if err != nil {
+		return nil, err
+	}
+	return x509.ParseCertificate(certDERBytes)
+}
+
+// EncodeCertPEM returns PEM-endcoded certificate data
+func EncodeCertPEM(cert *x509.Certificate) []byte {
+	block := pem.Block{
+		Type:  certificateBlockType,
+		Bytes: cert.Raw,
+	}
+	return pem.EncodeToMemory(&block)
+}
+
+// EncodePrivateKeyPEM returns PEM-encoded private key data
+func EncodePrivateKeyPEM(key *rsa.PrivateKey) []byte {
+	block := pem.Block{
+		Type:  RSAPrivateKeyBlockType,
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	}
+	return pem.EncodeToMemory(&block)
+}
+
+// ParsePrivateKeyPEM returns a private key parsed from a PEM block in the supplied data.
+// Recognizes PEM blocks for "EC PRIVATE KEY", "RSA PRIVATE KEY", or "PRIVATE KEY"
+func ParsePrivateKeyPEM(keyData []byte) (interface{}, error) {
+	var privateKeyPemBlock *pem.Block
+	for {
+		privateKeyPemBlock, keyData = pem.Decode(keyData)
+		if privateKeyPemBlock == nil {
+			break
+		}
+
+		switch privateKeyPemBlock.Type {
+		case ECPrivateKeyBlockType:
+			// ECDSA Private Key in ASN.1 format
+			if key, err := x509.ParseECPrivateKey(privateKeyPemBlock.Bytes); err == nil {
+				return key, nil
+			}
+		case RSAPrivateKeyBlockType:
+			// RSA Private Key in PKCS#1 format
+			if key, err := x509.ParsePKCS1PrivateKey(privateKeyPemBlock.Bytes); err == nil {
+				return key, nil
+			}
+		case PrivateKeyBlockType:
+			// RSA or ECDSA Private Key in unencrypted PKCS#8 format
+			if key, err := x509.ParsePKCS8PrivateKey(privateKeyPemBlock.Bytes); err == nil {
+				return key, nil
+			}
+		}
+
+		// tolerate non-key PEM blocks for compatibility with things like "EC PARAMETERS" blocks
+		// originally, only the first PEM block was parsed and expected to be a key block
+	}
+
+	// we read all the PEM blocks and didn't recognize one
+	return nil, fmt.Errorf("data does not contain a valid RSA or ECDSA private key")
+}
+
+// ParseCertsPEM returns the x509.Certificates contained in the given PEM-encoded byte array
+// Returns an error if a certificate could not be parsed, or if the data does not contain any certificates
+func ParseCertsPEM(pemCerts []byte) ([]*x509.Certificate, error) {
+	ok := false
+	certs := []*x509.Certificate{}
+	for len(pemCerts) > 0 {
+		var block *pem.Block
+		block, pemCerts = pem.Decode(pemCerts)
+		if block == nil {
+			break
+		}
+		// Only use PEM "CERTIFICATE" blocks without extra headers
+		if block.Type != CertificateBlockType || len(block.Headers) != 0 {
+			continue
+		}
+
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return certs, err
+		}
+
+		certs = append(certs, cert)
+		ok = true
+	}
+
+	if !ok {
+		return certs, errors.New("data does not contain any valid RSA or ECDSA certificates")
+	}
+	return certs, nil
+}
+
+// NewPrivateKey creates an RSA private key
+func NewPrivateKey() (*rsa.PrivateKey, error) {
+	return rsa.GenerateKey(rand.Reader, rsaKeySize)
+}
+
+// NewSignedCert creates a signed certificate using the given CA certificate and key
+func NewSignedCert(cfg certutil.Config, key crypto.Signer, caCert *x509.Certificate, caKey crypto.Signer) (*x509.Certificate, error) {
 	serial, err := rand.Int(rand.Reader, new(big.Int).SetInt64(math.MaxInt64))
 	if err != nil {
 		return nil, err

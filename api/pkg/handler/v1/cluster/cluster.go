@@ -775,7 +775,7 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter
 		}
 
 		nodeList := &corev1.NodeList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+		if err := client.List(ctx, nodeList); err != nil {
 			return nil, err
 		}
 		availableResources := make(map[string]corev1.ResourceList)
@@ -789,7 +789,7 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter
 		}
 
 		allNodeMetricsList := &v1beta1.NodeMetricsList{}
-		if err := dynamicCLient.List(ctx, &ctrlruntimeclient.ListOptions{}, allNodeMetricsList); err != nil {
+		if err := dynamicCLient.List(ctx, allNodeMetricsList); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
