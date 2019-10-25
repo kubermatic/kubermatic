@@ -166,9 +166,12 @@ func main() {
 		log.Fatal("The openVPN private key is not an ECDSA key")
 	}
 	openVPNCACert := &resources.ECDSAKeyPair{Cert: openVPNCACerts[0], Key: openVPNECSDAKey}
-	userSSHKeys, err := getUserSSHKeys(runOp.userSSHKeysDirPath)
-	if err != nil {
-		log.Fatalw("Failed reading userSSHKey files", zap.Error(err))
+	var userSSHKeys map[string][]byte
+	if runOp.userSSHKeysDirPath != "" {
+		userSSHKeys, err = getUserSSHKeys(runOp.userSSHKeysDirPath)
+		if err != nil {
+			log.Fatalw("Failed reading userSSHKey files", zap.Error(err))
+		}
 	}
 
 	var cloudCredentialSecretTemplate *corev1.Secret

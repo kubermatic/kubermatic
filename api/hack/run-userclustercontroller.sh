@@ -55,4 +55,6 @@ fi
     -version=${CLUSTER_VERSION} \
     -log-debug=true \
     -log-format=Console \
+    -logtostderr \
+    -v=4 \
     ${ARGS}
