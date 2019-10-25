@@ -14,7 +14,6 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
-	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -54,7 +53,7 @@ func New(name string, leaderElectionClient kubernetes.Interface, recorder resour
 	})
 }
 
-func RunAsLeader(ctx context.Context, log *zap.SugaredLogger, cfg *rest.Config, recorder record.EventRecorder, leaderName string, callback func(context.Context) error) error {
+func RunAsLeader(ctx context.Context, log *zap.SugaredLogger, cfg *rest.Config, recorder resourcelock.EventRecorder, leaderName string, callback func(context.Context) error) error {
 	leaderElectionClient, err := kubernetes.NewForConfig(rest.AddUserAgent(cfg, leaderName))
 	if err != nil {
 		return err
