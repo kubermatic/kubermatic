@@ -20,7 +20,7 @@ func deleteAllNonDefaultNamespaces(log *zap.SugaredLogger, client ctrlruntimecli
 	return wait.Poll(defaultUserClusterPollInterval, defaultTimeout, func() (done bool, err error) {
 		namespaceList := &corev1.NamespaceList{}
 		ctx := context.Background()
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, namespaceList); err != nil {
+		if err := client.List(ctx, namespaceList); err != nil {
 			log.Errorf("failed to list namespaces: %v", err)
 			return false, nil
 		}

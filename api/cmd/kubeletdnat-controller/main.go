@@ -68,7 +68,7 @@ func main() {
 		}
 
 		nodeList := &corev1.NodeList{}
-		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+		if err := client.List(context.Background(), nodeList); err != nil {
 			return false, nil
 		}
 
