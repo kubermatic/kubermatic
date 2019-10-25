@@ -91,7 +91,7 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 	}
 
 	bindings := &kubermaticv1.UserProjectBindingList{}
-	if err := r.List(r.ctx, &client.ListOptions{LabelSelector: labelSelector}, bindings); err != nil {
+	if err := r.List(r.ctx, bindings, &client.ListOptions{LabelSelector: labelSelector}); err != nil {
 		return err
 	}
 

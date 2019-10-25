@@ -227,7 +227,7 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 
 		return func() (map[string]*kubermaticv1.Seed, error) {
 			seeds := &kubermaticv1.SeedList{}
-			if err := client.List(ctx, listOpts, seeds); err != nil {
+			if err := client.List(ctx, seeds, listOpts); err != nil {
 				return nil, fmt.Errorf("failed to list the seeds: %v", err)
 			}
 			seedMap := map[string]*kubermaticv1.Seed{}

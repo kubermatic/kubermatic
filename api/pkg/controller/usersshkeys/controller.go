@@ -48,7 +48,7 @@ func Add(
 		log:        log,
 		workerName: workerName,
 		Client:     mgr.GetClient(),
-		recorder:   mgr.GetRecorder(ControllerName),
+		recorder:   mgr.GetEventRecorderFor(ControllerName),
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -105,7 +105,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	userSSHKeys := &kubermaticv1.UserSSHKeyList{}
-	if err := r.Client.List(ctx, &ctrlruntimeclient.ListOptions{}, userSSHKeys); err != nil {
+	if err := r.Client.List(ctx, userSSHKeys); err != nil {
 		return err
 	}
 
@@ -132,7 +132,7 @@ func enqueueAllClusters(client ctrlruntimeclient.Client) *handler.EnqueueRequest
 	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		clustersRequests := []reconcile.Request{}
 		clusterList := &kubermaticv1.ClusterList{}
-		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, clusterList); err != nil {
+		if err := client.List(context.Background(), clusterList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
 			return clustersRequests
 		}

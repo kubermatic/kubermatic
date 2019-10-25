@@ -45,7 +45,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager *
 		workerName:                    workerName,
 		updateManager:                 updateManager,
 		Client:                        mgr.GetClient(),
-		recorder:                      mgr.GetRecorder(ControllerName),
+		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
 	}
@@ -137,8 +137,7 @@ func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Clust
 
 	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
 	// Kubermatic only creates MachineDeployments in the kube-system namespace, everything else is essentially unsupported
-	listOpts := &ctrlruntimeclient.ListOptions{Namespace: "kube-system"}
-	if err := c.List(ctx, listOpts, machineDeployments); err != nil {
+	if err := c.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace("kube-system")); err != nil {
 		return fmt.Errorf("failed to list MachineDeployments: %v", err)
 	}
 

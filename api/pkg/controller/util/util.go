@@ -11,6 +11,7 @@ import (
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/util/retry"
@@ -24,7 +25,7 @@ import (
 func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) *handler.EnqueueRequestsFromMapFunc {
 	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
-		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, clusterList); err != nil {
+		if err := client.List(context.Background(), clusterList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
 			return []reconcile.Request{}
 		}
@@ -57,17 +58,19 @@ func EnqueueConst(queueKey string) *handler.EnqueueRequestsFromMapFunc {
 // SupportsFailureDomainZoneAntiAffinity checks if there are any nodes with the
 // TopologyKeyFailureDomainZone label.
 func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlruntimeclient.Client) (bool, error) {
+	selector, err := labels.Parse(resources.TopologyKeyFailureDomainZone)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse selector: %v", err)
+	}
 	opts := &ctrlruntimeclient.ListOptions{
+		LabelSelector: selector,
 		Raw: &metav1.ListOptions{
 			Limit: 1,
 		},
 	}
-	if err := opts.SetLabelSelector(resources.TopologyKeyFailureDomainZone); err != nil {
-		return false, fmt.Errorf("failed to set label selector: %v", err)
-	}
 
 	nodeList := &corev1.NodeList{}
-	if err := client.List(ctx, opts, nodeList); err != nil {
+	if err := client.List(ctx, nodeList, opts); err != nil {
 		return false, fmt.Errorf("failed to list nodes having the %s label: %v", resources.TopologyKeyFailureDomainZone, err)
 	}
 
@@ -92,7 +95,7 @@ func ClusterAvailableForReconciling(ctx context.Context, client ctrlruntimeclien
 // is equal or larger than the given limit.
 func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Client, limit int) (bool, error) {
 	clusters := &kubermaticv1.ClusterList{}
-	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, clusters); err != nil {
+	if err := client.List(ctx, clusters); err != nil {
 		return true, fmt.Errorf("failed to list clusters: %v", err)
 	}
 
@@ -143,7 +146,7 @@ func seedResourcesUpToDate(ctx context.Context, cluster *kubermaticv1.Cluster, c
 	listOpts := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
 
 	statefulSets := &appv1.StatefulSetList{}
-	if err := client.List(ctx, listOpts, statefulSets); err != nil {
+	if err := client.List(ctx, statefulSets, listOpts); err != nil {
 		return false, fmt.Errorf("failed to list statefulSets: %v", err)
 	}
 	for _, statefulSet := range statefulSets.Items {
@@ -158,7 +161,7 @@ func seedResourcesUpToDate(ctx context.Context, cluster *kubermaticv1.Cluster, c
 	}
 
 	deployments := &appv1.DeploymentList{}
-	if err := client.List(ctx, listOpts, deployments); err != nil {
+	if err := client.List(ctx, deployments, listOpts); err != nil {
 		return false, fmt.Errorf("failed to list deployments: %v", err)
 	}
 

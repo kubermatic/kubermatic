@@ -85,7 +85,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 				}
 			}
 
-			key, err := certutil.NewPrivateKey()
+			key, err := triple.NewPrivateKey()
 			if err != nil {
 				return nil, fmt.Errorf("unable to create a server private key: %v", err)
 			}
@@ -96,13 +96,13 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 				Usages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 			}
 
-			cert, err := certutil.NewSignedCert(config, key, ca.Cert, ca.Key)
+			cert, err := triple.NewSignedCert(config, key, ca.Cert, ca.Key)
 			if err != nil {
 				return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
 			}
 
-			se.Data[resources.ApiserverTLSKeySecretKey] = certutil.EncodePrivateKeyPEM(key)
-			se.Data[resources.ApiserverTLSCertSecretKey] = certutil.EncodeCertPEM(cert)
+			se.Data[resources.ApiserverTLSKeySecretKey] = triple.EncodePrivateKeyPEM(key)
+			se.Data[resources.ApiserverTLSCertSecretKey] = triple.EncodeCertPEM(cert)
 
 			return se, nil
 		}
