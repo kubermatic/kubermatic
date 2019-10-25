@@ -111,8 +111,7 @@ func TestReconciliation(t *testing.T) {
 			}
 
 			clusters := &kubermaticv1.ClusterList{}
-			listOpts := &ctrlruntimeclient.ListOptions{}
-			if err := tc.seedClient.List(context.Background(), listOpts, clusters); err != nil {
+			if err := tc.seedClient.List(context.Background(), clusters); err != nil {
 				t.Fatalf("Error listing clusters: %v", err)
 			}
 

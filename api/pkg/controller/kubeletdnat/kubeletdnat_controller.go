@@ -136,7 +136,7 @@ func (r *Reconciler) getDesiredRules(nodes []corev1.Node) []string {
 func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 	// Get nodes from lister, make a copy.
 	nodeList := &corev1.NodeList{}
-	if err := r.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+	if err := r.List(ctx, nodeList); err != nil {
 		return fmt.Errorf("failed to list nodes: %v", err)
 	}
 
