@@ -20,8 +20,12 @@ func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace str
 			mdURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./machinedeployments", resources.MachineControllerWebhookServiceName, namespace)
 			mURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./machines", resources.MachineControllerWebhookServiceName, namespace)
 
+			// This only gets set when the APIServer supports it, so carry it over
+			var scope *admissionregistrationv1beta1.ScopeType
 			if len(mutatingWebhookConfiguration.Webhooks) != 2 {
 				mutatingWebhookConfiguration.Webhooks = []admissionregistrationv1beta1.MutatingWebhook{{}, {}}
+			} else if len(mutatingWebhookConfiguration.Webhooks[0].Rules) > 0 {
+				scope = mutatingWebhookConfiguration.Webhooks[0].Rules[0].Scope
 			}
 
 			mutatingWebhookConfiguration.Webhooks[0].Name = fmt.Sprintf("%s-machinedeployments", resources.MachineControllerMutatingWebhookConfigurationName)
@@ -33,6 +37,7 @@ func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace str
 					APIGroups:   []string{clusterAPIGroup},
 					APIVersions: []string{clusterAPIVersion},
 					Resources:   []string{"machinedeployments"},
+					Scope:       scope,
 				},
 			}}
 			mutatingWebhookConfiguration.Webhooks[0].ClientConfig = admissionregistrationv1beta1.WebhookClientConfig{
@@ -49,6 +54,7 @@ func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace str
 					APIGroups:   []string{clusterAPIGroup},
 					APIVersions: []string{clusterAPIVersion},
 					Resources:   []string{"machines"},
+					Scope:       scope,
 				},
 			}}
 			mutatingWebhookConfiguration.Webhooks[1].ClientConfig = admissionregistrationv1beta1.WebhookClientConfig{
