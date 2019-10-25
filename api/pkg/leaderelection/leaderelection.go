@@ -25,7 +25,7 @@ const (
 )
 
 // New returns a new leader elector which uses the "hostname + name" as lock identity
-func New(name string, leaderElectionClient kubernetes.Interface, recorder record.EventRecorder, callbacks leaderelection.LeaderCallbacks) (*leaderelection.LeaderElector, error) {
+func New(name string, leaderElectionClient kubernetes.Interface, recorder resourcelock.EventRecorder, callbacks leaderelection.LeaderCallbacks) (*leaderelection.LeaderElector, error) {
 	// Identity used to distinguish between multiple controller manager instances
 	id, err := os.Hostname()
 	if err != nil {

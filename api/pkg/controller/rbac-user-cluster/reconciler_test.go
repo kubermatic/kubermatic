@@ -12,8 +12,6 @@ import (
 )
 
 const (
-	rbacAPIVersion = "rbac.authorization.k8s.io/v1"
-
 	owners  = "system:kubermatic:owners"
 	editors = "system:kubermatic:editors"
 	viewers = "system:kubermatic:viewers"
