@@ -211,7 +211,7 @@ func ListClusterRoleEndpoint() endpoint.Endpoint {
 		}
 
 		clusterRoleList := &rbacv1.ClusterRoleList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}, clusterRoleList); err != nil {
+		if err := client.List(ctx, clusterRoleList, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -241,7 +241,7 @@ func ListRoleEndpoint() endpoint.Endpoint {
 		}
 
 		roleList := &rbacv1.RoleList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}, roleList); err != nil {
+		if err := client.List(ctx, roleList, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 

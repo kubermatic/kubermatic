@@ -765,7 +765,7 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 
 		seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
 		podMetricsList := &v1beta1.PodMetricsList{}
-		if err := seedAdminClient.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: fmt.Sprintf("cluster-%s", cluster.Name)}, podMetricsList); err != nil {
+		if err := seedAdminClient.List(ctx, podMetricsList, &ctrlruntimeclient.ListOptions{Namespace: fmt.Sprintf("cluster-%s", cluster.Name)}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return convertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster)
@@ -1190,7 +1190,7 @@ func ListNamespaceEndpoint(projectProvider provider.ProjectProvider) endpoint.En
 		}
 
 		namespaceList := &corev1.NamespaceList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, namespaceList); err != nil {
+		if err := client.List(ctx, namespaceList); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
