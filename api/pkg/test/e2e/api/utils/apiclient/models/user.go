@@ -39,6 +39,9 @@ type User struct {
 	// Projects holds the list of project the user belongs to
 	// along with the group names
 	Projects []*ProjectGroup `json:"projects"`
+
+	// user settings
+	UserSettings *UserSettings `json:"userSettings,omitempty"`
 }
 
 // Validate validates this user
@@ -54,6 +57,10 @@ func (m *User) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateProjects(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateUserSettings(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -109,6 +116,24 @@ func (m *User) validateProjects(formats strfmt.Registry) error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *User) validateUserSettings(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.UserSettings) { // not required
+		return nil
+	}
+
+	if m.UserSettings != nil {
+		if err := m.UserSettings.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("userSettings")
+			}
+			return err
+		}
 	}
 
 	return nil
