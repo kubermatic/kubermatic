@@ -19,11 +19,11 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/system-basic-user"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/user-auth"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/usersshkeys"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	certutil "k8s.io/client-go/util/cert"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -93,7 +93,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 
 func (r *reconciler) ensureAPIServices(ctx context.Context) error {
 	creators := []reconciling.NamedAPIServiceCreatorGetter{}
-	caCert := certutil.EncodeCertPEM(r.caCert.Cert)
+	caCert := triple.EncodeCertPEM(r.caCert.Cert)
 	if r.openshift {
 		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion(r.version, caCert)
 		if err != nil {
