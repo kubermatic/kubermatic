@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	certutil "k8s.io/client-go/util/cert"
 )
 
 // MutatingwebhookConfigurationCreator returns the MutatingwebhookConfiguration for the machine controler
@@ -37,7 +37,7 @@ func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace str
 			}}
 			mutatingWebhookConfiguration.Webhooks[0].ClientConfig = admissionregistrationv1beta1.WebhookClientConfig{
 				URL:      &mdURL,
-				CABundle: certutil.EncodeCertPEM(caCert),
+				CABundle: triple.EncodeCertPEM(caCert),
 			}
 
 			mutatingWebhookConfiguration.Webhooks[1].Name = fmt.Sprintf("%s-machines", resources.MachineControllerMutatingWebhookConfigurationName)
@@ -53,7 +53,7 @@ func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace str
 			}}
 			mutatingWebhookConfiguration.Webhooks[1].ClientConfig = admissionregistrationv1beta1.WebhookClientConfig{
 				URL:      &mURL,
-				CABundle: certutil.EncodeCertPEM(caCert),
+				CABundle: triple.EncodeCertPEM(caCert),
 			}
 
 			return mutatingWebhookConfiguration, nil
