@@ -21,7 +21,7 @@ func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace str
 			mURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./machines", resources.MachineControllerWebhookServiceName, namespace)
 
 			if len(mutatingWebhookConfiguration.Webhooks) != 2 {
-				mutatingWebhookConfiguration.Webhooks = []admissionregistrationv1beta1.Webhook{{}, {}}
+				mutatingWebhookConfiguration.Webhooks = []admissionregistrationv1beta1.MutatingWebhook{{}, {}}
 			}
 
 			mutatingWebhookConfiguration.Webhooks[0].Name = fmt.Sprintf("%s-machinedeployments", resources.MachineControllerMutatingWebhookConfigurationName)

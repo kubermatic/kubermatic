@@ -21,7 +21,7 @@ func creationPreventingWebhook(apiGroup string, resources []string) reconciling.
 				}
 				vwc.Annotations[annotationKeyDescription] = "This webhook configuration exists to prevent creation of any new stateful resources in a cluster that is currently being terminated"
 				if len(vwc.Webhooks) != 1 {
-					vwc.Webhooks = []admissionregistrationv1beta1.Webhook{{}}
+					vwc.Webhooks = []admissionregistrationv1beta1.ValidatingWebhook{{}}
 				}
 				// Must be a domain with at least three segments separated by dots
 				vwc.Webhooks[0].Name = "kubernetes.cluster.cleanup"
