@@ -345,9 +345,10 @@ func DeleteClusterRoleEndpoint() endpoint.Endpoint {
 		}
 		userClusterRoleID := addUserClusterRBACPrefix(req.RoleID)
 
-		clusterRole := &rbacv1.ClusterRole{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: userClusterRoleID}, clusterRole); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+		clusterRole := &rbacv1.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: userClusterRoleID,
+			},
 		}
 		if err := client.Delete(ctx, clusterRole); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -374,9 +375,11 @@ func DeleteRoleEndpoint() endpoint.Endpoint {
 		}
 		roleID := addUserClusterRBACPrefix(req.RoleID)
 
-		role := &rbacv1.Role{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: roleID, Namespace: req.Namespace}, role); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+		role := &rbacv1.Role{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      roleID,
+				Namespace: req.Namespace,
+			},
 		}
 		if err := client.Delete(ctx, role); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
