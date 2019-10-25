@@ -112,35 +112,6 @@ func (a *Client) EditUserInProject(params *EditUserInProjectParams, authInfo run
 }
 
 /*
-GetCurrentUser returns information about the current user
-*/
-func (a *Client) GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter) (*GetCurrentUserOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewGetCurrentUserParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "getCurrentUser",
-		Method:             "GET",
-		PathPattern:        "/api/v1/me",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetCurrentUserReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*GetCurrentUserOK), nil
-
-}
-
-/*
 GetUsersForProject Get list of users for the given project
 */
 func (a *Client) GetUsersForProject(params *GetUsersForProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetUsersForProjectOK, error) {

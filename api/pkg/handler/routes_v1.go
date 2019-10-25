@@ -529,6 +529,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/me").
 		Handler(r.getCurrentUser())
 
+	mux.Methods(http.MethodPut).
+		Path("/me/settings").
+		Handler(r.updateCurrentUserSettings())
+
 	mux.Methods(http.MethodGet).
 		Path("/labels/system").
 		Handler(r.listSystemLabels())
@@ -1852,7 +1856,7 @@ func (r Routing) deleteUserFromProject() http.Handler {
 
 // swagger:route GET /api/v1/me users getCurrentUser
 //
-// Returns information about the current user.
+//     Returns information about the current user.
 //
 //     Produces:
 //     - application/json
@@ -1868,6 +1872,32 @@ func (r Routing) getCurrentUser() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(user.GetEndpoint(r.userProjectMapper)),
 		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/me settings updateCurrentUserSettings
+//
+//     Updates settings of the current user.
+//
+//	   Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: User
+//       401: empty
+func (r Routing) updateCurrentUserSettings() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(user.UpdateSettingsEndpoint(r.userProvider)),
+		user.DecodeUpdateSettingsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

@@ -180,14 +180,26 @@
     },
     "/api/v1/me": {
       "get": {
+        "consumes": [
+          "application/json"
+        ],
         "produces": [
           "application/json"
         ],
         "tags": [
-          "users"
+          "settings"
         ],
-        "summary": "Returns information about the current user.",
-        "operationId": "getCurrentUser",
+        "summary": "Updates settings of the current user.",
+        "operationId": "updateCurrentUserSettings",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/UserSettings"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "User",
@@ -9857,9 +9869,32 @@
             "$ref": "#/definitions/ProjectGroup"
           },
           "x-go-name": "Projects"
+        },
+        "userSettings": {
+          "$ref": "#/definitions/UserSettings"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "UserSettings": {
+      "description": "UserSettings represent an user settings",
+      "type": "object",
+      "properties": {
+        "itemsPerPage": {
+          "type": "integer",
+          "format": "int8",
+          "x-go-name": "ItemsPerPage"
+        },
+        "selectedProjectId": {
+          "type": "string",
+          "x-go-name": "SelectedProjectID"
+        },
+        "selectedTheme": {
+          "type": "string",
+          "x-go-name": "SelectedTheme"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "VSphereCloudSpec": {
       "type": "object",
