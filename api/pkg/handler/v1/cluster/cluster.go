@@ -160,6 +160,22 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			}()
 		}
 
+		const maxRetries = 10
+		// Try to make sure cluster can be retrieved by the user before returning
+		for i := 0; i < maxRetries; i++ {
+			_, err = clusterProvider.Get(userInfo, newCluster.Name, &provider.ClusterGetOptions{})
+			if err == nil {
+				break
+			}
+
+			// If there is some unexpected error and cluster has already been created, return it.
+			if !isStatus(err, http.StatusForbidden) {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			time.Sleep(time.Second)
+		}
+
 		return convertInternalClusterToExternal(newCluster), nil
 	}
 }
