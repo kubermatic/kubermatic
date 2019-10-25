@@ -268,11 +268,12 @@ func DeleteRoleBindingEndpoint() endpoint.Endpoint {
 		}
 
 		bindingID := addUserClusterRBACPrefix(req.BindingID)
-		binding := &rbacv1.RoleBinding{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: bindingID, Namespace: req.Namespace}, binding); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+		binding := &rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bindingID,
+				Namespace: req.Namespace,
+			},
 		}
-
 		if err := client.Delete(ctx, binding); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -660,9 +661,10 @@ func DeleteClusterRoleBindingEndpoint() endpoint.Endpoint {
 		}
 
 		bindingID := addUserClusterRBACPrefix(req.BindingID)
-		binding := &rbacv1.ClusterRoleBinding{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: bindingID}, binding); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+		binding := &rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: bindingID,
+			},
 		}
 
 		if err := client.Delete(ctx, binding); err != nil {
