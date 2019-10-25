@@ -2078,16 +2078,6 @@
   version = "v1.10.0"
 
 [[projects]]
-  digest = "1:63ea39743dfa0c5d53e2ef1551ca6d9b80d868364b098193b7135e032fb3e487"
-  name = "sigs.k8s.io/cluster-api"
-  packages = [
-    "pkg/apis/cluster/common",
-    "pkg/apis/cluster/v1alpha1",
-  ]
-  pruneopts = "NUT"
-  revision = "2ec456177c0e8f0a903f4e746d44baaae54cc591"
-
-[[projects]]
   digest = "1:44da1e564f5415316d8f2fc6aaa6ecea947015549812d02b2b96d75b42f5b2c5"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
@@ -2210,6 +2200,7 @@
     "github.com/heptiolabs/healthcheck",
     "github.com/hetznercloud/hcloud-go/hcloud",
     "github.com/iancoleman/strcase",
+    "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1",
     "github.com/kubermatic/machine-controller/pkg/apis/plugin",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure",
@@ -2336,7 +2327,6 @@
     "k8s.io/metrics/pkg/apis/metrics/v1beta1",
     "k8s.io/test-infra/pkg/genyaml",
     "k8s.io/utils/pointer",
-    "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1",
     "sigs.k8s.io/controller-runtime/pkg/cache",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
@@ -2344,6 +2334,7 @@
     "sigs.k8s.io/controller-runtime/pkg/controller",
     "sigs.k8s.io/controller-runtime/pkg/event",
     "sigs.k8s.io/controller-runtime/pkg/handler",
+    "sigs.k8s.io/controller-runtime/pkg/log",
     "sigs.k8s.io/controller-runtime/pkg/log/zap",
     "sigs.k8s.io/controller-runtime/pkg/manager",
     "sigs.k8s.io/controller-runtime/pkg/metrics",
