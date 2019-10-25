@@ -24,6 +24,11 @@ import (
 	"strings"
 	"time"
 
+	kubevirtv1 "kubevirt.io/client-go/api/v1"
+	cdi "kubevirt.io/containerized-data-importer/pkg/apis/core/v1alpha1"
+
+	"github.com/kubermatic/machine-controller/pkg/apis/cluster/common"
+	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	cloudprovidererrors "github.com/kubermatic/machine-controller/pkg/cloudprovider/errors"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/instance"
 	cloudprovidertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/types"
@@ -34,17 +39,17 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	utilpointer "k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	cdi "kubevirt.io/containerized-data-importer/pkg/apis/core/v1alpha1"
-	kubevirtv1 "kubevirt.io/kubevirt/pkg/api/v1"
-
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
+
+func init() {
+	// Workaround until we have https://github.com/kubevirt/kubevirt/pull/2841
+	metav1.AddToGroupVersion(scheme.Scheme, kubevirtv1.GroupVersion)
+}
 
 type provider struct {
 	configVarResolver *providerconfig.ConfigVarResolver
