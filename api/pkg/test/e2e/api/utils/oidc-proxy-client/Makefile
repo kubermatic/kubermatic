@@ -23,6 +23,11 @@ fix:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 
 run: build
-	./$(BUILD_DEST)/$(BINARYNAME) --client-id=$(KUBERMATIC_OIDC_CLIENT_ID) --client-secret=$(KUBERMATIC_OIDC_CLIENT_SECRET) --issuer=$(KUBERMATIC_OIDC_ISSUER) --redirect-uri=$(KUBERMATIC_OIDC_REDIRECT_URI) --debug
+	./$(BUILD_DEST)/$(BINARYNAME) \
+		--client-id=$(KUBERMATIC_OIDC_CLIENT_ID) \
+		--client-secret=$(KUBERMATIC_OIDC_CLIENT_SECRET) \
+		--issuer=$(KUBERMATIC_OIDC_ISSUER) \
+		--redirect-uri=$(KUBERMATIC_OIDC_REDIRECT_URI) \
+		--debug
 
 .PHONY: check build run
