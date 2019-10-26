@@ -1351,12 +1351,18 @@ func logEventsObject(
 	}
 
 	for _, event := range events.Items {
+		var msg string
+		if event.Type == corev1.EventTypeWarning {
+			// Make sure this gets highlighted
+			msg = "ERROR"
+		}
 		log.Infow(
-			"EventFound",
+			msg,
 			"EventType", event.Type,
 			"Number", event.Count,
 			"Reason", event.Reason,
 			"Message", event.Message,
+			"Source", event.Source.Component,
 		)
 	}
 	return nil
