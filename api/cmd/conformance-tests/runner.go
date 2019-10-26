@@ -304,7 +304,7 @@ func (r *testRunner) executeTests(
 
 	// Print all controlplane logs to both make debugging easier and show issues
 	// that didn't result in test failures.
-	r.printAllControlPlaneLogs(log, clusterName)
+	defer r.printAllControlPlaneLogs(log, clusterName)
 
 	var err error
 
@@ -1082,6 +1082,7 @@ func supportsLBs(cluster *kubermaticv1.Cluster) bool {
 }
 
 func (r *testRunner) printAllControlPlaneLogs(log *zap.SugaredLogger, clusterName string) {
+	log.Info("Printing controlplane logs")
 	cluster := &kubermaticv1.Cluster{}
 	ctx := context.Background()
 	if err := r.seedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
@@ -1101,8 +1102,8 @@ func (r *testRunner) printAllControlPlaneLogs(log *zap.SugaredLogger, clusterNam
 	}
 
 	if err := printEventsAndLogsForAllPods(
-		log,
 		ctx,
+		log,
 		r.seedClusterClient,
 		r.seedGeneratedClient,
 		cluster.Status.NamespaceName,
@@ -1233,12 +1234,13 @@ func junitReporterWrapper(
 
 // printEvents and logs for all pods. Include ready pods, because they may still contain useful information.
 func printEventsAndLogsForAllPods(
-	log *zap.SugaredLogger,
 	ctx context.Context,
+	log *zap.SugaredLogger,
 	client ctrlruntimeclient.Client,
 	k8sclient kubernetes.Interface,
 	namespace string,
 ) error {
+	log.Infow("Printing logs for all pods", "namespace", namespace)
 	listOpts := &ctrlruntimeclient.ListOptions{
 		Namespace: namespace,
 	}
@@ -1348,7 +1350,8 @@ func logEventsObject(
 	}
 
 	for _, event := range events.Items {
-		log.Info(
+		log.Infow(
+			"EventFound",
 			"EventType", event.Type,
 			"Number", event.Count,
 			"Reason", event.Reason,
