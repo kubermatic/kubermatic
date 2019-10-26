@@ -31,26 +31,11 @@ func getKubernetesVersion() string {
 	return "v1.14.2"
 }
 
-// runOIDCProxy runs the OIDC proxy. It is non-blocking. It does
-// so by shelling out which is not pretty, but better than the previous
-// approach of forking in a script and having no way of making the test
-// fail of the OIDC failed
 func runOIDCProxy(t *testing.T, cancel <-chan struct{}) error {
-	gopathRaw, err := exec.Command("go", "env", "GOPATH").CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("failed to get gopath: %v", err)
-	}
-	goPathSanitized := strings.Replace(string(gopathRaw), "\n", "", -1)
-	oidcProxyDir := fmt.Sprintf("%s/src/github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/oidc-proxy-client", goPathSanitized)
-
-	oidProxyCommand := exec.Command("make", "run")
-	oidProxyCommand.Dir = oidcProxyDir
-
 	errChan := make(chan error, 1)
-	go func() {
-		out, err := oidProxyCommand.CombinedOutput()
-		errChan <- fmt.Errorf("failed to run oidc proxy. Output:\n%s\nError: %v", string(out), err)
-	}()
+	if err := RunOIDCProxy(errChan, cancel); rer != nil {
+		return err
+	}
 
 	go func() {
 		select {

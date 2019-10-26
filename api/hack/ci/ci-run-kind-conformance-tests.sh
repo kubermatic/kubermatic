@@ -459,7 +459,7 @@ TEST_NAME="Expose dex and kubermatic API to localhost"
 kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556  &
 
 # Expose kubermatic API to localhost
-kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8000:80 &
+kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 &
 echodate "Finished exposing components"
 
 # We build the CLI after deploying to make sure we fail fast if the helm deployment fails
@@ -475,7 +475,7 @@ if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
 fi
 
 echodate "Starting conformance tests"
-export KUBERMATIC_APISERVER_ADDRESS="localhost:8000"
+export KUBERMATIC_APISERVER_ADDRESS="localhost:8080"
 if [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
      -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"

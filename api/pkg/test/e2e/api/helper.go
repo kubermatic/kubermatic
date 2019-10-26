@@ -1,11 +1,13 @@
 package e2e
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -57,14 +59,7 @@ func GetMasterToken() (string, error) {
 
 	issuerURLPrefix := getIssuerURLPrefix()
 
-	kubermaticServerAddress := defaultHost
-	if envVal := os.Getenv("KUBERMATIC_APISERVER_ADDRESS"); envVal != "" {
-		kubermaticServerAddress = envVal
-	}
-	if !strings.HasPrefix(kubermaticServerAddress, "http://") {
-		kubermaticServerAddress = "http://" + kubermaticServerAddress
-	}
-	requestToken, err := oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, kubermaticServerAddress)
+	requestToken, err := oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, "http://localhost:8000")
 	if err != nil {
 		return "", err
 	}
@@ -754,4 +749,34 @@ func (r *APIRunner) AddProjectUser(projectID, email, name, group string) (*apiv1
 		},
 	}
 	return usr, nil
+}
+
+// RunOIDCProxy runs the OIDC proxy. It is non-blocking. It does
+// so by shelling out which is not pretty, but better than the previous
+// approach of forking in a script and having no way of making the test
+// fail of the OIDC failed
+func RunOIDCProxy(errChan chan error, cancel <-chan struct{}) error {
+	gopathRaw, err := exec.Command("go", "env", "GOPATH").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to get gopath: %v", err)
+	}
+	goPathSanitized := strings.Replace(string(gopathRaw), "\n", "", -1)
+	oidcProxyDir := fmt.Sprintf("%s/src/github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/oidc-proxy-client", goPathSanitized)
+
+	oidProxyCommand := exec.Command("make", "run")
+	oidProxyCommand.Dir = oidcProxyDir
+	var out bytes.Buffer
+	oidProxyCommand.Stdout = &out
+	oidProxyCommand.Stderr = &out
+	if err := oidProxyCommand.Start(); err != nil {
+		return fmt.Errorf("failed to run oidc proxy command: %v", err)
+	}
+
+	go func() {
+		if err := oidProxyCommand.Wait(); err != nil {
+			errChan <- fmt.Errorf("failed to run oidc proxy. Output:\n%s\nError: %v", out.String(), err)
+		}
+	}()
+
+	return nil
 }

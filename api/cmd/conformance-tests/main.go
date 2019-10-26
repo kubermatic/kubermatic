@@ -252,6 +252,16 @@ func main() {
 		}
 		opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
 	} else {
+		errChan := make(chan error, 1)
+		if err := apitest.RunOIDCProxy(errChan, context.Background().Done()); err != nil {
+			log.Fatalw("Failed to run oidc proxy", zap.Error(err))
+		}
+		go func() {
+			select {
+			case err := <-errChan:
+				log.Errorw("OIDC proxy enxountered error", zap.Error(err))
+			}
+		}()
 		token, err := apitest.GetMasterToken()
 		if err != nil {
 			log.Fatalw("Failed to get master token", zap.Error(err))
