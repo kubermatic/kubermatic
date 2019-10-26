@@ -144,6 +144,8 @@ function cleanup {
   # Upload the JUNIT files
   mv /reports/* ${ARTIFACTS}/
   echodate "Finished cleanup"
+
+	sleep 1h
 }
 trap cleanup EXIT
 
