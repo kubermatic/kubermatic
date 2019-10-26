@@ -68,56 +68,8 @@ function cleanup {
   echodate "Starting cleanup"
   set +e
 
-  # Try being a little helpful
-  if [[ ${testRC} -ne 0 ]]; then
-    echodate "tests failed, describing cluster"
-
-    # Describe cluster
-    if [[ $provider == "aws" ]]; then
-      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Secret Access Key|Access Key Id'
-    elif [[ $provider == "packet" ]]; then
-      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'APIKey|ProjectID'
-    elif [[ $provider == "gcp" ]]; then
-      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Service Account'
-    elif [[ $provider == "azure" ]]; then
-      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'ClientID|ClientSecret|SubscriptionID|TenantID'
-    elif [[ $provider == "digitalocean" ]]; then
-      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Token'
-    elif [[ $provider == "hetzner" ]]; then
-      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Token'
-    elif [[ $provider == "openstack" ]]; then
-      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Domain|Tenant|Username|Password'
-    elif [[ $provider == "vsphere" ]]; then
-      kubectl describe cluster -l worker-name=$BUILD_ID|egrep -vi 'Username|Password'
-    elif [[ $provider == "kubevirt" ]]; then
-      kubectl describe cluster -l worker-name=$BUILD_ID|grep Events: -A 100
-    else
-      echo "Provider $provider is not yet supported."
-      exit 1
-    fi
-
-    # Display machine events, we don't have to worry about secrets here as they are stored in the machine-controllers env
-    # Except for vSphere
-    TMP_KUBECONFIG=$(mktemp);
-    USERCLUSTER_NS=$(kubectl get cluster -o name -l worker-name=${BUILD_ID} |sed 's#.kubermatic.k8s.io/#-#g')
-    kubectl get secret -n ${USERCLUSTER_NS} admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' | base64 -d > $TMP_KUBECONFIG
-    kubectl --kubeconfig=${TMP_KUBECONFIG} describe machine -n kube-system|egrep -vi 'password|user'
-  fi
-
-  # Delete addons from all clusters that have our worker-name label
-  kubectl get cluster -l worker-name=$BUILD_ID \
-     -o go-template='{{range .items}}{{.metadata.name}}{{end}}' \
-     |xargs -n 1 -I ^ kubectl label addon -n cluster-^ --all worker-name-
-
-  # Delete all clusters that have our worker-name label
-  kubectl delete cluster -l worker-name=$BUILD_ID --wait=false
-
-  # Remove the worker-name label from all clusters that have our worker-name
-  # label so the main cluster-controller will clean them up
-  kubectl get cluster -l worker-name=$BUILD_ID \
-    -o go-template='{{range .items}}{{.metadata.name}}{{end}}' \
-      |xargs -I ^ kubectl label cluster ^ worker-name-
-
+  # Delete all clusters
+  kubectl delete cluster --all
 
   # Upload the JUNIT files
   mv /reports/* ${ARTIFACTS}/
@@ -232,8 +184,6 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: kubermatic
-  labels:
-    worker-name: "$BUILD_ID"
 spec: {}
 status: {}
 ---
@@ -337,8 +287,6 @@ apiVersion: kubermatic.k8s.io/v1
 metadata:
   name: ${SEED_NAME}
   namespace: kubermatic
-  labels:
-    worker-name: "$BUILD_ID"
 spec:
   country: Germany
   location: Hamburg
@@ -435,7 +383,6 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set=kubermatic.apiserverDefaultReplicas=1 \
   --set=kubermatic.masterController.image.tag=${KUBERMATIC_IMAGE_TAG} \
   --set-string=kubermatic.ui.image.tag=${LATEST_DASHBOARD} \
-  --set-string=kubermatic.worker_name=$BUILD_ID \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
   --set=kubermatic.datacenters='' \
@@ -449,7 +396,18 @@ echodate "Finished installing Kubermatic"
 
 # Run the cluster exposer
 TEST_NAME="Run cluster exposer"
-DOCKER_CONFIG=/ docker run --name controller -d -v /root/.kube/config:/inner -v /etc/kubeconfig/kubeconfig:/outer --network host --privileged ${CLUSTER_EXPOSER_IMAGE} --kubeconfig-inner "/inner" --kubeconfig-outer "/outer" --namespace "default" --build-id "$PROW_JOB_ID"
+DOCKER_CONFIG=/ docker run \
+	--name controller \
+	-d \
+	-v /root/.kube/config:/inner \
+	-v /etc/kubeconfig/kubeconfig:/outer \
+	--network host \
+	--privileged ${CLUSTER_EXPOSER_IMAGE} \
+	--kubeconfig-inner "/inner" \
+	--kubeconfig-outer "/outer" \
+	--namespace "default" \
+	--build-id "$PROW_JOB_ID"
+
 docker logs -f controller &
 echodate "Finished running cluster exposer"
 
@@ -519,7 +477,6 @@ which apk && apk add coreutils
 
 timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
   -debug \
-  -worker-name=$BUILD_ID \
   -kubeconfig=$KUBECONFIG \
   -datacenters=$DATACENTERS_FILE \
   -kubermatic-nodes=3 \
