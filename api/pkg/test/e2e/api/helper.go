@@ -56,7 +56,11 @@ func GetMasterToken() (string, error) {
 
 	issuerURLPrefix := getIssuerURLPrefix()
 
-	requestToken, err := oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, "http://localhost:8000")
+	kubermaticServerAddress := defaultHost
+	if envVal := os.Getenv("KUBERMATIC_APISERVER_ADDRESS"); envVal != "" {
+		kubermaticServerAddress = envVal
+	}
+	requestToken, err := oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, kubermaticServerAddress)
 	if err != nil {
 		return "", err
 	}

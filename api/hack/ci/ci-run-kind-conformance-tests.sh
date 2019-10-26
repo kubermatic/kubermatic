@@ -16,7 +16,6 @@ source ./api/hack/lib.sh
 export BUILD_ID=${BUILD_ID:-BUILD_ID_UNDEF}
 echodate "Build ID is $BUILD_ID"
 export VERSIONS=${VERSIONS_TO_TEST:-"v1.12.4"}
-export NAMESPACE="prow-kubermatic-${BUILD_ID}"
 echodate "Testing versions: ${VERSIONS}"
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
@@ -97,17 +96,6 @@ function cleanup {
       exit 1
     fi
 
-    # Control plane logs
-    echodate "Dumping all conntrol plane logs"
-    local GOTEMPLATE='{{ range $pod := .items }}{{ range $container := .spec.containers }}{{ printf "%s,%s\n" $pod.metadata.name $container.name }}{{end}}{{end}}'
-    for i in $(kubectl get pods -n $NAMESPACE -o go-template="$GOTEMPLATE"); do
-      local POD="${i%,*}"
-      local CONTAINER="${i#*,}"
-
-      echo " [*] Pod $POD, container $CONTAINER:"
-      kubectl logs -n $NAMESPACE "$POD" "$CONTAINER"
-    done
-
     # Display machine events, we don't have to worry about secrets here as they are stored in the machine-controllers env
     # Except for vSphere
     TMP_KUBECONFIG=$(mktemp);
@@ -130,16 +118,6 @@ function cleanup {
     -o go-template='{{range .items}}{{.metadata.name}}{{end}}' \
       |xargs -I ^ kubectl label cluster ^ worker-name-
 
-  # Delete the Helm Deployment of Kubermatic
-  helm delete --purge kubermatic-$BUILD_ID  \
-    --tiller-namespace=$NAMESPACE
-
-  # Delete the Helm installation
-  kubectl delete clusterrolebinding -l prowjob=$BUILD_ID
-  kubectl delete namespace $NAMESPACE --wait=false
-
-  # Delete kind cluster
-  kind delete cluster --name ${SEED_NAME}
 
   # Upload the JUNIT files
   mv /reports/* ${ARTIFACTS}/
@@ -253,7 +231,7 @@ cat <<EOF >$INITIAL_MANIFESTS
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: $NAMESPACE
+  name: kubermatic
   labels:
     worker-name: "$BUILD_ID"
 spec: {}
@@ -263,7 +241,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: tiller
-  namespace: $NAMESPACE
+  namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -278,7 +256,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: tiller
-    namespace: $NAMESPACE
+    namespace: kube-system
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -289,20 +267,19 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: kubermatic
-  namespace: $NAMESPACE
+  namespace: kubermatic
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-admin
 ---
 EOF
-echodate "Creating namespace $NAMESPACE to deploy kubermatic in"
-TEST_NAME="Create Kubermatic namespace and Bindings"
+TEST_NAME="Create Kubermatic bindings"
 retry 5 kubectl apply -f $INITIAL_MANIFESTS
 
 echodate "Deploying tiller"
 TEST_NAME="Deploy Tiller"
-helm init --wait --service-account=tiller --tiller-namespace=$NAMESPACE
+helm init --wait --service-account=tiller
 
 echodate "Installing Kubermatic via Helm"
 TEST_NAME="Deploy Kubermatic"
@@ -325,7 +302,6 @@ LOCAL_PROVISIONER_NAMESPACE="local-provisioner"
 helm repo add rimusz https://charts.rimusz.net
 helm repo update
 helm install --wait --timeout 180 \
-	--tiller-namespace=${NAMESPACE} \
 	--namespace ${LOCAL_PROVISIONER_NAMESPACE} \
 	--set storageClass.name=kubermatic-fast \
 	--name hostpath-provisioner rimusz/hostpath-provisioner
@@ -340,7 +316,6 @@ cp ${SCRIPT_PATH}/testdata/oauth_configmap.yaml ${DEX_PATH}/templates/configmap.
 rm ${KUBERMATIC_HELM_PATH}/templates/ingress.yaml
 
 helm install --wait --timeout 180 \
-  --tiller-namespace=${NAMESPACE} \
   --set-string=dex.ingress.host=http://dex.oauth:5556 \
   --values ${DEX_PATH}/values.yaml \
   --namespace ${DEX_NAMESPACE} \
@@ -353,7 +328,7 @@ kind: Secret
 apiVersion: v1
 metadata:
   name: ${SEED_NAME}-kubeconfig
-  namespace: ${NAMESPACE}
+  namespace: kubermatic
 data:
   kubeconfig: "${KUBECONFIG_ENCODED}"
 ---
@@ -361,7 +336,7 @@ kind: Seed
 apiVersion: kubermatic.k8s.io/v1
 metadata:
   name: ${SEED_NAME}
-  namespace: ${NAMESPACE}
+  namespace: kubermatic
   labels:
     worker-name: "$BUILD_ID"
 spec:
@@ -369,7 +344,7 @@ spec:
   location: Hamburg
   kubeconfig:
     name: ${SEED_NAME}-kubeconfig
-    namespace: ${NAMESPACE}
+    namespace: kubermatic
     fieldPath: kubeconfig
   datacenters:
     aws-eu-central-1a:
@@ -444,7 +419,6 @@ rm -f config/kubermatic/templates/vpa-*
 # --force is needed in case the first attempt at installing didn't succeed
 # see https://github.com/helm/helm/pull/3597
 retry 3 helm upgrade --install --force --wait --timeout 300 \
-  --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
   --set=kubermatic.imagePullSecretData=$IMAGE_PULL_SECRET_DATA \
   --set=kubermatic.auth.serviceAccountKey=$SERVICE_ACCOUNT_KEY \
@@ -469,7 +443,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set=kubermatic.deployVPA=false \
   ${OPENSHIFT_HELM_ARGS:-} \
   --values ${VALUES_FILE} \
-  --namespace $NAMESPACE \
+  --namespace=kubermatic  \
   kubermatic-$BUILD_ID ./config/kubermatic/
 echodate "Finished installing Kubermatic"
 
@@ -482,10 +456,10 @@ echodate "Finished running cluster exposer"
 # expose.sh
 # Expose dex to localhost
 TEST_NAME="Expose dex and kubermatic API to localhost"
-kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556 > /dev/null 2> /dev/null &
+kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556  &
 
 # Expose kubermatic API to localhost
-kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 > /dev/null 2> /dev/null &
+kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8000:80 &
 echodate "Finished exposing components"
 
 # We build the CLI after deploying to make sure we fail fast if the helm deployment fails
@@ -501,7 +475,7 @@ if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
 fi
 
 echodate "Starting conformance tests"
-export KUBERMATIC_APISERVER_ADDRESS="kubermatic-api.prow-kubermatic-${BUILD_ID}.svc.cluster.local.:80"
+export KUBERMATIC_APISERVER_ADDRESS="localhost:8000"
 if [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
      -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"
@@ -567,67 +541,3 @@ timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
 # TODO(xmudrii): Back to this part.
 echodate "Success!"
 exit 0
-
-# # No upgradetest, just exit
-# if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
-#   echodate "Success!"
-#   exit 0
-# fi
-
-# # PULL_BASE_REF is the name of the current branch in case of a post-submit
-# # or the name of the base branch in case of a PR.
-# LATEST_DASHBOARD="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
-
-# echodate "Installing current version of Kubermatic"
-# retry 3 helm upgrade --install --force --wait --timeout 300 \
-#   --tiller-namespace=$NAMESPACE \
-#   --set=kubermatic.isMaster=true \
-#   --set-string=kubermatic.controller.addons.kubernetes.image.tag=${GIT_HEAD_HASH} \
-#   --set-string=kubermatic.controller.addons.kubernetes.image.repository=127.0.0.1:5000/kubermatic/addons \
-#   --set-string=kubermatic.controller.addons.openshift.image.tag=${GIT_HEAD_HASH} \
-#   --set-string=kubermatic.controller.addons.openshift.image.repository=127.0.0.1:5000/kubermatic/openshift_addons \
-#   --set-string=kubermatic.controller.image.tag=${GIT_HEAD_HASH} \
-#   --set-string=kubermatic.controller.image.repository=127.0.0.1:5000/kubermatic/api \
-#   --set-string=kubermatic.api.image.repository=127.0.0.1:5000/kubermatic/api \
-#   --set-string=kubermatic.api.image.tag=${GIT_HEAD_HASH} \
-#   --set-string=kubermatic.masterController.image.tag=${GIT_HEAD_HASH} \
-#   --set-string=kubermatic.masterController.image.repository=127.0.0.1:5000/kubermatic/api \
-#   --set-string=kubermatic.ui.image.tag=${LATEST_DASHBOARD} \
-#   --set-string=kubermatic.kubermaticImage=127.0.0.1:5000/kubermatic/api \
-#   --set-string=kubermatic.dnatcontrollerImage=127.0.0.1:5000/kubermatic/kubeletdnat-controller \
-#   --set-string=kubermatic.worker_name=$BUILD_ID \
-#   --set=kubermatic.ingressClass=non-existent \
-#   --set=kubermatic.checks.crd.disable=true \
-#   ${OPENSHIFT_HELM_ARGS:-} \
-#   --values ${VALUES_FILE} \
-#   --namespace $NAMESPACE \
-#   kubermatic-$BUILD_ID ./config/kubermatic/
-# echodate "Successfully installed current version of Kubermatic"
-
-# # We have to rebuild it so it is based on the newer Kubermatic
-# echodate "Building conformance-tests cli"
-# time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
-
-# echodate "Running conformance tester with existing cluster"
-
-# # We increase the number of nodes to make sure creation
-# # of nodes still work
-# timeout -s 9 60m ./conformance-tests $EXTRA_ARGS \
-#   -debug \
-#   -existing-cluster-label=worker-name=$BUILD_ID \
-#   -worker-name=$BUILD_ID \
-#   -kubeconfig=$KUBECONFIG \
-#   -datacenters=$DATACENTERS_FILE \
-#   -kubermatic-nodes=5 \
-#   -kubermatic-parallel-clusters=1 \
-#   -kubermatic-delete-cluster=true \
-#   -name-prefix=prow-e2e \
-#   -reports-root=/reports \
-#   -cleanup-on-start=false \
-#   -versions="$VERSIONS" \
-#   -providers=$provider \
-#   -only-test-creation="${ONLY_TEST_CREATION}" \
-#   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
-#   ${OPENSHIFT_ARG:-} \
-#   -print-ginkgo-logs=true \
-#   -default-timeout-minutes=${DEFAULT_TIMEOUT_MINUTES}
