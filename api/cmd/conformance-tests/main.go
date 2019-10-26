@@ -257,8 +257,7 @@ func main() {
 			log.Fatalw("Failed to run oidc proxy", zap.Error(err))
 		}
 		go func() {
-			select {
-			case err := <-errChan:
+			if err := <-errChan; err != nil {
 				log.Errorw("OIDC proxy enxountered error", zap.Error(err))
 			}
 		}()
