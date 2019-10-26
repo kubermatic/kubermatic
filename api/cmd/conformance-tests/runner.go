@@ -381,6 +381,11 @@ func (r *testRunner) executeTests(
 	}
 
 	defer logEventsForAllMachines(context.Background(), log, userClusterClient)
+	defer logUserClusterPodEventsAndLogs(
+		log,
+		r.clusterClientProvider,
+		cluster.DeepCopy(),
+	)
 
 	var overallTimeout = 10 * time.Minute
 	var timeoutLeft time.Duration
@@ -1373,4 +1378,36 @@ func logEventsObject(
 		)
 	}
 	return nil
+}
+
+func logUserClusterPodEventsAndLogs(
+	log *zap.SugaredLogger,
+	connProvider clusterclient.UserClusterConnectionProvider,
+	cluster *kubermaticv1.Cluster,
+) {
+	log.Info("Attempting to log usercluster pod events and logs")
+	cfg, err := connProvider.GetClientConfig(cluster)
+	if err != nil {
+		log.Errorw("Failed to get usercluster admin kubeconfig")
+		return
+	}
+	k8sClient, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		log.Errorw("Failed to construct k8sClient for usercluster", zap.Error(err))
+		return
+	}
+	client, err := connProvider.GetClient(cluster)
+	if err != nil {
+		log.Errorw("Failed to construct client for usercluster", zap.Error(err))
+		return
+	}
+	if err := printEventsAndLogsForAllPods(
+		context.Background(),
+		log,
+		client,
+		k8sClient,
+		"",
+	); err != nil {
+		log.Errorw("Failed to print events and logs for usercluster pods", zap.Error(err))
+	}
 }
