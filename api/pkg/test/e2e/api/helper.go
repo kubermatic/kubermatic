@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -58,14 +59,10 @@ func GetMasterToken() (string, error) {
 
 	kubermaticServerAddress := defaultHost
 	if envVal := os.Getenv("KUBERMATIC_APISERVER_ADDRESS"); envVal != "" {
-		url, err := url.Parse(envVal)
-		if err != nil {
-			return "", fmt.Errorf("failed to parse url: %v", err)
-		}
-		if url.Scheme == "" {
-			url.Scheme = "http"
-		}
-		kubermaticServerAddress = url.String()
+		kubermaticServerAddress = envVal
+	}
+	if !strings.HasPrefix(kubermaticServerAddress, "http://") {
+		kubermaticServerAddress = "http://" + kubermaticServerAddress
 	}
 	requestToken, err := oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, kubermaticServerAddress)
 	if err != nil {
