@@ -344,42 +344,6 @@ helm install --wait --timeout 180 \
   --namespace ${DEX_NAMESPACE} \
   --name kubermatic-oauth-e2e ${DEX_PATH}
 
-# We must delete all templates for cluster-scoped resources
-# because those already exist because of the main Kubermatic installation
-# otherwise the helm upgrade --install fails
-rm -f config/kubermatic/templates/cluster-role-binding.yaml
-rm -f config/kubermatic/templates/vpa-*
-# --force is needed in case the first attempt at installing didn't succeed
-# see https://github.com/helm/helm/pull/3597
-retry 3 helm upgrade --install --force --wait --timeout 300 \
-  --tiller-namespace=$NAMESPACE \
-  --set=kubermatic.isMaster=true \
-  --set=kubermatic.imagePullSecretData=$IMAGE_PULL_SECRET_DATA \
-  --set=kubermatic.auth.serviceAccountKey=$SERVICE_ACCOUNT_KEY \
-  --set=kubermatic.auth.tokenIssuer=http://dex.oauth:5556 \
-  --set=kubermatic.auth.clientID=kubermatic \
-  --set=kubermatic.kubeconfig=${KUBECONFIG_ENCODED} \
-  --set=kubermatic.controller.replicas=1 \
-  --set=kubermatic.controller.datacenterName=${SEED_NAME} \
-  --set=kubermatic.controller.image.tag=${KUBERMATIC_IMAGE_TAG} \
-  --set=kubermatic.controller.addons.kubernetes.image.tag=${KUBERMATIC_IMAGE_TAG} \
-  --set=kubermatic.controller.addons.openshift.image.tag=${KUBERMATIC_IMAGE_TAG} \
-  --set=kubermatic.api.image.tag=${KUBERMATIC_IMAGE_TAG} \
-  --set=kubermatic.api.replicas=1 \
-  --set=kubermatic.apiserverDefaultReplicas=1 \
-  --set=kubermatic.masterController.image.tag=${KUBERMATIC_IMAGE_TAG} \
-  --set-string=kubermatic.ui.image.tag=${LATEST_DASHBOARD} \
-  --set-string=kubermatic.worker_name=$BUILD_ID \
-  --set=kubermatic.ingressClass=non-existent \
-  --set=kubermatic.checks.crd.disable=true \
-  --set=kubermatic.dynamicDatacenters=true \
-  --set=kubermatic.deployVPA=false \
-  ${OPENSHIFT_HELM_ARGS:-} \
-  --values ${VALUES_FILE} \
-  --namespace $NAMESPACE \
-  kubermatic-$BUILD_ID ./config/kubermatic/
-echodate "Finished installing Kubermatic"
-
 echodate "Installing seed"
 SEED_MANIFEST="$(mktemp)"
 cat <<EOF >$SEED_MANIFEST
@@ -469,6 +433,43 @@ EOF
 TEST_NAME="Deploy Seed Manifest"
 retry 5 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing seed"
+
+# We must delete all templates for cluster-scoped resources
+# because those already exist because of the main Kubermatic installation
+# otherwise the helm upgrade --install fails
+rm -f config/kubermatic/templates/cluster-role-binding.yaml
+rm -f config/kubermatic/templates/vpa-*
+# --force is needed in case the first attempt at installing didn't succeed
+# see https://github.com/helm/helm/pull/3597
+retry 3 helm upgrade --install --force --wait --timeout 300 \
+  --tiller-namespace=$NAMESPACE \
+  --set=kubermatic.isMaster=true \
+  --set=kubermatic.imagePullSecretData=$IMAGE_PULL_SECRET_DATA \
+  --set=kubermatic.auth.serviceAccountKey=$SERVICE_ACCOUNT_KEY \
+  --set=kubermatic.auth.tokenIssuer=http://dex.oauth:5556 \
+  --set=kubermatic.auth.clientID=kubermatic \
+  --set=kubermatic.kubeconfig=${KUBECONFIG_ENCODED} \
+  --set=kubermatic.controller.replicas=1 \
+  --set=kubermatic.controller.datacenterName=${SEED_NAME} \
+  --set=kubermatic.controller.image.tag=${KUBERMATIC_IMAGE_TAG} \
+  --set=kubermatic.controller.addons.kubernetes.image.tag=${KUBERMATIC_IMAGE_TAG} \
+  --set=kubermatic.controller.addons.openshift.image.tag=${KUBERMATIC_IMAGE_TAG} \
+  --set=kubermatic.api.image.tag=${KUBERMATIC_IMAGE_TAG} \
+  --set=kubermatic.api.replicas=1 \
+  --set=kubermatic.apiserverDefaultReplicas=1 \
+  --set=kubermatic.masterController.image.tag=${KUBERMATIC_IMAGE_TAG} \
+  --set-string=kubermatic.ui.image.tag=${LATEST_DASHBOARD} \
+  --set-string=kubermatic.worker_name=$BUILD_ID \
+  --set=kubermatic.ingressClass=non-existent \
+  --set=kubermatic.checks.crd.disable=true \
+  --set=kubermatic.datacenters='' \
+  --set=kubermatic.dynamicDatacenters=true \
+  --set=kubermatic.deployVPA=false \
+  ${OPENSHIFT_HELM_ARGS:-} \
+  --values ${VALUES_FILE} \
+  --namespace $NAMESPACE \
+  kubermatic-$BUILD_ID ./config/kubermatic/
+echodate "Finished installing Kubermatic"
 
 # Run the cluster exposer
 TEST_NAME="Run cluster exposer"
