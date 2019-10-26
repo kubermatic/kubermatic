@@ -76,6 +76,7 @@ func newRunner(scenarios []testScenario, opts *Opts, log *zap.SugaredLogger) *te
 		workerName:                   opts.workerName,
 		homeDir:                      opts.homeDir,
 		seedClusterClient:            opts.seedClusterClient,
+		seedGeneratedClient:          opts.seedGeneratedClient,
 		log:                          log,
 		existingClusterLabel:         opts.existingClusterLabel,
 		openshift:                    opts.openshift,
