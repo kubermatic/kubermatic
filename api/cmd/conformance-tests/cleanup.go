@@ -5,6 +5,8 @@ import (
 
 	"go.uber.org/zap"
 
+	kubernetesdashboard "github.com/kubermatic/kubermatic/api/pkg/resources/kubernetes-dashboard"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -13,7 +15,12 @@ import (
 )
 
 var (
-	protectedNamespaces = sets.NewString(metav1.NamespaceDefault, metav1.NamespaceSystem, metav1.NamespacePublic, corev1.NamespaceNodeLease)
+	protectedNamespaces = sets.NewString(
+		metav1.NamespaceDefault,
+		metav1.NamespaceSystem,
+		metav1.NamespacePublic,
+		corev1.NamespaceNodeLease,
+		kubernetesdashboard.Namespace)
 )
 
 func deleteAllNonDefaultNamespaces(log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {

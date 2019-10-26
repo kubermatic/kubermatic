@@ -34,7 +34,7 @@ const (
 	imageName = "kubernetesui/dashboard"
 	tag       = "v2.0.0-beta4"
 	// Namespace used by Dashboard to find required resources.
-	namespace     = "kubernetes-dashboard"
+	Namespace     = "kubernetes-dashboard"
 	ContainerPort = 9090
 	AppLabel      = resources.AppLabelKey + "=" + name
 )
@@ -102,7 +102,7 @@ func getContainers(data kubernetesDashboardData, existingContainers []corev1.Con
 		Command:         []string{"/dashboard"},
 		Args: []string{
 			"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-			"--namespace", namespace,
+			"--namespace", Namespace,
 			"--enable-insecure-login",
 		},
 		Resources: defaultResourceRequirements,
