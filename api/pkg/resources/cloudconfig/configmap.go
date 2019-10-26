@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
+	"net/url"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -58,7 +58,11 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 }
 
 // CloudConfig returns the cloud-config for the supplied data
-func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, credentials resources.Credentials) (cloudConfig string, err error) {
+func CloudConfig(
+	cluster *kubermaticv1.Cluster,
+	dc *kubermaticv1.Datacenter,
+	credentials resources.Credentials,
+) (cloudConfig string, err error) {
 	cloud := cluster.Spec.Cloud
 
 	switch {
@@ -134,32 +138,9 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		}
 
 	case cloud.VSphere != nil:
-		vsphereCloudConfig := &vsphere.CloudConfig{
-			Global: vsphere.GlobalOpts{
-				User:             credentials.VSphere.Username,
-				Password:         credentials.VSphere.Password,
-				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
-				VCenterPort:      "443",
-				InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
-				Datacenter:       dc.Spec.VSphere.Datacenter,
-				DefaultDatastore: dc.Spec.VSphere.Datastore,
-				WorkingDir:       cluster.Name,
-			},
-			Workspace: vsphere.WorkspaceOpts{
-				// This is redudant with what the Vsphere cloud provider itself does:
-				// https://github.com/kubernetes/kubernetes/blob/9d80e7522ab7fc977e40dd6f3b5b16d8ebfdc435/pkg/cloudprovider/providers/vsphere/vsphere.go#L346
-				// We do it here because the fields in the "Global" object
-				// are marked as deprecated even thought the code checks
-				// if they are set and will make the controller-manager crash
-				// if they are not - But maybe that will change at some point
-				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
-				Datacenter:       dc.Spec.VSphere.Datacenter,
-				Folder:           cluster.Name,
-				DefaultDatastore: dc.Spec.VSphere.Datastore,
-			},
-			Disk: vsphere.DiskOpts{
-				SCSIControllerType: "pvscsi",
-			},
+		vsphereCloudConfig, err := getVsphereCloudConfig(cluster, dc, credentials)
+		if err != nil {
+			return cloudConfig, err
 		}
 		cloudConfig, err = vsphere.CloudConfigToString(vsphereCloudConfig)
 		if err != nil {
@@ -210,6 +191,48 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 	}
 
 	return cloudConfig, err
+}
+
+func getVsphereCloudConfig(
+	cluster *kubermaticv1.Cluster,
+	dc *kubermaticv1.Datacenter,
+	credentials resources.Credentials,
+) (*vsphere.CloudConfig, error) {
+	vspherURL, err := url.Parse(dc.Spec.VSphere.Endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse vsphere endpoint: %v", err)
+	}
+	port := "443"
+	if urlPort := vspherURL.Port(); urlPort != "" {
+		port = urlPort
+	}
+	return &vsphere.CloudConfig{
+		Global: vsphere.GlobalOpts{
+			User:             credentials.VSphere.Username,
+			Password:         credentials.VSphere.Password,
+			VCenterIP:        vspherURL.Hostname(),
+			VCenterPort:      port,
+			InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
+			Datacenter:       dc.Spec.VSphere.Datacenter,
+			DefaultDatastore: dc.Spec.VSphere.Datastore,
+			WorkingDir:       cluster.Name,
+		},
+		Workspace: vsphere.WorkspaceOpts{
+			// This is redudant with what the Vsphere cloud provider itself does:
+			// https://github.com/kubernetes/kubernetes/blob/9d80e7522ab7fc977e40dd6f3b5b16d8ebfdc435/pkg/cloudprovider/providers/vsphere/vsphere.go#L346
+			// We do it here because the fields in the "Global" object
+			// are marked as deprecated even thought the code checks
+			// if they are set and will make the controller-manager crash
+			// if they are not - But maybe that will change at some point
+			VCenterIP:        vspherURL.Hostname(),
+			Datacenter:       dc.Spec.VSphere.Datacenter,
+			Folder:           cluster.Name,
+			DefaultDatastore: dc.Spec.VSphere.Datastore,
+		},
+		Disk: vsphere.DiskOpts{
+			SCSIControllerType: "pvscsi",
+		},
+	}, nil
 }
 
 const (
