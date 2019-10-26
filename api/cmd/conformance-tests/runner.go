@@ -446,7 +446,7 @@ func (r *testRunner) deleteCluster(report *reporters.JUnitTestSuite, cluster *ku
 				log.With("cluster", clusterList.Items[0].Name).Info("Issuing DELETE call for cluster")
 				deleteParms.ClusterID = clusterList.Items[0].Name
 				_, err := r.kubermaticClient.Project.DeleteCluster(deleteParms, r.kubermaticAuthenticator)
-				log.Errorw("cluster delete call returned error", zap.Error(errors.New(fmtSwaggerError(err))))
+				log.Infow("Issued cluster delete call", zap.Error(errors.New(fmtSwaggerError(err))))
 				return false, nil
 			})
 		},
