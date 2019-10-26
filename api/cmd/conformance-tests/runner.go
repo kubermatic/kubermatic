@@ -1098,6 +1098,7 @@ func (r *testRunner) printAllControlPlaneLogs(log *zap.SugaredLogger, clusterNam
 		fmt.Printf("ClusterHealthStatus: '%s'\n", clusterHealthStatus)
 	}
 
+	log.Infow("Logging events for cluster")
 	if err := logEventsObject(ctx, log, r.seedClusterClient, "default", cluster.UID); err != nil {
 		log.Errorw("Failed to log cluster events", zap.Error(err))
 	}
@@ -1279,6 +1280,7 @@ func printLogsForPod(
 ) []error {
 	var errs []error
 	for _, container := range pod.Spec.Containers {
+		log.Infow("Printing logs for container", "container", container.Name)
 		if err := printLogsForContainer(k8sclient, pod, container.Name); err != nil {
 			log.Errorw(
 				"Failed to print logs for container",
@@ -1289,6 +1291,7 @@ func printLogsForPod(
 		}
 	}
 	for _, initContainer := range pod.Spec.InitContainers {
+		log.Infow("Printing logs for initContainer", "initContainer", initContainer.Name)
 		if err := printLogsForContainer(k8sclient, pod, initContainer.Name); err != nil {
 			log.Errorw(
 				"Failed to print logs for container",
@@ -1326,6 +1329,7 @@ func logEventsForAllMachines(
 	}
 
 	for _, machine := range machines.Items {
+		log.Infow("Logging events for machine", "name", machine.Name)
 		if err := logEventsObject(ctx, log, client, machine.Namespace, machine.UID); err != nil {
 			log.Errorw(
 				"Failed to log events for machine",
