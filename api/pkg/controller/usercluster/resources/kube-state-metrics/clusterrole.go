@@ -85,6 +85,11 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 					},
 					Verbs: []string{"list", "watch"},
 				},
+				{
+					APIGroups: []string{"storage.k8s.io"},
+					Resources: []string{"storageclasses"},
+					Verbs:     []string{"list", "watch"},
+				},
 			}
 			return cr, nil
 		}
