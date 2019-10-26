@@ -3,10 +3,7 @@
 package e2e
 
 import (
-	"fmt"
 	"os"
-	"os/exec"
-	"strings"
 	"testing"
 	"time"
 
@@ -33,7 +30,7 @@ func getKubernetesVersion() string {
 
 func runOIDCProxy(t *testing.T, cancel <-chan struct{}) error {
 	errChan := make(chan error, 1)
-	if err := RunOIDCProxy(errChan, cancel); rer != nil {
+	if err := RunOIDCProxy(errChan, cancel); err != nil {
 		return err
 	}
 
