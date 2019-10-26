@@ -33,11 +33,12 @@ KUBERMATIC_IMAGE_TAG=${1:-"latest"}
 
 # TODO alvaroaleman: Put that into the docker image
 iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-echodate "echoing hosts"
-cat /etc/hosts
-echodate "finishing echoing hosts"
-sed 's/localhost/localhost dex.oauth/' < /etc/hosts > /hosts
-sed 's/localhost/localhost dex.oauth/' < /etc/hosts > /etc/hosts
+
+# The container runtime allows us to change the content but not to change the inode
+# which is what sed -i does, so write to a tempfile and write the tempfile back
+temp_hosts="$(mktemp)"
+sed 's/localhost/localhost dex.oauth/' /etc/hosts > $temp_hosts
+cat $temp_hosts >/etc/hosts
 
 KUBECONFIG_PATH=~/.kube/config
 

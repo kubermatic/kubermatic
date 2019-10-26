@@ -31,9 +31,6 @@ trap cleanup EXIT
 # Set docker config
 echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json
 
-sed 's/localhost/localhost dex.oauth/' < /etc/hosts > /hosts
-cat /hosts > /etc/hosts
-
 # Start docker daemon
 dockerd > /dev/null 2> /dev/null &
 
