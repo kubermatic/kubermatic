@@ -13,7 +13,12 @@ import (
 )
 
 var (
-	protectedNamespaces = sets.NewString(metav1.NamespaceDefault, metav1.NamespaceSystem, metav1.NamespacePublic, corev1.NamespaceNodeLease)
+	protectedNamespaces = sets.NewString(
+		metav1.NamespaceDefault,
+		metav1.NamespaceSystem,
+		metav1.NamespacePublic,
+		corev1.NamespaceNodeLease,
+		"kubernetes-dashboard")
 )
 
 func deleteAllNonDefaultNamespaces(log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
