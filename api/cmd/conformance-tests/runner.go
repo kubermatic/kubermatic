@@ -279,8 +279,6 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		cluster = &clusterList.Items[0]
 	}
 
-	// We must store the name here because the cluster object may be nil on error
-	clusterName := cluster.Name
 	log = log.With("cluster", cluster.Name)
 
 	if err := r.executeTests(log, cluster, report, scenario); err != nil {
@@ -306,9 +304,7 @@ func (r *testRunner) executeTests(
 
 	// Print all controlplane logs to both make debugging easier and show issues
 	// that didn't result in test failures.
-	defer func() {
-		r.printAllControlPlaneLogs(log, clusterName)
-	}()
+	r.printAllControlPlaneLogs(log, clusterName)
 
 	var err error
 
@@ -382,6 +378,8 @@ func (r *testRunner) executeTests(
 	); err != nil {
 		return fmt.Errorf("failed to setup nodes: %v", err)
 	}
+
+	defer logEventsForAllMachines(context.Background(), log, userClusterClient)
 
 	var overallTimeout = 10 * time.Minute
 	var timeoutLeft time.Duration
@@ -1098,7 +1096,7 @@ func (r *testRunner) printAllControlPlaneLogs(log *zap.SugaredLogger, clusterNam
 		fmt.Printf("ClusterHealthStatus: '%s'\n", clusterHealthStatus)
 	}
 
-	if err := logEventsObject(log, ctx, r.seedClusterClient, "default", cluster.UID); err != nil {
+	if err := logEventsObject(ctx, log, r.seedClusterClient, "default", cluster.UID); err != nil {
 		log.Errorw("Failed to log cluster events", zap.Error(err))
 	}
 
@@ -1257,7 +1255,7 @@ func printEventsAndLogsForAllPods(
 			log.Error("Pod is not ready")
 		}
 		log.Info("Logging events for pod")
-		if err := logEventsObject(log, ctx, client, pod.Namespace, pod.UID); err != nil {
+		if err := logEventsObject(ctx, log, client, pod.Namespace, pod.UID); err != nil {
 			log.Errorw("Failed to log events for pod", zap.Error(err))
 			errs = append(errs, err)
 		}
@@ -1310,9 +1308,32 @@ func printLogsForContainer(client kubernetes.Interface, pod *corev1.Pod, contain
 		Error()
 }
 
-func logEventsObject(
-	log *zap.SugaredLogger,
+func logEventsForAllMachines(
 	ctx context.Context,
+	log *zap.SugaredLogger,
+	client ctrlruntimeclient.Client,
+) {
+	machines := &clusterv1alpha1.MachineList{}
+	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, machines); err != nil {
+		log.Errorw("Failed to list machines", zap.Error(err))
+		return
+	}
+
+	for _, machine := range machines.Items {
+		if err := logEventsObject(ctx, log, client, machine.Namespace, machine.UID); err != nil {
+			log.Errorw(
+				"Failed to log events for machine",
+				"name", machine.Name,
+				"namespace", machine.Namespace,
+				zap.Error(err),
+			)
+		}
+	}
+}
+
+func logEventsObject(
+	ctx context.Context,
+	log *zap.SugaredLogger,
 	client ctrlruntimeclient.Client,
 	namespace string,
 	uid types.UID,
