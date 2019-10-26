@@ -1302,13 +1302,16 @@ func printLogsForPod(
 }
 
 func printLogsForContainer(client kubernetes.Interface, pod *corev1.Pod, containerName string) error {
-	return client.
+	readCloser, err := client.
 		CoreV1().
 		Pods(pod.Namespace).
 		GetLogs(pod.Name, &corev1.PodLogOptions{Container: containerName}).
-		Body(os.Stdout).
-		Do().
-		Error()
+		Stream()
+	if err != nil {
+		return err
+	}
+	defer readCloser.Close()
+	return printUnbuffered(readCloser)
 }
 
 func logEventsForAllMachines(
