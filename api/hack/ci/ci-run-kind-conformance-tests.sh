@@ -90,8 +90,6 @@ provider=${PROVIDER:-"aws"}
 
 function cleanup {
   testRC=$?
-	sleep 1h
-
   echodate "Starting cleanup"
   set +e
 
