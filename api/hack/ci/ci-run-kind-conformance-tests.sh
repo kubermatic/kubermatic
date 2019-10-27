@@ -60,15 +60,15 @@ CLUSTER_EXPOSER_IMAGE="quay.io/kubermatic/cluster-exposer:v1.0.0"
 # if no provider argument has been specified, default to aws
 provider=${PROVIDER:-"aws"}
 
-if [[ -n ${OPENSHIFT:-} ]]; then
-  OPENSHIFT_ARG="-openshift=true"
-  export VERSIONS=${OPENSHIFT_VERSION}
-  OPENSHIFT_HELM_ARGS="--set-string=kubermatic.controller.featureGates=OpenIDAuthPlugin=true
- --set-string=kubermatic.auth.caBundle=$(cat /etc/oidc-data/oidc-ca-file|base64 -w0)
- --set-string=kubermatic.auth.tokenIssuer=$OIDC_ISSUER_URL
- --set-string=kubermatic.auth.issuerClientID=$OIDC_ISSUER_CLIENT_ID
- --set-string=kubermatic.auth.issuerClientSecret=$OIDC_ISSUER_CLIENT_SECRET"
-fi
+#if [[ -n ${OPENSHIFT:-} ]]; then
+#  OPENSHIFT_ARG="-openshift=true"
+#  export VERSIONS=${OPENSHIFT_VERSION}
+#  OPENSHIFT_HELM_ARGS="--set-string=kubermatic.controller.featureGates=OpenIDAuthPlugin=true
+# --set-string=kubermatic.auth.caBundle=$(cat /etc/oidc-data/oidc-ca-file|base64 -w0)
+# --set-string=kubermatic.auth.tokenIssuer=$OIDC_ISSUER_URL
+# --set-string=kubermatic.auth.issuerClientID=$OIDC_ISSUER_CLIENT_ID
+# --set-string=kubermatic.auth.issuerClientSecret=$OIDC_ISSUER_CLIENT_SECRET"
+#fi
 
 function cleanup {
   testRC=$?
@@ -491,6 +491,10 @@ mkdir -p /var/cache/apk
 which apk && apk add coreutils
 
 export NAMESPACE=kubermatic
+
+## TODO: Remove this once we have an image with ginkgo in it
+export ONLY_TEST_CREATION=true
+VERSIONS="1.15.5"
 timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
   -debug \
   -kubeconfig=$KUBECONFIG \
