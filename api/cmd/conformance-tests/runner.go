@@ -420,9 +420,13 @@ func (r *testRunner) deleteCluster(report *reporters.JUnitTestSuite, cluster *ku
 		"[Kubermatic] Delete cluster",
 		report,
 		func() error {
-			selector, err := labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
-			if err != nil {
-				return fmt.Errorf("failed to parse selector: %v", err)
+			var selector labels.Selector
+			var err error
+			if r.workerName != "" {
+				selector, err = labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
+				if err != nil {
+					return fmt.Errorf("failed to parse selector: %v", err)
+				}
 			}
 			return wait.PollImmediate(5*time.Second, deleteTimeout, func() (bool, error) {
 				clusterList := &kubermaticv1.ClusterList{}
@@ -714,9 +718,13 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 	params.SetTimeout(15 * time.Second)
 
 	crCluster := &kubermaticv1.Cluster{}
-	selector, err := labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse selector: %v", err)
+	var selector labels.Selector
+	var err error
+	if r.workerName != "" {
+		selector, err = labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse selector: %v", err)
+		}
 	}
 
 	var errs []error
