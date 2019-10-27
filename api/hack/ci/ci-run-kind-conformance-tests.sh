@@ -34,6 +34,9 @@ KUBERMATIC_IMAGE_TAG=${1:-"latest"}
 iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 
 # TODO: This should be done during image build time
+# Not doing this results in a "ERROR: http://dl-cdn.alpinelinux.org/alpine/v3.9/community: Bad file descriptor"
+rm -rf /var/cache/apk
+mkdir /var/cache/apk
 apk add bash-completion
 echo 'alias k=kubectl' >> ~/.bashrc
 echo 'source <(k completion bash )' >> ~/.bashrc
