@@ -542,7 +542,7 @@ func createProject(client *apiclient.Kubermatic, bearerToken runtime.ClientAuthI
 			return false, nil
 		}
 		if response.Payload.Status != kubermaticv1.ProjectActive {
-			log.Infof("Project not active yet", "project-status", response.Payload.Status)
+			log.Infow("Project not active yet", "project-status", response.Payload.Status)
 			return false, nil
 		}
 		log.Info("Successfully  got project")

@@ -54,6 +54,8 @@ echo 'export KUBECONFIG=~/.kube/kind-config-prow-build-cluster' >> ~/.bashrc
 # which is what sed -i does, so write to a tempfile and write the tempfile back
 temp_hosts="$(mktemp)"
 sed 's/localhost/localhost dex.oauth/' /etc/hosts > $temp_hosts
+# I will regret this...
+echo '10.98.184.166 minio.gocache.svc.cluster.local' >> $temp_hosts
 cat $temp_hosts >/etc/hosts
 
 KUBECONFIG_PATH=~/.kube/config
