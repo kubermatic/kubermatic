@@ -33,6 +33,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -732,9 +733,11 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 		case numFoundClusters < 1:
 			if _, err := r.kubermaticClient.Project.CreateCluster(params, r.kubermaticAuthenticator); err != nil {
 				// Log the error but don't return it, we want to retry
+				err = errors.New(fmtSwaggerError(err))
 				errs = append(errs, err)
-				log.Errorf("failed to create cluster via kubermatic api: %q, %v", fmtSwaggerError(err), err)
+				log.Errorf("failed to create cluster via kubermatic api: %q", err)
 			}
+			log.Info("Successfully created cluster via kubermatic api")
 			// Always return here, our clusterList is not up to date anymore
 			return false, nil
 		case numFoundClusters > 1:
@@ -745,7 +748,7 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 		}
 	}); err != nil {
 		errs = append(errs, err)
-		return nil, fmt.Errorf("cluster creation failed: %v", errs)
+		return nil, fmt.Errorf("cluster creation failed: %v", utilerrors.NewAggregate(errs))
 	}
 
 	log.Info("Successfully created cluster via Kubermatic API")

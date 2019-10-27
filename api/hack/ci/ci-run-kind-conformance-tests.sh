@@ -33,6 +33,12 @@ KUBERMATIC_IMAGE_TAG=${1:-"latest"}
 # TODO alvaroaleman: Put that into the docker image
 iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 
+# TODO: This should be done during image build time
+apk add bash-completion
+echo 'alias k=kubectl' >> ~/.bashrc
+echo 'source <(k completion bash )' >> ~/.bashrc
+echo 'source <(k completion bash | sed s/kubectl/k/g)' >> ~/.bashrc
+
 # The container runtime allows us to change the content but not to change the inode
 # which is what sed -i does, so write to a tempfile and write the tempfile back
 temp_hosts="$(mktemp)"
@@ -388,7 +394,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set=kubermatic.api.replicas=1 \
   --set=kubermatic.apiserverDefaultReplicas=1 \
   --set=kubermatic.masterController.image.tag=${KUBERMATIC_IMAGE_TAG} \
-  --set-string=kubermatic.ui.image.tag=${LATEST_DASHBOARD} \
+  --set-string=kubermatic.ui.replicas=0 \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
   --set=kubermatic.datacenters='' \
@@ -485,7 +491,6 @@ export NAMESPACE=kubermatic
 timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
   -debug \
   -kubeconfig=$KUBECONFIG \
-  -datacenters=$DATACENTERS_FILE \
   -kubermatic-nodes=3 \
   -kubermatic-parallel-clusters=1 \
   -name-prefix=prow-e2e \
