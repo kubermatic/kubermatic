@@ -42,7 +42,7 @@ echo 'source /usr/share/bash-completion/bash_completion' >> ~/.bashrc
 cat <<EOF >>~/.bashrc
 cn ()
 {
-    kubectl config set-context $(kubectl config current-context) --namespace=$1
+    kubectl config set-context \$(kubectl config current-context) --namespace=\$1
 }
 EOF
 echo 'alias k=kubectl' >> ~/.bashrc
