@@ -736,8 +736,9 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 				err = errors.New(fmtSwaggerError(err))
 				errs = append(errs, err)
 				log.Errorf("failed to create cluster via kubermatic api: %q", err)
+			} else {
+				log.Info("Successfully created cluster via kubermatic api")
 			}
-			log.Info("Successfully created cluster via kubermatic api")
 			// Always return here, our clusterList is not up to date anymore
 			return false, nil
 		case numFoundClusters > 1:
