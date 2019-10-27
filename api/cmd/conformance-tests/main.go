@@ -545,6 +545,7 @@ func createProject(client *apiclient.Kubermatic, bearerToken runtime.ClientAuthI
 			log.Infof("Project not active yet", "project-status", response.Payload.Status)
 			return false, nil
 		}
+		log.Info("Successfully  got project")
 		return true, nil
 	}); err != nil {
 		return "", fmt.Errorf("failed to wait for project to be ready: %v", err)
