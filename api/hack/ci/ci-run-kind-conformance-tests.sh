@@ -481,6 +481,7 @@ fi
 mkdir -p /var/cache/apk
 which apk && apk add coreutils
 
+export NAMESPACE=kubermatic
 timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
   -debug \
   -kubeconfig=$KUBECONFIG \
