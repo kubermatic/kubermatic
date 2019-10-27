@@ -73,7 +73,7 @@ SCRIPT_PATH=$(dirname -- "$(readlink -f -- "$BASH_SOURCE")")
 DEX_PATH=${SCRIPT_PATH}/helm/oauth
 DEX_NAMESPACE="oauth"
 
-CLUSTER_EXPOSER_IMAGE="quay.io/kubermatic/cluster-exposer:v1.1.0-dev"
+CLUSTER_EXPOSER_IMAGE="quay.io/kubermatic/cluster-exposer:v1.1.0-dev-2"
 
 # if no provider argument has been specified, default to aws
 provider=${PROVIDER:-"aws"}
