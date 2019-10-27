@@ -44,6 +44,14 @@ cn ()
 {
     kubectl config set-context \$(kubectl config current-context) --namespace=\$1
 }
+kubeconfig ()
+{
+    TMP_KUBECONFIG=\$(mktemp);
+    kubectl get secret admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' | base64 -d > \$TMP_KUBECONFIG;
+    export KUBECONFIG=\$TMP_KUBECONFIG;
+    cn kube-system
+}
+
 EOF
 echo 'alias k=kubectl' >> ~/.bashrc
 echo 'source <(k completion bash )' >> ~/.bashrc
