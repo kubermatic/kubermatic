@@ -28,7 +28,7 @@ KUBERMATIC_PATH=$(go env GOPATH)/src/github.com/kubermatic/kubermatic
 KUBERMATIC_CRD_PATH=${KUBERMATIC_PATH}/config/kubermatic/crd
 KUBERMATIC_HELM_PATH=${KUBERMATIC_PATH}/config/kubermatic
 KUBERMATIC_IMAGE="quay.io/kubermatic"
-KUBERMATIC_IMAGE_TAG=${1:-"latest"}
+KUBERMATIC_IMAGE_TAG=${GIT_HEAD_HASH}
 
 # TODO alvaroaleman: Put that into the docker image
 iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
@@ -38,9 +38,17 @@ iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --cla
 rm -rf /var/cache/apk
 mkdir /var/cache/apk
 apk add bash-completion
+echo 'source /usr/share/bash-completion/bash_completion' >> ~/.bashrc
+cat <<EOF >>~/.bashrc
+cn ()
+{
+    kubectl config set-context $(kubectl config current-context) --namespace=$1
+}
+EOF
 echo 'alias k=kubectl' >> ~/.bashrc
 echo 'source <(k completion bash )' >> ~/.bashrc
 echo 'source <(k completion bash | sed s/kubectl/k/g)' >> ~/.bashrc
+echo 'export KUBECONFIG=~/.kube/kind-config-prow-build-cluster' >> ~/.bashrc
 
 # The container runtime allows us to change the content but not to change the inode
 # which is what sed -i does, so write to a tempfile and write the tempfile back
