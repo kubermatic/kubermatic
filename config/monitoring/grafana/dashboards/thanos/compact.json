@@ -1726,7 +1726,7 @@
           "value": "monitoring"
         },
         "hide": 2,
-        "label": "namespace",
+        "label": "Namespace",
         "name": "namespace",
         "options": [
           {

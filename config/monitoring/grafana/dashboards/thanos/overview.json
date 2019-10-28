@@ -1509,7 +1509,7 @@
         "current": {},
         "hide": 2,
         "includeAll": false,
-        "label": null,
+        "label": "Data Source",
         "multi": false,
         "name": "datasource",
         "options": [],
@@ -1526,7 +1526,7 @@
           "value": "monitoring"
         },
         "hide": 2,
-        "label": "namespace",
+        "label": "Namespace",
         "name": "namespace",
         "options": [
           {
