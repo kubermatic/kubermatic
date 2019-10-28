@@ -19,6 +19,7 @@ retry 5 vault write \
 export VAULT_TOKEN="$(cat /tmp/vault-token-response.json| jq .auth.client_token -r)"
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
+export KUBERMATIC_SEEDS=dev.kubermatic.io
 
 # deploy to dev
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}

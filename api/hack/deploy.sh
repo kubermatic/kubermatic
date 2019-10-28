@@ -164,6 +164,16 @@ case "${DEPLOY_STACK}" in
 
     # Kubermatic
     deploy "kubermatic" "kubermatic" ./config/kubermatic/
+
+    # deploy Seed CRs
+    if [[ -n "${KUBERMATIC_SEEDS}" ]]; then
+      echodate "Deploying Seed CRs for ${KUBERMATIC_SEEDS}..."
+      infratmp=infra_clone
+      git clone --depth=1 git@github.com:kubermatic/docs.git "${infratmp}"
+      cd "${infratmp}"
+      echodate "Infra repository cloned at: $(git show --oneline --no-patch --no-decorate --no-color)"
+      retry 5 kubectl apply -f "seeds/${KUBERMATIC_SEEDS}/"
+    fi
     ;;
 
   kubermatic-operator)
