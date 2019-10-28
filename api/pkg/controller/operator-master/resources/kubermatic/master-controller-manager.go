@@ -48,30 +48,9 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 				"-v=4",
 				"-logtostderr",
 				"-internal-address=0.0.0.0:8085",
-				"-kubeconfig=/opt/.kube/kubeconfig",
 				"-dynamic-datacenters=true",
 			}
 
-			volumes := []corev1.Volume{
-				{
-					Name: "kubeconfig",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: kubeconfigSecretName,
-						},
-					},
-				},
-			}
-
-			volumeMounts := []corev1.VolumeMount{
-				{
-					MountPath: "/opt/.kube/",
-					Name:      "kubeconfig",
-					ReadOnly:  true,
-				},
-			}
-
-			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{projectsMigratorContainer(cfg)}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -86,7 +65,6 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					VolumeMounts: volumeMounts,
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("50m"),
@@ -113,15 +91,7 @@ func projectsMigratorContainer(cfg *operatorv1alpha1.KubermaticConfiguration) co
 		Args: []string{
 			"-v=2",
 			"-logtostderr",
-			"-kubeconfig=/opt/.kube/kubeconfig",
 			fmt.Sprintf("-dry-run=%v", cfg.Spec.MasterController.ProjectsMigrator.DryRun),
-		},
-		VolumeMounts: []corev1.VolumeMount{
-			{
-				MountPath: "/opt/.kube/",
-				Name:      "kubeconfig",
-				ReadOnly:  true,
-			},
 		},
 	}
 }

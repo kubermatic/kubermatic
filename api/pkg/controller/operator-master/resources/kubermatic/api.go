@@ -64,7 +64,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 				"-logtostderr",
 				"-address=0.0.0.0:8080",
 				"-internal-address=0.0.0.0:8085",
-				"-kubeconfig=/opt/.kube/kubeconfig",
 				"-dynamic-datacenters=true",
 				fmt.Sprintf("-oidc-url=%s", cfg.Spec.Auth.TokenIssuer),
 				fmt.Sprintf("-oidc-authenticator-client-id=%s", cfg.Spec.Auth.ClientID),
@@ -85,24 +84,8 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 				)
 			}
 
-			volumes := []corev1.Volume{
-				{
-					Name: "kubeconfig",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: kubeconfigSecretName,
-						},
-					},
-				},
-			}
-
-			volumeMounts := []corev1.VolumeMount{
-				{
-					MountPath: "/opt/.kube/",
-					Name:      "kubeconfig",
-					ReadOnly:  true,
-				},
-			}
+			volumes := []corev1.Volume{}
+			volumeMounts := []corev1.VolumeMount{}
 
 			if len(cfg.Spec.MasterFiles) > 0 {
 				args = append(

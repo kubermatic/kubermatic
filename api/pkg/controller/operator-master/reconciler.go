@@ -143,7 +143,6 @@ func (r *Reconciler) reconcileSecrets(config *operatorv1alpha1.KubermaticConfigu
 
 	creators := []reconciling.NamedSecretCreatorGetter{
 		kubermatic.DockercfgSecretCreator(config),
-		kubermatic.KubeconfigSecretCreator(config),
 		kubermatic.DexCASecretCreator(config),
 	}
 
