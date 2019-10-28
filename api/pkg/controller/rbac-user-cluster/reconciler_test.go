@@ -12,8 +12,6 @@ import (
 )
 
 const (
-	rbacAPIVersion = "rbac.authorization.k8s.io/v1"
-
 	owners  = "system:kubermatic:owners"
 	editors = "system:kubermatic:editors"
 	viewers = "system:kubermatic:viewers"
@@ -61,13 +59,7 @@ func TestReconcileCreate(t *testing.T) {
 			}
 
 			roles := &rbacv1.ClusterRoleList{}
-			if err := r.client.List(r.ctx, &controllerclient.ListOptions{Raw: &metav1.ListOptions{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: rbacAPIVersion,
-					Kind:       "ClusterRole",
-				},
-			},
-			}, roles); err != nil {
+			if err := r.client.List(r.ctx, roles); err != nil {
 				t.Fatalf("getting cluster roles error: %v", err)
 			}
 
@@ -80,13 +72,7 @@ func TestReconcileCreate(t *testing.T) {
 			}
 
 			rolesBindings := &rbacv1.ClusterRoleBindingList{}
-			if err := r.client.List(r.ctx, &controllerclient.ListOptions{Raw: &metav1.ListOptions{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: rbacAPIVersion,
-					Kind:       "ClusterRoleBinding",
-				},
-			},
-			}, rolesBindings); err != nil {
+			if err := r.client.List(r.ctx, rolesBindings); err != nil {
 				t.Fatalf("getting cluster role bindings error: %v", err)
 			}
 

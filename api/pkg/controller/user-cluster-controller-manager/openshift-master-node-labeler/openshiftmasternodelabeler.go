@@ -86,7 +86,7 @@ func (r *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 func (r *reconciler) reconcile() (*reconcile.Result, error) {
 
 	nodes := &corev1.NodeList{}
-	if err := r.client.List(r.ctx, &ctrlruntimeclient.ListOptions{}, nodes); err != nil {
+	if err := r.client.List(r.ctx, nodes); err != nil {
 		return nil, fmt.Errorf("failed to list nodes: %v", err)
 	}
 

@@ -138,7 +138,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 		log := log.With("seed", seedName)
 
 		unfilteredClusters := &kubermaticv1.ClusterList{}
-		if err := seedClient.List(r.ctx, listOpts, unfilteredClusters); err != nil {
+		if err := seedClient.List(r.ctx, unfilteredClusters, listOpts); err != nil {
 			errs = append(errs, fmt.Errorf("failed to list clusters in seed %q: %v", seedName, err))
 			continue
 		}

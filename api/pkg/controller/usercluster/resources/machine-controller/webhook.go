@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	certutil "k8s.io/client-go/util/cert"
 )
 
 // MutatingwebhookConfigurationCreator returns the MutatingwebhookConfiguration for the machine controler
@@ -20,8 +20,12 @@ func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace str
 			mdURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./machinedeployments", resources.MachineControllerWebhookServiceName, namespace)
 			mURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./machines", resources.MachineControllerWebhookServiceName, namespace)
 
+			// This only gets set when the APIServer supports it, so carry it over
+			var scope *admissionregistrationv1beta1.ScopeType
 			if len(mutatingWebhookConfiguration.Webhooks) != 2 {
-				mutatingWebhookConfiguration.Webhooks = []admissionregistrationv1beta1.Webhook{{}, {}}
+				mutatingWebhookConfiguration.Webhooks = []admissionregistrationv1beta1.MutatingWebhook{{}, {}}
+			} else if len(mutatingWebhookConfiguration.Webhooks[0].Rules) > 0 {
+				scope = mutatingWebhookConfiguration.Webhooks[0].Rules[0].Scope
 			}
 
 			mutatingWebhookConfiguration.Webhooks[0].Name = fmt.Sprintf("%s-machinedeployments", resources.MachineControllerMutatingWebhookConfigurationName)
@@ -33,11 +37,12 @@ func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace str
 					APIGroups:   []string{clusterAPIGroup},
 					APIVersions: []string{clusterAPIVersion},
 					Resources:   []string{"machinedeployments"},
+					Scope:       scope,
 				},
 			}}
 			mutatingWebhookConfiguration.Webhooks[0].ClientConfig = admissionregistrationv1beta1.WebhookClientConfig{
 				URL:      &mdURL,
-				CABundle: certutil.EncodeCertPEM(caCert),
+				CABundle: triple.EncodeCertPEM(caCert),
 			}
 
 			mutatingWebhookConfiguration.Webhooks[1].Name = fmt.Sprintf("%s-machines", resources.MachineControllerMutatingWebhookConfigurationName)
@@ -49,11 +54,12 @@ func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace str
 					APIGroups:   []string{clusterAPIGroup},
 					APIVersions: []string{clusterAPIVersion},
 					Resources:   []string{"machines"},
+					Scope:       scope,
 				},
 			}}
 			mutatingWebhookConfiguration.Webhooks[1].ClientConfig = admissionregistrationv1beta1.WebhookClientConfig{
 				URL:      &mURL,
-				CABundle: certutil.EncodeCertPEM(caCert),
+				CABundle: triple.EncodeCertPEM(caCert),
 			}
 
 			return mutatingWebhookConfiguration, nil

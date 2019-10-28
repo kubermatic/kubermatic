@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -63,7 +64,7 @@ func GetECDSAClientCertificateCreator(name, commonName string, organizations []s
 		se.Data[dataCertKey] = cert
 		se.Data[dataKeyKey] = key
 		// Include the CA for simplicity
-		se.Data[resources.CACertSecretKey] = certutil.EncodeCertPEM(ca.Cert)
+		se.Data[resources.CACertSecretKey] = triple.EncodeCertPEM(ca.Cert)
 
 		return se, nil
 	}

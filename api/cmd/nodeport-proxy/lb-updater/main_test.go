@@ -12,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -417,7 +416,7 @@ func TestReconciliation(t *testing.T) {
 			}
 
 			resultingServices := &corev1.ServiceList{}
-			if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, resultingServices); err != nil {
+			if err := client.List(context.Background(), resultingServices); err != nil {
 				t.Fatalf("failed to list services: %v", err)
 			}
 
