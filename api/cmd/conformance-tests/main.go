@@ -35,6 +35,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,6 +58,7 @@ type Opts struct {
 	publicKeys                   [][]byte
 	reportsRoot                  string
 	seedClusterClient            ctrlruntimeclient.Client
+	seedGeneratedClient          kubernetes.Interface
 	clusterClientProvider        clusterclient.UserClusterConnectionProvider
 	repoRoot                     string
 	seed                         *kubermaticv1.Seed
@@ -343,6 +345,12 @@ func main() {
 		log.Fatal(err)
 	}
 	opts.seedClusterClient = seedClusterClient
+
+	seedGeneratedClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	opts.seedGeneratedClient = seedGeneratedClient
 
 	namespaceName := os.Getenv("NAMESPACE")
 	if namespaceName == "" {
