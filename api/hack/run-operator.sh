@@ -12,5 +12,5 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
   -log-debug=true \
   -log-format=Console \
-	-logtostderr \
-	-v=4 # Log-level for the Kube dependencies. Increase up to 9 to get request-level logs.
+  -logtostderr \
+  -v=4 # Log-level for the Kube dependencies. Increase up to 9 to get request-level logs.
