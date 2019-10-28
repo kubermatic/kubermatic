@@ -102,6 +102,9 @@ run-controller-manager:
 run-api-server:
 	./hack/run-api.sh
 
+run-operator:
+	./hack/run-operator.sh
+
 run-master-controller-manager:
 	./hack/run-master-controller-manager.sh
 
