@@ -187,10 +187,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		return nil, nil
 	}
 
-	if err := r.markDefaultAddons(ctx, log, addon, cluster); err != nil {
-		return nil, fmt.Errorf("failed to ensure that the isDefault field is up to date in the addon: %v", err)
-	}
-
 	if cluster.DeletionTimestamp != nil {
 		log.Debug("Skipping addon because cluster is deleted")
 		return nil, nil
@@ -212,6 +208,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	if cluster.DeletionTimestamp != nil {
 		log.Debug("Skipping because the cluster is being deleted")
 		return nil, nil
+	}
+
+	if err := r.markDefaultAddons(ctx, log, addon, cluster); err != nil {
+		return nil, fmt.Errorf("failed to ensure that the isDefault field is up to date in the addon: %v", err)
 	}
 
 	// When the apiserver is not healthy, we must skip it
