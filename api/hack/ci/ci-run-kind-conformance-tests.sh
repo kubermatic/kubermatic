@@ -92,6 +92,7 @@ function cleanup {
   testRC=$?
   echodate "Starting cleanup"
   set +e
+	sleep 1h
 
   # Delete all clusters
   kubectl delete cluster --all
@@ -100,7 +101,6 @@ function cleanup {
   mv /reports/* ${ARTIFACTS}/
   echodate "Finished cleanup"
 
-	sleep 1h
 }
 trap cleanup EXIT
 
