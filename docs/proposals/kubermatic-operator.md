@@ -41,10 +41,6 @@ spec:
   # services as well as user clusters will be hosted as subdomains.
   domain: my.kubermatic.io
 
-  # Whether or not this installation is a master, i.e. where
-  # the Kubermatic dashboard and API should be deployed.
-  isMaster: true
-
   # The secrets are used to pull images from private Docker repositories;
   # this is effectively a copy of the "auth" section in your ~/.docker/config.json.
   # You must configure credentials for quay.io and docker.io at the
