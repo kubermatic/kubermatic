@@ -11,9 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -119,22 +117,11 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, cluster *kubermaticv1.Clu
 		return nil
 	}
 
-	if _, err := r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-		targetComponentsOverride.DeepCopyInto(&c.Spec.ComponentsOverride)
-	}); err != nil {
+	oldCluster := cluster.DeepCopy()
+	targetComponentsOverride.DeepCopyInto(&cluster.Spec.ComponentsOverride)
+	if err := r.client.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return fmt.Errorf("failed to update componentsOverride: %v", err)
 	}
 	log.Info("Successfully defaulted componentsOverride")
 	return nil
-}
-
-func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
-	cluster := &kubermaticv1.Cluster{}
-	return cluster, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		if err := r.client.Get(r.ctx, types.NamespacedName{Name: name}, cluster); err != nil {
-			return err
-		}
-		modify(cluster)
-		return r.client.Update(r.ctx, cluster)
-	})
 }

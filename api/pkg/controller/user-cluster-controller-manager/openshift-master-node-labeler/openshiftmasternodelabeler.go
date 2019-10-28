@@ -13,7 +13,6 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -110,7 +109,6 @@ func (r *reconciler) reconcile() (*reconcile.Result, error) {
 		if !hasNode {
 			return &reconcile.Result{RequeueAfter: time.Minute}, nil
 		}
-
 		if err := r.updateNode(nodeToLabel, func(n *corev1.Node) {
 			if n.Labels == nil {
 				n.Labels = map[string]string{}
@@ -125,15 +123,11 @@ func (r *reconciler) reconcile() (*reconcile.Result, error) {
 }
 
 func (r *reconciler) updateNode(name string, modify func(*corev1.Node)) error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		//Get latest version
-		node := &corev1.Node{}
-		if err := r.client.Get(r.ctx, types.NamespacedName{Name: name}, node); err != nil {
-			return err
-		}
-		// Apply modifications
-		modify(node)
-		// Update the cluster
-		return r.client.Update(r.ctx, node)
-	})
+	node := &corev1.Node{}
+	if err := r.client.Get(r.ctx, types.NamespacedName{Name: name}, node); err != nil {
+		return err
+	}
+	oldNode := node.DeepCopy()
+	modify(node)
+	return r.client.Patch(r.ctx, node, ctrlruntimeclient.MergeFrom(oldNode))
 }

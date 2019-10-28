@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -119,23 +118,26 @@ func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv
 	if err != nil {
 		return err
 	}
+	oldCluster := cluster.DeepCopy()
 	if !upToDate {
-		return updateCluster(ctx, client, cluster.Name, func(c *kubermaticv1.Cluster) {
-			kubermaticv1helper.SetClusterCondition(c,
-				kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-				corev1.ConditionFalse,
-				kubermaticv1.ReasonClusterUpdateSuccessful,
-				"All controlplane components are up to date")
-		})
+		kubermaticv1helper.SetClusterCondition(
+			cluster,
+			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
+			corev1.ConditionFalse,
+			kubermaticv1.ReasonClusterUpdateSuccessful,
+			"All controlplane components are up to date",
+		)
+		return client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 	}
 
-	return updateCluster(ctx, client, cluster.Name, func(c *kubermaticv1.Cluster) {
-		kubermaticv1helper.SetClusterCondition(c,
-			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-			corev1.ConditionTrue,
-			kubermaticv1.ReasonClusterUpdateSuccessful,
-			"Some controlplane components did not finish updating")
-	})
+	kubermaticv1helper.SetClusterCondition(
+		cluster,
+		kubermaticv1.ClusterConditionSeedResourcesUpToDate,
+		corev1.ConditionTrue,
+		kubermaticv1.ReasonClusterUpdateSuccessful,
+		"Some controlplane components did not finish updating",
+	)
+	return client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
 func seedResourcesUpToDate(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, successfullyReconciled bool) (bool, error) {
@@ -177,18 +179,4 @@ func seedResourcesUpToDate(ctx context.Context, cluster *kubermaticv1.Cluster, c
 	}
 
 	return true, nil
-}
-
-func updateCluster(ctx context.Context, client ctrlruntimeclient.Client, clusterName string, modify func(*kubermaticv1.Cluster)) error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		//Get latest version
-		cluster := &kubermaticv1.Cluster{}
-		if err := client.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-			return err
-		}
-		// Apply modifications
-		modify(cluster)
-		// Update the cluster
-		return client.Update(ctx, cluster)
-	})
 }

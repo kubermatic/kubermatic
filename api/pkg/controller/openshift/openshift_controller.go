@@ -44,7 +44,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -435,18 +434,9 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 }
 
 func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
-	// Store it here because it may be unset later on if an update request failed
-	name := c.Name
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		//Get latest version
-		if err := r.Get(ctx, nn("", name), c); err != nil {
-			return err
-		}
-		// Apply modifications
-		modify(c)
-		// Update the cluster
-		return r.Update(ctx, c)
-	})
+	oldCluster := c.DeepCopy()
+	modify(c)
+	return r.Patch(ctx, c, client.MergeFrom(oldCluster))
 }
 
 // Openshift doesn't seem to support a token-file-based authentication at all
