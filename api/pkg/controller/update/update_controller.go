@@ -168,13 +168,14 @@ func (r *Reconciler) controlPlaneUpgrade(ctx context.Context, cluster *kubermati
 	if update == nil {
 		return false, nil
 	}
+	oldCluster := cluster.DeepCopy()
 
 	cluster.Spec.Version = *semver.NewSemverOrDie(update.Version.String())
 	// Invalidating the health to prevent automatic updates directly on the next processing.
 	cluster.Status.ExtendedHealth.Apiserver = kubermaticv1.HealthStatusDown
 	cluster.Status.ExtendedHealth.Controller = kubermaticv1.HealthStatusDown
 	cluster.Status.ExtendedHealth.Scheduler = kubermaticv1.HealthStatusDown
-	if err := r.Update(ctx, cluster); err != nil {
+	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return false, fmt.Errorf("failed to update cluster: %v", err)
 	}
 	return true, nil
