@@ -95,6 +95,9 @@ func Add(
 		}
 
 		owner := a.Meta.GetAnnotations()[ConfigurationOwnerAnnotation]
+		if owner == "" {
+			return nil
+		}
 
 		ns, n, err := cache.SplitMetaNamespaceKey(owner)
 		if err != nil {

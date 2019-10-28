@@ -10,6 +10,7 @@ import (
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,6 +35,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// find the requested configuration
 	config := &operatorv1alpha1.KubermaticConfiguration{}
 	if err := r.Get(r.ctx, request.NamespacedName, config); err != nil {
+		if kerrors.IsNotFound(err) {
+			return reconcile.Result{}, nil
+		}
+
 		return reconcile.Result{}, fmt.Errorf("could not get KubermaticConfiguration %q: %v", request, err)
 	}
 
@@ -138,12 +143,7 @@ func (r *Reconciler) reconcileSecrets(config *operatorv1alpha1.KubermaticConfigu
 
 	creators := []reconciling.NamedSecretCreatorGetter{
 		kubermatic.DockercfgSecretCreator(config),
-		kubermatic.KubeconfigSecretCreator(config),
 		kubermatic.DexCASecretCreator(config),
-	}
-
-	if config.Spec.Datacenters != "" {
-		creators = append(creators, kubermatic.DatacentersSecretCreator(config))
 	}
 
 	if len(config.Spec.MasterFiles) > 0 {

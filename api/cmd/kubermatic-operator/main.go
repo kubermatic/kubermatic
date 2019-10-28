@@ -56,7 +56,7 @@ func main() {
 
 	config, err := clientcmd.BuildConfigFromFlags("", opt.kubeconfig)
 	if err != nil {
-		log.Fatalw("Failed to build config", "error", err)
+		log.Fatalw("Failed to build config", zap.Error(err))
 	}
 
 	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: opt.internalAddr})
@@ -65,17 +65,17 @@ func main() {
 	}
 
 	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register types in Scheme", "error", err)
+		log.Fatalw("Failed to register types in Scheme", zap.Error(err))
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	if err := operatormaster.Add(ctx, mgr, 1, log, opt.workerName); err != nil {
-		log.Fatalw("Failed to add operator-master controller", "error", err)
+		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
 	}
 
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		log.Fatalw("Cannot start manager", "error", err)
+		log.Fatalw("Cannot start manager", zap.Error(err))
 	}
 }
