@@ -142,10 +142,6 @@ func (r *Reconciler) reconcileSecrets(config *operatorv1alpha1.KubermaticConfigu
 		kubermatic.DexCASecretCreator(config),
 	}
 
-	if config.Spec.Datacenters != "" {
-		creators = append(creators, kubermatic.DatacentersSecretCreator(config))
-	}
-
 	if len(config.Spec.MasterFiles) > 0 {
 		creators = append(creators, kubermatic.MasterFilesSecretCreator(config))
 	}

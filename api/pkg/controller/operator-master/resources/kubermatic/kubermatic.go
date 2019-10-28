@@ -64,16 +64,6 @@ func KubeconfigSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reco
 	}
 }
 
-func DatacentersSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return datacentersSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			return createSecretData(s, map[string]string{
-				"datacenters.yaml": cfg.Spec.Datacenters,
-			}), nil
-		}
-	}
-}
-
 func DexCASecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return dexCASecretName, func(s *corev1.Secret) (*corev1.Secret, error) {

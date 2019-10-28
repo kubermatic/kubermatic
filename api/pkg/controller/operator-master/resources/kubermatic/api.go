@@ -65,6 +65,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 				"-address=0.0.0.0:8080",
 				"-internal-address=0.0.0.0:8085",
 				"-kubeconfig=/opt/.kube/kubeconfig",
+				"-dynamic-datacenters=true",
 				fmt.Sprintf("-oidc-url=%s", cfg.Spec.Auth.TokenIssuer),
 				fmt.Sprintf("-oidc-authenticator-client-id=%s", cfg.Spec.Auth.ClientID),
 				fmt.Sprintf("-oidc-skip-tls-verify=%v", cfg.Spec.Auth.SkipTokenIssuerTLSVerify),
@@ -142,25 +143,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 				volumeMounts = append(volumeMounts, corev1.VolumeMount{
 					MountPath: "/opt/presets/",
 					Name:      "presets",
-					ReadOnly:  true,
-				})
-			}
-
-			if cfg.Spec.Datacenters != "" {
-				args = append(args, "-datacenters=/opt/datacenters/datacenters.yaml")
-
-				volumes = append(volumes, corev1.Volume{
-					Name: "datacenters",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: datacentersSecretName,
-						},
-					},
-				})
-
-				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					MountPath: "/opt/datacenters/",
-					Name:      "datacenters",
 					ReadOnly:  true,
 				})
 			}

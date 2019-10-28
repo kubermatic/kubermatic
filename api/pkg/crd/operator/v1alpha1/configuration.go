@@ -34,9 +34,6 @@ type KubermaticConfigurationSpec struct {
 	Domain string `json:"domain"`
 	// IsMaster controls whether the dashboard and API will be deployed.
 	IsMaster bool `json:"isMaster,omitempty"`
-	// Datacenters is a YAML string containing the available node datacenters. Note that
-	// this is deprecated and you should use explicit Datacenter CRDs instead.
-	Datacenters string `json:"datacenters,omitempty"`
 	// ImagePullSecret is used to authenticate against Docker registries.
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 	// Auth defines keys and URLs for Dex.

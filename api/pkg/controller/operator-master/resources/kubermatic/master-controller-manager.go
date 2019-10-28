@@ -49,6 +49,7 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 				"-logtostderr",
 				"-internal-address=0.0.0.0:8085",
 				"-kubeconfig=/opt/.kube/kubeconfig",
+				"-dynamic-datacenters=true",
 			}
 
 			volumes := []corev1.Volume{
@@ -68,25 +69,6 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 					Name:      "kubeconfig",
 					ReadOnly:  true,
 				},
-			}
-
-			if cfg.Spec.Datacenters != "" {
-				args = append(args, "-datacenters=/opt/datacenters/datacenters.yaml")
-
-				volumes = append(volumes, corev1.Volume{
-					Name: "datacenters",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: datacentersSecretName,
-						},
-					},
-				})
-
-				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					MountPath: "/opt/datacenters/",
-					Name:      "datacenters",
-					ReadOnly:  true,
-				})
 			}
 
 			d.Spec.Template.Spec.Volumes = volumes
