@@ -1,3 +1,135 @@
+### [v2.12.0]()
+
+
+Supported Kubernetes versions:
+- `1.14.8`
+- `1.15.5`
+- `1.16.2`
+- Openshift `v4.1.18` preview
+
+
+**Major new features:**
+- Kubernetes 1.16 support was added [#4313](https://github.com/kubermatic/kubermatic/issues/4313) ([alvaroaleman](https://github.com/alvaroaleman))
+- It is now possible to also configure automatic node updates by setting `automaticNodeUpdate: true` in the `updates.yaml`. This option implies `automatic: true` as node versions must not be newer than the version of the corresponding controlplane. [#4258](https://github.com/kubermatic/kubermatic/issues/4258) ([alvaroaleman](https://github.com/alvaroaleman))
+- Cloud credentials can now be configured as presets [#3723](https://github.com/kubermatic/kubermatic/issues/3723) ([zreigz](https://github.com/zreigz))
+- Access to datacenters can now be restricted based on the user&#39;s email domain. [#4470](https://github.com/kubermatic/kubermatic/issues/4470) ([kdomanski](https://github.com/kdomanski))
+- It is now possible to open the Kubernetes Dashboard from the Kubermatic UI. [#4460](https://github.com/kubermatic/kubermatic/issues/4460) ([floreks](https://github.com/floreks))
+- An option to use AWS Route53 DNS validation was added to the `certs` chart. [#4397](https://github.com/kubermatic/kubermatic/issues/4397) ([alvaroaleman](https://github.com/alvaroaleman))
+- Added possibility to add labels to projects and clusters and have these labels inherited by node objects.
+- Added support for Kubernetes audit logging [#4151](https://github.com/kubermatic/kubermatic/issues/4151) ([eqrx](https://github.com/eqrx))
+- Connect button on cluster details will now open Kubernetes Dashboard/Openshift Console [#1667](https://github.com/kubermatic/dashboard-v2/issues/1667) ([floreks](https://github.com/floreks))
+- Pod Security Policies can now be enabled [#4062](https://github.com/kubermatic/kubermatic/issues/4062) ([bashofmann](https://github.com/bashofmann))
+- Added support for optional cluster addons [#1683](https://github.com/kubermatic/dashboard-v2/issues/1683) ([maciaszczykm](https://github.com/maciaszczykm)) 
+
+**Installation and updating:**
+- ACTION REQUIRED: the `zone_character` field must be removed from all AWS datacenters in `datacenters.yaml` [#3986](https://github.com/kubermatic/kubermatic/issues/3986) ([kdomanski](https://github.com/kdomanski))
+- ACTION REQUIRED: The default number of apiserver replicas was increased to 2. You can revert to the old behavior by setting `.Kubermatic.apiserverDefaultReplicas` in the `values.yaml` [#3885](https://github.com/kubermatic/kubermatic/issues/3885) ([alvaroaleman](https://github.com/alvaroaleman))
+- ACTION REQUIRED: The literal credentials on the `Cluster` object are being deprecated in favor of storing them in a secret. If you have addons that use credentials, replace `.Cluster.Spec.Cloud` with `.Credentials`. [#4463](https://github.com/kubermatic/kubermatic/issues/4463) ([alvaroaleman](https://github.com/alvaroaleman))
+- ACTION REQUIRED: Kubermatic now doesn&#39;t accept unknown keys in its config files anymore and will crash if an unknown key is present
+- ACTION REQUIRED: BYO datacenters now need to be specific in the `datacenters.yaml` with a value of `{}`, e.G `bringyourown: {}` [#3794](https://github.com/kubermatic/kubermatic/issues/3794) ([alvaroaleman](https://github.com/alvaroaleman))
+- ACTION REQUIRED: Velero does not backup Prometheus, Elasticsearch and Minio by default anymore. [#4482](https://github.com/kubermatic/kubermatic/issues/4482) ([xrstf](https://github.com/xrstf))
+- The deprecated nodePortPoxy key for Helm values has been removed. [#3830](https://github.com/kubermatic/kubermatic/issues/3830) ([xrstf](https://github.com/xrstf))
+- Support setting oidc authentication settings on cluster [#3751](https://github.com/kubermatic/kubermatic/issues/3751) ([bashofmann](https://github.com/bashofmann))
+- The worker-count of controller-manager and master-controller are now configurable [#3918](https://github.com/kubermatic/kubermatic/issues/3918) ([bashofmann](https://github.com/bashofmann))
+- master-controller-manager can now be deployed with multiple replicas [#4307](https://github.com/kubermatic/kubermatic/issues/4307) ([xrstf](https://github.com/xrstf))
+- It is now possible to configure an http proxy on a Seed. This will result in the proxy being used for all control plane pods in that seed that talk to a cloudprovider and for all machines in that Seed, unless its overriden on Datacenter level. [#4459](https://github.com/kubermatic/kubermatic/issues/4459) ([alvaroaleman](https://github.com/alvaroaleman))
+- The cert-manager Helm chart now allows configuring extra values for its controllers args and env vars. [#4398](https://github.com/kubermatic/kubermatic/issues/4398) ([alvaroaleman](https://github.com/alvaroaleman))
+- A fix for CVE-2019-11253 for clusters that were created with a Kubernetes version &lt; 1.14 was deployed [#4520](https://github.com/kubermatic/kubermatic/issues/4520) ([alvaroaleman](https://github.com/alvaroaleman))
+
+**Monitoring and logging:**
+- Alertmanager&#39;s inhibition feature is now used to hide consequential alerts. [#3833](https://github.com/kubermatic/kubermatic/issues/3833) ([xrstf](https://github.com/xrstf))
+- Removed cluster owner name and email labels from kubermatic_cluster_info metric to prevent leaking PII [#3854](https://github.com/kubermatic/kubermatic/issues/3854) ([xrstf](https://github.com/xrstf))
+- New Prometheus metrics kubermatic_addon_created kubermatic_addon_deleted
+- New alert KubermaticAddonDeletionTakesTooLong [#3941](https://github.com/kubermatic/kubermatic/issues/3941) ([bashofmann](https://github.com/bashofmann))
+- FluentBit will now collect the journald logs [#4001](https://github.com/kubermatic/kubermatic/issues/4001) ([mrIncompetent](https://github.com/mrIncompetent))
+- FluentBit can now collect the kernel messages [#4007](https://github.com/kubermatic/kubermatic/issues/4007) ([mrIncompetent](https://github.com/mrIncompetent))
+- FluentBit now always sets the node name in logs [#4010](https://github.com/kubermatic/kubermatic/issues/4010) ([mrIncompetent](https://github.com/mrIncompetent))
+- Added new KubermaticClusterPaused alert with &#34;none&#34; severity for inhibiting alerts from paused clusters [#3846](https://github.com/kubermatic/kubermatic/issues/3846) ([xrstf](https://github.com/xrstf))
+- Removed Helm-based templating in Grafana dashboards [#4475](https://github.com/kubermatic/kubermatic/issues/4475) ([xrstf](https://github.com/xrstf))
+- Added type label (kubernetes/openshift) to kubermatic_cluster_info metric. [#4452](https://github.com/kubermatic/kubermatic/issues/4452) ([xrstf](https://github.com/xrstf))
+- Added metrics endpoint for cluster control plane:GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics [#4208](https://github.com/kubermatic/kubermatic/issues/4208) ([zreigz](https://github.com/zreigz))
+- Added a new endpoint for node deployment metrics:GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/metrics [#4176](https://github.com/kubermatic/kubermatic/issues/4176) ([zreigz](https://github.com/zreigz))
+
+**Cloud providers:**
+- Openstack: A bug that could result in many securtiy groups being created when the creation of security group rules failed was fixed [#3848](https://github.com/kubermatic/kubermatic/issues/3848) ([alvaroaleman](https://github.com/alvaroaleman))
+- Openstack: Fixed a bug preventing an interrupted cluster creation from being resumed. [#4476](https://github.com/kubermatic/kubermatic/issues/4476) ([kdomanski](https://github.com/kdomanski))
+- Openstack: Disk size of nodes is now configurable [#4153](https://github.com/kubermatic/kubermatic/issues/4153) ([bashofmann](https://github.com/bashofmann))
+- Openstack: Added a security group API compatibility workaround for very old versions of Openstack. [#4479](https://github.com/kubermatic/kubermatic/issues/4479) ([kdomanski](https://github.com/kdomanski))
+- Openstack: Fixed fetching the list of tenants on some OpenStack configurations with one region [#4182](https://github.com/kubermatic/kubermatic/issues/4182) ([zreigz](https://github.com/zreigz))
+- Openstack: Added support for Project ID to the wizard [#1386](https://github.com/kubermatic/dashboard-v2/issues/1386) ([floreks](https://github.com/floreks))
+- Openstack: The project name can now be provided manually [#1423](https://github.com/kubermatic/dashboard-v2/issues/1423) ([floreks](https://github.com/floreks))
+- Openstack: Fixed API usage for datacenters with only one region [#4538](https://github.com/kubermatic/kubermatic/issues/4538) ([zreigz](https://github.com/zreigz))
+- Openstack: Fixed a bug that resulted in the router not being attached to the subnet when the subnet was manually created [#4521](https://github.com/kubermatic/kubermatic/issues/4521) ([alvaroaleman](https://github.com/alvaroaleman))
+- AWS: MachineDeployments can now be created in any availability zone of the cluster&#39;s region [#3870](https://github.com/kubermatic/kubermatic/issues/3870) ([kdomanski](https://github.com/kdomanski))
+- AWS: Reduced the role permissions for the control-plane &amp; worker role to the minimum [#3995](https://github.com/kubermatic/kubermatic/issues/3995) ([mrIncompetent](https://github.com/mrIncompetent))
+- AWS: The subnet can now be selected [#1499](https://github.com/kubermatic/dashboard-v2/issues/1499) ([kgroschoff](https://github.com/kgroschoff))
+- AWS: Setting `Control plane role (ARN)` now is possible [#1512](https://github.com/kubermatic/dashboard-v2/issues/1512) ([kgroschoff](https://github.com/kgroschoff))
+- AWS: VM sizes are fetched from the API now. [#1513](https://github.com/kubermatic/dashboard-v2/issues/1513) ([maciaszczykm](https://github.com/maciaszczykm))
+- AWS: Worker nodes can now be provisioned without a public IP. [#1591](https://github.com/kubermatic/dashboard-v2/issues/1591) ([maciaszczykm](https://github.com/maciaszczykm))
+- GCP: machine and disk types are now fetched from GCP. [#1363](https://github.com/kubermatic/dashboard-v2/issues/1363) ([maciaszczykm](https://github.com/maciaszczykm))
+- vSphere: the VM folder can now be configured
+- Added support for KubeVirt provider. [#1608](https://github.com/kubermatic/dashboard-v2/issues/1608) ([maciaszczykm](https://github.com/maciaszczykm))
+
+**Bugfixes:**
+- A bug that sometimes resulted in the creation of the initial NodeDeployment failing was fixed [#3894](https://github.com/kubermatic/kubermatic/issues/3894) ([alvaroaleman](https://github.com/alvaroaleman))
+- `kubeadm join` has been fixed for v1.15 clusters [#4161](https://github.com/kubermatic/kubermatic/issues/4161) ([kdomanski](https://github.com/kdomanski))
+- Fixed a bug that could cause intermittent delays when using kubectl logs/exec with `exposeStrategy: LoadBalancer` [#4278](https://github.com/kubermatic/kubermatic/issues/4278) ([alvaroaleman](https://github.com/alvaroaleman))
+- A bug that prevented node Labels, Taints and Annotations from getting applied correctly was fixed. [#4368](https://github.com/kubermatic/kubermatic/issues/4368) ([alvaroaleman](https://github.com/alvaroaleman))
+- Fixed worker nodes provisioning for instances with a Kernel &gt;= 4.19 [#4178](https://github.com/kubermatic/kubermatic/issues/4178) ([alvaroaleman](https://github.com/alvaroaleman))
+- Fixed an issue that kept clusters stuck if their creation didn&#39;t succeed and they got deleted with LB and/or PV cleanup enabled [#3973](https://github.com/kubermatic/kubermatic/issues/3973) ([alvaroaleman](https://github.com/alvaroaleman))
+- Fixed an issue where deleted project owners would come back after a while [#4025](https://github.com/kubermatic/kubermatic/issues/4025) ([zreigz](https://github.com/zreigz))
+- Enabling the OIDC feature flag in clusters has been fixed. [#4127](https://github.com/kubermatic/kubermatic/issues/4127) ([zreigz](https://github.com/zreigz))
+
+**Misc:**
+- The share cluster feature now allows to use groups, if passed by the IDP. All groups are prefixed with `oidc:` [#4244](https://github.com/kubermatic/kubermatic/issues/4244) ([alvaroaleman](https://github.com/alvaroaleman))
+- The kube-proxy mode (ipvs/iptables) can now be configured. If not specified, it defaults to ipvs. [#4247](https://github.com/kubermatic/kubermatic/issues/4247) ([nikhita](https://github.com/nikhita))
+- Addons can now read the AWS region  from the `kubermatic.io/aws-region` annotation on the cluster [#4434](https://github.com/kubermatic/kubermatic/issues/4434) ([alvaroaleman](https://github.com/alvaroaleman))
+- Allow disabling of apiserver endpoint reconciling. [#4396](https://github.com/kubermatic/kubermatic/issues/4396) ([thz](https://github.com/thz))
+- Allow cluster owner to manage RBACs from Kubermatic API [#4321](https://github.com/kubermatic/kubermatic/issues/4321) ([zreigz](https://github.com/zreigz))
+- The default service CIDR for new clusters was increased and changed from 10.10.10.0/24 to 10.240.16.0/20 [#4227](https://github.com/kubermatic/kubermatic/issues/4227) ([alvaroaleman](https://github.com/alvaroaleman))
+- Retries of the initial node deployment creation do not create an event anymore but continue to be logged at debug level. [#4226](https://github.com/kubermatic/kubermatic/issues/4226) ([alvaroaleman](https://github.com/alvaroaleman))
+- Added option to enforce cluster cleanup in UI [#3966](https://github.com/kubermatic/kubermatic/issues/3966) ([kgroschoff](https://github.com/kgroschoff))
+- Support PodSecurityPolicies in addons [#4174](https://github.com/kubermatic/kubermatic/issues/4174) ([bashofmann](https://github.com/bashofmann))
+- Kubernetes versions affected by CVE-2019-9512 and CVE-2019-9514 have been dropped [#4113](https://github.com/kubermatic/kubermatic/issues/4113) ([kdomanski](https://github.com/kdomanski))
+- Kubernetes versions affected by CVE-2019-11247 and CVE-2019-11249 have been dropped [#4066](https://github.com/kubermatic/kubermatic/issues/4066) ([kdomanski](https://github.com/kdomanski))
+- Kubernetes 1.13 which is end-of-life has been removed. [#4327](https://github.com/kubermatic/kubermatic/issues/4327) ([kdomanski](https://github.com/kdomanski))
+- Updated Alertmanager to 0.19 [#4340](https://github.com/kubermatic/kubermatic/issues/4340) ([xrstf](https://github.com/xrstf))
+- Updated blackbox-exporter to 0.15.1 [#4341](https://github.com/kubermatic/kubermatic/issues/4341) ([xrstf](https://github.com/xrstf))
+- Updated Canal to v3.8 [#3791](https://github.com/kubermatic/kubermatic/issues/3791) ([mrIncompetent](https://github.com/mrIncompetent))
+- Updated cert-manager to 0.10.1 [#4407](https://github.com/kubermatic/kubermatic/issues/4407) ([xrstf](https://github.com/xrstf))
+- Updated Dex to 2.19 [#4343](https://github.com/kubermatic/kubermatic/issues/4343) ([xrstf](https://github.com/xrstf))
+- Updated Envoy to 1.11.1 [#4075](https://github.com/kubermatic/kubermatic/issues/4075) ([xrstf](https://github.com/xrstf))
+- Updated etcd to 3.3.15 [#4199](https://github.com/kubermatic/kubermatic/issues/4199) ([bashofmann](https://github.com/bashofmann))
+- Updated FluentBit to v1.2.2 [#4022](https://github.com/kubermatic/kubermatic/issues/4022) ([mrIncompetent](https://github.com/mrIncompetent))
+- Updated Grafana to 6.3.5 [#4342](https://github.com/kubermatic/kubermatic/issues/4342) ([xrstf](https://github.com/xrstf))
+- Updated helm-exporter to 0.4.2 [#4124](https://github.com/kubermatic/kubermatic/issues/4124) ([xrstf](https://github.com/xrstf))
+- Updated kube-state-metrics to 1.7.2 [#4129](https://github.com/kubermatic/kubermatic/issues/4129) ([xrstf](https://github.com/xrstf))
+- Updated Minio to 2019-09-18T21-55-05Z [#4339](https://github.com/kubermatic/kubermatic/issues/4339) ([xrstf](https://github.com/xrstf))
+- Updated machine-controller to v1.5.6 [#4310](https://github.com/kubermatic/kubermatic/issues/4310) ([kdomanski](https://github.com/kdomanski))
+- Updated nginx-ingress-controller to 0.26.1 [#4400](https://github.com/kubermatic/kubermatic/issues/4400) ([xrstf](https://github.com/xrstf))
+- Updated Prometheus to 2.12.0 [#4131](https://github.com/kubermatic/kubermatic/issues/4131) ([xrstf](https://github.com/xrstf))
+- Updated Velero to v1.1.0 [#4468](https://github.com/kubermatic/kubermatic/issues/4468) ([kron4eg](https://github.com/kron4eg))
+
+
+**Dashboard:**
+- Added Swagger UI for Kubermatic API [#1418](https://github.com/kubermatic/dashboard-v2/issues/1418) ([bashofmann](https://github.com/bashofmann))
+- Redesign dialog to manage SSH keys on cluster [#1353](https://github.com/kubermatic/dashboard-v2/issues/1353) ([kgroschoff](https://github.com/kgroschoff))
+- GCP zones are now fetched from API. [#1379](https://github.com/kubermatic/dashboard-v2/issues/1379) ([maciaszczykm](https://github.com/maciaszczykm))
+- Redesign Wizard: Summary [#1409](https://github.com/kubermatic/dashboard-v2/issues/1409) ([kgroschoff](https://github.com/kgroschoff))
+- Cluster type toggle in wizard is now hidden if only one cluster type is active [#1425](https://github.com/kubermatic/dashboard-v2/issues/1425) ([bashofmann](https://github.com/bashofmann))
+- Disabled the possibility of adding new node deployments until the cluster is fully ready. [#1439](https://github.com/kubermatic/dashboard-v2/issues/1439) ([maciaszczykm](https://github.com/maciaszczykm))
+- The cluster name is now editable from the dashboard [#1455](https://github.com/kubermatic/dashboard-v2/issues/1455) ([bashofmann](https://github.com/bashofmann))
+- Added warning about node deployment changes that will recreate all nodes. [#1479](https://github.com/kubermatic/dashboard-v2/issues/1479) ([maciaszczykm](https://github.com/maciaszczykm))
+- OIDC client id is now configurable [#1505](https://github.com/kubermatic/dashboard-v2/issues/1505) ([bashofmann](https://github.com/bashofmann))
+- Replaced particles with a static background. [#1578](https://github.com/kubermatic/dashboard-v2/issues/1578) ([maciaszczykm](https://github.com/maciaszczykm))
+- Pod Security Policy can now be activated from the wizard. [#1647](https://github.com/kubermatic/dashboard-v2/issues/1647) ([maciaszczykm](https://github.com/maciaszczykm))
+- Redesigned extended options in wizard [#1609](https://github.com/kubermatic/dashboard-v2/issues/1609) ([kgroschoff](https://github.com/kgroschoff))
+- Various security improvements in authentication
+- Various other visual improvements
+
+
+
+
 ### [v2.11.6]()
 
 

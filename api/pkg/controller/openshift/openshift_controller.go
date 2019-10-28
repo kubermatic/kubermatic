@@ -14,7 +14,6 @@ import (
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -41,7 +40,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -115,7 +113,7 @@ func Add(
 		Client:                   mgr.GetClient(),
 		log:                      log.Named(ControllerName),
 		scheme:                   mgr.GetScheme(),
-		recorder:                 mgr.GetRecorder(ControllerName),
+		recorder:                 mgr.GetEventRecorderFor(ControllerName),
 		seedGetter:               seedGetter,
 		userClusterConnProvider:  userClusterConnProvider,
 		overwriteRegistry:        overwriteRegistry,
@@ -173,35 +171,40 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	log = log.With("cluster", cluster.Name)
 
+	if cluster.Spec.Pause {
+		log.Debug("Skipping because the cluster is paused")
+		return reconcile.Result{}, nil
+	}
+
 	if cluster.Annotations["kubermatic.io/openshift"] == "" {
 		log.Debug("Skipping because the cluster is an Kubernetes cluster")
 		return reconcile.Result{}, nil
 	}
 
-	successfullyReconciled := true
-	var errs []error
-	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
-		ctx,
-		r.Client,
-		r.workerName,
-		cluster,
-		kubermaticv1.ClusterConditionOpenshiftControllerReconcilingSuccess,
-		func() (*reconcile.Result, error) {
-			// only reconcile this cluster if there are not yet too many updates running
-			if available, err := controllerutil.ClusterAvailableForReconciling(ctx, r, cluster, r.concurrentClusterUpdates); !available || err != nil {
-				log.Infow("Concurrency limit reached, checking again in 10 seconds", "concurrency-limit", r.concurrentClusterUpdates)
-				return &reconcile.Result{RequeueAfter: 10 * time.Second}, err
-			}
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		log.Debugw(
+			"Skipping because the cluster has a different worker name set",
+			"cluster-worker-name", cluster.Labels[kubermaticv1.WorkerNameLabelKey],
+		)
+		return reconcile.Result{}, nil
+	}
 
-			return r.reconcile(ctx, log, cluster)
-		},
-	)
-	if err != nil {
+	// only reconcile this cluster if there are not yet too many updates running
+	if available, err := controllerutil.ClusterAvailableForReconciling(ctx, r, cluster, r.concurrentClusterUpdates); !available || err != nil {
+		log.Infow("Concurrency limit reached, checking again in 10 seconds", "concurrency-limit", r.concurrentClusterUpdates)
+		return reconcile.Result{
+			RequeueAfter: 10 * time.Second,
+		}, err
+	}
+
+	successfullyReconciled := true
+	// Add a wrapping here so we can emit an event on error
+	result, reconcileErr := r.reconcile(ctx, log, cluster)
+	recorderCluster := cluster.DeepCopy()
+	if reconcileErr != nil {
 		successfullyReconciled = false
-		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		errs = append(errs, err)
+		log.Errorw("Reconciling failed", zap.Error(reconcileErr))
+		r.recorder.Eventf(recorderCluster, corev1.EventTypeWarning, "ReconcilingError", "%v", reconcileErr)
 	}
 
 	if result == nil {
@@ -210,10 +213,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	if err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r, successfullyReconciled); err != nil {
 		log.Errorw("failed to update clusters status conditions", zap.Error(err))
-		errs = append(errs, err)
+		reconcileErr = fmt.Errorf("failed to set cluster status: %v after reconciliation was done with err=%v", err, reconcileErr)
 	}
 
-	return *result, utilerrors.NewAggregate(errs)
+	return *result, reconcileErr
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {

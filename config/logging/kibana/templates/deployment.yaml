@@ -18,6 +18,7 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
+        fluentbit.io/parser: kibana
     spec:
       containers:
       - name: kibana-logging

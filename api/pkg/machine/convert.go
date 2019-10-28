@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
@@ -18,8 +19,6 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
 	"k8s.io/apimachinery/pkg/util/json"
-
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 // GetAPIV1OperatingSystemSpec returns the api compatible OperatingSystemSpec for the given machine

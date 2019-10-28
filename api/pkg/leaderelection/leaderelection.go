@@ -14,7 +14,6 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	kubeleaderelection "k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
-	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -25,7 +24,7 @@ const (
 )
 
 // New returns a new leader elector which uses the "hostname + name" as lock identity
-func New(name string, leaderElectionClient kubernetes.Interface, recorder record.EventRecorder, callbacks leaderelection.LeaderCallbacks) (*leaderelection.LeaderElector, error) {
+func New(name string, leaderElectionClient kubernetes.Interface, recorder resourcelock.EventRecorder, callbacks leaderelection.LeaderCallbacks) (*leaderelection.LeaderElector, error) {
 	// Identity used to distinguish between multiple controller manager instances
 	id, err := os.Hostname()
 	if err != nil {
@@ -54,7 +53,7 @@ func New(name string, leaderElectionClient kubernetes.Interface, recorder record
 	})
 }
 
-func RunAsLeader(ctx context.Context, log *zap.SugaredLogger, cfg *rest.Config, recorder record.EventRecorder, leaderName string, callback func(context.Context) error) error {
+func RunAsLeader(ctx context.Context, log *zap.SugaredLogger, cfg *rest.Config, recorder resourcelock.EventRecorder, leaderName string, callback func(context.Context) error) error {
 	leaderElectionClient, err := kubernetes.NewForConfig(rest.AddUserAgent(cfg, leaderName))
 	if err != nil {
 		return err

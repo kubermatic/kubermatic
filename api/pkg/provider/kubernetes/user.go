@@ -89,13 +89,21 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add a user with the given email %s as the name is reserved, please try a different email address", email))
 	}
 
-	uniqueObjectName := fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
-
-	user := kubermaticv1.User{}
-	user.Name = uniqueObjectName
-	user.Spec.Email = email
-	user.Spec.Name = name
-	user.Spec.ID = id
+	user := kubermaticv1.User{
+		ObjectMeta: v1.ObjectMeta{
+			Name: fmt.Sprintf("%x", sha256.Sum256([]byte(email))),
+		},
+		Spec: kubermaticv1.UserSpec{
+			ID:    id,
+			Name:  name,
+			Email: email,
+		},
+	}
 
 	return p.client.KubermaticV1().Users().Create(&user)
+}
+
+// UpdateUser updates user.
+func (p *UserProvider) UpdateUser(user kubermaticv1.User) (*kubermaticv1.User, error) {
+	return p.client.KubermaticV1().Users().Update(&user)
 }

@@ -58,7 +58,7 @@ func TLSCertificateCreator(data tlsCertificateCreatorData) reconciling.NamedSecr
 				}
 			}
 
-			key, err := certutil.NewPrivateKey()
+			key, err := triple.NewPrivateKey()
 			if err != nil {
 				return nil, fmt.Errorf("failed to create private key for etcd server tls certificate: %v", err)
 			}
@@ -69,7 +69,7 @@ func TLSCertificateCreator(data tlsCertificateCreatorData) reconciling.NamedSecr
 				Usages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 			}
 
-			cert, err := certutil.NewSignedCert(config, key, ca.Cert, ca.Key)
+			cert, err := triple.NewSignedCert(config, key, ca.Cert, ca.Key)
 			if err != nil {
 				return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
 			}
@@ -77,8 +77,8 @@ func TLSCertificateCreator(data tlsCertificateCreatorData) reconciling.NamedSecr
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
 			}
-			se.Data[resources.EtcdTLSKeySecretKey] = certutil.EncodePrivateKeyPEM(key)
-			se.Data[resources.EtcdTLSCertSecretKey] = certutil.EncodeCertPEM(cert)
+			se.Data[resources.EtcdTLSKeySecretKey] = triple.EncodePrivateKeyPEM(key)
+			se.Data[resources.EtcdTLSCertSecretKey] = triple.EncodeCertPEM(cert)
 
 			return se, nil
 		}

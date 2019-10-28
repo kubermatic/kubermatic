@@ -11,7 +11,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/clusterdeletion"
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -23,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
@@ -118,7 +118,7 @@ func Add(
 		userClusterConnProvider: userClusterConnProvider,
 		workerName:              workerName,
 
-		recorder: mgr.GetRecorder(ControllerName),
+		recorder: mgr.GetEventRecorderFor(ControllerName),
 
 		overwriteRegistry:                      overwriteRegistry,
 		nodePortRange:                          nodePortRange,
@@ -187,40 +187,53 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	log = log.With("cluster", cluster.Name)
 
+	if cluster.Spec.Pause {
+		log.Debug("Skipping because the cluster is paused")
+		return reconcile.Result{}, nil
+	}
+
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		log.Debugw(
+			"Skipping because the cluster has a different worker name set",
+			"cluster-worker-name", cluster.Labels[kubermaticv1.WorkerNameLabelKey],
+		)
+		return reconcile.Result{}, nil
+	}
+
 	if cluster.Annotations["kubermatic.io/openshift"] != "" {
 		log.Debug("Skipping because the cluster is an OpenShift cluster")
 		return reconcile.Result{}, nil
 	}
 
-	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
-		ctx,
-		r.Client,
-		r.workerName,
-		cluster,
-		kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess,
-		func() (*reconcile.Result, error) {
-			// only reconcile this cluster if there are not yet too many updates running
-			if available, err := controllerutil.ClusterAvailableForReconciling(ctx, r, cluster, r.concurrentClusterUpdates); !available || err != nil {
-				log.Infow("Concurrency limit reached, checking again in 10 seconds", "concurrency-limit", r.concurrentClusterUpdates)
-				return &reconcile.Result{
-					RequeueAfter: 10 * time.Second,
-				}, err
-			}
+	// only reconcile this cluster if there are not yet too many updates running
+	if available, err := controllerutil.ClusterAvailableForReconciling(ctx, r, cluster, r.concurrentClusterUpdates); !available || err != nil {
+		log.Infow("Concurrency limit reached, checking again in 10 seconds", "concurrency-limit", r.concurrentClusterUpdates)
+		return reconcile.Result{
+			RequeueAfter: 10 * time.Second,
+		}, err
+	}
 
-			return r.reconcile(ctx, log, cluster)
-		},
-	)
+	successfullyReconciled := true
+	// Add a wrapping here so we can emit an event on error
+	var errs []error
+	result, err := r.reconcile(ctx, log, cluster)
 	if err != nil {
+		successfullyReconciled = false
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		errs = append(errs, err)
 	}
 
 	if result == nil {
 		result = &reconcile.Result{}
 	}
 
-	return *result, err
+	if err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r.Client, successfullyReconciled); err != nil {
+		log.Errorw("failed to update clusters status conditions", zap.Error(err))
+		errs = append(errs, err)
+	}
+
+	return *result, utilerrors.NewAggregate(errs)
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {

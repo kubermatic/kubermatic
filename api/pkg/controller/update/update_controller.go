@@ -7,17 +7,16 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	v1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -46,7 +45,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager *
 		workerName:                    workerName,
 		updateManager:                 updateManager,
 		Client:                        mgr.GetClient(),
-		recorder:                      mgr.GetRecorder(ControllerName),
+		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
 	}
@@ -79,19 +78,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
-		ctx,
-		r.Client,
-		r.workerName,
-		cluster,
-		kubermaticv1.ClusterConditionUpdateControllerReconcilingSuccess,
-		func() (*reconcile.Result, error) {
-			return r.reconcile(ctx, cluster)
-		},
-	)
+	result, err := r.reconcile(ctx, cluster)
 	if err != nil {
 		r.log.Errorw("Failed to reconcile cluster", "namespace", request.NamespacedName.String(), zap.Error(err))
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
 	if result == nil {
 		result = &reconcile.Result{}
@@ -100,6 +90,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		return nil, nil
+	}
+
+	if cluster.Spec.Pause {
+		return nil, nil
+	}
 
 	if !cluster.Status.ExtendedHealth.AllHealthy() {
 		// Cluster not healthy yet. Nothing to do.
@@ -140,8 +137,7 @@ func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Clust
 
 	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
 	// Kubermatic only creates MachineDeployments in the kube-system namespace, everything else is essentially unsupported
-	listOpts := &ctrlruntimeclient.ListOptions{Namespace: "kube-system"}
-	if err := c.List(ctx, listOpts, machineDeployments); err != nil {
+	if err := c.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace("kube-system")); err != nil {
 		return fmt.Errorf("failed to list MachineDeployments: %v", err)
 	}
 

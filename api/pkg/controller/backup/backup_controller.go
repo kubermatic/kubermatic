@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
@@ -107,7 +106,7 @@ func Add(
 		backupScheduleString: backupScheduleString,
 		backupContainerImage: backupContainerImage,
 		Client:               mgr.GetClient(),
-		recorder:             mgr.GetRecorder(ControllerName),
+		recorder:             mgr.GetEventRecorderFor(ControllerName),
 	}
 	c, err := controller.New(ControllerName, mgr, controller.Options{
 		Reconciler:              reconciler,
@@ -169,7 +168,7 @@ func (r *Reconciler) cleanupJobs() {
 	}
 
 	jobs := &batchv1.JobList{}
-	if err := r.List(ctx, &ctrlruntimeclient.ListOptions{LabelSelector: selector}, jobs); err != nil {
+	if err := r.List(ctx, jobs, &ctrlruntimeclient.ListOptions{LabelSelector: selector}); err != nil {
 		log.Errorw("failed to list jobs", "selector", selector.String(), zap.Error(err))
 		utilruntime.HandleError(fmt.Errorf("failed to list jobs: %v", err))
 		return
@@ -178,12 +177,12 @@ func (r *Reconciler) cleanupJobs() {
 	for _, job := range jobs.Items {
 		if job.Status.Succeeded >= 1 && (job.Status.CompletionTime != nil && time.Since(job.Status.CompletionTime.Time).Minutes() > 5) {
 
-			modifierForegroundDeletePropagation := func(deleteOpts *ctrlruntimeclient.DeleteOptions) {
-				deletePropagationForeground := metav1.DeletePropagationForeground
-				deleteOpts.PropagationPolicy = &deletePropagationForeground
+			deletePropagationForeground := metav1.DeletePropagationForeground
+			delOpts := &ctrlruntimeclient.DeleteOptions{
+				PropagationPolicy: &deletePropagationForeground,
 			}
 			jobName := types.NamespacedName{Name: job.Name, Namespace: job.Namespace}
-			if err := r.Delete(ctx, &job, modifierForegroundDeletePropagation); err != nil {
+			if err := r.Delete(ctx, &job, delOpts); err != nil {
 				log.Errorw(
 					"Failed to delete cleanup job",
 					zap.Error(err),
@@ -212,16 +211,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	_, err := kubermaticv1helper.ClusterReconcileWrapper(
-		ctx,
-		r.Client,
-		r.workerName,
-		cluster,
-		kubermaticv1.ClusterConditionBackupControllerReconcilingSuccess,
-		func() (*reconcile.Result, error) {
-			return nil, r.reconcile(ctx, log, cluster)
-		},
-	)
+	err := r.reconcile(ctx, log, cluster)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
@@ -230,6 +220,16 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	if cluster.Spec.Pause {
+		log.Debug("Skipping because the cluster is paused")
+		return nil
+	}
+
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		log.Debug("Skipping because the cluster has a different worker name set")
+		return nil
+	}
+
 	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
 	if cluster.DeletionTimestamp != nil {
 		// Need to cleanup

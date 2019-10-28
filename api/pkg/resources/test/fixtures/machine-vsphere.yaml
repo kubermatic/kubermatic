@@ -33,13 +33,13 @@ spec:
         working-dir       = "vsphere-1a2b3c4d5e"
         datacenter        = "vsphere-datacenter"
         datastore         = "vsphere-datastore"
-        server            = "http://vsphere.local"
+        server            = "vsphere.local"
 
         [Disk]
         scsicontrollertype = "pvscsi"
 
         [Workspace]
-        server            = "http://vsphere.local"
+        server            = "vsphere.local"
         datacenter        = "vsphere-datacenter"
         folder            = "vsphere-1a2b3c4d5e"
         default-datastore = "vsphere-datastore"

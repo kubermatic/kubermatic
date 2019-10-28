@@ -194,7 +194,7 @@ func crdCheckerFromFlag(flag string, cfg *restclient.Config) (func() error, erro
 			return fmt.Errorf("failed to create kube client: %v", err)
 		}
 
-		if err := client.List(context.Background(), listOpts, list); err != nil {
+		if err := client.List(context.Background(), list, listOpts); err != nil {
 			return fmt.Errorf("failed to list %s.%s: %v", kind, apiVersion, err)
 		}
 

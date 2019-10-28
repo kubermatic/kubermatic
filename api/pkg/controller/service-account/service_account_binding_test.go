@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
 
-	controllerclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -65,7 +64,7 @@ func TestReconcileBinding(t *testing.T) {
 				t.Fatal(err)
 			}
 			bindings := &kubermaticv1.UserProjectBindingList{}
-			err = kubermaticFakeClient.List(context.TODO(), &controllerclient.ListOptions{}, bindings)
+			err = kubermaticFakeClient.List(context.TODO(), bindings)
 			if err != nil {
 				t.Fatal(err)
 			}

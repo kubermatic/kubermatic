@@ -104,7 +104,7 @@ func (sv *seedValidator) validate(seed *kubermaticv1.Seed, seedClient ctrlruntim
 
 	// check if there are still clusters using DCs not defined anymore
 	clusters := &kubermaticv1.ClusterList{}
-	if err := seedClient.List(sv.ctx, sv.listOpts, clusters); err != nil {
+	if err := seedClient.List(sv.ctx, clusters, sv.listOpts); err != nil {
 		return fmt.Errorf("failed to list clusters: %v", err)
 	}
 

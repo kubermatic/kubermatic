@@ -17,7 +17,6 @@ import (
 
 	addonutils "github.com/kubermatic/kubermatic/api/pkg/addon"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
@@ -94,7 +93,7 @@ func Add(
 		KubeconfigProvider:      kubeconfigProvider,
 		Client:                  client,
 		workerName:              workerName,
-		recorder:                mgr.GetRecorder(ControllerName),
+		recorder:                mgr.GetEventRecorderFor(ControllerName),
 		overwriteRegistry:       overwriteRegistey,
 	}
 
@@ -114,8 +113,7 @@ func Add(
 		}
 
 		addonList := &kubermaticv1.AddonList{}
-		listOptions := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
-		if err := client.List(context.Background(), listOptions, addonList); err != nil {
+		if err := client.List(context.Background(), addonList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
 			log.Errorw("Failed to get addons for cluster", zap.Error(err), "cluster", cluster.Name)
 			return nil
 		}
@@ -150,31 +148,20 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	log = r.log.With("cluster", addon.Spec.Cluster.Name)
 
-	cluster := &kubermaticv1.Cluster{}
-	if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
-		// If its not a NotFound return it
-		if !kerrors.IsNotFound(err) {
-			return reconcile.Result{}, err
-		}
-		return reconcile.Result{}, nil
-	}
-
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
-		ctx,
-		r.Client,
-		r.workerName,
-		cluster,
-		kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess,
-		func() (*reconcile.Result, error) {
-			return r.reconcile(ctx, log, addon, cluster)
-		},
-	)
+	result, err := r.reconcile(ctx, log, addon)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Event(addon, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
-			"failed to reconcile Addon %q: %v", addon.Name, err)
+		r.recorder.Eventf(addon, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
+		reconcilingError := err
+		//Get the cluster so we can report an event to it
+		cluster := &kubermaticv1.Cluster{}
+		if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
+			log.Errorw("failed to get cluster for reporting error onto it", zap.Error(err))
+		} else {
+			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
+				"failed to reconcile Addon %q: %v", addon.Name, reconcilingError)
+		}
 	}
 	if result == nil {
 		result = &reconcile.Result{}
@@ -182,12 +169,21 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	// If the addon has a deletion timestamp, delete it
-	if addon.DeletionTimestamp != nil {
-		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) (*reconcile.Result, error) {
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
+		// If its not a NotFound return it
+		if !kerrors.IsNotFound(err) {
+			return nil, err
 		}
+
+		// Cluster does not exist - If the addon has the deletion timestamp - we shall delete it
+		if addon.DeletionTimestamp != nil {
+			if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
+				return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
+			}
+		}
+		return nil, nil
 	}
 
 	if err := r.markDefaultAddons(ctx, log, addon, cluster); err != nil {
@@ -196,6 +192,24 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 
 	if cluster.DeletionTimestamp != nil {
 		log.Debug("Skipping addon because cluster is deleted")
+		return nil, nil
+	}
+
+	if cluster.Spec.Pause {
+		log.Debug("Skipping because the cluster is paused")
+		return nil, nil
+	}
+
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		log.Debug("Skipping because the cluster has a different worker name set")
+		return nil, nil
+	}
+
+	// When a cluster gets deleted - we can skip it - not worth the effort.
+	// This could lead though to a potential leak of resources in case addons deploy LB's or PV's.
+	// The correct way of handling it though should be a optional cleanup routine in the cluster controller, which will delete all PV's and LB's inside the cluster cluster.
+	if cluster.DeletionTimestamp != nil {
+		log.Debug("Skipping because the cluster is being deleted")
 		return nil, nil
 	}
 

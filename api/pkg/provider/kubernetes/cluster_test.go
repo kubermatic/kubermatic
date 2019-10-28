@@ -94,6 +94,9 @@ func TestCreateCluster(t *testing.T) {
 					"kubermatic.io/openshift": "true",
 				}
 			}
+			if tc.expectedCluster != nil {
+				partialCluster.Finalizers = tc.expectedCluster.Finalizers
+			}
 
 			cluster, err := target.New(tc.project, tc.userInfo, partialCluster)
 			if len(tc.expectedError) > 0 {

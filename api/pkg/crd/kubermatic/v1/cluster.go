@@ -107,16 +107,6 @@ const (
 	// the status of cloud provider resources for a given cluster.
 	ClusterConditionSeedResourcesUpToDate ClusterConditionType = "SeedResourcesUpToDate"
 
-	ClusterConditionClusterControllerReconcilingSuccess        ClusterConditionType = "ClusterControllerReconciledSuccessfully"
-	ClusterConditionAddonControllerReconcilingSuccess          ClusterConditionType = "AddonControllerReconciledSuccessfully"
-	ClusterConditionAddonInstallerControllerReconcilingSuccess ClusterConditionType = "AddonInstallerControllerReconciledSuccessfully"
-	ClusterConditionBackupControllerReconcilingSuccess         ClusterConditionType = "BackupControllerReconciledSuccessfully"
-	ClusterConditionCloudControllerReconcilingSuccess          ClusterConditionType = "CloudControllerReconcilledSuccessfully"
-	ClusterConditionComponentDefaulterReconcilingSuccess       ClusterConditionType = "ComponentDefaulterReconciledSuccessfully"
-	ClusterConditionUpdateControllerReconcilingSuccess         ClusterConditionType = "UpdateControllerReconciledSuccessfully"
-	ClusterConditionMonitoringControllerReconcilingSuccess     ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
-	ClusterConditionOpenshiftControllerReconcilingSuccess      ClusterConditionType = "OpenshiftControllerReconciledSuccessfully"
-
 	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
 	ReasonClusterUpadteInProgress = "ClusterUpdateInProgress"
 )

@@ -25,7 +25,11 @@ func (d *Deletion) cleanupCredentialsRequests(ctx context.Context, log *zap.Suga
 	credentialRequests.SetAPIVersion("cloudcredential.openshift.io/v1")
 	credentialRequests.SetKind("CredentialsRequest")
 
-	if err := userClusterClient.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: "openshift-cloud-credential-operator"}, credentialRequests); err != nil {
+	if err := userClusterClient.List(
+		ctx,
+		credentialRequests,
+		&ctrlruntimeclient.ListOptions{Namespace: "openshift-cloud-credential-operator"},
+	); err != nil {
 		if meta.IsNoMatchError(err) {
 			log.Debug("Got a NoMatchError when listing CredentialsRequests, skipping their cleanup")
 			return false, nil

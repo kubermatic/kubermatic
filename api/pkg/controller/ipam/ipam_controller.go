@@ -11,6 +11,7 @@ import (
 
 	"go.uber.org/zap"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
@@ -19,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -52,7 +52,7 @@ type reconciler struct {
 
 func Add(mgr manager.Manager, cidrRanges []Network, log *zap.SugaredLogger) error {
 	reconciler := &reconciler{Client: mgr.GetClient(),
-		recorder:   mgr.GetRecorder(ControllerName),
+		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		cidrRanges: cidrRanges,
 		log:        log}
 	c, err := controller.New(ControllerName, mgr,
@@ -171,7 +171,7 @@ func (r *reconciler) ipsToStrs(ips []net.IP) []string {
 
 func (r *reconciler) getUsedIPs(ctx context.Context) ([]net.IP, error) {
 	machines := &clusterv1alpha1.MachineList{}
-	if err := r.List(ctx, &client.ListOptions{}, machines); err != nil {
+	if err := r.List(ctx, machines); err != nil {
 		return nil, fmt.Errorf("failed to list machines: %v", err)
 	}
 

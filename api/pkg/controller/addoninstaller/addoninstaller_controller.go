@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -51,7 +50,7 @@ func Add(
 		kubernetesAddons: kubernetesAddons,
 		openshiftAddons:  openshiftAddons,
 		Client:           mgr.GetClient(),
-		recorder:         mgr.GetRecorder(ControllerName),
+		recorder:         mgr.GetEventRecorderFor(ControllerName),
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{
@@ -68,7 +67,7 @@ func Add(
 
 	enqueueClusterForNamespacedObject := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
-		if err := mgr.GetClient().List(context.Background(), &ctrlruntimeclient.ListOptions{}, clusterList); err != nil {
+		if err := mgr.GetClient().List(context.Background(), clusterList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
 			log.Errorw("Failed to list clusters", zap.Error(err))
 			return []reconcile.Request{}
@@ -103,22 +102,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
-		ctx,
-		r.Client,
-		r.workerName,
-		cluster,
-		kubermaticv1.ClusterConditionAddonInstallerControllerReconcilingSuccess,
-		func() (*reconcile.Result, error) {
-			return r.reconcile(ctx, log, cluster)
-		},
-	)
-	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-	}
+	result, err := r.reconcile(ctx, log, cluster)
 	if result == nil {
 		result = &reconcile.Result{}
+	}
+	if err != nil {
+		log.Errorw("Reconciling failed", zap.Error(err))
+		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
 	}
 	return *result, err
 }
@@ -133,6 +123,16 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	} else {
 		log = log.With("clustertype", "kubernetes")
 		addonsToInstall = r.kubernetesAddons
+	}
+
+	if cluster.Spec.Pause {
+		log.Debug("Skipping because the cluster is paused")
+		return nil, nil
+	}
+
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+		log.Debug("Skipping because the cluster has a different worker name set")
+		return nil, nil
 	}
 
 	// Wait until the Apiserver is running to ensure the namespace exists at least.

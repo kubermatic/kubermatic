@@ -445,7 +445,19 @@ func getNetClient(username, password, domain, tenant, tenantID, authURL, region 
 		return nil, err
 	}
 
-	return goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{Region: region})
+	serviceClient, err := goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{Region: region})
+	if err != nil {
+		// this is special case for  services that span only one region.
+		if _, ok := err.(*gophercloud.ErrEndpointNotFound); ok {
+			serviceClient, err = goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{})
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+	return serviceClient, err
 }
 
 // GetSubnets list all available subnet ids fot a given CloudSpec

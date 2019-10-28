@@ -41,7 +41,7 @@ func ServingCertSecretCreator(caGetter CAGetter, secretName, commonName string, 
 				}
 			}
 
-			key, err := certutil.NewPrivateKey()
+			key, err := triple.NewPrivateKey()
 			if err != nil {
 				return nil, fmt.Errorf("unable to create a serving cert key: %v", err)
 			}
@@ -52,7 +52,7 @@ func ServingCertSecretCreator(caGetter CAGetter, secretName, commonName string, 
 				Usages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 			}
 
-			cert, err := certutil.NewSignedCert(config, key, ca.Cert, ca.Key)
+			cert, err := triple.NewSignedCert(config, key, ca.Cert, ca.Key)
 			if err != nil {
 				return nil, fmt.Errorf("unable to sign serving certificate: %v", err)
 			}
@@ -60,10 +60,10 @@ func ServingCertSecretCreator(caGetter CAGetter, secretName, commonName string, 
 			if s.Data == nil {
 				s.Data = map[string][]byte{}
 			}
-			s.Data[resources.ServingCertSecretKey] = certutil.EncodeCertPEM(cert)
-			s.Data[resources.ServingCertKeySecretKey] = certutil.EncodePrivateKeyPEM(key)
-			s.Data["tls.crt"] = certutil.EncodeCertPEM(cert)
-			s.Data["tls.key"] = certutil.EncodePrivateKeyPEM(key)
+			s.Data[resources.ServingCertSecretKey] = triple.EncodeCertPEM(cert)
+			s.Data[resources.ServingCertKeySecretKey] = triple.EncodePrivateKeyPEM(key)
+			s.Data["tls.crt"] = triple.EncodeCertPEM(cert)
+			s.Data["tls.key"] = triple.EncodePrivateKeyPEM(key)
 
 			return s, nil
 		}
