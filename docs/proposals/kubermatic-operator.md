@@ -45,20 +45,19 @@ spec:
   # this is effectively a copy of the "auth" section in your ~/.docker/config.json.
   # You must configure credentials for quay.io and docker.io at the
   # very least.
-  secrets:
-    imagePullSecret: |
-      {
-        "auths": {
-          "https://index.docker.io/v1/": {
-            "auth": "[base64-encoded credentials here]",
-            "email": ""
-          },
-          "quay.io": {
-            "auth": "[base64-encoded credentials here]",
-            "email": ""
-          }
+  imagePullSecret: |
+    {
+      "auths": {
+        "https://index.docker.io/v1/": {
+          "auth": "[base64-encoded credentials here]",
+          "email": ""
+        },
+        "quay.io": {
+          "auth": "[base64-encoded credentials here]",
+          "email": ""
         }
       }
+    }
 
   # Dex integration
   auth:
