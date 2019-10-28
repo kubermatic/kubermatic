@@ -529,9 +529,13 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/me").
 		Handler(r.getCurrentUser())
 
-	mux.Methods(http.MethodPut).
+	mux.Methods(http.MethodGet).
 		Path("/me/settings").
-		Handler(r.updateCurrentUserSettings())
+		Handler(r.getCurrentUserSettings())
+
+	mux.Methods(http.MethodPatch).
+		Path("/me/settings").
+		Handler(r.patchCurrentUserSettings())
 
 	mux.Methods(http.MethodGet).
 		Path("/labels/system").
@@ -1873,7 +1877,30 @@ func (r Routing) getCurrentUser() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/me settings updateCurrentUserSettings
+// swagger:route GET /api/v1/me settings getCurrentUserSettings
+//
+//     Returns settings of the current user.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: User
+//       401: empty
+func (r Routing) getCurrentUserSettings() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(user.GetSettingsEndpoint(r.userProjectMapper)),
+		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/me settings patchCurrentUserSettings
 //
 //     Updates settings of the current user.
 //
@@ -1887,13 +1914,13 @@ func (r Routing) getCurrentUser() http.Handler {
 //       default: errorResponse
 //       200: User
 //       401: empty
-func (r Routing) updateCurrentUserSettings() http.Handler {
+func (r Routing) patchCurrentUserSettings() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(user.UpdateSettingsEndpoint(r.userProvider)),
-		user.DecodeUpdateSettingsReq,
+		)(user.PatchSettingsEndpoint(r.userProvider)),
+		user.DecodePatchSettingsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
