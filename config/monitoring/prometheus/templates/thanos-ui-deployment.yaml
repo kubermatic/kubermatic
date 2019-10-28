@@ -1,0 +1,52 @@
+{{- if .Values.prometheus.thanos.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "name" . }}-thanos-ui
+  labels:
+    app.kubernetes.io/name: thanos-ui
+    app.kubernetes.io/instance: {{ template "name" . }}
+    app.kubernetes.io/version: '{{ .Values.prometheus.thanos.image.tag }}'
+    app.kubernetes.io/managed-by: helm
+spec:
+  replicas: {{ .Values.prometheus.thanos.ui.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: thanos-ui
+      app.kubernetes.io/instance: {{ template "name" . }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: thanos-ui
+        app.kubernetes.io/instance: {{ template "name" . }}
+      annotations:
+        kubermatic/scrape: 'true'
+        kubermatic/scrape_port: '10902'
+    spec:
+      containers:
+      - name: thanos
+        image: '{{ .Values.prometheus.thanos.image.repository }}:{{ .Values.prometheus.thanos.image.tag }}'
+        args:
+        - bucket
+        - web
+        - --refresh=10m
+        - --objstore.config-file=/etc/thanos/objstore.yaml
+        ports:
+        - name: http
+          containerPort: 8080
+        volumeMounts:
+        - name: thanos
+          mountPath: /etc/thanos
+        resources:
+{{ toYaml .Values.prometheus.containers.thanosUI.resources | indent 10 }}
+      volumes:
+      - name: thanos
+        secret:
+          secretName: '{{ template "name" . }}-thanos'
+      nodeSelector:
+{{ toYaml .Values.prometheus.thanos.ui.nodeSelector | indent 8 }}
+      affinity:
+{{ (tpl (toYaml .Values.prometheus.thanos.ui.affinity) .) | fromYaml | toYaml | indent 8 }}
+      tolerations:
+{{ toYaml .Values.prometheus.thanos.ui.tolerations | indent 8 }}
+{{- end }}
