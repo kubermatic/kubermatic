@@ -28,12 +28,12 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Clu
 	}
 
 	pvcList := &corev1.PersistentVolumeClaimList{}
-	if err := userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvcList); err != nil {
+	if err := userClusterClient.List(ctx, pvcList); err != nil {
 		return false, fmt.Errorf("failed to list PVCs from user cluster: %v", err)
 	}
 
 	pvList := &corev1.PersistentVolumeList{}
-	if err := userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, pvList); err != nil {
+	if err := userClusterClient.List(ctx, pvList); err != nil {
 		return deletedSomeResource, fmt.Errorf("failed to list PVs from user cluster: %v", err)
 	}
 
@@ -81,7 +81,7 @@ func (d *Deletion) disablePVCreation(ctx context.Context, userClusterClient cont
 
 func (d *Deletion) cleanupPVCUsingPods(ctx context.Context, userClusterClient controllerruntimeclient.Client) error {
 	podList := &corev1.PodList{}
-	if err := userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, podList); err != nil {
+	if err := userClusterClient.List(ctx, podList); err != nil {
 		return fmt.Errorf("failed to list Pods from user cluster: %v", err)
 	}
 

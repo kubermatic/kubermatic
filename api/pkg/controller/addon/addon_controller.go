@@ -93,7 +93,7 @@ func Add(
 		KubeconfigProvider:      kubeconfigProvider,
 		Client:                  client,
 		workerName:              workerName,
-		recorder:                mgr.GetRecorder(ControllerName),
+		recorder:                mgr.GetEventRecorderFor(ControllerName),
 		overwriteRegistry:       overwriteRegistey,
 	}
 
@@ -113,8 +113,7 @@ func Add(
 		}
 
 		addonList := &kubermaticv1.AddonList{}
-		listOptions := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
-		if err := client.List(context.Background(), listOptions, addonList); err != nil {
+		if err := client.List(context.Background(), addonList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
 			log.Errorw("Failed to get addons for cluster", zap.Error(err), "cluster", cluster.Name)
 			return nil
 		}

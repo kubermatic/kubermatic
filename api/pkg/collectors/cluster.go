@@ -71,7 +71,7 @@ func (cc ClusterCollector) Describe(ch chan<- *prometheus.Desc) {
 // Collect gets called by prometheus to collect the metrics
 func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
 	clusters := &kubermaticv1.ClusterList{}
-	if err := cc.client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, clusters); err != nil {
+	if err := cc.client.List(context.Background(), clusters); err != nil {
 		utilruntime.HandleError(fmt.Errorf("failed to list clusters from clusterLister in ClusterCollector: %v", err))
 		return
 	}

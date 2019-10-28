@@ -46,7 +46,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, label
 		ctx:      ctx,
 		log:      log,
 		client:   mgr.GetClient(),
-		recorder: mgr.GetRecorder(controllerName),
+		recorder: mgr.GetEventRecorderFor(controllerName),
 		labels:   labels,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{

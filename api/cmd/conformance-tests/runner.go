@@ -28,6 +28,7 @@ import (
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
 	projectclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
 	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -39,7 +40,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -271,7 +271,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		}
 		clusterList := &kubermaticv1.ClusterList{}
 		listOptions := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
-		if err := r.seedClusterClient.List(context.Background(), listOptions, clusterList); err != nil {
+		if err := r.seedClusterClient.List(context.Background(), clusterList, listOptions); err != nil {
 			return nil, fmt.Errorf("failed to list clusters: %v", err)
 		}
 		if foundClusterNum := len(clusterList.Items); foundClusterNum != 1 {
@@ -472,7 +472,7 @@ func (r *testRunner) deleteCluster(report *reporters.JUnitTestSuite, cluster *ku
 			return wait.PollImmediate(5*time.Second, deleteTimeout, func() (bool, error) {
 				clusterList := &kubermaticv1.ClusterList{}
 				listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
-				if err := r.seedClusterClient.List(r.ctx, listOpts, clusterList); err != nil {
+				if err := r.seedClusterClient.List(r.ctx, clusterList, listOpts); err != nil {
 					log.Errorw("Listing clusters failed", zap.Error(err))
 					return false, nil
 				}
@@ -492,7 +492,7 @@ func (r *testRunner) deleteCluster(report *reporters.JUnitTestSuite, cluster *ku
 				log.With("cluster", clusterList.Items[0].Name).Info("Issuing DELETE call for cluster")
 				deleteParms.ClusterID = clusterList.Items[0].Name
 				_, err := r.kubermaticClient.Project.DeleteCluster(deleteParms, r.kubermaticAuthenticator)
-				log.Errorw("cluster delete call returned error", zap.Error(errors.New(fmtSwaggerError(err))))
+				log.Infow("Issued cluster delete call", zap.Error(errors.New(fmtSwaggerError(err))))
 				return false, nil
 			})
 		},
@@ -769,7 +769,7 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 		// For some reason the cluster doesn't have the name we set via ID on creation
 		clusterList := &kubermaticv1.ClusterList{}
 		opts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
-		if err := r.seedClusterClient.List(r.ctx, opts, clusterList); err != nil {
+		if err := r.seedClusterClient.List(r.ctx, clusterList, opts); err != nil {
 			return false, err
 		}
 		numFoundClusters := len(clusterList.Items)
@@ -818,7 +818,11 @@ func (r *testRunner) waitForControlPlane(log *zap.SugaredLogger, clusterName str
 		}
 
 		controlPlanePods := &corev1.PodList{}
-		if err := r.seedClusterClient.List(context.Background(), &ctrlruntimeclient.ListOptions{Namespace: newCluster.Status.NamespaceName}, controlPlanePods); err != nil {
+		if err := r.seedClusterClient.List(
+			context.Background(),
+			controlPlanePods,
+			&ctrlruntimeclient.ListOptions{Namespace: newCluster.Status.NamespaceName},
+		); err != nil {
 			return false, fmt.Errorf("failed to list controlplane pods: %v", err)
 		}
 		for _, pod := range controlPlanePods.Items {
@@ -850,7 +854,7 @@ func (r *testRunner) waitUntilAllPodsAreReady(log *zap.SugaredLogger, userCluste
 
 	err := wait.Poll(defaultUserClusterPollInterval, timeout, func() (done bool, err error) {
 		podList := &corev1.PodList{}
-		if err := userClusterClient.List(context.Background(), &ctrlruntimeclient.ListOptions{}, podList); err != nil {
+		if err := userClusterClient.List(context.Background(), podList); err != nil {
 			log.Warnf("failed to load pod list while waiting until all pods are running: %v", err)
 			return false, nil
 		}
@@ -1126,7 +1130,7 @@ func waitForMachinesToJoinCluster(log *zap.SugaredLogger, client ctrlruntimeclie
 	startTime := time.Now()
 	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
 		machineList := &clusterv1alpha1.MachineList{}
-		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, machineList); err != nil {
+		if err := client.List(context.Background(), machineList); err != nil {
 			log.Warnw("Failed to list machines", zap.Error(err))
 			return false, nil
 		}
@@ -1152,7 +1156,7 @@ func waitForNodesToBeReady(log *zap.SugaredLogger, client ctrlruntimeclient.Clie
 	startTime := time.Now()
 	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
 		nodeList := &corev1.NodeList{}
-		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+		if err := client.List(context.Background(), nodeList); err != nil {
 			log.Warnw("Failed to list nodes", zap.Error(err))
 			return false, nil
 		}
@@ -1248,12 +1252,9 @@ func printEventsAndLogsForAllPods(
 	namespace string,
 ) error {
 	log.Infow("Printing logs for all pods", "namespace", namespace)
-	listOpts := &ctrlruntimeclient.ListOptions{
-		Namespace: namespace,
-	}
 
 	pods := &corev1.PodList{}
-	if err := client.List(ctx, listOpts, pods); err != nil {
+	if err := client.List(ctx, pods, ctrlruntimeclient.InNamespace(namespace)); err != nil {
 		return fmt.Errorf("failed to list pods: %v", err)
 	}
 
@@ -1328,7 +1329,7 @@ func logEventsForAllMachines(
 	client ctrlruntimeclient.Client,
 ) {
 	machines := &clusterv1alpha1.MachineList{}
-	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, machines); err != nil {
+	if err := client.List(ctx, machines); err != nil {
 		log.Errorw("Failed to list machines", zap.Error(err))
 		return
 	}
@@ -1358,7 +1359,7 @@ func logEventsObject(
 		Namespace:     namespace,
 		FieldSelector: fields.OneTermEqualSelector("involvedObject.uid", string(uid)),
 	}
-	if err := client.List(ctx, listOpts, events); err != nil {
+	if err := client.List(ctx, events, listOpts); err != nil {
 		return fmt.Errorf("failed to get events: %v", err)
 	}
 

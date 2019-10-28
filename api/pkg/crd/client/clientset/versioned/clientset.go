@@ -12,8 +12,6 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	KubermaticV1() kubermaticv1.KubermaticV1Interface
-	// Deprecated: please explicitly pick a version if possible.
-	Kubermatic() kubermaticv1.KubermaticV1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -25,12 +23,6 @@ type Clientset struct {
 
 // KubermaticV1 retrieves the KubermaticV1Client
 func (c *Clientset) KubermaticV1() kubermaticv1.KubermaticV1Interface {
-	return c.kubermaticV1
-}
-
-// Deprecated: Kubermatic retrieves the default version of KubermaticClient.
-// Please explicitly pick a version.
-func (c *Clientset) Kubermatic() kubermaticv1.KubermaticV1Interface {
 	return c.kubermaticV1
 }
 

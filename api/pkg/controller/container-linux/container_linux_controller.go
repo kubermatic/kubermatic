@@ -84,7 +84,7 @@ func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 func (r *Reconciler) labelAllContainerLinuxNodes(ctx context.Context) (bool, error) {
 	var hasContainerLinuxNode bool
 	nodeList := &corev1.NodeList{}
-	if err := r.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+	if err := r.List(ctx, nodeList); err != nil {
 		return false, fmt.Errorf("failed to list nodes: %v", err)
 	}
 

@@ -19,9 +19,9 @@ import (
 	awsprovider "github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -290,7 +290,7 @@ func AWSSubnetWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 		}
 
 		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
+		if err := client.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 

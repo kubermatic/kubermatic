@@ -106,7 +106,7 @@ func Add(
 
 		log: log,
 
-		recorder: mgr.GetRecorder(ControllerName),
+		recorder: mgr.GetEventRecorderFor(ControllerName),
 
 		overwriteRegistry:                                overwriteRegistry,
 		nodePortRange:                                    nodePortRange,

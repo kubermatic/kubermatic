@@ -106,7 +106,7 @@ func Add(
 		backupScheduleString: backupScheduleString,
 		backupContainerImage: backupContainerImage,
 		Client:               mgr.GetClient(),
-		recorder:             mgr.GetRecorder(ControllerName),
+		recorder:             mgr.GetEventRecorderFor(ControllerName),
 	}
 	c, err := controller.New(ControllerName, mgr, controller.Options{
 		Reconciler:              reconciler,
@@ -168,7 +168,7 @@ func (r *Reconciler) cleanupJobs() {
 	}
 
 	jobs := &batchv1.JobList{}
-	if err := r.List(ctx, &ctrlruntimeclient.ListOptions{LabelSelector: selector}, jobs); err != nil {
+	if err := r.List(ctx, jobs, &ctrlruntimeclient.ListOptions{LabelSelector: selector}); err != nil {
 		log.Errorw("failed to list jobs", "selector", selector.String(), zap.Error(err))
 		utilruntime.HandleError(fmt.Errorf("failed to list jobs: %v", err))
 		return
@@ -177,12 +177,12 @@ func (r *Reconciler) cleanupJobs() {
 	for _, job := range jobs.Items {
 		if job.Status.Succeeded >= 1 && (job.Status.CompletionTime != nil && time.Since(job.Status.CompletionTime.Time).Minutes() > 5) {
 
-			modifierForegroundDeletePropagation := func(deleteOpts *ctrlruntimeclient.DeleteOptions) {
-				deletePropagationForeground := metav1.DeletePropagationForeground
-				deleteOpts.PropagationPolicy = &deletePropagationForeground
+			deletePropagationForeground := metav1.DeletePropagationForeground
+			delOpts := &ctrlruntimeclient.DeleteOptions{
+				PropagationPolicy: &deletePropagationForeground,
 			}
 			jobName := types.NamespacedName{Name: job.Name, Namespace: job.Namespace}
-			if err := r.Delete(ctx, &job, modifierForegroundDeletePropagation); err != nil {
+			if err := r.Delete(ctx, &job, delOpts); err != nil {
 				log.Errorw(
 					"Failed to delete cleanup job",
 					zap.Error(err),

@@ -66,7 +66,7 @@ func (od *openshiftData) GetOpenVPNCAWithContext(ctx context.Context) (*kubernet
 		return nil, fmt.Errorf("did not find exactly one but %v certificates in the CA secret", len(certs))
 	}
 
-	key, err := certutil.ParsePrivateKeyPEM(caCertSecret.Data[kubernetesresources.CAKeySecretKey])
+	key, err := triple.ParsePrivateKeyPEM(caCertSecret.Data[kubernetesresources.CAKeySecretKey])
 	if err != nil {
 		return nil, fmt.Errorf("got an invalid private key from the CA secret %s: %v", kubernetesresources.CASecretName, err)
 	}
@@ -101,7 +101,7 @@ func (od *openshiftData) parseRSA(cert, rawKey []byte) (*triple.KeyPair, error) 
 		return nil, fmt.Errorf("did not find exactly one but %v certificates in the secret", len(certs))
 	}
 
-	key, err := certutil.ParsePrivateKeyPEM(rawKey)
+	key, err := triple.ParsePrivateKeyPEM(rawKey)
 	if err != nil {
 		return nil, fmt.Errorf("got an invalid private key from the secret: %v", err)
 	}
