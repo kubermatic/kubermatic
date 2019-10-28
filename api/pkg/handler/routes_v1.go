@@ -629,8 +629,7 @@ func (r Routing) listCredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(presets.CredentialEndpoint(r.presetsManager)),
+		)(presets.CredentialEndpoint(r.presetsManager, r.userInfoGetter)),
 		presets.DecodeProviderReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
