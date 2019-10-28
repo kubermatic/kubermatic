@@ -15,7 +15,6 @@ import (
 const (
 	dockercfgSecretName                   = "dockercfg"
 	kubeconfigSecretName                  = "kubeconfig"
-	datacentersSecretName                 = "datacenters"
 	presetsSecretName                     = "presets"
 	dexCASecretName                       = "dex-ca"
 	masterFilesSecretName                 = "extra-files"
