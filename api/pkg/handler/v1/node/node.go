@@ -25,6 +25,7 @@ import (
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation/nodeupdate"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -239,7 +239,7 @@ func ListNodeDeployments(projectProvider provider.ProjectProvider) endpoint.Endp
 		}
 
 		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
+		if err := client.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -377,7 +377,7 @@ func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.
 	}
 
 	machines := &clusterv1alpha1.MachineList{}
-	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}, machines); err != nil {
+	if err := client.List(ctx, machines, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}); err != nil {
 		return nil, err
 	}
 	return machines, nil
@@ -395,7 +395,8 @@ func getMachineSetsForNodeDeployment(ctx context.Context, clusterProvider provid
 	}
 
 	machineSets := &clusterv1alpha1.MachineSetList{}
-	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}, machineSets); err != nil {
+	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}
+	if err := client.List(ctx, machineSets, listOpts); err != nil {
 		return nil, err
 	}
 	return machineSets, nil
@@ -532,7 +533,7 @@ func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider) endpoin
 
 		nodeDeploymentNodesMetrics := make([]v1beta1.NodeMetrics, 0)
 		allNodeMetricsList := &v1beta1.NodeMetricsList{}
-		if err := dynamicCLient.List(ctx, &ctrlruntimeclient.ListOptions{}, allNodeMetricsList); err != nil {
+		if err := dynamicCLient.List(ctx, allNodeMetricsList); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -912,7 +913,7 @@ func getNodeList(ctx context.Context, cluster *kubermaticv1.Cluster, clusterProv
 	}
 
 	nodeList := &corev1.NodeList{}
-	if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+	if err := client.List(ctx, nodeList); err != nil {
 		return nil, err
 	}
 	return nodeList, nil

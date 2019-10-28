@@ -12,11 +12,11 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -45,7 +45,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager *
 		workerName:                    workerName,
 		updateManager:                 updateManager,
 		Client:                        mgr.GetClient(),
-		recorder:                      mgr.GetRecorder(ControllerName),
+		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
 	}
@@ -137,8 +137,7 @@ func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Clust
 
 	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
 	// Kubermatic only creates MachineDeployments in the kube-system namespace, everything else is essentially unsupported
-	listOpts := &ctrlruntimeclient.ListOptions{Namespace: "kube-system"}
-	if err := c.List(ctx, listOpts, machineDeployments); err != nil {
+	if err := c.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace("kube-system")); err != nil {
 		return fmt.Errorf("failed to list MachineDeployments: %v", err)
 	}
 

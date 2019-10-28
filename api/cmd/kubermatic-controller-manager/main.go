@@ -21,18 +21,17 @@ import (
 	metricserver "github.com/kubermatic/kubermatic/api/pkg/metrics/server"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
-	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 const (
@@ -84,7 +83,7 @@ func main() {
 	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
-	if _, err := informer.GetSyncedStoreFromDynamicFactory(mgr.GetCache(), &autoscalingv1beta2.VerticalPodAutoscaler{}); err != nil {
+	if err := mgr.GetAPIReader().List(context.Background(), &autoscalingv1beta2.VerticalPodAutoscalerList{}); err != nil {
 		if _, crdNotRegistered := err.(*meta.NoKindMatchError); crdNotRegistered {
 			log.Fatal(`
 The VerticalPodAutoscaler is not installed in this seed cluster.
@@ -224,7 +223,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 				electionName += "-" + options.workerName
 			}
 
-			return leaderelection.RunAsLeader(leaderCtx, log, config, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) error {
+			return leaderelection.RunAsLeader(leaderCtx, log, config, mgr.GetEventRecorderFor(controllerName), electionName, func(ctx context.Context) error {
 				log.Info("Executing migrations...")
 				if err := migrations.RunAll(ctrlCtx.mgr.GetConfig(), options.workerName); err != nil {
 					return fmt.Errorf("failed to run migrations: %v", err)

@@ -68,7 +68,7 @@ func main() {
 		}
 
 		nodeList := &corev1.NodeList{}
-		if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+		if err := client.List(context.Background(), nodeList); err != nil {
 			return false, nil
 		}
 
@@ -78,7 +78,8 @@ func main() {
 		log.Fatalw("Failed waiting for the API server to be alive", zap.Error(err))
 	}
 
-	mgr, err := manager.New(config, manager.Options{})
+	// 8080 is already in use by the insecure port of the apiserver
+	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: ":8090"})
 	if err != nil {
 		log.Fatalw("failed to create mgr", zap.Error(err))
 	}

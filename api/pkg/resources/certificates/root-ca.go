@@ -9,7 +9,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	certutil "k8s.io/client-go/util/cert"
 )
 
 // GetCACreator returns a function to create a secret containing a CA with the specified name
@@ -28,8 +27,8 @@ func GetCACreator(commonName string) reconciling.SecretCreator {
 			return nil, fmt.Errorf("unable to create a new CA: %v", err)
 		}
 
-		se.Data[resources.CAKeySecretKey] = certutil.EncodePrivateKeyPEM(caKp.Key)
-		se.Data[resources.CACertSecretKey] = certutil.EncodeCertPEM(caKp.Cert)
+		se.Data[resources.CAKeySecretKey] = triple.EncodePrivateKeyPEM(caKp.Key)
+		se.Data[resources.CACertSecretKey] = triple.EncodeCertPEM(caKp.Cert)
 
 		return se, nil
 	}

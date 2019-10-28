@@ -791,7 +791,7 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter
 		}
 
 		nodeList := &corev1.NodeList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, nodeList); err != nil {
+		if err := client.List(ctx, nodeList); err != nil {
 			return nil, err
 		}
 		availableResources := make(map[string]corev1.ResourceList)
@@ -805,13 +805,13 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter
 		}
 
 		allNodeMetricsList := &v1beta1.NodeMetricsList{}
-		if err := dynamicCLient.List(ctx, &ctrlruntimeclient.ListOptions{}, allNodeMetricsList); err != nil {
+		if err := dynamicCLient.List(ctx, allNodeMetricsList); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
 		podMetricsList := &v1beta1.PodMetricsList{}
-		if err := seedAdminClient.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: fmt.Sprintf("cluster-%s", cluster.Name)}, podMetricsList); err != nil {
+		if err := seedAdminClient.List(ctx, podMetricsList, &ctrlruntimeclient.ListOptions{Namespace: fmt.Sprintf("cluster-%s", cluster.Name)}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return convertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster)
@@ -1245,7 +1245,7 @@ func ListNamespaceEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endp
 		}
 
 		namespaceList := &corev1.NamespaceList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{}, namespaceList); err != nil {
+		if err := client.List(ctx, namespaceList); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 

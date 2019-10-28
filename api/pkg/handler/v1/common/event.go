@@ -33,7 +33,7 @@ func GetEvents(ctx context.Context, client ctrlruntimeclient.Client, obj metav1.
 		Namespace:     objNamespace,
 		FieldSelector: fields.OneTermEqualSelector("involvedObject.uid", string(obj.GetUID())),
 	}
-	if err := client.List(ctx, listOpts, events); err != nil {
+	if err := client.List(ctx, events, listOpts); err != nil {
 		return nil, err
 	}
 

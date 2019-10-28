@@ -236,7 +236,7 @@ func main() {
 				electionName += "-" + runOpts.workerName
 			}
 
-			return leaderelection.RunAsLeader(leaderCtx, log, cfg, mgr.GetRecorder(controllerName), electionName, func(ctx context.Context) error {
+			return leaderelection.RunAsLeader(leaderCtx, log, cfg, mgr.GetEventRecorderFor(controllerName), electionName, func(ctx context.Context) error {
 				if migrationOptions.MigrationEnabled() {
 					log.Info("executing migrations...")
 

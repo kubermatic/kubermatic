@@ -32,6 +32,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -39,10 +40,9 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/klog"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
@@ -132,7 +132,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("Failed to read ca-key file", zap.Error(err))
 	}
-	caKey, err := certutil.ParsePrivateKeyPEM(caKeyBytes)
+	caKey, err := triple.ParsePrivateKeyPEM(caKeyBytes)
 	if err != nil {
 		log.Fatalw("Failed to parse ca-key", zap.Error(err))
 	}
@@ -146,7 +146,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("Failed to read openvpn-ca-cert-file", zap.Error(err))
 	}
-	openVPNCACerts, err := certutil.ParseCertsPEM(openVPNCACertBytes)
+	openVPNCACerts, err := triple.ParseCertsPEM(openVPNCACertBytes)
 	if err != nil {
 		log.Fatalw("Failed to parse openVPN CA file", zap.Error(err))
 	}
@@ -157,7 +157,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("Failed to read openvpn-ca-key-file", zap.Error(err))
 	}
-	openVPNCAKey, err := certutil.ParsePrivateKeyPEM(openVPNCAKeyBytes)
+	openVPNCAKey, err := triple.ParsePrivateKeyPEM(openVPNCAKeyBytes)
 	if err != nil {
 		log.Fatalw("Failed to parse openVPN CA key file", zap.Error(err))
 	}

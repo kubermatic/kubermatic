@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
+	"github.com/kubermatic/machine-controller/pkg/apis/cluster/common"
 )
 
 var (

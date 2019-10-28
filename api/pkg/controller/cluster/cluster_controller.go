@@ -118,7 +118,7 @@ func Add(
 		userClusterConnProvider: userClusterConnProvider,
 		workerName:              workerName,
 
-		recorder: mgr.GetRecorder(ControllerName),
+		recorder: mgr.GetEventRecorderFor(ControllerName),
 
 		overwriteRegistry:                      overwriteRegistry,
 		nodePortRange:                          nodePortRange,
