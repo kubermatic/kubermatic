@@ -115,7 +115,7 @@ func (r *Reconciler) garbageCollect(seeds map[string]*kubermaticv1.Seed, log *za
 		}),
 	}
 
-	if err := r.List(r.ctx, options, list); err != nil {
+	if err := r.List(r.ctx, list, options); err != nil {
 		return fmt.Errorf("failed to list Secrets: %v", err)
 	}
 

@@ -113,7 +113,7 @@ func Add(
 		Client:                   mgr.GetClient(),
 		log:                      log.Named(ControllerName),
 		scheme:                   mgr.GetScheme(),
-		recorder:                 mgr.GetRecorder(ControllerName),
+		recorder:                 mgr.GetEventRecorderFor(ControllerName),
 		seedGetter:               seedGetter,
 		userClusterConnProvider:  userClusterConnProvider,
 		overwriteRegistry:        overwriteRegistry,

@@ -219,6 +219,14 @@ spec:
         securityContext:
           runAsNonRoot: false
           runAsUser: 0
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: http-sidecar
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: http-sidecar
         resources:
 {{ toYaml .Values.prometheus.containers.thanosSidecar.resources | indent 10 }}
       {{- end }}

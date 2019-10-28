@@ -178,7 +178,7 @@ func (r *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 
 func (r *reconciler) sync() error {
 	services := &corev1.ServiceList{}
-	if err := r.List(r.ctx, &ctrlruntimeclient.ListOptions{Namespace: r.namespace}, services); err != nil {
+	if err := r.List(r.ctx, services, ctrlruntimeclient.InNamespace(r.namespace)); err != nil {
 		return errors.Wrap(err, "failed to list service's")
 	}
 
@@ -351,7 +351,7 @@ func (r *reconciler) getReadyServicePods(service *corev1.Service) ([]*corev1.Pod
 		Namespace:     service.Namespace,
 	}
 	servicePods := &corev1.PodList{}
-	if err := r.List(context.Background(), opts, servicePods); err != nil {
+	if err := r.List(context.Background(), servicePods, opts); err != nil {
 		return readyPods, errors.Wrap(err, fmt.Sprintf("failed to list pod's for service '%s' via selector: '%s'", key, opts.LabelSelector.String()))
 	}
 

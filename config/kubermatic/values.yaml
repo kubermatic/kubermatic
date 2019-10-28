@@ -84,7 +84,6 @@ kubermatic:
         # list of Addons to install into every user-cluster. All need to exist in the addons image
         defaultAddons:
         - canal
-        - dashboard
         - dns
         - kube-proxy
         - openvpn

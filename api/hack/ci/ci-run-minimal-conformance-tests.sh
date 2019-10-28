@@ -72,23 +72,6 @@ function cleanup {
       exit 1
     fi
 
-    # Control plane logs
-    echodate "Dumping all conntrol plane logs"
-    local GOTEMPLATE='{{ range $pod := .items }}{{ range $container := .spec.containers }}{{ printf "%s,%s\n" $pod.metadata.name $container.name }}{{end}}{{end}}'
-    for i in $(kubectl get pods -n $NAMESPACE -o go-template="$GOTEMPLATE"); do
-      local POD="${i%,*}"
-      local CONTAINER="${i#*,}"
-
-      echo " [*] Pod $POD, container $CONTAINER:"
-      kubectl logs -n $NAMESPACE "$POD" "$CONTAINER"
-    done
-
-    # Display machine events, we don't have to worry about secrets here as they are stored in the machine-controllers env
-    # Except for vSphere
-    TMP_KUBECONFIG=$(mktemp);
-    USERCLUSTER_NS=$(kubectl get cluster -o name -l worker-name=${BUILD_ID} |sed 's#.kubermatic.k8s.io/#-#g')
-    kubectl get secret -n ${USERCLUSTER_NS} admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' | base64 -d > $TMP_KUBECONFIG
-    kubectl --kubeconfig=${TMP_KUBECONFIG} describe machine -n kube-system|egrep -vi 'password|user'
   fi
 
   # Delete addons from all clusters that have our worker-name label

@@ -100,7 +100,7 @@ func (in *Addon) DeepCopyObject() runtime.Object {
 func (in *AddonList) DeepCopyInto(out *AddonList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Addon, len(*in))
@@ -390,7 +390,7 @@ func (in *ClusterCondition) DeepCopy() *ClusterCondition {
 func (in *ClusterList) DeepCopyInto(out *ClusterList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Cluster, len(*in))
@@ -1423,7 +1423,7 @@ func (in *Preset) DeepCopyObject() runtime.Object {
 func (in *PresetList) DeepCopyInto(out *PresetList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Preset, len(*in))
@@ -1566,7 +1566,7 @@ func (in *ProjectGroup) DeepCopy() *ProjectGroup {
 func (in *ProjectList) DeepCopyInto(out *ProjectList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Project, len(*in))
@@ -1731,7 +1731,7 @@ func (in *Seed) DeepCopyObject() runtime.Object {
 func (in *SeedList) DeepCopyInto(out *SeedList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Seed, len(*in))
@@ -1863,7 +1863,7 @@ func (in *User) DeepCopyObject() runtime.Object {
 func (in *UserList) DeepCopyInto(out *UserList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]User, len(*in))
@@ -1923,7 +1923,7 @@ func (in *UserProjectBinding) DeepCopyObject() runtime.Object {
 func (in *UserProjectBindingList) DeepCopyInto(out *UserProjectBindingList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]UserProjectBinding, len(*in))
@@ -1999,7 +1999,7 @@ func (in *UserSSHKey) DeepCopyObject() runtime.Object {
 func (in *UserSSHKeyList) DeepCopyInto(out *UserSSHKeyList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]UserSSHKey, len(*in))

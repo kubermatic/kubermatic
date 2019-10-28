@@ -23,6 +23,7 @@ type UserClusterConnectionProvider interface {
 	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
 	GetViewerKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
 	RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error
+	GetClientConfig(c *kubermaticv1.Cluster, options ...ConfigOption) (*restclient.Config, error)
 }
 
 // NewInternal returns a new instance of the client connection provider that

@@ -7,6 +7,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -40,7 +41,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		},
 	}
 
-	caKey, err := certutil.NewPrivateKey()
+	caKey, err := triple.NewPrivateKey()
 	if err != nil {
 		t.Fatalf("unable to create a private key for the CA: %v", err)
 	}
@@ -56,8 +57,8 @@ func TestEnsureBackupCronJob(t *testing.T) {
 			Name:      resources.CASecretName,
 		},
 		Data: map[string][]byte{
-			resources.CACertSecretKey: certutil.EncodeCertPEM(caCert),
-			resources.CAKeySecretKey:  certutil.EncodePrivateKeyPEM(caKey),
+			resources.CACertSecretKey: triple.EncodeCertPEM(caCert),
+			resources.CAKeySecretKey:  triple.EncodePrivateKeyPEM(caKey),
 		},
 	}
 
@@ -74,7 +75,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	}
 
 	cronJobs := &batchv1beta1.CronJobList{}
-	if err := reconciler.List(context.Background(), &ctrlruntimeclient.ListOptions{}, cronJobs); err != nil {
+	if err := reconciler.List(context.Background(), cronJobs); err != nil {
 		t.Fatalf("Error listing cronjobs: %v", err)
 	}
 
@@ -96,7 +97,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		t.Fatalf("Error syncin cluster: %v", err)
 	}
 
-	if err := reconciler.List(context.Background(), &ctrlruntimeclient.ListOptions{}, cronJobs); err != nil {
+	if err := reconciler.List(context.Background(), cronJobs); err != nil {
 		t.Fatalf("Error listing cronjobs after updating cronJob: %v", err)
 	}
 
@@ -113,7 +114,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 
 	secrets := &corev1.SecretList{}
 	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}
-	if err := reconciler.List(context.Background(), listOpts, secrets); err != nil {
+	if err := reconciler.List(context.Background(), secrets, listOpts); err != nil {
 		t.Fatalf("failed to list secrets: %v", err)
 	}
 

@@ -17,12 +17,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	k8csemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 func TestGetClusterUpgrades(t *testing.T) {
@@ -400,7 +397,7 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			}
 
 			mds := &clusterv1alpha1.MachineDeploymentList{}
-			if err := cs.FakeClient.List(context.TODO(), &ctrlruntimeclient.ListOptions{Raw: &metav1.ListOptions{}}, mds); err != nil {
+			if err := cs.FakeClient.List(context.TODO(), mds); err != nil {
 				t.Fatalf("failed to list machine deployments: %v", err)
 			}
 

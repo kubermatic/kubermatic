@@ -190,13 +190,17 @@
           "settings"
         ],
         "summary": "Updates settings of the current user.",
-        "operationId": "updateCurrentUserSettings",
+        "operationId": "patchCurrentUserSettings",
         "parameters": [
           {
-            "name": "Body",
+            "name": "Patch",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/UserSettings"
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
             }
           }
         ],
@@ -8333,7 +8337,7 @@
           "x-go-name": "UpdatedReplicas"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
     },
     "MachineNetworkingConfig": {
       "type": "object",

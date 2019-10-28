@@ -32,7 +32,7 @@ func (d *Deletion) cleanupLBs(ctx context.Context, log *zap.SugaredLogger, clust
 	}
 
 	serviceList := &corev1.ServiceList{}
-	if err := userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, serviceList); err != nil {
+	if err := userClusterClient.List(ctx, serviceList); err != nil {
 		return false, fmt.Errorf("failed to list Service's from user cluster: %v", err)
 	}
 
@@ -123,7 +123,7 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 	for deletedLB := range deletedLoadBalancers {
 		selector := fields.OneTermEqualSelector("involvedObject.uid", deletedLB)
 		events := &corev1.EventList{}
-		if err := userClusterClient.List(context.Background(), &controllerruntimeclient.ListOptions{FieldSelector: selector}, events); err != nil {
+		if err := userClusterClient.List(context.Background(), events, &controllerruntimeclient.ListOptions{FieldSelector: selector}); err != nil {
 			return false, fmt.Errorf("failed to get service events: %v", err)
 		}
 		for _, event := range events.Items {

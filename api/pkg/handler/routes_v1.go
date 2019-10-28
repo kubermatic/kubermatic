@@ -529,9 +529,13 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/me").
 		Handler(r.getCurrentUser())
 
-	mux.Methods(http.MethodPut).
+	mux.Methods(http.MethodGet).
 		Path("/me/settings").
-		Handler(r.updateCurrentUserSettings())
+		Handler(r.getCurrentUserSettings())
+
+	mux.Methods(http.MethodPatch).
+		Path("/me/settings").
+		Handler(r.patchCurrentUserSettings())
 
 	mux.Methods(http.MethodGet).
 		Path("/labels/system").
@@ -1445,8 +1449,7 @@ func (r Routing) getClusterKubeconfig() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.GetAdminKubeconfigEndpoint(r.projectProvider)),
+		)(cluster.GetAdminKubeconfigEndpoint(r.projectProvider, r.userInfoGetter)),
 		cluster.DecodeGetAdminKubeconfig,
 		cluster.EncodeKubeconfig,
 		r.defaultServerOptions()...,
@@ -1472,8 +1475,7 @@ func (r Routing) getOidcClusterKubeconfig() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.GetOidcKubeconfigEndpoint(r.projectProvider)),
+		)(cluster.GetOidcKubeconfigEndpoint(r.projectProvider, r.userInfoGetter)),
 		cluster.DecodeGetAdminKubeconfig,
 		cluster.EncodeKubeconfig,
 		r.defaultServerOptions()...,
@@ -1684,8 +1686,7 @@ func (r Routing) getClusterUpgrades() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.GetUpgradesEndpoint(r.updateManager, r.projectProvider)),
+		)(cluster.GetUpgradesEndpoint(r.updateManager, r.projectProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1734,8 +1735,7 @@ func (r Routing) upgradeClusterNodeDeployments() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.UpgradeNodeDeploymentsEndpoint(r.projectProvider)),
+		)(cluster.UpgradeNodeDeploymentsEndpoint(r.projectProvider, r.userInfoGetter)),
 		cluster.DecodeUpgradeNodeDeploymentsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1877,7 +1877,30 @@ func (r Routing) getCurrentUser() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/me settings updateCurrentUserSettings
+// swagger:route GET /api/v1/me settings getCurrentUserSettings
+//
+//     Returns settings of the current user.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: User
+//       401: empty
+func (r Routing) getCurrentUserSettings() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(user.GetSettingsEndpoint(r.userProjectMapper)),
+		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/me settings patchCurrentUserSettings
 //
 //     Updates settings of the current user.
 //
@@ -1891,13 +1914,13 @@ func (r Routing) getCurrentUser() http.Handler {
 //       default: errorResponse
 //       200: User
 //       401: empty
-func (r Routing) updateCurrentUserSettings() http.Handler {
+func (r Routing) patchCurrentUserSettings() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(user.UpdateSettingsEndpoint(r.userProvider)),
-		user.DecodeUpdateSettingsReq,
+		)(user.PatchSettingsEndpoint(r.userProvider)),
+		user.DecodePatchSettingsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -2731,7 +2754,6 @@ func (r Routing) listAccessibleAddons() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(addon.ListAccessibleAddons(r.accessibleAddons)),
 		decodeEmptyReq,
 		encodeJSON,
@@ -2761,8 +2783,7 @@ func (r Routing) createAddon() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(addon.CreateAddonEndpoint(r.projectProvider)),
+		)(addon.CreateAddonEndpoint(r.projectProvider, r.userInfoGetter)),
 		addon.DecodeCreateAddon,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -2788,8 +2809,7 @@ func (r Routing) listAddons() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(addon.ListAddonEndpoint(r.projectProvider)),
+		)(addon.ListAddonEndpoint(r.projectProvider, r.userInfoGetter)),
 		addon.DecodeListAddons,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2815,8 +2835,7 @@ func (r Routing) getAddon() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(addon.GetAddonEndpoint(r.projectProvider)),
+		)(addon.GetAddonEndpoint(r.projectProvider, r.userInfoGetter)),
 		addon.DecodeGetAddon,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2845,8 +2864,7 @@ func (r Routing) patchAddon() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(addon.PatchAddonEndpoint(r.projectProvider)),
+		)(addon.PatchAddonEndpoint(r.projectProvider, r.userInfoGetter)),
 		addon.DecodePatchAddon,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2872,8 +2890,7 @@ func (r Routing) deleteAddon() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(addon.DeleteAddonEndpoint(r.projectProvider)),
+		)(addon.DeleteAddonEndpoint(r.projectProvider, r.userInfoGetter)),
 		addon.DecodeGetAddon,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2927,8 +2944,7 @@ func (r Routing) createClusterRole() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.CreateClusterRoleEndpoint()),
+		)(cluster.CreateClusterRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeCreateClusterRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3035,8 +3051,7 @@ func (r Routing) createRole() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.CreateRoleEndpoint()),
+		)(cluster.CreateRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeCreateRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3061,8 +3076,7 @@ func (r Routing) listClusterRole() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.ListClusterRoleEndpoint()),
+		)(cluster.ListClusterRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeListClusterRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3087,8 +3101,7 @@ func (r Routing) listRole() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.ListRoleEndpoint()),
+		)(cluster.ListRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeListClusterRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3113,8 +3126,7 @@ func (r Routing) getClusterRole() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.GetClusterRoleEndpoint()),
+		)(cluster.GetClusterRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeGetClusterRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3139,8 +3151,7 @@ func (r Routing) getRole() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.GetRoleEndpoint()),
+		)(cluster.GetRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeGetRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3165,8 +3176,7 @@ func (r Routing) deleteClusterRole() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.DeleteClusterRoleEndpoint()),
+		)(cluster.DeleteClusterRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeGetClusterRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3191,8 +3201,7 @@ func (r Routing) deleteRole() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.DeleteRoleEndpoint()),
+		)(cluster.DeleteRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeGetRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3242,8 +3251,7 @@ func (r Routing) patchRole() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.PatchRoleEndpoint()),
+		)(cluster.PatchRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodePatchRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3268,8 +3276,7 @@ func (r Routing) patchClusterRole() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.PatchClusterRoleEndpoint()),
+		)(cluster.PatchClusterRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodePatchClusterRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3297,8 +3304,7 @@ func (r Routing) createRoleBinding() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.CreateRoleBindingEndpoint()),
+		)(cluster.CreateRoleBindingEndpoint(r.userInfoGetter)),
 		cluster.DecodeCreateRoleBindingReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3324,8 +3330,7 @@ func (r Routing) listRoleBinding() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.ListRoleBindingEndpoint()),
+		)(cluster.ListRoleBindingEndpoint(r.userInfoGetter)),
 		cluster.DecodeListRoleBindingReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3351,8 +3356,7 @@ func (r Routing) getRoleBinding() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.GetRoleBindingEndpoint()),
+		)(cluster.GetRoleBindingEndpoint(r.userInfoGetter)),
 		cluster.DecodeRoleBindingReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3378,8 +3382,7 @@ func (r Routing) deleteRoleBinding() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.DeleteRoleBindingEndpoint()),
+		)(cluster.DeleteRoleBindingEndpoint(r.userInfoGetter)),
 		cluster.DecodeRoleBindingReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3405,8 +3408,7 @@ func (r Routing) patchRoleBinding() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.PatchRoleBindingEndpoint()),
+		)(cluster.PatchRoleBindingEndpoint(r.userInfoGetter)),
 		cluster.DecodePatchRoleBindingReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3434,8 +3436,7 @@ func (r Routing) createClusterRoleBinding() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.CreateClusterRoleBindingEndpoint()),
+		)(cluster.CreateClusterRoleBindingEndpoint(r.userInfoGetter)),
 		cluster.DecodeCreateClusterRoleBindingReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3461,8 +3462,7 @@ func (r Routing) listClusterRoleBinding() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.ListClusterRoleBindingEndpoint()),
+		)(cluster.ListClusterRoleBindingEndpoint(r.userInfoGetter)),
 		cluster.DecodeListClusterRoleBindingReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3488,8 +3488,7 @@ func (r Routing) getClusterRoleBinding() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.GetClusterRoleBindingEndpoint()),
+		)(cluster.GetClusterRoleBindingEndpoint(r.userInfoGetter)),
 		cluster.DecodeClusterRoleBindingReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3515,8 +3514,7 @@ func (r Routing) deleteClusterRoleBinding() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.DeleteClusterRoleBindingEndpoint()),
+		)(cluster.DeleteClusterRoleBindingEndpoint(r.userInfoGetter)),
 		cluster.DecodeClusterRoleBindingReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3542,8 +3540,7 @@ func (r Routing) patchClusterRoleBinding() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.PatchClusterRoleBindingEndpoint()),
+		)(cluster.PatchClusterRoleBindingEndpoint(r.userInfoGetter)),
 		cluster.DecodePatchClusterRoleBindingReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

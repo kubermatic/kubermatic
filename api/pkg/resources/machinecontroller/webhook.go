@@ -208,10 +208,10 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate serving cert: %v", err)
 			}
-			se.Data[resources.MachineControllerWebhookServingCertCertKeyName] = certutil.EncodeCertPEM(newKP.Cert)
-			se.Data[resources.MachineControllerWebhookServingCertKeyKeyName] = certutil.EncodePrivateKeyPEM(newKP.Key)
+			se.Data[resources.MachineControllerWebhookServingCertCertKeyName] = triple.EncodeCertPEM(newKP.Cert)
+			se.Data[resources.MachineControllerWebhookServingCertKeyKeyName] = triple.EncodePrivateKeyPEM(newKP.Key)
 			// Include the CA for simplicity
-			se.Data[resources.CACertSecretKey] = certutil.EncodeCertPEM(ca.Cert)
+			se.Data[resources.CACertSecretKey] = triple.EncodeCertPEM(ca.Cert)
 
 			return se, nil
 		}

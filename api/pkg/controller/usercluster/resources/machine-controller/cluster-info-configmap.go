@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	certutil "k8s.io/client-go/util/cert"
 )
 
 // ClusterInfoConfigMapCreator returns the func to create/update the ConfigMap
@@ -27,7 +27,7 @@ func ClusterInfoConfigMapCreator(url string, caCert *x509.Certificate) reconcili
 			kubeconfig.Clusters = map[string]*clientcmdapi.Cluster{
 				"": {
 					Server:                   url,
-					CertificateAuthorityData: certutil.EncodeCertPEM(caCert),
+					CertificateAuthorityData: triple.EncodeCertPEM(caCert),
 				},
 			}
 

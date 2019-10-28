@@ -28,10 +28,11 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 	"google.golang.org/api/compute/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 
+	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Environment variables for the configuration of the Google Cloud project access.

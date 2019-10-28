@@ -25,23 +25,23 @@ type Client struct {
 }
 
 /*
-UpdateCurrentUserSettings updates settings of the current user
+PatchCurrentUserSettings updates settings of the current user
 */
-func (a *Client) UpdateCurrentUserSettings(params *UpdateCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateCurrentUserSettingsOK, error) {
+func (a *Client) PatchCurrentUserSettings(params *PatchCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*PatchCurrentUserSettingsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewUpdateCurrentUserSettingsParams()
+		params = NewPatchCurrentUserSettingsParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "updateCurrentUserSettings",
+		ID:                 "patchCurrentUserSettings",
 		Method:             "GET",
 		PathPattern:        "/api/v1/me",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &UpdateCurrentUserSettingsReader{formats: a.formats},
+		Reader:             &PatchCurrentUserSettingsReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -49,7 +49,7 @@ func (a *Client) UpdateCurrentUserSettings(params *UpdateCurrentUserSettingsPara
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UpdateCurrentUserSettingsOK), nil
+	return result.(*PatchCurrentUserSettingsOK), nil
 
 }
 

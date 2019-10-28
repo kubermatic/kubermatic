@@ -111,7 +111,7 @@ func (in *KubermaticConfiguration) DeepCopyObject() runtime.Object {
 func (in *KubermaticConfigurationList) DeepCopyInto(out *KubermaticConfigurationList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]KubermaticConfiguration, len(*in))

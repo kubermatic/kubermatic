@@ -33,14 +33,16 @@ const (
 	UserClusterRBACPrefix = "api:"
 )
 
-func CreateClusterRoleEndpoint() endpoint.Endpoint {
+func CreateClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createClusterRoleReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest("invalid request: %v", err)
+		}
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
@@ -66,14 +68,16 @@ func CreateClusterRoleEndpoint() endpoint.Endpoint {
 	}
 }
 
-func CreateRoleEndpoint() endpoint.Endpoint {
+func CreateRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createRoleReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest("invalid request: %v", err)
+		}
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
@@ -189,11 +193,14 @@ func DecodeCreateRoleReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-func ListClusterRoleEndpoint() endpoint.Endpoint {
+func ListClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
@@ -211,7 +218,7 @@ func ListClusterRoleEndpoint() endpoint.Endpoint {
 		}
 
 		clusterRoleList := &rbacv1.ClusterRoleList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}, clusterRoleList); err != nil {
+		if err := client.List(ctx, clusterRoleList, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -219,11 +226,14 @@ func ListClusterRoleEndpoint() endpoint.Endpoint {
 	}
 }
 
-func ListRoleEndpoint() endpoint.Endpoint {
+func ListRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
@@ -241,7 +251,7 @@ func ListRoleEndpoint() endpoint.Endpoint {
 		}
 
 		roleList := &rbacv1.RoleList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}, roleList); err != nil {
+		if err := client.List(ctx, roleList, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -277,11 +287,14 @@ func DecodeListClusterRoleReq(c context.Context, r *http.Request) (interface{}, 
 }
 
 // GetClusterRoleEndpoint gets ClusterRole with given name.
-func GetClusterRoleEndpoint() endpoint.Endpoint {
+func GetClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getClusterRoleReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
@@ -302,11 +315,14 @@ func GetClusterRoleEndpoint() endpoint.Endpoint {
 	}
 }
 
-func GetRoleEndpoint() endpoint.Endpoint {
+func GetRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getRoleReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
@@ -328,11 +344,14 @@ func GetRoleEndpoint() endpoint.Endpoint {
 }
 
 // DeleteClusterRoleEndpoint deletes ClusterRole with given name
-func DeleteClusterRoleEndpoint() endpoint.Endpoint {
+func DeleteClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getClusterRoleReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
@@ -358,11 +377,14 @@ func DeleteClusterRoleEndpoint() endpoint.Endpoint {
 }
 
 // DeleteRoleEndpoint deletes Role with given name
-func DeleteRoleEndpoint() endpoint.Endpoint {
+func DeleteRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getRoleReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
@@ -468,11 +490,14 @@ func DecodeGetClusterRoleReq(c context.Context, r *http.Request) (interface{}, e
 }
 
 // PatchRoleEndpoint patches Role with given name
-func PatchRoleEndpoint() endpoint.Endpoint {
+func PatchRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchRoleReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
@@ -561,11 +586,14 @@ func DecodePatchRoleReq(c context.Context, r *http.Request) (interface{}, error)
 }
 
 // PatchRoleEndpoint patches ClusterRole with given name
-func PatchClusterRoleEndpoint() endpoint.Endpoint {
+func PatchClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchClusterRoleReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {

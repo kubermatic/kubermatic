@@ -37,7 +37,7 @@ func TestReconciliation(t *testing.T) {
 					return fmt.Errorf("expected err to be nil, was %v", err)
 				}
 				nodes := &corev1.NodeList{}
-				if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, nodes); err != nil {
+				if err := client.List(context.Background(), nodes); err != nil {
 					return fmt.Errorf("error listing nodes: %v", err)
 				}
 				if n := len(nodes.Items); n != 1 {
@@ -72,7 +72,7 @@ func TestReconciliation(t *testing.T) {
 					return fmt.Errorf("expected err to be nil, was %v", err)
 				}
 				nodes := &corev1.NodeList{}
-				if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, nodes); err != nil {
+				if err := client.List(context.Background(), nodes); err != nil {
 					return fmt.Errorf("error listing nodes: %v", err)
 				}
 				if n := len(nodes.Items); n != 3 {
@@ -105,7 +105,7 @@ func TestReconciliation(t *testing.T) {
 					return fmt.Errorf("expected err to be nil, was %v", err)
 				}
 				nodes := &corev1.NodeList{}
-				if err := client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, nodes); err != nil {
+				if err := client.List(context.Background(), nodes); err != nil {
 					return fmt.Errorf("error listing nodes: %v", err)
 				}
 				if n := len(nodes.Items); n != 1 {
