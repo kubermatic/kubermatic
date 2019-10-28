@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (d *Deletion) cleanUpCredentialsSecrets(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -18,9 +19,9 @@ func (d *Deletion) cleanUpCredentialsSecrets(ctx context.Context, cluster *kuber
 		return err
 	}
 
-	return d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
-	})
+	oldCluster := cluster.DeepCopy()
+	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
+	return d.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
 func (d *Deletion) deleteSecret(ctx context.Context, cluster *kubermaticv1.Cluster) error {
