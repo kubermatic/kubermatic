@@ -112,7 +112,7 @@ cp ~/.kube/kind-config-${SEED_NAME} ~/.kube/config
 export KUBECONFIG="$(kind get kubeconfig-path --name=${SEED_NAME})"
 
 echodate "Setting up iptables rules for to make nodeports available"
-iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:32000 -j DNAT --to-destination 172.17.0.2
+iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.17.0.2
 # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
 echodate "Successfully set up iptables rules for nodeports"
 
@@ -515,7 +515,7 @@ export NAMESPACE=kubermatic
 
 ## TODO: Remove this once we have an image with ginkgo in it
 export ONLY_TEST_CREATION=true
-VERSIONS="1.15.5"
+VERSIONS="1.14.8"
 timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
   -debug \
   -kubeconfig=$KUBECONFIG \
