@@ -1881,7 +1881,7 @@ func (r Routing) getCurrentUser() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/me users getCurrentUserSettings
+// swagger:route GET /api/v1/me settings getCurrentUserSettings
 //
 //     Returns settings of the current user.
 //
