@@ -222,11 +222,11 @@ spec:
         livenessProbe:
           httpGet:
             path: /-/healthy
-            port: http
+            port: http-sidecar
         readinessProbe:
           httpGet:
             path: /-/ready
-            port: http
+            port: http-sidecar
         resources:
 {{ toYaml .Values.prometheus.containers.thanosSidecar.resources | indent 10 }}
       {{- end }}
