@@ -32,8 +32,6 @@ type KubermaticConfigurationSpec struct {
 	Namespace string `json:"namespace,omitempty"`
 	// Domain is the base domain where the dashboard shall be available.
 	Domain string `json:"domain"`
-	// IsMaster controls whether the dashboard and API will be deployed.
-	IsMaster bool `json:"isMaster,omitempty"`
 	// ImagePullSecret is used to authenticate against Docker registries.
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 	// Auth defines keys and URLs for Dex.
