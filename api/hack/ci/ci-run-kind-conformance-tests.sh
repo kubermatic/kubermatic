@@ -111,10 +111,10 @@ kind create cluster --name ${SEED_NAME}
 cp ~/.kube/kind-config-${SEED_NAME} ~/.kube/config
 export KUBECONFIG="$(kind get kubeconfig-path --name=${SEED_NAME})"
 
-echodate "Setting up itables rules for to make nodeports available"
+echodate "Setting up iptables rules for to make nodeports available"
 iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:32000 -j DNAT --to-destination 172.17.0.2
 # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
-echodata "Successfully set up iptables rules for nodeports"
+echodate "Successfully set up iptables rules for nodeports"
 
 # Prepare the kind cluster
 TEST_NAME="Preparing the kind cluster"
