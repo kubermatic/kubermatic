@@ -16,23 +16,25 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/validation/nodeupdate"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
-func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
 		req, ok := request.(common.GetClusterReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
 		}
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -48,7 +50,7 @@ func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider pro
 		}
 
 		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
+		if err := client.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -188,17 +190,19 @@ func DecodeUpgradeNodeDeploymentsReq(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
-func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
 		req, ok := request.(UpgradeNodeDeploymentsReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
 		}
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -223,7 +227,7 @@ func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider) en
 		}
 
 		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
+		if err := client.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 

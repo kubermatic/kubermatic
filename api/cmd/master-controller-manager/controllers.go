@@ -175,7 +175,9 @@ func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcont
 				// in the rbac controller factory, so just log it here
 				continue
 			}
-			seedMgr, err := manager.New(kubeconfig, manager.Options{})
+			seedMgr, err := manager.New(kubeconfig, manager.Options{
+				MetricsBindAddress: "0",
+			})
 			if err != nil {
 				log.Errorw("Failed to construct mgr for seed", zap.Error(err))
 				continue

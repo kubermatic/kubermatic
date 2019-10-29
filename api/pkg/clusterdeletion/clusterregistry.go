@@ -33,7 +33,7 @@ func (d *Deletion) cleanupImageRegistryConfigs(ctx context.Context, log *zap.Sug
 	imageRegistryConfigs.SetAPIVersion("imageregistry.operator.openshift.io/v1")
 	imageRegistryConfigs.SetKind("Config")
 
-	if err := userClusterClient.List(ctx, &ctrlruntimeclient.ListOptions{}, imageRegistryConfigs); err != nil {
+	if err := userClusterClient.List(ctx, imageRegistryConfigs); err != nil {
 		if meta.IsNoMatchError(err) {
 			log.Debug("Got a NoMatchError when listing ImageRegistryConfigs, skipping their cleanup")
 			return false, nil

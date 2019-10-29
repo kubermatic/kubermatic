@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -13,9 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -47,7 +44,7 @@ func Add(
 		ctx:        ctx,
 		log:        log.Named(ControllerName),
 		client:     mgr.GetClient(),
-		recorder:   mgr.GetRecorder(ControllerName),
+		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		defaults:   defaults,
 		workerName: workerName,
 	}
@@ -127,29 +124,11 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, cluster *kubermaticv1.Clu
 		return nil
 	}
 
-	if _, err := r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
-		targetComponentsOverride.DeepCopyInto(&c.Spec.ComponentsOverride)
-	}); err != nil {
+	oldCluster := cluster.DeepCopy()
+	targetComponentsOverride.DeepCopyInto(&cluster.Spec.ComponentsOverride)
+	if err := r.client.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return fmt.Errorf("failed to update componentsOverride: %v", err)
 	}
 	log.Info("Successfully defaulted componentsOverride")
 	return nil
-}
-
-func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
-	cluster := &kubermaticv1.Cluster{}
-	var diff []string
-	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		if err := r.client.Get(r.ctx, types.NamespacedName{Name: name}, cluster); err != nil {
-			return err
-		}
-		old := cluster.DeepCopy()
-		modify(cluster)
-		diff = deep.Equal(old, cluster)
-		return r.client.Update(r.ctx, cluster)
-	})
-	if err != nil {
-		err = fmt.Errorf("err: %v, diff: %v", err, diff)
-	}
-	return cluster, err
 }

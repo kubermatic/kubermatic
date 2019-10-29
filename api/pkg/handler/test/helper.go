@@ -38,6 +38,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -49,7 +50,6 @@ import (
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -121,6 +121,7 @@ func GetUser(email, id, name string, admin bool) apiv1.User {
 // this function is temporal until all types end up in their own packages.
 // it is meant to be used by legacy handler.createTestEndpointAndGetClients function
 type newRoutingFunc func(
+	userInfoGetter provider.UserInfoGetter,
 	seedsGetter provider.SeedsGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
@@ -176,7 +177,10 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	}
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeKubermaticImpersonationClient, userLister, "localhost")
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister, kubernetes.IsServiceAccount)
-
+	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
+	if err != nil {
+		return nil, nil, err
+	}
 	verifiers := []auth.TokenVerifier{}
 	extractors := []auth.TokenExtractor{}
 	{
@@ -255,6 +259,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	var prometheusClient prometheusapi.Client
 
 	mainRouter := routingFunc(
+		userInfoGetter,
 		seedsGetter,
 		clusterProviderGetter,
 		addonProviderGetter,

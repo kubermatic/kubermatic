@@ -118,13 +118,14 @@ prometheus:
   thanos:
     enabled: false
     image:
-      repository: improbable/thanos
-      tag: v0.5.0
+      repository: quay.io/thanos/thanos
+      tag: v0.8.1
 
     store:
       replicas: 2
       indexCacheSize: 500MB
       chunkPoolSize: 2GB
+      probeDelaySeconds: 60
 
       nodeSelector: {}
       affinity:
@@ -162,6 +163,12 @@ prometheus:
         resolution5m: 30d
         resolution1h: 90d
 
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+
+    ui:
+      replicas: 2
       nodeSelector: {}
       affinity: {}
       tolerations: []
@@ -228,13 +235,7 @@ prometheus:
           cpu: 300m
           memory: 1Gi
     thanosStore:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 3Gi
-        limits:
-          cpu: 250m
-          memory: 6Gi
+      resources: {}
     thanosQuery:
       resources:
         requests:
@@ -251,6 +252,14 @@ prometheus:
         limits:
           cpu: 2
           memory: 8Gi
+    thanosUI:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 250m
+          memory: 128Mi
 
   nodeSelector: {}
   affinity:

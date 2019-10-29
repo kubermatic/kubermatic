@@ -152,8 +152,8 @@ func buildNewKubeconfig(ca *triple.KeyPair, server, commonName string, organizat
 
 	baseKubconfig.AuthInfos = map[string]*clientcmdapi.AuthInfo{
 		KubeconfigDefaultContextKey: {
-			ClientCertificateData: certutil.EncodeCertPEM(kp.Cert),
-			ClientKeyData:         certutil.EncodePrivateKeyPEM(kp.Key),
+			ClientCertificateData: triple.EncodeCertPEM(kp.Cert),
+			ClientKeyData:         triple.EncodePrivateKeyPEM(kp.Key),
 		},
 	}
 
@@ -166,7 +166,7 @@ func getBaseKubeconfig(caCert *x509.Certificate, server, clusterName string) *cl
 			// We use the actual cluster name here. It is later used in encodeKubeconfig()
 			// to set the filename of the kubeconfig downloaded from API to `kubeconfig-clusterName`.
 			clusterName: {
-				CertificateAuthorityData: certutil.EncodeCertPEM(caCert),
+				CertificateAuthorityData: triple.EncodeCertPEM(caCert),
 				Server:                   server,
 			},
 		},

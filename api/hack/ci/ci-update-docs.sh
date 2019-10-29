@@ -24,6 +24,8 @@ make runbook
 
 # update repo
 git add .
-git diff --cached --stat
-git commit -m "Syncing with kubermatic/kubermatic@$REVISION"
-git push
+
+if ! git diff --cached --stat --exit-code; then
+  git commit -m "Syncing with kubermatic/kubermatic@$REVISION"
+  git push
+fi

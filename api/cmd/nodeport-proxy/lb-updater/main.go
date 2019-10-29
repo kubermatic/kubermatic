@@ -111,7 +111,7 @@ func (u *LBUpdater) syncLB(s string) error {
 
 	services := &corev1.ServiceList{}
 	opts := &ctrlruntimeclient.ListOptions{Namespace: u.namespace}
-	if err := u.client.List(u.ctx, opts, services); err != nil {
+	if err := u.client.List(u.ctx, services, opts); err != nil {
 		return fmt.Errorf("failed to list services: %v", err)
 	}
 

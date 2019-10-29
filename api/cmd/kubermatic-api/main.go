@@ -45,8 +45,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
-	"github.com/kubermatic/kubermatic/api/pkg/util/informer"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
@@ -55,7 +55,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -124,9 +123,9 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 	// create other providers
 	kubeMasterClient := kubernetes.NewForConfigOrDie(masterCfg)
-	kubeMasterInformerFactory := informers.NewSharedInformerFactory(kubeMasterClient, informer.DefaultInformerResyncPeriod)
+	kubeMasterInformerFactory := informers.NewSharedInformerFactory(kubeMasterClient, 30*time.Minute)
 	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(masterCfg)
-	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, informer.DefaultInformerResyncPeriod)
+	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, 30*time.Minute)
 	defaultKubermaticImpersonationClient := kubernetesprovider.NewKubermaticImpersonationClient(masterCfg)
 	defaultKubernetesImpersonationClient := kubernetesprovider.NewKubernetesImpersonationClient(masterCfg)
 
@@ -200,6 +199,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to create privileged project provider due to %v", err)
 	}
 
+	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create user info getter due to %v", err)
+	}
+
 	kubeMasterInformerFactory.Start(wait.NeverStop)
 	kubeMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
@@ -222,7 +226,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		eventRecorderProvider:                 eventRecorderProvider,
 		clusterProviderGetter:                 clusterProviderGetter,
 		seedsGetter:                           seedsGetter,
-		addons:                                addonProviderGetter}, nil
+		addons:                                addonProviderGetter,
+		userInfoGetter:                        userInfoGetter}, nil
 }
 
 func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error) {
@@ -309,6 +314,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		presetsManager,
 		options.exposeStrategy,
 		options.accessibleAddons,
+		prov.userInfoGetter,
 	)
 
 	registerMetrics()

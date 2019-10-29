@@ -84,7 +84,6 @@ kubermatic:
         # list of Addons to install into every user-cluster. All need to exist in the addons image
         defaultAddons:
         - canal
-        - dashboard
         - dns
         - kube-proxy
         - openvpn
@@ -156,10 +155,10 @@ kubermatic:
     resources:
       requests:
         cpu: 100m
-        memory: 128Mi
+        memory: 512Mi
       limits:
         cpu: 250m
-        memory: 256Mi
+        memory: 1024Mi
     affinity:
       nodeAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:

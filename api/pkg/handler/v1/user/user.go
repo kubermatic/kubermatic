@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	jsonpatch "github.com/evanphx/json-patch"
+	"io/ioutil"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
 	"net/mail"
 	"strings"
@@ -111,7 +114,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		externalUser := convertInternalUserToExternal(memberToUpdate, updatedMemberBinding)
+		externalUser := convertInternalUserToExternal(memberToUpdate, false, updatedMemberBinding)
 		externalUser = filterExternalUser(externalUser, project.Name)
 		return externalUser, nil
 	}
@@ -146,7 +149,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			externalUser := convertInternalUserToExternal(user, memberOfProjectBinding)
+			externalUser := convertInternalUserToExternal(user, false, memberOfProjectBinding)
 			externalUser = filterExternalUser(externalUser, project.Name)
 			externalUsers = append(externalUsers, externalUser)
 		}
@@ -193,7 +196,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, userProvider provider
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		externalUser := convertInternalUserToExternal(userToInvite, generatedBinding)
+		externalUser := convertInternalUserToExternal(userToInvite, false, generatedBinding)
 		externalUser = filterExternalUser(externalUser, project.Name)
 		return externalUser, nil
 	}
@@ -209,11 +212,51 @@ func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalUserToExternal(authenticatedUser, bindings...), nil
+		return convertInternalUserToExternal(authenticatedUser, true, bindings...), nil
 	}
 }
 
-func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, bindings ...*kubermaticapiv1.UserProjectBinding) *apiv1.User {
+// GetSettingsEndpoint returns settings of the current user
+func GetSettingsEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		return authenticatedUser.Spec.Settings, nil
+	}
+}
+
+// PatchSettingsEndpoint patches settings of the current user
+func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(PatchSettingsReq)
+		existingUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+
+		existingSettingsJSON, err := json.Marshal(existingUser.Spec.Settings)
+		if err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("cannot decode existing user settings: %v", err))
+		}
+
+		patchedSettingsJSON, err := jsonpatch.MergePatch(existingSettingsJSON, req.Patch)
+		if err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("cannot patch user settings: %v", err))
+		}
+
+		var patchedSettings *kubermaticapiv1.UserSettings
+		err = json.Unmarshal(patchedSettingsJSON, &patchedSettings)
+		if err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("cannot decode patched user settings: %v", err))
+		}
+
+		existingUser.Spec.Settings = patchedSettings
+		updatedUser, err := userProvider.UpdateUser(*existingUser)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return updatedUser.Spec.Settings, nil
+	}
+}
+
+func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, includeSettings bool, bindings ...*kubermaticapiv1.UserProjectBinding) *apiv1.User {
 	apiUser := &apiv1.User{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalUser.Name,
@@ -221,6 +264,10 @@ func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, bindings 
 			CreationTimestamp: apiv1.NewTime(internalUser.CreationTimestamp.Time),
 		},
 		Email: internalUser.Spec.Email,
+	}
+
+	if includeSettings {
+		apiUser.Settings = internalUser.Spec.Settings
 	}
 
 	for _, binding := range bindings {
@@ -399,6 +446,25 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	req.UserID = userIDReq.UserID
+
+	return req, nil
+}
+
+// PatchSettingsReq defines HTTP request for patchCurrentUserSettings
+// swagger:parameters patchCurrentUserSettings
+type PatchSettingsReq struct {
+	// in: body
+	Patch []byte
+}
+
+// DecodePatchSettingsReq  decodes an HTTP request into PatchSettingsReq
+func DecodePatchSettingsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req PatchSettingsReq
+	var err error
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }

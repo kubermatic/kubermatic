@@ -94,7 +94,7 @@ func Add(
 		KubeconfigProvider:      kubeconfigProvider,
 		Client:                  client,
 		workerName:              workerName,
-		recorder:                mgr.GetRecorder(ControllerName),
+		recorder:                mgr.GetEventRecorderFor(ControllerName),
 		overwriteRegistry:       overwriteRegistey,
 	}
 
@@ -114,8 +114,7 @@ func Add(
 		}
 
 		addonList := &kubermaticv1.AddonList{}
-		listOptions := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
-		if err := client.List(context.Background(), listOptions, addonList); err != nil {
+		if err := client.List(context.Background(), addonList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
 			log.Errorw("Failed to get addons for cluster", zap.Error(err), "cluster", cluster.Name)
 			return nil
 		}
@@ -190,13 +189,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		}
 	}
 
-	if err := r.markDefaultAddons(ctx, log, addon, cluster); err != nil {
-		return nil, fmt.Errorf("failed to ensure that the isDefault field is up to date in the addon: %v", err)
-	}
-
 	if cluster.DeletionTimestamp != nil {
 		log.Debug("Skipping addon because cluster is deleted")
 		return nil, nil
+	}
+
+	if err := r.markDefaultAddons(ctx, log, addon, cluster); err != nil {
+		return nil, fmt.Errorf("failed to ensure that the isDefault field is up to date in the addon: %v", err)
 	}
 
 	// When the apiserver is not healthy, we must skip it
@@ -248,8 +247,9 @@ func (r *Reconciler) markDefaultAddons(ctx context.Context, log *zap.SugaredLogg
 
 	// Update only when the value was incorrect
 	if isDefault := defaultAddons.Has(addon.Name); addon.Spec.IsDefault != isDefault {
+		oldAddon := addon.DeepCopy()
 		addon.Spec.IsDefault = isDefault
-		if err := r.Client.Update(ctx, addon); err != nil {
+		if err := r.Client.Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon)); err != nil {
 			return err
 		}
 	}
@@ -259,8 +259,9 @@ func (r *Reconciler) markDefaultAddons(ctx context.Context, log *zap.SugaredLogg
 
 func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {
 	if kuberneteshelper.HasFinalizer(addon, cleanupFinalizerName) {
+		oldAddon := addon.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(addon, cleanupFinalizerName)
-		if err := r.Client.Update(ctx, addon); err != nil {
+		if err := r.Client.Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon)); err != nil {
 			return err
 		}
 		log.Infow("Removed the cleanup finalizer", "finalizer", cleanupFinalizerName)
@@ -460,8 +461,9 @@ func (r *Reconciler) ensureFinalizerIsSet(ctx context.Context, addon *kubermatic
 		return nil
 	}
 
+	oldAddon := addon.DeepCopy()
 	kuberneteshelper.AddFinalizer(addon, cleanupFinalizerName)
-	return r.Client.Update(ctx, addon)
+	return r.Client.Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
 }
 
 func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {

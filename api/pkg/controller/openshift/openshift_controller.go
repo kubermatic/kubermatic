@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -47,7 +46,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -116,7 +114,7 @@ func Add(
 		Client:                   mgr.GetClient(),
 		log:                      log.Named(ControllerName),
 		scheme:                   mgr.GetScheme(),
-		recorder:                 mgr.GetRecorder(ControllerName),
+		recorder:                 mgr.GetEventRecorderFor(ControllerName),
 		seedGetter:               seedGetter,
 		userClusterConnProvider:  userClusterConnProvider,
 		overwriteRegistry:        overwriteRegistry,
@@ -433,25 +431,9 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 }
 
 func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
-	// Store it here because it may be unset later on if an update request failed
-	name := c.Name
-	var diff []string
-	err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		//Get latest version
-		if err := r.Get(ctx, nn("", name), c); err != nil {
-			return err
-		}
-		old := c.DeepCopy()
-		// Apply modifications
-		modify(c)
-		// Update the cluster
-		diff = deep.Equal(old, c)
-		return r.Update(ctx, c)
-	})
-	if err != nil {
-		err = fmt.Errorf("err: %v, diff: %v", err, diff)
-	}
-	return err
+	oldCluster := c.DeepCopy()
+	modify(c)
+	return r.Patch(ctx, c, client.MergeFrom(oldCluster))
 }
 
 // Openshift doesn't seem to support a token-file-based authentication at all

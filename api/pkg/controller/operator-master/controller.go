@@ -55,7 +55,7 @@ func Add(
 ) error {
 	reconciler := &Reconciler{
 		Client:     mgr.GetClient(),
-		recorder:   mgr.GetRecorder(ControllerName),
+		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		log:        log.Named(ControllerName),
 		workerName: workerName,
 		ctx:        ctx,
@@ -95,6 +95,9 @@ func Add(
 		}
 
 		owner := a.Meta.GetAnnotations()[ConfigurationOwnerAnnotation]
+		if owner == "" {
+			return nil
+		}
 
 		ns, n, err := cache.SplitMetaNamespaceKey(owner)
 		if err != nil {

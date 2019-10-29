@@ -30,13 +30,14 @@ import (
 	apitest "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api"
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -57,6 +58,7 @@ type Opts struct {
 	publicKeys                   [][]byte
 	reportsRoot                  string
 	seedClusterClient            ctrlruntimeclient.Client
+	seedGeneratedClient          kubernetes.Interface
 	clusterClientProvider        clusterclient.UserClusterConnectionProvider
 	repoRoot                     string
 	seed                         *kubermaticv1.Seed
@@ -343,6 +345,12 @@ func main() {
 		log.Fatal(err)
 	}
 	opts.seedClusterClient = seedClusterClient
+
+	seedGeneratedClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	opts.seedGeneratedClient = seedGeneratedClient
 
 	namespaceName := os.Getenv("NAMESPACE")
 	if namespaceName == "" {

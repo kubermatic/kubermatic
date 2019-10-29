@@ -147,7 +147,7 @@ func (r *reconcileSyncProjectBinding) removeFinalizerFromBinding(projectBinding 
 func (r *reconcileSyncProjectBinding) userForBinding(projectBinding *kubermaticv1.UserProjectBinding) (*kubermaticv1.User, error) {
 
 	users := &kubermaticv1.UserList{}
-	if err := r.List(r.ctx, &client.ListOptions{}, users); err != nil {
+	if err := r.List(r.ctx, users); err != nil {
 		return nil, err
 	}
 

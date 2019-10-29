@@ -103,6 +103,7 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 	newCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: cluster.Annotations,
+			Finalizers:  cluster.Finalizers,
 			Labels:      getClusterLabels(cluster.Labels, project.Name, p.workerName),
 			Name:        name,
 		},
@@ -158,7 +159,7 @@ func (p *ClusterProvider) List(project *kubermaticv1.Project, options *provider.
 	projectClusters := &kubermaticv1.ClusterList{}
 	selector := labels.SelectorFromSet(map[string]string{kubermaticv1.ProjectIDLabelKey: project.Name})
 	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
-	if err := p.client.List(context.Background(), listOpts, projectClusters); err != nil {
+	if err := p.client.List(context.Background(), projectClusters, listOpts); err != nil {
 		return nil, fmt.Errorf("failed to list clusters: %v", err)
 	}
 

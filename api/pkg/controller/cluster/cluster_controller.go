@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
@@ -23,10 +22,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -119,7 +116,7 @@ func Add(
 		userClusterConnProvider: userClusterConnProvider,
 		workerName:              workerName,
 
-		recorder: mgr.GetRecorder(ControllerName),
+		recorder: mgr.GetEventRecorderFor(ControllerName),
 
 		overwriteRegistry:                      overwriteRegistry,
 		nodePortRange:                          nodePortRange,
@@ -257,25 +254,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 }
 
 func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
-	// Store it here because it may be unset later on if an update request failed
-	name := cluster.Name
-	var diff []string
-	err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		//Get latest version
-		if err := r.Get(ctx, types.NamespacedName{Name: name}, cluster); err != nil {
-			return err
-		}
-		old := cluster.DeepCopy()
-		// Apply modifications
-		modify(cluster)
-		diff = deep.Equal(old, cluster)
-		// Update the cluster
-		return r.Update(ctx, cluster)
-	})
-	if err != nil {
-		err = fmt.Errorf("err: %v, diff: %v", err, diff)
-	}
-	return err
+	oldCluster := cluster.DeepCopy()
+	modify(cluster)
+	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
 func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string) error {

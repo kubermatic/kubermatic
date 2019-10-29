@@ -32,7 +32,7 @@ func (d *Deletion) cleanupLBs(ctx context.Context, log *zap.SugaredLogger, clust
 	}
 
 	serviceList := &corev1.ServiceList{}
-	if err := userClusterClient.List(ctx, &controllerruntimeclient.ListOptions{}, serviceList); err != nil {
+	if err := userClusterClient.List(ctx, serviceList); err != nil {
 		return false, fmt.Errorf("failed to list Service's from user cluster: %v", err)
 	}
 
@@ -66,13 +66,12 @@ func (d *Deletion) cleanupLB(ctx context.Context, log *zap.SugaredLogger, userCl
 	// We only really know if a LoadBalancer(The cloud provider LB) is gone, until there has been an event stating that.
 	// The event contains the UID of the corresponding, deleted, service.
 	// Upstream changed that recently to use a finalizer - As soon as we only support Kubernetes versions above that, we can remove this
-	err := d.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
-		if cluster.Annotations == nil {
-			cluster.Annotations = map[string]string{}
-		}
-		cluster.Annotations[deletedLBAnnotationName] += fmt.Sprintf(",%s", string(service.UID))
-	})
-	if err != nil {
+	oldCluster := cluster.DeepCopy()
+	if cluster.Annotations == nil {
+		cluster.Annotations = map[string]string{}
+	}
+	cluster.Annotations[deletedLBAnnotationName] += fmt.Sprintf(",%s", string(service.UID))
+	if err := d.seedClient.Patch(ctx, cluster, controllerruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return fmt.Errorf("failed to update cluster when trying to add UID of deleted LoadBalancer: %v", err)
 	}
 
@@ -123,7 +122,7 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 	for deletedLB := range deletedLoadBalancers {
 		selector := fields.OneTermEqualSelector("involvedObject.uid", deletedLB)
 		events := &corev1.EventList{}
-		if err := userClusterClient.List(context.Background(), &controllerruntimeclient.ListOptions{FieldSelector: selector}, events); err != nil {
+		if err := userClusterClient.List(context.Background(), events, &controllerruntimeclient.ListOptions{FieldSelector: selector}); err != nil {
 			return false, fmt.Errorf("failed to get service events: %v", err)
 		}
 		for _, event := range events.Items {
@@ -133,9 +132,9 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 		}
 	}
 
-	if err := d.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
-		cluster.Annotations[deletedLBAnnotationName] = strings.Join(deletedLoadBalancers.List(), ",")
-	}); err != nil {
+	oldCluster := cluster.DeepCopy()
+	cluster.Annotations[deletedLBAnnotationName] = strings.Join(deletedLoadBalancers.List(), ",")
+	if err := d.seedClient.Patch(ctx, cluster, controllerruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return false, fmt.Errorf("failed to update cluster: %v", err)
 	}
 

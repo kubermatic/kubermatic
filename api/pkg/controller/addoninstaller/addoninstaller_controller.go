@@ -51,7 +51,7 @@ func Add(
 		kubernetesAddons: kubernetesAddons,
 		openshiftAddons:  openshiftAddons,
 		Client:           mgr.GetClient(),
-		recorder:         mgr.GetRecorder(ControllerName),
+		recorder:         mgr.GetEventRecorderFor(ControllerName),
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{
@@ -68,7 +68,7 @@ func Add(
 
 	enqueueClusterForNamespacedObject := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
-		if err := mgr.GetClient().List(context.Background(), &ctrlruntimeclient.ListOptions{}, clusterList); err != nil {
+		if err := mgr.GetClient().List(context.Background(), clusterList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
 			log.Errorw("Failed to list clusters", zap.Error(err))
 			return []reconcile.Request{}
