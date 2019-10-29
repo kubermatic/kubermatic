@@ -9,7 +9,6 @@ import (
 
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	operatorv1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
@@ -82,7 +81,7 @@ func Add(
 		return fmt.Errorf("failed to construct controller: %v", err)
 	}
 
-	for _, t := range []runtime.Object{&operatorv1.KubermaticConfiguration{}, &kubermaticv1.Seed{}, &corev1.Secret{}} {
+	for _, t := range []runtime.Object{&kubermaticv1.Seed{}, &corev1.Secret{}} {
 		if err := c.Watch(
 			&source.Kind{Type: t},
 			controllerutil.EnqueueConst(queueKey),
