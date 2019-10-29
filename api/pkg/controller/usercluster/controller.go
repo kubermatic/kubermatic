@@ -50,7 +50,6 @@ func Add(
 	userSSHKeys map[string][]byte,
 	registerReconciledCheck func(name string, check healthcheck.Check),
 	openVPNCA *resources.ECDSAKeyPair,
-	userSSHKeyDirPath string,
 	cloudCredentialSecretTemplate *corev1.Secret,
 	log *zap.SugaredLogger) error {
 	reconciler := &reconciler{
@@ -64,7 +63,6 @@ func Add(
 		clusterURL:                    clusterURL,
 		openvpnServerPort:             openvpnServerPort,
 		openVPNCA:                     openVPNCA,
-		userSSHKeyDirPath:             userSSHKeyDirPath,
 		cloudCredentialSecretTemplate: cloudCredentialSecretTemplate,
 		log:                           log,
 		platform:                      cloudProviderName,
@@ -157,7 +155,6 @@ type reconciler struct {
 	clusterURL                    *url.URL
 	openvpnServerPort             int
 	openVPNCA                     *resources.ECDSAKeyPair
-	userSSHKeyDirPath             string
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
 	userSSHKeys                   map[string][]byte
