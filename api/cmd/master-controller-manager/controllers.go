@@ -13,6 +13,7 @@ import (
 	seedsync "github.com/kubermatic/kubermatic/api/pkg/controller/seed-sync"
 	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
 	userprojectbinding "github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
+	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
@@ -24,6 +25,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 func createAllControllers(ctrlCtx *controllerContext) error {
@@ -35,12 +37,15 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.labelSelectorFunc)
 	projectLabelSynchronizerFactory := projectLabelSynchronizerFactoryCreator(ctrlCtx)
 
-	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
+	predicates := []predicate.Predicate{predicateutil.ByNamespace(ctrlCtx.namespace)}
+
+	if err := seedcontrollerlifecycle.Add(
+		ctrlCtx.ctx,
 		kubermaticlog.Logger,
 		ctrlCtx.mgr,
-		ctrlCtx.namespace,
 		ctrlCtx.seedsGetter,
 		ctrlCtx.seedKubeconfigGetter,
+		predicates
 		rbacControllerFactory,
 		projectLabelSynchronizerFactory); err != nil {
 		//TODO: Find a better name

@@ -8,8 +8,8 @@ import (
 	"go.uber.org/zap"
 
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
-	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	operatorv1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
@@ -20,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -59,9 +60,9 @@ func Add(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	mgr manager.Manager,
-	namespace string,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
+	predicates []predicate.Predicate,
 	controllerFactories ...ControllerFactory,
 ) error {
 
@@ -81,11 +82,11 @@ func Add(
 		return fmt.Errorf("failed to construct controller: %v", err)
 	}
 
-	for _, t := range []runtime.Object{&kubermaticv1.Seed{}, &corev1.Secret{}} {
+	for _, t := range []runtime.Object{&operatorv1.KubermaticConfiguration{}, &kubermaticv1.Seed{}, &corev1.Secret{}} {
 		if err := c.Watch(
 			&source.Kind{Type: t},
 			controllerutil.EnqueueConst(queueKey),
-			predicateutil.ByNamespace(namespace),
+			predicates...,
 		); err != nil {
 			return fmt.Errorf("failed to create watch for type %T: %v", t, err)
 		}
@@ -124,10 +125,10 @@ func (r *Reconciler) reconcile() error {
 		cfg, err := r.seedKubeconfigGetter(seed)
 		if err != nil {
 			// Don't let a single broken kubeconfig break everything.
-			r.log.Errorw("failed to get kubeconfig", "seed", seed.Name, zap.Error(err))
+			r.log.Errorw("failed to get kubeconfig", "seed", seed, zap.Error(err))
 			continue
 		}
-		seedKubeconfigMap[seed.Name] = *cfg
+		seedKubeconfigMap[seed.Namespace+"/"+seed.Name] = *cfg
 	}
 
 	if r.activeManager != nil && r.activeManager.running && reflect.DeepEqual(r.activeManager.config, seedKubeconfigMap) {
