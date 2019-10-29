@@ -5,10 +5,8 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
-	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -108,76 +106,4 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 	clustersUpdatingInProgressCount := len(clusters.Items) - finishedUpdatingClustersCount
 
 	return clustersUpdatingInProgressCount >= limit, nil
-}
-
-// SetSeedResourcesUpToDateCondition updates the cluster status condition based on the Deployment and StatefulSet
-// replicas. If both StatefulSet and Deployment spec replica are equal to all replicas in the status object, then the
-// ClusterConditionSeedResourcesUpToDate will be set to true, else it will be set to false.
-func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, successfullyReconciled bool) error {
-
-	upToDate, err := seedResourcesUpToDate(ctx, cluster, client, successfullyReconciled)
-	if err != nil {
-		return err
-	}
-	oldCluster := cluster.DeepCopy()
-	if !upToDate {
-		kubermaticv1helper.SetClusterCondition(
-			cluster,
-			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-			corev1.ConditionFalse,
-			kubermaticv1.ReasonClusterUpdateSuccessful,
-			"Some controlplane components did not finish updating",
-		)
-		return client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
-	}
-
-	kubermaticv1helper.SetClusterCondition(
-		cluster,
-		kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-		corev1.ConditionTrue,
-		kubermaticv1.ReasonClusterUpdateSuccessful,
-		"All controlplane components are up to date",
-	)
-	return client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
-}
-
-func seedResourcesUpToDate(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, successfullyReconciled bool) (bool, error) {
-	if !successfullyReconciled {
-		return false, nil
-	}
-
-	listOpts := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
-
-	statefulSets := &appv1.StatefulSetList{}
-	if err := client.List(ctx, statefulSets, listOpts); err != nil {
-		return false, fmt.Errorf("failed to list statefulSets: %v", err)
-	}
-	for _, statefulSet := range statefulSets.Items {
-		if statefulSet.Spec.Replicas == nil {
-			return false, nil
-		}
-		if *statefulSet.Spec.Replicas != statefulSet.Status.UpdatedReplicas ||
-			*statefulSet.Spec.Replicas != statefulSet.Status.CurrentReplicas ||
-			*statefulSet.Spec.Replicas != statefulSet.Status.ReadyReplicas {
-			return false, nil
-		}
-	}
-
-	deployments := &appv1.DeploymentList{}
-	if err := client.List(ctx, deployments, listOpts); err != nil {
-		return false, fmt.Errorf("failed to list deployments: %v", err)
-	}
-
-	for _, deployment := range deployments.Items {
-		if deployment.Spec.Replicas == nil {
-			return false, nil
-		}
-		if *deployment.Spec.Replicas != deployment.Status.UpdatedReplicas ||
-			*deployment.Spec.Replicas != deployment.Status.AvailableReplicas ||
-			*deployment.Spec.Replicas != deployment.Status.ReadyReplicas {
-			return false, nil
-		}
-	}
-
-	return true, nil
 }
