@@ -11,7 +11,7 @@ import (
 	"github.com/Masterminds/semver"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/plugin"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
 
 	"k8s.io/apimachinery/pkg/runtime"
