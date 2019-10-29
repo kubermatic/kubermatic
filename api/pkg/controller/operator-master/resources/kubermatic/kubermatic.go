@@ -13,19 +13,19 @@ import (
 )
 
 const (
-	dockercfgSecretName            = "dockercfg"
-	presetsSecretName              = "presets"
-	dexCASecretName                = "dex-ca"
-	masterFilesSecretName          = "extra-files"
-	serviceAccountName             = "kubermatic"
-	uiConfigConfigMapName          = "ui-config"
-	backupContainersConfigMapName  = "backup-containers"
-	ingressName                    = "kubermatic"
-	apiDeploymentName              = "kubermatic-api"
-	uiDeploymentName               = "kubermatic-ui"
-	masterControllerDeploymentName = "kubermatic-master-controller"
-	apiServiceName                 = "kubermatic-api"
-	uiServiceName                  = "kubermatic-ui"
+	dockercfgSecretName                   = "dockercfg"
+	presetsSecretName                     = "presets"
+	dexCASecretName                       = "dex-ca"
+	masterFilesSecretName                 = "extra-files"
+	serviceAccountName                    = "kubermatic"
+	uiConfigConfigMapName                 = "ui-config"
+	backupContainersConfigMapName         = "backup-containers"
+	ingressName                           = "kubermatic"
+	apiDeploymentName                     = "kubermatic-api"
+	uiDeploymentName                      = "kubermatic-ui"
+	masterControllerManagerDeploymentName = "kubermatic-master-controller-manager"
+	apiServiceName                        = "kubermatic-api"
+	uiServiceName                         = "kubermatic-ui"
 )
 
 func clusterRoleBindingName(ns string) string {

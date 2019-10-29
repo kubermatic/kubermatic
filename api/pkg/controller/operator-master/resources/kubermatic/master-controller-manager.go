@@ -15,18 +15,18 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func masterControllerPodLabels() map[string]string {
+func masterControllerManagerPodLabels() map[string]string {
 	return map[string]string{
-		nameLabel: "kubermatic-master-controller",
+		nameLabel: "kubermatic-master-controller-manager",
 	}
 }
 
-func MasterControllerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
+func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return masterControllerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+		return masterControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(2)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: masterControllerPodLabels(),
+				MatchLabels: masterControllerManagerPodLabels(),
 			}
 
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
@@ -95,8 +95,8 @@ func projectsMigratorContainer(cfg *operatorv1alpha1.KubermaticConfiguration) co
 	}
 }
 
-func MasterControllerPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
-	name := "kubermatic-master-controller"
+func MasterControllerManagerPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
+	name := "kubermatic-master-controller-manager"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return name, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
@@ -104,7 +104,7 @@ func MasterControllerPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) r
 
 			pdb.Spec.MinAvailable = &min
 			pdb.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: masterControllerPodLabels(),
+				MatchLabels: masterControllerManagerPodLabels(),
 			}
 
 			return pdb, nil
