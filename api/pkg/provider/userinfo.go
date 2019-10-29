@@ -14,19 +14,19 @@ type UserInfoGetter = func(ctx context.Context, projectID string) (*UserInfo, er
 func UserInfoGetterFactory(userProjectMapper ProjectMemberMapper) (UserInfoGetter, error) {
 
 	return func(ctx context.Context, projectID string) (*UserInfo, error) {
-		if projectID == "" {
-			return nil, fmt.Errorf("the projectID can not be empty")
-		}
-
 		user, ok := ctx.Value(kubermaticcontext.UserCRContextKey).(*kubermaticapiv1.User)
 		if !ok {
 			// This happens if middleware.UserSaver is not enabled.
 			return nil, fmt.Errorf("unable to get authenticated user object")
 		}
 
-		group, err := userProjectMapper.MapUserToGroup(user.Spec.Email, projectID)
-		if err != nil {
-			return nil, err
+		var group string
+		if projectID != "" {
+			var err error
+			group, err = userProjectMapper.MapUserToGroup(user.Spec.Email, projectID)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		return &UserInfo{Email: user.Spec.Email, Group: group}, nil
