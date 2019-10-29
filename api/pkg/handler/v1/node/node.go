@@ -72,11 +72,14 @@ func DecodeCreateNodeDeployment(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createNodeDeploymentReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
@@ -217,13 +220,16 @@ func DecodeListNodeDeployments(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-func ListNodeDeployments(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func ListNodeDeployments(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listNodeDeploymentsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -299,13 +305,16 @@ func DecodeGetNodeDeployment(c context.Context, r *http.Request) (interface{}, e
 	return req, nil
 }
 
-func GetNodeDeployment(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func GetNodeDeployment(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -416,13 +425,16 @@ func getMachineDeploymentForNodeDeployment(ctx context.Context, clusterProvider 
 	return machineDeployment, nil
 }
 
-func ListNodeDeploymentNodes(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func ListNodeDeploymentNodes(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentNodesReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -490,13 +502,16 @@ func DecodeListNodeDeploymentMetrics(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
-func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentMetricsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -631,11 +646,14 @@ func DecodePatchNodeDeployment(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchNodeDeploymentReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
@@ -758,13 +776,16 @@ func DecodeDeleteNodeDeployment(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-func DeleteNodeDeployment(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func DeleteNodeDeployment(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteNodeDeploymentReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -832,11 +853,14 @@ func DecodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (in
 	return req, nil
 }
 
-func ListNodeDeploymentNodesEvents() endpoint.Endpoint {
+func ListNodeDeploymentNodesEvents(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentNodesEventsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {

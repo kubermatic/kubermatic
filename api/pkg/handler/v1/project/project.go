@@ -111,7 +111,7 @@ func isStatus(err error, status int32) bool {
 }
 
 // DeleteEndpoint defines an HTTP endpoint for deleting a project
-func DeleteEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func DeleteEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteRq)
 		if !ok {
@@ -121,8 +121,11 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 			return nil, errors.NewBadRequest("the id of the project cannot be empty")
 		}
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		err := projectProvider.Delete(userInfo, req.ProjectID)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		err = projectProvider.Delete(userInfo, req.ProjectID)
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 }
