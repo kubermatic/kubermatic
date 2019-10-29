@@ -114,6 +114,7 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 // replicas. If both StatefulSet and Deployment spec replica are equal to all replicas in the status object, then the
 // ClusterConditionSeedResourcesUpToDate will be set to true, else it will be set to false.
 func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, successfullyReconciled bool) error {
+
 	upToDate, err := seedResourcesUpToDate(ctx, cluster, client, successfullyReconciled)
 	if err != nil {
 		return err
@@ -125,7 +126,7 @@ func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv
 			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
 			corev1.ConditionFalse,
 			kubermaticv1.ReasonClusterUpdateSuccessful,
-			"All controlplane components are up to date",
+			"Some controlplane components did not finish updating",
 		)
 		return client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 	}
@@ -135,7 +136,7 @@ func SetSeedResourcesUpToDateCondition(ctx context.Context, cluster *kubermaticv
 		kubermaticv1.ClusterConditionSeedResourcesUpToDate,
 		corev1.ConditionTrue,
 		kubermaticv1.ReasonClusterUpdateSuccessful,
-		"Some controlplane components did not finish updating",
+		"All controlplane components are up to date",
 	)
 	return client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }

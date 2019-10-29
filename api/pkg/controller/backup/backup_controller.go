@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
@@ -211,7 +212,16 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	err := r.reconcile(ctx, log, cluster)
+	_, err := kubermaticv1helper.ClusterReconcileWrapper(
+		ctx,
+		r.Client,
+		r.workerName,
+		cluster,
+		kubermaticv1.ClusterConditionBackupControllerReconcilingSuccess,
+		func() (*reconcile.Result, error) {
+			return nil, r.reconcile(ctx, log, cluster)
+		},
+	)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", err)
@@ -220,16 +230,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	if cluster.Spec.Pause {
-		log.Debug("Skipping because the cluster is paused")
-		return nil
-	}
-
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
-		log.Debug("Skipping because the cluster has a different worker name set")
-		return nil
-	}
-
 	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
 	if cluster.DeletionTimestamp != nil {
 		// Need to cleanup
@@ -242,8 +242,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				}
 			}
 
+			oldCluster := cluster.DeepCopy()
 			kuberneteshelper.RemoveFinalizer(cluster, cleanupFinalizer)
-			if err := r.Update(ctx, cluster); err != nil {
+			if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 				return fmt.Errorf("failed to update cluster after removing cleanup finalizer: %v", err)
 			}
 		}
@@ -258,8 +259,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	// Always add the finalizer first
 	if !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
+		oldCluster := cluster.DeepCopy()
 		kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
-		if err := r.Update(ctx, cluster); err != nil {
+		if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 			return fmt.Errorf("failed to update cluster after adding cleanup finalizer: %v", err)
 		}
 	}

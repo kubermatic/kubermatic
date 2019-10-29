@@ -10,6 +10,7 @@ import (
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -17,6 +18,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -169,15 +171,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	log = log.With("cluster", cluster.Name)
 
-	if cluster.Spec.Pause {
-		log.Debug("Skipping cluster reconciling because it was set to paused")
-		return reconcile.Result{}, nil
-	}
-
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
-		return reconcile.Result{}, nil
-	}
-
 	if cluster.DeletionTimestamp != nil {
 		// Cluster got deleted - all monitoring components will be automatically garbage collected (Due to the ownerRef)
 		return reconcile.Result{}, nil
@@ -194,33 +187,41 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{RequeueAfter: healthCheckPeriod}, nil
 	}
 
-	// only reconcile this cluster if there are not yet too many updates running
-	if available, err := controllerutil.ClusterAvailableForReconciling(ctx, r, cluster, r.concurrentClusterUpdates); !available || err != nil {
-		log.Infow("Concurrency limit reached, checking again in 10 seconds", "concurrency-limit", r.concurrentClusterUpdates)
-		return reconcile.Result{
-			RequeueAfter: 10 * time.Second,
-		}, err
-	}
-
+	var errs []error
 	successfullyReconciled := true
 	// Add a wrapping here so we can emit an event on error
-	result, reconcileErr := r.reconcile(ctx, log, cluster)
-	if reconcileErr != nil {
-		successfullyReconciled = false
-		log.Errorw("Failed to reconcile cluster", zap.Error(reconcileErr))
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", "%v", reconcileErr)
+	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+		ctx,
+		r.Client,
+		r.workerName,
+		cluster,
+		kubermaticv1.ClusterConditionMonitoringControllerReconcilingSuccess,
+		func() (*reconcile.Result, error) {
+			// only reconcile this cluster if there are not yet too many updates running
+			if available, err := controllerutil.ClusterAvailableForReconciling(ctx, r, cluster, r.concurrentClusterUpdates); !available || err != nil {
+				log.Infow("Concurrency limit reached, checking again in 10 seconds", "concurrency-limit", r.concurrentClusterUpdates)
+				return &reconcile.Result{
+					RequeueAfter: 10 * time.Second,
+				}, err
+			}
+
+			result, reconcileErr := r.reconcile(ctx, log, cluster)
+			errs = append(errs, reconcileErr)
+			err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r, successfullyReconciled)
+			return result, err
+		},
+	)
+	if err != nil {
+		errs = append(errs, err)
+		log.Errorw("Failed to reconcile cluster", zap.Error(err))
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 
 	if result == nil {
 		result = &reconcile.Result{}
 	}
 
-	if err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r, successfullyReconciled); err != nil {
-		log.Errorw("failed to update clusters status conditions", zap.Error(err))
-		reconcileErr = fmt.Errorf("failed to set cluster status: %v after reconciliation was done with err=%v", err, reconcileErr)
-	}
-
-	return *result, reconcileErr
+	return *result, utilerrors.NewAggregate(errs)
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
