@@ -192,10 +192,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 				return &reconcile.Result{RequeueAfter: 10 * time.Second}, err
 			}
 
-			result, reconcileErr := r.reconcile(ctx, log, cluster)
-			errs = append(errs, reconcileErr)
-			err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r, reconcileErr == nil)
-			return result, err
+			return r.reconcile(ctx, log, cluster)
 		},
 	)
 	if err != nil {

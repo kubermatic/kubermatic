@@ -18,7 +18,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -187,8 +186,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{RequeueAfter: healthCheckPeriod}, nil
 	}
 
-	var errs []error
-	successfullyReconciled := true
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
@@ -204,15 +201,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 					RequeueAfter: 10 * time.Second,
 				}, err
 			}
-
-			result, reconcileErr := r.reconcile(ctx, log, cluster)
-			errs = append(errs, reconcileErr)
-			err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r, successfullyReconciled)
-			return result, err
+			return r.reconcile(ctx, log, cluster)
 		},
 	)
 	if err != nil {
-		errs = append(errs, err)
 		log.Errorw("Failed to reconcile cluster", zap.Error(err))
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
@@ -221,7 +213,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		result = &reconcile.Result{}
 	}
 
-	return *result, utilerrors.NewAggregate(errs)
+	return *result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {

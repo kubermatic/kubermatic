@@ -16,6 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/clustercomponentdefaulter"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
 	openshiftcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/openshift"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seedresourcesuptodatecondition"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeys"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -31,16 +32,17 @@ import (
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
 var allControllers = map[string]controllerCreator{
-	cluster.ControllerName:                   createClusterController,
-	updatecontroller.ControllerName:          createUpdateController,
-	addon.ControllerName:                     createAddonController,
-	addoninstaller.ControllerName:            createAddonInstallerController,
-	backupcontroller.ControllerName:          createBackupController,
-	monitoring.ControllerName:                createMonitoringController,
-	cloudcontroller.ControllerName:           createCloudController,
-	openshiftcontroller.ControllerName:       createOpenshiftController,
-	clustercomponentdefaulter.ControllerName: createClusterComponentDefaulter,
-	usersshkeys.ControllerName:               createUserSSHKeyController,
+	cluster.ControllerName:                        createClusterController,
+	updatecontroller.ControllerName:               createUpdateController,
+	addon.ControllerName:                          createAddonController,
+	addoninstaller.ControllerName:                 createAddonInstallerController,
+	backupcontroller.ControllerName:               createBackupController,
+	monitoring.ControllerName:                     createMonitoringController,
+	cloudcontroller.ControllerName:                createCloudController,
+	openshiftcontroller.ControllerName:            createOpenshiftController,
+	clustercomponentdefaulter.ControllerName:      createClusterComponentDefaulter,
+	usersshkeys.ControllerName:                    createUserSSHKeyController,
+	seedresourcesuptodatecondition.ControllerName: createSeedConditionUpToDateController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -52,6 +54,16 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		}
 	}
 	return nil
+}
+
+func createSeedConditionUpToDateController(ctrlCtx *controllerContext) error {
+	return seedresourcesuptodatecondition.Add(
+		ctrlCtx.ctx,
+		ctrlCtx.log,
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+	)
 }
 
 func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
