@@ -8004,7 +8004,7 @@
           "$ref": "#/definitions/UID"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/providerconfig"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/providerconfig/types"
     },
     "GlobalSecretKeySelector": {
       "$ref": "#/definitions/GlobalObjectKeySelector"

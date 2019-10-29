@@ -17,7 +17,7 @@ import (
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
 
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"

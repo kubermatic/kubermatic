@@ -6,7 +6,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 )
 
 func TestGetCredentialsForCluster(t *testing.T) {

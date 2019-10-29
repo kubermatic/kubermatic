@@ -14,7 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
