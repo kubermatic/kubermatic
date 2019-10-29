@@ -29,7 +29,7 @@ import (
 	"github.com/Masterminds/semver"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/plugin"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfigtypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
 )
 
@@ -49,7 +49,7 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 		return "", fmt.Errorf("invalid kubelet version: %v", err)
 	}
 
-	pconfig, err := providerconfig.GetConfig(req.MachineSpec.ProviderSpec)
+	pconfig, err := providerconfigtypes.GetConfig(req.MachineSpec.ProviderSpec)
 	if err != nil {
 		return "", fmt.Errorf("failed to get providerSpec: %v", err)
 	}
@@ -84,7 +84,7 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 
 	data := struct {
 		plugin.UserDataRequest
-		ProviderSpec     *providerconfig.Config
+		ProviderSpec     *providerconfigtypes.Config
 		OSConfig         *Config
 		ServerAddr       string
 		KubeletVersion   string

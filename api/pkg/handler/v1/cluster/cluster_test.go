@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 	clienttesting "k8s.io/client-go/testing"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 )
 
 func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
