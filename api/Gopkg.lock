@@ -816,8 +816,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "1d83e8f7de74f01ba0470e1a46523b8b9549c084"
-  source = "github.com/alvaroaleman/machine-controller"
+  revision = "c6c7d0a641d203002899fffad858e5fdb47786dc"
+  version = "v1.7.0"
 
 [[projects]]
   digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"
