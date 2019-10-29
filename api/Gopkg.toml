@@ -121,12 +121,7 @@ required = [
 
 [[override]]
   name = "github.com/kubermatic/machine-controller"
-	revision = "1d83e8f7de74f01ba0470e1a46523b8b9549c084"
-	source = "github.com/alvaroaleman/machine-controller"
-
-[[override]]
-  name = "kubevirt.io/containerized-data-importer"
-  source = "github.com/kubevirt/containerized-data-importer"
+	version = "v1.7.0"
 
 [[override]]
   name = "sigs.k8s.io/controller-runtime"

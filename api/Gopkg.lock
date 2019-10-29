@@ -829,8 +829,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "1d83e8f7de74f01ba0470e1a46523b8b9549c084"
-  source = "github.com/alvaroaleman/machine-controller"
+  revision = "c6c7d0a641d203002899fffad858e5fdb47786dc"
+  version = "v1.7.0"
 
 [[projects]]
   digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"
@@ -1896,16 +1896,6 @@
   packages = ["pointer"]
   pruneopts = "NUT"
   revision = "c55fbcfc754a5b2ec2fbae8fb9dcac36bdba6a12"
-
-[[projects]]
-  digest = "1:63ea39743dfa0c5d53e2ef1551ca6d9b80d868364b098193b7135e032fb3e487"
-  name = "sigs.k8s.io/cluster-api"
-  packages = [
-    "pkg/apis/cluster/common",
-    "pkg/apis/cluster/v1alpha1",
-  ]
-  pruneopts = "NUT"
-  revision = "2ec456177c0e8f0a903f4e746d44baaae54cc591"
 
 [[projects]]
   digest = "1:f9536a0685b75eef97e368e810d124641afc4185d7c619a67e3ac2f5af2fe9a1"
