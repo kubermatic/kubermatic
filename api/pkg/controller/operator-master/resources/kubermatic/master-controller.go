@@ -15,19 +15,18 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func masterControllerManagerPodLabels() map[string]string {
+func masterControllerPodLabels() map[string]string {
 	return map[string]string{
-		nameLabel:    "master-controller-manager",
-		versionLabel: "v1",
+		nameLabel: "kubermatic-master-controller",
 	}
 }
 
-func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
+func MasterControllerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return masterControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+		return masterControllerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(2)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: masterControllerManagerPodLabels(),
+				MatchLabels: masterControllerPodLabels(),
 			}
 
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
@@ -96,8 +95,8 @@ func projectsMigratorContainer(cfg *operatorv1alpha1.KubermaticConfiguration) co
 	}
 }
 
-func MasterControllerManagerPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
-	name := "kubermatic-master-controller-manager-v1"
+func MasterControllerPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
+	name := "kubermatic-master-controller"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return name, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
@@ -105,7 +104,7 @@ func MasterControllerManagerPDBCreator(cfg *operatorv1alpha1.KubermaticConfigura
 
 			pdb.Spec.MinAvailable = &min
 			pdb.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: masterControllerManagerPodLabels(),
+				MatchLabels: masterControllerPodLabels(),
 			}
 
 			return pdb, nil

@@ -195,7 +195,7 @@ func (r *Reconciler) reconcileDeployments(config *operatorv1alpha1.KubermaticCon
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		kubermatic.APIDeploymentCreator(config),
 		kubermatic.UIDeploymentCreator(config),
-		kubermatic.MasterControllerManagerDeploymentCreator(config),
+		kubermatic.MasterControllerDeploymentCreator(config),
 	}
 
 	modifiers := []reconciling.ObjectModifier{
@@ -216,7 +216,7 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(config *operatorv1alpha1.Kube
 	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
 		kubermatic.APIPDBCreator(config),
 		kubermatic.UIPDBCreator(config),
-		kubermatic.MasterControllerManagerPDBCreator(config),
+		kubermatic.MasterControllerPDBCreator(config),
 	}
 
 	if err := reconciling.ReconcilePodDisruptionBudgets(r.ctx, creators, config.Spec.Namespace, r.Client, r.applyOwnerLabels(config)); err != nil {

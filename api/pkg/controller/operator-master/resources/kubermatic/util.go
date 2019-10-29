@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	nameLabel    = "app.kubernetes.io/name"
-	versionLabel = "app.kubernetes.io/version"
+	nameLabel = "app.kubernetes.io/name"
 )
 
 func featureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string {
