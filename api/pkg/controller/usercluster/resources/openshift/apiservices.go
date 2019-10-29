@@ -41,10 +41,11 @@ func apiServiceFactory(
 	return func() (string, reconciling.APIServiceCreator) {
 		return name, func(s *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error) {
 
-			s.Spec.Service = &apiregistrationv1beta1.ServiceReference{
-				Namespace: "openshift-apiserver",
-				Name:      "api",
+			if s.Spec.Service == nil {
+				s.Spec.Service = &apiregistrationv1beta1.ServiceReference{}
 			}
+			s.Spec.Service.Namespace = "openshift-apiserver"
+			s.Spec.Service.Name = "api"
 			s.Spec.Group = group
 			s.Spec.Version = version
 			s.Spec.InsecureSkipTLSVerify = false
