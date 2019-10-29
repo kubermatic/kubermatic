@@ -205,11 +205,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 				}, err
 			}
 
-			return r.reconcile(ctx, log, cluster)
+			result, reconcileErr := r.reconcile(ctx, log, cluster)
+			errs = append(errs, reconcileErr)
+			err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r, successfullyReconciled)
+			return result, err
 		},
 	)
 	if err != nil {
-		successfullyReconciled = false
 		errs = append(errs, err)
 		log.Errorw("Failed to reconcile cluster", zap.Error(err))
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -217,11 +219,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	if result == nil {
 		result = &reconcile.Result{}
-	}
-
-	if err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r, successfullyReconciled); err != nil {
-		log.Errorw("failed to update clusters status conditions", zap.Error(err))
-		errs = append(errs, err)
 	}
 
 	return *result, utilerrors.NewAggregate(errs)

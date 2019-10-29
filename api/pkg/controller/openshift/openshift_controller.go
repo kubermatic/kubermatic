@@ -177,7 +177,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, nil
 	}
 
-	successfullyReconciled := true
 	var errs []error
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
@@ -193,11 +192,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 				return &reconcile.Result{RequeueAfter: 10 * time.Second}, err
 			}
 
-			return r.reconcile(ctx, log, cluster)
+			result, reconcileErr := r.reconcile(ctx, log, cluster)
+			errs = append(errs, reconcileErr)
+			err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r, reconcileErr == nil)
+			return result, err
 		},
 	)
 	if err != nil {
-		successfullyReconciled = false
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		errs = append(errs, err)
@@ -205,11 +206,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	if result == nil {
 		result = &reconcile.Result{}
-	}
-
-	if err := controllerutil.SetSeedResourcesUpToDateCondition(ctx, cluster, r, successfullyReconciled); err != nil {
-		log.Errorw("failed to update clusters status conditions", zap.Error(err))
-		errs = append(errs, err)
 	}
 
 	return *result, utilerrors.NewAggregate(errs)
