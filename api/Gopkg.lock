@@ -2,16 +2,9 @@
 
 
 [[projects]]
-  digest = "1:0cb15db3c4421094556e11d635346083e2b5b01860e779ab6848b8fee5fd79e7"
+  digest = "1:4d6f036ea3fe636bcb2e89850bcdc62a771354e157cd51b8b22a2de8562bf663"
   name = "cloud.google.com/go"
-  packages = [
-    "compute/metadata",
-    "internal/version",
-    "logging",
-    "logging/apiv2",
-    "logging/internal",
-    "monitoring/apiv3",
-  ]
+  packages = ["compute/metadata"]
   pruneopts = "NUT"
   revision = "c9474f2f8deb81759839474b6bd1726bbfe1c1c4"
   version = "v0.36.0"
@@ -87,29 +80,6 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
-
-[[projects]]
-  branch = "go15"
-  digest = "1:8dab0033e231d02909f00a501a1f1ac01e63fd267dcb374a5de71b99ba1ee74f"
-  name = "github.com/ajeddeloh/go-json"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "6a2fe990e08303c82d966297ddb29a58678a4783"
-
-[[projects]]
-  digest = "1:dfc48e1a293a468126069586733806f62cbf485d87780881ea9106cdb68d38bb"
-  name = "github.com/ajeddeloh/yaml"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "6b94386aeefd8c4b8470aee72bfca084c2f91da9"
-
-[[projects]]
-  branch = "master"
-  digest = "1:fdd419e104ec26bb5bd63cc62637c640453ed2929a7453f3afadbd9a0223da66"
-  name = "github.com/alecthomas/units"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 
 [[projects]]
   digest = "1:975108e8d4f5dab096fc991326e96a5716ee8d02e5e7386bb4796171afc4ab9a"
@@ -204,60 +174,12 @@
   version = "v1.13.1"
 
 [[projects]]
-  digest = "1:15173ac9caac43ba3a8990716158f5fd08174293e259d0a9e67f6fc98cc39d35"
-  name = "github.com/coreos/container-linux-config-transpiler"
-  packages = [
-    "config",
-    "config/astyaml",
-    "config/platform",
-    "config/templating",
-    "config/types",
-    "config/types/util",
-    "internal/util",
-  ]
-  pruneopts = "NUT"
-  revision = "b76ab0b2d66ff1ac6902f4fe118a02c1bed6e5ce"
-  version = "v0.6.1"
-
-[[projects]]
   digest = "1:c91a5363a19174cb0181832821a7bb9da0aeefb5e2180724614b1005c2269712"
   name = "github.com/coreos/go-oidc"
   packages = ["."]
   pruneopts = "NUT"
   revision = "1180514eaf4d9f38d0d19eef639a1d695e066e72"
   version = "v2.0.0"
-
-[[projects]]
-  digest = "1:0ef770954bca104ee99b3b6b7f9b240605ac03517d9f98cbc1893daa03f3c038"
-  name = "github.com/coreos/go-semver"
-  packages = ["semver"]
-  pruneopts = "NUT"
-  revision = "8ab6407b697782a06568d4b7f1db25550ec2e4c6"
-  version = "v0.2.0"
-
-[[projects]]
-  digest = "1:027c348e13b5f924c925aebf0d2932545644c78da3f43cc82327220286084539"
-  name = "github.com/coreos/go-systemd"
-  packages = ["unit"]
-  pruneopts = "NUT"
-  revision = "9002847aa1425fb6ac49077c0a630b3b67e0fbfd"
-  version = "v18"
-
-[[projects]]
-  digest = "1:4170b2fbe85d262f50f5fe3c19246b7dafb3b3453aad53255019bbfe827c16b1"
-  name = "github.com/coreos/ignition"
-  packages = [
-    "config/shared/errors",
-    "config/shared/validations",
-    "config/v2_1/types",
-    "config/validate",
-    "config/validate/astjson",
-    "config/validate/astnode",
-    "config/validate/report",
-  ]
-  pruneopts = "NUT"
-  revision = "f7079129b8651ac51dba14c3af65692bb413c1dd"
-  version = "v0.28.0"
 
 [[projects]]
   branch = "master"
@@ -331,17 +253,6 @@
   pruneopts = "NUT"
   revision = "9f541cc9db5d55bce703bd99987c9d5cb8eea45e"
   version = "v1.0.0"
-
-[[projects]]
-  digest = "1:6dd2b549cc43ec65eb4c2a66364a76aa947f20dbf8bf59440b837d4546be9448"
-  name = "github.com/emicklei/go-restful"
-  packages = [
-    ".",
-    "log",
-  ]
-  pruneopts = "NUT"
-  revision = "6ac3b8eb89d325e5c750d77f344a6870464d03c3"
-  version = "v2.9.6"
 
 [[projects]]
   digest = "1:662e3fdfe37512e20258e01c60aac10d8b60f1ae501dbc6291930d5448c16ead"
@@ -601,7 +512,7 @@
   revision = "c65c006176ff7ff98bb916961c7abbc6b0afc0aa"
 
 [[projects]]
-  digest = "1:178f7ca50ede13568f3e1b4e93ab1cd31481477873aa558a0f06a17b72573cf8"
+  digest = "1:1e21a0bbb10d73b781e87a9a123b96f6ebe08d0451e50f1b97c1213b302af46f"
   name = "github.com/golang/protobuf"
   packages = [
     "jsonpb",
@@ -613,7 +524,6 @@
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
-    "ptypes/empty",
     "ptypes/struct",
     "ptypes/timestamp",
     "ptypes/wrappers",
@@ -661,14 +571,6 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:fa300677001e58a995e10afe4e251d2a6e30d3815a234d553b5810db7795d5a2"
-  name = "github.com/googleapis/gax-go"
-  packages = ["v2"]
-  pruneopts = "NUT"
-  revision = "beaecbbdd8af86aa3acf14180d53828ce69400b2"
-  version = "v2.0.4"
-
-[[projects]]
   digest = "1:06a7dadb7b760767341ffb6c8d377238d68a1226f2b21b5d497d2e3f6ecf6b4e"
   name = "github.com/googleapis/gnostic"
   packages = [
@@ -682,27 +584,20 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2e935442f280bdda393b1915007aaf81e9e526978c6190482d1c7616823bc8ae"
+  digest = "1:8309ba48bdbffedeff08ed79d41728a8370eff42f7b9c13d3b326b4b0dc87bca"
   name = "github.com/gophercloud/gophercloud"
   packages = [
     ".",
     "internal",
     "openstack",
-    "openstack/compute/v2/extensions/availabilityzones",
-    "openstack/compute/v2/extensions/bootfromvolume",
-    "openstack/compute/v2/extensions/extendedstatus",
     "openstack/compute/v2/flavors",
-    "openstack/compute/v2/images",
-    "openstack/compute/v2/servers",
     "openstack/identity/v2/tenants",
     "openstack/identity/v2/tokens",
     "openstack/identity/v3/groups",
     "openstack/identity/v3/projects",
-    "openstack/identity/v3/regions",
     "openstack/identity/v3/tokens",
     "openstack/identity/v3/users",
     "openstack/networking/v2/extensions/external",
-    "openstack/networking/v2/extensions/layer3/floatingips",
     "openstack/networking/v2/extensions/layer3/routers",
     "openstack/networking/v2/extensions/security/groups",
     "openstack/networking/v2/extensions/security/rules",
@@ -896,39 +791,33 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:b9f869c1b700171979d970cfeb7adf69aefa9dbdc59ff1a6659e0af0cfe0b7cc"
+  digest = "1:1c4bb3b2e102060cc14199bebfa4a624373bdc9cb7432aa177b65937aa629102"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/cluster/common",
     "pkg/apis/cluster/v1alpha1",
     "pkg/apis/plugin",
-    "pkg/cloudprovider/common/ssh",
-    "pkg/cloudprovider/errors",
-    "pkg/cloudprovider/instance",
-    "pkg/cloudprovider/provider/aws",
-    "pkg/cloudprovider/provider/azure",
-    "pkg/cloudprovider/provider/digitalocean",
-    "pkg/cloudprovider/provider/gce",
-    "pkg/cloudprovider/provider/hetzner",
-    "pkg/cloudprovider/provider/kubevirt",
-    "pkg/cloudprovider/provider/openstack",
-    "pkg/cloudprovider/provider/packet",
-    "pkg/cloudprovider/provider/vsphere",
-    "pkg/cloudprovider/types",
+    "pkg/cloudprovider/provider/aws/types",
+    "pkg/cloudprovider/provider/azure/types",
+    "pkg/cloudprovider/provider/digitalocean/types",
+    "pkg/cloudprovider/provider/gce/types",
+    "pkg/cloudprovider/provider/hetzner/types",
+    "pkg/cloudprovider/provider/kubevirt/types",
+    "pkg/cloudprovider/provider/openstack/types",
+    "pkg/cloudprovider/provider/packet/types",
+    "pkg/cloudprovider/provider/vsphere/types",
     "pkg/ini",
-    "pkg/kubernetes",
-    "pkg/node/eviction",
-    "pkg/providerconfig",
+    "pkg/node/eviction/types",
+    "pkg/providerconfig/types",
     "pkg/userdata/centos",
-    "pkg/userdata/convert",
     "pkg/userdata/coreos",
     "pkg/userdata/helper",
     "pkg/userdata/plugin",
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "ecaf41657919495a18c1295543f0e835a63b5309"
-  version = "v1.6.0"
+  revision = "1d83e8f7de74f01ba0470e1a46523b8b9549c084"
+  source = "github.com/alvaroaleman/machine-controller"
 
 [[projects]]
   digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"
@@ -1048,22 +937,6 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "a02c426e4888c0bb39c3abcf249c8d048e2c6e40"
-
-[[projects]]
-  digest = "1:748946761cf99c8b73cef5a3c0ee3e040859dd713a20cece0d0e0dc04e6ceca7"
-  name = "github.com/patrickmn/go-cache"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "a3647f8e31d79543b2d0f0ae2fe5c379d72cedc0"
-  version = "v2.1.0"
-
-[[projects]]
-  digest = "1:93b1d84c5fa6d1ea52f4114c37714cddd84d5b78f151b62bb101128dd51399bf"
-  name = "github.com/pborman/uuid"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "adf5a7427709b9deb95d29d3fa8a2bf9cfd388f1"
-  version = "v1.2"
 
 [[projects]]
   digest = "1:51ea800cff51752ff68e12e04106f5887b4daec6f9356721238c28019f0b42db"
@@ -1253,14 +1126,6 @@
   version = "v1.20.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:c9b456727ce4101594aabddaa816c80464cd21a1e5fcd145297a902303be0085"
-  name = "github.com/vincent-petithory/dataurl"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "9a301d65acbb728fcc3ace14f45f511a4cfeea9c"
-
-[[projects]]
   digest = "1:fc2fce0db3c34496ad580fb209e97b3e4827420b1b6aa4172f4eff2ec2d73d23"
   name = "github.com/vmware/govmomi"
   packages = [
@@ -1345,14 +1210,6 @@
   pruneopts = "NUT"
   revision = "ff33455a0e382e8a81d14dd7c922020b6b5e7982"
   version = "v1.9.1"
-
-[[projects]]
-  branch = "master"
-  digest = "1:91ed6116b126ec7fa7b9f9460356ee6b3005e5ed320b8e85510937f44d3d62d5"
-  name = "go4.org"
-  packages = ["errorutil"]
-  pruneopts = "NUT"
-  revision = "00e24f1b25994999399dee600cb8f35a45f519dc"
 
 [[projects]]
   branch = "master"
@@ -1499,29 +1356,21 @@
   version = "v2.0.1"
 
 [[projects]]
-  digest = "1:f2bea127e9472641b831158233ae841800faa502767b0c7d3aa7b5ccc9142456"
+  digest = "1:b20273f035b3858947cca282ff8d003b1ae3413016e1e0c0a5fc72218ba713d0"
   name = "google.golang.org/api"
   packages = [
     "compute/v1",
     "gensupport",
     "googleapi",
     "googleapi/internal/uritemplates",
-    "googleapi/transport",
-    "internal",
-    "iterator",
-    "option",
     "support/bundler",
-    "transport",
-    "transport/grpc",
-    "transport/http",
-    "transport/http/internal/propagation",
   ]
   pruneopts = "NUT"
   revision = "19e022d8cf43ce81f046bae8cc18c5397cc7732f"
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:b400989fa9ecf8f825e9092d41c9779444afeda5d5ce7f5c9d4a9ca9d05c949c"
+  digest = "1:b63b351b57e64ae8aec1af030dc5e74a2676fcda62102f006ae4411fac1b04c8"
   name = "google.golang.org/appengine"
   packages = [
     ".",
@@ -1532,9 +1381,7 @@
     "internal/log",
     "internal/modules",
     "internal/remote_api",
-    "internal/socket",
     "internal/urlfetch",
-    "socket",
     "urlfetch",
   ]
   pruneopts = "NUT"
@@ -1543,18 +1390,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a724c8ecc791b5c2dc1eb81c72f1eb8fe12050e5cdc21c832cfaa154ec224f5d"
+  digest = "1:65029e36eebfe0c87fd57faf9c8143b8e6385d1ac39572537a33052ca0d81445"
   name = "google.golang.org/genproto"
   packages = [
-    "googleapis/api/annotations",
-    "googleapis/api/distribution",
     "googleapis/api/httpbody",
-    "googleapis/api/label",
-    "googleapis/api/metric",
-    "googleapis/api/monitoredres",
-    "googleapis/logging/type",
-    "googleapis/logging/v2",
-    "googleapis/monitoring/v3",
     "googleapis/rpc/status",
     "protobuf/field_mask",
   ]
@@ -1562,7 +1401,7 @@
   revision = "082222b4a5c572e33e82ee9162d1352c7cf38682"
 
 [[projects]]
-  digest = "1:26ad31c404ea7ee468ae1c684abdafdae159994a2862a4a583bfd7b07ede5b6f"
+  digest = "1:4837585442801f3c7ebd044a96fce852242529a73bdd96fcba2119ff74987b0b"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -1574,7 +1413,6 @@
     "connectivity",
     "credentials",
     "credentials/internal",
-    "credentials/oauth",
     "encoding",
     "encoding/proto",
     "grpclog",
@@ -2039,12 +1877,9 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0728020defbd5d26e88ec5f6a9e844b6f2982998bad1356b649ccc9469e0aa89"
+  digest = "1:03a96603922fc1f6895ae083e1e16d943b55ef0656b56965351bd87e7d90485f"
   name = "k8s.io/kube-openapi"
-  packages = [
-    "pkg/common",
-    "pkg/util/proto",
-  ]
+  packages = ["pkg/util/proto"]
   pruneopts = "NUT"
   revision = "0317810137be915b9cf888946c6e115c1bfac693"
 
@@ -2078,30 +1913,6 @@
   ]
   pruneopts = "NUT"
   revision = "c2654d5206da6b7b6ace12841e8f359bb89b443c"
-
-[[projects]]
-  digest = "1:e28f5cd99ea2cf75b070d567cde53308d43649f9bb6ed38dd50e4e57bb611313"
-  name = "kubevirt.io/client-go"
-  packages = [
-    "api/v1",
-    "precond",
-  ]
-  pruneopts = "NUT"
-  revision = "f7b247301033cc7dc3da457939d72a129d460021"
-  source = "github.com/kubevirt/client-go"
-  version = "v0.19.0"
-
-[[projects]]
-  digest = "1:a662690aaa202e4bb9d05410af32bad7ed7e0ad3145f9a2d427716ce02c26098"
-  name = "kubevirt.io/containerized-data-importer"
-  packages = [
-    "pkg/apis/core",
-    "pkg/apis/core/v1alpha1",
-  ]
-  pruneopts = "NUT"
-  revision = "3dcef90a28402b4b9cde7dc40dbebc075cc7b6ad"
-  source = "github.com/kubevirt/containerized-data-importer"
-  version = "v1.10.0"
 
 [[projects]]
   digest = "1:508aaf04208c0a48f224d05cec32f149863ef6ba238281fbe0b220819d9efb0d"
@@ -2228,17 +2039,17 @@
     "github.com/iancoleman/strcase",
     "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1",
     "github.com/kubermatic/machine-controller/pkg/apis/plugin",
-    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws",
-    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure",
-    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean",
-    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce",
-    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner",
-    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt",
-    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack",
-    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/packet",
-    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere",
-    "github.com/kubermatic/machine-controller/pkg/node/eviction",
-    "github.com/kubermatic/machine-controller/pkg/providerconfig",
+    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types",
+    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types",
+    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types",
+    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types",
+    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types",
+    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types",
+    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types",
+    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/packet/types",
+    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types",
+    "github.com/kubermatic/machine-controller/pkg/node/eviction/types",
+    "github.com/kubermatic/machine-controller/pkg/providerconfig/types",
     "github.com/kubermatic/machine-controller/pkg/userdata/centos",
     "github.com/kubermatic/machine-controller/pkg/userdata/coreos",
     "github.com/kubermatic/machine-controller/pkg/userdata/helper",
