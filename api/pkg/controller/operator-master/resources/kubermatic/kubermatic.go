@@ -14,8 +14,6 @@ import (
 
 const (
 	dockercfgSecretName                   = "dockercfg"
-	kubeconfigSecretName                  = "kubeconfig"
-	datacentersSecretName                 = "datacenters"
 	presetsSecretName                     = "presets"
 	dexCASecretName                       = "dex-ca"
 	masterFilesSecretName                 = "extra-files"
@@ -23,9 +21,9 @@ const (
 	uiConfigConfigMapName                 = "ui-config"
 	backupContainersConfigMapName         = "backup-containers"
 	ingressName                           = "kubermatic"
-	apiDeploymentName                     = "kubermatic-api-v1"
-	uiDeploymentName                      = "kubermatic-ui-v2"
-	masterControllerManagerDeploymentName = "kubermatic-master-controller-manager-v1"
+	apiDeploymentName                     = "kubermatic-api"
+	uiDeploymentName                      = "kubermatic-ui"
+	masterControllerManagerDeploymentName = "kubermatic-master-controller-manager"
 	apiServiceName                        = "kubermatic-api"
 	uiServiceName                         = "kubermatic-ui"
 )
@@ -49,26 +47,6 @@ func DockercfgSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) recon
 
 			return createSecretData(s, map[string]string{
 				corev1.DockerConfigJsonKey: cfg.Spec.ImagePullSecret,
-			}), nil
-		}
-	}
-}
-
-func KubeconfigSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return kubeconfigSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			return createSecretData(s, map[string]string{
-				"kubeconfig": cfg.Spec.Auth.CABundle,
-			}), nil
-		}
-	}
-}
-
-func DatacentersSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return datacentersSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			return createSecretData(s, map[string]string{
-				"datacenters.yaml": cfg.Spec.Datacenters,
 			}), nil
 		}
 	}

@@ -17,8 +17,7 @@ import (
 
 func apiPodLabels() map[string]string {
 	return map[string]string{
-		nameLabel:    "kubermatic-api",
-		versionLabel: "v1",
+		nameLabel: "kubermatic-api",
 	}
 }
 
@@ -64,7 +63,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 				"-logtostderr",
 				"-address=0.0.0.0:8080",
 				"-internal-address=0.0.0.0:8085",
-				"-kubeconfig=/opt/.kube/kubeconfig",
+				"-dynamic-datacenters=true",
 				fmt.Sprintf("-oidc-url=%s", cfg.Spec.Auth.TokenIssuer),
 				fmt.Sprintf("-oidc-authenticator-client-id=%s", cfg.Spec.Auth.ClientID),
 				fmt.Sprintf("-oidc-skip-tls-verify=%v", cfg.Spec.Auth.SkipTokenIssuerTLSVerify),
@@ -84,24 +83,8 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 				)
 			}
 
-			volumes := []corev1.Volume{
-				{
-					Name: "kubeconfig",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: kubeconfigSecretName,
-						},
-					},
-				},
-			}
-
-			volumeMounts := []corev1.VolumeMount{
-				{
-					MountPath: "/opt/.kube/",
-					Name:      "kubeconfig",
-					ReadOnly:  true,
-				},
-			}
+			volumes := []corev1.Volume{}
+			volumeMounts := []corev1.VolumeMount{}
 
 			if len(cfg.Spec.MasterFiles) > 0 {
 				args = append(
@@ -146,25 +129,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 				})
 			}
 
-			if cfg.Spec.Datacenters != "" {
-				args = append(args, "-datacenters=/opt/datacenters/datacenters.yaml")
-
-				volumes = append(volumes, corev1.Volume{
-					Name: "datacenters",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: datacentersSecretName,
-						},
-					},
-				})
-
-				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					MountPath: "/opt/datacenters/",
-					Name:      "datacenters",
-					ReadOnly:  true,
-				})
-			}
-
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -188,11 +152,11 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("100m"),
-							corev1.ResourceMemory: resource.MustParse("64Mi"),
+							corev1.ResourceMemory: resource.MustParse("512Mi"),
 						},
 						Limits: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("250m"),
-							corev1.ResourceMemory: resource.MustParse("128Mi"),
+							corev1.ResourceMemory: resource.MustParse("1Gi"),
 						},
 					},
 					ReadinessProbe: &probe,
@@ -205,7 +169,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 }
 
 func APIPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
-	name := "kubermatic-api-v1"
+	name := "kubermatic-api"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return name, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {

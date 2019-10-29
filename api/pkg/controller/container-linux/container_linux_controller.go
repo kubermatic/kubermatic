@@ -10,8 +10,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -93,17 +91,12 @@ func (r *Reconciler) labelAllContainerLinuxNodes(ctx context.Context) (bool, err
 		hasLabel := hasContainerLinuxLabel(&node)
 
 		if usesContainerLinux && !hasLabel {
-			if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-				newNode := &corev1.Node{}
-				if err := r.Get(ctx, types.NamespacedName{Name: node.Name}, newNode); err != nil {
-					return err
-				}
-				if newNode.Labels == nil {
-					newNode.Labels = map[string]string{}
-				}
-				newNode.Labels[resources.NodeSelectorLabelKey] = resources.NodeSelectorLabelValue
-				return r.Client.Update(ctx, newNode)
-			}); err != nil {
+			oldNode := node.DeepCopy()
+			if node.Labels == nil {
+				node.Labels = map[string]string{}
+			}
+			node.Labels[resources.NodeSelectorLabelKey] = resources.NodeSelectorLabelValue
+			if err := r.Client.Patch(ctx, &node, ctrlruntimeclient.MergeFrom(oldNode)); err != nil {
 				return false, fmt.Errorf("failed to update node %q: %v", node.Name, err)
 			}
 		}

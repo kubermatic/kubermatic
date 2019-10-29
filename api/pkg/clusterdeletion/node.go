@@ -13,8 +13,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -39,20 +37,12 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 			continue
 		}
 
-		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			// Get latest version of the node to prevent conflict errors
-			currentNode := &corev1.Node{}
-			if err := userClusterClient.Get(ctx, types.NamespacedName{Name: node.Name}, currentNode); err != nil {
-				return err
-			}
-			if currentNode.Annotations == nil {
-				currentNode.Annotations = map[string]string{}
-			}
-			currentNode.Annotations[eviction.SkipEvictionAnnotationKey] = "true"
-
-			return userClusterClient.Update(ctx, currentNode)
-		})
-		if err != nil {
+		oldNode := node.DeepCopy()
+		if node.Annotations == nil {
+			node.Annotations = map[string]string{}
+		}
+		node.Annotations[eviction.SkipEvictionAnnotationKey] = "true"
+		if err := userClusterClient.Patch(ctx, &node, controllerruntimeclient.MergeFrom(oldNode)); err != nil {
 			return fmt.Errorf("failed to add the annotation '%s=true' to node '%s': %v", eviction.SkipEvictionAnnotationKey, node.Name, err)
 		}
 	}
@@ -103,7 +93,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 		return nil
 	}
 
-	return d.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-		kuberneteshelper.RemoveFinalizer(c, kubermaticapiv1.NodeDeletionFinalizer)
-	})
+	oldCluster := cluster.DeepCopy()
+	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer)
+	return d.seedClient.Patch(ctx, cluster, controllerruntimeclient.MergeFrom(oldCluster))
 }

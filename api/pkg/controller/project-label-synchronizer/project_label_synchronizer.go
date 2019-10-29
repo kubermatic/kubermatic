@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -146,32 +145,21 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 		filteredClusters := r.filterClustersByProjectID(log, project.Name, unfilteredClusters)
 		for _, cluster := range filteredClusters {
 			log := log.With("cluster", cluster.Name)
-			changed, newClusterLabels := getLabelsForCluster(log, cluster.Labels, project.Labels)
+			changed, newClusterLabels := getLabelsForCluster(log, cluster.ObjectMeta.DeepCopy().Labels, project.Labels)
 			if !changed {
 				log.Debug("Labels on cluster are already up to date")
 				continue
 			}
+			oldCluster := cluster.DeepCopy()
+			cluster.Labels = newClusterLabels
 			log.Debug("Updating labels on cluster")
-			if err := r.updateCluster(cluster.Name, seedClient, func(c *kubermaticv1.Cluster) {
-				c.Labels = newClusterLabels
-			}); err != nil {
+			if err := seedClient.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 				errs = append(errs, fmt.Errorf("failed to update cluster %q", cluster.Name))
 			}
 		}
 	}
 
 	return utilerrors.NewAggregate(errs)
-}
-
-func (r *reconciler) updateCluster(name string, client ctrlruntimeclient.Client, modify func(*kubermaticv1.Cluster)) error {
-	cluster := &kubermaticv1.Cluster{}
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		if err := client.Get(r.ctx, types.NamespacedName{Name: name}, cluster); err != nil {
-			return err
-		}
-		modify(cluster)
-		return client.Update(r.ctx, cluster)
-	})
 }
 
 func (r *reconciler) filterClustersByProjectID(

@@ -15,8 +15,7 @@ import (
 
 func uiPodLabels() map[string]string {
 	return map[string]string{
-		nameLabel:    "kubermatic-ui",
-		versionLabel: "v1",
+		nameLabel: "kubermatic-ui",
 	}
 }
 
@@ -83,7 +82,7 @@ func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcil
 }
 
 func UIPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
-	name := "kubermatic-ui-v2"
+	name := "kubermatic-ui"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return name, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {

@@ -143,7 +143,7 @@ func (r *Reconciler) volumeRevisionLabels() reconciling.ObjectModifier {
 			}
 
 			volumeLabels, err := resources.VolumeRevisionLabels(r.ctx, r.Client, deployment.Namespace, deployment.Spec.Template.Spec.Volumes)
-			if !ok {
+			if err != nil {
 				return obj, fmt.Errorf("failed to determine revision labels for volumes: %v", err)
 			}
 
