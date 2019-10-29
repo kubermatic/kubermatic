@@ -9,9 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -43,29 +41,10 @@ func ClusterReconcileWrapper(
 		reconcilingStatus = corev1.ConditionTrue
 	}
 	errs := []error{err}
-	errs = append(errs, clusterUpdater(ctx, client, cluster.Name, func(c *kubermaticv1.Cluster) {
-		SetClusterCondition(c, conditionType, reconcilingStatus, "", "")
-	}))
+	oldCluster := cluster.DeepCopy()
+	SetClusterCondition(cluster, conditionType, reconcilingStatus, "", "")
+	errs = append(errs, client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)))
 	return result, utilerrors.NewAggregate(errs)
-}
-
-func clusterUpdater(
-	ctx context.Context,
-	client ctrlruntimeclient.Client,
-	name string,
-	modify func(*kubermaticv1.Cluster),
-) error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		//Get latest version
-		c := &kubermaticv1.Cluster{}
-		if err := client.Get(ctx, types.NamespacedName{Name: name}, c); err != nil {
-			return err
-		}
-		// Apply modifications
-		modify(c)
-		// Update the cluster
-		return client.Update(ctx, c)
-	})
 }
 
 // GetClusterCondition returns the index of the given condition or -1 and the condition itself

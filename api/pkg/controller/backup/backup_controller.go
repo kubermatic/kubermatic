@@ -242,8 +242,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				}
 			}
 
+			oldCluster := cluster.DeepCopy()
 			kuberneteshelper.RemoveFinalizer(cluster, cleanupFinalizer)
-			if err := r.Update(ctx, cluster); err != nil {
+			if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 				return fmt.Errorf("failed to update cluster after removing cleanup finalizer: %v", err)
 			}
 		}
@@ -258,8 +259,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	// Always add the finalizer first
 	if !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
+		oldCluster := cluster.DeepCopy()
 		kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
-		if err := r.Update(ctx, cluster); err != nil {
+		if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 			return fmt.Errorf("failed to update cluster after adding cleanup finalizer: %v", err)
 		}
 	}
