@@ -45,7 +45,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.seedsGetter,
 		ctrlCtx.seedKubeconfigGetter,
-		predicates
+		predicates,
 		rbacControllerFactory,
 		projectLabelSynchronizerFactory); err != nil {
 		//TODO: Find a better name
