@@ -21,9 +21,9 @@ const (
 	uiConfigConfigMapName                 = "ui-config"
 	backupContainersConfigMapName         = "backup-containers"
 	ingressName                           = "kubermatic"
-	apiDeploymentName                     = "kubermatic-api-v1"
-	uiDeploymentName                      = "kubermatic-ui-v2"
-	masterControllerManagerDeploymentName = "kubermatic-master-controller-manager-v1"
+	apiDeploymentName                     = "kubermatic-api"
+	uiDeploymentName                      = "kubermatic-ui"
+	masterControllerManagerDeploymentName = "kubermatic-master-controller-manager"
 	apiServiceName                        = "kubermatic-api"
 	uiServiceName                         = "kubermatic-ui"
 )
