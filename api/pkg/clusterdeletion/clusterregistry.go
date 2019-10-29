@@ -68,8 +68,9 @@ func (d *Deletion) cleanupImageRegistryConfigs(ctx context.Context, log *zap.Sug
 		}
 
 		log.Debugw("ImageregistryConfig has no storage configured but finalizer, removing it", "name", imageRegistry.GetName())
+		oldImageRegistry := imageRegistry.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(&imageRegistry, openshiftImageRegistryFinalizer)
-		if err := userClusterClient.Update(ctx, &imageRegistry); err != nil {
+		if err := userClusterClient.Patch(ctx, &imageRegistry, ctrlruntimeclient.MergeFrom(oldImageRegistry)); err != nil {
 			return false, fmt.Errorf("failed to remove %q finalizer from imageRegistryConfig %q: %v", openshiftImageRegistryFinalizer, imageRegistry.GetName(), err)
 		}
 
