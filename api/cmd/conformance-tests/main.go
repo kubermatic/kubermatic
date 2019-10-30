@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
-	"os/user"
 	"path"
 	"strings"
 	"time"
@@ -158,11 +157,8 @@ func main() {
 		}
 	}()
 
-	usr, err := user.Current()
-	if err != nil {
-		log.Fatal("failed to get the current user", zap.Error(err))
-	}
-	pubkeyPath := path.Join(usr.HomeDir, ".ssh/id_rsa.pub")
+	// user.Current does not work in Alpine
+	pubkeyPath := path.Join(os.Getenv("HOME"), ".ssh/id_rsa.pub")
 
 	flag.StringVar(&opts.kubeconfigPath, "kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
 	flag.StringVar(&opts.existingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
@@ -258,6 +254,15 @@ func main() {
 		}
 		opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
 	} else {
+		errChan := make(chan error, 1)
+		if err := apitest.RunOIDCProxy(errChan, context.Background().Done()); err != nil {
+			log.Fatalw("Failed to run oidc proxy", zap.Error(err))
+		}
+		go func() {
+			if err := <-errChan; err != nil {
+				log.Errorw("OIDC proxy enxountered error", zap.Error(err))
+			}
+		}()
 		token, err := apitest.GetMasterToken()
 		if err != nil {
 			log.Fatalw("Failed to get master token", zap.Error(err))
@@ -545,9 +550,10 @@ func createProject(client *apiclient.Kubermatic, bearerToken runtime.ClientAuthI
 			return false, nil
 		}
 		if response.Payload.Status != kubermaticv1.ProjectActive {
-			log.Infof("Project not active yet", "project-status", response.Payload.Status)
+			log.Infow("Project not active yet", "project-status", response.Payload.Status)
 			return false, nil
 		}
+		log.Info("Successfully  got project")
 		return true, nil
 	}); err != nil {
 		return "", fmt.Errorf("failed to wait for project to be ready: %v", err)
