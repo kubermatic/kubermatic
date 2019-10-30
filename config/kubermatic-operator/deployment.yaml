@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kubermatic-operator
@@ -26,7 +26,13 @@ spec:
         - kubermatic-operator
         args:
         - -internal-address=0.0.0.0:8085
+        - -namespace=$(POD_NAMESPACE)
         - -log-format=json
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         ports:
         - name: metrics
           containerPort: 8085

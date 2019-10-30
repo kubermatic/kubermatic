@@ -9,6 +9,7 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 
 ./_build/kubermatic-operator \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
+  -namespace=kubermatic \
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
   -log-debug=true \
   -log-format=Console \

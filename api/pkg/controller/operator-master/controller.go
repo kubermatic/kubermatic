@@ -6,7 +6,9 @@ import (
 
 	"go.uber.org/zap"
 
+	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -49,8 +51,9 @@ const (
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,
-	numWorkers int,
 	log *zap.SugaredLogger,
+	namespace string,
+	numWorkers int,
 	workerName string,
 ) error {
 	reconciler := &Reconciler{
@@ -67,12 +70,11 @@ func Add(
 		return err
 	}
 
+	namespacePredicate := predicateutil.ByNamespace(namespace)
+	workerNamePredicate := workerlabel.Predicates(workerName)
+
 	// put the config's identifier on the queue
 	kubermaticConfigHandler := newEventHandler(func(a handler.MapObject) []reconcile.Request {
-		if a.Meta.GetLabels()[WorkerNameLabel] != workerName {
-			return nil
-		}
-
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{
@@ -84,7 +86,7 @@ func Add(
 	})
 
 	obj := &operatorv1alpha1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: obj}, kubermaticConfigHandler); err != nil {
+	if err := c.Watch(&source.Kind{Type: obj}, kubermaticConfigHandler, namespacePredicate, workerNamePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %v", obj, err)
 	}
 
@@ -126,7 +128,7 @@ func Add(
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, childEventHandler); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, namespacePredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}
