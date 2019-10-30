@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -120,13 +121,7 @@ func Add(
 
 func createSeedWatches(controller controller.Controller, seedName string, seedManager manager.Manager, predicates ...predicate.Predicate) error {
 	cache := seedManager.GetCache()
-	eventHandler := newEventHandler(func(_ handler.MapObject) []reconcile.Request {
-		return []reconcile.Request{{
-			NamespacedName: types.NamespacedName{
-				Name: seedName,
-			},
-		}}
-	})
+	eventHandler := util.EnqueueConst(seedName)
 
 	typesToWatch := []runtime.Object{
 		&appsv1.Deployment{},
