@@ -3,7 +3,7 @@ package rbacusercluster_test
 import (
 	"testing"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/rbac"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
