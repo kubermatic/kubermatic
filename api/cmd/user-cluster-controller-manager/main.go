@@ -20,9 +20,9 @@ import (
 	"github.com/oklog/run"
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
 	rbacusercluster "github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
 	containerlinux "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/container-linux"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/ipam"
 	nodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/nodecsrapprover"
 	openshiftmasternodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-master-node-labeler"
