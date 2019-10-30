@@ -7,6 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 // New returns a new Cache
@@ -30,7 +31,7 @@ func (c *Cache) Client(cfg *rest.Config) (ctrlruntimeclient.Client, error) {
 	rawMapper, exists := c.cache.Load(key)
 	if !exists {
 		var err error
-		mapper, err = newDynamicRESTMapper(cfg)
+		mapper, err = apiutil.NewDynamicRESTMapper(cfg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create restMapper: %v", err)
 		}
