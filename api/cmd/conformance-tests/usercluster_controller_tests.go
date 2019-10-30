@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/rbac"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
