@@ -93,6 +93,7 @@ function cleanup {
   echodate "Starting cleanup"
   set +e
 
+	sleep 1h
   # Delete all clusters
   kubectl delete cluster --all
 
