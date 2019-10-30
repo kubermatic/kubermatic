@@ -28,13 +28,13 @@ const (
 	uiServiceName                         = "kubermatic-ui"
 )
 
-func clusterRoleBindingName(ns string) string {
-	return fmt.Sprintf("%s:kubermatic:cluster-admin", ns)
+func clusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
+	return fmt.Sprintf("%s:%s:cluster-admin", cfg.Namespace, cfg.Name)
 }
 
 func NamespaceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
 	return func() (string, reconciling.NamespaceCreator) {
-		return cfg.Spec.Namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+		return cfg.Namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 			return ns, nil
 		}
 	}
@@ -118,7 +118,7 @@ func ServiceAccountCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconc
 }
 
 func ClusterRoleBindingCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingCreatorGetter {
-	name := clusterRoleBindingName(cfg.Spec.Namespace)
+	name := clusterRoleBindingName(cfg)
 
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
@@ -132,7 +132,7 @@ func ClusterRoleBindingCreator(cfg *operatorv1alpha1.KubermaticConfiguration) re
 				{
 					Kind:      rbacv1.ServiceAccountKind,
 					Name:      serviceAccountName,
-					Namespace: cfg.Spec.Namespace,
+					Namespace: cfg.Namespace,
 				},
 			}
 

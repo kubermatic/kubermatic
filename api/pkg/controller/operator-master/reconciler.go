@@ -70,10 +70,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Kubermatic configuration")
 
-	if err := r.reconcileNamespaces(config, logger); err != nil {
-		return err
-	}
-
 	if err := r.reconcileServiceAccounts(config, logger); err != nil {
 		return err
 	}
@@ -109,20 +105,6 @@ func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration,
 	return nil
 }
 
-func (r *Reconciler) reconcileNamespaces(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
-	logger.Debug("Reconciling Namespaces")
-
-	creators := []reconciling.NamedNamespaceCreatorGetter{
-		kubermatic.NamespaceCreator(config),
-	}
-
-	if err := reconciling.ReconcileNamespaces(r.ctx, creators, "", r.Client, r.applyOwnerLabels(config)); err != nil {
-		return fmt.Errorf("failed to reconcile Namespaces: %v", err)
-	}
-
-	return nil
-}
-
 func (r *Reconciler) reconcileConfigMaps(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ConfigMaps")
 
@@ -131,7 +113,7 @@ func (r *Reconciler) reconcileConfigMaps(config *operatorv1alpha1.KubermaticConf
 		kubermatic.BackupContainersConfigMapCreator(config),
 	}
 
-	if err := reconciling.ReconcileConfigMaps(r.ctx, creators, config.Spec.Namespace, r.Client, r.applyOwnerLabels(config)); err != nil {
+	if err := reconciling.ReconcileConfigMaps(r.ctx, creators, config.Namespace, r.Client, r.applyOwnerLabels(config)); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
 	}
 
@@ -154,7 +136,7 @@ func (r *Reconciler) reconcileSecrets(config *operatorv1alpha1.KubermaticConfigu
 		creators = append(creators, kubermatic.PresetsSecretCreator(config))
 	}
 
-	if err := reconciling.ReconcileSecrets(r.ctx, creators, config.Spec.Namespace, r.Client, r.applyOwnerLabels(config)); err != nil {
+	if err := reconciling.ReconcileSecrets(r.ctx, creators, config.Namespace, r.Client, r.applyOwnerLabels(config)); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets: %v", err)
 	}
 
@@ -168,7 +150,7 @@ func (r *Reconciler) reconcileServiceAccounts(config *operatorv1alpha1.Kubermati
 		kubermatic.ServiceAccountCreator(config),
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, config.Spec.Namespace, r.Client, r.applyOwnerLabels(config)); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, config.Namespace, r.Client, r.applyOwnerLabels(config)); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts: %v", err)
 	}
 
@@ -203,7 +185,7 @@ func (r *Reconciler) reconcileDeployments(config *operatorv1alpha1.KubermaticCon
 		r.volumeRevisionLabels(),
 	}
 
-	if err := reconciling.ReconcileDeployments(r.ctx, creators, config.Spec.Namespace, r.Client, modifiers...); err != nil {
+	if err := reconciling.ReconcileDeployments(r.ctx, creators, config.Namespace, r.Client, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %v", err)
 	}
 
@@ -219,7 +201,7 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(config *operatorv1alpha1.Kube
 		kubermatic.MasterControllerManagerPDBCreator(config),
 	}
 
-	if err := reconciling.ReconcilePodDisruptionBudgets(r.ctx, creators, config.Spec.Namespace, r.Client, r.applyOwnerLabels(config)); err != nil {
+	if err := reconciling.ReconcilePodDisruptionBudgets(r.ctx, creators, config.Namespace, r.Client, r.applyOwnerLabels(config)); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
 	}
 
@@ -234,7 +216,7 @@ func (r *Reconciler) reconcileServices(config *operatorv1alpha1.KubermaticConfig
 		kubermatic.UIServiceCreator(config),
 	}
 
-	if err := reconciling.ReconcileServices(r.ctx, creators, config.Spec.Namespace, r.Client, r.applyOwnerLabels(config)); err != nil {
+	if err := reconciling.ReconcileServices(r.ctx, creators, config.Namespace, r.Client, r.applyOwnerLabels(config)); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %v", err)
 	}
 
@@ -248,7 +230,7 @@ func (r *Reconciler) reconcileIngresses(config *operatorv1alpha1.KubermaticConfi
 		kubermatic.IngressCreator(config),
 	}
 
-	if err := reconciling.ReconcileIngresses(r.ctx, creators, config.Spec.Namespace, r.Client, r.applyOwnerLabels(config)); err != nil {
+	if err := reconciling.ReconcileIngresses(r.ctx, creators, config.Namespace, r.Client, r.applyOwnerLabels(config)); err != nil {
 		return fmt.Errorf("failed to reconcile Ingresses: %v", err)
 	}
 

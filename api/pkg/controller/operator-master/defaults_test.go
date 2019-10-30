@@ -30,22 +30,6 @@ func TestDefaultingConfigurations(t *testing.T) {
 		validate func(c *operatorv1alpha1.KubermaticConfiguration) error
 	}{
 		{
-			name: "Namespace is defaulted to the configuration's namespace",
-			input: &operatorv1alpha1.KubermaticConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "foo",
-					Namespace: "bar",
-				},
-			},
-			validate: func(c *operatorv1alpha1.KubermaticConfiguration) error {
-				if c.Spec.Namespace != c.Namespace {
-					return fmt.Errorf("expected namespace %s, but got '%s'", c.Namespace, c.Spec.Namespace)
-				}
-
-				return nil
-			},
-		},
-		{
 			name: "Auth fields are defaulted",
 			input: &operatorv1alpha1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
