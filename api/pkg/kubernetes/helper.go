@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 )
 
 var tokenValidator = regexp.MustCompile(`[bcdfghjklmnpqrstvwxz2456789]{6}\.[bcdfghjklmnpqrstvwxz2456789]{16}`)

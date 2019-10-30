@@ -6,7 +6,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
+	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 )
 
 func TestGetVsphereCloudConfig(t *testing.T) {

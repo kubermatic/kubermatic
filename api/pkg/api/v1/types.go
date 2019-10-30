@@ -8,9 +8,9 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 
+	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 // LegacyObjectMeta is an object storing common metadata for persistable objects.

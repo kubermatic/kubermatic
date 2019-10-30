@@ -25,7 +25,7 @@ import (
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 )
 
 const (

@@ -5,7 +5,7 @@
 package v1
 
 import (
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig"
+	types "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	corev1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -53,7 +53,7 @@ func (in *AWSCloudSpec) DeepCopyInto(out *AWSCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(providerconfig.GlobalSecretKeySelector)
+		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}
 	return
@@ -184,7 +184,7 @@ func (in *AzureCloudSpec) DeepCopyInto(out *AzureCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(providerconfig.GlobalSecretKeySelector)
+		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}
 	return
@@ -904,7 +904,7 @@ func (in *DigitaloceanCloudSpec) DeepCopyInto(out *DigitaloceanCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(providerconfig.GlobalSecretKeySelector)
+		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}
 	return
@@ -989,7 +989,7 @@ func (in *GCPCloudSpec) DeepCopyInto(out *GCPCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(providerconfig.GlobalSecretKeySelector)
+		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}
 	return
@@ -1026,7 +1026,7 @@ func (in *HetznerCloudSpec) DeepCopyInto(out *HetznerCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(providerconfig.GlobalSecretKeySelector)
+		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}
 	return
@@ -1111,7 +1111,7 @@ func (in *KubevirtCloudSpec) DeepCopyInto(out *KubevirtCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(providerconfig.GlobalSecretKeySelector)
+		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}
 	return
@@ -1244,7 +1244,7 @@ func (in *OpenstackCloudSpec) DeepCopyInto(out *OpenstackCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(providerconfig.GlobalSecretKeySelector)
+		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}
 	return
@@ -1297,7 +1297,7 @@ func (in *PacketCloudSpec) DeepCopyInto(out *PacketCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(providerconfig.GlobalSecretKeySelector)
+		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}
 	return
@@ -1964,7 +1964,7 @@ func (in *VSphereCloudSpec) DeepCopyInto(out *VSphereCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(providerconfig.GlobalSecretKeySelector)
+		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}
 	out.InfraManagementUser = in.InfraManagementUser
