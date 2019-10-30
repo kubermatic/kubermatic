@@ -23,6 +23,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
@@ -254,6 +255,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		}
 	}()
 
+	ctx := context.Background()
 	if r.existingClusterLabel == "" {
 		if err := junitReporterWrapper(
 			"[Kubermatic] Create cluster",
@@ -271,7 +273,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		}
 		clusterList := &kubermaticv1.ClusterList{}
 		listOptions := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
-		if err := r.seedClusterClient.List(context.Background(), clusterList, listOptions); err != nil {
+		if err := r.seedClusterClient.List(ctx, clusterList, listOptions); err != nil {
 			return nil, fmt.Errorf("failed to list clusters: %v", err)
 		}
 		if foundClusterNum := len(clusterList.Items); foundClusterNum != 1 {
@@ -279,8 +281,24 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		}
 		cluster = &clusterList.Items[0]
 	}
-
+	clusterName := cluster.Name
 	log = log.With("cluster", cluster.Name)
+
+	if err := junitReporterWrapper(
+		"[Kubermatic] Wait for successful reconciliation",
+		report,
+		func() error {
+			return wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+				if err := r.seedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
+					log.Errorw("Failed to get cluster when waiting for successful reconciliation", zap.Error(err))
+					return false, nil
+				}
+				return kubermaticv1helper.ClusterReconciliationSuccessful(cluster), nil
+			})
+		},
+	); err != nil {
+		return report, fmt.Errorf("failed to wait for successful reconciliation: %v", err)
+	}
 
 	if err := r.executeTests(log, cluster, report, scenario); err != nil {
 		return report, err
