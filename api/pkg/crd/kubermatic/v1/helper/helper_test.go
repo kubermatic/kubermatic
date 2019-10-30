@@ -71,7 +71,7 @@ func TestSetClusterCondition(t *testing.T) {
 			cluster: getCluster(&kubermaticv1.ClusterCondition{
 				Type:              conditionType,
 				Status:            corev1.ConditionTrue,
-				KubermaticVersion: resources.KUBERMATICGITTAG + "-" + resources.KUBERMATICCOMMIT,
+				KubermaticVersion: resources.KUBERMATICCOMMIT,
 				Reason:            "my-reason",
 				Message:           "my-message",
 			}),
@@ -164,6 +164,104 @@ func getCluster(condition *kubermaticv1.ClusterCondition) *kubermaticv1.Cluster 
 	c := &kubermaticv1.Cluster{}
 	if condition != nil {
 		c.Status.Conditions = []kubermaticv1.ClusterCondition{*condition}
+	}
+	return c
+}
+
+func TestClusterReconciliatonSuccessful(t *testing.T) {
+	testCases := []struct {
+		name          string
+		openshift     bool
+		modify        func(*kubermaticv1.Cluster)
+		expectSuccess bool
+	}{
+		{
+			name:          "All conditions set",
+			modify:        func(_ *kubermaticv1.Cluster) {},
+			expectSuccess: true,
+		},
+		{
+			name:      "Openshift cluster ignores cluster controller condition",
+			openshift: true,
+			modify: func(c *kubermaticv1.Cluster) {
+				SetClusterCondition(
+					c,
+					kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess,
+					corev1.ConditionFalse,
+					"",
+					"",
+				)
+			},
+			expectSuccess: true,
+		},
+		{
+			name: "Kubernetes cluster ignores openshift controller condition",
+			modify: func(c *kubermaticv1.Cluster) {
+				SetClusterCondition(
+					c,
+					kubermaticv1.ClusterConditionOpenshiftControllerReconcilingSuccess,
+					corev1.ConditionFalse,
+					"",
+					"",
+				)
+			},
+			expectSuccess: true,
+		},
+		{
+			name: "SeedResourcesUpToDate condition is ignored",
+			modify: func(c *kubermaticv1.Cluster) {
+				SetClusterCondition(
+					c,
+					kubermaticv1.ClusterConditionSeedResourcesUpToDate,
+					corev1.ConditionFalse,
+					"",
+					"",
+				)
+			},
+			expectSuccess: true,
+		},
+		{
+			name: "Wrong Kubermatic version",
+			modify: func(c *kubermaticv1.Cluster) {
+				idx, _ := GetClusterCondition(c, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess)
+				c.Status.Conditions[idx].KubermaticVersion = "outdated"
+			},
+			expectSuccess: false,
+		},
+		{
+			name: "Condition value wrong",
+			modify: func(c *kubermaticv1.Cluster) {
+				SetClusterCondition(
+					c,
+					kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess,
+					corev1.ConditionFalse,
+					"",
+					"",
+				)
+			},
+		},
+	}
+
+	for idx := range testCases {
+		testCase := testCases[idx]
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			cluster := clusterWithAllSuccessfulConditions(testCase.openshift)
+			testCase.modify(cluster)
+			if result := ClusterReconciliationSuccessful(cluster); result != testCase.expectSuccess {
+				t.Errorf("Expected success: %t, got successs: %t", testCase.expectSuccess, result)
+			}
+		})
+	}
+}
+
+func clusterWithAllSuccessfulConditions(openshift bool) *kubermaticv1.Cluster {
+	c := &kubermaticv1.Cluster{}
+	if openshift {
+		c.Annotations = map[string]string{"kubermatic.io/openshift": "true"}
+	}
+	for _, t := range kubermaticv1.AllClusterConditionTypes {
+		SetClusterCondition(c, t, corev1.ConditionTrue, "", "")
 	}
 	return c
 }

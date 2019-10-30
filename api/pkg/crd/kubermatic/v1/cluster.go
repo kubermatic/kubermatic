@@ -99,6 +99,9 @@ type ClusterSpec struct {
 	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 }
 
+// ClusterConditionType is used to indicate the type of a cluster condition. For all condition
+// types, the `true` value must indicate success. All condition types must be registered within
+// the `AllClusterConditionTypes` variable.
 type ClusterConditionType string
 
 const (
@@ -120,6 +123,18 @@ const (
 	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
 	ReasonClusterUpadteInProgress = "ClusterUpdateInProgress"
 )
+
+var AllClusterConditionTypes = []ClusterConditionType{
+	ClusterConditionSeedResourcesUpToDate,
+	ClusterConditionClusterControllerReconcilingSuccess,
+	ClusterConditionAddonControllerReconcilingSuccess,
+	ClusterConditionBackupControllerReconcilingSuccess,
+	ClusterConditionCloudControllerReconcilingSuccess,
+	ClusterConditionComponentDefaulterReconcilingSuccess,
+	ClusterConditionUpdateControllerReconcilingSuccess,
+	ClusterConditionMonitoringControllerReconcilingSuccess,
+	ClusterConditionOpenshiftControllerReconcilingSuccess,
+}
 
 type ClusterCondition struct {
 	// Type of cluster condition.
