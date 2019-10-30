@@ -35,7 +35,7 @@ func main() {
 	opt := &controllerRunOptions{}
 	flag.StringVar(&opt.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if outside of cluster.")
 	flag.StringVar(&opt.namespace, "namespace", "", "The namespace the operator runs in, uses to determine where to look for KubermaticConfigurations.")
-	flag.IntVar(&opt.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
+	flag.IntVar(&opt.workerCount, "worker-count", 4, "Number of workers which process reconcilings in parallel.")
 	flag.StringVar(&opt.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served")
 	flag.BoolVar(&opt.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&opt.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format, one of "+kubermaticlog.AvailableFormats.String())
@@ -77,7 +77,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if err := operatormaster.Add(ctx, mgr, log, opt.namespace, 1, opt.workerName); err != nil {
+	if err := operatormaster.Add(ctx, mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
 	}
 
