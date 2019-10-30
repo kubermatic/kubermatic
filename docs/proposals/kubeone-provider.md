@@ -19,22 +19,22 @@ With the enhancements described in this proposal we want to enable:
 
 ### Kubermatic:
 
-#### Add “KubeOne” provider:
+#### Add “KubeOne” cluster controller:
 
-Add a new provider to Kubermatic that will not deploy a k8s control plane in the seed cluster. The cluster CRD will be used with some sort of specification that it is a KubeOne cluster (e.g. cluster-type) and will have a status field for the health of the gRPC connection. The cluster namespace (unique per user-cluster) will be created. Kubermatic generates and stores a random string in a K8s-Secret for the gRPC server to use as the token. Kubermatic will also create a KubeOne SSH key-pair and store it in a K8s-Secret. The KubeOne configuration will be created in a ConfigMap in the cluster namespace. In addition to that the gRPC server for that cluster needs to be deployed in the cluster namespace and wait for the agent registration.
+Add a new cluster type besides Kubernetes and Openshift to Kubermatic that will not deploy a k8s control plane in the seed cluster. The cluster CRD will be used with an annotation "kubermatic.io/kubeone: true" that shows that it is a KubeOne cluster and will have a status field for the health of the gRPC connection. The cluster namespace (unique per user-cluster) will be created. The controller handling the annotated kubeone cluster crd generates and stores a random string in a K8s-Secret for the gRPC server to use as the token. The secret will have the name *grpc-init* and have the keys url, token and ca. The controller will also create a KubeOne SSH key-pair and store it in a K8s-Secret. The KubeOne configuration will be created in a KubeOneConfig crd in the cluster namespace. In addition to that the gRPC server for that cluster needs to be deployed in the cluster namespace and wait for the agent registration. For a POC/evaluation phase the controller can live in its own binary, independent of Kubermatic. Integration of the controller code into Kubermatic at a later point in time should pose no problem.
 
 #### Start KubeOne install:
-When the agent successfully establishes connection with the gRPC server (running in the user-cluster namespace) a KubeOne install will be triggered (by watching gRPC agent connection health status in cluster CRD) that uses the created KubeOne ConfigMap, the KubeOne SSH key-pair, and provisions the master node via SSH through the gRPC connection (TCP tunnel). This could be accomplished by e.g. starting a Job with a simple KubeOne install.
+When the agent successfully establishes connection with the gRPC server (running in the user-cluster namespace) a KubeOne install will be triggered (by watching gRPC agent connection health status in cluster CRD) that uses the created KubeOneConfig CRD, the KubeOne SSH key-pair, and provisions the master node via SSH through the gRPC connection (TCP tunnel). This will first be accomplished by starting a Job with a simple KubeOne install.
 
 ### UI:
 
-#### Add “KubeOne” provider for cluster creation:
+#### Add “KubeOne” cluster type for cluster creation:
 
-To enable the UI there needs to be a new provider added. For the POC phase there will be no changes to the region selection although for this use-case there is no need for a region. We’ll use a dummy region for now that does nothing.
+To enable the UI there needs to be a new cluster type added. For the POC phase there will be no changes to the region selection although for this use-case there is no need for a region. We’ll use a dummy region for now that does nothing. As provider we will need to have some form of dummy provider for now that could be named "edge" or "rack".
 
 #### Display gRPC agent config details:
 
-To be able to configure the gRPC agent the credentials/config for the agent needs to be displayed after cluster creation. Details on how these infos look like still need to be defined.
+To be able to configure the gRPC agent the credentials/config for the agent needs to be displayed after cluster creation. For this the values from the grpc-init secret must be displayed.
 
 ### gRPC server:
 
