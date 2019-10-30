@@ -61,6 +61,9 @@ test-integration: download-gocache
 test-update:
 	-go test ./... -update
 
+run-e2e-ci:
+	./hack/e2e/run_ci_e2e_test_kind.sh
+
 clean:
 	rm -f $(TARGET)
 	@echo "Cleaned $(BUILD_DEST)"

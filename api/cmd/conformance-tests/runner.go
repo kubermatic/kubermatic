@@ -465,9 +465,13 @@ func (r *testRunner) deleteCluster(report *reporters.JUnitTestSuite, cluster *ku
 		"[Kubermatic] Delete cluster",
 		report,
 		func() error {
-			selector, err := labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
-			if err != nil {
-				return fmt.Errorf("failed to parse selector: %v", err)
+			var selector labels.Selector
+			var err error
+			if r.workerName != "" {
+				selector, err = labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
+				if err != nil {
+					return fmt.Errorf("failed to parse selector: %v", err)
+				}
 			}
 			return wait.PollImmediate(5*time.Second, deleteTimeout, func() (bool, error) {
 				clusterList := &kubermaticv1.ClusterList{}
@@ -759,9 +763,13 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 	params.SetTimeout(15 * time.Second)
 
 	crCluster := &kubermaticv1.Cluster{}
-	selector, err := labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse selector: %v", err)
+	var selector labels.Selector
+	var err error
+	if r.workerName != "" {
+		selector, err = labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse selector: %v", err)
+		}
 	}
 
 	var errs []error
@@ -778,8 +786,11 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 		case numFoundClusters < 1:
 			if _, err := r.kubermaticClient.Project.CreateCluster(params, r.kubermaticAuthenticator); err != nil {
 				// Log the error but don't return it, we want to retry
+				err = errors.New(fmtSwaggerError(err))
 				errs = append(errs, err)
-				log.Errorf("failed to create cluster via kubermatic api: %q, %v", fmtSwaggerError(err), err)
+				log.Errorf("failed to create cluster via kubermatic api: %q", err)
+			} else {
+				log.Info("Successfully created cluster via kubermatic api")
 			}
 			// Always return here, our clusterList is not up to date anymore
 			return false, nil
@@ -791,7 +802,7 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 		}
 	}); err != nil {
 		errs = append(errs, err)
-		return nil, fmt.Errorf("cluster creation failed: %v", errs)
+		return nil, fmt.Errorf("cluster creation failed: %v", utilerror.NewAggregate(errs))
 	}
 
 	log.Info("Successfully created cluster via Kubermatic API")

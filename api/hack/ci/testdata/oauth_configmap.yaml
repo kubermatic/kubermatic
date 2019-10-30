@@ -1,0 +1,45 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: dex
+data:
+  config.yaml: |
+    issuer: {{ .Values.dex.ingress.host }}{{ .Values.dex.ingress.path }}
+    oauth2:
+      skipApprovalScreen: true
+      responseTypes:
+        - code
+        - token
+        - id_token
+    storage:
+      type: kubernetes
+      config:
+        inCluster: true
+    web:
+      http: 0.0.0.0:5556
+{{ if .Values.dex.expiry }}
+    expiry:
+{{ toYaml .Values.dex.expiry | indent 6 }}
+{{- end }}
+    enablePasswordDB: true
+{{ if .Values.dex.grpc }}
+    grpc:
+{{ toYaml .Values.dex.grpc.api | indent 7 }}
+{{- end }}
+{{ if .Values.dex.connectors }}
+    connectors:
+{{ toYaml .Values.dex.connectors | indent 7 }}
+{{- end }}
+{{ if .Values.dex.clients }}
+    staticClients:
+{{ toYaml .Values.dex.clients | indent 7 }}
+{{- end }}
+    staticPasswords:
+    - email: "roxy@loodse.com"
+      hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+      username: "roxy"
+      userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+    - email: "roxy2@loodse.com"
+      hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+      username: "roxy2"
+      userID: "08a8684b-db88-4b73-90a9-3cd1661f5467"
