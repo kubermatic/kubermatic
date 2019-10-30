@@ -9,8 +9,11 @@ import (
 	"go.uber.org/zap"
 
 	operatormaster "github.com/kubermatic/kubermatic/api/pkg/controller/operator-master"
+	operatorseed "github.com/kubermatic/kubermatic/api/pkg/controller/operator-seed"
+	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-lifecycle"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -77,11 +80,95 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	seedsGetter, err := provider.SeedsGetterFactory(ctx, mgr.GetClient(), "", opt.namespace, opt.workerName, true)
+	if err != nil {
+		log.Fatalw("Failed to construct seedsGetter", zap.Error(err))
+	}
+
+	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, mgr.GetClient(), "", opt.namespace, true)
+	if err != nil {
+		log.Fatalw("Failed to construct seedKubeconfigGetter", zap.Error(err))
+	}
+
 	if err := operatormaster.Add(ctx, mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
 	}
 
+	ctrlCtx := seedOperatorContext{
+		ctx:                  ctx,
+		log:                  log,
+		namespace:            opt.namespace,
+		seedsGetter:          seedsGetter,
+		seedKubeconfigGetter: seedKubeconfigGetter,
+		workerCount:          opt.workerCount,
+		workerName:           opt.workerName,
+	}
+
+	seedOperatorControllerFactory := seedOperatorControllerFactoryCreator(ctrlCtx)
+
+	if err := seedcontrollerlifecycle.Add(ctx, log, mgr, opt.namespace, seedsGetter, seedKubeconfigGetter, seedOperatorControllerFactory); err != nil {
+		log.Fatalw("Failed to create seed-lifecycle controller", zap.Error(err))
+	}
+
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
 		log.Fatalw("Cannot start manager", zap.Error(err))
+	}
+}
+
+type seedOperatorContext struct {
+	ctx                  context.Context
+	log                  *zap.SugaredLogger
+	namespace            string
+	seedsGetter          provider.SeedsGetter
+	seedKubeconfigGetter provider.SeedKubeconfigGetter
+	workerCount          int
+	workerName           string
+}
+
+func seedOperatorControllerFactoryCreator(ctrlCtx seedOperatorContext) seedcontrollerlifecycle.ControllerFactory {
+	factory := func(mgr manager.Manager) error {
+		log := ctrlCtx.log.Named("operator-seed-controller-factory")
+
+		seeds, err := ctrlCtx.seedsGetter()
+		if err != nil {
+			log.Errorw("Failed to get seeds", zap.Error(err))
+			return fmt.Errorf("failed to get seeds: %v", err)
+		}
+
+		seedManagerMap := map[string]manager.Manager{}
+		for seedName, seed := range seeds {
+			log := log.With("seed", seed.Name)
+
+			kubeconfig, err := ctrlCtx.seedKubeconfigGetter(seed)
+			if err != nil {
+				log.Errorw("Failed to get kubeconfig for seed", zap.Error(err))
+				continue
+			}
+
+			seedMgr, err := manager.New(kubeconfig, manager.Options{MetricsBindAddress: "0"})
+			if err != nil {
+				log.Errorw("Failed to construct mgr for seed", zap.Error(err))
+				continue
+			}
+			seedManagerMap[seedName] = seedMgr
+
+			if err := mgr.Add(seedMgr); err != nil {
+				return fmt.Errorf("failed to add controller manager for seed %q to mgr: %v", seedName, err)
+			}
+		}
+
+		return operatorseed.Add(
+			ctrlCtx.ctx,
+			ctrlCtx.log,
+			ctrlCtx.namespace,
+			mgr,
+			seedManagerMap,
+			ctrlCtx.seedsGetter,
+			ctrlCtx.workerCount,
+			ctrlCtx.workerName)
+	}
+
+	return func(mgr manager.Manager) (string, error) {
+		return operatorseed.ControllerName, factory(mgr)
 	}
 }
