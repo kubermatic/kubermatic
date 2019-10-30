@@ -116,12 +116,17 @@ func isValidVM(sku compute.ResourceSku, location string) bool {
 	return true
 }
 
-func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeNoCredentialsReq)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -157,7 +162,7 @@ func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 	}
 }
 
-func AzureSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint {
+func AzureSizeEndpoint(credentialManager common.PresetsManager, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeReq)
 
@@ -166,9 +171,9 @@ func AzureSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoin
 		clientSecret := req.ClientSecret
 		tenantID := req.TenantID
 
-		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		if len(req.Credential) > 0 {
