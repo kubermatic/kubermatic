@@ -48,17 +48,24 @@ func Add(
 	numWorkers int,
 	workerName string,
 ) error {
+	workerNameSelector, err := workerlabel.LabelSelector(workerName)
+	if err != nil {
+		return fmt.Errorf("failed to create worker-name label selector: %v", err)
+	}
+
 	namespacePredicate := predicateutil.ByNamespace(namespace)
 	workerNamePredicate := workerlabel.Predicates(workerName)
 
 	reconciler := &Reconciler{
-		ctx:            ctx,
-		log:            log.Named(ControllerName),
-		namespace:      namespace,
-		masterClient:   masterManager.GetClient(),
-		seedClients:    map[string]ctrlruntimeclient.Client{},
-		masterRecorder: masterManager.GetEventRecorderFor(ControllerName),
-		workerName:     workerName,
+		ctx:                ctx,
+		log:                log.Named(ControllerName),
+		namespace:          namespace,
+		masterClient:       masterManager.GetClient(),
+		seedsGetter:        seedsGetter,
+		seedClients:        map[string]ctrlruntimeclient.Client{},
+		masterRecorder:     masterManager.GetEventRecorderFor(ControllerName),
+		workerName:         workerName,
+		workerNameSelector: workerNameSelector,
 	}
 
 	ctrlOpts := controller.Options{
