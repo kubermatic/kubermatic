@@ -29,7 +29,7 @@ import (
 
 const (
 	// ControllerName is the name of this very controller.
-	ControllerName = "kubermatic-seed-operator"
+	ControllerName = "kubermatic-seed-operator-controller"
 
 	// NameLabel is the label containing the application's name.
 	NameLabel = "app.kubernetes.io/name"

@@ -127,27 +127,27 @@ type seedOperatorContext struct {
 
 func seedOperatorControllerFactoryCreator(ctrlCtx seedOperatorContext) seedcontrollerlifecycle.ControllerFactory {
 	factory := func(mgr manager.Manager) error {
-		flog := ctrlCtx.log.Named("operator-seed-controller-factory")
+		log := ctrlCtx.log.Named("operator-seed-controller-factory")
 
 		seeds, err := ctrlCtx.seedsGetter()
 		if err != nil {
-			flog.Errorw("Failed to get seeds", zap.Error(err))
+			log.Errorw("Failed to get seeds", zap.Error(err))
 			return fmt.Errorf("failed to get seeds: %v", err)
 		}
 
 		seedManagerMap := map[string]manager.Manager{}
 		for seedName, seed := range seeds {
-			flog := flog.With("seed", seed.Name)
+			log := log.With("seed", seed.Name)
 
 			kubeconfig, err := ctrlCtx.seedKubeconfigGetter(seed)
 			if err != nil {
-				flog.Errorw("Failed to get kubeconfig for seed", zap.Error(err))
+				log.Errorw("Failed to get kubeconfig for seed", zap.Error(err))
 				continue
 			}
 
 			seedMgr, err := manager.New(kubeconfig, manager.Options{MetricsBindAddress: "0"})
 			if err != nil {
-				flog.Errorw("Failed to construct mgr for seed", zap.Error(err))
+				log.Errorw("Failed to construct mgr for seed", zap.Error(err))
 				continue
 			}
 			seedManagerMap[seedName] = seedMgr
