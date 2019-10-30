@@ -12,23 +12,23 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 // ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter
-func ListEndpoint(seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+func ListEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		seeds, err := seedsGetter()
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 		}
 
-		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		// Get the DCs and immediately filter out the ones restricted by e-mail domain.
@@ -46,13 +46,13 @@ func ListEndpoint(seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 }
 
 // GetEndpoint an HTTP endpoint that returns a single apiv1.Datacenter object
-func GetEndpoint(seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+func GetEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(LegacyDCReq)
 
-		userInfo, ok := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "can not get user info")
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		return GetDatacenter(userInfo, seedsGetter, req.DC)
