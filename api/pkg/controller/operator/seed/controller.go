@@ -1,4 +1,4 @@
-package operatorseed
+package seed
 
 import (
 	"context"
@@ -29,7 +29,7 @@ import (
 
 const (
 	// ControllerName is the name of this very controller.
-	ControllerName = "kubermatic-seed-operator-controller"
+	ControllerName = "kubermatic-seed-operator"
 
 	// NameLabel is the label containing the application's name.
 	NameLabel = "app.kubernetes.io/name"
