@@ -17,8 +17,7 @@ import (
 
 func masterControllerManagerPodLabels() map[string]string {
 	return map[string]string{
-		nameLabel:    "master-controller-manager",
-		versionLabel: "v1",
+		nameLabel: "kubermatic-master-controller-manager",
 	}
 }
 
@@ -97,7 +96,7 @@ func projectsMigratorContainer(cfg *operatorv1alpha1.KubermaticConfiguration) co
 }
 
 func MasterControllerManagerPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
-	name := "kubermatic-master-controller-manager-v1"
+	name := "kubermatic-master-controller-manager"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return name, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {

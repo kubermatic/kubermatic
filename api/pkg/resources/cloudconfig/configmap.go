@@ -10,12 +10,12 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
+	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
+	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
+	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
+	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
 )

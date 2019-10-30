@@ -19,10 +19,11 @@ func APIServiceCreator(caBundle []byte) reconciling.NamedAPIServiceCreatorGetter
 			labels := resources.BaseAppLabel(Name, nil)
 			se.Labels = labels
 
-			se.Spec.Service = &apiregistrationv1beta1.ServiceReference{
-				Namespace: metav1.NamespaceSystem,
-				Name:      resources.MetricsServerExternalNameServiceName,
+			if se.Spec.Service == nil {
+				se.Spec.Service = &apiregistrationv1beta1.ServiceReference{}
 			}
+			se.Spec.Service.Namespace = metav1.NamespaceSystem
+			se.Spec.Service.Name = resources.MetricsServerExternalNameServiceName
 			se.Spec.Group = "metrics.k8s.io"
 			se.Spec.Version = "v1beta1"
 			se.Spec.InsecureSkipTLSVerify = false

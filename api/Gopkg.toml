@@ -119,13 +119,9 @@ required = [
   # VPA release 0.4.0 https://github.com/kubernetes/autoscaler/releases/tag/vertical-pod-autoscaler-0.4.0
   revision = "7f77136aeea401ca5199292c4e5eb17eb1597e55"
 
-[[override]]
+[[constraint]]
   name = "github.com/kubermatic/machine-controller"
-	version = "1.6.0"
-
-[[override]]
-  name = "kubevirt.io/containerized-data-importer"
-  source = "github.com/kubevirt/containerized-data-importer"
+	version = "v1.7.0"
 
 [[override]]
   name = "sigs.k8s.io/controller-runtime"

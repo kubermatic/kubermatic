@@ -7,20 +7,16 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// CreateUserSSHKeysSecrets creates a secret in the usercluster from the user ssh keys.
-func CreateUserSSHKeysSecrets(userSSHKeys map[string][]byte) reconciling.NamedSecretCreatorGetter {
+// SecretCreator returns a function to create a secret in the usercluster containing the user ssh keys.
+func SecretCreator(userSSHKeys map[string][]byte) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
-		return resources.UserSSHKeys, createSecretsFromUserSSHDirPath(userSSHKeys)
-	}
-}
+		return resources.UserSSHKeys, func(sec *corev1.Secret) (*corev1.Secret, error) {
+			sec.Data = map[string][]byte{}
+			for k, v := range userSSHKeys {
+				sec.Data[k] = v
+			}
 
-func createSecretsFromUserSSHDirPath(userSSHKeys map[string][]byte) reconciling.SecretCreator {
-	return func(existing *corev1.Secret) (secret *corev1.Secret, e error) {
-		existing.Data = map[string][]byte{}
-
-		for k, v := range userSSHKeys {
-			existing.Data[k] = v
+			return sec, nil
 		}
-		return existing, nil
 	}
 }

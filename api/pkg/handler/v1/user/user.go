@@ -24,15 +24,18 @@ import (
 )
 
 // DeleteEndpoint deletes the given user/member from the given project
-func DeleteEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
+func DeleteEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(DeleteReq)
 		if !ok {
 			return nil, k8cerrors.NewBadRequest("invalid request")
 		}
 		if len(req.UserID) == 0 {
 			return nil, k8cerrors.NewBadRequest("the user ID cannot be empty")
+		}
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
@@ -69,15 +72,17 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, userProvider provi
 }
 
 // EditEndpoint changes the group the given user/member belongs in the given project
-func EditEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
+func EditEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(EditReq)
 		if !ok {
 			return nil, k8cerrors.NewBadRequest("invalid request")
 		}
-
-		err := req.Validate(userInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		err = req.Validate(userInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -121,16 +126,18 @@ func EditEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 }
 
 // ListEndpoint returns user/members of the given project
-func ListEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
+func ListEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(common.GetProjectRq)
 		if !ok {
 			return nil, k8cerrors.NewBadRequest("invalid request")
 		}
-
 		if len(req.ProjectID) == 0 {
 			return nil, k8cerrors.NewBadRequest("the name of the project cannot be empty")
+		}
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
@@ -159,12 +166,14 @@ func ListEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 }
 
 // AddEndpoint adds the given user to the given group within the given project
-func AddEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
+func AddEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddReq)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
-		err := req.Validate(userInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		err = req.Validate(userInfo)
 		if err != nil {
 			return nil, err
 		}

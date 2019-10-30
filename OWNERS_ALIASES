@@ -1,22 +1,19 @@
 aliases:
   team-lifecycle:
     - alvaroaleman
-    - mrIncompetent
     - kdomanski
     - moadqassem
-    - nikhita
     - thz
-    - themue
+    - kron4eg
+    - xmudrii
 
   team-seed:
     - kron4eg
     - xrstf
-    - thetechnick
-    - xmudrii
 
   team-ui:
-    - p0lyn0mial
     - kgroschoff
     - maciaszczykm
     - zreigz
     - floreks
+    - nikhita
