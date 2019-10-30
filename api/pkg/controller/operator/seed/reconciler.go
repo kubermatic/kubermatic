@@ -1,4 +1,4 @@
-package operatorseed
+package seed
 
 import (
 	"context"

@@ -8,8 +8,8 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	operatormaster "github.com/kubermatic/kubermatic/api/pkg/controller/operator-master"
-	operatorseed "github.com/kubermatic/kubermatic/api/pkg/controller/operator-seed"
+	masterctrl "github.com/kubermatic/kubermatic/api/pkg/controller/operator/master"
+	seedctrl "github.com/kubermatic/kubermatic/api/pkg/controller/operator/seed"
 	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-lifecycle"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
@@ -90,7 +90,7 @@ func main() {
 		log.Fatalw("Failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
 
-	if err := operatormaster.Add(ctx, mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
+	if err := masterctrl.Add(ctx, mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
 	}
 
@@ -157,7 +157,7 @@ func seedOperatorControllerFactoryCreator(ctrlCtx seedOperatorContext) seedcontr
 			}
 		}
 
-		return operatorseed.Add(
+		return seedctrl.Add(
 			ctrlCtx.ctx,
 			ctrlCtx.log,
 			ctrlCtx.namespace,
@@ -169,6 +169,6 @@ func seedOperatorControllerFactoryCreator(ctrlCtx seedOperatorContext) seedcontr
 	}
 
 	return func(mgr manager.Manager) (string, error) {
-		return operatorseed.ControllerName, factory(mgr)
+		return seedctrl.ControllerName, factory(mgr)
 	}
 }

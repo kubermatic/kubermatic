@@ -1,4 +1,4 @@
-package operatormaster
+package master
 
 import (
 	"fmt"
