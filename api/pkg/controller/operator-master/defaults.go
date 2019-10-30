@@ -21,11 +21,6 @@ func (r *Reconciler) defaultConfiguration(config *operatorv1alpha1.KubermaticCon
 
 	original := config.DeepCopy()
 
-	if config.Spec.Namespace == "" {
-		config.Spec.Namespace = config.Namespace
-		logger.Debugf("Defaulting field namespace to %s", config.Spec.Namespace)
-	}
-
 	if config.Spec.ExposeStrategy == "" {
 		config.Spec.ExposeStrategy = "NodePort"
 		logger.Debugf("Defaulting field exposeStrategy to %s", config.Spec.ExposeStrategy)

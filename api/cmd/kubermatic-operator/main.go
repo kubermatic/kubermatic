@@ -23,6 +23,7 @@ import (
 
 type controllerRunOptions struct {
 	kubeconfig   string
+	namespace    string
 	internalAddr string
 	log          kubermaticlog.Options
 	workerCount  int
@@ -33,7 +34,8 @@ func main() {
 	klog.InitFlags(nil)
 	opt := &controllerRunOptions{}
 	flag.StringVar(&opt.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if outside of cluster.")
-	flag.IntVar(&opt.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
+	flag.StringVar(&opt.namespace, "namespace", "", "The namespace the operator runs in, uses to determine where to look for KubermaticConfigurations.")
+	flag.IntVar(&opt.workerCount, "worker-count", 4, "Number of workers which process reconcilings in parallel.")
 	flag.StringVar(&opt.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served")
 	flag.BoolVar(&opt.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&opt.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format, one of "+kubermaticlog.AvailableFormats.String())
@@ -54,6 +56,10 @@ func main() {
 	// set the logger used by sigs.k8s.io/controller-runtime
 	ctrllog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
+	if len(opt.namespace) == 0 {
+		log.Fatal("-namespace is a mandatory flag")
+	}
+
 	config, err := clientcmd.BuildConfigFromFlags("", opt.kubeconfig)
 	if err != nil {
 		log.Fatalw("Failed to build config", zap.Error(err))
@@ -71,7 +77,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if err := operatormaster.Add(ctx, mgr, 1, log, opt.workerName); err != nil {
+	if err := operatormaster.Add(ctx, mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
 	}
 
