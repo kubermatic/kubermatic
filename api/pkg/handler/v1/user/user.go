@@ -239,7 +239,12 @@ func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint
 		req := request.(PatchSettingsReq)
 		existingUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
 
-		existingSettingsJSON, err := json.Marshal(existingUser.Spec.Settings)
+		existingSettings := existingUser.Spec.Settings
+		if existingSettings == nil {
+			existingSettings = &kubermaticapiv1.UserSettings{}
+		}
+
+		existingSettingsJSON, err := json.Marshal(existingSettings)
 		if err != nil {
 			return nil, errors.NewBadRequest(fmt.Sprintf("cannot decode existing user settings: %v", err))
 		}
