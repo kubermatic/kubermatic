@@ -3,7 +3,6 @@ package backup
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/robfig/cron"
@@ -373,13 +372,12 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) reconciling.NamedCro
 						},
 					},
 					Command: []string{
-						"/usr/bin/time",
-						"/usr/local/bin/etcdctl",
-						"--endpoints", strings.Join(endpoints, ","),
-						"--cacert", "/etc/etcd/client/ca.crt",
-						"--cert", "/etc/etcd/client/backup-etcd-client.crt",
-						"--key", "/etc/etcd/client/backup-etcd-client.key",
-						"snapshot", "save", "/backup/snapshot.db",
+						"/bin/sh",
+						"-ec",
+						fmt.Sprintf("/usr/local/bin/etcdctl --endpoints %s --cacert /etc/etcd/client/ca.crt --cert /etc/etcd/client/backup-etcd-client.crt --key /etc/etcd/client/backup-etcd-client.key snapshot save /backup/snapshot.db || "+
+							"/usr/local/bin/etcdctl --endpoints %s --cacert /etc/etcd/client/ca.crt --cert /etc/etcd/client/backup-etcd-client.crt --key /etc/etcd/client/backup-etcd-client.key snapshot save /backup/snapshot.db || "+
+							"/usr/local/bin/etcdctl --endpoints %s --cacert /etc/etcd/client/ca.crt --cert /etc/etcd/client/backup-etcd-client.crt --key /etc/etcd/client/backup-etcd-client.key snapshot save /backup/snapshot.db",
+							endpoints[0], endpoints[1], endpoints[2]),
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
