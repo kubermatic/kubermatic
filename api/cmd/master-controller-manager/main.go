@@ -187,17 +187,10 @@ func main() {
 		if err != nil {
 			log.Fatalw("failed to create validatingAdmissionWebhook server for seeds", zap.Error(err))
 		}
-
-		// This group starts the validation webhook server; it's not using the
-		// mgr because we want the webhook to run so that migrations can perform
-		// operations on seeds
-		{
-			g.Add(func() error {
-				return seedValidationWebhookServer.Start(ctx.Done())
-			}, func(err error) {
-				ctxCancel()
-			})
+		if err := mgr.Add(seedValidationWebhookServer); err != nil {
+			log.Fatalw("failed to add the seedValidationWebhookServer to the mgr", zap.Error(err))
 		}
+
 	} else {
 		log.Info("the validatingAdmissionWebhook server can not be started because seed-admissionwebhook-cert-file and seed-admissionwebhook-key-file are empty")
 	}
