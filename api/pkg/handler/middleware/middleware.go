@@ -117,33 +117,6 @@ func UserSaver(userProvider provider.UserProvider) endpoint.Middleware {
 	}
 }
 
-// UserInfoExtractor is a middleware that creates UserInfoExtractor object from kubermaticapiv1.User (authenticated)
-// and stores it in ctx under UserInfoContextKey key.
-func UserInfoExtractor(userProjectMapper provider.ProjectMemberMapper) endpoint.Middleware {
-	return func(next endpoint.Endpoint) endpoint.Endpoint {
-		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-			user, ok := ctx.Value(kubermaticcontext.UserCRContextKey).(*kubermaticapiv1.User)
-			if !ok {
-				// This happens if middleware.UserSaver is not enabled.
-				return nil, k8cerrors.New(http.StatusInternalServerError, "unable to get authenticated user object")
-			}
-
-			var projectID string
-			prjIDGetter, ok := request.(common.ProjectIDGetter)
-			if ok {
-				projectID = prjIDGetter.GetProjectID()
-			}
-
-			uInfo, err := createUserInfo(user, projectID, userProjectMapper)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-
-			return next(context.WithValue(ctx, UserInfoContextKey, uInfo), request)
-		}
-	}
-}
-
 // UserInfoUnauthorized tries to build userInfo for not authenticated (token) user
 // instead it reads the user_id from the request and finds the associated user in the database
 func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userProvider provider.UserProvider) endpoint.Middleware {
