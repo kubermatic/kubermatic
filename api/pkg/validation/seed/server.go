@@ -19,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 type WebhookOpts struct {
@@ -80,6 +81,14 @@ type Server struct {
 	keyFile              string
 	validator            *seedValidator
 	migrationModeEnabled bool
+}
+
+// Server implements LeaderElectionRunnable to indicate that it does not require to run
+// within an elected leader
+var _ manager.LeaderElectionRunnable = &Server{}
+
+func (s *Server) NeedLeaderElection() bool {
+	return false
 }
 
 // Start implements sigs.k8s.io/controller-runtime/pkg/manager.Runnable
