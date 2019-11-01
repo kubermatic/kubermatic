@@ -96,7 +96,7 @@ func SetClusterCondition(
 	}
 }
 
-func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster) bool {
+func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster) (missingConditions []kubermaticv1.ClusterConditionType, success bool) {
 	conditionsToExclude := []kubermaticv1.ClusterConditionType{kubermaticv1.ClusterConditionSeedResourcesUpToDate}
 	if IsOpenshiftCluster(cluster) {
 		conditionsToExclude = append(conditionsToExclude, kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess)
@@ -111,11 +111,11 @@ func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster) bool {
 		}
 
 		if !clusterHasCurrentSuccessfullConditionType(cluster, conditionType) {
-			return false
+			missingConditions = append(missingConditions, conditionType)
 		}
 	}
 
-	return true
+	return missingConditions, len(missingConditions) == 0
 }
 
 func conditionTypeListHasConditionType(

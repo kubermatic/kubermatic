@@ -293,7 +293,12 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 					log.Errorw("Failed to get cluster when waiting for successful reconciliation", zap.Error(err))
 					return false, nil
 				}
-				return kubermaticv1helper.ClusterReconciliationSuccessful(cluster), nil
+
+				missingConditions, success := kubermaticv1helper.ClusterReconciliationSuccessful(cluster)
+				if len(missingConditions) > 0 {
+					log.Infof("Waiting for the following conditions: %v", missingConditions)
+				}
+				return success, nil
 			})
 		},
 	); err != nil {
