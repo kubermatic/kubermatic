@@ -19,6 +19,7 @@ default: all
 
 all: check vendor build test
 
+.PHONY: $(CMD)
 build: $(CMD)
 
 $(CMD): download-gocache

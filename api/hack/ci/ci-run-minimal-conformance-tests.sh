@@ -404,11 +404,6 @@ if ! ls ./api/_build/conformance-tests &>/dev/null; then
   echodate "Finished building conformance-tests cli"
 fi
 
-if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
-  echodate "Upgradetest, going back to old revision"
-  git checkout -
-fi
-
 echodate "Starting conformance tests"
 export KUBERMATIC_APISERVER_ADDRESS="kubermatic-api.prow-kubermatic-${BUILD_ID}.svc.cluster.local.:80"
 if [[ $provider == "aws" ]]; then
@@ -475,9 +470,8 @@ if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   exit 0
 fi
 
-# PULL_BASE_REF is the name of the current branch in case of a post-submit
-# or the name of the base branch in case of a PR.
-LATEST_DASHBOARD="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
+echodate "Checking out current version of Kubermatic"
+git checkout ${GIT_HEAD_HASH}
 
 echodate "Installing current version of Kubermatic"
 retry 3 helm upgrade --install --force --wait --timeout 300 \
