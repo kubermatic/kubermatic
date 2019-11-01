@@ -249,7 +249,7 @@ func TestClusterReconciliatonSuccessful(t *testing.T) {
 			cluster := clusterWithAllSuccessfulConditions(testCase.openshift)
 			testCase.modify(cluster)
 			if result := ClusterReconciliationSuccessful(cluster); result != testCase.expectSuccess {
-				t.Errorf("Expected success: %t, got successs: %t", testCase.expectSuccess, result)
+				t.Errorf("Expected success: %t, got success: %t", testCase.expectSuccess, result)
 			}
 		})
 	}
