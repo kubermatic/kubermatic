@@ -507,13 +507,15 @@ echodate "Successfully installed current version of Kubermatic"
 
 # We have to rebuild it so it is based on the newer Kubermatic
 echodate "Building conformance-tests cli"
-time go build -v github.com/kubermatic/kubermatic/api/cmd/conformance-tests
+# Force rebuild and let go decide if thats needed rather than make
+rm -f api/_build/conformance-tests
+time make -C api conformance-tests
 
 echodate "Running conformance tester with existing cluster"
 
 # We increase the number of nodes to make sure creation
 # of nodes still work
-timeout -s 9 60m ./conformance-tests $EXTRA_ARGS \
+timeout -s 9 60m ./api/_build/conformance-tests $EXTRA_ARGS \
   -debug \
   -existing-cluster-label=worker-name=$BUILD_ID \
   -worker-name=$BUILD_ID \
