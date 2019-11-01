@@ -685,7 +685,7 @@ func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario test
 	}
 	log.Info("Found %d pre-existing node replicas", existingReplicas)
 
-	nodeCount := r.nodeCount + existingReplicas
+	nodeCount := r.nodeCount - existingReplicas
 	if nodeCount < 0 {
 		return fmt.Errorf("found %d existing replicas and want %d, scaledown not supported", existingReplicas, r.nodeCount)
 	}
