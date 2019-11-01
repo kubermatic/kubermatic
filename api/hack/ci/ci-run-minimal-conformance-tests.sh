@@ -147,7 +147,12 @@ echodate "Successfully got secrets from Vault"
 
 build_tag_if_not_exists() {
   # Build kubermatic binaries and push the image
-  if ! curl -Ss --fail "http://registry.registry.svc.cluster.local.:5000/v2/kubermatic/api/tags/list"|grep -q "$1"; then
+	local current_git_hash
+	current_git_hash=$(git rev-parse HEAD)
+	echodate "Building containers with tag $current_git_hash"
+  if ! curl -Ss --fail \
+		"http://registry.registry.svc.cluster.local.:5000/v2/kubermatic/api/tags/list" \
+		|grep -q "current_git_hash"; then
     mkdir -p /etc/containers
     cat <<EOF > /etc/containers/registries.conf
 [registries.search]
@@ -162,46 +167,51 @@ EOF
       echodate "Building docker image"
       TEST_NAME="Build Kubermatic Docker image"
       cd api
-      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/api:$1" .
+      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/api:$current_git_hash" .
     )
     (
       echodate "Building addons image"
       TEST_NAME="Build addons Docker image"
       cd addons
-      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1" .
+      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/addons:$current_git_hash" .
     )
     (
       echodate "Building openshift addons image"
       TEST_NAME="Build openshift Docker image"
       cd openshift_addons
-      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/openshift_addons:$1" .
+      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/openshift_addons:$current_git_hash" .
     )
     (
       echodate "Building dnatcontroller image"
       TEST_NAME="Build dnatcontroller Docker image"
       cd api/cmd/kubeletdnat-controller
       make build
-      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/kubeletdnat-controller:$1 ."
+      time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/kubeletdnat-controller:$current_git_hash ."
     )
     echodate "Pushing docker image"
     TEST_NAME="Push Kubermatic Docker image"
-    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/api:$1"
+    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/api:$current_git_hash"
     TEST_NAME="Push addons Docker image"
     echodate "Pushing addons image"
-    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/addons:$1"
+    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/addons:$current_git_hash"
     TEST_NAME="Push openshift addons Docker image"
     echodate "Pushing openshift addons image"
-    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/openshift_addons:$1"
+    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/openshift_addons:$current_git_hash"
     TEST_NAME="Push dnatcontroller Docker image"
     echodate "Pushing dnatcontroller image"
-    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/kubeletdnat-controller:$1"
+    time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/kubeletdnat-controller:$current_git_hash"
     echodate "Finished building and pushing docker images"
   else
-    echodate "Omitting building of binaries and docker image, as tag $1 already exists in local registry"
+    echodate "Omitting building of binaries and docker image, as tag $current_git_hash already exists in local registry"
   fi
 }
 
-build_tag_if_not_exists "$GIT_HEAD_HASH"
+if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
+  echodate "Upgradetest, checking out revision ${UPGRADE_TEST_BASE_HASH}"
+  git checkout $UPGRADE_TEST_BASE_HASH
+fi
+
+build_tag_if_not_exists
 
 INITIAL_MANIFESTS="$(mktemp)"
 cat <<EOF >$INITIAL_MANIFESTS
@@ -262,11 +272,6 @@ helm init --wait --service-account=tiller --tiller-namespace=$NAMESPACE
 echodate "Installing Kubermatic via Helm"
 TEST_NAME="Deploy Kubermatic"
 
-if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
-  echodate "Upgradetest, checking out revision ${UPGRADE_TEST_BASE_HASH}"
-  git checkout $UPGRADE_TEST_BASE_HASH
-  build_tag_if_not_exists "$UPGRADE_TEST_BASE_HASH"
-fi
 
 # Hardcoded as the only thing these tests test about the dashboard is that the pod comes up. In order to
 # not introduce a dependency on the dashboard push postsubmit being successfully run, we just harcode it
@@ -472,6 +477,7 @@ fi
 
 echodate "Checking out current version of Kubermatic"
 git checkout ${GIT_HEAD_HASH}
+build_tag_if_not_exists
 
 echodate "Installing current version of Kubermatic"
 retry 3 helm upgrade --install --force --wait --timeout 300 \
