@@ -14,7 +14,8 @@ make kubermatic-controller-manager
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 
 ./_build/kubermatic-controller-manager \
-  -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+  -dynamic-datacenters=true \
+  -namespace=kubermatic \
   -datacenter-name=europe-west3-c \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -versions=../config/kubermatic/static/master/versions.yaml \
@@ -36,5 +37,5 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
   -log-debug=true \
   -log-format=Console \
   -max-parallel-reconcile=10 \
-	-logtostderr \
-	-v=4 # Log-level for the Kube dependencies. Increase up to 9 to get request-level logs.
+  -logtostderr \
+  -v=4 # Log-level for the Kube dependencies. Increase up to 9 to get request-level logs.
