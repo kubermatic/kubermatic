@@ -661,11 +661,43 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *zap.SugaredLogger, run *gi
 }
 
 func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario testScenario, clusterName string) error {
+
+	var existingReplicas int
+	log.Info("Getting existing NodeDeployments")
+	nodeDeploymentGetParams := &projectclient.ListNodeDeploymentsParams{
+		ProjectID: r.kubermatcProjectID,
+		ClusterID: clusterName,
+		Dc:        r.seed.Name,
+	}
+	nodeDeploymentGetParams.SetTimeout(15 * time.Second)
+	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+		resp, err := r.kubermaticClient.Project.ListNodeDeployments(nodeDeploymentGetParams, r.kubermaticAuthenticator)
+		if err != nil {
+			log.Errorw("Failed to get existing NodeDeployments", zap.Error(errors.New(fmtSwaggerError(err))))
+			return false, nil
+		}
+		for _, nodeDeployment := range resp.Payload {
+			existingReplicas += int(*nodeDeployment.Spec.Replicas)
+		}
+		return true, nil
+	}); err != nil {
+		return fmt.Errorf("failed to get existing NodeDeployments: %v", err)
+	}
+	log.Info("Found %d pre-existing node replicas", existingReplicas)
+
+	nodeCount := r.nodeCount + existingReplicas
+	if nodeCount < 0 {
+		return fmt.Errorf("found %d existing replicas and want %d, scaledown not supported", existingReplicas, r.nodeCount)
+	}
+	if nodeCount == 0 {
+		return nil
+	}
+
 	log.Info("Creating NodeDeployments via kubermatic API")
 	var nodeDeployments []apimodels.NodeDeployment
 	var err error
 	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
-		nodeDeployments, err = scenario.NodeDeployments(r.nodeCount, r.secrets)
+		nodeDeployments, err = scenario.NodeDeployments(nodeCount, r.secrets)
 		if err != nil {
 			log.Info("Getting NodeDeployments from scenario failed", zap.Error(err))
 			return false, nil
@@ -695,7 +727,7 @@ func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario test
 		}
 	}
 
-	log.Info("Successfully created NodeDeployments via Kubermatic API")
+	log.Infof("Successfully created %d NodeDeployments via Kubermatic API", nodeCount)
 	return nil
 }
 
