@@ -71,7 +71,7 @@ func TestSetClusterCondition(t *testing.T) {
 			cluster: getCluster(&kubermaticv1.ClusterCondition{
 				Type:              conditionType,
 				Status:            corev1.ConditionTrue,
-				KubermaticVersion: resources.KUBERMATICCOMMIT,
+				KubermaticVersion: resources.KUBERMATICGITTAG + "-" + resources.KUBERMATICCOMMIT,
 				Reason:            "my-reason",
 				Message:           "my-message",
 			}),

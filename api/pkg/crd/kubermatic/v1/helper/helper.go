@@ -70,7 +70,7 @@ func SetClusterCondition(
 	newCondition := kubermaticv1.ClusterCondition{
 		Type:              conditionType,
 		Status:            status,
-		KubermaticVersion: resources.KUBERMATICCOMMIT,
+		KubermaticVersion: resources.KUBERMATICGITTAG + "-" + resources.KUBERMATICCOMMIT,
 		Reason:            reason,
 		Message:           message,
 	}
@@ -143,7 +143,7 @@ func clusterHasCurrentSuccessfullConditionType(
 			return false
 		}
 
-		if condition.KubermaticVersion != resources.KUBERMATICCOMMIT {
+		if condition.KubermaticVersion != resources.KUBERMATICGITTAG+"-"+resources.KUBERMATICCOMMIT {
 			return false
 		}
 
