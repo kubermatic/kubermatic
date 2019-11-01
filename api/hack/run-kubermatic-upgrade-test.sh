@@ -15,7 +15,10 @@ git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o Stri
 git remote add origin git@github.com:kubermatic/kubermatic.git
 git fetch origin ${UPGRADE_TEST_BASE_HASH}
 
-# Make sure we do not use the local copy of the branches
-export UPGRADE_TEST_BASE_HASH=origin/${UPGRADE_TEST_BASE_HASH}
+# We have to make sure UPGRADE_TEST_BASE_HASH is actually a hash and not a branch because its used
+# as the image tag later on
+git checkout origin/${UPGRADE_TEST_BASE_HASH}
+export UPGRADE_TEST_BASE_HASH="$(git rev-parse HEAD|tr -d '\n')"
+git checkout -
 
 ./ci-run-minimal-conformance-tests.sh
