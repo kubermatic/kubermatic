@@ -44,6 +44,11 @@ function cleanup {
   echodate "Starting cleanup"
   set +e
 
+	if [[ -n ${UPGRADE_TEST_BASE_HASH} ]]; then
+		echodate "sleeping for debug"
+		sleep 1h
+	fi
+
   # Try being a little helpful
   if [[ ${testRC} -ne 0 ]]; then
     echodate "tests failed, describing cluster"
