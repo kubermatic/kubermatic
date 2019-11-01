@@ -16,7 +16,8 @@ git remote add origin git@github.com:kubermatic/kubermatic.git
 git fetch origin ${UPGRADE_TEST_BASE_HASH}
 
 # We have to make sure UPGRADE_TEST_BASE_HASH is actually a hash and not a branch because its used
-# as the image tag later on
+# as the image tag later on. Also make sure we use the branch versions from upstream, as the local version
+# may be different.
 git checkout origin/${UPGRADE_TEST_BASE_HASH}
 export UPGRADE_TEST_BASE_HASH="$(git rev-parse HEAD|tr -d '\n')"
 git checkout -
