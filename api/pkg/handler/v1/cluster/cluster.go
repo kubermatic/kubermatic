@@ -245,7 +245,6 @@ func getNodeDeploymentDisplayName(nd *apiv1.NodeDeployment) string {
 
 func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		fmt.Println("asa")
 		req := request.(common.GetClusterReq)
 
 		cluster, err := GetCluster(ctx, req, projectProvider)
