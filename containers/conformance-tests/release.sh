@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TAG=v0.10.6
+TAG=v0.10.7
 
 set -euox pipefail
 
