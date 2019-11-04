@@ -195,7 +195,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	if len(manifests) != 1 {
 		t.Fatalf("invalid number of manifests returned. Expected 1, Got %d", len(manifests))
 	}
-	fmt.Println(manifests)
+
 	expectedIP := "10.240.16.10"
 	if !strings.Contains(string(manifests[0].Raw), expectedIP) {
 		t.Fatalf("invalid IP returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].String())
@@ -376,16 +376,6 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 	}
 }
 
-func TestController_getDeleteCommand(t *testing.T) {
-	controller := &Reconciler{}
-	cmd := controller.getDeleteCommand(context.Background(), "/opt/kubeconfig", "/opt/manifest.yaml", false)
-	expected := "kubectl --kubeconfig /opt/kubeconfig delete -f /opt/manifest.yaml"
-	got := strings.Join(cmd.Args, " ")
-	if got != expected {
-		t.Fatalf("invalid delete command returned. Expected \n%s, Got \n%s", expected, got)
-	}
-}
-
 func TestController_getApplyCommand(t *testing.T) {
 	controller := &Reconciler{}
 	cmd := controller.getApplyCommand(context.Background(), "/opt/kubeconfig", "/opt/manifest.yaml", labels.SelectorFromSet(map[string]string{"foo": "bar"}), false)
@@ -393,51 +383,6 @@ func TestController_getApplyCommand(t *testing.T) {
 	got := strings.Join(cmd.Args, " ")
 	if got != expected {
 		t.Fatalf("invalid apply command returned. Expected \n%s, Got \n%s", expected, got)
-	}
-}
-
-func TestController_wasKubectlDeleteSuccessful(t *testing.T) {
-	tests := []struct {
-		name    string
-		out     string
-		success bool
-	}{
-		{
-			name: "everything was deleted successfully",
-			out: `clusterrolebinding.rbac.authorization.k8s.io "metrics-server:system:auth-delegator" deleted
-rolebinding.rbac.authorization.k8s.io "metrics-server-auth-reader" deleted
-apiservice.apiregistration.k8s.io "v1beta1.metrics.k8s.io" deleted
-service "metrics-server" deleted
-clusterrole.rbac.authorization.k8s.io "system:metrics-server" deleted
-clusterrolebinding.rbac.authorization.k8s.io "system:metrics-server" deleted`,
-			success: true,
-		},
-		{
-			name: "some thing where not found - but everything else was successfully deleted",
-			out: `clusterrolebinding.rbac.authorization.k8s.io "metrics-server:system:auth-delegator" deleted
-rolebinding.rbac.authorization.k8s.io "metrics-server-auth-reader" deleted
-apiservice.apiregistration.k8s.io "v1beta1.metrics.k8s.io" deleted
-service "metrics-server" deleted
-clusterrole.rbac.authorization.k8s.io "system:metrics-server" deleted
-clusterrolebinding.rbac.authorization.k8s.io "system:metrics-server" deleted
-Error from server (NotFound): error when deleting "/tmp/cluster-rwhxp9j5j-metrics-server.yaml": serviceaccounts "metrics-server" not found
-Error from server (NotFound): error when stopping "/tmp/cluster-rwhxp9j5j-metrics-server.yaml": deployments.extensions "metrics-server" not found`,
-			success: true,
-		},
-		{
-			name:    "failed to delete",
-			out:     `connection refused`,
-			success: false,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			res := wasKubectlDeleteSuccessful(test.out)
-			if res != test.success {
-				t.Errorf("expected to get %v, got %v", test.success, res)
-			}
-		})
 	}
 }
 
