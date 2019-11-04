@@ -1,26 +1,27 @@
 package seed
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type cleanupContext struct {
-	kubeClient       kubernetes.Interface
-	kubermaticClient kubermaticclientset.Interface
+	client ctrlruntimeclient.Client
 }
 
 // ClusterTask represents a cleanup action, taking the current cluster for which the cleanup should be executed and the current context.
@@ -29,18 +30,13 @@ type ClusterTask func(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error
 
 // RunAll runs all migrations
 func RunAll(config *rest.Config, workerName string) error {
-	kubeClient, err := kubernetes.NewForConfig(config)
+	client, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
 	if err != nil {
-		return fmt.Errorf("failed to create kubeClient: %v", err)
-	}
-	kubermaticClient, err := kubermaticclientset.NewForConfig(config)
-	if err != nil {
-		return fmt.Errorf("failed to create Kubermatic client: %v", err)
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 
 	ctx := &cleanupContext{
-		kubeClient:       kubeClient,
-		kubermaticClient: kubermaticClient,
+		client: client,
 	}
 
 	if err := cleanupClusters(workerName, ctx); err != nil {
@@ -55,11 +51,9 @@ func cleanupClusters(workerName string, ctx *cleanupContext) error {
 	if err != nil {
 		return err
 	}
-	options := metav1.ListOptions{
-		LabelSelector: selector.String(),
-	}
-	clusters, err := ctx.kubermaticClient.KubermaticV1().Clusters().List(options)
-	if err != nil {
+	matchingLabelSelector := selector.(ctrlruntimeclient.MatchingLabelsSelector)
+	clusters := &kubermaticv1.ClusterList{}
+	if err := ctx.client.List(context.TODO(), clusters, matchingLabelSelector); err != nil {
 		return fmt.Errorf("failed to list clusters: %v", err)
 	}
 
@@ -101,6 +95,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 		setProxyModeIfEmpty,
 		cleanupDashboardAddon,
 		migrateClusterUserLabel,
+		createSecretsForCredentials,
 	}
 
 	w := sync.WaitGroup{}
@@ -137,10 +132,16 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 func setExposeStrategyIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	if cluster.Spec.ExposeStrategy == "" {
 		cluster.Spec.ExposeStrategy = corev1.ServiceTypeNodePort
-		updatedCluster, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
-		if err != nil {
+
+		if err := ctx.client.Update(context.TODO(), cluster); err != nil {
 			return fmt.Errorf("failed to default exposeStrategy to NodePort for cluster %q: %v", cluster.Name, err)
 		}
+		namespacedName := types.NamespacedName{Namespace: "default", Name: cluster.Name}
+		updatedCluster := &kubermaticv1.Cluster{}
+		if err := ctx.client.Get(context.TODO(), namespacedName, updatedCluster); err != nil {
+			return fmt.Errorf("failed to get cluster %q: %v", cluster.Name, err)
+		}
+
 		*cluster = *updatedCluster
 	}
 	return nil
@@ -152,20 +153,30 @@ func setExposeStrategyIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext
 func setProxyModeIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	if cluster.Spec.ClusterNetwork.ProxyMode == "" {
 		cluster.Spec.ClusterNetwork.ProxyMode = resources.IPTablesProxyMode
-		updatedCluster, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
-		if err != nil {
+
+		if err := ctx.client.Update(context.TODO(), cluster); err != nil {
 			return fmt.Errorf("failed to default proxyMode to iptables for cluster %q: %v", cluster.Name, err)
 		}
+		namespacedName := types.NamespacedName{Namespace: "default", Name: cluster.Name}
+		updatedCluster := &kubermaticv1.Cluster{}
+		if err := ctx.client.Get(context.TODO(), namespacedName, updatedCluster); err != nil {
+			return fmt.Errorf("failed to get cluster %q: %v", cluster.Name, err)
+		}
+
 		*cluster = *updatedCluster
 	}
 	return nil
 }
 
 func cleanupDashboardAddon(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
-	if err := ctx.kubermaticClient.KubermaticV1().Addons(cluster.Status.NamespaceName).Delete("dashboard", &metav1.DeleteOptions{}); err != nil {
-		if !kerrors.IsNotFound(err) {
-			return err
-		}
+	namespacedName := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: "dashboard"}
+	dashboardAddon := &kubermaticv1.Addon{}
+	if err := ctx.client.Get(context.TODO(), namespacedName, dashboardAddon); err != nil {
+		return fmt.Errorf("failed to get dashboard addon: %v", err)
+	}
+
+	if err := ctx.client.Delete(context.TODO(), dashboardAddon); err != nil {
+		return fmt.Errorf("failed to delete dashboard addon: %v", err)
 	}
 	return nil
 }
@@ -185,12 +196,35 @@ func migrateClusterUserLabel(cluster *kubermaticv1.Cluster, ctx *cleanupContext)
 	}
 	if len(newLabels) != len(cluster.Labels) {
 		cluster.Labels = newLabels
-		updatedCluster, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
-		if err != nil {
-			return err
+		if err := ctx.client.Update(context.TODO(), cluster); err != nil {
+			return fmt.Errorf("failed to update cluster %q: %v", cluster.Name, err)
 		}
+		namespacedName := types.NamespacedName{Name: cluster.Name}
+		updatedCluster := &kubermaticv1.Cluster{}
+		if err := ctx.client.Get(context.TODO(), namespacedName, updatedCluster); err != nil {
+			return fmt.Errorf("failed to get cluster %q: %v", cluster.Name, err)
+		}
+
 		*cluster = *updatedCluster
 	}
+	return nil
+}
 
+func createSecretsForCredentials(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(context.TODO(), ctx.client, cluster); err != nil {
+		return err
+	}
+	kuberneteshelper.AddFinalizer(cluster, apiv1.CredentialsSecretsCleanupFinalizer)
+
+	if err := ctx.client.Update(context.TODO(), cluster); err != nil {
+		return fmt.Errorf("failed to update cluster %q: %v", cluster.Name, err)
+	}
+	namespacedName := types.NamespacedName{Name: cluster.Name}
+	updatedCluster := &kubermaticv1.Cluster{}
+	if err := ctx.client.Get(context.TODO(), namespacedName, updatedCluster); err != nil {
+		return fmt.Errorf("failed to get cluster %q: %v", cluster.Name, err)
+	}
+
+	*cluster = *updatedCluster
 	return nil
 }
