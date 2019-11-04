@@ -71,7 +71,7 @@ get_latest_dashboard_tag() {
   MINOR_VERSION="${FOR_BRANCH##release/}"
   # --sort=-version:refname will treat the tag names as semvers and sort by version number.
   # -c versionsort.suffix=-alpha -c versionsort.suffix=-rc tell git that alphas and RCs come before versions wihtout any suffix.
-  FOUND_TAG="$(retry 5 git ls-remote -c versionsort.suffix=-alpha -c versionsort.suffix=-rc --sort=-version:refname "$DASHBOARD_URL" "refs/tags/$MINOR_VERSION*" | head -n1 | awk '{print $2}')"
+  FOUND_TAG="$(retry 5 git -c versionsort.suffix=-alpha -c versionsort.suffix=-rc ls-remote --sort=-version:refname "$DASHBOARD_URL" "refs/tags/$MINOR_VERSION*" | head -n1 | awk '{print $2}')"
   if [ -z "$FOUND_TAG" ]; then
     echo "Error, no Dashboard tags contain $MINOR_VERSION" >/dev/stderr
     exit 1
