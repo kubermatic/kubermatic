@@ -147,7 +147,16 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		}
 		return reconcile.Result{}, err
 	}
-	log = r.log.With("cluster", addon.Spec.Cluster.Name)
+
+	// remove old finalizers if they are still set; otherwise they'd block
+	// cluster namespace deletion
+	if kuberneteshelper.HasFinalizer(addon, cleanupFinalizerName) {
+		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to remove addon cleanup finalizer: %v", err)
+		}
+
+		return reconcile.Result{}, nil
+	}
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
@@ -156,18 +165,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			return reconcile.Result{}, err
 		}
 
-		// If the cluster was already deleted, we cannot perform a clean cleanup anymore;
-		// in this case we remove the finalizer and let Kubernetes remove the addon while
-		// removing the cluster namespace.
-		log.Infow("cluster does not exist anymore, removing stale cleanup finalizer", "cluster", addon.Spec.Cluster.Name)
-
-		err = r.removeCleanupFinalizer(ctx, log, addon)
-		if err != nil {
-			err = fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
-		}
-
-		return reconcile.Result{}, err
+		return reconcile.Result{}, nil
 	}
+
+	log = r.log.With("cluster", cluster.Name, "addon", addon.Name)
 
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
@@ -193,11 +194,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	// If the addon has a deletion timestamp, delete it
 	if addon.DeletionTimestamp != nil {
-		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
-		}
+		log.Debug("Skipping addon because deletion timestamp is set")
+		return nil, nil
 	}
 
 	if cluster.DeletionTimestamp != nil {
@@ -225,23 +224,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		return nil, err
 	}
 
-	// Addon got deleted - remove all manifests
-	if addon.DeletionTimestamp != nil {
-		if err := r.cleanupManifests(ctx, log, addon, cluster); err != nil {
-			return nil, fmt.Errorf("failed to delete manifests from cluster: %v", err)
-		}
-		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
-		}
-		return nil, nil
-	}
-
 	// Reconciling
 	if err := r.ensureIsInstalled(ctx, log, addon, cluster); err != nil {
 		return nil, fmt.Errorf("failed to deploy the addon manifests into the cluster: %v", err)
-	}
-	if err := r.ensureFinalizerIsSet(ctx, addon); err != nil {
-		return nil, fmt.Errorf("failed to ensure that the cleanup finalizer existis on the addon: %v", err)
 	}
 
 	return nil, nil
@@ -456,25 +441,10 @@ func (r *Reconciler) setupManifestInteraction(log *zap.SugaredLogger, addon *kub
 	return kubeconfigFilename, manifestFilename, done, nil
 }
 
-func (r *Reconciler) getDeleteCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, openshift bool) *exec.Cmd {
-	cmd := exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename)
-	return cmd
-}
-
 func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, openshift bool) *exec.Cmd {
-	//kubectl apply --prune -f manifest.yaml -l app=nginx
+	// kubectl apply --prune -f manifest.yaml -l app=nginx
 	cmd := exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFilename, "apply", "--prune", "-f", manifestFilename, "-l", selector.String())
 	return cmd
-}
-
-func (r *Reconciler) ensureFinalizerIsSet(ctx context.Context, addon *kubermaticv1.Addon) error {
-	if kuberneteshelper.HasFinalizer(addon, cleanupFinalizerName) {
-		return nil
-	}
-
-	oldAddon := addon.DeepCopy()
-	kuberneteshelper.AddFinalizer(addon, cleanupFinalizerName)
-	return r.Client.Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
 }
 
 func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
@@ -508,58 +478,6 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	return err
 }
 
-func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(log, addon, cluster)
-	if err != nil {
-		return err
-	}
-	defer done()
-
-	cmd := r.getDeleteCommand(ctx, kubeconfigFilename, manifestFilename, isOpenshift(cluster))
-	cmdLog := log.With("cmd", strings.Join(cmd.Args, " "))
-
-	cmdLog.Debug("Deleting resources...")
-	out, err := cmd.CombinedOutput()
-	cmdLog.Debugw("Finished executing command", "output", string(out))
-	if err != nil {
-		if wasKubectlDeleteSuccessful(string(out)) {
-			return nil
-		}
-		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
-	}
-	return nil
-}
-
 func isOpenshift(c *kubermaticv1.Cluster) bool {
 	return c.Annotations["kubermatic.io/openshift"] != ""
-}
-
-func wasKubectlDeleteSuccessful(out string) bool {
-	lines := strings.Split(strings.TrimSpace(out), "\n")
-	for _, rawLine := range lines {
-		line := strings.TrimSpace(rawLine)
-		if line == "" {
-			continue
-		}
-		if !isKubectlDeleteSuccessful(line) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func isKubectlDeleteSuccessful(message string) bool {
-	// Resource got successfully deleted. Something like: apiservice.apiregistration.k8s.io "v1beta1.metrics.k8s.io" deleted
-	if strings.HasSuffix(message, "\" deleted") {
-		return true
-	}
-
-	// Something like: Error from server (NotFound): error when deleting "/tmp/cluster-rwhxp9j5j-metrics-server.yaml": serviceaccounts "metrics-server" not found
-	if strings.HasSuffix(message, "\" not found") {
-		return true
-	}
-
-	fmt.Printf("fail: %v", message)
-	return false
 }
