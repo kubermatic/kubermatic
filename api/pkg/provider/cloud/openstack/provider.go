@@ -141,7 +141,7 @@ func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.Serv
 func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	creds, err := GetCredentialsForCluster(cluster.Spec.Cloud, os.secretKeySelector)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get credentials: %v", err)
 	}
 
 	netClient, err := getNetClient(creds.Username, creds.Password, creds.Domain, creds.Tenant, creds.TenantID, os.dc.AuthURL, os.dc.Region)
@@ -152,14 +152,14 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	if cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
 		extNetwork, err := getExternalNetwork(netClient)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get external network: %v", err)
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.FloatingIPPool = extNetwork.Name
 			// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer
 		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to update cluster floating IP pool: %v", err)
 		}
 	}
 
@@ -173,7 +173,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 			kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
 		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to add security group cleanup finalizer: %v", err)
 		}
 	}
 
@@ -187,7 +187,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 			kubernetes.AddFinalizer(cluster, NetworkCleanupFinalizer)
 		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to add network cleanup finalizer: %v", err)
 		}
 	}
 
@@ -207,7 +207,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 			kubernetes.AddFinalizer(cluster, SubnetCleanupFinalizer)
 		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to add subnet cleanup finalizer: %v", err)
 		}
 	}
 
@@ -215,21 +215,21 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		// Check if the subnet has already a router
 		routerID, err := getRouterIDForSubnet(netClient, cluster.Spec.Cloud.Openstack.SubnetID, network.ID)
 		if err != nil {
-			if err == errNotFound {
-				// No Router exists -> Create a router
-				router, err := createKubermaticRouter(netClient, cluster.Name, cluster.Spec.Cloud.Openstack.FloatingIPPool)
-				if err != nil {
-					return nil, fmt.Errorf("failed to create the kubermatic router: %v", err)
-				}
-				cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-					cluster.Spec.Cloud.Openstack.RouterID = router.ID
-					kubernetes.AddFinalizer(cluster, RouterCleanupFinalizer)
-				})
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				return nil, fmt.Errorf("failed to verify that the subnet '%s' has a router attached: %v", cluster.Spec.Cloud.Openstack.SubnetID, err)
+			return nil, fmt.Errorf("failed to verify that the subnet '%s' has a router attached: %v", cluster.Spec.Cloud.Openstack.SubnetID, err)
+		}
+
+		if routerID == "" {
+			// No Router exists -> Create a router
+			router, err := createKubermaticRouter(netClient, cluster.Name, cluster.Spec.Cloud.Openstack.FloatingIPPool)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create the kubermatic router: %v", err)
+			}
+			cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+				cluster.Spec.Cloud.Openstack.RouterID = router.ID
+				kubernetes.AddFinalizer(cluster, RouterCleanupFinalizer)
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to add router cleanup finalizer: %v", err)
 			}
 		} else {
 			// A router already exists -> Reuse it but don't clean it up
@@ -237,7 +237,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 				cluster.Spec.Cloud.Openstack.RouterID = routerID
 			})
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to add router ID to cluster: %v", err)
 			}
 		}
 	}
@@ -253,7 +253,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 			kubernetes.AddFinalizer(cluster, RouterSubnetLinkCleanupFinalizer)
 		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to add router subnet cleanup finalizer: %v", err)
 		}
 	}
 
