@@ -95,3 +95,68 @@ func SetClusterCondition(
 		c.Status.Conditions = append(c.Status.Conditions, newCondition)
 	}
 }
+
+func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster) (missingConditions []kubermaticv1.ClusterConditionType, success bool) {
+	conditionsToExclude := []kubermaticv1.ClusterConditionType{kubermaticv1.ClusterConditionSeedResourcesUpToDate}
+	if IsOpenshiftCluster(cluster) {
+		conditionsToExclude = append(conditionsToExclude, kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess)
+	}
+	if IsKubernetesCluster(cluster) {
+		conditionsToExclude = append(conditionsToExclude, kubermaticv1.ClusterConditionOpenshiftControllerReconcilingSuccess)
+	}
+
+	for _, conditionType := range kubermaticv1.AllClusterConditionTypes {
+		if conditionTypeListHasConditionType(conditionsToExclude, conditionType) {
+			continue
+		}
+
+		if !clusterHasCurrentSuccessfullConditionType(cluster, conditionType) {
+			missingConditions = append(missingConditions, conditionType)
+		}
+	}
+
+	return missingConditions, len(missingConditions) == 0
+}
+
+func conditionTypeListHasConditionType(
+	list []kubermaticv1.ClusterConditionType,
+	t kubermaticv1.ClusterConditionType,
+) bool {
+	for _, item := range list {
+		if item == t {
+			return true
+		}
+	}
+	return false
+}
+
+func clusterHasCurrentSuccessfullConditionType(
+	cluster *kubermaticv1.Cluster,
+	conditionType kubermaticv1.ClusterConditionType,
+) bool {
+	for _, condition := range cluster.Status.Conditions {
+		if condition.Type != conditionType {
+			continue
+		}
+
+		if condition.Status != corev1.ConditionTrue {
+			return false
+		}
+
+		if condition.KubermaticVersion != resources.KUBERMATICGITTAG+"-"+resources.KUBERMATICCOMMIT {
+			return false
+		}
+
+		return true
+	}
+
+	return false
+}
+
+func IsOpenshiftCluster(cluster *kubermaticv1.Cluster) bool {
+	return cluster.Annotations["kubermatic.io/openshift"] != ""
+}
+
+func IsKubernetesCluster(cluster *kubermaticv1.Cluster) bool {
+	return !IsOpenshiftCluster(cluster)
+}
