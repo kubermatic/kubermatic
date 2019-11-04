@@ -392,7 +392,7 @@ func (r *Reconciler) writeCombinedManifest(log *zap.SugaredLogger, manifest *byt
 	if err := ioutil.WriteFile(manifestFilename, manifest.Bytes(), 0644); err != nil {
 		return "", nil, fmt.Errorf("failed to write combined manifest to %s: %v", manifestFilename, err)
 	}
-	log.Debugw("Wrote combined manifest", "file", manifestFilename, "content", manifest.String())
+	log.Debugw("Wrote combined manifest", "file", manifestFilename)
 
 	return manifestFilename, getFileDeleteFinalizer(log, manifestFilename), nil
 }
