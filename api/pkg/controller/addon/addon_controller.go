@@ -151,11 +151,22 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
-		// If its not a NotFound return it
+		// If it's not a NotFound err, return it
 		if !kerrors.IsNotFound(err) {
 			return reconcile.Result{}, err
 		}
-		return reconcile.Result{}, nil
+
+		// If the cluster was already deleted, we cannot perform a clean cleanup anymore;
+		// in this case we remove the finalizer and let Kubernetes remove the addon while
+		// removing the cluster namespace.
+		log.Infow("cluster does not exist anymore, removing stale cleanup finalizer", "cluster", addon.Spec.Cluster.Name)
+
+		err = r.removeCleanupFinalizer(ctx, log, addon)
+		if err != nil {
+			err = fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
+		}
+
+		return reconcile.Result{}, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
