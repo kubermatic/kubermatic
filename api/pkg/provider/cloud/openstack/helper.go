@@ -31,10 +31,6 @@ const (
 	resourceNamePrefix = "kubernetes-"
 )
 
-var (
-	errNotFound = errors.New("not found")
-)
-
 func getSecurityGroups(netClient *gophercloud.ServiceClient, opts ossecuritygroups.ListOpts) ([]ossecuritygroups.SecGroup, error) {
 	page, err := ossecuritygroups.List(netClient, opts).AllPages()
 	if err != nil {
@@ -465,7 +461,7 @@ func getRouterIDForSubnet(netClient *gophercloud.ServiceClient, subnetID, networ
 		}
 	}
 
-	return "", fmt.Errorf("no router found for subnet '%s', network '%s'", subnetID, networkID)
+	return "", nil
 }
 
 func getAllNetworkPorts(netClient *gophercloud.ServiceClient, networkID string) ([]osports.Port, error) {
