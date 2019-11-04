@@ -119,7 +119,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Failed to get clientProvider", zap.Error(err))
 	}
 
-	if options.dynamicDatacenters {
+	if options.dynamicDatacenters && options.seedValidationHook.CertFile != "" && options.seedValidationHook.KeyFile != "" {
 		restMapperCache := restmapper.New()
 		seedValidationWebhookServer, err := options.seedValidationHook.Server(
 			rootCtx,
