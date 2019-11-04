@@ -683,7 +683,7 @@ func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario test
 	}); err != nil {
 		return fmt.Errorf("failed to get existing NodeDeployments: %v", err)
 	}
-	log.Info("Found %d pre-existing node replicas", existingReplicas)
+	log.Infof("Found %d pre-existing node replicas", existingReplicas)
 
 	nodeCount := r.nodeCount - existingReplicas
 	if nodeCount < 0 {
