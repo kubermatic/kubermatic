@@ -1406,6 +1406,7 @@ func (r Routing) patchCluster() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.PatchEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		cluster.DecodePatchReq,
 		encodeJSON,
