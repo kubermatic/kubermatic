@@ -23,6 +23,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
@@ -254,6 +255,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		}
 	}()
 
+	ctx := context.Background()
 	if r.existingClusterLabel == "" {
 		if err := junitReporterWrapper(
 			"[Kubermatic] Create cluster",
@@ -271,7 +273,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		}
 		clusterList := &kubermaticv1.ClusterList{}
 		listOptions := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
-		if err := r.seedClusterClient.List(context.Background(), clusterList, listOptions); err != nil {
+		if err := r.seedClusterClient.List(ctx, clusterList, listOptions); err != nil {
 			return nil, fmt.Errorf("failed to list clusters: %v", err)
 		}
 		if foundClusterNum := len(clusterList.Items); foundClusterNum != 1 {
@@ -279,8 +281,29 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 		}
 		cluster = &clusterList.Items[0]
 	}
-
+	clusterName := cluster.Name
 	log = log.With("cluster", cluster.Name)
+
+	if err := junitReporterWrapper(
+		"[Kubermatic] Wait for successful reconciliation",
+		report,
+		func() error {
+			return wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+				if err := r.seedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
+					log.Errorw("Failed to get cluster when waiting for successful reconciliation", zap.Error(err))
+					return false, nil
+				}
+
+				missingConditions, success := kubermaticv1helper.ClusterReconciliationSuccessful(cluster)
+				if len(missingConditions) > 0 {
+					log.Infof("Waiting for the following conditions: %v", missingConditions)
+				}
+				return success, nil
+			})
+		},
+	); err != nil {
+		return report, fmt.Errorf("failed to wait for successful reconciliation: %v", err)
+	}
 
 	if err := r.executeTests(log, cluster, report, scenario); err != nil {
 		return report, err
@@ -642,11 +665,43 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *zap.SugaredLogger, run *gi
 }
 
 func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario testScenario, clusterName string) error {
+
+	var existingReplicas int
+	log.Info("Getting existing NodeDeployments")
+	nodeDeploymentGetParams := &projectclient.ListNodeDeploymentsParams{
+		ProjectID: r.kubermatcProjectID,
+		ClusterID: clusterName,
+		Dc:        r.seed.Name,
+	}
+	nodeDeploymentGetParams.SetTimeout(15 * time.Second)
+	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+		resp, err := r.kubermaticClient.Project.ListNodeDeployments(nodeDeploymentGetParams, r.kubermaticAuthenticator)
+		if err != nil {
+			log.Errorw("Failed to get existing NodeDeployments", zap.Error(errors.New(fmtSwaggerError(err))))
+			return false, nil
+		}
+		for _, nodeDeployment := range resp.Payload {
+			existingReplicas += int(*nodeDeployment.Spec.Replicas)
+		}
+		return true, nil
+	}); err != nil {
+		return fmt.Errorf("failed to get existing NodeDeployments: %v", err)
+	}
+	log.Infof("Found %d pre-existing node replicas", existingReplicas)
+
+	nodeCount := r.nodeCount - existingReplicas
+	if nodeCount < 0 {
+		return fmt.Errorf("found %d existing replicas and want %d, scaledown not supported", existingReplicas, r.nodeCount)
+	}
+	if nodeCount == 0 {
+		return nil
+	}
+
 	log.Info("Creating NodeDeployments via kubermatic API")
 	var nodeDeployments []apimodels.NodeDeployment
 	var err error
 	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
-		nodeDeployments, err = scenario.NodeDeployments(r.nodeCount, r.secrets)
+		nodeDeployments, err = scenario.NodeDeployments(nodeCount, r.secrets)
 		if err != nil {
 			log.Info("Getting NodeDeployments from scenario failed", zap.Error(err))
 			return false, nil
@@ -676,7 +731,7 @@ func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario test
 		}
 	}
 
-	log.Info("Successfully created NodeDeployments via Kubermatic API")
+	log.Infof("Successfully created %d NodeDeployments via Kubermatic API", nodeCount)
 	return nil
 }
 
