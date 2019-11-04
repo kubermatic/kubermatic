@@ -4,9 +4,13 @@ The `datacenters.yaml` file describes the datacenters that Kubermatic can deploy
 
 ### What is a Seed Cluster?
 
-Seed clusters are just another datacenter, but are different in one particular way: They are the datacenter in which other clusters _control plane_ components are deployed. They must be an already deployed Kubernetes cluster, and must have a Kubeconfig entry with a matching name. Though the Kubermatic components only get deployed into a single seed cluster, the other seed clusters are controlled via those same Kubermatic components.
+Seed clusters are Kubernetes clusters that are used by Kubermatic to deploy Kubernetes controlplanes of user clusters in.
+They must be an already deployed Kubernetes cluster, and must have a Kubeconfig entry with a matching name. Though the Kubermatic components only get deployed into a single seed cluster, the other seed clusters are controlled via those same Kubermatic components.
 
-Seed datacenters are identified by setting `is_seed` to `true` in the Datacenter block
+Seed datacenters are identified by setting `is_seed` to `true` in the Datacenter block.
+
+Alternatively, it is also possible to enable the `--dynamic-datacenters` feature on the controllers, which will make them read the `Seeds` from a custom resource definition.
+Check out [the generated example](/docs/zz_generated.seed.yaml) for a full sample.
 
 ### Datacenter Block
 
@@ -30,8 +34,7 @@ The `spec` block for a datacenter identifies which datacenter `provider` to use,
 
 Currently supported providers are:
 - `aws`
-- `baremetal` (_outdated_)
-- `bringyourown` (_outdated_)
+- `bringyourown`
   **Keys:**
   - `region`
     A name identifying the region for the 'datacenter'
