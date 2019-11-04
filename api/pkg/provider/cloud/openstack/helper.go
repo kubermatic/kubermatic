@@ -84,9 +84,9 @@ func getNetworkByName(netClient *gophercloud.ServiceClient, name string, isExter
 	case 1:
 		return candidates[0], nil
 	case 0:
-		return nil, errNotFound
+		return nil, fmt.Errorf("no network named '%s' with external=%v found", name, isExternal)
 	default:
-		return nil, fmt.Errorf("found %d external networks for name '%s', expected one at most", len(candidates), name)
+		return nil, fmt.Errorf("found %d networks for name '%s' (external=%v), expected exactly one", len(candidates), name, isExternal)
 	}
 }
 
@@ -102,7 +102,7 @@ func getExternalNetwork(netClient *gophercloud.ServiceClient) (*NetworkWithExter
 		}
 	}
 
-	return nil, errNotFound
+	return nil, errors.New("no external network found")
 }
 
 func validateSecurityGroupsExist(netClient *gophercloud.ServiceClient, securityGroups []string) error {
@@ -465,7 +465,7 @@ func getRouterIDForSubnet(netClient *gophercloud.ServiceClient, subnetID, networ
 		}
 	}
 
-	return "", errNotFound
+	return "", fmt.Errorf("no router found for subnet '%s', network '%s'", subnetID, networkID)
 }
 
 func getAllNetworkPorts(netClient *gophercloud.ServiceClient, networkID string) ([]osports.Port, error) {

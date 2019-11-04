@@ -117,7 +117,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	seed, err := r.seedGetter()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get seeds: %v", err)
 	}
 	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !found {
@@ -125,7 +125,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 	prov, err := cloud.Provider(datacenter.DeepCopy(), r.getGlobalSecretKeySelectorValue)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create cloud provider: %v", err)
 	}
 
 	if cluster.DeletionTimestamp != nil {
@@ -137,7 +137,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
 		_, err := prov.CleanUpCloudProvider(cluster, r.updateCluster)
-		return nil, err
+		return nil, fmt.Errorf("failed cloud provider cleanup: %v", err)
 	}
 
 	// We do the migration inside the controller because it has a decent potential to fail (e.G. due
@@ -156,13 +156,16 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	if _, err := prov.InitializeCloudProvider(cluster, r.updateCluster); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed cloud provider init: %v", err)
 	}
 
-	_, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
+	if _, err := r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.CloudProviderInfrastructure = kubermaticv1.HealthStatusUp
-	})
-	return nil, err
+	}); err != nil {
+		return nil, fmt.Errorf("failed to set cluster health: %v", err)
+	}
+
+	return nil, nil
 }
 
 func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, cloudProvider provider.CloudProvider) error {
