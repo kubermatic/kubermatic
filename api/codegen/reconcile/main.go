@@ -251,6 +251,9 @@ func Reconcile{{ .ResourceNamePlural }}(ctx context.Context, namedGetters []Name
 		create = {{ .DefaultingFunc }}(create)
 {{- end }}
 		createObject := {{ .ResourceName }}ObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
