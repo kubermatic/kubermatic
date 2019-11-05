@@ -24,6 +24,7 @@ import (
 // NewTestRouting is a hack that helps us avoid circular imports
 // for example handler package uses v1/dc and v1/dc needs handler for testing
 func NewTestRouting(
+	settingsProvider provider.SettingsProvider,
 	userInfoGetter provider.UserInfoGetter,
 	seedsGetter provider.SeedsGetter,
 	clusterProvidersGetter provider.ClusterProviderGetter,
@@ -72,6 +73,7 @@ func NewTestRouting(
 		corev1.ServiceTypeNodePort,
 		sets.String{},
 		userInfoGetter,
+		settingsProvider,
 	)
 
 	mainRouter := mux.NewRouter()
@@ -83,6 +85,7 @@ func NewTestRouting(
 		*generateDefaultOicdCfg(),
 		mainRouter,
 	)
+	r.RegisterV1Admin(v1Router)
 	return mainRouter
 }
 
