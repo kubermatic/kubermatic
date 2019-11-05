@@ -1,3 +1,13 @@
+### [v2.12.1]()
+
+
+- VSphere: Fixed a bug that resulted in a faulty cloud config when using a non-default port [#4562](https://github.com/kubermatic/kubermatic/issues/4562) ([alvaroaleman](https://github.com/alvaroaleman))
+- Fixed master-controller failing to create project-label-synchronizer controllers. [#4577](https://github.com/kubermatic/kubermatic/issues/4577) ([xrstf](https://github.com/xrstf))
+- Fixed broken NodePort-Proxy for user clusters with LoadBalancer expose strategy. [#4590](https://github.com/kubermatic/kubermatic/issues/4590) ([xrstf](https://github.com/xrstf))
+
+
+
+
 ### [v2.12.0]()
 
 
