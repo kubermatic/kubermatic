@@ -225,7 +225,7 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 	}
 	client := fakectrlruntimeclient.NewFakeClient(initSeed)
 
-	seedsGetter, err := SeedsGetterFactory(context.Background(), client, "", "my-ns", "", true)
+	seedsGetter, err := SeedsGetterFactory(context.Background(), client, "", "my-ns", true)
 	if err != nil {
 		t.Fatalf("failed getting seedsGetter: %v", err)
 	}
