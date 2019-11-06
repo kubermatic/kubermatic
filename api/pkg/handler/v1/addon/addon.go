@@ -28,8 +28,8 @@ type addonReq struct {
 	AddonID string `json:"addon_id"`
 }
 
-// listReq defines HTTP request for listAddons endpoint
-// swagger:parameters listAddons
+// listReq defines HTTP request for listAddons and listInstallableAddons endpoints
+// swagger:parameters listAddons listInstallableAddons
 type listReq struct {
 	common.GetClusterReq
 }
@@ -127,6 +127,38 @@ func decodeAddonID(c context.Context, r *http.Request) (string, error) {
 func ListAccessibleAddons(accessibleAddons sets.String) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		return accessibleAddons.UnsortedList(), nil
+	}
+}
+
+func ListInstallableAddonEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter, accessibleAddons sets.String) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
+		addons, err := addonProvider.List(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		installedAddons := sets.NewString()
+		for _, addon := range addons {
+			installedAddons.Insert(addon.Name)
+		}
+
+		return accessibleAddons.Difference(installedAddons).UnsortedList(), nil
 	}
 }
 
