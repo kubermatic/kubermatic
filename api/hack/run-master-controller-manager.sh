@@ -10,7 +10,7 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 ./_build/master-controller-manager \
-  -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+  -dynamic-datacenters=true \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -internal-address=127.0.0.1:8086 \
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
