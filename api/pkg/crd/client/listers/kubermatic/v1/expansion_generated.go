@@ -14,6 +14,10 @@ type AddonNamespaceListerExpansion interface{}
 // ClusterLister.
 type ClusterListerExpansion interface{}
 
+// KubermaticSettingListerExpansion allows custom methods to be added to
+// KubermaticSettingLister.
+type KubermaticSettingListerExpansion interface{}
+
 // ProjectListerExpansion allows custom methods to be added to
 // ProjectLister.
 type ProjectListerExpansion interface{}

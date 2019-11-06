@@ -6,6 +6,8 @@ type AddonExpansion interface{}
 
 type ClusterExpansion interface{}
 
+type KubermaticSettingExpansion interface{}
+
 type ProjectExpansion interface{}
 
 type UserExpansion interface{}

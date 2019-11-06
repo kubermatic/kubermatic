@@ -12,6 +12,8 @@ type Interface interface {
 	Addons() AddonInformer
 	// Clusters returns a ClusterInformer.
 	Clusters() ClusterInformer
+	// KubermaticSettings returns a KubermaticSettingInformer.
+	KubermaticSettings() KubermaticSettingInformer
 	// Projects returns a ProjectInformer.
 	Projects() ProjectInformer
 	// Users returns a UserInformer.
@@ -41,6 +43,11 @@ func (v *version) Addons() AddonInformer {
 // Clusters returns a ClusterInformer.
 func (v *version) Clusters() ClusterInformer {
 	return &clusterInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// KubermaticSettings returns a KubermaticSettingInformer.
+func (v *version) KubermaticSettings() KubermaticSettingInformer {
+	return &kubermaticSettingInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // Projects returns a ProjectInformer.
