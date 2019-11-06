@@ -28,8 +28,8 @@ type addonReq struct {
 	AddonID string `json:"addon_id"`
 }
 
-// listReq defines HTTP request for listAddons endpoint
-// swagger:parameters listAddons
+// listReq defines HTTP request for listAddons and listInstallableAddons endpoints
+// swagger:parameters listAddons listInstallableAddons
 type listReq struct {
 	common.GetClusterReq
 }

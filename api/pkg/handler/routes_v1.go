@@ -2731,8 +2731,10 @@ func (r Routing) listInstallableAddons() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
 		)(addon.ListInstallableAddonEndpoint(r.projectProvider, r.userInfoGetter, r.accessibleAddons)),
-		decodeEmptyReq,
+		addon.DecodeListAddons,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
