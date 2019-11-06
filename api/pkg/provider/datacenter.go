@@ -10,7 +10,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
@@ -196,8 +195,8 @@ func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 
 }
 
-func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace, workerName string, dynamicDatacenters bool) (SeedsGetter, error) {
-	seedsGetter, err := seedsGetterFactory(ctx, client, dcFile, namespace, workerName, dynamicDatacenters)
+func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace string, dynamicDatacenters bool) (SeedsGetter, error) {
+	seedsGetter, err := seedsGetterFactory(ctx, client, dcFile, namespace, dynamicDatacenters)
 	if err != nil {
 		return nil, err
 	}
@@ -213,16 +212,11 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 	}, nil
 }
 
-func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace, workerName string, dynamicDatacenters bool) (SeedsGetter, error) {
+func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace string, dynamicDatacenters bool) (SeedsGetter, error) {
 	if dynamicDatacenters {
-		labelSelector, err := workerlabel.LabelSelector(workerName)
-		if err != nil {
-			return nil, fmt.Errorf("failed to construct label selector for worker-name: %v", err)
-		}
 		// We only have a options func for raw *metav1.ListOpts as the rbac controller currently required that
 		listOpts := &ctrlruntimeclient.ListOptions{
-			LabelSelector: labelSelector,
-			Namespace:     namespace,
+			Namespace: namespace,
 		}
 
 		return func() (map[string]*kubermaticv1.Seed, error) {

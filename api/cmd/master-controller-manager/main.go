@@ -159,7 +159,7 @@ func main() {
 
 	// these two getters rely on the ctrlruntime manager being started; they are
 	// only used inside controllers
-	ctrlCtx.seedsGetter, err = provider.SeedsGetterFactory(ctx, mgr.GetClient(), runOpts.dcFile, ctrlCtx.namespace, runOpts.workerName, runOpts.dynamicDatacenters)
+	ctrlCtx.seedsGetter, err = provider.SeedsGetterFactory(ctx, mgr.GetClient(), runOpts.dcFile, ctrlCtx.namespace, runOpts.dynamicDatacenters)
 	if err != nil {
 		log.Fatalw("failed to construct seedsGetter", zap.Error(err))
 	}

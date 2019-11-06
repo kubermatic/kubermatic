@@ -80,7 +80,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	seedsGetter, err := provider.SeedsGetterFactory(ctx, mgr.GetClient(), "", opt.namespace, opt.workerName, true)
+	seedsGetter, err := provider.SeedsGetterFactory(ctx, mgr.GetClient(), "", opt.namespace, true)
 	if err != nil {
 		log.Fatalw("Failed to construct seedsGetter", zap.Error(err))
 	}
