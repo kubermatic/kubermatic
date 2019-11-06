@@ -4,17 +4,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+//+genclient
+//+genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// KubermaticSettings is the type representing a KubermaticSettings
-type KubermaticSettings struct {
+// KubermaticSetting is the type representing a KubermaticSetting
+type KubermaticSetting struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec SettingsSpec `json:"spec"`
+	Spec SettingSpec `json:"spec"`
 }
 
-type SettingsSpec struct {
+type SettingSpec struct {
 	CustomLinks           CustomLinks    `json:"customLinks"`
 	CleanupOptions        CleanupOptions `json:"cleanupOptions"`
 	DefaultNodeCount      int8           `json:"defaultNodeCount"`
@@ -38,4 +40,14 @@ type CustomLink struct {
 type CleanupOptions struct {
 	Enabled  bool
 	Enforced bool
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// KubermaticSettingList is a list of settings
+type KubermaticSettingList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []KubermaticSetting `json:"items"`
 }

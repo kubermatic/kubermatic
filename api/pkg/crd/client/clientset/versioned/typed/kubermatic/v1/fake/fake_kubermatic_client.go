@@ -20,6 +20,10 @@ func (c *FakeKubermaticV1) Clusters() v1.ClusterInterface {
 	return &FakeClusters{c}
 }
 
+func (c *FakeKubermaticV1) KubermaticSettings() v1.KubermaticSettingInterface {
+	return &FakeKubermaticSettings{c}
+}
+
 func (c *FakeKubermaticV1) Projects() v1.ProjectInterface {
 	return &FakeProjects{c}
 }

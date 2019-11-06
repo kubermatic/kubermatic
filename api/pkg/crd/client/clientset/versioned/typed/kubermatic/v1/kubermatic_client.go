@@ -12,6 +12,7 @@ type KubermaticV1Interface interface {
 	RESTClient() rest.Interface
 	AddonsGetter
 	ClustersGetter
+	KubermaticSettingsGetter
 	ProjectsGetter
 	UsersGetter
 	UserProjectBindingsGetter
@@ -29,6 +30,10 @@ func (c *KubermaticV1Client) Addons(namespace string) AddonInterface {
 
 func (c *KubermaticV1Client) Clusters() ClusterInterface {
 	return newClusters(c)
+}
+
+func (c *KubermaticV1Client) KubermaticSettings() KubermaticSettingInterface {
+	return newKubermaticSettings(c)
 }
 
 func (c *KubermaticV1Client) Projects() ProjectInterface {
