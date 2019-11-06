@@ -5,9 +5,9 @@ metadata:
 spec:
   group: kubermatic.k8s.io
   names:
-    kind: KubermaticSettings
-    listKind: KubermaticSettingsList
+    kind: KubermaticSetting
+    listKind: KubermaticSettingList
     plural: kubermaticsettings
-    singular: kubermaticsettings
-  scope: Namespaced
-  version: v1alpha1
+    singular: kubermaticsetting
+  scope: Cluster
+  version: v1
