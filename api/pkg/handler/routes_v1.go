@@ -354,10 +354,13 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 
 	//
 	// Defines a set of HTTP endpoints for managing addons
-
 	mux.Methods(http.MethodGet).
 		Path("/addons").
 		Handler(r.listAccessibleAddons())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons").
+		Handler(r.listInstallableAddons())
 
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons").
@@ -2705,6 +2708,30 @@ func (r Routing) listAccessibleAddons() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 		)(addon.ListAccessibleAddons(r.accessibleAddons)),
+		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons addon listInstallableAddons
+//
+//     Lists names of addons that can be installed inside the user cluster
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AccessibleAddons
+//       401: empty
+//       403: empty
+func (r Routing) listInstallableAddons() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(addon.ListInstallableAddonEndpoint(r.projectProvider, r.userInfoGetter, r.accessibleAddons)),
 		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
