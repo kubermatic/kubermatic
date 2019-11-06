@@ -1,3 +1,12 @@
+@font-face {
+	font-family: 'Ubuntu';
+	font-style: normal;
+	font-weight: 500;
+	src:
+			url('ubuntu-500.woff2') format('woff2'),
+			url('ubuntu-500.woff') format('woff');
+}
+
 .theme-body {
 	background: #001930 url("bg.svg") no-repeat fixed center center;
 	background-size: cover;
@@ -26,8 +35,9 @@
 .dex-container:before {
 	color: #fff;
 	content: "Login to Kubermatic";
+	font-family: 'Ubuntu', sans-serif;
 	font-size: 28px;
-	font-weight: bold;
+	font-weight: 500;
 	line-height: 140%;
 	width: 380px;
 	position: absolute;
