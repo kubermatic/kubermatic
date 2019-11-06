@@ -17,7 +17,7 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 ./_build/kubermatic-api \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
-  -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+  -dynamic-datacenters=true \
   -presets=../../secrets/seed-clusters/dev.kubermatic.io/presets.yaml \
   -versions=../config/kubermatic/static/master/versions.yaml \
   -updates=../config/kubermatic/static/master/updates.yaml \
