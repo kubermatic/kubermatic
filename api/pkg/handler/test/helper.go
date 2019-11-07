@@ -359,6 +359,14 @@ func buildSeeds() provider.SeedsGetter {
 								RequiredEmailDomain: "example.com",
 							},
 						},
+						"restricted-fake-dc2": {
+							Country:  "NL",
+							Location: "Amsterdam",
+							Spec: kubermaticv1.DatacenterSpec{
+								Fake:                 &kubermaticv1.DatacenterSpecFake{},
+								RequiredEmailDomains: []string{"23f67weuc.com", "example.com", "12noifsdsd.org"},
+							},
+						},
 						"fake-dc": {
 							Location: "Henriks basement",
 							Country:  "Germany",
