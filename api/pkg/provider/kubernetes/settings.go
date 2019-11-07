@@ -41,6 +41,13 @@ func (s *SettingsProvider) GetGlobalSettings(userInfo *provider.UserInfo) (*kube
 	return settings, nil
 }
 
+func (s *SettingsProvider) UpdateGlobalSettings(userInfo *provider.UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error) {
+	if !userInfo.IsAdmin {
+		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+	}
+	return s.client.KubermaticV1().KubermaticSettings().Update(settings)
+}
+
 func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.KubermaticSetting, error) {
 	defaultSettings := &kubermaticv1.KubermaticSetting{
 		ObjectMeta: v1.ObjectMeta{

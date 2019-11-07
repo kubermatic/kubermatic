@@ -12,6 +12,7 @@ import (
 	strfmt "github.com/go-openapi/strfmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/addon"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/admin"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/aws"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/azure"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/credentials"
@@ -76,6 +77,8 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Transport = transport
 
 	cli.Addon = addon.New(transport, formats)
+
+	cli.Admin = admin.New(transport, formats)
 
 	cli.Aws = aws.New(transport, formats)
 
@@ -159,6 +162,8 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 type Kubermatic struct {
 	Addon *addon.Client
 
+	Admin *admin.Client
+
 	Aws *aws.Client
 
 	Azure *azure.Client
@@ -203,6 +208,8 @@ func (c *Kubermatic) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
 
 	c.Addon.SetTransport(transport)
+
+	c.Admin.SetTransport(transport)
 
 	c.Aws.SetTransport(transport)
 
