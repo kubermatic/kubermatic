@@ -152,4 +152,5 @@ type providers struct {
 	seedsGetter                           provider.SeedsGetter
 	addons                                provider.AddonProviderGetter
 	userInfoGetter                        provider.UserInfoGetter
+	settingsProvider                      provider.SettingsProvider
 }

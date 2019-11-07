@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"k8s.io/apimachinery/pkg/runtime"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -246,8 +246,9 @@ type ProjectProvider interface {
 
 // UserInfo represent authenticated user
 type UserInfo struct {
-	Email string
-	Group string
+	Email   string
+	Group   string
+	IsAdmin bool
 }
 
 // ProjectMemberListOptions allows to set filters that will be applied to filter the result.
@@ -473,4 +474,9 @@ type AddonProvider interface {
 
 	// Delete deletes the given addon
 	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string) error
+}
+
+// SettingsProvider declares the set of methods for interacting global settings
+type SettingsProvider interface {
+	GetGlobalSettings(userInfo *UserInfo) (*kubermaticv1.KubermaticSetting, error)
 }

@@ -29,6 +29,7 @@ type UserSpec struct {
 	ID       string        `json:"id"`
 	Name     string        `json:"name"`
 	Email    string        `json:"email"`
+	IsAdmin  bool          `json:"admin"`
 	Settings *UserSettings `json:"settings,omitempty"`
 }
 

@@ -45,6 +45,7 @@ type Routing struct {
 	exposeStrategy              corev1.ServiceType
 	accessibleAddons            sets.String
 	userInfoGetter              provider.UserInfoGetter
+	settingsProvider            provider.SettingsProvider
 }
 
 // NewRouting creates a new Routing.
@@ -73,6 +74,7 @@ func NewRouting(
 	exposeStrategy corev1.ServiceType,
 	accessibleAddons sets.String,
 	userInfoGetter provider.UserInfoGetter,
+	settingsProvider provider.SettingsProvider,
 ) Routing {
 	return Routing{
 		log:                         logger,
@@ -100,6 +102,7 @@ func NewRouting(
 		exposeStrategy:              exposeStrategy,
 		accessibleAddons:            accessibleAddons,
 		userInfoGetter:              userInfoGetter,
+		settingsProvider:            settingsProvider,
 	}
 }
 

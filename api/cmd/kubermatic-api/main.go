@@ -181,6 +181,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	userMasterLister := kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userMasterLister, kubernetesprovider.IsServiceAccount)
+	settingsProvider := kubernetesprovider.NewSettingsProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().KubermaticSettings().Lister())
 
 	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, kubeMasterInformerFactory.Core().V1().Secrets().Lister())
 	if err != nil {
@@ -227,7 +228,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		clusterProviderGetter:                 clusterProviderGetter,
 		seedsGetter:                           seedsGetter,
 		addons:                                addonProviderGetter,
-		userInfoGetter:                        userInfoGetter}, nil
+		userInfoGetter:                        userInfoGetter,
+		settingsProvider:                      settingsProvider}, nil
 }
 
 func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error) {
@@ -315,6 +317,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		options.exposeStrategy,
 		options.accessibleAddons,
 		prov.userInfoGetter,
+		prov.settingsProvider,
 	)
 
 	registerMetrics()
@@ -335,6 +338,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 			OfflineAccessAsScope: options.oidcIssuerOfflineAccessAsScope,
 		},
 		mainRouter)
+	r.RegisterV1Admin(v1Router)
 
 	mainRouter.Methods(http.MethodGet).
 		Path("/api/swagger.json").
