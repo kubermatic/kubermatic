@@ -15,7 +15,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestCreateRoleBinding(t *testing.T) {
+func TestGetGlobalSettings(t *testing.T) {
 	t.Parallel()
 
 	testcases := []struct {
@@ -57,6 +57,70 @@ func TestCreateRoleBinding(t *testing.T) {
 			kubernetesObj := []runtime.Object{}
 			kubeObj := []runtime.Object{}
 			req := httptest.NewRequest("GET", "/api/v1/admin/settings", strings.NewReader(""))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
+	}
+}
+
+func TestUpdateGloablSettings(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name                   string
+		body                   string
+		expectedResponse       string
+		httpStatus             int
+		existingAPIUser        *apiv1.User
+		existingKubermaticObjs []runtime.Object
+	}{
+		// scenario 1
+		{
+			name:                   "scenario 1: unauthorized user updates settings",
+			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
+			httpStatus:             http.StatusForbidden,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			existingAPIUser:        test.GenDefaultAPIUser(),
+		},
+		// scenario 2
+		{
+			name:                   "scenario 2: authorized user updates default settings",
+			body:                   `{"spec":{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true}}`,
+			expectedResponse:       `{"id":"globalSettings","name":"globalSettings","creationTimestamp":"0001-01-01T00:00:00Z","globalSettings":{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true}}`,
+			httpStatus:             http.StatusOK,
+			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true)},
+			existingAPIUser:        test.GenDefaultAPIUser(),
+		},
+		// scenario 3
+		{
+			name:             "scenario 3: authorized user updates existing global settings",
+			body:             `{"spec":{"customLinks":[],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true}}`,
+			expectedResponse: `{"id":"globalSettings","name":"globalSettings","creationTimestamp":"0001-01-01T00:00:00Z","globalSettings":{"customLinks":[],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true}}`,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true),
+				genDefaultGlobalSettings()},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			kubernetesObj := []runtime.Object{}
+			kubeObj := []runtime.Object{}
+			req := httptest.NewRequest("PATCH", "/api/v1/admin/settings", strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)

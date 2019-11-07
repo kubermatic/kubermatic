@@ -72,6 +72,49 @@
             }
           }
         }
+      },
+      "patch": {
+        "description": "Patch the global settings",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "operationId": "patchKubermaticSettings",
+        "parameters": [
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GlobalSettings",
+            "schema": {
+              "$ref": "#/definitions/GlobalSettings"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     },
     "/api/v1/dc": {
