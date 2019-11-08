@@ -76,7 +76,7 @@ func TestVsphereEndpoint(t *testing.T) {
 			req.Header.Add("Username", "user")
 			req.Header.Add("Password", "pass")
 
-			apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
+			apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName)
 
 			res := httptest.NewRecorder()
 			ep, _, err := test.CreateTestEndpointAndGetClients(apiUser, mock.buildVSphereDatacenter(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)

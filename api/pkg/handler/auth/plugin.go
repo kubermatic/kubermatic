@@ -55,7 +55,7 @@ func (p *TokenVerifierPlugins) Verify(ctx context.Context, token string) (TokenC
 	if len(p.plugins) == 0 {
 		return TokenClaims{}, errors.New("cannot validate the token - no plugins registered")
 	}
-	errList := []error{}
+	var errList []error
 	for _, plugin := range p.plugins {
 		claims, err := plugin.Verify(ctx, token)
 		if err == nil {
@@ -86,7 +86,7 @@ func (p *TokenExtractorPlugins) Extract(r *http.Request) (string, error) {
 	if len(p.plugins) == 0 {
 		return "", errors.New("cannot validate the token - no plugins registered")
 	}
-	errList := []error{}
+	var errList []error
 	for _, plugin := range p.plugins {
 		token, err := plugin.Extract(r)
 		if err == nil {

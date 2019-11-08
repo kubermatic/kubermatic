@@ -45,11 +45,11 @@ func TestCreateClusterRole(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			kubernetesObj := []runtime.Object{}
-			kubeObj := []runtime.Object{}
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles", test.ProjectName, tc.ClusterToGet), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -107,11 +107,11 @@ func TestCreateRole(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			kubernetesObj := []runtime.Object{}
-			kubeObj := []runtime.Object{}
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/roles", test.ProjectName, tc.ClusterToGet), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -161,12 +161,13 @@ func TestListRole(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			kubernetesObj := []runtime.Object{}
-			kubeObj := []runtime.Object{}
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
+			var kubermaticObj []runtime.Object
 			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/roles", test.ProjectName, tc.clusterToGet), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -216,12 +217,12 @@ func TestListClusterRole(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			kubernetesObj := []runtime.Object{}
-			kubeObj := []runtime.Object{}
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
 			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles", test.ProjectName, tc.clusterToGet), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -275,12 +276,13 @@ func TestGetRole(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			kubernetesObj := []runtime.Object{}
-			kubeObj := []runtime.Object{}
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
+			var kubermaticObj []runtime.Object
 			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/roles/%s/%s", test.ProjectName, tc.clusterToGet, tc.namespace, tc.roleName), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -331,12 +333,13 @@ func TestGetClusterRole(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			kubernetesObj := []runtime.Object{}
-			kubeObj := []runtime.Object{}
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
+			var kubermaticObj []runtime.Object
 			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles/%s", test.ProjectName, tc.clusterToGet, tc.roleName), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -411,12 +414,13 @@ func TestPatchRole(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			kubernetesObj := []runtime.Object{}
-			kubeObj := []runtime.Object{}
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
+			var kubermaticObj []runtime.Object
 			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
 			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/roles/%s/%s", test.ProjectName, tc.clusterToGet, tc.namespace, tc.roleName), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -488,12 +492,13 @@ func TestPatchClusterRole(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			kubernetesObj := []runtime.Object{}
-			kubeObj := []runtime.Object{}
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
+			var kubermaticObj []runtime.Object
 			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
 			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles/%s", test.ProjectName, tc.clusterToGet, tc.roleName), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
