@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -60,7 +61,7 @@ func TestCleanUpPVUsingWorkloads(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			client := fake.NewFakeClient(tc.objects...)
+			client := fake.NewFakeClientWithScheme(scheme.Scheme, tc.objects...)
 			d := &Deletion{}
 			ctx := context.Background()
 
