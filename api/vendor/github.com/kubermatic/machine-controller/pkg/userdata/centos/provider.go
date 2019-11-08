@@ -222,10 +222,12 @@ write_files:
 {{ kubeletSystemdUnit .KubeletVersion .CloudProviderName .MachineSpec.Name .DNSIPs .ExternalCloudProvider .PauseImage | indent 4 }}
 
 - path: "/etc/kubernetes/cloud-config"
+  permissions: "0600"
   content: |
 {{ .CloudConfig | indent 4 }}
 
 - path: "/etc/kubernetes/bootstrap-kubelet.conf"
+  permissions: "0600"
   content: |
 {{ .Kubeconfig | indent 4 }}
 
