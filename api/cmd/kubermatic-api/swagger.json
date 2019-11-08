@@ -7616,8 +7616,16 @@
           "x-go-name": "Provider"
         },
         "requiredEmailDomain": {
+          "description": "Deprecated. Automatically migrated to the RequiredEmailDomains field.",
           "type": "string",
           "x-go-name": "RequiredEmailDomain"
+        },
+        "requiredEmailDomains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "RequiredEmailDomains"
         },
         "seed": {
           "type": "string",

@@ -120,7 +120,9 @@ type DatacenterSpec struct {
 	VSphere      *VSphereDatacenterSpec       `json:"vsphere,omitempty"`
 	Kubevirt     *KubevirtDatacenterSpec      `json:"kubevirt,omitempty"`
 
-	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
+	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
+	RequiredEmailDomain  string   `json:"requiredEmailDomain,omitempty"`
+	RequiredEmailDomains []string `json:"requiredEmailDomains,omitempty"`
 }
 
 // DatacenterList represents a list of datacenters

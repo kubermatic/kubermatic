@@ -86,21 +86,44 @@ func DatacenterFromSeedMap(userInfo *UserInfo, seedsGetter SeedsGetter, datacent
 
 	var foundDatacenters []kubermaticv1.Datacenter
 	var foundSeeds []*kubermaticv1.Seed
+
+iterateOverSeeds:
 	for _, seed := range seeds {
 		datacenter, exists := seed.Spec.Datacenters[datacenterName]
 		if !exists {
 			continue
 		}
 
-		if datacenter.Spec.RequiredEmailDomain != "" {
-			userDomain := strings.Split(userInfo.Email, "@")
-			if len(userDomain) != 2 || !strings.EqualFold(userDomain[1], datacenter.Spec.RequiredEmailDomain) {
-				continue
+		requiredEmailDomain := datacenter.Spec.RequiredEmailDomain
+		requiredEmailDomains := datacenter.Spec.RequiredEmailDomains
+
+		if requiredEmailDomain == "" && len(requiredEmailDomains) == 0 {
+			// find datacenter for "all" without RequiredEmailDomain(s) field
+			foundSeeds = append(foundSeeds, seed)
+			foundDatacenters = append(foundDatacenters, datacenter)
+			continue iterateOverSeeds
+		} else {
+			// find datacenter for specific email domain
+			split := strings.Split(userInfo.Email, "@")
+			if len(split) != 2 {
+				return nil, nil, fmt.Errorf("invalid email address")
+			}
+			userDomain := split[1]
+
+			if requiredEmailDomain != "" && strings.EqualFold(userDomain, requiredEmailDomain) {
+				foundSeeds = append(foundSeeds, seed)
+				foundDatacenters = append(foundDatacenters, datacenter)
+				continue iterateOverSeeds
+			}
+
+			for _, whitelistedDomain := range requiredEmailDomains {
+				if whitelistedDomain != "" && strings.EqualFold(userDomain, whitelistedDomain) {
+					foundSeeds = append(foundSeeds, seed)
+					foundDatacenters = append(foundDatacenters, datacenter)
+					continue iterateOverSeeds
+				}
 			}
 		}
-
-		foundSeeds = append(foundSeeds, seed)
-		foundDatacenters = append(foundDatacenters, datacenter)
 	}
 
 	if len(foundDatacenters) == 0 {
