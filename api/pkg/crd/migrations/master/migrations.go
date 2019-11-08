@@ -142,13 +142,17 @@ func migrateAllDatacenterEmailRestrictions(ctx context.Context, log *zap.Sugared
 		log := log.With("seed", seed.Name)
 		log.Info("processing Seed...")
 
-		changed := false
+		anyDCchanged := false
 		for dcName, dc := range seed.Spec.Datacenters {
-			changed = changed || migrateDatacenterEmailRestrictions(log.With("datacenter", dcName), &dc.Spec)
+			thisDCchanged := migrateDatacenterEmailRestrictions(log.With("datacenter", dcName), &dc.Spec)
+			anyDCchanged = anyDCchanged || thisDCchanged
+			if thisDCchanged {
+				seed.Spec.Datacenters[dcName] = dc
+			}
 		}
 
 		// Update the seed object only if any of the DCs were actually migrated.
-		if changed {
+		if anyDCchanged {
 			if err := client.Update(ctx, &seed); err != nil {
 				return fmt.Errorf("failed to update seed %s: %s", seed.Name, err)
 			}
