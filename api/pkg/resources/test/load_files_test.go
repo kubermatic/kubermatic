@@ -36,6 +36,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -242,7 +243,7 @@ func TestLoadFiles(t *testing.T) {
 					},
 				}
 
-				dynamicClient := ctrlruntimefakeclient.NewFakeClient(
+				dynamicClient := ctrlruntimefakeclient.NewFakeClientWithScheme(scheme.Scheme,
 					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
@@ -1172,7 +1173,7 @@ func TestExecute(t *testing.T) {
 
 			credentialsData := testhelper.CredentialsData{
 				KubermaticCluster: test.data.Cluster,
-				Client:            ctrlruntimefakeclient.NewFakeClient(),
+				Client:            ctrlruntimefakeclient.NewFakeClientWithScheme(scheme.Scheme),
 			}
 			machine, err := machine.Machine(test.data.Cluster, test.data.Node, test.data.Datacenter, test.data.Keys, credentialsData)
 			if err != nil {

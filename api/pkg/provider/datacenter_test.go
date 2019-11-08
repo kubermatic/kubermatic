@@ -12,6 +12,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -193,7 +194,7 @@ func TestSeedGetterFactorySetsDefaults(t *testing.T) {
 			Datacenters: map[string]kubermaticv1.Datacenter{"a": {}},
 		},
 	}
-	client := fakectrlruntimeclient.NewFakeClient(initSeed)
+	client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, initSeed)
 
 	seedGetter, err := SeedGetterFactory(context.Background(), client, "my-seed", "", "my-ns", true)
 	if err != nil {
@@ -223,7 +224,7 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 			Datacenters: map[string]kubermaticv1.Datacenter{"a": {}},
 		},
 	}
-	client := fakectrlruntimeclient.NewFakeClient(initSeed)
+	client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, initSeed)
 
 	seedsGetter, err := SeedsGetterFactory(context.Background(), client, "", "my-ns", true)
 	if err != nil {

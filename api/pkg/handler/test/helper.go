@@ -13,16 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/sets"
-
-	"github.com/kubermatic/kubermatic/api/pkg/presets"
-
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-
 	prometheusapi "github.com/prometheus/client_golang/api"
-
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
@@ -32,7 +23,9 @@ import (
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/api/pkg/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
@@ -40,13 +33,16 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	kubernetesclientset "k8s.io/client-go/kubernetes"
 	fakerestclient "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
@@ -151,7 +147,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	allObjects := kubeObjects
 	allObjects = append(allObjects, machineObjects...)
 	allObjects = append(allObjects, kubermaticObjects...)
-	fakeClient := fakectrlruntimeclient.NewFakeClient(allObjects...)
+	fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, allObjects...)
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 	kubernetesClient := fakerestclient.NewSimpleClientset(kubeObjects...)
