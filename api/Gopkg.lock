@@ -1197,7 +1197,7 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:85674ac609b704fd4e9f463553b6ffc3a3527a993ae0ba550eb56beaabdfe094"
+  digest = "1:da2b9a41b46b14a9d9d093413cf922dd1352743364e8ede79ba60c9b8e21ca39"
   name = "go.uber.org/zap"
   packages = [
     ".",
@@ -1205,7 +1205,9 @@
     "internal/bufferpool",
     "internal/color",
     "internal/exit",
+    "internal/ztest",
     "zapcore",
+    "zaptest",
   ]
   pruneopts = "NUT"
   revision = "ff33455a0e382e8a81d14dd7c922020b6b5e7982"
@@ -2076,6 +2078,7 @@
     "github.com/vmware/govmomi/simulator",
     "go.uber.org/zap",
     "go.uber.org/zap/zapcore",
+    "go.uber.org/zap/zaptest",
     "golang.org/x/crypto/bcrypt",
     "golang.org/x/crypto/ssh",
     "golang.org/x/oauth2",
