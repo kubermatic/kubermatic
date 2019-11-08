@@ -3,6 +3,7 @@ package master
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -41,16 +42,20 @@ func (o MigrationOptions) SeedMigrationEnabled() bool {
 
 // RunAll runs all migrations that should be run inside a master cluster.
 func RunAll(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, opt MigrationOptions) error {
-	if opt.SeedMigrationEnabled() {
-		if err := waitForWebhook(ctx, log, client, kubermaticNamespace); err != nil {
-			return fmt.Errorf("failed to wait for webhook: %v", err)
-		}
+	if err := waitForWebhook(ctx, log, client, kubermaticNamespace); err != nil {
+		return fmt.Errorf("failed to wait for webhook: %v", err)
+	}
 
+	if opt.SeedMigrationEnabled() {
 		log.Info("datacenters given and dynamic datacenters enabled, attempting to migrate datacenters to Seeds")
 		if err := migrateDatacenters(ctx, log, client, kubermaticNamespace, opt); err != nil {
 			return fmt.Errorf("failed to migrate datacenters.yaml: %v", err)
 		}
 		log.Info("seed migration completed successfully")
+	}
+
+	if err := migrateAllDatacenterEmailRestrictions(ctx, log, client, kubermaticNamespace, opt); err != nil {
+		return fmt.Errorf("failed to migrate datacenters' email restrictions: %v", err)
 	}
 
 	return nil
@@ -124,6 +129,63 @@ func migrateDatacenters(ctx context.Context, log *zap.SugaredLogger, client ctrl
 	}
 
 	return nil
+}
+
+// migrateDatacenterEmailRestrictions removes the `requiredEmailDomain` field of DCs and move its value to `requiredEmailDomains`
+func migrateAllDatacenterEmailRestrictions(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, opt MigrationOptions) error {
+	seedList := &kubermaticv1.SeedList{}
+	if err := client.List(ctx, seedList); err != nil {
+		return fmt.Errorf("failed to list seeds: %s", err)
+	}
+
+	for _, seed := range seedList.Items {
+		log := log.With("seed", seed.Name)
+		log.Info("processing Seed...")
+
+		changed := false
+		for dcName, dc := range seed.Spec.Datacenters {
+			changed = changed || migrateDatacenterEmailRestrictions(log.With("datacenter", dcName), &dc.Spec)
+		}
+
+		// Update the seed object only if any of the DCs were actually migrated.
+		if changed {
+			if err := client.Update(ctx, &seed); err != nil {
+				return fmt.Errorf("failed to update seed %s: %s", seed.Name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// migrateDatacenterEmailRestrictions moves the values of `requiredEmailDomain` to `requiredEmailDomains`
+// and clears the value of `requiredEmailDomain`.
+// It returns a bool specifying whether any changes to the spec were made.
+func migrateDatacenterEmailRestrictions(log *zap.SugaredLogger, spec *kubermaticv1.DatacenterSpec) bool {
+	if spec.RequiredEmailDomain == "" {
+		return false
+	}
+
+	if len(spec.RequiredEmailDomains) == 0 {
+		spec.RequiredEmailDomains = []string{spec.RequiredEmailDomain}
+	} else {
+		// check whether already exists within RequiredEmailDomains
+		exists := false
+		for _, existingDomain := range spec.RequiredEmailDomains {
+			if strings.EqualFold(spec.RequiredEmailDomain, existingDomain) {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			spec.RequiredEmailDomains = append(spec.RequiredEmailDomains, spec.RequiredEmailDomain)
+		}
+	}
+
+	spec.RequiredEmailDomain = ""
+	log.Info("migrating DC")
+	return true
 }
 
 // createSeedKubeconfig creates a new Secret with a kubeconfig contains only the credentials
