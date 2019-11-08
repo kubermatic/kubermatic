@@ -97,17 +97,33 @@ func filterDCsByEmail(userInfo *provider.UserInfo, list []apiv1.Datacenter) ([]a
 	}
 	var dcList []apiv1.Datacenter
 
+iterateOverDCs:
 	for _, dc := range list {
 		requiredEmailDomain := dc.Spec.RequiredEmailDomain
-		// find datacenter for specific email domain
-		if requiredEmailDomain != "" {
-			userDomain := strings.Split(userInfo.Email, "@")
-			if len(userDomain) == 2 && strings.EqualFold(userDomain[1], requiredEmailDomain) {
-				dcList = append(dcList, dc)
-			}
-		} else {
-			// find datacenter for "all" without RequiredEmailDomain field
+		requiredEmailDomainsList := dc.Spec.RequiredEmailDomains
+
+		if requiredEmailDomain == "" && len(requiredEmailDomainsList) == 0 {
+			// find datacenter for "all" without RequiredEmailDomain(s) field
 			dcList = append(dcList, dc)
+		} else {
+			// find datacenter for specific email domain
+			split := strings.Split(userInfo.Email, "@")
+			if len(split) != 2 {
+				return nil, fmt.Errorf("invalid email address")
+			}
+			userDomain := split[1]
+
+			if requiredEmailDomain != "" && strings.EqualFold(userDomain, requiredEmailDomain) {
+				dcList = append(dcList, dc)
+				continue iterateOverDCs
+			}
+
+			for _, whitelistedDomain := range requiredEmailDomainsList {
+				if whitelistedDomain != "" && strings.EqualFold(userDomain, whitelistedDomain) {
+					dcList = append(dcList, dc)
+					continue iterateOverDCs
+				}
+			}
 		}
 	}
 	return dcList, nil
@@ -214,6 +230,7 @@ func apiSpec(dc *kubermaticv1.Datacenter) (*apiv1.DatacenterSpec, error) {
 	}
 
 	spec.RequiredEmailDomain = dc.Spec.RequiredEmailDomain
+	spec.RequiredEmailDomains = dc.Spec.RequiredEmailDomains
 
 	return spec, nil
 }

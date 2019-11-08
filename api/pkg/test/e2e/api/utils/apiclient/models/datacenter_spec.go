@@ -25,8 +25,11 @@ type DatacenterSpec struct {
 	// provider
 	Provider string `json:"provider,omitempty"`
 
-	// required email domain
+	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
 	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
+
+	// required email domains
+	RequiredEmailDomains []string `json:"requiredEmailDomains"`
 
 	// seed
 	Seed string `json:"seed,omitempty"`
