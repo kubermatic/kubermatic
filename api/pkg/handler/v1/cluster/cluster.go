@@ -14,6 +14,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -21,6 +22,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
@@ -164,20 +166,20 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			}()
 		}
 
-		const maxRetries = 10
-		// Try to make sure cluster can be retrieved by the user before returning
-		for i := 0; i < maxRetries; i++ {
-			_, err = clusterProvider.Get(userInfo, newCluster.Name, &provider.ClusterGetOptions{})
-			if err == nil {
-				break
-			}
+		log := kubermaticlog.Logger.With("cluster", newCluster.Name)
 
-			// If there is some unexpected error and cluster has already been created, return it.
-			if !isStatus(err, http.StatusForbidden) {
-				return nil, common.KubernetesErrorToHTTPError(err)
+		// Block for up to 10 seconds to give the rbac controller time to create the bindings.
+		// During that time we swallow all errors
+		if err := wait.PollImmediate(time.Second, 10*time.Second, func() (bool, error) {
+			_, err := clusterProvider.Get(userInfo, newCluster.Name, &provider.ClusterGetOptions{})
+			if err != nil {
+				log.Debugw("Error when waiting for cluster to become ready after creation", zap.Error(err))
+				return false, nil
 			}
-
-			time.Sleep(time.Second)
+			return true, nil
+		}); err != nil {
+			log.Error("Timed out waiting for cluster to become ready")
+			return convertInternalClusterToExternal(newCluster), errors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
 		}
 
 		return convertInternalClusterToExternal(newCluster), nil
