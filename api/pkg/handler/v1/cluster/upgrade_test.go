@@ -295,7 +295,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{testStruct.cluster}
 			kubermaticObj = append(kubermaticObj, testStruct.existingKubermaticObjs...)
-			machineObj := []runtime.Object{}
+			var machineObj []runtime.Object
 			for _, existingMachineDeployment := range testStruct.existingMachineDeployments {
 				machineObj = append(machineObj, existingMachineDeployment)
 			}
@@ -380,9 +380,9 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes/upgrades",
 				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
-			machineObj := []runtime.Object{}
-			kubernetesObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
+			var machineObj []runtime.Object
+			var kubernetesObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			machineObj = append(machineObj, tc.ExistingMachineDeployments...)
 			ep, cs, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)

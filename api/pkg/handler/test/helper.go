@@ -102,7 +102,7 @@ const (
 )
 
 // GetUser is a convenience function for generating apiv1.User
-func GetUser(email, id, name string, admin bool) apiv1.User {
+func GetUser(email, id, name string) apiv1.User {
 	u := apiv1.User{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:   id,
@@ -178,8 +178,8 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	if err != nil {
 		return nil, nil, err
 	}
-	verifiers := []auth.TokenVerifier{}
-	extractors := []auth.TokenExtractor{}
+	var verifiers []auth.TokenVerifier
+	var extractors []auth.TokenExtractor
 	{
 		// if the API users is actually a service account use JWTTokenAuthentication
 		// that knows how to extract and verify the token
@@ -521,10 +521,6 @@ func GenServiceAccount(id, name, group, projectName string) *kubermaticv1.User {
 	return sa
 }
 
-func GenDefaultServiceAccount() *kubermaticv1.User {
-	return GenServiceAccount("1984", "default", "editors", GenDefaultProject().Name)
-}
-
 // GenAPIUser generates a API user
 func GenAPIUser(name, email string) *apiv1.User {
 	usr := GenUser("", name, email)
@@ -835,12 +831,12 @@ func CompareVersions(t *testing.T, versions, expected []*apiv1.MasterVersion) {
 	sortVersion(versions)
 	sortVersion(expected)
 
-	for i, version := range versions {
-		if !version.Version.Equal(expected[i].Version) {
-			t.Fatalf("expected version %v got %v", expected[i].Version, version.Version)
+	for i, v := range versions {
+		if !v.Version.Equal(expected[i].Version) {
+			t.Fatalf("expected version %v got %v", expected[i].Version, v.Version)
 		}
-		if version.Default != expected[i].Default {
-			t.Fatalf("expected flag %v got %v", expected[i].Default, version.Default)
+		if v.Default != expected[i].Default {
+			t.Fatalf("expected flag %v got %v", expected[i].Default, v.Default)
 		}
 	}
 }
