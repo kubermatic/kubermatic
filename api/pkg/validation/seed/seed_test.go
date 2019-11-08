@@ -7,6 +7,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -313,7 +314,7 @@ func TestValidate(t *testing.T) {
 			}
 
 			err := sv.validate(tc.seedToValidate,
-				fakectrlruntimeclient.NewFakeClient(tc.existingClusters...),
+				fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingClusters...),
 				tc.existingSeeds, tc.isDelete)
 
 			if (err != nil) != tc.errExpected {
