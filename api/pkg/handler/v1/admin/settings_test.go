@@ -54,11 +54,11 @@ func TestGetGlobalSettings(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			kubernetesObj := []runtime.Object{}
-			kubeObj := []runtime.Object{}
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
 			req := httptest.NewRequest("GET", "/api/v1/admin/settings", strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -118,11 +118,11 @@ func TestUpdateGloablSettings(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			kubernetesObj := []runtime.Object{}
-			kubeObj := []runtime.Object{}
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
 			req := httptest.NewRequest("PATCH", "/api/v1/admin/settings", strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {

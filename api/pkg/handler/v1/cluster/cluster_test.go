@@ -79,6 +79,7 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
+			var kubermaticObj []runtime.Object
 			// validate if deletion was successful
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s", test.GenDefaultProject().Name, "clusterAbcID"), strings.NewReader(""))
 
@@ -87,7 +88,6 @@ func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 			}
 
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*test.GenDefaultAPIUser(), nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -231,7 +231,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 	// validate if deletion was successful
 	req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s", testcase.ProjectToSync, testcase.ClusterToSync), strings.NewReader(testcase.Body))
 	res := httptest.NewRecorder()
-	kubermaticObj := []runtime.Object{}
+	var kubermaticObj []runtime.Object
 	kubermaticObj = append(kubermaticObj, testcase.ExistingKubermaticObjs...)
 	ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*testcase.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 	if err != nil {
@@ -354,7 +354,7 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 				var err error
 				req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/sshkeys/%s", tc.ProjectToSync, tc.ClusterToSync, tc.KeyToDelete), strings.NewReader(tc.Body))
 				res := httptest.NewRecorder()
-				kubermaticObj := []runtime.Object{}
+				var kubermaticObj []runtime.Object
 				kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 				ep, err = test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 				if err != nil {
@@ -480,7 +480,7 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/sshkeys", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -583,7 +583,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/sshkeys/%s", tc.ProjectToSync, tc.ClusterToSync, tc.SSHKeyID), nil)
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -800,7 +800,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters", tc.ProjectToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
 			if tc.ExistingProject != nil {
 				kubermaticObj = append(kubermaticObj, tc.ExistingProject)
 			}
@@ -879,7 +879,7 @@ func TestGetClusterHealth(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/health", tc.ProjectToSync, tc.ClusterToGet), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -1008,7 +1008,7 @@ func TestPatchCluster(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			machineObj := []runtime.Object{}
+			var machineObj []runtime.Object
 			for _, existingMachine := range tc.ExistingMachines {
 				machineObj = append(machineObj, existingMachine)
 			}
@@ -1076,7 +1076,7 @@ func TestGetCluster(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s", test.ProjectName, tc.ClusterToGet), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -1181,7 +1181,7 @@ func TestListClusters(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters", test.ProjectName), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -1272,7 +1272,7 @@ func TestListClustersForProject(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/clusters", test.ProjectName), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -1504,8 +1504,9 @@ func TestGetClusterMetrics(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			kubernetesObj := []runtime.Object{}
-			kubeObj := []runtime.Object{}
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
+			var kubermaticObj []runtime.Object
 			for _, existingMetric := range tc.ExistingPodMetrics {
 				kubernetesObj = append(kubernetesObj, existingMetric)
 			}
@@ -1517,7 +1518,7 @@ func TestGetClusterMetrics(t *testing.T) {
 			}
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/metrics", test.ProjectName, tc.ClusterToGet), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -1570,12 +1571,12 @@ func TestListNamespace(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			kubernetesObj := []runtime.Object{}
-			kubeObj := []runtime.Object{}
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
 			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/namespaces", test.ProjectName, tc.clusterToGet), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
