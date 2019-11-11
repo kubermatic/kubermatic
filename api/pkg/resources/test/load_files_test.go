@@ -16,8 +16,8 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	clustercontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
-	monitoringcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
+	kubernetescontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/kubernetes"
+	monitoringcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/monitoring"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
@@ -574,7 +574,7 @@ func TestLoadFiles(t *testing.T) {
 					false)
 
 				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter
-				deploymentCreators = append(deploymentCreators, clustercontroller.GetDeploymentCreators(data, true)...)
+				deploymentCreators = append(deploymentCreators, kubernetescontroller.GetDeploymentCreators(data, true)...)
 				deploymentCreators = append(deploymentCreators, monitoringcontroller.GetDeploymentCreators(data)...)
 				for _, create := range deploymentCreators {
 					_, creator := create()
@@ -590,7 +590,7 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				var namedConfigMapCreatorGetters []reconciling.NamedConfigMapCreatorGetter
-				namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, clustercontroller.GetConfigMapCreators(data)...)
+				namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, kubernetescontroller.GetConfigMapCreators(data)...)
 				namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, monitoringcontroller.GetConfigMapCreators(data)...)
 				for _, namedGetter := range namedConfigMapCreatorGetters {
 					name, create := namedGetter()
@@ -603,7 +603,7 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				serviceCreators := clustercontroller.GetServiceCreators(data)
+				serviceCreators := kubernetescontroller.GetServiceCreators(data)
 				for _, creatorGetter := range serviceCreators {
 					name, create := creatorGetter()
 					res, err := create(&corev1.Service{})
@@ -616,7 +616,7 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				var statefulSetCreators []reconciling.NamedStatefulSetCreatorGetter
-				statefulSetCreators = append(statefulSetCreators, clustercontroller.GetStatefulSetCreators(data, false)...)
+				statefulSetCreators = append(statefulSetCreators, kubernetescontroller.GetStatefulSetCreators(data, false)...)
 				statefulSetCreators = append(statefulSetCreators, monitoringcontroller.GetStatefulSetCreators(data)...)
 				for _, creatorGetter := range statefulSetCreators {
 					_, create := creatorGetter()
@@ -640,7 +640,7 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				for _, creatorGetter := range clustercontroller.GetPodDisruptionBudgetCreators(data) {
+				for _, creatorGetter := range kubernetescontroller.GetPodDisruptionBudgetCreators(data) {
 					name, create := creatorGetter()
 					res, err := create(&policyv1beta1.PodDisruptionBudget{})
 					if err != nil {
@@ -655,7 +655,7 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				for _, creatorGetter := range clustercontroller.GetCronJobCreators(data) {
+				for _, creatorGetter := range kubernetescontroller.GetCronJobCreators(data) {
 					_, create := creatorGetter()
 					res, err := create(&batchv1beta1.CronJob{})
 					if err != nil {

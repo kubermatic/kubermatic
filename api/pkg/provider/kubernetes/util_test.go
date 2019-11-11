@@ -12,7 +12,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/cloud"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
