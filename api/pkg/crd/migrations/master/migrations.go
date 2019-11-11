@@ -2,6 +2,7 @@ package master
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -178,6 +179,10 @@ func createSeedKubeconfig(ctx context.Context, log *zap.SugaredLogger, client ct
 // required parts to connect to the given seed. An error is returned when the given seed
 // has no valid matching context in the kubeconfig.
 func singleSeedKubeconfig(seed *kubermaticv1.Seed, kubeconfig *clientcmdapi.Config) (*clientcmdapi.Config, error) {
+	if kubeconfig == nil {
+		return nil, errors.New("no kubeconfig defined")
+	}
+
 	contextName := seed.Name
 
 	context, exists := kubeconfig.Contexts[contextName]
