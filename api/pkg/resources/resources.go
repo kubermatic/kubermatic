@@ -659,8 +659,8 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 	return true
 }
 
-func getECDSAClusterCAFromLister(ctx context.Context, name string, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
-	cert, key, err := getClusterCAFromLister(ctx, name, cluster, client)
+func getECDSAClusterCAFromLister(ctx context.Context, namespace, name string, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
+	cert, key, err := getClusterCAFromLister(ctx, namespace, name, client)
 	if err != nil {
 		return nil, err
 	}
@@ -671,8 +671,8 @@ func getECDSAClusterCAFromLister(ctx context.Context, name string, cluster *kube
 	return &ECDSAKeyPair{Cert: cert, Key: ecdsaKey}, nil
 }
 
-func getRSAClusterCAFromLister(ctx context.Context, name string, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
-	cert, key, err := getClusterCAFromLister(ctx, name, cluster, client)
+func getRSAClusterCAFromLister(ctx context.Context, namespace, name string, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
+	cert, key, err := getClusterCAFromLister(ctx, namespace, name, client)
 	if err != nil {
 		return nil, err
 	}
@@ -684,9 +684,9 @@ func getRSAClusterCAFromLister(ctx context.Context, name string, cluster *kuberm
 }
 
 // getClusterCAFromLister returns the CA of the cluster from the lister
-func getClusterCAFromLister(ctx context.Context, name string, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*x509.Certificate, interface{}, error) {
+func getClusterCAFromLister(ctx context.Context, namespace, name string, client ctrlruntimeclient.Client) (*x509.Certificate, interface{}, error) {
 	caSecret := &corev1.Secret{}
-	caSecretKey := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: name}
+	caSecretKey := types.NamespacedName{Namespace: namespace, Name: name}
 	if err := client.Get(ctx, caSecretKey, caSecret); err != nil {
 		return nil, nil, fmt.Errorf("unable to check if a CA cert already exists: %v", err)
 	}
@@ -736,18 +736,18 @@ func GetDexCAFromFile(caBundleFilePath string) ([]*x509.Certificate, error) {
 }
 
 // GetClusterRootCA returns the root CA of the cluster from the lister
-func GetClusterRootCA(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
-	return getRSAClusterCAFromLister(ctx, CASecretName, cluster, client)
+func GetClusterRootCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
+	return getRSAClusterCAFromLister(ctx, namespace, CASecretName, client)
 }
 
 // GetClusterFrontProxyCA returns the frontproxy CA of the cluster from the lister
-func GetClusterFrontProxyCA(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
-	return getRSAClusterCAFromLister(ctx, FrontProxyCASecretName, cluster, client)
+func GetClusterFrontProxyCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
+	return getRSAClusterCAFromLister(ctx, namespace, FrontProxyCASecretName, client)
 }
 
 // GetOpenVPNCA returns the OpenVPN CA of the cluster from the lister
-func GetOpenVPNCA(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
-	return getECDSAClusterCAFromLister(ctx, OpenVPNCASecretName, cluster, client)
+func GetOpenVPNCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
+	return getECDSAClusterCAFromLister(ctx, namespace, OpenVPNCASecretName, client)
 }
 
 // ClusterIPForService returns the cluster ip for the given service

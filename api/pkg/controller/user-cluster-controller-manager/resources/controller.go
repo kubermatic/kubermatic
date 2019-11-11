@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,33 +41,29 @@ const (
 // Add creates a new user cluster controller.
 func Add(
 	mgr manager.Manager,
+	seedMgr manager.Manager,
 	openshift bool,
 	version string,
 	namespace string,
 	cloudProviderName string,
-	caCert *triple.KeyPair,
 	clusterURL *url.URL,
 	openvpnServerPort int,
-	userSSHKeys map[string][]byte,
 	registerReconciledCheck func(name string, check healthcheck.Check),
-	openVPNCA *resources.ECDSAKeyPair,
 	cloudCredentialSecretTemplate *corev1.Secret,
 	log *zap.SugaredLogger) error {
 	reconciler := &reconciler{
 		Client:                        mgr.GetClient(),
+		seedClient:                    seedMgr.GetClient(),
 		cache:                         mgr.GetCache(),
 		openshift:                     openshift,
 		version:                       version,
 		rLock:                         &sync.Mutex{},
 		namespace:                     namespace,
-		caCert:                        caCert,
 		clusterURL:                    clusterURL,
 		openvpnServerPort:             openvpnServerPort,
-		openVPNCA:                     openVPNCA,
 		cloudCredentialSecretTemplate: cloudCredentialSecretTemplate,
 		log:                           log,
 		platform:                      cloudProviderName,
-		userSSHKeys:                   userSSHKeys,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -131,6 +128,19 @@ func Add(
 		}
 	}
 
+	seedTypesToWatch := []runtime.Object{
+		&corev1.Secret{},
+	}
+	for _, t := range seedTypesToWatch {
+		seedWatch := &source.Kind{Type: t}
+		if err := seedWatch.InjectCache(seedMgr.GetCache()); err != nil {
+			return fmt.Errorf("failed to inject cache in seed cluster watch for %T: %v", t, err)
+		}
+		if err := c.Watch(seedWatch, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
+			return fmt.Errorf("failed to watch %T in seed: %v", t, err)
+		}
+	}
+
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
 	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func() error {
 		reconciler.rLock.Lock()
@@ -147,17 +157,15 @@ func Add(
 // reconcileUserCluster reconciles objects in the user cluster
 type reconciler struct {
 	client.Client
+	seedClient                    client.Client
 	openshift                     bool
 	version                       string
 	cache                         cache.Cache
 	namespace                     string
-	caCert                        *triple.KeyPair
 	clusterURL                    *url.URL
 	openvpnServerPort             int
-	openVPNCA                     *resources.ECDSAKeyPair
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
-	userSSHKeys                   map[string][]byte
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
@@ -176,4 +184,27 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	defer r.rLock.Unlock()
 	r.reconciledSuccessfullyOnce = true
 	return reconcile.Result{}, nil
+}
+
+func (r *reconciler) caCert(ctx context.Context) (*triple.KeyPair, error) {
+	return resources.GetClusterRootCA(ctx, r.namespace, r.seedClient)
+}
+
+func (r *reconciler) openVPNCA(ctx context.Context) (*resources.ECDSAKeyPair, error) {
+	return resources.GetOpenVPNCA(ctx, r.namespace, r.seedClient)
+}
+
+func (r *reconciler) userSSHKeys(ctx context.Context) (map[string][]byte, error) {
+	secret := &corev1.Secret{}
+	if err := r.seedClient.Get(
+		ctx,
+		types.NamespacedName{Namespace: r.namespace, Name: resources.UserSSHKeys},
+		secret,
+	); err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return secret.Data, nil
 }
