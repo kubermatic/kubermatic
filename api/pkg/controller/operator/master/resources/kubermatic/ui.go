@@ -1,6 +1,7 @@
 package kubermatic
 
 import (
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -30,7 +31,7 @@ func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcil
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{
-					Name: dockercfgSecretName,
+					Name: common.DockercfgSecretName,
 				},
 			}
 
@@ -82,10 +83,8 @@ func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcil
 }
 
 func UIPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
-	name := "kubermatic-ui"
-
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
-		return name, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+		return "kubermatic-ui", func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
 			min := intstr.FromInt(1)
 
 			pdb.Spec.MinAvailable = &min
