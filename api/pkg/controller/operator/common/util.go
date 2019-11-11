@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -25,10 +25,6 @@ const (
 	// ManagedByLabel is the label used to identify the resources
 	// created by this controller.
 	ManagedByLabel = "app.kubernetes.io/managed-by"
-
-	// ConfigurationOwnerAnnotation is the annotation containing a resource's
-	// owning configuration name and namespace.
-	ConfigurationOwnerAnnotation = "operator.kubermatic.io/configuration"
 )
 
 func StringifyFeatureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string {
@@ -40,10 +36,9 @@ func StringifyFeatureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string
 	return strings.Join(features, ",")
 }
 
-// OwnerLabelsModifierFactory is generating a new ObjectModifier that wraps an ObjectCreator
-// and takes care of applying the default labels and annotations from this operator.
-// These are then used to establish a weak ownership.
-func OwnerLabelsModifierFactory(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.ObjectModifier {
+// OwnershipModifierFactory is generating a new ObjectModifier that wraps an ObjectCreator
+// and takes care of applying the ownership and other labels for all managed objects.
+func OwnershipModifierFactory(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.ObjectModifier {
 	return func(create reconciling.ObjectCreator) reconciling.ObjectCreator {
 		return func(existing runtime.Object) (runtime.Object, error) {
 			obj, err := create(existing)
@@ -56,18 +51,14 @@ func OwnerLabelsModifierFactory(cfg *operatorv1alpha1.KubermaticConfiguration) r
 				return obj, nil
 			}
 
-			annotations := o.GetAnnotations()
-			if annotations == nil {
-				annotations = make(map[string]string)
-			}
-
-			identifier, err := cache.MetaNamespaceKeyFunc(cfg)
-			if err != nil {
-				return obj, fmt.Errorf("failed to determine KubermaticConfiguration string key: %v", err)
-			}
-
-			annotations[ConfigurationOwnerAnnotation] = identifier
-			o.SetAnnotations(annotations)
+			o.SetOwnerReferences([]metav1.OwnerReference{{
+				APIVersion:         "operator.kubermatic.io/v1alpha1",
+				Kind:               "KubermaticConfiguration",
+				Name:               cfg.Name,
+				UID:                cfg.UID,
+				Controller:         pointer.BoolPtr(true),
+				BlockOwnerDeletion: pointer.BoolPtr(true),
+			}})
 
 			labels := o.GetLabels()
 			if labels == nil {

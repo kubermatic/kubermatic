@@ -17,7 +17,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -84,24 +83,18 @@ func Add(
 			return nil
 		}
 
-		owner := a.Meta.GetAnnotations()[common.ConfigurationOwnerAnnotation]
-		if owner == "" {
-			return nil
+		for _, ref := range a.Meta.GetOwnerReferences() {
+			if ref.Kind == "KubermaticConfiguration" {
+				return []reconcile.Request{{
+					NamespacedName: types.NamespacedName{
+						Namespace: a.Meta.GetNamespace(),
+						Name:      ref.Name,
+					},
+				}}
+			}
 		}
 
-		ns, n, err := cache.SplitMetaNamespaceKey(owner)
-		if err != nil {
-			return nil
-		}
-
-		return []reconcile.Request{
-			{
-				NamespacedName: types.NamespacedName{
-					Namespace: ns,
-					Name:      n,
-				},
-			},
-		}
+		return nil
 	})
 
 	typesToWatch := []runtime.Object{
