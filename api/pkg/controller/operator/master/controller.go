@@ -17,6 +17,8 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -72,9 +74,9 @@ func Add(
 		}
 	})
 
-	dummyConfig := &operatorv1alpha1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: dummyConfig}, kubermaticConfigHandler, namespacePredicate, workerNamePredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %v", dummyConfig, err)
+	cfg := &operatorv1alpha1.KubermaticConfiguration{}
+	if err := c.Watch(&source.Kind{Type: cfg}, kubermaticConfigHandler, namespacePredicate, workerNamePredicate); err != nil {
+		return fmt.Errorf("failed to create watcher for %T: %v", cfg, err)
 	}
 
 	// for each child put the parent configuration onto the queue
@@ -83,18 +85,30 @@ func Add(
 			return nil
 		}
 
-		for _, ref := range a.Meta.GetOwnerReferences() {
-			if ref.Kind == dummyConfig.Kind && ref.APIVersion == dummyConfig.APIVersion {
-				return []reconcile.Request{{
-					NamespacedName: types.NamespacedName{
-						Namespace: a.Meta.GetNamespace(),
-						Name:      ref.Name,
-					},
-				}}
-			}
+		configs := &operatorv1alpha1.KubermaticConfigurationList{}
+		options := &ctrlruntimeclient.ListOptions{Namespace: namespace}
+
+		if err := mgr.GetClient().List(ctx, configs, options); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list KubermaticConfigurations: %v", err))
+			return nil
 		}
 
-		return nil
+		if len(configs.Items) == 0 {
+			log.Warnw("could not find KubermaticConfiguration this object belongs to", "object", a)
+			return nil
+		}
+
+		if len(configs.Items) > 1 {
+			log.Warnw("found multiple KubermaticConfigurations in this namespace, refusing to guess the owner", "namespace", namespace)
+			return nil
+		}
+
+		return []reconcile.Request{{
+			NamespacedName: types.NamespacedName{
+				Namespace: configs.Items[0].Namespace,
+				Name:      configs.Items[0].Name,
+			},
+		}}
 	})
 
 	typesToWatch := []runtime.Object{
