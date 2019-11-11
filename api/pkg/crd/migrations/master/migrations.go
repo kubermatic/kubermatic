@@ -3,7 +3,6 @@ package master
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -144,12 +143,19 @@ func migrateAllDatacenterEmailRestrictions(ctx context.Context, log *zap.Sugared
 
 		anyDCchanged := false
 		for dcName, dc := range seed.Spec.Datacenters {
-			thisDCchanged := migrateDatacenterEmailRestrictions(log.With("datacenter", dcName), &dc.Spec)
-			anyDCchanged = anyDCchanged || thisDCchanged
-			if thisDCchanged {
-				log.Warn("datacenter %q is using the deprecated field `requiredEmailDomain` - plese migrate to `requiredEmailDomains` instead", dcName)
-				seed.Spec.Datacenters[dcName] = dc
+			if dc.Spec.RequiredEmailDomain == "" {
+				continue
 			}
+
+			if len(dc.Spec.RequiredEmailDomains) > 0 {
+				return fmt.Errorf("datacenter %s->%s has both `requiredEmailDomain` and `requiredEmailDomains` set", seed.Name, dcName)
+			}
+
+			dc.Spec.RequiredEmailDomains = []string{dc.Spec.RequiredEmailDomain}
+			dc.Spec.RequiredEmailDomain = ""
+			seed.Spec.Datacenters[dcName] = dc
+			anyDCchanged = true
+			log.Warn("datacenter %q is using the deprecated field `requiredEmailDomain` - plese migrate to `requiredEmailDomains` instead", dcName)
 		}
 
 		// Update the seed object only if any of the DCs were actually migrated.
@@ -161,36 +167,6 @@ func migrateAllDatacenterEmailRestrictions(ctx context.Context, log *zap.Sugared
 	}
 
 	return nil
-}
-
-// migrateDatacenterEmailRestrictions moves the values of `requiredEmailDomain` to `requiredEmailDomains`
-// and clears the value of `requiredEmailDomain`.
-// It returns a bool specifying whether any changes to the spec were made.
-func migrateDatacenterEmailRestrictions(log *zap.SugaredLogger, spec *kubermaticv1.DatacenterSpec) bool {
-	if spec.RequiredEmailDomain == "" {
-		return false
-	}
-
-	if len(spec.RequiredEmailDomains) == 0 {
-		spec.RequiredEmailDomains = []string{spec.RequiredEmailDomain}
-	} else {
-		// check whether already exists within RequiredEmailDomains
-		exists := false
-		for _, existingDomain := range spec.RequiredEmailDomains {
-			if strings.EqualFold(spec.RequiredEmailDomain, existingDomain) {
-				exists = true
-				break
-			}
-		}
-
-		if !exists {
-			spec.RequiredEmailDomains = append(spec.RequiredEmailDomains, spec.RequiredEmailDomain)
-		}
-	}
-
-	spec.RequiredEmailDomain = ""
-	log.Info("migrating DC")
-	return true
 }
 
 // createSeedKubeconfig creates a new Secret with a kubeconfig contains only the credentials

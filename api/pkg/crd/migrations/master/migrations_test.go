@@ -18,6 +18,7 @@ func TestMigrateAllDatacenterEmailRestrictions(t *testing.T) {
 	seedName := "example-seed"
 	nsName := "example-namespace"
 	dcName := "example-datacenter"
+	dcName2 := "another-datacenter"
 	domain := "ripe.net"
 	unmigratedSeed := &kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
@@ -30,6 +31,9 @@ func TestMigrateAllDatacenterEmailRestrictions(t *testing.T) {
 					Spec: kubermaticv1.DatacenterSpec{
 						RequiredEmailDomain: domain,
 					},
+				},
+				dcName2: kubermaticv1.Datacenter{
+					Spec: kubermaticv1.DatacenterSpec{},
 				},
 			},
 		},
@@ -45,6 +49,9 @@ func TestMigrateAllDatacenterEmailRestrictions(t *testing.T) {
 					Spec: kubermaticv1.DatacenterSpec{
 						RequiredEmailDomains: []string{domain},
 					},
+				},
+				dcName2: kubermaticv1.Datacenter{
+					Spec: kubermaticv1.DatacenterSpec{},
 				},
 			},
 		},
@@ -63,4 +70,31 @@ func TestMigrateAllDatacenterEmailRestrictions(t *testing.T) {
 	err = client.Get(context.Background(), key, migratedSeed)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSeed, migratedSeed)
+}
+
+func TestMigrateAllDatacenterEmailRestrictionsInvalid(t *testing.T) {
+	seedName := "example-seed"
+	nsName := "example-namespace"
+	dcName := "example-datacenter"
+	domain := "ripe.net"
+	unmigratedSeed := &kubermaticv1.Seed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      seedName,
+			Namespace: nsName,
+		},
+		Spec: kubermaticv1.SeedSpec{
+			Datacenters: map[string]kubermaticv1.Datacenter{
+				dcName: kubermaticv1.Datacenter{
+					Spec: kubermaticv1.DatacenterSpec{
+						RequiredEmailDomain:  domain,
+						RequiredEmailDomains: []string{domain},
+					},
+				},
+			},
+		},
+	}
+
+	client := fakectrlruntimeclient.NewFakeClient(unmigratedSeed)
+	err := migrateAllDatacenterEmailRestrictions(context.Background(), zaptest.NewLogger(t).Sugar(), client, nsName, MigrationOptions{})
+	assert.Error(t, err, "datacenter %s->%s has both `requiredEmailDomain` and `requiredEmailDomains` set", seedName, dcName)
 }
