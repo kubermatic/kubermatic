@@ -138,6 +138,7 @@ func Add(
 
 	typesToWatch := []runtime.Object{
 		&corev1.Service{},
+		&corev1.ServiceAccount{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
 		&corev1.Namespace{},
@@ -146,6 +147,8 @@ func Add(
 		&batchv1beta1.CronJob{},
 		&policyv1beta1.PodDisruptionBudget{},
 		&autoscalingv1beta2.VerticalPodAutoscaler{},
+		&rbacv1.Role{},
+		&rbacv1.RoleBinding{},
 	}
 
 	for _, t := range typesToWatch {
@@ -280,6 +283,18 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	if err := r.secrets(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Secrets: %v", err)
+	}
+
+	if err := r.ensureServiceAccounts(ctx, cluster); err != nil {
+		return nil, err
+	}
+
+	if err := r.ensureRoles(ctx, cluster); err != nil {
+		return nil, err
+	}
+
+	if err := r.ensureRoleBindings(ctx, cluster); err != nil {
+		return nil, err
 	}
 
 	if err := r.statefulSets(ctx, osData); err != nil {
@@ -809,6 +824,38 @@ func (r *Reconciler) services(ctx context.Context, osData *openshiftData) error 
 			nn(osData.Cluster().Status.NamespaceName, serviceName), reconciling.ServiceObjectWrapper(serviceCreator), r.Client, &corev1.Service{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Service %s: %v", serviceName, err)
 		}
+	}
+	return nil
+}
+
+func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.Cluster) error {
+	namedServiceAccountCreatorGetters := []reconciling.NamedServiceAccountCreatorGetter{
+		usercluster.ServiceAccountCreator,
+	}
+	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
+		return fmt.Errorf("failed to ensure ServiceAccounts: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) error {
+	namedRoleCreatorGetters := []reconciling.NamedRoleCreatorGetter{
+		usercluster.RoleCreator,
+	}
+	if err := reconciling.ReconcileRoles(ctx, namedRoleCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
+		return fmt.Errorf("failed to ensure Roles: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Cluster) error {
+	namedRoleBindingCreatorGetters := []reconciling.NamedRoleBindingCreatorGetter{
+		usercluster.RoleBindingCreator,
+	}
+	if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
+		return fmt.Errorf("failed to ensure RoleBindings: %v", err)
 	}
 	return nil
 }

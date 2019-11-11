@@ -18,6 +18,7 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -150,6 +151,7 @@ func Add(
 
 	typesToWatch := []runtime.Object{
 		&corev1.Service{},
+		&corev1.ServiceAccount{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
 		&corev1.Namespace{},
@@ -158,6 +160,8 @@ func Add(
 		&batchv1beta1.CronJob{},
 		&policyv1beta1.PodDisruptionBudget{},
 		&autoscalingv1beta2.VerticalPodAutoscaler{},
+		&rbacv1.Role{},
+		&rbacv1.RoleBinding{},
 	}
 
 	for _, t := range typesToWatch {
