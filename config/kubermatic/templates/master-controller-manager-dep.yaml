@@ -48,6 +48,7 @@ spec:
         {{- else }}
         - -v=2
         {{- end }}
+        - -pprof-listen-address={{ .Values.kubermatic.masterController.pprofEndpoint }}
         image: '{{ .Values.kubermatic.masterController.image.repository }}:{{ .Values.kubermatic.masterController.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.masterController.image.pullPolicy }}
         env:
