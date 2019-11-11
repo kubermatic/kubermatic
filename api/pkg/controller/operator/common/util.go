@@ -52,8 +52,8 @@ func OwnershipModifierFactory(cfg *operatorv1alpha1.KubermaticConfiguration) rec
 			}
 
 			o.SetOwnerReferences([]metav1.OwnerReference{{
-				APIVersion:         "operator.kubermatic.io/v1alpha1",
-				Kind:               "KubermaticConfiguration",
+				APIVersion:         cfg.APIVersion,
+				Kind:               cfg.Kind,
 				Name:               cfg.Name,
 				UID:                cfg.UID,
 				Controller:         pointer.BoolPtr(true),

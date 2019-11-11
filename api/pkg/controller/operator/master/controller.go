@@ -72,9 +72,9 @@ func Add(
 		}
 	})
 
-	obj := &operatorv1alpha1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: obj}, kubermaticConfigHandler, namespacePredicate, workerNamePredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %v", obj, err)
+	dummyConfig := &operatorv1alpha1.KubermaticConfiguration{}
+	if err := c.Watch(&source.Kind{Type: dummyConfig}, kubermaticConfigHandler, namespacePredicate, workerNamePredicate); err != nil {
+		return fmt.Errorf("failed to create watcher for %T: %v", dummyConfig, err)
 	}
 
 	// for each child put the parent configuration onto the queue
@@ -84,7 +84,7 @@ func Add(
 		}
 
 		for _, ref := range a.Meta.GetOwnerReferences() {
-			if ref.Kind == "KubermaticConfiguration" {
+			if ref.Kind == dummyConfig.Kind && ref.APIVersion == dummyConfig.APIVersion {
 				return []reconcile.Request{{
 					NamespacedName: types.NamespacedName{
 						Namespace: a.Meta.GetNamespace(),
