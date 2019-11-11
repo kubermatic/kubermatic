@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/ecdsa"
-	"crypto/rsa"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -39,7 +38,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/klog"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -55,8 +53,6 @@ type controllerRunOptions struct {
 	version                       string
 	networks                      networkFlags
 	namespace                     string
-	caPath                        string
-	caKeyPath                     string
 	clusterURL                    string
 	openvpnServerPort             int
 	openvpnCACertFilePath         string
@@ -79,8 +75,6 @@ func main() {
 	flag.StringVar(&runOp.version, "version", "", "The version of the cluster")
 	flag.Var(&runOp.networks, "ipam-controller-network", "The networks from which the ipam controller should allocate IPs for machines (e.g.: .--ipam-controller-network=10.0.0.0/16,10.0.0.1,8.8.8.8 --ipam-controller-network=192.168.5.0/24,192.168.5.1,1.1.1.1,8.8.4.4)")
 	flag.StringVar(&runOp.namespace, "namespace", "", "Namespace in which the cluster is running in")
-	flag.StringVar(&runOp.caPath, "ca-cert", "ca.crt", "Path to the CA cert file")
-	flag.StringVar(&runOp.caKeyPath, "ca-key", "ca.key", "Path to the ca key file")
 	flag.StringVar(&runOp.clusterURL, "cluster-url", "", "Cluster URL")
 	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
 	flag.StringVar(&runOp.openvpnCACertFilePath, "openvpn-ca-cert-file", "", "Path to the OpenVPN CA cert file")
@@ -107,9 +101,6 @@ func main() {
 	if runOp.namespace == "" {
 		log.Fatal("-namespace must be set")
 	}
-	if runOp.caPath == "" {
-		log.Fatal("-ca-cert must be set")
-	}
 	if runOp.clusterURL == "" {
 		log.Fatal("-cluster-url must be set")
 	}
@@ -120,31 +111,6 @@ func main() {
 	if runOp.openvpnServerPort == 0 {
 		log.Fatal("-openvpn-server-port must be set")
 	}
-
-	caBytes, err := ioutil.ReadFile(runOp.caPath)
-	if err != nil {
-		log.Fatalw("Failed to read CA cert", zap.Error(err))
-	}
-	certs, err := certutil.ParseCertsPEM(caBytes)
-	if err != nil {
-		log.Fatalw("Failed to parse certs", zap.Error(err))
-	}
-	if len(certs) != 1 {
-		log.Fatalw("Did not find exactly one certificate in the given CA", "certificates-count", len(certs))
-	}
-	caKeyBytes, err := ioutil.ReadFile(runOp.caKeyPath)
-	if err != nil {
-		log.Fatalw("Failed to read ca-key file", zap.Error(err))
-	}
-	caKey, err := triple.ParsePrivateKeyPEM(caKeyBytes)
-	if err != nil {
-		log.Fatalw("Failed to parse ca-key", zap.Error(err))
-	}
-	rsaCAKey, isRSAKey := caKey.(*rsa.PrivateKey)
-	if !isRSAKey {
-		log.Fatalf("Expected ca-key to be an RSA key, but was a %T", caKey)
-	}
-	caCert := &triple.KeyPair{Cert: certs[0], Key: rsaCAKey}
 
 	openVPNCACertBytes, err := ioutil.ReadFile(runOp.openvpnCACertFilePath)
 	if err != nil {
@@ -253,11 +219,11 @@ func main() {
 	// Setup all Controllers
 	log.Info("registering controllers")
 	if err := usercluster.Add(mgr,
+		seedMgr,
 		runOp.openshift,
 		runOp.version,
 		runOp.namespace,
 		runOp.cloudProviderName,
-		caCert,
 		clusterURL,
 		runOp.openvpnServerPort,
 		userSSHKeys,

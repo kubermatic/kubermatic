@@ -29,7 +29,7 @@ import (
 
 // Reconcile creates, updates, or deletes Kubernetes resources to match the desired state.
 func (r *reconciler) reconcile(ctx context.Context) error {
-	caCert, err := r.caCert()
+	caCert, err := r.caCert(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get caCert: %v", err)
 	}

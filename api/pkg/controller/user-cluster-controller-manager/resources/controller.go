@@ -192,5 +192,5 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *reconciler) caCert(ctx context.Context) (*triple.KeyPair, error) {
-	return nil, nil
+	return resources.GetClusterRootCA(ctx, r.namespace, r.seedClient)
 }

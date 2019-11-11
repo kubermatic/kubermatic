@@ -104,8 +104,6 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				"-metrics-listen-address", "0.0.0.0:8085",
 				"-health-listen-address", "0.0.0.0:8086",
 				"-namespace", "$(NAMESPACE)",
-				"-ca-cert", "/etc/kubernetes/pki/ca/ca.crt",
-				"-ca-key", "/etc/kubernetes/pki/ca/ca.key",
 				"-cluster-url", data.Cluster().Address.URL,
 				"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
 				"-overwrite-registry", data.ImageRegistry(""),
@@ -171,11 +169,6 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 							ReadOnly:  true,
 						},
 						{
-							Name:      resources.CASecretName,
-							MountPath: "/etc/kubernetes/pki/ca",
-							ReadOnly:  true,
-						},
-						{
 							Name:      resources.OpenVPNCASecretName,
 							MountPath: openvpnCAMountDir,
 							ReadOnly:  true,
@@ -208,14 +201,6 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
-				},
-			},
-		},
-		{
-			Name: resources.CASecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.CASecretName,
 				},
 			},
 		},
