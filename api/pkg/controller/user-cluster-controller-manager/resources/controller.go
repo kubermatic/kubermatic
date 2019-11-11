@@ -49,7 +49,6 @@ func Add(
 	openvpnServerPort int,
 	userSSHKeys map[string][]byte,
 	registerReconciledCheck func(name string, check healthcheck.Check),
-	openVPNCA *resources.ECDSAKeyPair,
 	cloudCredentialSecretTemplate *corev1.Secret,
 	log *zap.SugaredLogger) error {
 	reconciler := &reconciler{
@@ -62,7 +61,6 @@ func Add(
 		namespace:                     namespace,
 		clusterURL:                    clusterURL,
 		openvpnServerPort:             openvpnServerPort,
-		openVPNCA:                     openVPNCA,
 		cloudCredentialSecretTemplate: cloudCredentialSecretTemplate,
 		log:                           log,
 		platform:                      cloudProviderName,
@@ -167,7 +165,6 @@ type reconciler struct {
 	namespace                     string
 	clusterURL                    *url.URL
 	openvpnServerPort             int
-	openVPNCA                     *resources.ECDSAKeyPair
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
 	userSSHKeys                   map[string][]byte
@@ -193,4 +190,8 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 func (r *reconciler) caCert(ctx context.Context) (*triple.KeyPair, error) {
 	return resources.GetClusterRootCA(ctx, r.namespace, r.seedClient)
+}
+
+func (r *reconciler) openVPNCA(ctx context.Context) (*resources.ECDSAKeyPair, error) {
+	return resources.GetOpenVPNCA(ctx, r.namespace, r.seedClient)
 }

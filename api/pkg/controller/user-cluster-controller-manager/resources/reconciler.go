@@ -19,6 +19,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -33,8 +34,13 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get caCert: %v", err)
 	}
+	openVPNCACert, err := r.openVPNCA(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get openVPN CA cert: %v", err)
+	}
 	data := reconcileData{
-		caCert: caCert,
+		caCert:        caCert,
+		openVPNCACert: openVPNCACert,
 	}
 
 	// Must be first because of openshift
@@ -385,7 +391,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 
 func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedSecretCreatorGetter{
-		openvpn.ClientCertificate(r.openVPNCA),
+		openvpn.ClientCertificate(data.openVPNCACert),
 		usersshkeys.SecretCreator(r.userSSHKeys),
 	}
 	if r.openshift {
@@ -497,5 +503,6 @@ func (r *reconciler) reconcileDeployments(ctx context.Context) error {
 }
 
 type reconcileData struct {
-	caCert *triple.KeyPair
+	caCert        *triple.KeyPair
+	openVPNCACert *resources.ECDSAKeyPair
 }
