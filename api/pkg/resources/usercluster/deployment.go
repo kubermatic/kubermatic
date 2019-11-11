@@ -110,7 +110,6 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				fmt.Sprintf("-openshift=%t", openshift),
 				"-version", data.Cluster().Spec.Version.String(),
 				"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
-				fmt.Sprintf("-user-ssh-keys-dir-path=%s", userSSHKeysMountDir),
 			}, getNetworkArgs(data)...)
 
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())
@@ -166,11 +165,6 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 							MountPath: "/etc/kubernetes/kubeconfig",
 							ReadOnly:  true,
 						},
-						{
-							Name:      resources.UserSSHKeys,
-							MountPath: userSSHKeysMountDir,
-							ReadOnly:  true,
-						},
 					},
 				},
 			}
@@ -194,14 +188,6 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
-				},
-			},
-		},
-		{
-			Name: resources.UserSSHKeys,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.UserSSHKeys,
 				},
 			},
 		},

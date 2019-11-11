@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -47,7 +48,6 @@ func Add(
 	cloudProviderName string,
 	clusterURL *url.URL,
 	openvpnServerPort int,
-	userSSHKeys map[string][]byte,
 	registerReconciledCheck func(name string, check healthcheck.Check),
 	cloudCredentialSecretTemplate *corev1.Secret,
 	log *zap.SugaredLogger) error {
@@ -64,7 +64,6 @@ func Add(
 		cloudCredentialSecretTemplate: cloudCredentialSecretTemplate,
 		log:                           log,
 		platform:                      cloudProviderName,
-		userSSHKeys:                   userSSHKeys,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -167,7 +166,6 @@ type reconciler struct {
 	openvpnServerPort             int
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
-	userSSHKeys                   map[string][]byte
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
@@ -194,4 +192,19 @@ func (r *reconciler) caCert(ctx context.Context) (*triple.KeyPair, error) {
 
 func (r *reconciler) openVPNCA(ctx context.Context) (*resources.ECDSAKeyPair, error) {
 	return resources.GetOpenVPNCA(ctx, r.namespace, r.seedClient)
+}
+
+func (r *reconciler) userSSHKeys(ctx context.Context) (map[string][]byte, error) {
+	secret := &corev1.Secret{}
+	if err := r.seedClient.Get(
+		ctx,
+		types.NamespacedName{Namespace: r.namespace, Name: resources.UserSSHKeys},
+		secret,
+	); err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return secret.Data, nil
 }
