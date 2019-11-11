@@ -1,8 +1,7 @@
 package kubermatic
 
 import (
-	"fmt"
-
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -39,7 +38,7 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{
-					Name: dockercfgSecretName,
+					Name: common.DockercfgSecretName,
 				},
 			}
 
@@ -50,7 +49,6 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 				"-dynamic-datacenters=true",
 			}
 
-			d.Spec.Template.Spec.InitContainers = []corev1.Container{projectsMigratorContainer(cfg)}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "controller-manager",
@@ -79,19 +77,6 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 
 			return d, nil
 		}
-	}
-}
-
-func projectsMigratorContainer(cfg *operatorv1alpha1.KubermaticConfiguration) corev1.Container {
-	return corev1.Container{
-		Name:    "projects-migrator",
-		Image:   cfg.Spec.MasterController.Image,
-		Command: []string{"projects-migrator"},
-		Args: []string{
-			"-v=2",
-			"-logtostderr",
-			fmt.Sprintf("-dry-run=%v", cfg.Spec.MasterController.ProjectsMigrator.DryRun),
-		},
 	}
 }
 
