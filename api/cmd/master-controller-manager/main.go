@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/rest"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
@@ -106,22 +107,39 @@ func main() {
 	defer ctxCancel()
 	ctrlCtx.ctx = ctx
 
-	// load kubeconfig and create API client
-	kubeconfig, err := clientcmd.LoadFromFile(runOpts.kubeconfig)
-	if err != nil {
-		log.Fatalw("failed to read the kubeconfig", zap.Error(err))
+	// prepare migration options
+	migrationOptions := mastermigrations.MigrationOptions{
+		DatacentersFile:    runOpts.dcFile,
+		DynamicDatacenters: runOpts.dynamicDatacenters,
 	}
 
-	config := clientcmd.NewNonInteractiveClientConfig(
-		*kubeconfig,
-		kubeconfig.CurrentContext,
-		&clientcmd.ConfigOverrides{CurrentContext: kubeconfig.CurrentContext},
-		nil,
-	)
+	// load kubeconfig and create API client; kubeconfig can be empty if no Seed CRD migrations need to run
+	var cfg *restclient.Config
 
-	cfg, err := config.ClientConfig()
-	if err != nil {
-		log.Fatalw("failed to create client", zap.Error(err))
+	if runOpts.kubeconfig == "" {
+		cfg, err = clientcmd.BuildConfigFromFlags("", "")
+		if err != nil {
+			log.Fatalw("failed to load kubeconfig", zap.Error(err))
+		}
+	} else {
+		kubeconfig, err := clientcmd.LoadFromFile(runOpts.kubeconfig)
+		if err != nil {
+			log.Fatalw("failed to read the kubeconfig", zap.Error(err))
+		}
+
+		config := clientcmd.NewNonInteractiveClientConfig(
+			*kubeconfig,
+			kubeconfig.CurrentContext,
+			&clientcmd.ConfigOverrides{CurrentContext: kubeconfig.CurrentContext},
+			nil,
+		)
+
+		cfg, err = config.ClientConfig()
+		if err != nil {
+			log.Fatalw("failed to create client", zap.Error(err))
+		}
+
+		migrationOptions.Kubeconfig = kubeconfig
 	}
 
 	ctrlCtx.labelSelectorFunc = func(listOpts *metav1.ListOptions) {
@@ -167,13 +185,6 @@ func main() {
 		ctx, mgr.GetClient(), runOpts.kubeconfig, ctrlCtx.namespace, runOpts.dynamicDatacenters)
 	if err != nil {
 		log.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
-	}
-
-	// prepare migration options
-	migrationOptions := mastermigrations.MigrationOptions{
-		DatacentersFile:    runOpts.dcFile,
-		DynamicDatacenters: runOpts.dynamicDatacenters,
-		Kubeconfig:         kubeconfig,
 	}
 
 	if runOpts.seedvalidationHook.CertFile != "" || runOpts.seedvalidationHook.KeyFile != "" {
