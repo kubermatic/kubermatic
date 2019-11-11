@@ -73,6 +73,91 @@ func TestValidate(t *testing.T) {
 			},
 		},
 		{
+			name: "Clusters from other seeds should have no effect on new empty seeds",
+			existingSeeds: map[string]*kubermaticv1.Seed{
+				"europe-west3-c": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "europe-west3-c",
+					},
+					Spec: kubermaticv1.SeedSpec{
+						Datacenters: map[string]kubermaticv1.Datacenter{
+							"do-fra1": {
+								Spec: fakeProviderSpec,
+							},
+						},
+					},
+				},
+			},
+			existingClusters: []runtime.Object{
+				&kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "do-fra1",
+						},
+					},
+				},
+			},
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "asia-south1-a",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					Datacenters: map[string]kubermaticv1.Datacenter{},
+				},
+			},
+		},
+		{
+			name: "Clusters from other seeds should have no effect when deleting seeds",
+			existingSeeds: map[string]*kubermaticv1.Seed{
+				"europe-west3-c": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "europe-west3-c",
+					},
+					Spec: kubermaticv1.SeedSpec{
+						Datacenters: map[string]kubermaticv1.Datacenter{
+							"do-fra1": {
+								Spec: fakeProviderSpec,
+							},
+						},
+					},
+				},
+				"asia-south1-a": {
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "asia-south1-a",
+					},
+					Spec: kubermaticv1.SeedSpec{
+						Datacenters: map[string]kubermaticv1.Datacenter{
+							"aws-asia-south1-a": {
+								Spec: fakeProviderSpec,
+							},
+						},
+					},
+				},
+			},
+			existingClusters: []runtime.Object{
+				&kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "do-fra1",
+						},
+					},
+				},
+			},
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "asia-south1-a",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					Datacenters: map[string]kubermaticv1.Datacenter{
+						"aws-asia-south1-a": {
+							Spec: fakeProviderSpec,
+						},
+					},
+				},
+			},
+			isDelete: true,
+		},
+		{
 			name: "Adding new datacenter should be possible",
 			existingSeeds: map[string]*kubermaticv1.Seed{
 				"existing-seed": {
