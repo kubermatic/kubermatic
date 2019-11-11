@@ -10,6 +10,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -97,6 +98,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	tasks := []ClusterTask{
 		setExposeStrategyIfEmpty,
 		setProxyModeIfEmpty,
+		cleanupDashboardAddon,
 	}
 
 	w := sync.WaitGroup{}
@@ -153,6 +155,15 @@ func setProxyModeIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext) err
 			return fmt.Errorf("failed to default proxyMode to iptables for cluster %q: %v", cluster.Name, err)
 		}
 		*cluster = *updatedCluster
+	}
+	return nil
+}
+
+func cleanupDashboardAddon(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	if err := ctx.kubermaticClient.KubermaticV1().Addons(cluster.Status.NamespaceName).Delete("dashboard", &metav1.DeleteOptions{}); err != nil {
+		if !kerrors.IsNotFound(err) {
+			return err
+		}
 	}
 	return nil
 }
