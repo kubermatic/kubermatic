@@ -37,6 +37,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/klog"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
@@ -64,6 +66,7 @@ type controllerRunOptions struct {
 	cloudProviderName             string
 	cloudCredentialSecretTemplate string
 	nodelabels                    string
+	seedKubeconfig                string
 	log                           kubermaticlog.Options
 }
 
@@ -89,6 +92,7 @@ func main() {
 	flag.StringVar(&runOp.cloudProviderName, "cloud-provider-name", "", "Name of the cloudprovider")
 	flag.StringVar(&runOp.cloudCredentialSecretTemplate, "cloud-credential-secret-template", "", "A serialized Kubernetes secret whose Name and Data fields will be used to create a secret for the openshift cloud credentials operator.")
 	flag.StringVar(&runOp.nodelabels, "node-labels", "", "A json-encoded map of node labels. If set, those labels will be enforced on all nodes.")
+	flag.StringVar(&runOp.seedKubeconfig, "seed-kubeconfig", "", "Path to the seed kubeconfig. In-Cluster config will be used if unset")
 
 	flag.Parse()
 
@@ -213,6 +217,29 @@ func main() {
 	})
 	if err != nil {
 		log.Fatalw("Failed creating user cluster controller", zap.Error(err))
+	}
+
+	var seedConfig *rest.Config
+	if runOp.seedKubeconfig != "" {
+		seedConfig, err = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+			&clientcmd.ClientConfigLoadingRules{ExplicitPath: runOp.seedKubeconfig},
+			&clientcmd.ConfigOverrides{}).ClientConfig()
+	} else {
+		seedConfig, err = rest.InClusterConfig()
+	}
+	if err != nil {
+		log.Fatalw("Failed to get seed kubeconfig", zap.Error(err))
+	}
+	seedMgr, err := manager.New(seedConfig, manager.Options{
+		LeaderElection:     false,
+		MetricsBindAddress: "0",
+		Namespace:          runOp.namespace,
+	})
+	if err != nil {
+		log.Fatalw("Failed to construct seed mgr", zap.Error(err))
+	}
+	if err := mgr.Add(seedMgr); err != nil {
+		log.Fatalw("Failed to add seed mgr to main mgr", zap.Error(err))
 	}
 
 	log.Info("registering components")

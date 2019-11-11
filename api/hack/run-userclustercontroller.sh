@@ -15,6 +15,13 @@ OPENVPN_CA_SECRET_RAW="$(kubectl get secret openvpn-ca -o json)"
 CLUSTER_RAW="$(kubectl get cluster $(echo $ADMIN_KUBECONFIG_RAW|jq -r '.metadata.namespace'|sed 's/cluster-//') -o json)"
 OPENVPN_SERVER_SERVICE_RAW="$(kubectl get service openvpn-server -o json )"
 
+SEED_SERVICEACCOUNT_TOKEN="$(kubectl get secret -o json \
+  |jq '.items[]|select(.metadata.annotations["kubernetes.io/service-account.name"] == "usercluster-controller-manager")|.data.token' -r \
+  |base64 -d)"
+SEED_KUBECONFIG=$(mktemp)
+kubectl config view  --flatten --minify -ojson \
+  |jq --arg token "$SEED_SERVICEACCOUNT_TOKEN" 'del(.users[0].user)|.users[0].user.token = $token' > $SEED_KUBECONFIG
+
 CA_CERT_FILE=$(mktemp)
 CA_CERT_KEY_FILE=$(mktemp)
 OPENVPN_CA_CERT_FILE=$(mktemp)
@@ -57,4 +64,5 @@ fi
     -log-format=Console \
     -logtostderr \
     -v=4 \
+    -seed-kubeconfig=${SEED_KUBECONFIG} \
     ${ARGS}
