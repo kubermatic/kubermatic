@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
@@ -33,19 +34,6 @@ const (
 
 	// VersionLabel is the label containing the application's version.
 	VersionLabel = "app.kubernetes.io/version"
-
-	// ManagedByLabel is the label used to identify the resources
-	// created by this controller.
-	ManagedByLabel = "app.kubernetes.io/managed-by"
-
-	// ConfigurationOwnerAnnotation is the annotation containing a resource's
-	// owning configuration name and namespace.
-	ConfigurationOwnerAnnotation = "operator.kubermatic.io/configuration"
-
-	// WorkerNameLabel is the label containing the worker-name,
-	// restricting the operator that is willing to work on a given
-	// resource.
-	WorkerNameLabel = "operator.kubermatic.io/worker"
 )
 
 func Add(
@@ -92,11 +80,11 @@ func Add(
 
 	// for each child put the parent configuration onto the queue
 	childEventHandler := newEventHandler(func(a handler.MapObject) []reconcile.Request {
-		if a.Meta.GetLabels()[ManagedByLabel] != ControllerName {
+		if a.Meta.GetLabels()[common.ManagedByLabel] != common.OperatorName {
 			return nil
 		}
 
-		owner := a.Meta.GetAnnotations()[ConfigurationOwnerAnnotation]
+		owner := a.Meta.GetAnnotations()[common.ConfigurationOwnerAnnotation]
 		if owner == "" {
 			return nil
 		}

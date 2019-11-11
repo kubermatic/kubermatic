@@ -36,19 +36,6 @@ const (
 
 	// VersionLabel is the label containing the application's version.
 	VersionLabel = "app.kubernetes.io/version"
-
-	// ManagedByLabel is the label used to identify the resources
-	// created by this controller.
-	ManagedByLabel = "app.kubernetes.io/managed-by"
-
-	// ConfigurationOwnerAnnotation is the annotation containing a resource's
-	// owning configuration name and namespace.
-	ConfigurationOwnerAnnotation = "operator.kubermatic.io/configuration"
-
-	// WorkerNameLabel is the label containing the worker-name,
-	// restricting the operator that is willing to work on a given
-	// resource.
-	WorkerNameLabel = "operator.kubermatic.io/worker"
 )
 
 func Add(

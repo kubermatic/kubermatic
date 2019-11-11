@@ -13,13 +13,9 @@ import (
 )
 
 const (
-	dockercfgSecretName                   = "dockercfg"
 	presetsSecretName                     = "presets"
-	dexCASecretName                       = "dex-ca"
-	masterFilesSecretName                 = "extra-files"
-	serviceAccountName                    = "kubermatic"
+	serviceAccountName                    = "kubermatic-master"
 	uiConfigConfigMapName                 = "ui-config"
-	backupContainersConfigMapName         = "backup-containers"
 	ingressName                           = "kubermatic"
 	apiDeploymentName                     = "kubermatic-api"
 	uiDeploymentName                      = "kubermatic-ui"
@@ -29,43 +25,13 @@ const (
 )
 
 func clusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
-	return fmt.Sprintf("%s:%s:cluster-admin", cfg.Namespace, cfg.Name)
+	return fmt.Sprintf("%s:%s-master:cluster-admin", cfg.Namespace, cfg.Name)
 }
 
 func NamespaceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
 	return func() (string, reconciling.NamespaceCreator) {
 		return cfg.Namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 			return ns, nil
-		}
-	}
-}
-
-func DockercfgSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return dockercfgSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			s.Type = corev1.SecretTypeDockerConfigJson
-
-			return createSecretData(s, map[string]string{
-				corev1.DockerConfigJsonKey: cfg.Spec.ImagePullSecret,
-			}), nil
-		}
-	}
-}
-
-func DexCASecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return dexCASecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			return createSecretData(s, map[string]string{
-				"caBundle.pem": cfg.Spec.Auth.CABundle,
-			}), nil
-		}
-	}
-}
-
-func MasterFilesSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return masterFilesSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			return createSecretData(s, cfg.Spec.MasterFiles), nil
 		}
 	}
 }
@@ -88,21 +54,6 @@ func UIConfigConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfiguration) rec
 			}
 
 			c.Data["config.json"] = cfg.Spec.UI.Config
-
-			return c, nil
-		}
-	}
-}
-
-func BackupContainersConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
-		return backupContainersConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			if c.Data == nil {
-				c.Data = make(map[string]string)
-			}
-
-			c.Data["store-container.yaml"] = cfg.Spec.SeedController.BackupStoreContainer
-			c.Data["cleanup-container.yaml"] = cfg.Spec.SeedController.BackupCleanupContainer
 
 			return c, nil
 		}

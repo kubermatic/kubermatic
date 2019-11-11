@@ -3,6 +3,7 @@ package kubermatic
 import (
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -54,7 +55,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{
-					Name: dockercfgSecretName,
+					Name: common.DockercfgSecretName,
 				},
 			}
 
@@ -98,7 +99,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 					Name: "master-files",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: masterFilesSecretName,
+							SecretName: common.MasterFilesSecretName,
 						},
 					},
 				})
