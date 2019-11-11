@@ -188,6 +188,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 					},
 				},
 			}
+			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {
