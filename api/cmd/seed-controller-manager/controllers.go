@@ -8,17 +8,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/addon"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/addoninstaller"
-	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
-	cloudcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/clustercomponentdefaulter"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
-	openshiftcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/openshift"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/seedresourcesuptodatecondition"
-	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/update"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeys"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/addon"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/addoninstaller"
+	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/backup"
+	cloudcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/clustercomponentdefaulter"
+	kubernetescontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/monitoring"
+	openshiftcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
+	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/update"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/usersshkeys"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -32,7 +32,7 @@ import (
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller
 var AllControllers = map[string]controllerCreator{
-	cluster.ControllerName:                        createClusterController,
+	kubernetescontroller.ControllerName:           createKubernetesController,
 	updatecontroller.ControllerName:               createUpdateController,
 	addon.ControllerName:                          createAddonController,
 	addoninstaller.ControllerName:                 createAddonInstallerController,
@@ -131,8 +131,8 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 	return nil
 }
 
-func createClusterController(ctrlCtx *controllerContext) error {
-	return cluster.Add(
+func createKubernetesController(ctrlCtx *controllerContext) error {
+	return kubernetescontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
@@ -157,7 +157,7 @@ func createClusterController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.oidcIssuerClientID,
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.dnatControllerImage,
-		cluster.Features{
+		kubernetescontroller.Features{
 			VPA:                          ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
 			EtcdDataCorruptionChecks:     ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
 			KubernetesOIDCAuthentication: ctrlCtx.runOptions.featureGates.Enabled(OpenIDAuthPlugin),
