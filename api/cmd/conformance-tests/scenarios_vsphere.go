@@ -79,7 +79,7 @@ func (s *vSphereScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeD
 						Vsphere: &apimodels.VSphereNodeSpec{
 							Template: fmt.Sprintf("machine-controller-e2e-%s", osName),
 							Cpus:     2,
-							Memory:   2048,
+							Memory:   4096,
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{

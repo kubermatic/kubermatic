@@ -295,10 +295,12 @@ write_files:
     Environment="KUBELET_EXTRA_ARGS=--resolv-conf=/run/systemd/resolve/resolv.conf"
 
 - path: "/etc/kubernetes/cloud-config"
+  permissions: "0600"
   content: |
 {{ .CloudConfig | indent 4 }}
 
 - path: "/etc/kubernetes/bootstrap-kubelet.conf"
+  permissions: "0600"
   content: |
 {{ .Kubeconfig | indent 4 }}
 
