@@ -23,7 +23,7 @@ type AddonCollector struct {
 }
 
 // MustRegisterAddonCollector registers the addon collector at the given prometheus registry
-func MustRegisterAddonCollector(registry prometheus.Registerer, client ctrlruntimeclient.Client) {
+func MustRegisterAddonCollector(registry prometheus.Registerer, client ctrlruntimeclient.Reader) {
 	cc := &AddonCollector{
 		client: client,
 		addonCreated: prometheus.NewDesc(
