@@ -27,12 +27,12 @@ func TestMigrateAllDatacenterEmailRestrictions(t *testing.T) {
 		},
 		Spec: kubermaticv1.SeedSpec{
 			Datacenters: map[string]kubermaticv1.Datacenter{
-				dcName: kubermaticv1.Datacenter{
+				dcName: {
 					Spec: kubermaticv1.DatacenterSpec{
 						RequiredEmailDomain: domain,
 					},
 				},
-				dcName2: kubermaticv1.Datacenter{
+				dcName2: {
 					Spec: kubermaticv1.DatacenterSpec{},
 				},
 			},
@@ -45,12 +45,12 @@ func TestMigrateAllDatacenterEmailRestrictions(t *testing.T) {
 		},
 		Spec: kubermaticv1.SeedSpec{
 			Datacenters: map[string]kubermaticv1.Datacenter{
-				dcName: kubermaticv1.Datacenter{
+				dcName: {
 					Spec: kubermaticv1.DatacenterSpec{
 						RequiredEmailDomains: []string{domain},
 					},
 				},
-				dcName2: kubermaticv1.Datacenter{
+				dcName2: {
 					Spec: kubermaticv1.DatacenterSpec{},
 				},
 			},
@@ -84,7 +84,7 @@ func TestMigrateAllDatacenterEmailRestrictionsInvalid(t *testing.T) {
 		},
 		Spec: kubermaticv1.SeedSpec{
 			Datacenters: map[string]kubermaticv1.Datacenter{
-				dcName: kubermaticv1.Datacenter{
+				dcName: {
 					Spec: kubermaticv1.DatacenterSpec{
 						RequiredEmailDomain:  domain,
 						RequiredEmailDomains: []string{domain},
