@@ -31,11 +31,7 @@ var (
 	}
 )
 
-const (
-	name                = "usercluster-controller"
-	openvpnCAMountDir   = "/etc/kubernetes/pki/openvpn"
-	userSSHKeysMountDir = "/etc/kubernetes/usersshkeys"
-)
+const name = "usercluster-controller"
 
 // userclusterControllerData is the subet of the deploymentData interface
 // that is actually required by the usercluster deployment

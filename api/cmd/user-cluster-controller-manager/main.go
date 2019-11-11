@@ -281,32 +281,3 @@ func main() {
 	}
 
 }
-
-func getUserSSHKeys(path string) (map[string][]byte, error) {
-	secretsDir, err := os.Readlink(fmt.Sprintf("%v/%v", path, "..data"))
-	if err != nil {
-		return nil, err
-	}
-
-	files, err := ioutil.ReadDir(fmt.Sprintf("%v/%v", path, secretsDir))
-	if err != nil {
-		return nil, err
-	}
-
-	var data = make(map[string][]byte, len(files))
-
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-
-		secret, err := ioutil.ReadFile(fmt.Sprintf("%v/%v", path, file.Name()))
-		if err != nil {
-			return nil, fmt.Errorf("failed to read file %v during secret creation: %v", file.Name(), err)
-		}
-
-		data[file.Name()] = secret
-	}
-
-	return data, nil
-}
