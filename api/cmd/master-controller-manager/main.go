@@ -119,7 +119,7 @@ func main() {
 	if runOpts.kubeconfig == "" {
 		cfg, err = clientcmd.BuildConfigFromFlags("", "")
 		if err != nil {
-			log.Fatalw("failed to load kubeconfig", zap.Error(err))
+			log.Fatalw("failed to load in-cluster credentials", zap.Error(err))
 		}
 	} else {
 		kubeconfig, err := clientcmd.LoadFromFile(runOpts.kubeconfig)
