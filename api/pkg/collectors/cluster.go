@@ -18,7 +18,7 @@ const (
 
 // ClusterCollector exports metrics for cluster resources
 type ClusterCollector struct {
-	client ctrlruntimeclient.Client
+	client ctrlruntimeclient.Reader
 
 	clusterCreated *prometheus.Desc
 	clusterDeleted *prometheus.Desc

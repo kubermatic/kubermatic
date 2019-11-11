@@ -16,7 +16,7 @@ const (
 
 // AddonCollector exports metrics for addon resources
 type AddonCollector struct {
-	client ctrlruntimeclient.Client
+	client ctrlruntimeclient.Reader
 
 	addonCreated *prometheus.Desc
 	addonDeleted *prometheus.Desc
