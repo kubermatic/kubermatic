@@ -175,11 +175,14 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Could not create all controllers", zap.Error(err))
 	}
 
+	// Use the API reader as the cache-backed reader will only contain data when we are leader
+	// and return errors otherwise.
+	// Ideally, the cache wouldn't require the leader lease:
+	// https://github.com/kubernetes-sigs/controller-runtime/issues/677
 	log.Debug("Starting clusters collector")
-	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetClient())
-
+	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
 	log.Debug("Starting addons collector")
-	collectors.MustRegisterAddonCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetClient())
+	collectors.MustRegisterAddonCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
 
 	var g run.Group
 	// This group is forever waiting in a goroutine for signals to stop
