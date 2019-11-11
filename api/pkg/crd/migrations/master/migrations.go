@@ -147,6 +147,7 @@ func migrateAllDatacenterEmailRestrictions(ctx context.Context, log *zap.Sugared
 			thisDCchanged := migrateDatacenterEmailRestrictions(log.With("datacenter", dcName), &dc.Spec)
 			anyDCchanged = anyDCchanged || thisDCchanged
 			if thisDCchanged {
+				log.Warn("datacenter %q is using the deprecated field `requiredEmailDomain` - plese migrate to `requiredEmailDomains` instead", dcName)
 				seed.Spec.Datacenters[dcName] = dc
 			}
 		}
