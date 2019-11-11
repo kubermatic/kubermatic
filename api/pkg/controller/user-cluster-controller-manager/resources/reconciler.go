@@ -29,8 +29,16 @@ import (
 
 // Reconcile creates, updates, or deletes Kubernetes resources to match the desired state.
 func (r *reconciler) reconcile(ctx context.Context) error {
+	caCert, err := r.caCert()
+	if err != nil {
+		return fmt.Errorf("failed to get caCert: %v", err)
+	}
+	data := reconcileData{
+		caCert: caCert,
+	}
+
 	// Must be first because of openshift
-	if err := r.ensureAPIServices(ctx); err != nil {
+	if err := r.ensureAPIServices(ctx, data); err != nil {
 		return err
 	}
 
@@ -76,24 +84,24 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileMutatingWebhookConfigurations(ctx); err != nil {
+	if err := r.reconcileMutatingWebhookConfigurations(ctx, data); err != nil {
 		return err
 	}
 
-	if err := r.reconcileConfigMaps(ctx); err != nil {
+	if err := r.reconcileConfigMaps(ctx, data); err != nil {
 		return err
 	}
 
-	if err := r.reconcileSecrets(ctx); err != nil {
+	if err := r.reconcileSecrets(ctx, data); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *reconciler) ensureAPIServices(ctx context.Context) error {
+func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedAPIServiceCreatorGetter{}
-	caCert := triple.EncodeCertPEM(r.caCert.Cert)
+	caCert := triple.EncodeCertPEM(data.caCert.Cert)
 	if r.openshift {
 		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion(r.version, caCert)
 		if err != nil {
@@ -311,9 +319,12 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context) error {
+func (r *reconciler) reconcileMutatingWebhookConfigurations(
+	ctx context.Context,
+	data reconcileData,
+) error {
 	creators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
-		machinecontroller.MutatingwebhookConfigurationCreator(r.caCert.Cert, r.namespace),
+		machinecontroller.MutatingwebhookConfigurationCreator(data.caCert.Cert, r.namespace),
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -350,9 +361,9 @@ func (r *reconciler) reconcileServices(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) reconcileConfigMaps(ctx context.Context) error {
+func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		machinecontroller.ClusterInfoConfigMapCreator(r.clusterURL.String(), r.caCert.Cert),
+		machinecontroller.ClusterInfoConfigMapCreator(r.clusterURL.String(), data.caCert.Cert),
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespacePublic, r.Client); err != nil {
@@ -372,7 +383,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) reconcileSecrets(ctx context.Context) error {
+func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		openvpn.ClientCertificate(r.openVPNCA),
 		usersshkeys.SecretCreator(r.userSSHKeys),
@@ -400,7 +411,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context) error {
 	}
 
 	if r.openshift {
-		creators = []reconciling.NamedSecretCreatorGetter{openshift.RegistryServingCert(r.caCert)}
+		creators = []reconciling.NamedSecretCreatorGetter{openshift.RegistryServingCert(data.caCert)}
 		if err := reconciling.ReconcileSecrets(ctx, creators, openshiftresources.RegistryNamespaceName, r.Client); err != nil {
 			return fmt.Errorf("failed to create secrets in %q namespace: %v", openshiftresources.RegistryNamespaceName, err)
 		}
@@ -483,4 +494,8 @@ func (r *reconciler) reconcileDeployments(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+type reconcileData struct {
+	caCert *triple.KeyPair
 }

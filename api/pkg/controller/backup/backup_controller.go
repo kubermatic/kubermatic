@@ -281,7 +281,7 @@ func (r *Reconciler) ensureCronJobSecret(ctx context.Context, cluster *kubermati
 	secretName := r.getEtcdSecretName(cluster)
 
 	getCA := func() (*triple.KeyPair, error) {
-		return resources.GetClusterRootCA(ctx, cluster, r.Client)
+		return resources.GetClusterRootCA(ctx, cluster.Status.NamespaceName, r.Client)
 	}
 
 	_, creator := certificates.GetClientCertificateCreator(

@@ -40,11 +40,11 @@ const (
 // Add creates a new user cluster controller.
 func Add(
 	mgr manager.Manager,
+	seedMgr manager.Manager,
 	openshift bool,
 	version string,
 	namespace string,
 	cloudProviderName string,
-	caCert *triple.KeyPair,
 	clusterURL *url.URL,
 	openvpnServerPort int,
 	userSSHKeys map[string][]byte,
@@ -54,12 +54,12 @@ func Add(
 	log *zap.SugaredLogger) error {
 	reconciler := &reconciler{
 		Client:                        mgr.GetClient(),
+		seedClient:                    seedMgr.GetClient(),
 		cache:                         mgr.GetCache(),
 		openshift:                     openshift,
 		version:                       version,
 		rLock:                         &sync.Mutex{},
 		namespace:                     namespace,
-		caCert:                        caCert,
 		clusterURL:                    clusterURL,
 		openvpnServerPort:             openvpnServerPort,
 		openVPNCA:                     openVPNCA,
@@ -131,6 +131,19 @@ func Add(
 		}
 	}
 
+	seedTypesToWatch := []runtime.Object{
+		&corev1.Secret{},
+	}
+	for _, t := range seedTypesToWatch {
+		seedWatch := &source.Kind{Type: t}
+		if err := seedWatch.InjectCache(seedMgr.GetCache()); err != nil {
+			return fmt.Errorf("failed to inject cache in seed cluster watch for %T: %v", t, err)
+		}
+		if err := c.Watch(seedWatch, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
+			return fmt.Errorf("failed to watch %T in seed: %v", t, err)
+		}
+	}
+
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
 	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func() error {
 		reconciler.rLock.Lock()
@@ -147,11 +160,11 @@ func Add(
 // reconcileUserCluster reconciles objects in the user cluster
 type reconciler struct {
 	client.Client
+	seedClient                    client.Client
 	openshift                     bool
 	version                       string
 	cache                         cache.Cache
 	namespace                     string
-	caCert                        *triple.KeyPair
 	clusterURL                    *url.URL
 	openvpnServerPort             int
 	openVPNCA                     *resources.ECDSAKeyPair
@@ -176,4 +189,8 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	defer r.rLock.Unlock()
 	r.reconciledSuccessfullyOnce = true
 	return reconcile.Result{}, nil
+}
+
+func (r *reconciler) caCert(ctx context.Context) (*triple.KeyPair, error) {
+	return nil, nil
 }
