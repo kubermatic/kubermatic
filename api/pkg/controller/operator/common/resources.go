@@ -68,6 +68,9 @@ func SeedWebhookServingCertSecretCreator(cfg *operatorv1alpha1.KubermaticConfigu
 				fmt.Sprintf("%s.%s.svc", seedWebhookCommonName, cfg.Namespace),
 			},
 		},
+		Usages: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageServerAuth,
+		},
 	}
 
 	return func() (string, reconciling.SecretCreator) {
@@ -93,10 +96,6 @@ func SeedWebhookServingCertSecretCreator(cfg *operatorv1alpha1.KubermaticConfigu
 			key, err := triple.NewPrivateKey()
 			if err != nil {
 				return nil, fmt.Errorf("unable to create a serving cert key: %v", err)
-			}
-
-			certConfig.Usages = []x509.ExtKeyUsage{
-				x509.ExtKeyUsageServerAuth,
 			}
 
 			// create certificate
@@ -133,7 +132,6 @@ func caCertPairValid(secret *corev1.Secret, config *certutil.Config) bool {
 
 	caCerts, err := certutil.ParseCertsPEM(caCertPEM)
 	if err != nil {
-		fmt.Println("caCertPEM not valid PEM")
 		return false
 	}
 
