@@ -34,7 +34,7 @@ if [ -n "$(git rev-parse --show-prefix)" ]; then
 fi
 
 # clone the target and pick the right branch
-tempdir="$(mktemp -d --suffix "-apiclient-sync")"
+tempdir="$(mktemp -d)"
 trap "rm -rf '$tempdir'" EXIT
 git clone "$URL" "$tempdir"
 (
