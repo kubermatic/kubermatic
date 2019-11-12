@@ -77,7 +77,7 @@ func main() {
 	}
 
 	if err := mgr.Add(pprofOpts); err != nil {
-		log.Fatalw("Failed to pprof endpoint", zap.Error(err))
+		log.Fatalw("Failed to add pprof endpoint", zap.Error(err))
 	}
 
 	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
