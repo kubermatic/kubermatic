@@ -2,6 +2,7 @@ package seed
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
@@ -12,8 +13,10 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"go.uber.org/zap"
 
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -95,7 +98,25 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 
 	config := configList.Items[0]
 
-	return r.reconcileResources(&config, seed, client, log)
+	// As the Seed CR is the owner for all resources managed by this controller,
+	// we wait for the seed-sync controller to do its job and mirror the Seed CR
+	// into the seed cluster.
+	seedCopy := &kubermaticv1.Seed{}
+	name := types.NamespacedName{
+		Name:      seedName,
+		Namespace: r.namespace,
+	}
+
+	if err := client.Get(r.ctx, name, seedCopy); err != nil {
+		if kerrors.IsNotFound(err) {
+			return errors.New("seed cluster has not yet been provisioned and contains no Seed CR yet")
+		}
+
+		return fmt.Errorf("failed to get Seed in seed cluster: %v", err)
+	}
+
+	// make sure to use the seedCopy so the owner ref has the correct UID
+	return r.reconcileResources(&config, seedCopy, client, log)
 }
 
 func (r *Reconciler) reconcileResources(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {

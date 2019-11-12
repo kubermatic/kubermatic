@@ -106,6 +106,8 @@ func Add(
 
 	// watch all resources we manage inside all configured seeds
 	for key, manager := range seedManagers {
+		reconciler.seedClients[key] = manager.GetClient()
+
 		if err := createSeedWatches(c, key, manager, namespacePredicate); err != nil {
 			return fmt.Errorf("failed to setup watches for seed %s: %v", key, err)
 		}
