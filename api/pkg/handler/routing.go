@@ -46,6 +46,7 @@ type Routing struct {
 	accessibleAddons            sets.String
 	userInfoGetter              provider.UserInfoGetter
 	settingsProvider            provider.SettingsProvider
+	adminProvider               provider.AdminProvider
 }
 
 // NewRouting creates a new Routing.
@@ -75,6 +76,7 @@ func NewRouting(
 	accessibleAddons sets.String,
 	userInfoGetter provider.UserInfoGetter,
 	settingsProvider provider.SettingsProvider,
+	adminProvider provider.AdminProvider,
 ) Routing {
 	return Routing{
 		log:                         logger,
@@ -103,6 +105,7 @@ func NewRouting(
 		accessibleAddons:            accessibleAddons,
 		userInfoGetter:              userInfoGetter,
 		settingsProvider:            settingsProvider,
+		adminProvider:               adminProvider,
 	}
 }
 
