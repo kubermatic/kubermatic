@@ -36,7 +36,7 @@ func TestGetGlobalSettings(t *testing.T) {
 		// scenario 2
 		{
 			name:                   "scenario 2: authorized user gets settings first time",
-			expectedResponse:       `{"id":"globalSettings","name":"globalSettings","creationTimestamp":"0001-01-01T00:00:00Z","globalSettings":{"customLinks":[],"cleanupOptions":{"Enabled":false,"Enforced":false},"defaultNodeCount":10,"clusterTypeOptions":10,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":false}}`,
+			expectedResponse:       `{"id":"globalsettings","name":"globalsettings","creationTimestamp":"0001-01-01T00:00:00Z","globalSettings":{"customLinks":[],"cleanupOptions":{"Enabled":false,"Enforced":false},"defaultNodeCount":10,"clusterTypeOptions":10,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":false}}`,
 			httpStatus:             http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
@@ -44,7 +44,7 @@ func TestGetGlobalSettings(t *testing.T) {
 		// scenario 3
 		{
 			name:             "scenario 3: authorized user gets existing global settings",
-			expectedResponse: `{"id":"globalSettings","name":"globalSettings","creationTimestamp":"0001-01-01T00:00:00Z","globalSettings":{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":5,"clusterTypeOptions":5,"displayDemoInfo":true,"displayAPIDocs":true,"displayTermsOfService":true}}`,
+			expectedResponse: `{"id":"globalsettings","name":"globalsettings","creationTimestamp":"0001-01-01T00:00:00Z","globalSettings":{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":5,"clusterTypeOptions":5,"displayDemoInfo":true,"displayAPIDocs":true,"displayTermsOfService":true}}`,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true),
 				genDefaultGlobalSettings()},
@@ -99,7 +99,7 @@ func TestUpdateGloablSettings(t *testing.T) {
 		{
 			name:                   "scenario 2: authorized user updates default settings",
 			body:                   `{"spec":{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true}}`,
-			expectedResponse:       `{"id":"globalSettings","name":"globalSettings","creationTimestamp":"0001-01-01T00:00:00Z","globalSettings":{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true}}`,
+			expectedResponse:       `{"id":"globalsettings","name":"globalsettings","creationTimestamp":"0001-01-01T00:00:00Z","globalSettings":{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true}}`,
 			httpStatus:             http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
@@ -108,7 +108,7 @@ func TestUpdateGloablSettings(t *testing.T) {
 		{
 			name:             "scenario 3: authorized user updates existing global settings",
 			body:             `{"spec":{"customLinks":[],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true}}`,
-			expectedResponse: `{"id":"globalSettings","name":"globalSettings","creationTimestamp":"0001-01-01T00:00:00Z","globalSettings":{"customLinks":[],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true}}`,
+			expectedResponse: `{"id":"globalsettings","name":"globalsettings","creationTimestamp":"0001-01-01T00:00:00Z","globalSettings":{"customLinks":[],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true}}`,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true),
 				genDefaultGlobalSettings()},
