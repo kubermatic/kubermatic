@@ -14,7 +14,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/kubernetes-dashboard"
+	kubernetesdashboard "github.com/kubermatic/kubermatic/api/pkg/resources/kubernetes-dashboard"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"

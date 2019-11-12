@@ -26,6 +26,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/dns"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
+	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -172,7 +173,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	log = log.With("cluster", cluster.Name)
 
-	if cluster.Annotations["kubermatic.io/openshift"] == "" {
+	if _, found := cluster.Annotations["kubermatic.io/openshift"]; !found {
 		log.Debug("Skipping because the cluster is an Kubernetes cluster")
 		return reconcile.Result{}, nil
 	}
@@ -216,6 +217,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			if err != nil {
 				return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 			}
+
 			log.Debugw("Getting client for cluster", "cluster", cluster.Name)
 			return userClusterClient, nil
 		}
@@ -237,10 +239,12 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if err != nil {
 		return nil, err
 	}
+
 	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
+
 	supportsFailureDomainZoneAntiAffinity, err := controllerutil.SupportsFailureDomainZoneAntiAffinity(ctx, r.Client)
 	if err != nil {
 		return nil, err
@@ -305,6 +309,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if kubermaticv1.HealthStatusUp != cluster.Status.ExtendedHealth.CloudProviderInfrastructure {
 		return &reconcile.Result{RequeueAfter: 1 * time.Second}, nil
 	}
+
 	if err := r.configMaps(ctx, osData); err != nil {
 		return nil, fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
 	}
@@ -476,6 +481,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 		openvpn.InternalClientCertificateCreator(osData),
 		machinecontroller.TLSServingCertificateCreator(osData),
 		openshiftresources.KubeSchedulerServingCertCreator(osData.GetRootCA),
+		metricsserver.TLSServingCertSecretCreator(osData.GetRootCA),
 
 		// Kubeconfigs
 		resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, osData),
@@ -564,7 +570,9 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 		openshiftresources.OauthDeploymentCreator(osData),
 		openshiftresources.ConsoleDeployment(osData),
 		openshiftresources.CloudCredentialOperator(osData),
-		openshiftresources.RegistryOperatorFactory(osData)}
+		openshiftresources.RegistryOperatorFactory(osData),
+		metricsserver.DeploymentCreator(osData),
+	}
 
 	if osData.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" {
 		creators = append(creators, clusterautoscaler.DeploymentCreator(osData))
@@ -596,6 +604,7 @@ func GetPodDisruptionBudgetCreators(osData *openshiftData) []reconciling.NamedPo
 		etcd.PodDisruptionBudgetCreator(osData),
 		apiserver.PodDisruptionBudgetCreator(),
 		dns.PodDisruptionBudgetCreator(),
+		metricsserver.PodDisruptionBudgetCreator(),
 	}
 }
 
@@ -730,6 +739,7 @@ func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCrea
 		dns.ServiceCreator(),
 		machinecontroller.ServiceCreator(),
 		openshiftresources.OauthServiceCreator(osData.Cluster().Spec.ExposeStrategy),
+		metricsserver.ServiceCreator(),
 	}
 
 	if osData.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
