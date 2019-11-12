@@ -79,6 +79,7 @@ kubermatic:
       repository: "quay.io/kubermatic/api"
       tag: "__KUBERMATIC_TAG__"
       pullPolicy: "IfNotPresent"
+    pprofEndpoint: ":6600"
     addons:
       kubernetes:
         # list of Addons to install into every user-cluster. All need to exist in the addons image
@@ -159,6 +160,7 @@ kubermatic:
       limits:
         cpu: 250m
         memory: 1024Mi
+    pprofEndpoint: ":6600"
     affinity:
       nodeAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
@@ -268,6 +270,7 @@ kubermatic:
         cpu: 100m
         memory: 256Mi
     debugLog: false
+    pprofEndpoint: ":6600"
     workerCount: 20
     affinity: {}
     nodeSelector: {}

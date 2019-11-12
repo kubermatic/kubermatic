@@ -15,6 +15,7 @@ import (
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	metricserver "github.com/kubermatic/kubermatic/api/pkg/metrics/server"
+	"github.com/kubermatic/kubermatic/api/pkg/pprof"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
@@ -65,6 +66,8 @@ func main() {
 	ctrlCtx := &controllerContext{}
 	runOpts := controllerRunOptions{}
 	klog.InitFlags(nil)
+	pprofOpts := &pprof.Opts{}
+	pprofOpts.AddFlags(flag.CommandLine)
 	runOpts.seedvalidationHook.AddFlags(flag.CommandLine)
 	flag.StringVar(&runOpts.kubeconfig, "kubeconfig", "", "Path to a kubeconfig.")
 	flag.StringVar(&runOpts.dcFile, "datacenters", "", "The datacenters.yaml file path.")
@@ -174,6 +177,10 @@ func main() {
 		log.Fatalw("failed to create Controller Manager instance", zap.Error(err))
 	}
 	ctrlCtx.mgr = mgr
+
+	if err := mgr.Add(pprofOpts); err != nil {
+		log.Fatalw("Failed to add pprof endpoint", zap.Error(err))
+	}
 
 	// these two getters rely on the ctrlruntime manager being started; they are
 	// only used inside controllers

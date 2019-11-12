@@ -21,6 +21,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -41,6 +42,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	metricspkg "github.com/kubermatic/kubermatic/api/pkg/metrics"
+	"github.com/kubermatic/kubermatic/api/pkg/pprof"
 	"github.com/kubermatic/kubermatic/api/pkg/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -60,6 +62,8 @@ import (
 
 func main() {
 	klog.InitFlags(nil)
+	pprofOpts := &pprof.Opts{}
+	pprofOpts.AddFlags(flag.CommandLine)
 	options, err := newServerRunOptions()
 	if err != nil {
 		fmt.Printf("failed to create server run options due to = %v\n", err)
@@ -109,6 +113,12 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to create API Handler", "error", err)
 	}
+
+	go func() {
+		if err := pprofOpts.Start(make(chan struct{})); err != nil {
+			log.Fatalw("Failed to start pprof handler", zap.Error(err))
+		}
+	}()
 
 	go metricspkg.ServeForever(options.internalAddr, "/metrics")
 	log.Infow("the API server listening", "listenAddress", options.listenAddress)

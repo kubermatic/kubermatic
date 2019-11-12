@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -19,6 +20,7 @@ import (
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
 	metricserver "github.com/kubermatic/kubermatic/api/pkg/metrics/server"
+	"github.com/kubermatic/kubermatic/api/pkg/pprof"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
@@ -40,6 +42,8 @@ const (
 
 func main() {
 	klog.InitFlags(nil)
+	pprofOpts := &pprof.Opts{}
+	pprofOpts.AddFlags(flag.CommandLine)
 	options, err := newControllerRunOptions()
 	if err != nil {
 		fmt.Printf("Failed to create controller run options due to = %v\n", err)
@@ -73,6 +77,9 @@ func main() {
 	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: "0"})
 	if err != nil {
 		log.Fatalw("Failed to create the manager", zap.Error(err))
+	}
+	if err := mgr.Add(pprofOpts); err != nil {
+		log.Fatalw("Failed to add the pprof handler", zap.Error(err))
 	}
 	// Add all custom type schemes to our scheme. Otherwise we won't get a informer
 	if err := autoscalingv1beta2.AddToScheme(mgr.GetScheme()); err != nil {
