@@ -42,7 +42,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -783,18 +782,6 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 		return fmt.Errorf("failed to ensure RoleBindings: %v", err)
 	}
 	return nil
-}
-
-func (r *Reconciler) getUserclusterClientUseExternalCert(ctx context.Context, cluster *kubermaticv1.Cluster) (client.Client, error) {
-	kubeConfigSecret := &corev1.Secret{}
-	if err := r.Get(ctx, nn(cluster.Status.NamespaceName, openshiftresources.ExternalX509KubeconfigName), kubeConfigSecret); err != nil {
-		return nil, fmt.Errorf("failed to get userCluster kubeconfig secret: %v", err)
-	}
-	cfg, err := clientcmd.RESTConfigFromKubeConfig(kubeConfigSecret.Data[resources.KubeconfigSecretKey])
-	if err != nil {
-		return nil, fmt.Errorf("failed to get config from secret: %v", err)
-	}
-	return client.New(cfg, client.Options{})
 }
 
 // A cheap helper because I am too lazy to type this everytime

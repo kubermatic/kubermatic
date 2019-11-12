@@ -58,7 +58,7 @@ Y1OSU+4JRXF62VQY
 	assert.NotNil(t, caCert)
 	assert.NoError(t, err)
 
-	c := getBaseKubeconfig(caCert, "example.com", clusterName)
+	c := GetBaseKubeconfig(caCert, "example.com", clusterName)
 	assert.NotNil(t, c)
 
 	assert.Len(t, c.Clusters, 1)

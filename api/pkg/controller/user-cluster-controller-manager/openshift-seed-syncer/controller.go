@@ -52,7 +52,9 @@ func Add(
 	}
 
 	seedSecretSource := &source.Kind{Type: &corev1.Secret{}}
-	seedSecretSource.InjectCache(seedMgr.GetCache())
+	if err := seedSecretSource.InjectCache(seedMgr.GetCache()); err != nil {
+		return fmt.Errorf("failed to inject seed cache into watch: %v", err)
+	}
 	if err := c.Watch(seedSecretSource, controllerutil.EnqueueConst("")); err != nil {
 		return fmt.Errorf("failed to watch secrets in seed: %v", err)
 	}
