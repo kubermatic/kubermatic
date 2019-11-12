@@ -42,16 +42,20 @@ func (o MigrationOptions) SeedMigrationEnabled() bool {
 
 // RunAll runs all migrations that should be run inside a master cluster.
 func RunAll(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, opt MigrationOptions) error {
-	if opt.SeedMigrationEnabled() {
-		if err := waitForWebhook(ctx, log, client, kubermaticNamespace); err != nil {
-			return fmt.Errorf("failed to wait for webhook: %v", err)
-		}
+	if err := waitForWebhook(ctx, log, client, kubermaticNamespace); err != nil {
+		return fmt.Errorf("failed to wait for webhook: %v", err)
+	}
 
+	if opt.SeedMigrationEnabled() {
 		log.Info("datacenters given and dynamic datacenters enabled, attempting to migrate datacenters to Seeds")
 		if err := migrateDatacenters(ctx, log, client, kubermaticNamespace, opt); err != nil {
 			return fmt.Errorf("failed to migrate datacenters.yaml: %v", err)
 		}
 		log.Info("seed migration completed successfully")
+	}
+
+	if err := migrateAllDatacenterEmailRestrictions(ctx, log, client, kubermaticNamespace, opt); err != nil {
+		return fmt.Errorf("failed to migrate datacenters' email restrictions: %v", err)
 	}
 
 	return nil
@@ -120,6 +124,45 @@ func migrateDatacenters(ctx context.Context, log *zap.SugaredLogger, client ctrl
 			log.Info("creating Seed CR...")
 			if err := client.Create(ctx, seed); err != nil {
 				return fmt.Errorf("failed to create seed %s: %v", name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// migrateDatacenterEmailRestrictions removes the `requiredEmailDomain` field of DCs and move its value to `requiredEmailDomains`
+func migrateAllDatacenterEmailRestrictions(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, opt MigrationOptions) error {
+	seedList := &kubermaticv1.SeedList{}
+	if err := client.List(ctx, seedList); err != nil {
+		return fmt.Errorf("failed to list seeds: %s", err)
+	}
+
+	for _, seed := range seedList.Items {
+		log := log.With("seed", seed.Name)
+		log.Info("processing Seed...")
+
+		anyDCchanged := false
+		for dcName, dc := range seed.Spec.Datacenters {
+			if dc.Spec.RequiredEmailDomain == "" {
+				continue
+			}
+
+			if len(dc.Spec.RequiredEmailDomains) > 0 {
+				return fmt.Errorf("datacenter %s->%s has both `requiredEmailDomain` and `requiredEmailDomains` set", seed.Name, dcName)
+			}
+
+			dc.Spec.RequiredEmailDomains = []string{dc.Spec.RequiredEmailDomain}
+			dc.Spec.RequiredEmailDomain = ""
+			seed.Spec.Datacenters[dcName] = dc
+			anyDCchanged = true
+			log.Warn("datacenter %q is using the deprecated field `requiredEmailDomain` - plese migrate to `requiredEmailDomains` instead", dcName)
+		}
+
+		// Update the seed object only if any of the DCs were actually migrated.
+		if anyDCchanged {
+			if err := client.Update(ctx, &seed); err != nil {
+				return fmt.Errorf("failed to update seed %s: %s", seed.Name, err)
 			}
 		}
 	}
