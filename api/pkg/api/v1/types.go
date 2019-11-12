@@ -383,6 +383,8 @@ type User struct {
 
 	// Email an email address of the user
 	Email string `json:"email"`
+	// IsAdmin indicates admin role
+	IsAdmin bool `json:"admin,omitempty"`
 
 	// Projects holds the list of project the user belongs to
 	// along with the group names
