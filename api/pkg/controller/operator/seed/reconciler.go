@@ -148,7 +148,7 @@ func (r *Reconciler) reconcileConfigMaps(cfg *operatorv1alpha1.KubermaticConfigu
 	log.Debug("reconciling ConfigMaps")
 
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		common.BackupContainersConfigMapCreator(cfg),
+		kubermatic.BackupContainersConfigMapCreator(cfg),
 	}
 
 	if err := reconciling.ReconcileConfigMaps(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(cfg)); err != nil {

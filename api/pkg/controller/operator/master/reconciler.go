@@ -112,7 +112,6 @@ func (r *Reconciler) reconcileConfigMaps(config *operatorv1alpha1.KubermaticConf
 
 	creators := []reconciling.NamedConfigMapCreatorGetter{
 		kubermatic.UIConfigConfigMapCreator(config),
-		common.BackupContainersConfigMapCreator(config),
 	}
 
 	if err := reconciling.ReconcileConfigMaps(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config)); err != nil {

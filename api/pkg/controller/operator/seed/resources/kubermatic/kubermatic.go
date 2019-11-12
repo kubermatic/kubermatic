@@ -13,6 +13,7 @@ import (
 
 const (
 	serviceAccountName                  = "kubermatic-seed"
+	backupContainersConfigMapName       = "backup-containers"
 	seedControllerManagerDeploymentName = "kubermatic-seed-controller-manager"
 	openIDAuthFeatureFlag               = "OpenIDAuthPlugin"
 	nameLabel                           = "app.kubernetes.io/name"
@@ -50,6 +51,21 @@ func ClusterRoleBindingCreator(cfg *operatorv1alpha1.KubermaticConfiguration, se
 			}
 
 			return crb, nil
+		}
+	}
+}
+
+func BackupContainersConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return backupContainersConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			if c.Data == nil {
+				c.Data = make(map[string]string)
+			}
+
+			c.Data["store-container.yaml"] = cfg.Spec.SeedController.BackupStoreContainer
+			c.Data["cleanup-container.yaml"] = cfg.Spec.SeedController.BackupCleanupContainer
+
+			return c, nil
 		}
 	}
 }
