@@ -24,7 +24,7 @@ running controlers manage the cluster.
 ./hack/run-api.sh
 ```
 
-#### kubermatic-controller-manager
+#### seed-controller-manager
 ```bash
 ./hack/run-controller.sh
 ```

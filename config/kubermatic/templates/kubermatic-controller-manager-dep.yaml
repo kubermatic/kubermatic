@@ -52,9 +52,9 @@ spec:
         - name: addons
           mountPath: /opt/addons
       containers:
-      - name: controller-manager
+      - name: seed-controller-manager
         command:
-        - kubermatic-controller-manager
+        - seed-controller-manager
         args:
         - -external-url={{ .Values.kubermatic.domain }}
         - -datacenter-name={{ .Values.kubermatic.controller.datacenterName }}

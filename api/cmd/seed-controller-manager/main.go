@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	controllerName = "kubermatic-controller-manager"
+	controllerName = "seed-controller-manager"
 )
 
 func main() {

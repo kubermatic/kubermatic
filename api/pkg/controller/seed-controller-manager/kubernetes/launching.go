@@ -1,4 +1,4 @@
-package cluster
+package kubernetes
 
 import (
 	"context"
