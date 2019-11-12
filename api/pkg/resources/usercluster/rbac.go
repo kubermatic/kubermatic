@@ -21,15 +21,24 @@ func ServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
 
 func RoleCreator() (string, reconciling.RoleCreator) {
 	return roleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-		r.Rules = []rbacv1.PolicyRule{{
-			APIGroups: []string{""},
-			Resources: []string{"secrets"},
-			Verbs: []string{
-				"get",
-				"list",
-				"watch",
+		r.Rules = []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"secrets"},
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"create",
+				},
 			},
-		}}
+			{
+				APIGroups:     []string{""},
+				Resources:     []string{"secrets"},
+				ResourceNames: []string{"admin-kubeconfig"},
+				Verbs:         []string{"update"},
+			},
+		}
 		return r, nil
 	}
 }

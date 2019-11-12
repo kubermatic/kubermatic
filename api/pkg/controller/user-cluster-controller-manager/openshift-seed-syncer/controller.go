@@ -18,6 +18,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -73,7 +74,11 @@ type reconciler struct {
 }
 
 func (r *reconciler) getCACert() (*x509.Certificate, error) {
-	return nil, nil
+	pair, err := resources.GetClusterRootCA(r.ctx, r.clusterNamespace, r.seedClient)
+	if err != nil {
+		return nil, err
+	}
+	return pair.Cert, nil
 }
 
 func (r *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
@@ -146,7 +151,11 @@ func seedAdminKubeconfigSecretCreatorGetter(
 	return func() (string, reconciling.SecretCreator) {
 		return resources.AdminKubeconfigSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			config := resources.GetBaseKubeconfig(caCert, apiServerAddress, clusterName)
-			config.AuthInfos[resources.KubeconfigDefaultContextKey].Token = token
+			config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
+				resources.KubeconfigDefaultContextKey: {
+					Token: token,
+				},
+			}
 			b, err := clientcmd.Write(*config)
 			if err != nil {
 				return nil, fmt.Errorf("failed to write kubeconfig: %v", err)

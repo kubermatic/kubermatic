@@ -8,9 +8,23 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 make user-cluster-controller-manager
 
 # Getting everything we need from the api
-# TODO: append -n cluster-$CLUSTER_NAME here or switch to the namespace before
-ADMIN_KUBECONFIG_RAW="$(kubectl get secret admin-kubeconfig -o json)"
-CLUSTER_RAW="$(kubectl get cluster $(echo $ADMIN_KUBECONFIG_RAW|jq -r '.metadata.namespace'|sed 's/cluster-//') -o json)"
+# This script assumes you are in your cluster namespace, which you can configure via `kubectl config set-context $(kubectl config current-context) --namespace=<<cluster-namespace>>`
+NAMESPACE="$(kubectl config view --minify|grep namespace |awk '{ print $2 }')"
+CLUSTER_NAME="$(echo $NAMESPACE|sed 's/cluster-//')"
+CLUSTER_RAW="$(kubectl get cluster $CLUSTER_NAME -o json)"
+CLUSTER_URL="$(echo $CLUSTER_RAW|jq -r '.address.url')"
+# We can not use the `admin-kubeconfig` secret because the user-cluster-controller-manager is
+# the one creating it in case of openshift. So we just use the internal kubeconfig and replace
+# the apiserver uurl
+KUBECONFIG_USERCLUSTER_CONTROLLER_FILE=$(mktemp)
+ADMIN_KUBECONFIG="$(kubectl get secret internal-admin-kubeconfig -o json \
+  |jq '.data.kubeconfig' -r \
+  |base64 -d \
+  |yaml2json \
+  |jq --arg url "$CLUSTER_URL" '.clusters[0].cluster.server = $url')"
+echo $ADMIN_KUBECONFIG > $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE
+echo "Using kubeconfig $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE"
+
 OPENVPN_SERVER_SERVICE_RAW="$(kubectl get service openvpn-server -o json )"
 
 SEED_SERVICEACCOUNT_TOKEN="$(kubectl get secret -o json \
@@ -20,12 +34,8 @@ SEED_KUBECONFIG=$(mktemp)
 kubectl config view  --flatten --minify -ojson \
   |jq --arg token "$SEED_SERVICEACCOUNT_TOKEN" 'del(.users[0].user)|.users[0].user.token = $token' > $SEED_KUBECONFIG
 
-KUBECONFIG_USERCLUSTER_CONTROLLER_FILE=$(mktemp)
-
-echo ${ADMIN_KUBECONFIG_RAW}|jq -r '.data.kubeconfig' |base64 -d > ${KUBECONFIG_USERCLUSTER_CONTROLLER_FILE}
 
 CLUSTER_VERSION="$(echo $CLUSTER_RAW|jq -r '.spec.version')"
-CLUSTER_NAMESPACE="$(echo $ADMIN_KUBECONFIG_RAW|jq -r '.metadata.namespace')"
 CLUSTER_URL="$(echo $CLUSTER_RAW | jq -r .address.url)"
 OPENVPN_SERVER_NODEPORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r .spec.ports[0].nodePort)"
 
@@ -42,7 +52,7 @@ fi
     -kubeconfig=${KUBECONFIG_USERCLUSTER_CONTROLLER_FILE} \
     -metrics-listen-address=127.0.0.1:8087 \
     -health-listen-address=127.0.0.1:8088 \
-    -namespace=${CLUSTER_NAMESPACE} \
+    -namespace=${NAMESPACE} \
     -openvpn-server-port=${OPENVPN_SERVER_NODEPORT} \
     -cluster-url=${CLUSTER_URL} \
     -version=${CLUSTER_VERSION} \

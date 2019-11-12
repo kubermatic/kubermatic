@@ -31,7 +31,8 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
-	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -168,8 +169,8 @@ func main() {
 	}
 
 	log.Info("registering components")
-	if err := apiextensionv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiextensionv1beta1.SchemeGroupVersion), zap.Error(err))
+	if err := apiextensionsv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiextensionsv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
 	if err := apiregistrationv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiregistrationv1beta1.SchemeGroupVersion), zap.Error(err))
@@ -177,6 +178,34 @@ func main() {
 
 	// Setup all Controllers
 	log.Info("registering controllers")
+	if runOp.openshift {
+		// We create watches for these, hence they have to exist. They are created by the addon
+		// controller which needs the kubeconfig we create.
+		infrastructureCRD := &apiextensionsv1beta1.CustomResourceDefinition{}
+		infrastructureCRD.Name = "infrastructures.config.openshift.io"
+		infrastructureCRD.Spec.Group = "config.openshift.io"
+		infrastructureCRD.Spec.Names.Kind = "Infrastructure"
+		infrastructureCRD.Spec.Names.ListKind = "InfrastructureList"
+		infrastructureCRD.Spec.Names.Plural = "infrastructures"
+		infrastructureCRD.Spec.Names.Singular = "infrastructure"
+		infrastructureCRD.Spec.Scope = apiextensionsv1beta1.ClusterScoped
+		infrastructureCRD.Spec.Version = "v1"
+		if err := mgr.GetClient().Create(context.Background(), infrastructureCRD); err != nil && !kerrors.IsAlreadyExists(err) {
+			log.Fatalw("Failed to create infrastructure CRD", zap.Error(err))
+		}
+		clusterVersionCRD := &apiextensionsv1beta1.CustomResourceDefinition{}
+		clusterVersionCRD.Name = "clusterversions.config.openshift.io"
+		clusterVersionCRD.Spec.Group = "config.openshift.io"
+		clusterVersionCRD.Spec.Names.Kind = "ClusterVersion"
+		clusterVersionCRD.Spec.Names.ListKind = "ClusterVersionList"
+		clusterVersionCRD.Spec.Names.Plural = "clusterversions"
+		clusterVersionCRD.Spec.Names.Singular = "clusterversion"
+		clusterVersionCRD.Spec.Scope = apiextensionsv1beta1.ClusterScoped
+		clusterVersionCRD.Spec.Version = "v1"
+		if err := mgr.GetClient().Create(context.Background(), clusterVersionCRD); err != nil && !kerrors.IsAlreadyExists(err) {
+			log.Fatalw("Failed to create clusterVersion CRD", zap.Error(err))
+		}
+	}
 	if err := usercluster.Add(mgr,
 		seedMgr,
 		runOp.openshift,

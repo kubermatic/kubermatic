@@ -75,19 +75,19 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileRoles(ctx); err != nil {
-		return err
-	}
-
-	if err := r.reconcileRoleBindings(ctx); err != nil {
-		return err
-	}
-
 	if err := r.reconcileClusterRoles(ctx); err != nil {
 		return err
 	}
 
 	if err := r.reconcileClusterRoleBindings(ctx); err != nil {
+		return err
+	}
+
+	if err := r.reconcileRoles(ctx); err != nil {
+		return err
+	}
+
+	if err := r.reconcileRoleBindings(ctx); err != nil {
 		return err
 	}
 
