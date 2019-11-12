@@ -15,7 +15,7 @@ spec:
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/scrape_port: '8085'
-        fluentbit.io/parser: glog
+        fluentbit.io/parser: json
     spec:
       serviceAccountName: kubermatic-operator
       containers:
