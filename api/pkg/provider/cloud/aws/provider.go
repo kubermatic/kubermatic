@@ -404,8 +404,10 @@ func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (str
 				}),
 		},
 	})
-	if awsErr, ok := err.(awserr.Error); !ok || awsErr.Code() != "InvalidPermission.Duplicate" {
-		return "", fmt.Errorf("failed to authorize security group %s with id %s: %v", newSecurityGroupName, securityGroupID, err)
+	if err != nil {
+		if awsErr, ok := err.(awserr.Error); !ok || awsErr.Code() != "InvalidPermission.Duplicate" {
+			return "", fmt.Errorf("failed to authorize security group %s with id %s: %v", newSecurityGroupName, securityGroupID, err)
+		}
 	}
 
 	return securityGroupID, nil
