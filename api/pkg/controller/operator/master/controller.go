@@ -47,6 +47,7 @@ func Add(
 ) error {
 	reconciler := &Reconciler{
 		Client:     mgr.GetClient(),
+		scheme:     mgr.GetScheme(),
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		log:        log.Named(ControllerName),
 		workerName: workerName,
