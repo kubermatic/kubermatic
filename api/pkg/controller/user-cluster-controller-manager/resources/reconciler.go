@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
+	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"

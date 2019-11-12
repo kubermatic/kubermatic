@@ -9,11 +9,11 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 # Deploy a user-cluster/ipam-controller for which we actuallly
 # have a pushed image
 export KUBERMATICCOMMIT="${KUBERMATICCOMMIT:-$(git rev-parse origin/master)}"
-make kubermatic-controller-manager
+make seed-controller-manager
 
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 
-./_build/kubermatic-controller-manager \
+./_build/seed-controller-manager \
   -dynamic-datacenters=true \
   -namespace=kubermatic \
   -datacenter-name=europe-west3-c \

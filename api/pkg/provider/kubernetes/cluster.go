@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/cloud"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
