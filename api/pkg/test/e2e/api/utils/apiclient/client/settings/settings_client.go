@@ -25,6 +25,35 @@ type Client struct {
 }
 
 /*
+GetCurrentUserSettings returns settings of the current user
+*/
+func (a *Client) GetCurrentUserSettings(params *GetCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetCurrentUserSettingsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetCurrentUserSettingsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getCurrentUserSettings",
+		Method:             "GET",
+		PathPattern:        "/api/v1/me/settings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetCurrentUserSettingsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetCurrentUserSettingsOK), nil
+
+}
+
+/*
 PatchCurrentUserSettings updates settings of the current user
 */
 func (a *Client) PatchCurrentUserSettings(params *PatchCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*PatchCurrentUserSettingsOK, error) {
@@ -35,8 +64,8 @@ func (a *Client) PatchCurrentUserSettings(params *PatchCurrentUserSettingsParams
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "patchCurrentUserSettings",
-		Method:             "GET",
-		PathPattern:        "/api/v1/me",
+		Method:             "PATCH",
+		PathPattern:        "/api/v1/me/settings",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
