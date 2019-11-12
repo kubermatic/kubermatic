@@ -9,7 +9,6 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -29,7 +28,7 @@ func KubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, settings
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalSettingsToExternal(globalSettings), nil
+		return globalSettings.Spec, nil
 	}
 }
 
@@ -46,7 +45,7 @@ func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, se
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		existingGlobalSettingsJSON, err := json.Marshal(existingGlobalSettings)
+		existingGlobalSettingsJSON, err := json.Marshal(existingGlobalSettings.Spec)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode existing settings: %v", err)
 		}
@@ -55,18 +54,19 @@ func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, se
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot patch global settings: %v", err)
 		}
-		var pachedGlobalSettings *kubermaticv1.KubermaticSetting
-		err = json.Unmarshal(patchedGlobalSettingsJSON, &pachedGlobalSettings)
+		var patchedGlobalSettings *kubermaticv1.SettingSpec
+		err = json.Unmarshal(patchedGlobalSettingsJSON, &patchedGlobalSettings)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode patched settings: %v", err)
 		}
 
-		globalSettings, err := settingsProvider.UpdateGlobalSettings(userInfo, pachedGlobalSettings)
+		existingGlobalSettings.Spec = *patchedGlobalSettings
+		globalSettings, err := settingsProvider.UpdateGlobalSettings(userInfo, existingGlobalSettings)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalSettingsToExternal(globalSettings), nil
+		return globalSettings.Spec, nil
 	}
 }
 
@@ -86,16 +86,4 @@ func DecodePatchKubermaticSettingsReq(c context.Context, r *http.Request) (inter
 	}
 
 	return req, nil
-}
-
-func convertInternalSettingsToExternal(settings *kubermaticv1.KubermaticSetting) *apiv1.GlobalSettings {
-	return &apiv1.GlobalSettings{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                settings.Name,
-			Name:              settings.Name,
-			DeletionTimestamp: nil,
-			CreationTimestamp: apiv1.NewTime(settings.CreationTimestamp.Time),
-		},
-		Settings: settings.Spec,
-	}
 }

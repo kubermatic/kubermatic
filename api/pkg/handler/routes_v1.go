@@ -1862,7 +1862,7 @@ func (r Routing) getCurrentUser() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: User
+//       200: UserSettings
 //       401: empty
 func (r Routing) getCurrentUserSettings() http.Handler {
 	return httptransport.NewServer(
@@ -1888,7 +1888,7 @@ func (r Routing) getCurrentUserSettings() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: User
+//       200: UserSettings
 //       401: empty
 func (r Routing) patchCurrentUserSettings() http.Handler {
 	return httptransport.NewServer(
