@@ -34,7 +34,7 @@ type User struct {
 	ID string `json:"id,omitempty"`
 
 	// IsAdmin indicates admin role
-	IsAdmin bool `json:"admin,omitempty"`
+	IsAdmin bool `json:"isAdmin,omitempty"`
 
 	// Name represents human readable name for the resource
 	Name string `json:"name,omitempty"`
