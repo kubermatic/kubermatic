@@ -252,6 +252,62 @@
     },
     "/api/v1/me": {
       "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "users"
+        ],
+        "summary": "Returns information about the current user.",
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": {
+            "description": "User",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/settings": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "settings"
+        ],
+        "summary": "Returns settings of the current user.",
+        "operationId": "getCurrentUserSettings",
+        "responses": {
+          "200": {
+            "description": "User",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
         "consumes": [
           "application/json"
         ],
@@ -10026,6 +10082,11 @@
       "description": "User represent an API user",
       "type": "object",
       "properties": {
+        "admin": {
+          "description": "IsAdmin indicates admin role",
+          "type": "boolean",
+          "x-go-name": "IsAdmin"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",

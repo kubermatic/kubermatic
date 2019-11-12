@@ -4,13 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	jsonpatch "github.com/evanphx/json-patch"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
 	"net/mail"
 	"strings"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
@@ -21,6 +20,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
+	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 // DeleteEndpoint deletes the given user/member from the given project
@@ -277,7 +278,8 @@ func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, includeSe
 			Name:              internalUser.Spec.Name,
 			CreationTimestamp: apiv1.NewTime(internalUser.CreationTimestamp.Time),
 		},
-		Email: internalUser.Spec.Email,
+		Email:   internalUser.Spec.Email,
+		IsAdmin: internalUser.Spec.IsAdmin,
 	}
 
 	if includeSettings {
