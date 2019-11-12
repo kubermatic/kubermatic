@@ -22,6 +22,7 @@ import (
 	nodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/nodecsrapprover"
 	openshiftmasternodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-master-node-labeler"
+	openshiftseedsyncer "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-seed-syncer"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/rbac"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources"
 	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
@@ -226,6 +227,10 @@ func main() {
 			log.Fatalw("Failed to add openshiftmasternodelabeler controller", zap.Error(err))
 		}
 		log.Info("Registered nodecsrapprover controller")
+		if err := openshiftseedsyncer.Add(log, mgr, seedMgr, runOp.clusterURL, runOp.namespace); err != nil {
+			log.Fatalw("Failed to register the openshiftseedsyncer", zap.Error(err))
+		}
+		log.Info("Registered openshiftseedsyncer controller")
 	}
 
 	if err := containerlinux.Add(mgr, runOp.overwriteRegistry); err != nil {

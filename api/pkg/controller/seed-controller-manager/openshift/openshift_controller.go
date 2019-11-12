@@ -43,7 +43,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -341,9 +340,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
-	reconcileRequest, err := r.createClusterAccessToken(ctx, osData)
-	if reconcileRequest != nil || err != nil {
-		return reconcileRequest, err
+	reachable, err := r.clusterIsReachable(ctx, osData.Cluster())
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if cluster is reachable: %v", err)
+	}
+	if !reachable {
+		log.Debug("Cluster is not reachable yet, retrying later")
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	// Only add the node deletion finalizer when the cluster is actually running
@@ -393,6 +396,21 @@ func (r *Reconciler) ensureConsoleOAuthSecret(ctx context.Context, osData *opens
 	return reconciling.ReconcileSecrets(ctx, getter, ns, r.Client)
 }
 
+// clusterIsReachable checks if the cluster is reachable via its external name
+func (r *Reconciler) clusterIsReachable(ctx context.Context, c *kubermaticv1.Cluster) (bool, error) {
+	client, err := r.userClusterConnProvider.GetClient(c)
+	if err != nil {
+		return false, err
+	}
+
+	if err := client.List(ctx, &corev1.NamespaceList{}); err != nil {
+		r.log.Debugw("Cluster not yet reachable", "cluster", c.Name, zap.Error(err))
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error {
 	currentHealth := osData.Cluster().Status.ExtendedHealth.DeepCopy()
 	type depInfo struct {
@@ -439,96 +457,6 @@ func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster,
 	oldCluster := c.DeepCopy()
 	modify(c)
 	return r.Patch(ctx, c, client.MergeFrom(oldCluster))
-}
-
-// Openshift doesn't seem to support a token-file-based authentication at all
-// It can be passed down onto the kube-apiserver but does still not work, presumably because OS puts another authentication
-// layer on top
-// The workaround here is to create a serviceaccount and clusterrolebinding in the user cluster, then copy the token secret
-// of that Serviceaccount into the admin kubeconfig.
-// In its current form this is not a long-term solution as we wont notice if someone deletes the token Secret inside the user
-// cluster, rendering our admin-kubeconfig invalid
-// TODO: Find an alternate approach or move this to a controller that has informers in both the user cluster and the seed
-func (r *Reconciler) createClusterAccessToken(ctx context.Context, osData *openshiftData) (*reconcile.Result, error) {
-	userClusterClient, err := osData.Client()
-	if err != nil {
-		// This happens when the kubermatic controller manager is running outside of the cluster, because it needs
-		// the token to create the token. We fallback to a cert in this case
-		if err.Error() == `Secret "admin-kubeconfig" not found` {
-			userClusterClient, err = r.getUserclusterClientUseExternalCert(ctx, osData.Cluster())
-			if err != nil {
-				return nil, fmt.Errorf("failed to get userClusterClient via external cert: %v", err)
-			}
-		} else {
-			return nil, fmt.Errorf("failed to get userClusterClient: %v", err)
-		}
-	}
-
-	// Ensure ServiceAccount in user cluster
-	tokenOwnerServiceAccountName, tokenOwnerServiceAccountCreator := openshiftresources.TokenOwnerServiceAccount(ctx)
-	err = reconciling.EnsureNamedObject(ctx,
-		nn(metav1.NamespaceSystem, tokenOwnerServiceAccountName),
-		reconciling.ServiceAccountObjectWrapper(tokenOwnerServiceAccountCreator),
-		userClusterClient,
-		&corev1.ServiceAccount{},
-		false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create TokenOwnerServiceAccount in user cluster: %v", err)
-	}
-
-	// Ensure ClusterRoleBinding in user cluster
-	tokenOwnerServiceAccountClusterRoleBindingName, tokenOwnerServiceAccountClusterRoleBindingCreator := openshiftresources.TokenOwnerServiceAccountClusterRoleBinding(ctx)
-	err = reconciling.EnsureNamedObject(ctx,
-		nn("", tokenOwnerServiceAccountClusterRoleBindingName),
-		reconciling.ClusterRoleBindingObjectWrapper(tokenOwnerServiceAccountClusterRoleBindingCreator),
-		userClusterClient, &rbacv1.ClusterRoleBinding{},
-		false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create TokenOwnerServiceAccountClusterRoleBinding in user cluster: %v", err)
-	}
-
-	// Get the ServiceAccount to find out the name of its secret
-	tokenOwnerServiceAccount := &corev1.ServiceAccount{}
-	if err := userClusterClient.Get(ctx, nn(metav1.NamespaceSystem, tokenOwnerServiceAccountName), tokenOwnerServiceAccount); err != nil {
-		return nil, fmt.Errorf("failed to get TokenOwnerServiceAccount after creating it: %v", err)
-	}
-
-	// Check if the secret already exists, if not try again later
-	if len(tokenOwnerServiceAccount.Secrets) < 1 {
-		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
-	}
-
-	// Get the secret
-	tokenSecret := &corev1.Secret{}
-	if err := userClusterClient.Get(ctx, nn(metav1.NamespaceSystem, tokenOwnerServiceAccount.Secrets[0].Name), tokenSecret); err != nil {
-		return nil, fmt.Errorf("failed to get token secret from user cluster: %v", err)
-	}
-	if len(tokenSecret.Data["token"]) == 0 {
-		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
-	}
-
-	// Create the admin-kubeconfig in the seed cluster
-	adminKubeconfigSecretName, adminKubeconfigCreator := resources.AdminKubeconfigCreator(osData, func(c *clientcmdapi.Config) {
-		c.AuthInfos[resources.KubeconfigDefaultContextKey].Token = string(tokenSecret.Data["token"])
-	})()
-	creatorWithToken := func(s *corev1.Secret) (*corev1.Secret, error) {
-		s, err := adminKubeconfigCreator(s)
-		if err != nil {
-			return nil, err
-		}
-		s.Data["token"] = tokenSecret.Data["token"]
-		return s, nil
-	}
-	err = reconciling.EnsureNamedObject(ctx,
-		nn(osData.Cluster().Status.NamespaceName, adminKubeconfigSecretName),
-		reconciling.SecretObjectWrapper(creatorWithToken),
-		r.Client,
-		&corev1.Secret{},
-		false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to ensure token secret: %v", err)
-	}
-	return nil, nil
 }
 
 func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedSecretCreatorGetter {

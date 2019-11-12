@@ -134,6 +134,10 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 		userauth.ServiceAccountCreator(),
 	}
 
+	if r.openshift {
+		creators = append(creators, openshift.TokenOwnerServiceAccount)
+	}
+
 	if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", metav1.NamespaceSystem, err)
 	}
@@ -308,6 +312,10 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 		controllermanager.ClusterRoleBindingAuthDelegator(),
 		clusterautoscaler.ClusterRoleBindingCreator(),
 		systembasicuser.ClusterRoleBinding,
+	}
+
+	if r.openshift {
+		creators = append(creators, openshift.TokenOwnerServiceAccountClusterRoleBinding)
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
