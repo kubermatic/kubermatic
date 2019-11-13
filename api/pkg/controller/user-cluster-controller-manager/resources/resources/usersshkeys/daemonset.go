@@ -83,7 +83,7 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 					Name: "core",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/core/.ssh/authorized_keys",
+							Path: "/home/core/.ssh/authorized_keys",
 							Type: &hostPathType,
 						},
 					},
@@ -92,7 +92,7 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 					Name: "centos",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/centos/.ssh/authorized_keys",
+							Path: "/home/centos/.ssh/authorized_keys",
 							Type: &hostPathType,
 						},
 					},
@@ -101,7 +101,7 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 					Name: "ubuntu",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/ubuntu/.ssh/authorized_keys",
+							Path: "/home/ubuntu/.ssh/authorized_keys",
 							Type: &hostPathType,
 						},
 					},

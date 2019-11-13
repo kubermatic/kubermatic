@@ -2,24 +2,19 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
 
 	"github.com/go-logr/zapr"
-	"github.com/oklog/run"
-
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/usersshkeys"
+	usersshkeys "github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeys-agent"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/signals"
-
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -54,7 +49,6 @@ func main() {
 		log.Fatalw("Failed getting user cluster controller config", zap.Error(err))
 	}
 
-	stopCh := signals.SetupSignalHandler()
 	ctx, ctxDone := context.WithCancel(context.Background())
 	defer ctxDone()
 
@@ -67,45 +61,20 @@ func main() {
 		log.Fatalw("Failed creating user ssh key controller", zap.Error(err))
 	}
 
-	users, err := availableUsers()
+	paths, err := availableUsersPaths()
 	if err != nil {
 		log.Fatalw("Failed to get users directories", zap.Error(err))
 	}
-	if err := usersshkeys.Add(mgr, log, users); err != nil {
+	if err := usersshkeys.Add(mgr, log, paths); err != nil {
 		log.Fatalw("Failed registering user ssh key controller", zap.Error(err))
 	}
-	var g run.Group
 
-	// This group is forever waiting in a goroutine for signals to stop
-	{
-		g.Add(func() error {
-			select {
-			case <-stopCh:
-				return errors.New("user requested to stop the application")
-			case <-done:
-				return errors.New("parent context has been closed - propagating the request")
-			}
-		}, func(err error) {
-			ctxDone()
-		})
-	}
-
-	// This group starts the controller manager
-	{
-		g.Add(func() error {
-			// Start the Cmd
-			return mgr.Start(done)
-		}, func(err error) {
-			log.Infow("stopping user ssh controller", zap.Error(err))
-		})
-	}
-
-	if err := g.Run(); err != nil {
-		log.Fatalw("Failed running user cluster controller", zap.Error(err))
+	if err := mgr.Start(done); err != nil {
+		log.Fatalw("error occurred while running the controller manager", zap.Error(err))
 	}
 }
 
-func availableUsers() ([]string, error) {
+func availableUsersPaths() ([]string, error) {
 	var paths []string
 	for _, user := range []string{"root", "core", "ubuntu", "centos"} {
 		path := fmt.Sprintf("%v%v/authorized_keys", resources.AuthorizedKeysPath, user)
