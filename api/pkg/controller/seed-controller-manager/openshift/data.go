@@ -3,7 +3,6 @@ package openshift
 import (
 	"context"
 	"crypto/ecdsa"
-	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
 	"errors"
@@ -87,30 +86,8 @@ func (od *openshiftData) GetRootCAWithContext(ctx context.Context) (*triple.KeyP
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.CASecretName), secret); err != nil {
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 	}
-	return od.parseRSA(secret.Data[kubernetesresources.CACertSecretKey],
+	return triple.NewRSAKeyPair(secret.Data[kubernetesresources.CACertSecretKey],
 		secret.Data[kubernetesresources.CAKeySecretKey])
-}
-
-func (od *openshiftData) parseRSA(cert, rawKey []byte) (*triple.KeyPair, error) {
-	certs, err := certutil.ParseCertsPEM(cert)
-	if err != nil {
-		return nil, fmt.Errorf("got an invalid cert from the secret: %v", err)
-	}
-
-	if len(certs) != 1 {
-		return nil, fmt.Errorf("did not find exactly one but %v certificates in the secret", len(certs))
-	}
-
-	key, err := triple.ParsePrivateKeyPEM(rawKey)
-	if err != nil {
-		return nil, fmt.Errorf("got an invalid private key from the secret: %v", err)
-	}
-
-	rsaKey, isRSAKey := key.(*rsa.PrivateKey)
-	if !isRSAKey {
-		return nil, errors.New("key is not a RSA key")
-	}
-	return &triple.KeyPair{Cert: certs[0], Key: rsaKey}, nil
 }
 
 func (od *openshiftData) GetFrontProxyCA() (*triple.KeyPair, error) {
@@ -122,7 +99,7 @@ func (od *openshiftData) GetFrontProxyCAWithContext(ctx context.Context) (*tripl
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.FrontProxyCASecretName), secret); err != nil {
 		return nil, fmt.Errorf("failed to get FrontProxy CA: %v", err)
 	}
-	return od.parseRSA(secret.Data[kubernetesresources.CACertSecretKey],
+	return triple.NewRSAKeyPair(secret.Data[kubernetesresources.CACertSecretKey],
 		secret.Data[kubernetesresources.CAKeySecretKey])
 }
 

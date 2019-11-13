@@ -7,6 +7,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -54,8 +55,8 @@ func SeedControllerManagerDeploymentCreator(workerName string, cfg *operatorv1al
 				"-backup-container=/opt/backup/store-container.yaml",
 				"-cleanup-container=/opt/backup/cleanup-container.yaml",
 				"-docker-pull-config-json-file=/opt/docker/.dockerconfigjson",
-				"-seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/serverCert.pem",
-				"-seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/serverKey.pem",
+				fmt.Sprintf("-seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertSecretKey),
+				fmt.Sprintf("-seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-external-url=%s", cfg.Spec.Domain),
 				fmt.Sprintf("-datacenter-name=%s", seed.Name),

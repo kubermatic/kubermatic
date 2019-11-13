@@ -123,7 +123,8 @@ func (r *Reconciler) reconcileSecrets(config *operatorv1alpha1.KubermaticConfigu
 	creators := []reconciling.NamedSecretCreatorGetter{
 		common.DockercfgSecretCreator(config),
 		common.DexCASecretCreator(config),
-		common.SeedWebhookServingCertSecretCreator(config),
+		common.SeedWebhookServingCASecretCreator(config),
+		common.SeedWebhookServingCertSecretCreator(config, r.Client),
 	}
 
 	if len(config.Spec.MasterFiles) > 0 {
