@@ -403,7 +403,6 @@ func (r *Reconciler) clusterIsReachable(ctx context.Context, c *kubermaticv1.Clu
 	}
 
 	if err := client.List(ctx, &corev1.NamespaceList{}); err != nil {
-		r.log.Debugw("Cluster not yet reachable", "cluster", c.Name, zap.Error(err))
 		return false, nil
 	}
 

@@ -9,7 +9,7 @@ make user-cluster-controller-manager
 
 # Getting everything we need from the api
 # This script assumes you are in your cluster namespace, which you can configure via `kubectl config set-context $(kubectl config current-context) --namespace=<<cluster-namespace>>`
-NAMESPACE="$(kubectl config view --minify|grep namespace |awk '{ print $2 }')"
+NAMESPACE="${NAMESPACE:-$(kubectl config view --minify|grep namespace |awk '{ print $2 }')}"
 CLUSTER_NAME="$(echo $NAMESPACE|sed 's/cluster-//')"
 CLUSTER_RAW="$(kubectl get cluster $CLUSTER_NAME -o json)"
 CLUSTER_URL="$(echo $CLUSTER_RAW|jq -r '.address.url')"
