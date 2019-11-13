@@ -74,22 +74,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, cfg *operatorv1al
 				fmt.Sprintf("-scheduler-default-replicas=%d", 1),
 				fmt.Sprintf("-max-parallel-reconcile=%d", 10),
 				fmt.Sprintf("-apiserver-reconciling-disabled-by-default=%v", false),
-
-				// {{- if .Values.kubermatic.clusterNamespacePrometheus.disableDefaultRules }}
-				// - -in-cluster-prometheus-disable-default-rules=true
-				// {{- end }}
-				// {{- if .Values.kubermatic.clusterNamespacePrometheus.rules }}
-				// - -in-cluster-prometheus-rules-file=/opt/incluster-prometheus-rules/_customrules.yaml
-				// {{- end }}
-				// {{- if .Values.kubermatic.clusterNamespacePrometheus.disableDefaultScrapingConfigs }}
-				// - -in-cluster-prometheus-disable-default-scraping-configs=true
-				// {{- end }}
-				// {{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
-				// - -in-cluster-prometheus-scraping-configs-file=/opt/incluster-prometheus-scraping-configs/_custom-scraping-configs.yaml
-				// {{- end }}
-				// {{- if .Values.kubermatic.monitoringScrapeAnnotationPrefix }}
-				// - -monitoring-scrape-annotation-prefix={{ .Values.kubermatic.monitoringScrapeAnnotationPrefix }}
-				// {{- end }}
 			}
 
 			sharedAddonVolume := "addons"
