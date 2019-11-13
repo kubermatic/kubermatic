@@ -8,7 +8,6 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/master/resources/kubermatic"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -44,11 +43,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		}
 
 		return reconcile.Result{}, fmt.Errorf("could not get KubermaticConfiguration %q: %v", request, err)
-	}
-
-	// silently ignore other worker names
-	if config.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
-		return reconcile.Result{}, nil
 	}
 
 	identifier, err := cache.MetaNamespaceKeyFunc(config)
@@ -181,7 +175,7 @@ func (r *Reconciler) reconcileDeployments(config *operatorv1alpha1.KubermaticCon
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		kubermatic.APIDeploymentCreator(config),
 		kubermatic.UIDeploymentCreator(config),
-		kubermatic.MasterControllerManagerDeploymentCreator(config),
+		kubermatic.MasterControllerManagerDeploymentCreator(config, r.workerName),
 	}
 
 	modifiers := []reconciling.ObjectModifier{

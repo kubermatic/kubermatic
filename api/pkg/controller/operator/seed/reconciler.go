@@ -14,7 +14,6 @@ import (
 	"go.uber.org/zap"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -27,16 +26,15 @@ import (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	ctx                context.Context
-	log                *zap.SugaredLogger
-	scheme             *runtime.Scheme
-	namespace          string
-	masterClient       ctrlruntimeclient.Client
-	seedsGetter        provider.SeedsGetter
-	seedClients        map[string]ctrlruntimeclient.Client
-	masterRecorder     record.EventRecorder
-	workerName         string
-	workerNameSelector labels.Selector
+	ctx            context.Context
+	log            *zap.SugaredLogger
+	scheme         *runtime.Scheme
+	namespace      string
+	masterClient   ctrlruntimeclient.Client
+	seedsGetter    provider.SeedsGetter
+	seedClients    map[string]ctrlruntimeclient.Client
+	masterRecorder record.EventRecorder
+	workerName     string
 }
 
 // Reconcile acts upon requests and will restore the state of resources
@@ -62,37 +60,35 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 		return fmt.Errorf("failed to get seeds: %v", err)
 	}
 
-	seed, exists := seeds[seedName]
-	if !exists {
+	if _, exists := seeds[seedName]; !exists {
 		log.Debug("ignoring request for non-existing seed")
 		return nil
 	}
 
-	if seed.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
-		log.Debugw("ignoring request for wrong worker name", "worker-name", seed.Labels[kubermaticv1.WorkerNameLabelKey])
-		return nil
-	}
-
 	// get pre-constructed seed client
-	client, exists := r.seedClients[seedName]
+	seedClient, exists := r.seedClients[seedName]
 	if !exists {
-		log.Debug("ignoring request for existing but uninitialized seed; the controller will be restarted once the kubeconfig is available")
+		log.Debug("ignoring request for existing but uninitialized seed; the controller will be reloaded once the kubeconfig is available")
 		return nil
 	}
 
 	// find the owning KubermaticConfiguration
 	configList := &operatorv1alpha1.KubermaticConfigurationList{}
 	listOpts := &ctrlruntimeclient.ListOptions{
-		Namespace:     r.namespace,
-		LabelSelector: r.workerNameSelector,
+		Namespace: r.namespace,
 	}
 
 	if err := r.masterClient.List(r.ctx, configList, listOpts); err != nil {
 		return fmt.Errorf("failed to find KubermaticConfigurations: %v", err)
 	}
 
-	if len(configList.Items) != 1 {
+	if len(configList.Items) == 0 {
 		log.Debug("ignoring request for namespace without KubermaticConfiguration")
+		return nil
+	}
+
+	if len(configList.Items) > 1 {
+		log.Infow("there are multiple KubermaticConfiguration objects, cannot reconcile", "namespace", r.namespace)
 		return nil
 	}
 
@@ -107,7 +103,7 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 		Namespace: r.namespace,
 	}
 
-	if err := client.Get(r.ctx, name, seedCopy); err != nil {
+	if err := seedClient.Get(r.ctx, name, seedCopy); err != nil {
 		if kerrors.IsNotFound(err) {
 			return errors.New("seed cluster has not yet been provisioned and contains no Seed CR yet")
 		}
@@ -116,7 +112,7 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 	}
 
 	// make sure to use the seedCopy so the owner ref has the correct UID
-	return r.reconcileResources(&config, seedCopy, client, log)
+	return r.reconcileResources(&config, seedCopy, seedClient, log)
 }
 
 func (r *Reconciler) reconcileResources(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {

@@ -185,8 +185,8 @@ func SeedControllerManagerDeploymentCreator(workerName string, cfg *operatorv1al
 
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
-				copyKubernetesAddonsContainer(cfg, sharedAddonVolume),
-				copyOpenshiftAddonsContainer(cfg, sharedAddonVolume),
+				createKubernetesAddonsInitContainer(cfg, sharedAddonVolume),
+				createOpenshiftAddonsInitContainer(cfg, sharedAddonVolume),
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -220,7 +220,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, cfg *operatorv1al
 	}
 }
 
-func copyKubernetesAddonsContainer(cfg *operatorv1alpha1.KubermaticConfiguration, addonVolume string) corev1.Container {
+func createKubernetesAddonsInitContainer(cfg *operatorv1alpha1.KubermaticConfiguration, addonVolume string) corev1.Container {
 	return corev1.Container{
 		Name:    "copy-addons-kubernetes",
 		Image:   cfg.Spec.SeedController.Addons.Kubernetes.Image,
@@ -238,7 +238,7 @@ func copyKubernetesAddonsContainer(cfg *operatorv1alpha1.KubermaticConfiguration
 	}
 }
 
-func copyOpenshiftAddonsContainer(cfg *operatorv1alpha1.KubermaticConfiguration, addonVolume string) corev1.Container {
+func createOpenshiftAddonsInitContainer(cfg *operatorv1alpha1.KubermaticConfiguration, addonVolume string) corev1.Container {
 	return corev1.Container{
 		Name:    "copy-addons-openshift",
 		Image:   cfg.Spec.SeedController.Addons.Openshift.Image,

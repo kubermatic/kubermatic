@@ -6,11 +6,11 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -48,25 +48,18 @@ func Add(
 	numWorkers int,
 	workerName string,
 ) error {
-	workerNameSelector, err := workerlabel.LabelSelector(workerName)
-	if err != nil {
-		return fmt.Errorf("failed to create worker-name label selector: %v", err)
-	}
-
 	namespacePredicate := predicateutil.ByNamespace(namespace)
-	workerNamePredicate := workerlabel.Predicates(workerName)
 
 	reconciler := &Reconciler{
-		ctx:                ctx,
-		log:                log.Named(ControllerName),
-		scheme:             masterManager.GetScheme(),
-		namespace:          namespace,
-		masterClient:       masterManager.GetClient(),
-		seedsGetter:        seedsGetter,
-		seedClients:        map[string]ctrlruntimeclient.Client{},
-		masterRecorder:     masterManager.GetEventRecorderFor(ControllerName),
-		workerName:         workerName,
-		workerNameSelector: workerNameSelector,
+		ctx:            ctx,
+		log:            log.Named(ControllerName),
+		scheme:         masterManager.GetScheme(),
+		namespace:      namespace,
+		masterClient:   masterManager.GetClient(),
+		seedsGetter:    seedsGetter,
+		seedClients:    map[string]ctrlruntimeclient.Client{},
+		masterRecorder: masterManager.GetEventRecorderFor(ControllerName),
+		workerName:     workerName,
 	}
 
 	ctrlOpts := controller.Options{
@@ -100,7 +93,7 @@ func Add(
 		return requests
 	})
 
-	if err := c.Watch(&source.Kind{Type: obj}, configEventHandler, workerNamePredicate); err != nil {
+	if err := c.Watch(&source.Kind{Type: obj}, configEventHandler, namespacePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %v", obj, err)
 	}
 
@@ -108,7 +101,7 @@ func Add(
 	for key, manager := range seedManagers {
 		reconciler.seedClients[key] = manager.GetClient()
 
-		if err := createSeedWatches(c, key, manager, namespacePredicate); err != nil {
+		if err := createSeedWatches(c, key, manager, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to setup watches for seed %s: %v", key, err)
 		}
 	}

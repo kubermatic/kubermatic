@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -12,7 +13,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -25,6 +28,18 @@ const (
 	// ManagedByLabel is the label used to identify the resources
 	// created by this controller.
 	ManagedByLabel = "app.kubernetes.io/managed-by"
+)
+
+var (
+	// ManagedByOperatorPredicate is a predicate that matches all resources created by
+	// the Kubermatic Operator, based on the ManagedBy label.
+	ManagedByOperatorPredicate = predicate.Factory(func(m metav1.Object, _ runtime.Object) bool {
+		return m.GetLabels()[ManagedByLabel] == OperatorName
+	})
+
+	// ManagedByOperatorSelector is a label selector that matches all resources created by
+	// the Kubermatic Operator.
+	ManagedByOperatorSelector, _ = labels.NewRequirement(ManagedByLabel, selection.Equals, []string{OperatorName})
 )
 
 func StringifyFeatureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string {
