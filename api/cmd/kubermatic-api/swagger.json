@@ -50,8 +50,11 @@
         "produces": [
           "application/json"
         ],
-        "summary": "Gets a kubermatic settings.",
-        "operationId": "admin",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Gets the global settings.",
+        "operationId": "getKubermaticSettings",
         "responses": {
           "200": {
             "description": "GlobalSettings",
@@ -74,13 +77,13 @@
         }
       },
       "patch": {
-        "description": "Patch the global settings",
         "produces": [
           "application/json"
         ],
         "tags": [
           "admin"
         ],
+        "summary": "Patches the global settings.",
         "operationId": "patchKubermaticSettings",
         "parameters": [
           {
