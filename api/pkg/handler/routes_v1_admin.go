@@ -24,9 +24,9 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 		Handler(r.patchKubermaticSettings())
 }
 
-// swagger:route GET /api/v1/admin/settings admin
+// swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
 //
-//     Gets a kubermatic settings.
+//     Gets the global settings.
 //
 //     Produces:
 //     - application/json
@@ -50,7 +50,7 @@ func (r Routing) getKubermaticSettings() http.Handler {
 
 // swagger:route PATCH /api/v1/admin/settings admin patchKubermaticSettings
 //
-//     Patch the global settings
+//     Patches the global settings.
 //
 //     Produces:
 //     - application/json
