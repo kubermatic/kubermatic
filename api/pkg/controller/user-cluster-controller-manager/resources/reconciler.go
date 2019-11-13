@@ -111,8 +111,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) error {
-	creators := []reconciling.NamedAPIServiceCreatorGetter{}
 	caCert := triple.EncodeCertPEM(data.caCert.Cert)
+	creators := []reconciling.NamedAPIServiceCreatorGetter{
+		metricsserver.APIServiceCreator(caCert),
+	}
 
 	if r.openshift {
 		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion(r.version, caCert)
@@ -122,11 +124,10 @@ func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) 
 		creators = append(creators, openshiftAPIServiceCreators...)
 	}
 
-	creators = append(creators, metricsserver.APIServiceCreator(caCert))
-
 	if err := reconciling.ReconcileAPIServices(ctx, creators, metav1.NamespaceNone, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile APIServices: %v", err)
 	}
+
 	return nil
 }
 
