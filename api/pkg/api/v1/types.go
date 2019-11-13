@@ -1267,6 +1267,10 @@ type LabelKeyList []string
 // swagger:model ResourceLabelMap
 type ResourceLabelMap map[ResourceType]LabelKeyList
 
+// GlobalSettings defines global settings
+// swagger:model GlobalSettings
+type GlobalSettings kubermaticv1.SettingSpec
+
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup
 	NodeDeletionFinalizer = "kubermatic.io/delete-nodes"

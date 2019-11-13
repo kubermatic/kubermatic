@@ -54,7 +54,10 @@
         "operationId": "admin",
         "responses": {
           "200": {
-            "$ref": "#/responses/GlobalSettings"
+            "description": "GlobalSettings",
+            "schema": {
+              "$ref": "#/definitions/GlobalSettings"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -94,7 +97,10 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/GlobalSettings"
+            "description": "GlobalSettings",
+            "schema": {
+              "$ref": "#/definitions/GlobalSettings"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -7207,6 +7213,18 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "CleanupOptions": {
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "type": "boolean"
+        },
+        "Enforced": {
+          "type": "boolean"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "CloudSpec": {
       "type": "object",
       "title": "CloudSpec mutually stores access data to a cloud provider.",
@@ -7555,6 +7573,35 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "CustomLink": {
+      "type": "object",
+      "properties": {
+        "icon": {
+          "type": "string",
+          "x-go-name": "Icon"
+        },
+        "label": {
+          "type": "string",
+          "x-go-name": "Label"
+        },
+        "location": {
+          "type": "string",
+          "x-go-name": "Location"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "CustomLinks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/CustomLink"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "Datacenter": {
       "type": "object",
@@ -8138,6 +8185,10 @@
     },
     "GlobalSecretKeySelector": {
       "$ref": "#/definitions/GlobalObjectKeySelector"
+    },
+    "GlobalSettings": {
+      "description": "GlobalSettings defines global settings",
+      "$ref": "#/definitions/SettingSpec"
     },
     "HealthStatus": {
       "type": "integer",
@@ -9900,6 +9951,40 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "SettingSpec": {
+      "type": "object",
+      "properties": {
+        "cleanupOptions": {
+          "$ref": "#/definitions/CleanupOptions"
+        },
+        "clusterTypeOptions": {
+          "type": "integer",
+          "format": "int8",
+          "x-go-name": "ClusterTypeOptions"
+        },
+        "customLinks": {
+          "$ref": "#/definitions/CustomLinks"
+        },
+        "defaultNodeCount": {
+          "type": "integer",
+          "format": "int8",
+          "x-go-name": "DefaultNodeCount"
+        },
+        "displayAPIDocs": {
+          "type": "boolean",
+          "x-go-name": "DisplayAPIDocs"
+        },
+        "displayDemoInfo": {
+          "type": "boolean",
+          "x-go-name": "DisplayDemoInfo"
+        },
+        "displayTermsOfService": {
+          "type": "boolean",
+          "x-go-name": "DisplayTermsOfService"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "Subject": {
       "description": "Right now we support \"User\" as a API group.",
