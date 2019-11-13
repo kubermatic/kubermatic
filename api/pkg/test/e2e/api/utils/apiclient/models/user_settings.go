@@ -18,6 +18,9 @@ type UserSettings struct {
 	// items per page
 	ItemsPerPage int8 `json:"itemsPerPage,omitempty"`
 
+	// select project card view
+	SelectProjectCardView bool `json:"selectProjectCardView,omitempty"`
+
 	// selected project ID
 	SelectedProjectID string `json:"selectedProjectId,omitempty"`
 
