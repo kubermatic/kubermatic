@@ -13,7 +13,7 @@ import (
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-// GetAdminEndpoint returns admin users
+// GetAdminEndpoint returns list of admin users
 func GetAdminEndpoint(userInfoGetter provider.UserInfoGetter, adminProvider provider.AdminProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		userInfo, err := userInfoGetter(ctx, "")
@@ -35,7 +35,7 @@ func GetAdminEndpoint(userInfoGetter provider.UserInfoGetter, adminProvider prov
 	}
 }
 
-// SetAdminEndpoint set/clear admin role
+// SetAdminEndpoint allows setting and clearing admin role for users
 func SetAdminEndpoint(userInfoGetter provider.UserInfoGetter, adminProvider provider.AdminProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(setAdminReq)
@@ -72,7 +72,7 @@ type setAdminReq struct {
 	Body apiv1.Admin
 }
 
-// Validate validates AddReq request
+// Validate setAdminReq request
 func (r setAdminReq) Validate() error {
 	if len(r.Body.Email) == 0 {
 		return k8cerrors.NewBadRequest("the email address cannot be empty")

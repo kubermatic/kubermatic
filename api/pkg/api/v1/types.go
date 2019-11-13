@@ -393,12 +393,12 @@ type User struct {
 	Settings *kubermaticv1.UserSettings `json:"userSettings,omitempty"`
 }
 
-// User represent an API admin
+// Admin represents admin user
 // swagger:model Admin
 type Admin struct {
-	// Email an email address of the admin user
+	// Email address of the admin user
 	Email string `json:"email"`
-	// Name the admin name
+	// Name of the admin user
 	Name string `json:"name,omitempty"`
 	// IsAdmin indicates admin role
 	IsAdmin bool `json:"isAdmin"`

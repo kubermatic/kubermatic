@@ -53,7 +53,7 @@
         "tags": [
           "admin"
         ],
-        "summary": "Gets a kubermatic admins.",
+        "summary": "Returns list of admin users.",
         "operationId": "getAdmins",
         "responses": {
           "200": {
@@ -89,7 +89,7 @@
         "tags": [
           "admin"
         ],
-        "summary": "Sets/clear admin role.",
+        "summary": "Allows setting and clearing admin role for users.",
         "operationId": "setAdmin",
         "parameters": [
           {
@@ -7018,11 +7018,11 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "Admin": {
-      "description": "User represent an API admin",
+      "description": "Admin represents admin user",
       "type": "object",
       "properties": {
         "email": {
-          "description": "Email an email address of the admin user",
+          "description": "Email address of the admin user",
           "type": "string",
           "x-go-name": "Email"
         },
@@ -7032,7 +7032,7 @@
           "x-go-name": "IsAdmin"
         },
         "name": {
-          "description": "Name the admin name",
+          "description": "Name of the admin user",
           "type": "string",
           "x-go-name": "Name"
         }

@@ -25,7 +25,7 @@ type Client struct {
 }
 
 /*
-GetAdmins gets a kubermatic admins
+GetAdmins returns list of admin users
 */
 func (a *Client) GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdminsOK, error) {
 	// TODO: Validate the params before sending
@@ -112,7 +112,7 @@ func (a *Client) PatchKubermaticSettings(params *PatchKubermaticSettingsParams, 
 }
 
 /*
-SetAdmin sets clear admin role
+SetAdmin allows setting and clearing admin role for users
 */
 func (a *Client) SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInfoWriter) (*SetAdminOK, error) {
 	// TODO: Validate the params before sending

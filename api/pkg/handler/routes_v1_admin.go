@@ -82,7 +82,7 @@ func (r Routing) patchKubermaticSettings() http.Handler {
 
 // swagger:route GET /api/v1/admin admin getAdmins
 //
-//     Gets a kubermatic admins.
+//     Returns list of admin users.
 //
 //     Produces:
 //     - application/json
@@ -106,7 +106,7 @@ func (r Routing) getAdmins() http.Handler {
 
 // swagger:route PUT /api/v1/admin admin setAdmin
 //
-//     Sets/clear admin role.
+//     Allows setting and clearing admin role for users.
 //
 //
 //     Consumes:

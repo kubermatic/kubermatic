@@ -11,17 +11,17 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// Admin User represent an API admin
+// Admin Admin represents admin user
 // swagger:model Admin
 type Admin struct {
 
-	// Email an email address of the admin user
+	// Email address of the admin user
 	Email string `json:"email,omitempty"`
 
 	// IsAdmin indicates admin role
 	IsAdmin bool `json:"isAdmin,omitempty"`
 
-	// Name the admin name
+	// Name of the admin user
 	Name string `json:"name,omitempty"`
 }
 
