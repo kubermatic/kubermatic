@@ -65,22 +65,20 @@ func NewAdminOK() *AdminOK {
 
 /*AdminOK handles this case with default header values.
 
-GlobalSettings
+Admin
 */
 type AdminOK struct {
-	Payload *models.GlobalSettings
+	Payload []*models.Admin
 }
 
 func (o *AdminOK) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] adminOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/admin][%d] adminOK  %+v", 200, o.Payload)
 }
 
 func (o *AdminOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.GlobalSettings)
-
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 
@@ -100,7 +98,7 @@ type AdminUnauthorized struct {
 }
 
 func (o *AdminUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] adminUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v1/admin][%d] adminUnauthorized ", 401)
 }
 
 func (o *AdminUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -121,7 +119,7 @@ type AdminForbidden struct {
 }
 
 func (o *AdminForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] adminForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v1/admin][%d] adminForbidden ", 403)
 }
 
 func (o *AdminForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -152,7 +150,7 @@ func (o *AdminDefault) Code() int {
 }
 
 func (o *AdminDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] admin default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/admin][%d] admin default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *AdminDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -117,6 +117,7 @@ func GetUser(email, id, name string) apiv1.User {
 // this function is temporal until all types end up in their own packages.
 // it is meant to be used by legacy handler.createTestEndpointAndGetClients function
 type newRoutingFunc func(
+	adminProvider provider.AdminProvider,
 	settingsProvider provider.SettingsProvider,
 	userInfoGetter provider.UserInfoGetter,
 	seedsGetter provider.SeedsGetter,
@@ -162,6 +163,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, userLister, kubernetes.IsServiceAccount)
+	adminProvider := kubernetes.NewAdminProvider(kubermaticClient, userLister)
 	settingsProvider := kubernetes.NewSettingsProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().KubermaticSettings().Lister())
 	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(TestServiceAccountHashKey))
 	if err != nil {
@@ -256,6 +258,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	var prometheusClient prometheusapi.Client
 
 	mainRouter := routingFunc(
+		adminProvider,
 		settingsProvider,
 		userInfoGetter,
 		seedsGetter,

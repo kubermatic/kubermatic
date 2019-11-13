@@ -153,4 +153,5 @@ type providers struct {
 	addons                                provider.AddonProviderGetter
 	userInfoGetter                        provider.UserInfoGetter
 	settingsProvider                      provider.SettingsProvider
+	adminProvider                         provider.AdminProvider
 }
