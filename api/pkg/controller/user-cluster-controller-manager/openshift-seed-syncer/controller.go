@@ -16,6 +16,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -98,21 +99,21 @@ func (r *reconciler) reconcile() (*reconcile.Result, error) {
 	serviceAccount := &corev1.ServiceAccount{}
 	if err := r.userClusterClient.Get(r.ctx, types.NamespacedName{Namespace: "kube-system", Name: userclusteropenshiftresources.TokenOwnerServiceAccountName}, serviceAccount); err != nil {
 		if !kerrors.IsNotFound(err) {
-			return nil, fmt.Errorf("error trying to get serviceAccount: %v", err)
+			return nil, fmt.Errorf("error trying to get ServiceAccount: %v", err)
 		}
 		// The ServiceAccount is created by another controller and may not exist yet
-		r.log.Debug("Gota NotFound when trying to get ServiceAccount, retrying later")
+		r.log.Debug("Got a NotFound error when trying to get ServiceAccount, retrying later")
 		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
 	if len(serviceAccount.Secrets) < 1 {
-		r.log.Debug("ServiceAccount has no Token associated, retrying later")
+		r.log.Debug("ServiceAccount has no token associated, retrying later")
 		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
 	tokenSecret := &corev1.Secret{}
 	tokenSecretName := types.NamespacedName{
-		Namespace: "kube-system",
+		Namespace: metav1.NamespaceSystem,
 		Name:      serviceAccount.Secrets[0].Name,
 	}
 	if err := r.userClusterClient.Get(r.ctx, tokenSecretName, tokenSecret); err != nil {

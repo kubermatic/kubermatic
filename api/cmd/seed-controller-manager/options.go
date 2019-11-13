@@ -248,7 +248,7 @@ type controllerContext struct {
 	ctx                  context.Context
 	runOptions           controllerRunOptions
 	mgr                  manager.Manager
-	clientProvider       client.UserClusterConnectionProvider
+	clientProvider       *client.Provider
 	seedGetter           provider.SeedGetter
 	dockerPullConfigJSON []byte
 	log                  *zap.SugaredLogger

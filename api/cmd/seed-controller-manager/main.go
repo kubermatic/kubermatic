@@ -109,7 +109,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Unable to create the seed factory", zap.Error(err))
 	}
 
-	var clientProvider client.UserClusterConnectionProvider
+	var clientProvider *client.Provider
 	if options.kubeconfig != "" {
 		clientProvider, err = client.NewExternal(mgr.GetClient())
 	} else {

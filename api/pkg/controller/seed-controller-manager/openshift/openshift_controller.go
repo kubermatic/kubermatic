@@ -75,7 +75,7 @@ type Reconciler struct {
 	scheme                   *runtime.Scheme
 	recorder                 record.EventRecorder
 	seedGetter               provider.SeedGetter
-	userClusterConnProvider  clusterclient.UserClusterConnectionProvider
+	userClusterConnProvider  *clusterclient.Provider
 	overwriteRegistry        string
 	nodeAccessNetwork        string
 	etcdDiskSize             resource.Quantity
@@ -95,7 +95,7 @@ func Add(
 	numWorkers int,
 	workerName string,
 	seedGetter provider.SeedGetter,
-	userClusterConnProvider clusterclient.UserClusterConnectionProvider,
+	userClusterConnProvider *clusterclient.Provider,
 	overwriteRegistry,
 	nodeAccessNetwork string,
 	etcdDiskSize resource.Quantity,

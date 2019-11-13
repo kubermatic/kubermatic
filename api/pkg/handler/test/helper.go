@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
@@ -24,6 +25,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -394,6 +396,10 @@ func (f *fakeUserClusterConnection) GetViewerKubeconfig(c *kubermaticv1.Cluster)
 }
 func (f *fakeUserClusterConnection) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error {
 	return nil
+}
+func (f *fakeUserClusterConnection) RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error {
+	c.Address.AdminToken = kuberneteshelper.GenerateToken()
+	return f.fakeDynamicClient.Update(context.Background(), c)
 }
 
 // ClientsSets a simple wrapper that holds fake client sets

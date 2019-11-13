@@ -35,13 +35,13 @@ type Reconciler struct {
 	updateManager *version.Manager
 	ctrlruntimeclient.Client
 	recorder                      record.EventRecorder
-	userClusterConnectionProvider client.UserClusterConnectionProvider
+	userClusterConnectionProvider *client.Provider
 	log                           *zap.SugaredLogger
 }
 
 // Add creates a new update controller
 func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager *version.Manager,
-	userClusterConnectionProvider client.UserClusterConnectionProvider, log *zap.SugaredLogger) error {
+	userClusterConnectionProvider *client.Provider, log *zap.SugaredLogger) error {
 	reconciler := &Reconciler{
 		workerName:                    workerName,
 		updateManager:                 updateManager,

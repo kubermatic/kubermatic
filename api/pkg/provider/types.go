@@ -143,6 +143,9 @@ type ClusterProvider interface {
 	// RevokeViewerKubeconfig revokes viewer token and kubeconfig
 	RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error
 
+	// RevokeAdminKubeconfig revokes the viewer token and kubeconfig
+	RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error
+
 	// GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
 	//
 	// Note that the client you will get has admin privileges
