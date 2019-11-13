@@ -1269,11 +1269,7 @@ type ResourceLabelMap map[ResourceType]LabelKeyList
 
 // GlobalSettings defines global settings
 // swagger:model GlobalSettings
-type GlobalSettings struct {
-	ObjectMeta `json:",inline"`
-
-	Settings kubermaticv1.SettingSpec `json:"globalSettings"`
-}
+type GlobalSettings kubermaticv1.SettingSpec
 
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup
