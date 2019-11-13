@@ -25,6 +25,35 @@ type Client struct {
 }
 
 /*
+GetAdmins returns list of admin users
+*/
+func (a *Client) GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdminsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetAdminsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getAdmins",
+		Method:             "GET",
+		PathPattern:        "/api/v1/admin",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAdminsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetAdminsOK), nil
+
+}
+
+/*
 GetKubermaticSettings gets the global settings
 */
 func (a *Client) GetKubermaticSettings(params *GetKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetKubermaticSettingsOK, error) {
@@ -79,6 +108,35 @@ func (a *Client) PatchKubermaticSettings(params *PatchKubermaticSettingsParams, 
 		return nil, err
 	}
 	return result.(*PatchKubermaticSettingsOK), nil
+
+}
+
+/*
+SetAdmin allows setting and clearing admin role for users
+*/
+func (a *Client) SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInfoWriter) (*SetAdminOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewSetAdminParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "setAdmin",
+		Method:             "PUT",
+		PathPattern:        "/api/v1/admin",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &SetAdminReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*SetAdminOK), nil
 
 }
 
