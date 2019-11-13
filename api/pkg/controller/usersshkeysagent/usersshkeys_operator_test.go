@@ -42,14 +42,14 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						ResourceVersion: "123456",
 						Name:            resources.UserSSHKeys,
-						Namespace:       namespace,
+						Namespace:       metav1.NamespaceSystem,
 					},
 					Data: map[string][]byte{
 						"key-test": []byte("ssh-rsa test_user_ssh_key"),
 					},
 				})
 			if _, err := tc.reconciler.Reconcile(reconcile.Request{
-				NamespacedName: types.NamespacedName{Name: resources.UserSSHKeys, Namespace: namespace}}); err != nil {
+				NamespacedName: types.NamespacedName{Name: resources.UserSSHKeys, Namespace: metav1.NamespaceSystem}}); err != nil {
 				t.Fatalf("failed to run reconcile: %v", err)
 			}
 

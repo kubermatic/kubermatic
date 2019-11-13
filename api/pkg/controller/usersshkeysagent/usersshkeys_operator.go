@@ -4,12 +4,11 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"gopkg.in/fsnotify.v1"
 	"os"
 	"reflect"
 
 	"go.uber.org/zap"
-
-	"github.com/fsnotify/fsnotify"
 
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -155,7 +154,6 @@ func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) er
 	if err != nil {
 		return err
 	}
-	defer watcher.Close()
 
 	go func() {
 		for {
@@ -169,10 +167,19 @@ func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) er
 					if err != nil || secret == nil {
 						return
 					}
-					if err := r.updateAuthorizedKeysFile(event.Name, secret.Data); err != nil {
-						r.log.Errorw("Cannot update authorized_keys file", "path", event.Name, zap.Error(err))
+
+					fileSSHKeys, err := r.getAuthorizedKeys(event.Name)
+					if err != nil {
+						r.log.Errorw("Failed getting ssh keys from authorized_keys file", "path", event.Name, zap.Error(err))
+						return
 					}
 
+					secretSSHKeys := reverseMapKeyValue(secret.Data)
+					if !reflect.DeepEqual(fileSSHKeys, secretSSHKeys) {
+						if err := r.updateAuthorizedKeysFile(event.Name, secret.Data); err != nil {
+							r.log.Errorw("Cannot update authorized_keys file", "path", event.Name, zap.Error(err))
+						}
+					}
 				}
 			case _, ok := <-watcher.Errors:
 				if !ok {
