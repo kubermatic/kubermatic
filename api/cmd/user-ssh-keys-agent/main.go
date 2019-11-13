@@ -11,7 +11,6 @@ import (
 
 	usersshkeys "github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeysagent"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -77,7 +76,10 @@ func main() {
 func availableUsersPaths() ([]string, error) {
 	var paths []string
 	for _, user := range []string{"root", "core", "ubuntu", "centos"} {
-		path := fmt.Sprintf("%v%v/authorized_keys", resources.AuthorizedKeysPath, user)
+		path := fmt.Sprintf("/%v/.ssh/authorized_keys", user)
+		if user != "root" {
+			path = fmt.Sprintf("/home%v", path)
+		}
 		file, err := os.Stat(path)
 		if err != nil {
 			if os.IsNotExist(err) {

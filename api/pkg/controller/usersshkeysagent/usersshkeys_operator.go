@@ -23,11 +23,11 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	operatorName = "usersshkeys-notifier"
-	namespace    = "kube-system"
 )
 
 type Reconciler struct {
@@ -165,7 +165,7 @@ func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) er
 					return
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write {
-					secret, err := r.fetchUserSSHKeySecret(ctx, namespace)
+					secret, err := r.fetchUserSSHKeySecret(ctx, metav1.NamespaceSystem)
 					if err != nil || secret == nil {
 						return
 					}
