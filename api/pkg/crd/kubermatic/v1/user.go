@@ -35,9 +35,10 @@ type UserSpec struct {
 
 // UserSettings represent an user settings
 type UserSettings struct {
-	SelectedTheme     string `json:"selectedTheme,omitempty"`
-	ItemsPerPage      int8   `json:"itemsPerPage,omitempty"`
-	SelectedProjectID string `json:"selectedProjectId,omitempty"`
+	SelectedTheme         string `json:"selectedTheme,omitempty"`
+	ItemsPerPage          int8   `json:"itemsPerPage,omitempty"`
+	SelectedProjectID     string `json:"selectedProjectId,omitempty"`
+	SelectProjectCardView bool   `json:"selectProjectCardView,omitempty"`
 }
 
 // UserList is a list of users
