@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"gopkg.in/fsnotify.v1"
 	"os"
 	"reflect"
 
+	"github.com/fsnotify/fsnotify"
 	"go.uber.org/zap"
 
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
