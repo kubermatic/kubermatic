@@ -58,10 +58,10 @@ func NewGetCurrentUserSettingsOK() *GetCurrentUserSettingsOK {
 
 /*GetCurrentUserSettingsOK handles this case with default header values.
 
-User
+UserSettings
 */
 type GetCurrentUserSettingsOK struct {
-	Payload *models.User
+	Payload *models.UserSettings
 }
 
 func (o *GetCurrentUserSettingsOK) Error() string {
@@ -70,7 +70,7 @@ func (o *GetCurrentUserSettingsOK) Error() string {
 
 func (o *GetCurrentUserSettingsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.User)
+	o.Payload = new(models.UserSettings)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
