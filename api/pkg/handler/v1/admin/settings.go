@@ -45,22 +45,22 @@ func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, se
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		existingGlobalSettingsJSON, err := json.Marshal(existingGlobalSettings.Spec)
+		existingGlobalSettingsSpecJSON, err := json.Marshal(existingGlobalSettings.Spec)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode existing settings: %v", err)
 		}
 
-		patchedGlobalSettingsJSON, err := jsonpatch.MergePatch(existingGlobalSettingsJSON, req.Patch)
+		patchedGlobalSettingsSpecJSON, err := jsonpatch.MergePatch(existingGlobalSettingsSpecJSON, req.Patch)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot patch global settings: %v", err)
 		}
-		var patchedGlobalSettings *kubermaticv1.SettingSpec
-		err = json.Unmarshal(patchedGlobalSettingsJSON, &patchedGlobalSettings)
+		var patchedGlobalSettingsSpec *kubermaticv1.SettingSpec
+		err = json.Unmarshal(patchedGlobalSettingsSpecJSON, &patchedGlobalSettingsSpec)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot decode patched settings: %v", err)
 		}
 
-		existingGlobalSettings.Spec = *patchedGlobalSettings
+		existingGlobalSettings.Spec = *patchedGlobalSettingsSpec
 		globalSettings, err := settingsProvider.UpdateGlobalSettings(userInfo, existingGlobalSettings)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
