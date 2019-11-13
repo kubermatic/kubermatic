@@ -1,4 +1,4 @@
-package usersshkeys_agent
+package usersshkeysagent
 
 import (
 	"bufio"

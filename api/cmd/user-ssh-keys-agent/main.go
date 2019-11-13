@@ -9,7 +9,7 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	usersshkeys "github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeys-agent"
+	usersshkeys "github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeysagent"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"

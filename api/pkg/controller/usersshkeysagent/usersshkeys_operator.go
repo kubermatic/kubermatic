@@ -1,4 +1,4 @@
-package usersshkeys_agent
+package usersshkeysagent
 
 import (
 	"bufio"
@@ -90,7 +90,7 @@ func (r *Reconciler) reconcileUserSSHKeys(secret *corev1.Secret) error {
 		}
 
 		secretKeys := reverseMapKeyValue(secret.Data)
-		if !compareUserSSHKeys(filesKeys, secretKeys) {
+		if !reflect.DeepEqual(filesKeys, secretKeys) {
 			if err := r.updateAuthorizedKeysFile(path, secret.Data); err != nil {
 				return err
 			}
@@ -204,13 +204,6 @@ func (r *Reconciler) fetchUserSSHKeySecret(ctx context.Context, namespace string
 	}
 
 	return secret, nil
-}
-
-func compareUserSSHKeys(keysFromFile map[string]struct{}, keysFromSecret map[string]struct{}) bool {
-	if reflect.DeepEqual(keysFromFile, keysFromSecret) {
-		return true
-	}
-	return false
 }
 
 func reverseMapKeyValue(data map[string][]byte) map[string]struct{} {
