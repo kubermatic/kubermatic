@@ -12,6 +12,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/kubeletdnat"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/api/pkg/pprof"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -23,6 +24,8 @@ import (
 )
 
 func main() {
+	pprofOpts := &pprof.Opts{}
+	pprofOpts.AddFlags(flag.CommandLine)
 	klog.InitFlags(nil)
 	kubeconfigFlag := flag.String("kubeconfig", "", "Path to a kubeconfig.")
 	master := flag.String("master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig")
@@ -86,6 +89,10 @@ func main() {
 
 	if err := kubeletdnat.Add(mgr, *chainNameFlag, nodeAccessNetwork, log, *vpnInterfaceFlag); err != nil {
 		log.Fatalw("failed to add the kubelet dnat controller", zap.Error(err))
+	}
+
+	if err := mgr.Add(pprofOpts); err != nil {
+		log.Fatalw("failed to add pprof endpoint", zap.Error(err))
 	}
 
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {

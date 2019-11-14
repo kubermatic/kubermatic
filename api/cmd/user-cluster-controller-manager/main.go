@@ -27,6 +27,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources"
 	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/api/pkg/pprof"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
@@ -64,6 +65,8 @@ type controllerRunOptions struct {
 func main() {
 	runOp := controllerRunOptions{}
 	klog.InitFlags(nil)
+	pprofOpts := &pprof.Opts{}
+	pprofOpts.AddFlags(flag.CommandLine)
 	flag.StringVar(&runOp.metricsListenAddr, "metrics-listen-address", "127.0.0.1:8085", "The address on which the internal HTTP /metrics server is running on")
 	flag.StringVar(&runOp.healthListenAddr, "health-listen-address", "127.0.0.1:8086", "The address on which the internal HTTP /ready & /live server is running on")
 	flag.BoolVar(&runOp.openshift, "openshift", false, "Whether the managed cluster is an openshift cluster")
@@ -143,6 +146,9 @@ func main() {
 	})
 	if err != nil {
 		log.Fatalw("Failed creating user cluster controller", zap.Error(err))
+	}
+	if err := mgr.Add(pprofOpts); err != nil {
+		log.Fatalw("Failed to add pprof handler", zap.Error(err))
 	}
 
 	var seedConfig *rest.Config

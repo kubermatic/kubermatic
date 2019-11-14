@@ -13,6 +13,7 @@ import (
 	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-lifecycle"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/api/pkg/pprof"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 
@@ -35,6 +36,8 @@ type controllerRunOptions struct {
 
 func main() {
 	klog.InitFlags(nil)
+	pprofOpts := &pprof.Opts{}
+	pprofOpts.AddFlags(flag.CommandLine)
 	opt := &controllerRunOptions{}
 	flag.StringVar(&opt.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if outside of cluster.")
 	flag.StringVar(&opt.namespace, "namespace", "", "The namespace the operator runs in, uses to determine where to look for KubermaticConfigurations.")
@@ -71,6 +74,10 @@ func main() {
 	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: opt.internalAddr})
 	if err != nil {
 		log.Fatalw("Failed to create Controller Manager instance: %v", err)
+	}
+
+	if err := mgr.Add(pprofOpts); err != nil {
+		log.Fatalw("Failed to add pprof endpoint", zap.Error(err))
 	}
 
 	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {

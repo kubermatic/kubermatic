@@ -67,6 +67,7 @@ spec:
         - -expose-strategy={{ .Values.kubermatic.exposeStrategy }}
         {{- end }}
         - -namespace=$(NAMESPACE)
+        - -pprof-listen-address={{ .Values.kubermatic.api.pprofEndpoint}}
         image: '{{ .Values.kubermatic.api.image.repository }}:{{ .Values.kubermatic.api.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.api.image.pullPolicy }}
         env:

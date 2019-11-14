@@ -58,10 +58,10 @@ func NewPatchCurrentUserSettingsOK() *PatchCurrentUserSettingsOK {
 
 /*PatchCurrentUserSettingsOK handles this case with default header values.
 
-User
+UserSettings
 */
 type PatchCurrentUserSettingsOK struct {
-	Payload *models.User
+	Payload *models.UserSettings
 }
 
 func (o *PatchCurrentUserSettingsOK) Error() string {
@@ -70,7 +70,7 @@ func (o *PatchCurrentUserSettingsOK) Error() string {
 
 func (o *PatchCurrentUserSettingsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.User)
+	o.Payload = new(models.UserSettings)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -393,6 +393,17 @@ type User struct {
 	Settings *kubermaticv1.UserSettings `json:"userSettings,omitempty"`
 }
 
+// Admin represents admin user
+// swagger:model Admin
+type Admin struct {
+	// Email address of the admin user
+	Email string `json:"email"`
+	// Name of the admin user
+	Name string `json:"name,omitempty"`
+	// IsAdmin indicates admin role
+	IsAdmin bool `json:"isAdmin"`
+}
+
 // ProjectGroup is a helper data structure that
 // stores the information about a project and a group prefix that a user belongs to
 type ProjectGroup struct {
@@ -1269,11 +1280,7 @@ type ResourceLabelMap map[ResourceType]LabelKeyList
 
 // GlobalSettings defines global settings
 // swagger:model GlobalSettings
-type GlobalSettings struct {
-	ObjectMeta `json:",inline"`
-
-	Settings kubermaticv1.SettingSpec `json:"globalSettings"`
-}
+type GlobalSettings kubermaticv1.SettingSpec
 
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup

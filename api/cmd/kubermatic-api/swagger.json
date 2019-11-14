@@ -45,13 +45,93 @@
         }
       }
     },
+    "/api/v1/admin": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Returns list of admin users.",
+        "operationId": "getAdmins",
+        "responses": {
+          "200": {
+            "description": "Admin",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Admin"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Allows setting and clearing admin role for users.",
+        "operationId": "setAdmin",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Admin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin",
+            "schema": {
+              "$ref": "#/definitions/Admin"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/settings": {
       "get": {
         "produces": [
           "application/json"
         ],
-        "summary": "Gets a kubermatic settings.",
-        "operationId": "admin",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Gets the global settings.",
+        "operationId": "getKubermaticSettings",
         "responses": {
           "200": {
             "description": "GlobalSettings",
@@ -74,13 +154,13 @@
         }
       },
       "patch": {
-        "description": "Patch the global settings",
         "produces": [
           "application/json"
         ],
         "tags": [
           "admin"
         ],
+        "summary": "Patches the global settings.",
         "operationId": "patchKubermaticSettings",
         "parameters": [
           {
@@ -291,9 +371,9 @@
         "operationId": "getCurrentUserSettings",
         "responses": {
           "200": {
-            "description": "User",
+            "description": "UserSettings",
             "schema": {
-              "$ref": "#/definitions/User"
+              "$ref": "#/definitions/UserSettings"
             }
           },
           "401": {
@@ -334,9 +414,9 @@
         ],
         "responses": {
           "200": {
-            "description": "User",
+            "description": "UserSettings",
             "schema": {
-              "$ref": "#/definitions/User"
+              "$ref": "#/definitions/UserSettings"
             }
           },
           "401": {
@@ -6937,6 +7017,28 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "Admin": {
+      "description": "Admin represents admin user",
+      "type": "object",
+      "properties": {
+        "email": {
+          "description": "Email address of the admin user",
+          "type": "string",
+          "x-go-name": "Email"
+        },
+        "isAdmin": {
+          "description": "IsAdmin indicates admin role",
+          "type": "boolean",
+          "x-go-name": "IsAdmin"
+        },
+        "name": {
+          "description": "Name of the admin user",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "AuditLoggingSettings": {
       "type": "object",
       "properties": {
@@ -8188,35 +8290,7 @@
     },
     "GlobalSettings": {
       "description": "GlobalSettings defines global settings",
-      "type": "object",
-      "properties": {
-        "creationTimestamp": {
-          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "CreationTimestamp"
-        },
-        "deletionTimestamp": {
-          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "DeletionTimestamp"
-        },
-        "globalSettings": {
-          "$ref": "#/definitions/SettingSpec"
-        },
-        "id": {
-          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
-          "type": "string",
-          "x-go-name": "ID"
-        },
-        "name": {
-          "description": "Name represents human readable name for the resource",
-          "type": "string",
-          "x-go-name": "Name"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+      "$ref": "#/definitions/SettingSpec"
     },
     "HealthStatus": {
       "type": "integer",
@@ -10136,6 +10210,10 @@
           "type": "integer",
           "format": "int8",
           "x-go-name": "ItemsPerPage"
+        },
+        "selectProjectCardView": {
+          "type": "boolean",
+          "x-go-name": "SelectProjectCardView"
         },
         "selectedProjectId": {
           "type": "string",

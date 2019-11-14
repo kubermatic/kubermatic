@@ -170,6 +170,7 @@ func seedAdminKubeconfigSecretCreatorGetter(
 
 			s.Data = map[string][]byte{
 				resources.KubeconfigSecretKey: b,
+				"token":                       []byte(token),
 			}
 			return s, nil
 		}

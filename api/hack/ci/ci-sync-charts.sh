@@ -10,7 +10,8 @@ export LATEST_VERSION=$(git describe --tags --abbrev=0)
 sed -i "s/__KUBERMATIC_TAG__/$LATEST_VERSION/g" config/*/*.yaml
 git config --global user.email "dev@loodse.com"
 git config --global user.name "Prow CI Robot"
-git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /ssh/id_rsa'
+git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
+ensure_github_host_pubkey
 
 if ! git describe --exact-match --tags HEAD &>/dev/null; then
   echo "No tag matches current HEAD, exitting..."

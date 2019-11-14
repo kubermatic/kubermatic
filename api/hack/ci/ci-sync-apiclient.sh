@@ -2,6 +2,8 @@
 
 set -eu
 
+. $(dirname $0)/../lib.sh
+
 URL="git@github.com:kubermatic/go-kubermatic.git"
 
 commit_and_push() {
@@ -15,7 +17,7 @@ commit_and_push() {
 
         git config --local user.email "dev@loodse.com"
         git config --local user.name "Prow CI Robot"
-        git config --local core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /ssh/id_rsa'
+        git config --local core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
 
         git add .
         git commit -m "Syncing client from Kubermatic $source_sha"
@@ -33,10 +35,13 @@ if [ -n "$(git rev-parse --show-prefix)" ]; then
     exit 1
 fi
 
+# Ensure Github's host key is available and disable IP checking.
+ensure_github_host_pubkey
+
 # clone the target and pick the right branch
-tempdir="$(mktemp -d --suffix "-apiclient-sync")"
+tempdir="$(mktemp -d)"
 trap "rm -rf '$tempdir'" EXIT
-git clone "$URL" "$tempdir"
+GIT_SSH_COMMAND="ssh -o CheckHostIP=no -i /ssh/id_rsa" git clone "$URL" "$tempdir"
 (
     cd "$tempdir"
     git checkout "$PULL_BASE_REF" || git checkout -b "$PULL_BASE_REF"
@@ -45,7 +50,7 @@ git clone "$URL" "$tempdir"
 # rewrite all the import paths
 echo "Rewriting import paths"
 sed_expression="s#github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient#github.com/kubermatic/go-kubermatic#g"
-time find api/pkg/test/e2e/api/utils/apiclient/ -type f -execdir sed "$sed_expression" -i {} \;
+time find api/pkg/test/e2e/api/utils/apiclient/ -type f -exec sed "$sed_expression" -i {} \;
 
 # sync the files
 echo "Synchronizing the files"

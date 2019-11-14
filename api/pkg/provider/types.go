@@ -484,3 +484,9 @@ type SettingsProvider interface {
 	GetGlobalSettings(userInfo *UserInfo) (*kubermaticv1.KubermaticSetting, error)
 	UpdateGlobalSettings(userInfo *UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error)
 }
+
+// AdminProvider declares the set of methods for interacting with admin
+type AdminProvider interface {
+	SetAdmin(userInfo *UserInfo, email string, isAdmin bool) (*kubermaticv1.User, error)
+	GetAdmins(userInfo *UserInfo) ([]kubermaticv1.User, error)
+}
