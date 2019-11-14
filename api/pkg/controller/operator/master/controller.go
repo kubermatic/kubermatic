@@ -9,7 +9,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -47,6 +46,7 @@ func Add(
 ) error {
 	reconciler := &Reconciler{
 		Client:     mgr.GetClient(),
+		scheme:     mgr.GetScheme(),
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		log:        log.Named(ControllerName),
 		workerName: workerName,
@@ -60,7 +60,6 @@ func Add(
 	}
 
 	namespacePredicate := predicateutil.ByNamespace(namespace)
-	workerNamePredicate := workerlabel.Predicates(workerName)
 
 	// put the config's identifier on the queue
 	kubermaticConfigHandler := newEventHandler(func(a handler.MapObject) []reconcile.Request {
@@ -75,16 +74,12 @@ func Add(
 	})
 
 	cfg := &operatorv1alpha1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: cfg}, kubermaticConfigHandler, namespacePredicate, workerNamePredicate); err != nil {
+	if err := c.Watch(&source.Kind{Type: cfg}, kubermaticConfigHandler, namespacePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %v", cfg, err)
 	}
 
 	// for each child put the parent configuration onto the queue
 	childEventHandler := newEventHandler(func(a handler.MapObject) []reconcile.Request {
-		if a.Meta.GetLabels()[common.ManagedByLabel] != common.OperatorName {
-			return nil
-		}
-
 		configs := &operatorv1alpha1.KubermaticConfigurationList{}
 		options := &ctrlruntimeclient.ListOptions{Namespace: namespace}
 
@@ -123,7 +118,7 @@ func Add(
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, namespacePredicate); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}

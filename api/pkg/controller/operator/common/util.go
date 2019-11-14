@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -12,9 +14,11 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/apimachinery/pkg/selection"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -27,6 +31,32 @@ const (
 	ManagedByLabel = "app.kubernetes.io/managed-by"
 )
 
+var (
+	// ManagedByOperatorPredicate is a predicate that matches all resources created by
+	// the Kubermatic Operator, based on the ManagedBy label.
+	ManagedByOperatorPredicate = predicate.Factory(func(m metav1.Object, _ runtime.Object) bool {
+		for _, ref := range m.GetOwnerReferences() {
+			if isKubermaticConfiguration(ref) || isSeed(ref) {
+				return true
+			}
+		}
+
+		return false
+	})
+
+	// ManagedByOperatorSelector is a label selector that matches all resources created by
+	// the Kubermatic Operator.
+	ManagedByOperatorSelector, _ = labels.NewRequirement(ManagedByLabel, selection.Equals, []string{OperatorName})
+)
+
+func isKubermaticConfiguration(ref metav1.OwnerReference) bool {
+	return ref.APIVersion == operatorv1alpha1.SchemeGroupVersion.String() && ref.Kind == "KubermaticConfiguration"
+}
+
+func isSeed(ref metav1.OwnerReference) bool {
+	return ref.APIVersion == kubermaticv1.SchemeGroupVersion.String() && ref.Kind == "Seed"
+}
+
 func StringifyFeatureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string {
 	features := make([]string, 0)
 	for _, feature := range cfg.Spec.FeatureGates.List() {
@@ -38,7 +68,7 @@ func StringifyFeatureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string
 
 // OwnershipModifierFactory is generating a new ObjectModifier that wraps an ObjectCreator
 // and takes care of applying the ownership and other labels for all managed objects.
-func OwnershipModifierFactory(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.ObjectModifier {
+func OwnershipModifierFactory(owner metav1.Object, scheme *runtime.Scheme) reconciling.ObjectModifier {
 	return func(create reconciling.ObjectCreator) reconciling.ObjectCreator {
 		return func(existing runtime.Object) (runtime.Object, error) {
 			obj, err := create(existing)
@@ -51,14 +81,15 @@ func OwnershipModifierFactory(cfg *operatorv1alpha1.KubermaticConfiguration) rec
 				return obj, nil
 			}
 
-			o.SetOwnerReferences([]metav1.OwnerReference{{
-				APIVersion:         cfg.APIVersion,
-				Kind:               cfg.Kind,
-				Name:               cfg.Name,
-				UID:                cfg.UID,
-				Controller:         pointer.BoolPtr(true),
-				BlockOwnerDeletion: pointer.BoolPtr(true),
-			}})
+			// try to set an owner reference; on shared resources this would fail to set
+			// the second owner ref, we ignore this error and rely on the existing
+			// KubermaticConfiguration ownership
+			err = controllerutil.SetControllerReference(owner, o, scheme)
+			if err != nil {
+				if _, ok := err.(*controllerutil.AlreadyOwnedError); !ok {
+					return obj, fmt.Errorf("failed to set owner reference: %v", err)
+				}
+			}
 
 			labels := o.GetLabels()
 			if labels == nil {
