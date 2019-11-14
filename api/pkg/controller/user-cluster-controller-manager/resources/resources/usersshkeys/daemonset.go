@@ -8,6 +8,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -31,6 +32,11 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 					MaxUnavailable: &daemonSetMaxUnavailable,
 				},
 			}
+			labels := map[string]string{"app": "user-ssh-keys-agent"}
+			ds.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
+			ds.Spec.Template.ObjectMeta.Labels = labels
+
+			ds.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{

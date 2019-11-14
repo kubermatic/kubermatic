@@ -136,6 +136,7 @@ func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) 
 func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		userauth.ServiceAccountCreator(),
+		usersshkeys.ServiceAccountCreator(),
 	}
 
 	if r.openshift {
@@ -164,6 +165,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 	creators := []reconciling.NamedRoleCreatorGetter{
 		machinecontroller.KubeSystemRoleCreator(),
 		clusterautoscaler.KubeSystemRoleCreator(),
+		usersshkeys.RoleCreator(),
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -230,6 +232,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 		scheduler.RoleBindingAuthDelegator(),
 		controllermanager.RoleBindingAuthDelegator(),
 		clusterautoscaler.KubeSystemRoleBindingCreator(),
+		usersshkeys.RoleBindingCreator(),
 	}
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in kube-system Namespace: %v", err)
