@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -34,13 +35,27 @@ var (
 	// ManagedByOperatorPredicate is a predicate that matches all resources created by
 	// the Kubermatic Operator, based on the ManagedBy label.
 	ManagedByOperatorPredicate = predicate.Factory(func(m metav1.Object, _ runtime.Object) bool {
-		return m.GetLabels()[ManagedByLabel] == OperatorName
+		for _, ref := range m.GetOwnerReferences() {
+			if isKubermaticConfiguration(ref) || isSeed(ref) {
+				return true
+			}
+		}
+
+		return false
 	})
 
 	// ManagedByOperatorSelector is a label selector that matches all resources created by
 	// the Kubermatic Operator.
 	ManagedByOperatorSelector, _ = labels.NewRequirement(ManagedByLabel, selection.Equals, []string{OperatorName})
 )
+
+func isKubermaticConfiguration(ref metav1.OwnerReference) bool {
+	return ref.APIVersion == operatorv1alpha1.SchemeGroupVersion.String() && ref.Kind == "KubermaticConfiguration"
+}
+
+func isSeed(ref metav1.OwnerReference) bool {
+	return ref.APIVersion == kubermaticv1.SchemeGroupVersion.String() && ref.Kind == "Seed"
+}
 
 func StringifyFeatureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string {
 	features := make([]string, 0)
