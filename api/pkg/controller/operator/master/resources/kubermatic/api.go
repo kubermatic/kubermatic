@@ -22,12 +22,6 @@ func apiPodLabels() map[string]string {
 	}
 }
 
-/*
-The openshiftseedsyncer controller is responsible for syncing resources from Openshift userclusters
-The openshiftseedsyncer controller is responsible for syncing resources from Openshift userclusters
-into the seed cluster namespace.
-into the seed cluster namespace.
-*/
 func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return apiDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
