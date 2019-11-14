@@ -52,7 +52,6 @@ func Add(
 	clusterURL *url.URL,
 	openvpnServerPort int,
 	registerReconciledCheck func(name string, check healthcheck.Check),
-	overwriteRegistry string,
 	cloudCredentialSecretTemplate *corev1.Secret,
 	openshiftConsoleCallbackURI string,
 	cloudConfig []byte,
@@ -69,7 +68,6 @@ func Add(
 		log:                           log,
 		platform:                      cloudProviderName,
 		openshiftConsoleCallbackURI:   openshiftConsoleCallbackURI,
-		overwriteRegistry:             overwriteRegistry,
 	}
 
 	if r.openshift {

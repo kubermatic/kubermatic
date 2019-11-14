@@ -21,9 +21,7 @@ var (
 	hostPathType            = corev1.HostPathUnset
 )
 
-type GetImageRegistry func(reg string) string
-
-func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return daemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Spec.UpdateStrategy = appsv1.DaemonSetUpdateStrategy{
@@ -37,7 +35,7 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 				{
 					Name:            daemonSetName,
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           getRegistry(resources.RegistryQuay) + "/" + daemonSetName + ":" + tag,
+					Image:           resources.RegistryQuay + "/" + daemonSetName + ":" + tag,
 					Command:         []string{fmt.Sprintf("/bin/%v", daemonSetName)},
 					VolumeMounts: []corev1.VolumeMount{
 						{

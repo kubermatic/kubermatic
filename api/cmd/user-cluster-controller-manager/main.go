@@ -207,7 +207,6 @@ func main() {
 		clusterURL,
 		runOp.openvpnServerPort,
 		healthHandler.AddReadinessCheck,
-		runOp.overwriteRegistry,
 		cloudCredentialSecretTemplate,
 		runOp.openshiftConsoleCallbackURI,
 		cloudConfig,

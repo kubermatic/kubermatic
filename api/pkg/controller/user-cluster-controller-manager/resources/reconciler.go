@@ -451,7 +451,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
 	dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
-		usersshkeys.DaemonSetCreator(getRegistryDefaultFunc(r.overwriteRegistry)),
+		usersshkeys.DaemonSetCreator(),
 	}
 
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -547,13 +547,4 @@ type reconcileData struct {
 	caCert        *triple.KeyPair
 	openVPNCACert *resources.ECDSAKeyPair
 	userSSHKeys   map[string][]byte
-}
-
-func getRegistryDefaultFunc(overwriteRegistry string) func(defaultRegistry string) string {
-	return func(defaultRegistry string) string {
-		if overwriteRegistry != "" {
-			return overwriteRegistry
-		}
-		return defaultRegistry
-	}
 }
