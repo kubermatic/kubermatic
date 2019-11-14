@@ -983,7 +983,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "prometheus_tsdb_head_chunks{job=\"pods\",pod=~\"$pod\"}",
+          "expr": "sum by (pod) (prometheus_tsdb_head_chunks{job=\"pods\",pod=~\"$pod\"})",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
@@ -1076,7 +1076,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "prometheus_tsdb_head_series{job=\"pods\",pod=~\"$pod\"}",
+          "expr": "sum by (pod) (prometheus_tsdb_head_series{job=\"pods\",pod=~\"$pod\"})",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
@@ -1275,7 +1275,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(prometheus_tsdb_head_samples_appended_total{job=\"pods\",pod=~\"$pod\"}[$interval])",
+          "expr": "sum by (pod) (rate(prometheus_tsdb_head_samples_appended_total{job=\"pods\",pod=~\"$pod\"}[$interval]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ pod }}",
@@ -1555,7 +1555,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "scrape_duration_seconds{job=\"pods\",pod=~\"$pod\"}",
+          "expr": "sum by (pod) (scrape_duration_seconds{job=\"pods\",pod=~\"$pod\"})",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
@@ -1770,7 +1770,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(prometheus_rule_evaluation_duration_seconds_sum{job=\"pods\",pod=~\"$pod\"}[$interval]) / rate(prometheus_rule_evaluation_duration_seconds_count{job=\"pods\",pod=~\"$pod\"}[$interval])",
+          "expr": "sum by (pod) (rate(prometheus_rule_evaluation_duration_seconds_sum{job=\"pods\",pod=~\"$pod\"}[$interval]) / rate(prometheus_rule_evaluation_duration_seconds_count{job=\"pods\",pod=~\"$pod\"}[$interval]))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ pod }}",
@@ -2332,7 +2332,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "prometheus_config_last_reload_successful{job=\"pods\",pod=~\"$pod\"}",
+          "expr": "min by (pod) (prometheus_config_last_reload_successful{job=\"pods\",pod=~\"$pod\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ pod }}",
@@ -2500,7 +2500,7 @@
       {
         "allValue": null,
         "current": {
-          "tags": [],
+          "selected": true,
           "text": "5m",
           "value": "5m"
         },
