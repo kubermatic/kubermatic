@@ -48,29 +48,6 @@ type KeyPair struct {
 	Cert *x509.Certificate
 }
 
-func NewRSAKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
-	certs, err := certutil.ParseCertsPEM(certPEM)
-	if err != nil {
-		return nil, fmt.Errorf("certificate is not valid PEM: %v", err)
-	}
-
-	if len(certs) != 1 {
-		return nil, fmt.Errorf("did not find exactly one but %v certificates", len(certs))
-	}
-
-	key, err := ParsePrivateKeyPEM(keyPEM)
-	if err != nil {
-		return nil, fmt.Errorf("private key is not valid PEM: %v", err)
-	}
-
-	rsaKey, isRSAKey := key.(*rsa.PrivateKey)
-	if !isRSAKey {
-		return nil, errors.New("private key is not a RSA key")
-	}
-
-	return &KeyPair{Cert: certs[0], Key: rsaKey}, nil
-}
-
 func NewCA(name string) (*KeyPair, error) {
 	key, err := newPrivateKey()
 	if err != nil {
@@ -190,6 +167,29 @@ func newSignedCert(cfg certutil.Config, key crypto.Signer, caCert *x509.Certific
 		return nil, err
 	}
 	return x509.ParseCertificate(certDERBytes)
+}
+
+func ParseRSAKeyPair(certPEM, keyPEM []byte) (*KeyPair, error) {
+	certs, err := certutil.ParseCertsPEM(certPEM)
+	if err != nil {
+		return nil, fmt.Errorf("certificate is not valid PEM: %v", err)
+	}
+
+	if len(certs) != 1 {
+		return nil, fmt.Errorf("did not find exactly one but %v certificates", len(certs))
+	}
+
+	key, err := ParsePrivateKeyPEM(keyPEM)
+	if err != nil {
+		return nil, fmt.Errorf("private key is not valid PEM: %v", err)
+	}
+
+	rsaKey, isRSAKey := key.(*rsa.PrivateKey)
+	if !isRSAKey {
+		return nil, errors.New("private key is not a RSA key")
+	}
+
+	return &KeyPair{Cert: certs[0], Key: rsaKey}, nil
 }
 
 // EncodeCertPEM returns PEM-endcoded certificate data

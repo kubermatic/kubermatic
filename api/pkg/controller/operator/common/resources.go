@@ -91,7 +91,7 @@ func SeedWebhookServingCertSecretCreator(cfg *operatorv1alpha1.KubermaticConfigu
 			return nil, fmt.Errorf("CA certificate could not be retrieved: %v", err)
 		}
 
-		keypair, err := triple.NewRSAKeyPair(se.Data[resources.CACertSecretKey], se.Data[resources.CAKeySecretKey])
+		keypair, err := triple.ParseRSAKeyPair(se.Data[resources.CACertSecretKey], se.Data[resources.CAKeySecretKey])
 		if err != nil {
 			return nil, fmt.Errorf("CA certificate secret contains no valid key pair: %v", err)
 		}

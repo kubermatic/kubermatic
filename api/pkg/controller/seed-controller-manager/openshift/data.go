@@ -86,7 +86,7 @@ func (od *openshiftData) GetRootCAWithContext(ctx context.Context) (*triple.KeyP
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.CASecretName), secret); err != nil {
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 	}
-	return triple.NewRSAKeyPair(secret.Data[kubernetesresources.CACertSecretKey],
+	return triple.ParseRSAKeyPair(secret.Data[kubernetesresources.CACertSecretKey],
 		secret.Data[kubernetesresources.CAKeySecretKey])
 }
 
@@ -99,7 +99,7 @@ func (od *openshiftData) GetFrontProxyCAWithContext(ctx context.Context) (*tripl
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.FrontProxyCASecretName), secret); err != nil {
 		return nil, fmt.Errorf("failed to get FrontProxy CA: %v", err)
 	}
-	return triple.NewRSAKeyPair(secret.Data[kubernetesresources.CACertSecretKey],
+	return triple.ParseRSAKeyPair(secret.Data[kubernetesresources.CACertSecretKey],
 		secret.Data[kubernetesresources.CAKeySecretKey])
 }
 
