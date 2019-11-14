@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	daemonSetName = "kubermatic/user-ssh-keys-agent"
-	tag           = "latest"
+	daemonSetName      = "user-ssh-keys-agent"
+	daemonSetImageName = "kubermatic/user-ssh-keys-agent"
+	tag                = "latest"
 )
 
 var (
@@ -35,7 +36,7 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 				{
 					Name:            daemonSetName,
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           resources.RegistryQuay + "/" + daemonSetName + ":" + tag,
+					Image:           resources.RegistryQuay + "/" + daemonSetImageName + ":" + tag,
 					Command:         []string{fmt.Sprintf("/bin/%v", daemonSetName)},
 					VolumeMounts: []corev1.VolumeMount{
 						{
