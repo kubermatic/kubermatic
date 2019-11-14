@@ -29,6 +29,9 @@ import (
 
 const (
 	controllerName = "openshift_seed_syncer"
+	// ConsoleAdminPasswordSecretName is the OAuth bootstrap secret which we
+	// use to authenticate the console against the oauth service.
+	ConsoleAdminPasswordSecretName = "openshift-bootstrap-password"
 )
 
 func Add(
@@ -132,6 +135,7 @@ func (r *reconciler) reconcile() (*reconcile.Result, error) {
 
 	secretCreators := []reconciling.NamedSecretCreatorGetter{
 		seedAdminKubeconfigSecretCreatorGetter(caCert, r.externalClusterAddress, r.clusterName, token),
+		oauthBootstrapSecretCreatorGetter(r.userClusterClient),
 	}
 	if err := reconciling.ReconcileSecrets(
 		r.ctx,
@@ -168,6 +172,29 @@ func seedAdminKubeconfigSecretCreatorGetter(
 				resources.KubeconfigSecretKey: b,
 				"token":                       []byte(token),
 			}
+			return s, nil
+		}
+	}
+}
+
+func oauthBootstrapSecretCreatorGetter(userClusterClient ctrlruntimeclient.Client) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		name := userclusteropenshiftresources.OAuthBootstrapSecretName
+		return ConsoleAdminPasswordSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+			userClusterOAuthSecretName := types.NamespacedName{
+				Namespace: metav1.NamespaceSystem,
+				Name:      name,
+			}
+			userClusterOAuthSecret := &corev1.Secret{}
+			if err := userClusterClient.Get(context.Background(), userClusterOAuthSecretName, userClusterOAuthSecret); err != nil {
+				return nil, fmt.Errorf("failed to get the %s/%s secret from the usercluster: %v", userClusterOAuthSecretName.Namespace, userClusterOAuthSecretName.Name, err)
+			}
+
+			if s.Data == nil {
+				s.Data = map[string][]byte{}
+			}
+			s.Data[name] = userClusterOAuthSecret.Data[name]
+
 			return s, nil
 		}
 	}

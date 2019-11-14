@@ -408,6 +408,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		usersshkeys.SecretCreator(data.userSSHKeys),
 	}
 	if r.openshift {
+		creators = append(creators, openshift.OAuthBootstrapPassword)
 		if r.cloudCredentialSecretTemplate != nil {
 			creators = append(creators, openshift.CloudCredentialSecretCreator(*r.cloudCredentialSecretTemplate))
 		}
