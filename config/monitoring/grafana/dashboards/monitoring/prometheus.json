@@ -23,6 +23,7 @@
       "hideTimeOverride": true,
       "id": 25,
       "links": [],
+      "options": {},
       "pageSize": null,
       "scroll": true,
       "showHeader": true,
@@ -75,9 +76,10 @@
       ],
       "targets": [
         {
-          "expr": "up{pod=~\"$pod\"} < 1",
+          "expr": "up{job=\"pods\",pod=~\"$pod\"} < 1",
           "format": "table",
-          "intervalFactor": 2,
+          "instant": true,
+          "intervalFactor": 1,
           "refId": "A",
           "step": 2
         }
@@ -132,6 +134,7 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
+      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -152,9 +155,10 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(prometheus_tsdb_head_series{pod=~\"$pod\"})",
+          "expr": "sum(prometheus_tsdb_head_series{job=\"pods\",pod=~\"$pod\"})",
           "format": "time_series",
-          "intervalFactor": 2,
+          "interval": "$interval",
+          "intervalFactor": 1,
           "refId": "B",
           "step": 40
         }
@@ -217,6 +221,7 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
+      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -237,9 +242,10 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(prometheus_tsdb_head_chunks{pod=~\"$pod\"})",
+          "expr": "sum(prometheus_tsdb_head_chunks{job=\"pods\",pod=~\"$pod\"})",
           "format": "time_series",
-          "intervalFactor": 2,
+          "interval": "$interval",
+          "intervalFactor": 1,
           "refId": "B",
           "step": 40
         }
@@ -281,7 +287,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
+        "w": 6,
         "x": 0,
         "y": 7
       },
@@ -302,6 +308,7 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
+      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -317,106 +324,21 @@
         "fillColor": "rgba(31, 118, 189, 0.18)",
         "full": false,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(sum_over_time(prometheus_evaluator_iterations_missed_total{pod=~\"$pod\"}[$interval]))",
+          "expr": "sum(sum_over_time(prometheus_rule_group_iterations_missed_total{job=\"pods\",pod=~\"$pod\"}[$interval]))",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "refId": "A",
           "step": 40
         }
       ],
       "thresholds": "1,10",
       "timeRegions": [],
-      "title": "Missed Iterations [$interval]",
-      "transparent": true,
-      "type": "singlestat",
-      "valueFontSize": "100%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
-    },
-    {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": true,
-      "colors": [
-        "rgba(50, 172, 45, 0.97)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(245, 54, 54, 0.9)"
-      ],
-      "datasource": "$datasource",
-      "description": "The total number of rule group evaluations skipped due to throttled metric storage.",
-      "editable": true,
-      "format": "locale",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 7
-      },
-      "id": 18,
-      "interval": null,
-      "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
-      "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false
-      },
-      "tableColumn": "",
-      "targets": [
-        {
-          "expr": "sum(sum_over_time(prometheus_evaluator_iterations_skipped_total{pod=~\"$pod\"}[$interval]))",
-          "format": "time_series",
-          "intervalFactor": 2,
-          "refId": "A",
-          "step": 40
-        }
-      ],
-      "thresholds": "1,10",
-      "timeRegions": [],
-      "title": "Skipped Iterations [$interval]",
+      "title": "Missed Iterations",
       "transparent": true,
       "type": "singlestat",
       "valueFontSize": "100%",
@@ -451,8 +373,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 8,
+        "w": 6,
+        "x": 6,
         "y": 7
       },
       "id": 19,
@@ -472,6 +394,7 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
+      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -487,21 +410,21 @@
         "fillColor": "rgba(31, 118, 189, 0.18)",
         "full": false,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(sum_over_time(prometheus_target_scrapes_exceeded_sample_limit_total{pod=~\"$pod\"}[$interval]))",
+          "expr": "sum(sum_over_time(prometheus_target_scrapes_exceeded_sample_limit_total{job=\"pods\",pod=~\"$pod\"}[$interval]))",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "refId": "A",
           "step": 40
         }
       ],
       "thresholds": "1,10",
       "timeRegions": [],
-      "title": "Tardy Scrapes [$interval]",
+      "title": "Tardy Scrapes",
       "transparent": true,
       "type": "singlestat",
       "valueFontSize": "100%",
@@ -536,7 +459,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
+        "w": 6,
         "x": 12,
         "y": 7
       },
@@ -557,6 +480,7 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
+      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -572,21 +496,21 @@
         "fillColor": "rgba(31, 118, 189, 0.18)",
         "full": false,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(sum_over_time(prometheus_tsdb_reloads_failures_total{pod=~\"$pod\"}[$interval]))",
+          "expr": "sum(sum_over_time(prometheus_tsdb_reloads_failures_total{job=\"pods\",pod=~\"$pod\"}[$interval]))",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "refId": "A",
           "step": 40
         }
       ],
       "thresholds": "1,10",
       "timeRegions": [],
-      "title": "Reload Failures [$interval]",
+      "title": "Reload Failures",
       "transparent": true,
       "type": "singlestat",
       "valueFontSize": "100%",
@@ -621,8 +545,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 8,
-        "x": 16,
+        "w": 6,
+        "x": 18,
         "y": 7
       },
       "id": 20,
@@ -642,6 +566,7 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
+      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -657,21 +582,21 @@
         "fillColor": "rgba(31, 118, 189, 0.18)",
         "full": false,
         "lineColor": "rgb(31, 120, 193)",
-        "show": false
+        "show": true
       },
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(sum_over_time(prometheus_target_scrapes_exceeded_sample_limit_total{pod=~\"$pod\"}[$interval])) + \nsum(sum_over_time(prometheus_target_scrapes_sample_duplicate_timestamp_total{pod=~\"$pod\"}[$interval])) + \nsum(sum_over_time(prometheus_target_scrapes_sample_out_of_bounds_total{pod=~\"$pod\"}[$interval])) + \nsum(sum_over_time(prometheus_target_scrapes_sample_out_of_order_total{pod=~\"$pod\"}[$interval])) ",
+          "expr": "sum(sum_over_time(prometheus_target_scrapes_exceeded_sample_limit_total{job=\"pods\",pod=~\"$pod\"}[$interval])) + \nsum(sum_over_time(prometheus_target_scrapes_sample_duplicate_timestamp_total{job=\"pods\",pod=~\"$pod\"}[$interval])) + \nsum(sum_over_time(prometheus_target_scrapes_sample_out_of_bounds_total{job=\"pods\",job=\"pods\",pod=~\"$pod\"}[$interval])) + \nsum(sum_over_time(prometheus_target_scrapes_sample_out_of_order_total{pod=~\"$pod\"}[$interval])) ",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "refId": "A",
           "step": 40
         }
       ],
       "thresholds": "1,10",
       "timeRegions": [],
-      "title": "Skipped Scrapes [$interval]",
+      "title": "Skipped Scrapes",
       "transparent": true,
       "type": "singlestat",
       "valueFontSize": "100%",
@@ -693,6 +618,7 @@
       "description": "All non-zero failures and errors",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 24,
@@ -713,6 +639,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -723,161 +652,154 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(net_conntrack_dialer_conn_failed_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(net_conntrack_dialer_conn_failed_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "Failed Connections",
           "refId": "A",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_evaluator_iterations_missed_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_rule_group_iterations_missed_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Missed Iterations",
           "refId": "B",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_evaluator_iterations_skipped_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_rule_evaluation_failures_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "Skipped Iterations",
-          "refId": "C",
-          "step": 2
-        },
-        {
-          "expr": "sum(increase(prometheus_rule_evaluation_failures_total{pod=~\"$pod\"}[5m])) > 0",
-          "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Evaluation",
           "refId": "D",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_sd_azure_refresh_failures_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_sd_azure_refresh_failures_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Azure Refresh",
           "refId": "E",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_sd_consul_rpc_failures_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_sd_consul_rpc_failures_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Consul RPC",
           "refId": "F",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_sd_dns_lookup_failures_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_sd_dns_lookup_failures_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "DNS Lookup",
           "refId": "G",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_sd_ec2_refresh_failures_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_sd_ec2_refresh_failures_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "EC2 Refresh",
           "refId": "H",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_sd_gce_refresh_failures_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_sd_gce_refresh_failures_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "GCE Refresh",
           "refId": "I",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_sd_marathon_refresh_failures_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_sd_marathon_refresh_failures_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Marathon Refresh",
           "refId": "J",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_sd_openstack_refresh_failures_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_sd_openstack_refresh_failures_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Openstack Refresh",
           "refId": "K",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_sd_triton_refresh_failures_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_sd_triton_refresh_failures_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Triton Refresh",
           "refId": "L",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_target_scrapes_exceeded_sample_limit_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_target_scrapes_exceeded_sample_limit_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Sample Limit",
           "refId": "M",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_target_scrapes_sample_duplicate_timestamp_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_target_scrapes_sample_duplicate_timestamp_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Duplicate Timestamp",
           "refId": "N",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_target_scrapes_sample_out_of_bounds_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_target_scrapes_sample_out_of_bounds_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Timestamp Out of Bounds",
           "refId": "O",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_target_scrapes_sample_out_of_order_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_target_scrapes_sample_out_of_order_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Sample Out of Order",
           "refId": "P",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_treecache_zookeeper_failures_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_treecache_zookeeper_failures_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Zookeeper",
           "refId": "Q",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_tsdb_compactions_failed_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_tsdb_compactions_failed_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "TSDB Compactions",
           "refId": "R",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_tsdb_head_series_not_found{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_tsdb_head_series_not_found{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Series Not Found",
           "refId": "S",
           "step": 2
         },
         {
-          "expr": "sum(increase(prometheus_tsdb_reloads_failures_total{pod=~\"$pod\"}[5m])) > 0",
+          "expr": "sum(increase(prometheus_tsdb_reloads_failures_total{job=\"pods\",pod=~\"$pod\"}[$interval])) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Reload",
           "refId": "T",
           "step": 2
@@ -908,7 +830,7 @@
           "label": "Errors",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -933,6 +855,7 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -953,6 +876,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -963,9 +889,9 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "up{pod=~\"$pod\"}",
+          "expr": "min(up{job=\"pods\",pod=~\"$pod\"}) by (pod)",
           "format": "time_series",
-          "interval": "",
+          "interval": "$interval",
           "intervalFactor": 1,
           "legendFormat": "{{ pod }}",
           "refId": "A",
@@ -1023,6 +949,7 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1043,19 +970,23 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "prometheus_tsdb_head_chunks{pod=~\"$pod\"}",
+          "expr": "sum by (pod) (prometheus_tsdb_head_chunks{job=\"pods\",pod=~\"$pod\"})",
           "format": "time_series",
-          "intervalFactor": 2,
+          "interval": "$interval",
+          "intervalFactor": 1,
           "legendFormat": "{{ pod }}",
           "refId": "A",
           "step": 4
@@ -1086,7 +1017,7 @@
           "label": "Chunks",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -1111,6 +1042,7 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1131,19 +1063,23 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "prometheus_tsdb_head_series{pod=~\"$pod\"}",
+          "expr": "sum by (pod) (prometheus_tsdb_head_series{job=\"pods\",pod=~\"$pod\"})",
           "format": "time_series",
-          "intervalFactor": 2,
+          "interval": "$interval",
+          "intervalFactor": 1,
           "legendFormat": "{{ pod }}",
           "refId": "A",
           "step": 4
@@ -1174,7 +1110,7 @@
           "label": "Series",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -1199,6 +1135,7 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1219,6 +1156,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -1234,17 +1174,17 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(prometheus_tsdb_head_series_created_total{pod=~\"$pod\"}[5m]))",
+          "expr": "sum(increase(prometheus_tsdb_head_series_created_total{job=\"pods\",pod=~\"$pod\"}[$interval]))",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "created",
           "refId": "A",
           "step": 4
         },
         {
-          "expr": "sum(increase(prometheus_tsdb_head_series_removed_total{pod=~\"$pod\"}[5m]))",
+          "expr": "sum(increase(prometheus_tsdb_head_series_removed_total{job=\"pods\",pod=~\"$pod\"}[$interval]))",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "removed",
           "refId": "B",
           "step": 4
@@ -1301,6 +1241,7 @@
       "description": "Rate of total number of appended samples",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 24,
@@ -1321,19 +1262,22 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(prometheus_tsdb_head_samples_appended_total{pod=~\"$pod\"}[1m])",
+          "expr": "sum by (pod) (rate(prometheus_tsdb_head_samples_appended_total{job=\"pods\",pod=~\"$pod\"}[$interval]))",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "{{ pod }}",
           "refId": "A",
           "step": 2
@@ -1364,7 +1308,7 @@
           "label": "Samples / Second",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -1390,6 +1334,7 @@
       "description": "Total number of syncs that were executed on a scrape pool.",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1410,6 +1355,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -1420,11 +1368,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(prometheus_target_scrape_pool_sync_total{pod=~\"$pod\"}) by (scrape_job)",
+          "expr": "sum(rate(prometheus_target_scrape_pool_sync_total{job=\"pods\",pod=~\"$pod\"}[$interval])) by (scrape_job)",
           "format": "time_series",
           "hide": false,
           "instant": false,
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "{{ scrape_job }}",
           "refId": "B",
           "step": 4
@@ -1434,7 +1382,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Scrape Sync Total",
+      "title": "Scrape Sync Rate",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1455,7 +1403,7 @@
           "label": "Syncs",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -1481,6 +1429,7 @@
       "description": "Actual interval to sync the scrape pool.",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1501,6 +1450,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -1511,9 +1463,9 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(prometheus_target_sync_length_seconds_sum{pod=~\"$pod\"}[2m])) by (scrape_job) * 1000",
+          "expr": "sum(rate(prometheus_target_sync_length_seconds_sum{job=\"pods\",pod=~\"$pod\"}[$interval])) by (scrape_job) * 1000",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "{{ scrape_job }}",
           "refId": "A",
           "step": 4
@@ -1544,7 +1496,7 @@
           "label": "Sync Duration",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -1569,6 +1521,7 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1589,19 +1542,23 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "scrape_duration_seconds{pod=~\"$pod\"}",
+          "expr": "sum by (pod) (scrape_duration_seconds{job=\"pods\",pod=~\"$pod\"})",
           "format": "time_series",
-          "intervalFactor": 2,
+          "interval": "$interval",
+          "intervalFactor": 1,
           "legendFormat": "{{ pod }}",
           "refId": "A",
           "step": 4
@@ -1658,6 +1615,7 @@
       "description": "Total number of rejected scrapes",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1678,6 +1636,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -1749,7 +1710,7 @@
           "label": "Scrapes",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -1775,6 +1736,7 @@
       "description": "The duration of rule group evaluations",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1795,6 +1757,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -1805,9 +1770,9 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(prometheus_evaluator_duration_seconds_sum{pod=~\"$pod\"}[5m]) / rate(prometheus_evaluator_duration_seconds_count{pod=~\"$pod\"}[5m])",
+          "expr": "sum by (pod) (rate(prometheus_rule_evaluation_duration_seconds_sum{job=\"pods\",pod=~\"$pod\"}[$interval]) / rate(prometheus_rule_evaluation_duration_seconds_count{job=\"pods\",pod=~\"$pod\"}[$interval]))",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "{{ pod }}",
           "refId": "E",
           "step": 4
@@ -1863,6 +1828,7 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1883,6 +1849,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -1893,9 +1862,9 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(http_request_duration_microseconds_count[1m])) by (handler) > 0",
+          "expr": "sum(rate(http_request_duration_microseconds_count[$interval])) by (handler) > 0",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "{{ handler }}",
           "refId": "A",
           "step": 4
@@ -1951,6 +1920,7 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -1971,6 +1941,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -1981,9 +1954,9 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(prometheus_engine_query_duration_seconds_sum{pod=~\"$pod\"}[10m])) by (slice)",
+          "expr": "sum(rate(prometheus_engine_query_duration_seconds_sum{pod=~\"$pod\"}[$interval])) by (slice)",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "{{ slice }}",
           "refId": "A",
           "step": 4
@@ -2014,7 +1987,7 @@
           "label": "Seconds",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -2040,6 +2013,7 @@
       "description": "Rule-group evaluations \n - total\n - missed due to slow rule group evaluation\n - skipped due to throttled metric storage",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -2060,6 +2034,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -2070,27 +2047,19 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(prometheus_evaluator_iterations_total{pod=~\"$pod\"}[5m]))",
+          "expr": "sum(rate(prometheus_rule_group_iterations_total{job=\"pods\",pod=~\"$pod\"}[$interval]))",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Total",
           "refId": "B",
           "step": 4
         },
         {
-          "expr": "sum(rate(prometheus_evaluator_iterations_missed_total{pod=~\"$pod\"}[5m]))",
+          "expr": "sum(rate(prometheus_rule_group_iterations_missed_total{job=\"pods\",pod=~\"$pod\"}[$interval]))",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Missed",
           "refId": "A",
-          "step": 4
-        },
-        {
-          "expr": "sum(rate(prometheus_evaluator_iterations_skipped_total{pod=~\"$pod\"}[5m]))",
-          "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "Skipped",
-          "refId": "C",
           "step": 4
         }
       ],
@@ -2119,7 +2088,7 @@
           "label": "Iterations",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -2144,6 +2113,7 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 24,
@@ -2164,19 +2134,22 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(prometheus_notifications_sent_total[5m])) by (pod)",
+          "expr": "sum(rate(prometheus_notifications_sent_total[$interval])) by (pod)",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "{{ pod }}",
           "refId": "A",
           "step": 2
@@ -2207,7 +2180,7 @@
           "label": "Notifications",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -2232,6 +2205,7 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -2252,19 +2226,23 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum((time() - prometheus_config_last_reload_success_timestamp_seconds{pod=~\"$pod\"})) by (pod)",
+          "expr": "sum((time() - prometheus_config_last_reload_success_timestamp_seconds{job=\"pods\",pod=~\"$pod\"})) by (pod)",
           "format": "time_series",
-          "intervalFactor": 2,
+          "interval": "$interval",
+          "intervalFactor": 1,
           "legendFormat": "{{ pod }}",
           "refId": "A",
           "step": 4
@@ -2295,7 +2273,7 @@
           "label": "Minutes",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -2320,6 +2298,7 @@
       "datasource": "$datasource",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 12,
@@ -2340,19 +2319,22 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": true,
+      "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "prometheus_config_last_reload_successful{pod=~\"$pod\"}",
+          "expr": "min by (pod) (prometheus_config_last_reload_successful{job=\"pods\",pod=~\"$pod\"})",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "{{ pod }}",
           "refId": "A",
           "step": 4
@@ -2384,7 +2366,7 @@
           "label": "Success",
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -2410,6 +2392,7 @@
       "description": "GC invocation durations",
       "editable": true,
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 24,
@@ -2430,6 +2413,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "percentage": false,
       "pointradius": 5,
       "points": false,
@@ -2440,9 +2426,9 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(go_gc_duration_seconds_sum{pod=~\"$pod\"}[2m])) by (pod)",
+          "expr": "sum(rate(go_gc_duration_seconds_sum{job=\"pods\",pod=~\"$pod\"}[$interval])) by (pod)",
           "format": "time_series",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "{{ pod }}",
           "refId": "A",
           "step": 2
@@ -2452,7 +2438,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "GC Rate / 2m",
+      "title": "GC Rate",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -2492,7 +2478,7 @@
     }
   ],
   "refresh": "30s",
-  "schemaVersion": 16,
+  "schemaVersion": 19,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -2500,18 +2486,65 @@
       {
         "current": {},
         "hide": 2,
+        "includeAll": false,
         "label": null,
+        "multi": false,
         "name": "datasource",
         "options": [],
         "query": "prometheus",
         "refresh": 1,
         "regex": "",
+        "skipUrlSync": false,
         "type": "datasource"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": "5m",
+          "value": "5m"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Interval",
+        "multi": false,
+        "name": "interval",
+        "options": [
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": true,
+            "text": "5m",
+            "value": "5m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          },
+          {
+            "selected": false,
+            "text": "60m",
+            "value": "60m"
+          }
+        ],
+        "query": "1m,5m,10m,30m,60m",
+        "skipUrlSync": false,
+        "type": "custom"
       },
       {
         "allValue": null,
         "current": {},
         "datasource": "$datasource",
+        "definition": "",
         "hide": 0,
         "includeAll": true,
         "label": "Pod",
@@ -2521,80 +2554,13 @@
         "query": "label_values(prometheus_build_info, pod)",
         "refresh": 2,
         "regex": "",
+        "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
         "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {
-          "selected": true,
-          "tags": [],
-          "text": "3h",
-          "value": "3h"
-        },
-        "hide": 0,
-        "includeAll": false,
-        "label": null,
-        "multi": false,
-        "name": "interval",
-        "options": [
-          {
-            "selected": false,
-            "text": "1h",
-            "value": "1h"
-          },
-          {
-            "selected": true,
-            "text": "3h",
-            "value": "3h"
-          },
-          {
-            "selected": false,
-            "text": "6h",
-            "value": "6h"
-          },
-          {
-            "selected": false,
-            "text": "12h",
-            "value": "12h"
-          },
-          {
-            "selected": false,
-            "text": "1d",
-            "value": "1d"
-          },
-          {
-            "selected": false,
-            "text": "2d",
-            "value": "2d"
-          },
-          {
-            "selected": false,
-            "text": "7d",
-            "value": "7d"
-          },
-          {
-            "selected": false,
-            "text": "30d",
-            "value": "30d"
-          },
-          {
-            "selected": false,
-            "text": "90d",
-            "value": "90d"
-          },
-          {
-            "selected": false,
-            "text": "180d",
-            "value": "180d"
-          }
-        ],
-        "query": "1h, 3h, 6h, 12h, 1d, 2d, 7d, 30d, 90d, 180d",
-        "type": "custom"
       }
     ]
   },
@@ -2628,7 +2594,7 @@
     ]
   },
   "timezone": "",
-  "title": "Seed Cluster",
+  "title": "Prometheus",
   "uid": "b45950c33c9c",
   "version": 1
 }
