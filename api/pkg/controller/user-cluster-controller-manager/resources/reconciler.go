@@ -450,13 +450,13 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 }
 
 func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
-	dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
-		usersshkeys.DaemonSetCreator(),
-	}
-
-	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the DaemonSet: %v", err)
-	}
+	//dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
+	//	usersshkeys.DaemonSetCreator(),
+	//}
+	//
+	//if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
+	//	return fmt.Errorf("failed to reconcile the DaemonSet: %v", err)
+	//}
 
 	return nil
 }
