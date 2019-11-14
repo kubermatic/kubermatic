@@ -1,7 +1,7 @@
 prometheus:
   image:
     repository: quay.io/prometheus/prometheus
-    tag: v2.12.0
+    tag: v2.14.0
     pullPolicy: IfNotPresent
 
   host: ''
@@ -18,7 +18,7 @@ prometheus:
 
   configReloaderImage:
     repository: docker.io/jimmidyson/configmap-reload
-    tag: v0.2.2
+    tag: v0.3.0
     pullPolicy: IfNotPresent
 
   # If you install Prometheus using a different Helm release name,
