@@ -75,19 +75,19 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileRoles(ctx); err != nil {
-		return err
-	}
-
-	if err := r.reconcileRoleBindings(ctx); err != nil {
-		return err
-	}
-
 	if err := r.reconcileClusterRoles(ctx); err != nil {
 		return err
 	}
 
 	if err := r.reconcileClusterRoleBindings(ctx); err != nil {
+		return err
+	}
+
+	if err := r.reconcileRoles(ctx); err != nil {
+		return err
+	}
+
+	if err := r.reconcileRoleBindings(ctx); err != nil {
 		return err
 	}
 
@@ -132,6 +132,10 @@ func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) 
 func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		userauth.ServiceAccountCreator(),
+	}
+
+	if r.openshift {
+		creators = append(creators, openshift.TokenOwnerServiceAccount)
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -308,6 +312,10 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 		controllermanager.ClusterRoleBindingAuthDelegator(),
 		clusterautoscaler.ClusterRoleBindingCreator(),
 		systembasicuser.ClusterRoleBinding,
+	}
+
+	if r.openshift {
+		creators = append(creators, openshift.TokenOwnerServiceAccountClusterRoleBinding)
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {

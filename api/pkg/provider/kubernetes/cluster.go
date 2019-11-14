@@ -34,6 +34,7 @@ type UserClusterConnectionProvider interface {
 	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
 	GetViewerKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
 	RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error
+	RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error
 }
 
 // extractGroupPrefixFunc is a function that knows how to extract a prefix (owners, editors) from "projectID-owners" group,
@@ -254,6 +255,11 @@ func (p *ClusterProvider) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error 
 		return fmt.Errorf("not implemented")
 	}
 	return p.userClusterConnProvider.RevokeViewerKubeconfig(c)
+}
+
+// RevokeAdminKubeconfig revokes the viewer token and kubeconfig
+func (p *ClusterProvider) RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error {
+	return p.userClusterConnProvider.RevokeAdminKubeconfig(c)
 }
 
 // GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster

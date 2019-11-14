@@ -1,6 +1,7 @@
 package cluster_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -23,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
 	clienttesting "k8s.io/client-go/testing"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
@@ -1318,30 +1320,16 @@ func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 	// check assertions
 	test.CheckStatusCode(http.StatusOK, res, t)
 	test.CompareWithResult(t, res, expectedResponse)
-	wasUpdateActionValidated := false
-	for _, action := range clientsSets.FakeKubermaticClient.Actions() {
-		if action.Matches("update", "clusters") {
-			updateAction, ok := action.(clienttesting.CreateAction)
-			if !ok {
-				t.Errorf("unexpected action %#v", action)
-			}
-			updatedCluster, ok := updateAction.GetObject().(*kubermaticv1.Cluster)
-			if !ok {
-				t.Error("updateAction doesn't contain *kubermaticv1.Cluster")
-			}
-			updatedToken := updatedCluster.Address.AdminToken
-			if err := kuberneteshelper.ValidateKubernetesToken(updatedToken); err != nil {
-				t.Errorf("generated token '%s' is malformed: %v", updatedToken, err)
-			}
-			if updatedToken == cluster.Address.AdminToken {
-				t.Errorf("generated token '%s' is exactly the same as the old one : %s", updatedToken, cluster.Address.AdminToken)
-			}
-			wasUpdateActionValidated = true
-		}
+	updatedCluster := &kubermaticv1.Cluster{}
+	if err := clientsSets.FakeClient.Get(context.Background(), types.NamespacedName{Name: test.DefaultClusterID}, updatedCluster); err != nil {
+		t.Fatalf("failed to get cluster from fake client: %v", err)
 	}
-
-	if !wasUpdateActionValidated {
-		t.Error("updated admin token in cluster resource was not persisted")
+	updatedToken := updatedCluster.Address.AdminToken
+	if err := kuberneteshelper.ValidateKubernetesToken(updatedToken); err != nil {
+		t.Errorf("generated token '%s' is malformed: %v", updatedToken, err)
+	}
+	if updatedToken == cluster.Address.AdminToken {
+		t.Errorf("generated token '%s' is exactly the same as the old one : %s", updatedToken, cluster.Address.AdminToken)
 	}
 }
 

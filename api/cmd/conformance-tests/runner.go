@@ -115,7 +115,7 @@ type testRunner struct {
 
 	seedClusterClient     ctrlruntimeclient.Client
 	seedGeneratedClient   kubernetes.Interface
-	clusterClientProvider clusterclient.UserClusterConnectionProvider
+	clusterClientProvider *clusterclient.Provider
 	seed                  *kubermaticv1.Seed
 
 	// The label to use to select an existing cluster to test against instead of
@@ -1449,7 +1449,7 @@ func logEventsObject(
 
 func logUserClusterPodEventsAndLogs(
 	log *zap.SugaredLogger,
-	connProvider clusterclient.UserClusterConnectionProvider,
+	connProvider *clusterclient.Provider,
 	cluster *kubermaticv1.Cluster,
 ) {
 	log.Info("Attempting to log usercluster pod events and logs")
