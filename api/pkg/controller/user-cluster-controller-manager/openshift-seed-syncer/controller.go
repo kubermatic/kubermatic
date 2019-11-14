@@ -34,6 +34,9 @@ const (
 	ConsoleAdminPasswordSecretName = "openshift-bootstrap-password"
 )
 
+// Add adds the controller to manager. **Note:**: Is is blocking for up to two minutes until
+// the `oauth.openshift.io` apiservice is available which is created by the `resources` controller
+// that also runs in the usercluster controller-manager
 func Add(
 	log *zap.SugaredLogger,
 	mgr manager.Manager,
