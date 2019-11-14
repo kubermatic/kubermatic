@@ -69,6 +69,13 @@ func Add(
 		return fmt.Errorf("failed to watch secrets in usercluster: %v", err)
 	}
 
+	oauthClientConfigKind := &unstructured.Unstructured{}
+	oauthClientConfigKind.SetAPIVersion("oauth.openshift.io/v1")
+	oauthClientConfigKind.SetKind("OAuthClient")
+	if err := c.Watch(&source.Kind{Type: oauthClientConfigKind}, controllerutil.EnqueueConst("")); err != nil {
+		return fmt.Errorf("failed to watch OauthClients in usercluster: %v", err)
+	}
+
 	return nil
 }
 

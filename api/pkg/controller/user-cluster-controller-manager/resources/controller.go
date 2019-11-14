@@ -107,7 +107,10 @@ func Add(
 		clusterVersionConfigKind := &unstructured.Unstructured{}
 		clusterVersionConfigKind.SetKind("ClusterVersion")
 		clusterVersionConfigKind.SetAPIVersion("config.openshift.io/v1")
-		typesToWatch = append(typesToWatch, infrastructureConfigKind, clusterVersionConfigKind)
+		oauthClientConfigKind := &unstructured.Unstructured{}
+		oauthClientConfigKind.SetAPIVersion("oauth.openshift.io/v1")
+		oauthClientConfigKind.SetKind("OAuthClient")
+		typesToWatch = append(typesToWatch, infrastructureConfigKind, clusterVersionConfigKind, oauthClientConfigKind)
 	}
 
 	// Avoid getting triggered by the leader lease AKA: If the annotation exists AND changed on
