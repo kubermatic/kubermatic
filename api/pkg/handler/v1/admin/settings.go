@@ -17,14 +17,9 @@ import (
 )
 
 // KubermaticSettingsEndpoint returns global settings
-func KubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func KubermaticSettingsEndpoint(settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		globalSettings, err := settingsProvider.GetGlobalSettings(userInfo)
+		globalSettings, err := settingsProvider.GetGlobalSettings()
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -42,7 +37,7 @@ func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, se
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingGlobalSettings, err := settingsProvider.GetGlobalSettings(userInfo)
+		existingGlobalSettings, err := settingsProvider.GetGlobalSettings()
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

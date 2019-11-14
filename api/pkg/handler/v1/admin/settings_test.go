@@ -27,23 +27,15 @@ func TestGetGlobalSettings(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			name:                   "scenario 1: unauthorized user gets settings",
-			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
-			httpStatus:             http.StatusForbidden,
-			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),
-			existingAPIUser:        test.GenDefaultAPIUser(),
-		},
-		// scenario 2
-		{
-			name:                   "scenario 2: authorized user gets settings first time",
+			name:                   "scenario 1: user gets settings first time",
 			expectedResponse:       `{"customLinks":[],"cleanupOptions":{"Enabled":false,"Enforced":false},"defaultNodeCount":10,"clusterTypeOptions":10,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":false}`,
 			httpStatus:             http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
-		// scenario 3
+		// scenario 2
 		{
-			name:             "scenario 3: authorized user gets existing global settings",
+			name:             "scenario 2: user gets existing global settings",
 			expectedResponse: `{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":5,"clusterTypeOptions":5,"displayDemoInfo":true,"displayAPIDocs":true,"displayTermsOfService":true}`,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true),
@@ -90,6 +82,7 @@ func TestUpdateGlobalSettings(t *testing.T) {
 		// scenario 1
 		{
 			name:                   "scenario 1: unauthorized user updates settings",
+			body:                   `{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true}`,
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),

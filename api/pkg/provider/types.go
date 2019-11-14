@@ -481,7 +481,7 @@ type AddonProvider interface {
 
 // SettingsProvider declares the set of methods for interacting global settings
 type SettingsProvider interface {
-	GetGlobalSettings(userInfo *UserInfo) (*kubermaticv1.KubermaticSetting, error)
+	GetGlobalSettings() (*kubermaticv1.KubermaticSetting, error)
 	UpdateGlobalSettings(userInfo *UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error)
 }
 
