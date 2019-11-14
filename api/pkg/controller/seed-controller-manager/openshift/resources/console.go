@@ -30,7 +30,7 @@ var (
 )
 
 const (
-	consoleOAuthSecretName       = "openshift-console-oauth-client-secret"
+	ConsoleOAuthSecretName       = "openshift-console-oauth-client-secret"
 	consoleServingCertSecretName = "openshift-console-serving-cert"
 	consoleOAuthClientObjectName = "console"
 	consoleConfigMapName         = "openshift-console-config"
@@ -101,7 +101,7 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
-						Name:      consoleOAuthSecretName,
+						Name:      ConsoleOAuthSecretName,
 						MountPath: "/var/oauth-config",
 					},
 					{
@@ -137,9 +137,9 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 					},
 				},
 				{
-					Name: consoleOAuthSecretName,
+					Name: ConsoleOAuthSecretName,
 					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{SecretName: consoleOAuthSecretName},
+						Secret: &corev1.SecretVolumeSource{SecretName: ConsoleOAuthSecretName},
 					},
 				},
 				{
@@ -226,7 +226,7 @@ func ConsoleServingCertCreator(caGetter servingcerthelper.CAGetter) reconciling.
 
 func ConsoleOAuthClientSecretCreator(data openshiftData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
-		return consoleOAuthSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+		return ConsoleOAuthSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			oauthClientObject := &unstructured.Unstructured{}
 			oauthClientObject.SetAPIVersion("oauth.openshift.io/v1")
 			oauthClientObject.SetKind("OAuthClient")

@@ -211,6 +211,16 @@ func main() {
 		if err := mgr.GetClient().Create(context.Background(), clusterVersionCRD); err != nil && !kerrors.IsAlreadyExists(err) {
 			log.Fatalw("Failed to create clusterVersion CRD", zap.Error(err))
 		}
+
+		// This apiservice is initially defunct but it has to exist, else adding the controller
+		// fails because the API group does not exist.
+		oauthAPIService := &apiregistrationv1beta1.APIService{}
+		oauthAPIService.Name = "v1.oauth.openshift.io"
+		oauthAPIService.Spec.Group = "oauth.openshift.io"
+		oauthAPIService.Spec.Version = "v1"
+		if err := mgr.GetClient().Create(context.Background(), oauthAPIService); err != nil && !kerrors.IsAlreadyExists(err) {
+			log.Fatalw("Failed to create apiservice for oauth.openshift.io/v1", zap.Error(err))
+		}
 	}
 	if err := usercluster.Add(mgr,
 		seedMgr,
@@ -262,6 +272,7 @@ func main() {
 			log.Fatalw("Failed to add openshiftmasternodelabeler controller", zap.Error(err))
 		}
 		log.Info("Registered nodecsrapprover controller")
+
 		if err := openshiftseedsyncer.Add(log, mgr, seedMgr, runOp.clusterURL, runOp.namespace); err != nil {
 			log.Fatalw("Failed to register the openshiftseedsyncer", zap.Error(err))
 		}

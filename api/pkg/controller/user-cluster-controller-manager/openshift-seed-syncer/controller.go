@@ -3,12 +3,14 @@ package openshiftseedsyncer
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"go.uber.org/zap"
 
+	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift/resources"
 	userclusteropenshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -17,6 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -34,9 +37,6 @@ const (
 	ConsoleAdminPasswordSecretName = "openshift-bootstrap-password"
 )
 
-// Add adds the controller to manager. **Note:**: Is is blocking for up to two minutes until
-// the `oauth.openshift.io` apiservice is available which is created by the `resources` controller
-// that also runs in the usercluster controller-manager
 func Add(
 	log *zap.SugaredLogger,
 	mgr manager.Manager,
@@ -139,6 +139,7 @@ func (r *reconciler) reconcile() (*reconcile.Result, error) {
 	secretCreators := []reconciling.NamedSecretCreatorGetter{
 		seedAdminKubeconfigSecretCreatorGetter(caCert, r.externalClusterAddress, r.clusterName, token),
 		oauthBootstrapSecretCreatorGetter(r.userClusterClient),
+		consoleOAuthSecretCreatorGetter(r.userClusterClient),
 	}
 	if err := reconciling.ReconcileSecrets(
 		r.ctx,
@@ -197,6 +198,36 @@ func oauthBootstrapSecretCreatorGetter(userClusterClient ctrlruntimeclient.Clien
 				s.Data = map[string][]byte{}
 			}
 			s.Data[name] = userClusterOAuthSecret.Data[name]
+
+			return s, nil
+		}
+	}
+}
+
+func consoleOAuthSecretCreatorGetter(userClusterClient ctrlruntimeclient.Client) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return openshiftresources.ConsoleOAuthSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+			oAuthClient := &unstructured.Unstructured{}
+			oAuthClient.SetAPIVersion("oauth.openshift.io/v1")
+			oAuthClient.SetKind("OAuthClient")
+			oAuthClientName := types.NamespacedName{
+				Name: userclusteropenshiftresources.ConsoleOAuthClientName,
+			}
+			if err := userClusterClient.Get(context.Background(), oAuthClientName, oAuthClient); err != nil {
+				return nil, fmt.Errorf("failed to get OAuthClient: %v", err)
+			}
+			if _, ok := oAuthClient.Object["secret"]; !ok {
+				return nil, errors.New("OAuthClient has no `secret key`")
+			}
+			stringVal, ok := oAuthClient.Object["secret"].(string)
+			if !ok {
+				return nil, fmt.Errorf("`secret field of OAuthClient was not a string but a %t`", oAuthClient.Object["secret"])
+			}
+
+			if s.Data == nil {
+				s.Data = map[string][]byte{}
+			}
+			s.Data["clientSecret"] = []byte(stringVal)
 
 			return s, nil
 		}
