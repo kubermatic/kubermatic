@@ -1,6 +1,8 @@
 package kubermatic
 
 import (
+	"fmt"
+
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -20,7 +22,7 @@ func masterControllerManagerPodLabels() map[string]string {
 	}
 }
 
-func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
+func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerName string) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return masterControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(2)
@@ -47,6 +49,10 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 				"-logtostderr",
 				"-internal-address=0.0.0.0:8085",
 				"-dynamic-datacenters=true",
+			}
+
+			if workerName != "" {
+				args = append(args, fmt.Sprintf("-worker-name=%s", workerName))
 			}
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{

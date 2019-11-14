@@ -6,10 +6,11 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 make kubermatic-operator
 
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
+NAMESPACE="${NAMESPACE:-kubermatic}"
 
 ./_build/kubermatic-operator \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
-  -namespace=kubermatic \
+  -namespace=$NAMESPACE \
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
   -log-debug=true \
   -log-format=Console \

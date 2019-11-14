@@ -1,7 +1,9 @@
 package certificates
 
 import (
+	"errors"
 	"fmt"
+	"time"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -9,6 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	certutil "k8s.io/client-go/util/cert"
 )
 
 // GetCACreator returns a function to create a secret containing a CA with the specified name
@@ -18,7 +21,17 @@ func GetCACreator(commonName string) reconciling.SecretCreator {
 			se.Data = map[string][]byte{}
 		}
 
-		if _, exists := se.Data[resources.CACertSecretKey]; exists {
+		// if the CA exists, only check if it's expired but never attempt to replace an existing CA
+		if certPEM, exists := se.Data[resources.CACertSecretKey]; exists {
+			certs, err := certutil.ParseCertsPEM(certPEM)
+			if err != nil {
+				return se, fmt.Errorf("certificate is not valid PEM-encoded: %v", err)
+			}
+
+			if time.Now().After(certs[0].NotAfter) {
+				return se, errors.New("certificate has expired")
+			}
+
 			return se, nil
 		}
 
