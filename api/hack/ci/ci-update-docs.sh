@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+source $(dirname $0)/../lib.sh
+
 cd $(dirname $0)/../../..
 
 TARGET_DIR=docs_sync
