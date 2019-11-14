@@ -302,6 +302,8 @@ type ClusterAddress struct {
 	AdminToken string `json:"adminToken"`
 	// IP is the external IP under which the apiserver is available
 	IP string `json:"ip"`
+	// OpenshiftConsoleCallBack is the callback address for the Openshift console
+	OpenshiftConsoleCallBack string `json:"openshiftConsoleCallback,omitempty"`
 }
 
 // CloudSpec mutually stores access data to a cloud provider.

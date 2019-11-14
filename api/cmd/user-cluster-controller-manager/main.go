@@ -59,6 +59,7 @@ type controllerRunOptions struct {
 	cloudCredentialSecretTemplate string
 	nodelabels                    string
 	seedKubeconfig                string
+	openshiftConsoleCallbackURI   string
 	log                           kubermaticlog.Options
 }
 
@@ -82,6 +83,7 @@ func main() {
 	flag.StringVar(&runOp.cloudCredentialSecretTemplate, "cloud-credential-secret-template", "", "A serialized Kubernetes secret whose Name and Data fields will be used to create a secret for the openshift cloud credentials operator.")
 	flag.StringVar(&runOp.nodelabels, "node-labels", "", "A json-encoded map of node labels. If set, those labels will be enforced on all nodes.")
 	flag.StringVar(&runOp.seedKubeconfig, "seed-kubeconfig", "", "Path to the seed kubeconfig. In-Cluster config will be used if unset")
+	flag.StringVar(&runOp.openshiftConsoleCallbackURI, "openshift-console-callback-uri", "", "The callback uri for the openshift console")
 
 	flag.Parse()
 
@@ -232,6 +234,7 @@ func main() {
 		runOp.openvpnServerPort,
 		healthHandler.AddReadinessCheck,
 		cloudCredentialSecretTemplate,
+		runOp.openshiftConsoleCallbackURI,
 		log); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
 	}

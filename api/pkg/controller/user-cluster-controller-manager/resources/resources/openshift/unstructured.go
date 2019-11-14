@@ -76,7 +76,7 @@ func ClusterVersionCreatorGetter(clusterNamespaceName string) reconciling.NamedU
 // ConsoleOAuthClientName is the name of the OAuthClient object created for the openshift console
 const ConsoleOAuthClientName = "console"
 
-func ConsoleOAuthClientCreator(externalURL, projectID, seedName, clusterName string) reconciling.NamedUnstructuredCreatorGetter {
+func ConsoleOAuthClientCreator(consoleCallbackURI string) reconciling.NamedUnstructuredCreatorGetter {
 	return func() (string, string, string, reconciling.UnstructuredCreator) {
 		return ConsoleOAuthClientName, "OAuthClient", "oauth.openshift.io/v1", func(u *unstructured.Unstructured) (*unstructured.Unstructured, error) {
 
@@ -92,9 +92,7 @@ func ConsoleOAuthClientCreator(externalURL, projectID, seedName, clusterName str
 			}
 
 			u.Object["grantMethod"] = "auto"
-
-			redirectURI := fmt.Sprintf("https://%s/api/v1/projects/%s/dc/%s/clusters/%s/openshift/console/proxy/auth/callback", externalURL, projectID, seedName, clusterName)
-			u.Object["redirectURIs"] = []string{redirectURI}
+			u.Object["redirectURIs"] = []string{consoleCallbackURI}
 
 			return u, nil
 		}

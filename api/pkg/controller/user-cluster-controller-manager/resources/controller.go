@@ -50,6 +50,7 @@ func Add(
 	openvpnServerPort int,
 	registerReconciledCheck func(name string, check healthcheck.Check),
 	cloudCredentialSecretTemplate *corev1.Secret,
+	openshiftConsoleCallbackURI string,
 	log *zap.SugaredLogger) error {
 	reconciler := &reconciler{
 		Client:                        mgr.GetClient(),
@@ -64,6 +65,7 @@ func Add(
 		cloudCredentialSecretTemplate: cloudCredentialSecretTemplate,
 		log:                           log,
 		platform:                      cloudProviderName,
+		openshiftConsoleCallbackURI:   openshiftConsoleCallbackURI,
 	}
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -166,10 +168,7 @@ type reconciler struct {
 	openvpnServerPort             int
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
-
-	externalURL string
-	projectID   string
-	seedName    string
+	openshiftConsoleCallbackURI   string
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

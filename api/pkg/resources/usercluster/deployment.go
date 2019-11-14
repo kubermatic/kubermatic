@@ -108,6 +108,10 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
 			}, getNetworkArgs(data)...)
 
+			if openshiftConsoleCallbackURI := data.Cluster().Address.OpenshiftConsoleCallBack; openshiftConsoleCallbackURI != "" {
+				args = append(args, "-openshift-console-callback-uri", openshiftConsoleCallbackURI)
+			}
+
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())
 			if err != nil {
 				return nil, fmt.Errorf("faild to get label args value: %v", err)
