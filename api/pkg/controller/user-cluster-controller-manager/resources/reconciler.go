@@ -3,6 +3,7 @@ package usercluster
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
@@ -475,6 +476,7 @@ func (r *reconciler) reconcileUnstructured(ctx context.Context) error {
 	creators := []reconciling.NamedUnstructuredCreatorGetter{
 		openshift.InfrastructureCreatorGetter(r.platform),
 		openshift.ClusterVersionCreatorGetter(r.namespace),
+		openshift.ConsoleOAuthClientCreator(r.externalURL, r.projectID, r.seedName, clusterNameFromNamespace(r.namespace)),
 	}
 	r.log.Debug("Reconciling unstructured")
 	// The delegatingReader from the `mgr` always redirects request for unstructured.Unstructured
@@ -520,4 +522,8 @@ type reconcileData struct {
 	caCert        *triple.KeyPair
 	openVPNCACert *resources.ECDSAKeyPair
 	userSSHKeys   map[string][]byte
+}
+
+func clusterNameFromNamespace(namespace string) string {
+	return strings.TrimLeft(namespace, "cluster-")
 }

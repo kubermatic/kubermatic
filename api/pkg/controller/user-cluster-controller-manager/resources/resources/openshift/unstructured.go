@@ -76,7 +76,7 @@ func ClusterVersionCreatorGetter(clusterNamespaceName string) reconciling.NamedU
 // ConsoleOAuthClientName is the name of the OAuthClient object created for the openshift console
 const ConsoleOAuthClientName = "console"
 
-func ConsoleOAuthClientSecretCreator(externalURL, projectID, seedName, clusterName string) reconciling.NamedUnstructuredCreatorGetter {
+func ConsoleOAuthClientCreator(externalURL, projectID, seedName, clusterName string) reconciling.NamedUnstructuredCreatorGetter {
 	return func() (string, string, string, reconciling.UnstructuredCreator) {
 		return ConsoleOAuthClientName, "OAuthClient", "oauth.openshift.io/v1", func(u *unstructured.Unstructured) (*unstructured.Unstructured, error) {
 

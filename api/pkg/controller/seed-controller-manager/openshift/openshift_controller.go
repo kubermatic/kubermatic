@@ -363,21 +363,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
-	// This requires both the cluster to be up and a CRD we deploy via the AddonController
-	// to exist, so do this at the very end
-	// TODO: Move this into the usercluster controller
-	if err := r.ensureConsoleOAuthSecret(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to create oauth secret for Openshift console: %v", err)
-	}
-
 	return nil, nil
-}
-
-func (r *Reconciler) ensureConsoleOAuthSecret(ctx context.Context, osData *openshiftData) error {
-	getter := []reconciling.NamedSecretCreatorGetter{
-		openshiftresources.ConsoleOAuthClientSecretCreator(osData)}
-	ns := osData.Cluster().Status.NamespaceName
-	return reconciling.ReconcileSecrets(ctx, getter, ns, r.Client)
 }
 
 // clusterIsReachable checks if the cluster is reachable via its external name

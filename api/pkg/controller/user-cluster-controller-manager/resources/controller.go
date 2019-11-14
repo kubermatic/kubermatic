@@ -167,6 +167,10 @@ type reconciler struct {
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
 
+	externalURL string
+	projectID   string
+	seedName    string
+
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
 
