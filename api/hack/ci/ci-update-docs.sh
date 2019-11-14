@@ -4,6 +4,8 @@ set -euo pipefail
 
 cd $(dirname $0)/../../..
 
+source $(dirname $0)/../lib.sh
+
 TARGET_DIR=docs_sync
 REVISION=$(git rev-parse --short HEAD)
 
