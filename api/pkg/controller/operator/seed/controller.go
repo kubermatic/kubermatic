@@ -9,6 +9,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
@@ -121,6 +122,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 		&corev1.ServiceAccount{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&kubermaticv1.Seed{},
 	}
 
 	for _, t := range typesToWatch {
