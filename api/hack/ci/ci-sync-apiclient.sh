@@ -20,8 +20,10 @@ commit_and_push() {
         git config --local core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
 
         git add .
-        git commit -m "Syncing client from Kubermatic $source_sha"
-        git push origin "$branch"
+        if ! git status | grep -q 'nothing to commit'; then
+            git commit -m "Syncing client from Kubermatic $source_sha"
+            git push origin "$branch"
+        fi
     )
 }
 
