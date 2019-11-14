@@ -889,7 +889,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "up{job=\"pods\",pod=~\"$pod\"}",
+          "expr": "min(up{job=\"pods\",pod=~\"$pod\"}) by (pod)",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
