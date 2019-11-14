@@ -49,7 +49,7 @@ func (r Routing) getKubermaticSettings() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(admin.KubermaticSettingsEndpoint(r.userInfoGetter, r.settingsProvider)),
+		)(admin.KubermaticSettingsEndpoint(r.settingsProvider)),
 		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
