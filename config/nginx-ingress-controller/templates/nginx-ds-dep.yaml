@@ -31,19 +31,18 @@ spec:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '10254'
     spec:
+      dnsPolicy: {{ .Values.nginx.dnsPolicy }}
       hostNetwork: {{ .Values.nginx.hostNetwork }}
       # wait up to five minutes for the drain of connections
       terminationGracePeriodSeconds: 300
-      serviceAccountName: nginx-ingress-serviceaccount
+      serviceAccountName: nginx-ingress-controller
       containers:
       - name: nginx-ingress-controller
         image: '{{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}'
         args:
         - /nginx-ingress-controller
         - --configmap=$(POD_NAMESPACE)/nginx-configuration
-        - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
-        - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
-        - --publish-service=$(POD_NAMESPACE)/ingress-nginx
+        - --ingress-class=nginx
         - --annotations-prefix=ingress.kubernetes.io
         {{- range .Values.nginx.extraArgs }}
         - {{ . | quote }}
@@ -69,8 +68,10 @@ spec:
         ports:
         - name: http
           containerPort: 80
+          protocol: TCP
         - name: https
           containerPort: 443
+          protocol: TCP
         livenessProbe:
           failureThreshold: 3
           httpGet:
