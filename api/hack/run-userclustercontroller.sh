@@ -56,6 +56,7 @@ fi
     -openvpn-server-port=${OPENVPN_SERVER_NODEPORT} \
     -cluster-url=${CLUSTER_URL} \
     -version=${CLUSTER_VERSION} \
+    -openshift-console-callback-uri=http://localhost:8000/api/v1/projects//dc/alias-europe-west3-c/clusters/test-cluster/openshift/console/proxy/auth/callback \
     -log-debug=true \
     -log-format=Console \
     -logtostderr \

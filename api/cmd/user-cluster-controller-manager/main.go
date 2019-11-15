@@ -33,7 +33,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -186,44 +185,6 @@ func main() {
 
 	// Setup all Controllers
 	log.Info("registering controllers")
-	if runOp.openshift {
-		// We create watches for these, hence they have to exist. They are created by the addon
-		// controller which needs the kubeconfig we create.
-		infrastructureCRD := &apiextensionsv1beta1.CustomResourceDefinition{}
-		infrastructureCRD.Name = "infrastructures.config.openshift.io"
-		infrastructureCRD.Spec.Group = "config.openshift.io"
-		infrastructureCRD.Spec.Names.Kind = "Infrastructure"
-		infrastructureCRD.Spec.Names.ListKind = "InfrastructureList"
-		infrastructureCRD.Spec.Names.Plural = "infrastructures"
-		infrastructureCRD.Spec.Names.Singular = "infrastructure"
-		infrastructureCRD.Spec.Scope = apiextensionsv1beta1.ClusterScoped
-		infrastructureCRD.Spec.Version = "v1"
-		if err := mgr.GetClient().Create(context.Background(), infrastructureCRD); err != nil && !kerrors.IsAlreadyExists(err) {
-			log.Fatalw("Failed to create infrastructure CRD", zap.Error(err))
-		}
-		clusterVersionCRD := &apiextensionsv1beta1.CustomResourceDefinition{}
-		clusterVersionCRD.Name = "clusterversions.config.openshift.io"
-		clusterVersionCRD.Spec.Group = "config.openshift.io"
-		clusterVersionCRD.Spec.Names.Kind = "ClusterVersion"
-		clusterVersionCRD.Spec.Names.ListKind = "ClusterVersionList"
-		clusterVersionCRD.Spec.Names.Plural = "clusterversions"
-		clusterVersionCRD.Spec.Names.Singular = "clusterversion"
-		clusterVersionCRD.Spec.Scope = apiextensionsv1beta1.ClusterScoped
-		clusterVersionCRD.Spec.Version = "v1"
-		if err := mgr.GetClient().Create(context.Background(), clusterVersionCRD); err != nil && !kerrors.IsAlreadyExists(err) {
-			log.Fatalw("Failed to create clusterVersion CRD", zap.Error(err))
-		}
-
-		// This apiservice is initially defunct but it has to exist, else adding the controller
-		// fails because the API group does not exist.
-		oauthAPIService := &apiregistrationv1beta1.APIService{}
-		oauthAPIService.Name = "v1.oauth.openshift.io"
-		oauthAPIService.Spec.Group = "oauth.openshift.io"
-		oauthAPIService.Spec.Version = "v1"
-		if err := mgr.GetClient().Create(context.Background(), oauthAPIService); err != nil && !kerrors.IsAlreadyExists(err) {
-			log.Fatalw("Failed to create apiservice for oauth.openshift.io/v1", zap.Error(err))
-		}
-	}
 	if err := usercluster.Add(mgr,
 		seedMgr,
 		runOp.openshift,
@@ -235,7 +196,8 @@ func main() {
 		healthHandler.AddReadinessCheck,
 		cloudCredentialSecretTemplate,
 		runOp.openshiftConsoleCallbackURI,
-		log); err != nil {
+		log,
+	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
 	}
 	log.Info("Registered usercluster controller")
