@@ -11,25 +11,19 @@ import (
 
 	usersshkeys "github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeysagent"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type controllerRunOptions struct {
-	namespace string
-	log       kubermaticlog.Options
+	log kubermaticlog.Options
 }
 
 func main() {
 	runOp := controllerRunOptions{}
 	flag.BoolVar(&runOp.log.Debug, "log-debug", true, "Enables debug logging")
 	flag.StringVar(&runOp.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
-	flag.StringVar(&runOp.namespace, "namespace", metav1.NamespaceSystem, "Namespace in which the cluster is running in")
 
 	flag.Parse()
 
@@ -40,10 +34,6 @@ func main() {
 
 	rawLog := kubermaticlog.New(runOp.log.Debug, kubermaticlog.Format(runOp.log.Format))
 	log := rawLog.Sugar()
-
-	if runOp.namespace == "" {
-		log.Fatal("-namespace must be set")
-	}
 
 	cfg, err := config.GetConfig()
 	if err != nil {
@@ -78,7 +68,10 @@ func main() {
 func availableUsersPaths() ([]string, error) {
 	var paths []string
 	for _, user := range []string{"root", "core", "ubuntu", "centos"} {
-		path := fmt.Sprintf("%v%v/authorized_keys", resources.AuthorizedKeysPath, user)
+		path := fmt.Sprintf("/%v/.ssh/authorized_keys", user)
+		if user != "root" {
+			path = fmt.Sprintf("/home%v", path)
+		}
 		file, err := os.Stat(path)
 		if err != nil {
 			if os.IsNotExist(err) {

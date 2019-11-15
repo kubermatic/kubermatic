@@ -1,20 +1,23 @@
 package usersshkeysagent
 
 import (
-	"bufio"
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
-	"reflect"
 
-	"github.com/fsnotify/fsnotify"
 	"go.uber.org/zap"
+
+	"gopkg.in/fsnotify.v1"
 
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -33,6 +36,7 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 	log                *zap.SugaredLogger
 	authorizedKeysPath []string
+	events             chan event.GenericEvent
 }
 
 func Add(
@@ -43,6 +47,7 @@ func Add(
 		Client:             mgr.GetClient(),
 		log:                log,
 		authorizedKeysPath: authorizedKeysPaths,
+		events:             make(chan event.GenericEvent),
 	}
 
 	c, err := controller.New(operatorName, mgr, controller.Options{Reconciler: reconciler})
@@ -51,12 +56,28 @@ func Add(
 	}
 
 	namePredicate := predicateutil.ByName(resources.UserSSHKeys)
-	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, namePredicate); err != nil {
+	namespacePredicate := predicateutil.ByNamespace(metav1.NamespaceSystem)
+	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, namePredicate, namespacePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for secrets: %v", err)
 	}
 
 	if err := reconciler.watchAuthorizedKeys(context.TODO(), authorizedKeysPaths); err != nil {
 		return fmt.Errorf("failed to watch authorized_keys files: %v", err)
+	}
+
+	userSSHKeySecret := newEventHandler(func(a handler.MapObject) []reconcile.Request {
+		return []reconcile.Request{
+			{
+				NamespacedName: types.NamespacedName{
+					Namespace: metav1.NamespaceSystem,
+					Name:      resources.UserSSHKeys,
+				},
+			},
+		}
+	})
+
+	if err := c.Watch(&source.Channel{Source: reconciler.events}, userSSHKeySecret); err != nil {
+		return fmt.Errorf("failed to create watch for channelSource: %v", err)
 	}
 
 	return nil
@@ -73,80 +94,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
-	if err := r.reconcileUserSSHKeys(secret); err != nil {
+	if err := r.updateAuthorizedKeys(secret.Data); err != nil {
 		log.Errorw("Failed reconciling user ssh key secret", zap.Error(err))
 		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{}, nil
-}
-
-func (r *Reconciler) reconcileUserSSHKeys(secret *corev1.Secret) error {
-	for _, path := range r.authorizedKeysPath {
-		filesKeys, err := r.getAuthorizedKeys(path)
-		if err != nil {
-			return err
-		}
-
-		secretKeys := reverseMapKeyValue(secret.Data)
-		if !reflect.DeepEqual(filesKeys, secretKeys) {
-			if err := r.updateAuthorizedKeysFile(path, secret.Data); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func (r *Reconciler) updateAuthorizedKeysFile(path string, data map[string][]byte) error {
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	var sshKeys string
-
-	for _, sshKey := range data {
-		sshKeys += fmt.Sprintf("%v\n", string(sshKey))
-	}
-	if _, err := file.WriteString(sshKeys); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *Reconciler) getAuthorizedKeys(path string) (map[string]struct{}, error) {
-	var (
-		userSSHKeys = make(map[string]struct{})
-		file        *os.File
-		err         error
-	)
-
-	if _, err = os.Stat(path); err != nil {
-		if os.IsNotExist(err) {
-			file, err = os.Create(path)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
-	}
-
-	if file == nil {
-		file, err = os.Open(path)
-		if err != nil {
-			return nil, err
-		}
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		userSSHKeys[scanner.Text()] = struct{}{}
-	}
-	return userSSHKeys, nil
 }
 
 func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) error {
@@ -158,33 +111,18 @@ func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) er
 	go func() {
 		for {
 			select {
-			case event, ok := <-watcher.Events:
+			case e, ok := <-watcher.Events:
 				if !ok {
 					return
 				}
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					secret, err := r.fetchUserSSHKeySecret(ctx, metav1.NamespaceSystem)
-					if err != nil || secret == nil {
-						return
-					}
-
-					fileSSHKeys, err := r.getAuthorizedKeys(event.Name)
-					if err != nil {
-						r.log.Errorw("Failed getting ssh keys from authorized_keys file", "path", event.Name, zap.Error(err))
-						return
-					}
-
-					secretSSHKeys := reverseMapKeyValue(secret.Data)
-					if !reflect.DeepEqual(fileSSHKeys, secretSSHKeys) {
-						if err := r.updateAuthorizedKeysFile(event.Name, secret.Data); err != nil {
-							r.log.Errorw("Cannot update authorized_keys file", "path", event.Name, zap.Error(err))
-						}
-					}
+				if e.Op&fsnotify.Write == fsnotify.Write {
+					r.events <- event.GenericEvent{}
 				}
 			case _, ok := <-watcher.Errors:
 				if !ok {
 					return
 				}
+				r.events <- event.GenericEvent{}
 			}
 		}
 	}()
@@ -213,12 +151,46 @@ func (r *Reconciler) fetchUserSSHKeySecret(ctx context.Context, namespace string
 	return secret, nil
 }
 
-func reverseMapKeyValue(data map[string][]byte) map[string]struct{} {
-	reveresedMap := make(map[string]struct{}, len(data))
-
-	for _, v := range data {
-		reveresedMap[string(v)] = struct{}{}
+func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
+	expectedUserSSHKeys := bytes.Buffer{}
+	for _, secretData := range sshKeys {
+		secretData = append(secretData, []byte("\n")...)
+		if _, err := expectedUserSSHKeys.Write(secretData); err != nil {
+			return err
+		}
 	}
 
-	return reveresedMap
+	for _, path := range r.authorizedKeysPath {
+		if _, err := os.Stat(path); err != nil {
+			if !os.IsNotExist(err) {
+				return err
+			}
+			if err := ioutil.WriteFile(path, expectedUserSSHKeys.Bytes(), 0600); err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		actualUserSSHKeys, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		if !bytes.Equal(actualUserSSHKeys, expectedUserSSHKeys.Bytes()) {
+			if err := ioutil.WriteFile(path, expectedUserSSHKeys.Bytes(), 0600); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// newEventHandler takes a obj->request mapper function and wraps it into an
+// handler.EnqueueRequestsFromMapFunc.
+func newEventHandler(rf handler.ToRequestsFunc) *handler.EnqueueRequestsFromMapFunc {
+	return &handler.EnqueueRequestsFromMapFunc{
+		ToRequests: rf,
+	}
 }

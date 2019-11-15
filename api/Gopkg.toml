@@ -182,10 +182,6 @@ required = [
   version = "1.1.1"
 
 [[constraint]]
-  name = "github.com/fsnotify/fsnotify"
-  branch = "master"
-
-[[constraint]]
   name = "google.golang.org/grpc"
   version = "v1.17.0"
 

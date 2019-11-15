@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	daemonSetName      = "user-ssh-keys-agent"
-	daemonSetImageName = "kubermatic/user-ssh-keys-agent"
-	tag                = "latest"
+	daemonSetName = "user-ssh-keys-agent"
+	mainRepoName  = "kubermatic"
+	tag           = "latest"
 )
 
 var (
@@ -42,24 +42,24 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 				{
 					Name:            daemonSetName,
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           resources.RegistryQuay + "/" + daemonSetImageName + ":" + tag,
+					Image:           resources.RegistryQuay + "/" + mainRepoName + "/" + daemonSetName + ":" + tag,
 					Command:         []string{fmt.Sprintf("/bin/%v", daemonSetName)},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "root",
-							MountPath: resources.AuthorizedKeysPath + "root/authorized_keys",
+							MountPath: "/root/.ssh/authorized_keys",
 						},
 						{
 							Name:      "core",
-							MountPath: resources.AuthorizedKeysPath + "core/authorized_keys",
+							MountPath: "/home/core/.ssh/authorized_keys",
 						},
 						{
 							Name:      "centos",
-							MountPath: resources.AuthorizedKeysPath + "centos/authorized_keys",
+							MountPath: "/home/centos/.ssh/authorized_keys",
 						},
 						{
 							Name:      "ubuntu",
-							MountPath: resources.AuthorizedKeysPath + "ubuntu/authorized_keys",
+							MountPath: "/home/ubuntu/.ssh/authorized_keys",
 						},
 					},
 				},
