@@ -5,32 +5,33 @@ set -euo pipefail
 apk add --no-cache -U git bash openssh
 source $(dirname $0)/../lib.sh
 cd $(dirname $0)/../../..
-git fetch
-export LATEST_VERSION=$(git describe --tags --abbrev=0)
-sed -i "s/__KUBERMATIC_TAG__/$LATEST_VERSION/g" config/*/*.yaml
+git fetch --tags
+
+# we only synchronize charts for tags
+if ! git tag -l | grep -q "^$PULL_BASE_REF\$"; then
+  echo "Base ref $PULL_BASE_REF is not a tag! Exitting..."
+  exit 1
+fi
+
+# find out which kubermatic-installer branch to synchronize to
+if grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+.*' <<< "$PULL_BASE_REF"; then
+  # e.g. 'release/v2.12'
+  INSTALLER_BRANCH="release/$(grep -o -E '^v[0-9]+\.[0-9]+' <<< "$PULL_BASE_REF")"
+elif grep -E '^weekly-[0-9]{4}-.*' <<< "$PULL_BASE_REF"; then
+  INSTALLER_BRANCH="weekly"
+else
+  echo "I don't know to which installer branch the tag '$PULL_BASE_REF' belongs to. Exitting..."
+  exit 1
+fi
+
+# The dashboard tag should match the Kubermatic tag
+sed -i "s/__KUBERMATIC_TAG__/$PULL_BASE_REF/g" config/*/*.yaml
+sed -i "s/__DASHBOARD_TAG__/$PULL_BASE_REF/g" config/*/*.yaml
+
 git config --global user.email "dev@loodse.com"
 git config --global user.name "Prow CI Robot"
 git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
 ensure_github_host_pubkey
-
-if ! git describe --exact-match --tags HEAD &>/dev/null; then
-  echo "No tag matches current HEAD, exitting..."
-  exit 0
-fi
-
-git remote add origin git@github.com:kubermatic/kubermatic.git
-git fetch origin
-export INSTALLER_BRANCH="$(git branch --contains HEAD --all \
-  |tr -d ' '|grep -E 'remotes/origin/release/v2.[0-9]+$'|cut -d '/' -f3-)"
-
-if [[ -z ${INSTALLER_BRANCH} ]]; then
-  echo "Error, the INSTALLER_BRANCH varible was empty"
-  exit 1
-fi
-
-
-LATEST_DASHBOARD="$(get_latest_dashboard_tag "$INSTALLER_BRANCH")"
-sed -i "s/__DASHBOARD_TAG__/$LATEST_DASHBOARD/g" config/*/*.yaml
 
 export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio iap s3-exporter'
 export MONITORING_CHARTS='alertmanager blackbox-exporter grafana kube-state-metrics node-exporter prometheus'
@@ -149,8 +150,9 @@ mv ${TARGET_DIR}/values.example.{tmp.,}yaml
 cd ${TARGET_DIR}
 git add .
 if ! git status|grep 'nothing to commit'; then
-  git commit -m "Syncing charts from release ${LATEST_VERSION}"
-  git tag $LATEST_VERSION
+  git commit -m "Syncing charts from release ${PULL_BASE_REF}"
+  # $PULL_BASE_REF must be a tag, but we've verified it earlier
+  git tag $PULL_BASE_REF
   git push --tags origin ${INSTALLER_BRANCH}
 fi
 

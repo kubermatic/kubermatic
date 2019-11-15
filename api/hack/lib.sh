@@ -79,27 +79,6 @@ ensure_github_host_pubkey() {
   fi
 }
 
-get_latest_dashboard_tag() {
-  FOR_BRANCH="$1"
-
-  ensure_github_host_pubkey
-  git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
-  local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
-
-  MINOR_VERSION="${FOR_BRANCH##release/}"
-  # --sort=-version:refname will treat the tag names as semvers and sort by version number.
-  # -c versionsort.suffix=-alpha -c versionsort.suffix=-rc tell git that alphas and RCs come before versions wihtout any suffix.
-  FOUND_TAG="$(retry 5 git -c versionsort.suffix=-alpha -c versionsort.suffix=-rc ls-remote --sort=-version:refname "$DASHBOARD_URL" "refs/tags/$MINOR_VERSION*" | head -n1 | awk '{print $2}')"
-  if [ -z "$FOUND_TAG" ]; then
-    echo "Error, no Dashboard tags contain $MINOR_VERSION" >/dev/stderr
-    exit 1
-  fi
-
-  local TAG="${FOUND_TAG##refs/tags/}"
-  echodate "The latest dashboard tag for $FOR_BRANCH is $TAG" >/dev/stderr
-  echo "$TAG"
-}
-
 get_latest_dashboard_hash() {
   FOR_BRANCH="$1"
 
