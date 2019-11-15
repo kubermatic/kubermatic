@@ -1,7 +1,7 @@
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: nginx-ingress-clusterrole
+  name: nginx-ingress-controller
   labels:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/instance: '{{ .Release.Name }}'

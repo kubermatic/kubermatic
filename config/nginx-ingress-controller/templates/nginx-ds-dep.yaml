@@ -35,7 +35,7 @@ spec:
       hostNetwork: {{ .Values.nginx.hostNetwork }}
       # wait up to five minutes for the drain of connections
       terminationGracePeriodSeconds: 300
-      serviceAccountName: nginx-ingress-serviceaccount
+      serviceAccountName: nginx-ingress-controller
       containers:
       - name: nginx-ingress-controller
         image: '{{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}'
