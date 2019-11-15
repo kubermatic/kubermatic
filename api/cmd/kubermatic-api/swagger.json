@@ -10211,9 +10211,9 @@
           "format": "int8",
           "x-go-name": "ItemsPerPage"
         },
-        "selectProjectCardView": {
+        "selectProjectTableView": {
           "type": "boolean",
-          "x-go-name": "SelectProjectCardView"
+          "x-go-name": "SelectProjectTableView"
         },
         "selectedProjectId": {
           "type": "string",
