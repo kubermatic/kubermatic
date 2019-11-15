@@ -4,7 +4,7 @@ nginx:
   replicas: 3
   image:
     repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
-    tag: 0.26.1
+    tag: 0.25.1
   config: {}
   extraArgs:
   - '--default-ssl-certificate=default/kubermatic-tls-certificates'
