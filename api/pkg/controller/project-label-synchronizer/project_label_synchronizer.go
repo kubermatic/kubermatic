@@ -213,7 +213,7 @@ func getLabelsForCluster(
 }
 
 func getInheritedLabels(projectLabels map[string]string) map[string]string {
-	inheritedLabels := make(map[string]string, 0)
+	inheritedLabels := make(map[string]string)
 
 	for key, val := range projectLabels {
 		if !kubermaticv1.ProtectedClusterLabels.Has(key) {
