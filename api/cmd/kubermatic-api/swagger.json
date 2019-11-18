@@ -1275,6 +1275,64 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames": {
+      "get": {
+        "description": "Lists all ClusterRoles",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "listClusterRoleNames",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterRoleName",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ClusterRoleName"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles": {
       "get": {
         "description": "Lists all ClusterRoles",
@@ -7615,6 +7673,18 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "ClusterRoleName": {
+      "description": "ClusterRoleName defines RBAC cluster role name object for the user cluster",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name of the cluster role.",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "ClusterSpec": {
       "description": "ClusterSpec defines the cluster specification",
       "type": "object",
@@ -9982,7 +10052,7 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "RoleName": {
-      "description": "Role defines RBAC role name object for the user cluster",
+      "description": "RoleName defines RBAC role name object for the user cluster",
       "type": "object",
       "properties": {
         "name": {

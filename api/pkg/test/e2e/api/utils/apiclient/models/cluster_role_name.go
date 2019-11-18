@@ -11,24 +11,21 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// RoleName RoleName defines RBAC role name object for the user cluster
-// swagger:model RoleName
-type RoleName struct {
+// ClusterRoleName ClusterRoleName defines RBAC cluster role name object for the user cluster
+// swagger:model ClusterRoleName
+type ClusterRoleName struct {
 
-	// Name of the role.
+	// Name of the cluster role.
 	Name string `json:"name,omitempty"`
-
-	// Indicates the scopes of this role.
-	Namespace []string `json:"namespace"`
 }
 
-// Validate validates this role name
-func (m *RoleName) Validate(formats strfmt.Registry) error {
+// Validate validates this cluster role name
+func (m *ClusterRoleName) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *RoleName) MarshalBinary() ([]byte, error) {
+func (m *ClusterRoleName) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -36,8 +33,8 @@ func (m *RoleName) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *RoleName) UnmarshalBinary(b []byte) error {
-	var res RoleName
+func (m *ClusterRoleName) UnmarshalBinary(b []byte) error {
+	var res ClusterRoleName
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}
