@@ -35,12 +35,12 @@ We evaluated the following products:
 
 ### VictoriaMetrics 1.28.3
 
-Pros:
+**Pros**:
 
 * Great performance
 * Simple configuration (single binary)
 
-Cons:
+**Cons**:
 
 * Does not use object store and would require backup jobs (via snapshots like Prometheus)
 * Cannot de-duplicate data (recommends extra promxy instance)
@@ -49,12 +49,12 @@ Cons:
 
 ### Cortex
 
-Pros:
+**Pros**:
 
 * Maintained Grafana/Prometheus community
 * (never actually tested due to cons)
 
-Cons:
+**Cons**:
 
 * Requires [Cassandra/DynamoDB/BigTable](https://github.com/cortexproject/cortex/blob/master/docs/architecture.md#chunk-store)
   for index storage
@@ -62,13 +62,13 @@ Cons:
 
 ### Thanos 0.8
 
-Pros:
+**Pros**:
 
 * Maintained Grafana/Prometheus community
 * Purely based on object store
 * Flexible to configure
 
-Cons:
+**Cons**:
 
 * Needs lots of resources (especially for compacting)
 * No remote-write receiver
@@ -83,7 +83,7 @@ complicated than Thanos's.
 
 ## Goals
 
-* Provide near-realtime access to user-cluster metrics.
+* **Provide near-realtime access to user-cluster metrics.**
 
   Currently we override the block duration to be 15min, but this is highly discouraged
   and we should stop doing it. It's an ugly hack to work around too many missing metrics
@@ -93,22 +93,22 @@ complicated than Thanos's.
   you want to check the dashboards, data being delayed by up to 2 hours (again, when we
   stop doing nasty things) is a major inconvenience.
 
-* Keep User-Cluster Prometheus stateless.
+* **Keep User-Cluster Prometheus stateless.**
 
   We could give every Prometheus a 10Gi disk, but this would quickly balloon. And
   balloon unneccesarily because the data is streamed somewhere else anyway in order to
   eventually make it durable.
 
-* Be able to scale to accomodate many user clusters.
+* **Be able to scale to accomodate many user clusters.**
 
   If for example the Seed-Prometheus would scrape all User-Cluster Prometheus instances,
   it would quickly eat more memory than we're willing to give it. If it then also has to
   run queries, things quickly die.
 
-* Provide master-Grafana with dashboards providing an overview over all seeds and user
+* **Provide master-Grafana** with dashboards providing an overview over all seeds and user
   clusters.
 
-* Keep seed-Grafanas so that if the master goes down, monitoring in seeds is still
+* **Keep seed-Grafanas** so that if the master goes down, monitoring in seeds is still
   possible.
 
 ## Masterplan
@@ -135,7 +135,7 @@ user-clusters.
 
 To get the data out, we have basically three options:
 
-* Federation (Seed-Prometheus scrapes User-Cluster Prometheus)
+* **Federation** (Seed-Prometheus scrapes User-Cluster Prometheus)
 
   This is what we do right now. It makes data available pretty much immediately inside the
   seed and thereby makes it durable as well.
@@ -144,12 +144,12 @@ To get the data out, we have basically three options:
   mentioned above) will likely overload it. We could setup a dedicated "Federation Prometheus"
   that only scrapes and produces blocks to be uploaded via Thanos Sidecar.
 
-* Thanos Sidecar (Sidecar container uploads newly created blocks)
+* **Thanos Sidecar** (Sidecar container uploads newly created blocks)
 
   This has the downside of delaying metrics by the block duration. Also, metrics are lost
   when the pod restarts. This makes it unsuitable for our setup.
 
-* Remote Write (Prometheus streams data somewhere)
+* **Remote Write** (Prometheus streams data somewhere)
 
   This solves the durability and the immediate availability, but is not something supported
   by Thanos directly.
