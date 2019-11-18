@@ -27,7 +27,7 @@ type tlsConfig struct {
 // containing everything required to scrape resources.
 type customizationData struct {
 	Cluster                  *kubermaticv1.Cluster
-	APIServer                string
+	APIServerHost            string
 	EtcdTLS                  tlsConfig
 	ApiserverTLS             tlsConfig
 	ScrapingAnnotationPrefix string
@@ -35,7 +35,7 @@ type customizationData struct {
 
 type configTemplateData struct {
 	TemplateData          interface{}
-	APIServer             string
+	APIServerHost         string
 	EtcdTLSConfig         string
 	ApiserverTLSConfig    string
 	CustomScrapingConfigs string
@@ -63,7 +63,7 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 			// get custom scraping configs and rules
 			customData := &customizationData{
 				Cluster:                  cluster,
-				APIServer:                fmt.Sprintf("%s:%d", cluster.Address.InternalName, cluster.Address.Port),
+				APIServerHost:            fmt.Sprintf("%s:%d", cluster.Address.InternalName, cluster.Address.Port),
 				EtcdTLS:                  etcdTLS,
 				ApiserverTLS:             apiserverTLS,
 				ScrapingAnnotationPrefix: data.MonitoringScrapeAnnotationPrefix(),
@@ -95,7 +95,7 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 			// prepare config template
 			configData := &configTemplateData{
 				TemplateData:          data,
-				APIServer:             customData.APIServer,
+				APIServerHost:         customData.APIServerHost,
 				CustomScrapingConfigs: customScrapingConfigs,
 				EtcdTLSConfig:         strings.TrimSpace(string(etcdTLSYaml)),
 				ApiserverTLSConfig:    strings.TrimSpace(string(apiserverTLSYaml)),
@@ -302,7 +302,7 @@ scrape_configs:
 
   kubernetes_sd_configs:
   - role: node
-    api_server: 'https://{{ .APIServer }}'
+    api_server: 'https://{{ .APIServerHost }}'
     tls_config:
 {{ .ApiserverTLSConfig | indent 6 }}
 
@@ -310,7 +310,7 @@ scrape_configs:
   - action: labelmap
     regex: __meta_kubernetes_node_label_(.+)
   - target_label: __address__
-    replacement: '{{ .APIServer }}'
+    replacement: '{{ .APIServerHost }}'
   - source_labels: [__meta_kubernetes_node_name]
     regex: (.+)
     target_label: __metrics_path__
@@ -324,7 +324,7 @@ scrape_configs:
 
   kubernetes_sd_configs:
   - role: node
-    api_server: 'https://{{ .APIServer }}'
+    api_server: 'https://{{ .APIServerHost }}'
     tls_config:
 {{ .ApiserverTLSConfig | indent 6 }}
 
@@ -332,7 +332,7 @@ scrape_configs:
   - action: labelmap
     regex: __meta_kubernetes_node_label_(.+)
   - target_label: __address__
-    replacement: '{{ .APIServer }}'
+    replacement: '{{ .APIServerHost }}'
   - source_labels: [__meta_kubernetes_node_name]
     regex: (.+)
     target_label: __metrics_path__
@@ -346,7 +346,7 @@ scrape_configs:
 
   kubernetes_sd_configs:
   - role: pod
-    api_server: 'https://{{ .APIServer }}'
+    api_server: 'https://{{ .APIServerHost }}'
     tls_config:
 {{ .ApiserverTLSConfig | indent 6 }}
 
@@ -364,7 +364,7 @@ scrape_configs:
     target_label: __metrics_path__
     replacement: /api/v1/namespaces/${1}/pods/${2}:${3}/proxy${4}
   - target_label: __address__
-    replacement: '{{ .APIServer }}'
+    replacement: '{{ .APIServerHost }}'
   - source_labels: [__meta_kubernetes_namespace]
     action: replace
     target_label: namespace
