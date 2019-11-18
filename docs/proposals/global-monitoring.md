@@ -33,7 +33,7 @@ question by utilizing an object store.
 
 We evaluated the following products:
 
-### VictoriaMetrics 1.28.3
+#### VictoriaMetrics 1.28.3
 
 **Pros**:
 
@@ -47,7 +47,7 @@ We evaluated the following products:
 * Returns wrong query results
 * 1-man project re-implementing everything
 
-### Cortex
+#### Cortex
 
 **Pros**:
 
@@ -60,7 +60,7 @@ We evaluated the following products:
   for index storage
 * Requires its own backup for the index
 
-### Thanos 0.8
+#### Thanos 0.8
 
 **Pros**:
 
@@ -73,7 +73,7 @@ We evaluated the following products:
 * Needs lots of resources (especially for compacting)
 * No remote-write receiver
 
-### Conclusion
+#### Conclusion
 
 VictoriaMetrics is out because of the wrong query results and the need for a backup job.
 Thanos beats Cortex because of its architecture around an object store, even though the
