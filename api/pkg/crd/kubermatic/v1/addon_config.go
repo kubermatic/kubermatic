@@ -2,7 +2,6 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -11,6 +10,15 @@ const (
 
 	// AddonKindName represents "Kind" defined in Kubernetes
 	AddonConfigKindName = "AddonConfig"
+
+	// ControlTypeBool represents bool type.
+	ControlTypeBool = "bool"
+
+	// ControlTypeString represents string type.
+	ControlTypeString = "string"
+
+	// ControlTypeNumber represents number type.
+	ControlTypeNumber = "number"
 )
 
 //+genclient
@@ -27,12 +35,23 @@ type AddonConfig struct {
 // AddonConfigSpec specifies configuration of addon
 type AddonConfigSpec struct {
 	// Description of the configured addon
-	Description string `json:"description"`
-	// TODO: Fix the types of Logo and Variables.
-	// Logo of the configured addon
-	Logo string `json:"description"`
-	// Variables that can be set for configured addon
-	Variables runtime.RawExtension `json:"variables,omitempty"`
+	Description string `json:"description,omitempty"`
+	// Logo of the configured addon, encoded in base64
+	Logo string `json:"logo,omitempty"`
+	// Controls that can be set for configured addon
+	Controls []AddonFormControl `json:"formSpec,omitempty"`
+}
+
+// AddonFormControl specifies addon form control
+type AddonFormControl struct {
+	// DisplayName is visible in the UI
+	DisplayName string `json:"displayName,omitempty"`
+	// InternalName is used internally to save in the addon object
+	InternalName string `json:"internalName,omitempty"`
+	// Required indicates if the control has to be set
+	Required bool `json:"required,omitempty"`
+	// Type of displayed control
+	Type string `json:"type,omitempty"`
 }
 
 // AddonConfigList is a list of addon configs
