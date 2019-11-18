@@ -379,14 +379,6 @@ func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (str
 					{CidrIp: aws.String("0.0.0.0/0")},
 				}),
 			(&ec2.IpPermission{}).
-				// tcp:10250 from everywhere
-				SetIpProtocol("tcp").
-				SetFromPort(provider.DefaultKubeletPort).
-				SetToPort(provider.DefaultKubeletPort).
-				SetIpRanges([]*ec2.IpRange{
-					{CidrIp: aws.String("0.0.0.0/0")},
-				}),
-			(&ec2.IpPermission{}).
 				// ICMP from/to everywhere
 				SetIpProtocol("icmp").
 				SetFromPort(-1). // any port
