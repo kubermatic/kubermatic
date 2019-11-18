@@ -1218,13 +1218,20 @@ type ClusterRole struct {
 	Rules []rbacv1.PolicyRule `json:"rules"`
 }
 
-// Role defines RBAC role name object for the user cluster
+// RoleName defines RBAC role name object for the user cluster
 // swagger:model RoleName
 type RoleName struct {
 	// Name of the role.
 	Name string `json:"name"`
 	// Indicates the scopes of this role.
 	Namespace []string `json:"namespace"`
+}
+
+// ClusterRoleName defines RBAC cluster role name object for the user cluster
+// swagger:model ClusterRoleName
+type ClusterRoleName struct {
+	// Name of the cluster role.
+	Name string `json:"name"`
 }
 
 // Role defines RBAC role for the user cluster
