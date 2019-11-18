@@ -223,6 +223,45 @@ func ListClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.En
 	}
 }
 
+func ListClusterRoleNamesEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		clusterRoleLabelSelector, err := labels.Parse(UserClusterRoleLabelSelector)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		clusterRoleList := &rbacv1.ClusterRoleList{}
+		if err := client.List(ctx, clusterRoleList, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var clusterRoleNames []apiv1.ClusterRoleName
+		for _, clusterRole := range clusterRoleList.Items {
+			clusterRoleNames = append(clusterRoleNames, apiv1.ClusterRoleName{
+				Name: clusterRole.Name,
+			})
+		}
+		return clusterRoleNames, nil
+	}
+}
+
 func ListRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listReq)
@@ -290,7 +329,7 @@ func ListRoleNamesEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endp
 }
 
 // listReq defines HTTP request for listClusterRole and listRole endpoint
-// swagger:parameters listClusterRole listRole listRoleNames
+// swagger:parameters listClusterRole listRole listRoleNames listClusterRoleNames
 type listReq struct {
 	common.DCReq
 	// in: path
