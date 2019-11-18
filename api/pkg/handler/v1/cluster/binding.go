@@ -173,7 +173,7 @@ func ListRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.En
 
 		var bindings []rbacv1.RoleBinding
 		for _, binding := range roleBindingList.Items {
-			if removeUserClusterRBACPrefix(binding.RoleRef.Name) == req.RoleID {
+			if binding.RoleRef.Name == req.RoleID {
 				bindings = append(bindings, binding)
 			}
 		}
@@ -241,15 +241,12 @@ func GetRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.End
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		roleID := addUserClusterRBACPrefix(req.RoleID)
-
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: roleID, Namespace: req.Namespace}, &rbacv1.Role{}); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID, Namespace: req.Namespace}, &rbacv1.Role{}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		bindingID := addUserClusterRBACPrefix(req.BindingID)
 		binding := &rbacv1.RoleBinding{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: bindingID, Namespace: req.Namespace}, binding); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.BindingID, Namespace: req.Namespace}, binding); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -276,16 +273,13 @@ func DeleteRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		roleID := addUserClusterRBACPrefix(req.RoleID)
-
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: roleID, Namespace: req.Namespace}, &rbacv1.Role{}); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID, Namespace: req.Namespace}, &rbacv1.Role{}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		bindingID := addUserClusterRBACPrefix(req.BindingID)
 		binding := &rbacv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      bindingID,
+				Name:      req.BindingID,
 				Namespace: req.Namespace,
 			},
 		}
@@ -364,15 +358,12 @@ func PatchRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.E
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		roleID := addUserClusterRBACPrefix(req.RoleID)
-
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: roleID, Namespace: req.Namespace}, &rbacv1.Role{}); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID, Namespace: req.Namespace}, &rbacv1.Role{}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		bindingID := addUserClusterRBACPrefix(req.BindingID)
 		existingBinding := &rbacv1.RoleBinding{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: bindingID, Namespace: req.Namespace}, existingBinding); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.BindingID, Namespace: req.Namespace}, existingBinding); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -477,8 +468,7 @@ func CreateClusterRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) en
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		roleID := addUserClusterRBACPrefix(req.RoleID)
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: roleID}, &rbacv1.ClusterRole{}); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID}, &rbacv1.ClusterRole{}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -588,7 +578,7 @@ func ListClusterRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) endp
 
 		var bindings []rbacv1.ClusterRoleBinding
 		for _, binding := range clusterRoleBindingList.Items {
-			if removeUserClusterRBACPrefix(binding.RoleRef.Name) == req.RoleID {
+			if binding.RoleRef.Name == req.RoleID {
 				bindings = append(bindings, binding)
 			}
 		}
@@ -648,15 +638,12 @@ func GetClusterRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) endpo
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		clusterRoleID := addUserClusterRBACPrefix(req.RoleID)
-
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: clusterRoleID}, &rbacv1.ClusterRole{}); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID}, &rbacv1.ClusterRole{}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		bindingID := addUserClusterRBACPrefix(req.BindingID)
 		binding := &rbacv1.ClusterRoleBinding{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: bindingID}, binding); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.BindingID}, binding); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -683,16 +670,13 @@ func DeleteClusterRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) en
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		clusterRoleID := addUserClusterRBACPrefix(req.RoleID)
-
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: clusterRoleID}, &rbacv1.ClusterRole{}); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID}, &rbacv1.ClusterRole{}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		bindingID := addUserClusterRBACPrefix(req.BindingID)
 		binding := &rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: bindingID,
+				Name: req.BindingID,
 			},
 		}
 
@@ -765,17 +749,15 @@ func PatchClusterRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) end
 		}
 
 		// check if ClusterRole exists for the binding
-		clusterRoleID := addUserClusterRBACPrefix(req.RoleID)
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: clusterRoleID}, &rbacv1.ClusterRole{}); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID}, &rbacv1.ClusterRole{}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		// Get kubernetes ClusterRoleBinding and patch it with kubermatic API ClusterRoleBinding.
 		// The kubermatic ClusterRoleBinding contains kubernetes Subjects type and can be apply on
 		// the kubernetes subject object.
-		bindingID := addUserClusterRBACPrefix(req.BindingID)
 		existingBinding := &rbacv1.ClusterRoleBinding{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: bindingID}, existingBinding); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.BindingID}, existingBinding); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -855,14 +837,14 @@ func generateRBACRoleBinding(name, namespace, roleName string, subjects []rbacv1
 
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      addUserClusterRBACPrefix(name),
+			Name:      name,
 			Labels:    map[string]string{UserClusterComponentKey: UserClusterBindingComponentValue},
 			Namespace: namespace,
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.GroupName,
 			Kind:     "Role",
-			Name:     addUserClusterRBACPrefix(roleName),
+			Name:     roleName,
 		},
 		Subjects: []rbacv1.Subject{},
 	}
@@ -886,13 +868,13 @@ func generateRBACClusterRoleBinding(name, roleName string, subjects []rbacv1.Sub
 
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   addUserClusterRBACPrefix(name),
+			Name:   name,
 			Labels: map[string]string{UserClusterComponentKey: UserClusterBindingComponentValue},
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.GroupName,
 			Kind:     "ClusterRole",
-			Name:     addUserClusterRBACPrefix(roleName),
+			Name:     roleName,
 		},
 		Subjects: []rbacv1.Subject{},
 	}
@@ -914,13 +896,13 @@ func generateRBACClusterRoleBinding(name, roleName string, subjects []rbacv1.Sub
 func convertInternalRoleBindingToExternal(clusterRole *rbacv1.RoleBinding) *apiv1.RoleBinding {
 	roleBinding := &apiv1.RoleBinding{
 		ObjectMeta: apiv1.ObjectMeta{
-			ID:                removeUserClusterRBACPrefix(clusterRole.Name),
-			Name:              removeUserClusterRBACPrefix(clusterRole.Name),
+			ID:                clusterRole.Name,
+			Name:              clusterRole.Name,
 			DeletionTimestamp: nil,
 			CreationTimestamp: apiv1.NewTime(clusterRole.CreationTimestamp.Time),
 		},
 		Namespace:   clusterRole.Namespace,
-		RoleRefName: removeUserClusterRBACPrefix(clusterRole.RoleRef.Name),
+		RoleRefName: clusterRole.RoleRef.Name,
 		Subjects:    clusterRole.Subjects,
 	}
 
@@ -939,12 +921,12 @@ func convertInternalRoleBindingsToExternal(roleBindings []rbacv1.RoleBinding) []
 func convertInternalClusterRoleBindingToExternal(clusterRoleBinding *rbacv1.ClusterRoleBinding) *apiv1.ClusterRoleBinding {
 	binding := &apiv1.ClusterRoleBinding{
 		ObjectMeta: apiv1.ObjectMeta{
-			ID:                removeUserClusterRBACPrefix(clusterRoleBinding.Name),
-			Name:              removeUserClusterRBACPrefix(clusterRoleBinding.Name),
+			ID:                clusterRoleBinding.Name,
+			Name:              clusterRoleBinding.Name,
 			DeletionTimestamp: nil,
 			CreationTimestamp: apiv1.NewTime(clusterRoleBinding.CreationTimestamp.Time),
 		},
-		RoleRefName: removeUserClusterRBACPrefix(clusterRoleBinding.RoleRef.Name),
+		RoleRefName: clusterRoleBinding.RoleRef.Name,
 		Subjects:    clusterRoleBinding.Subjects,
 	}
 
