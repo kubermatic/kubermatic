@@ -193,6 +193,14 @@ func (r *Reconciler) reconcileConfigMaps(cfg *operatorv1alpha1.KubermaticConfigu
 		kubermatic.BackupContainersConfigMapCreator(cfg),
 	}
 
+	if creator := kubermatic.ClusterNamespacePrometheusScrapingConfigMapCreator(cfg); creator != nil {
+		creators = append(creators, creator)
+	}
+
+	if creator := kubermatic.ClusterNamespacePrometheusRulesConfigMapCreator(cfg); creator != nil {
+		creators = append(creators, creator)
+	}
+
 	if err := reconciling.ReconcileConfigMaps(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
 	}

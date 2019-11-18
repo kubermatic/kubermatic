@@ -107,7 +107,7 @@ type KubermaticSeedControllerConfiguration struct {
 	// KubermaticImage can be used to overwrite the Docker image that is deployed inside user clusters.
 	KubermaticImage string `json:"kubermaticImage,omitempty"`
 	// Monitoring can be used to fine-tune to in-cluster Prometheus.
-	Monitoring KubermaticSeedMonitoringConfiguration `json:"monitoring,omitempty"`
+	Monitoring KubermaticUserClusterMonitoringConfiguration `json:"monitoring,omitempty"`
 }
 
 // KubermaticAddonsConfiguration controls the optional additions installed into each user cluster.
@@ -118,8 +118,8 @@ type KubermaticAddonsConfiguration struct {
 	Openshift KubermaticAddonConfiguration `json:"openshift,omitempty"`
 }
 
-// KubermaticSeedMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
-type KubermaticSeedMonitoringConfiguration struct {
+// KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
+type KubermaticUserClusterMonitoringConfiguration struct {
 	// DisableDefaultRules disables the recording and alerting rules.
 	DisableDefaultRules bool `json:"disableDefaultRules,omitempty"`
 	// DisableDefaultScrapingConfigs disables the default scraping targets.
