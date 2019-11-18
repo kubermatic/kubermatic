@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
@@ -29,8 +28,6 @@ const (
 	UserClusterComponentKey       = "component"
 	UserClusterRoleComponentValue = "userClusterRole"
 	UserClusterRoleLabelSelector  = "component=userClusterRole"
-
-	UserClusterRBACPrefix = "api:"
 )
 
 func CreateClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
@@ -305,10 +302,9 @@ func GetClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.End
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		userClusterRoleID := addUserClusterRBACPrefix(req.RoleID)
 
 		clusterRole := &rbacv1.ClusterRole{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: userClusterRoleID}, clusterRole); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID}, clusterRole); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return convertInternalClusterRoleToExternal(clusterRole), nil
@@ -333,10 +329,9 @@ func GetRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		roleID := addUserClusterRBACPrefix(req.RoleID)
 
 		role := &rbacv1.Role{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: roleID, Namespace: req.Namespace}, role); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID, Namespace: req.Namespace}, role); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return convertInternalRoleToExternal(role), nil
@@ -362,11 +357,10 @@ func DeleteClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		userClusterRoleID := addUserClusterRBACPrefix(req.RoleID)
 
 		clusterRole := &rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: userClusterRoleID,
+				Name: req.RoleID,
 			},
 		}
 		if err := client.Delete(ctx, clusterRole); err != nil {
@@ -395,11 +389,10 @@ func DeleteRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoin
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		roleID := addUserClusterRBACPrefix(req.RoleID)
 
 		role := &rbacv1.Role{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      roleID,
+				Name:      req.RoleID,
 				Namespace: req.Namespace,
 			},
 		}
@@ -508,10 +501,9 @@ func PatchRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		roleID := addUserClusterRBACPrefix(req.RoleID)
 
 		existingRole := &rbacv1.Role{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: roleID, Namespace: req.Namespace}, existingRole); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID, Namespace: req.Namespace}, existingRole); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -604,10 +596,9 @@ func PatchClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.E
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		roleID := addUserClusterRBACPrefix(req.RoleID)
 
 		existingClusterRole := &rbacv1.ClusterRole{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: roleID}, existingClusterRole); err != nil {
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID}, existingClusterRole); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -700,7 +691,7 @@ func generateRBACClusterRole(name string, rules []rbacv1.PolicyRule) (*rbacv1.Cl
 	}
 	clusterRole := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   addUserClusterRBACPrefix(name),
+			Name:   name,
 			Labels: map[string]string{UserClusterComponentKey: UserClusterRoleComponentValue},
 		},
 		Rules: rules,
@@ -715,7 +706,7 @@ func generateRBACRole(name, namespace string, rules []rbacv1.PolicyRule) (*rbacv
 	}
 	clusterRole := &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      addUserClusterRBACPrefix(name),
+			Name:      name,
 			Labels:    map[string]string{UserClusterComponentKey: UserClusterRoleComponentValue},
 			Namespace: namespace,
 		},
@@ -727,8 +718,8 @@ func generateRBACRole(name, namespace string, rules []rbacv1.PolicyRule) (*rbacv
 func convertInternalClusterRoleToExternal(clusterRole *rbacv1.ClusterRole) *apiv1.ClusterRole {
 	return &apiv1.ClusterRole{
 		ObjectMeta: apiv1.ObjectMeta{
-			ID:                removeUserClusterRBACPrefix(clusterRole.Name),
-			Name:              removeUserClusterRBACPrefix(clusterRole.Name),
+			ID:                clusterRole.Name,
+			Name:              clusterRole.Name,
 			DeletionTimestamp: nil,
 			CreationTimestamp: apiv1.NewTime(clusterRole.CreationTimestamp.Time),
 		},
@@ -739,32 +730,12 @@ func convertInternalClusterRoleToExternal(clusterRole *rbacv1.ClusterRole) *apiv
 func convertInternalRoleToExternal(clusterRole *rbacv1.Role) *apiv1.Role {
 	return &apiv1.Role{
 		ObjectMeta: apiv1.ObjectMeta{
-			ID:                removeUserClusterRBACPrefix(clusterRole.Name),
-			Name:              removeUserClusterRBACPrefix(clusterRole.Name),
+			ID:                clusterRole.Name,
+			Name:              clusterRole.Name,
 			DeletionTimestamp: nil,
 			CreationTimestamp: apiv1.NewTime(clusterRole.CreationTimestamp.Time),
 		},
 		Namespace: clusterRole.Namespace,
 		Rules:     clusterRole.Rules,
 	}
-}
-
-// removeUserClusterRBACPrefix removes "api:" from a UserClusterRole name,
-// for example given "api:admin" it returns "admin"
-func removeUserClusterRBACPrefix(name string) string {
-	return strings.TrimPrefix(name, UserClusterRBACPrefix)
-}
-
-// addUserClusterRBACPrefix adds "api:" prefix to a UserClusterRole name,
-// for example given "admin" it returns "admin:7d4b5695vb"
-func addUserClusterRBACPrefix(name string) string {
-	if !hasPrefix(name) {
-		return fmt.Sprintf("%s%s", UserClusterRBACPrefix, name)
-	}
-	return name
-}
-
-// hasPrefix checks if the given id has "api:" prefix
-func hasPrefix(sa string) bool {
-	return strings.HasPrefix(sa, UserClusterRBACPrefix)
 }
