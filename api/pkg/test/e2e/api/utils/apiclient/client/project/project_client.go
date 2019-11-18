@@ -1372,6 +1372,35 @@ func (a *Client) ListRoleBinding(params *ListRoleBindingParams, authInfo runtime
 }
 
 /*
+ListRoleNames Lists all Role names with namespaces
+*/
+func (a *Client) ListRoleNames(params *ListRoleNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleNamesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListRoleNamesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listRoleNames",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/rolenames",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListRoleNamesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListRoleNamesOK), nil
+
+}
+
+/*
 ListSSHKeys lists SSH keys that belong to the given project
 
 The returned collection is sorted by creation timestamp.

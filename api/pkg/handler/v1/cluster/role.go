@@ -256,8 +256,41 @@ func ListRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint 
 	}
 }
 
+func ListRoleNamesEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		clusterRoleLabelSelector, err := labels.Parse(UserClusterRoleLabelSelector)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		roleList := &rbacv1.RoleList{}
+		if err := client.List(ctx, roleList, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertRoleNames(roleList), nil
+	}
+}
+
 // listReq defines HTTP request for listClusterRole and listRole endpoint
-// swagger:parameters listClusterRole listRole
+// swagger:parameters listClusterRole listRole listRoleNames
 type listReq struct {
 	common.DCReq
 	// in: path
@@ -738,4 +771,24 @@ func convertInternalRoleToExternal(clusterRole *rbacv1.Role) *apiv1.Role {
 		Namespace: clusterRole.Namespace,
 		Rules:     clusterRole.Rules,
 	}
+}
+
+func convertRoleNames(internalRoles *rbacv1.RoleList) []*apiv1.RoleName {
+	var apiRoleName []*apiv1.RoleName
+	roleMap := map[string][]string{}
+	if internalRoles != nil {
+		for _, role := range internalRoles.Items {
+			if roleMap[role.Name] == nil {
+				roleMap[role.Name] = []string{}
+			}
+			roleMap[role.Name] = append(roleMap[role.Name], role.Namespace)
+		}
+	}
+	for name, namespaces := range roleMap {
+		apiRoleName = append(apiRoleName, &apiv1.RoleName{
+			Name:      name,
+			Namespace: namespaces,
+		})
+	}
+	return apiRoleName
 }
