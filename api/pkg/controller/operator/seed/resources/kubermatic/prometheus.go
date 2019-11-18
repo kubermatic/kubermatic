@@ -1,8 +1,12 @@
 package kubermatic
 
 import (
+	"encoding/json"
+	"fmt"
+
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	"gopkg.in/yaml.v2"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -23,7 +27,23 @@ func ClusterNamespacePrometheusScrapingConfigMapCreator(cfg *operatorv1alpha1.Ku
 				c.Data = make(map[string]string)
 			}
 
-			c.Data["_custom-scraping-configs.yaml"] = cfg.Spec.SeedController.Monitoring.CustomScrapingConfigs
+			configs := make([]interface{}, len(cfg.Spec.SeedController.Monitoring.CustomScrapingConfigs))
+			for n, c := range cfg.Spec.SeedController.Monitoring.CustomScrapingConfigs {
+				var config interface{}
+
+				if err := json.Unmarshal(c.Raw, &config); err != nil {
+					return nil, fmt.Errorf("Prometheus scraping rule %d is invalid: %v", n+1, err)
+				}
+
+				configs[n] = config
+			}
+
+			marshalled, err := yaml.Marshal(configs)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode Prometheus scraping rules as YAML: %v", err)
+			}
+
+			c.Data["_custom-scraping-configs.yaml"] = string(marshalled)
 
 			return c, nil
 		}
@@ -31,7 +51,7 @@ func ClusterNamespacePrometheusScrapingConfigMapCreator(cfg *operatorv1alpha1.Ku
 }
 
 func ClusterNamespacePrometheusRulesConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {
-	if len(cfg.Spec.SeedController.Monitoring.CustomRules) == 0 {
+	if cfg.Spec.SeedController.Monitoring.CustomRules.Size() == 0 {
 		return nil
 	}
 
@@ -41,7 +61,17 @@ func ClusterNamespacePrometheusRulesConfigMapCreator(cfg *operatorv1alpha1.Kuber
 				c.Data = make(map[string]string)
 			}
 
-			c.Data["_customrules.yaml"] = cfg.Spec.SeedController.Monitoring.CustomRules
+			var rules interface{}
+			if err := json.Unmarshal(cfg.Spec.SeedController.Monitoring.CustomRules.Raw, &rules); err != nil {
+				return nil, fmt.Errorf("Prometheus rules are invalid: %v", err)
+			}
+
+			marshalled, err := yaml.Marshal(rules)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode Prometheus rules as YAML: %v", err)
+			}
+
+			c.Data["_customrules.yaml"] = string(marshalled)
 
 			return c, nil
 		}

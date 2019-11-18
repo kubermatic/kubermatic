@@ -209,7 +209,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, cfg *operatorv1al
 				})
 			}
 
-			if len(cfg.Spec.SeedController.Monitoring.CustomRules) > 0 {
+			if cfg.Spec.SeedController.Monitoring.CustomRules.Size() > 0 {
 				path := "/opt/" + clusterNamespacePrometheusRulesConfigMapName
 				args = append(args, fmt.Sprintf("-in-cluster-prometheus-rules-file=%s/_customrules.yaml", path))
 
