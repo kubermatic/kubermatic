@@ -367,19 +367,6 @@ func (a *Azure) ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location strin
 					},
 				},
 				{
-					Name: to.StringPtr("kubelet"),
-					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
-						Direction:                network.SecurityRuleDirectionInbound,
-						Protocol:                 network.SecurityRuleProtocolTCP,
-						SourceAddressPrefix:      to.StringPtr("*"),
-						SourcePortRange:          to.StringPtr("*"),
-						DestinationAddressPrefix: to.StringPtr("*"),
-						DestinationPortRange:     to.StringPtr("10250"),
-						Access:                   network.SecurityRuleAccessAllow,
-						Priority:                 to.Int32Ptr(101),
-					},
-				},
-				{
 					Name: to.StringPtr("inter_node_comm"),
 					SecurityRulePropertiesFormat: &network.SecurityRulePropertiesFormat{
 						Direction:                network.SecurityRuleDirectionInbound,

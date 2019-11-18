@@ -187,15 +187,6 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, cluster
 			Protocol:     osecuritygrouprules.ProtocolTCP,
 		},
 		{
-			// Allows kubelet from external
-			Direction:    osecuritygrouprules.DirIngress,
-			EtherType:    osecuritygrouprules.EtherType4,
-			SecGroupID:   securityGroupID,
-			PortRangeMin: provider.DefaultKubeletPort,
-			PortRangeMax: provider.DefaultKubeletPort,
-			Protocol:     osecuritygrouprules.ProtocolTCP,
-		},
-		{
 			// Allows ICMP traffic
 			Direction:  osecuritygrouprules.DirIngress,
 			EtherType:  osecuritygrouprules.EtherType4,
