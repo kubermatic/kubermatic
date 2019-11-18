@@ -215,11 +215,11 @@ func TestGetRoleBinding(t *testing.T) {
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
 		{
-			name:             "scenario 1: get binding when role doesn't exist",
+			name:             "scenario 2: get binding when role doesn't exist",
 			roleName:         "role-1",
 			bindingName:      "binding-1",
 			namespace:        "default",
-			expectedResponse: `{"error":{"code":404,"message":"roles.rbac.authorization.k8s.io \"api:role-1\" not found"}}`,
+			expectedResponse: `{"error":{"code":404,"message":"roles.rbac.authorization.k8s.io \"role-1\" not found"}}`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusNotFound,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -296,11 +296,11 @@ func TestDeleteRoleBinding(t *testing.T) {
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
 		{
-			name:             "scenario 1: delete binding when role doesn't exist",
+			name:             "scenario 2: delete binding when role doesn't exist",
 			roleName:         "role-1",
 			bindingName:      "binding-1",
 			namespace:        "default",
-			expectedResponse: `{"error":{"code":404,"message":"roles.rbac.authorization.k8s.io \"api:role-1\" not found"}}`,
+			expectedResponse: `{"error":{"code":404,"message":"roles.rbac.authorization.k8s.io \"role-1\" not found"}}`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusNotFound,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -431,7 +431,7 @@ func TestPatchRoleBinding(t *testing.T) {
 func genDefaultRoleBinding(name, namespace, roleID, userEmail string) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s%s", cluster.UserClusterRBACPrefix, name),
+			Name:      name,
 			Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
 			Namespace: namespace,
 		},
@@ -450,7 +450,7 @@ func genDefaultRoleBinding(name, namespace, roleID, userEmail string) *rbacv1.Ro
 func genDefaultClusterRoleBinding(name, roleID, userEmail string) *rbacv1.ClusterRoleBinding {
 	return &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   fmt.Sprintf("%s%s", cluster.UserClusterRBACPrefix, name),
+			Name:   name,
 			Labels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
 		},
 		Subjects: []rbacv1.Subject{
@@ -515,7 +515,7 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			name:             "scenario 3: create cluster role binding when cluster role doesn't exist",
 			roleName:         "role-1",
 			body:             `{"name":"test-1","roleRefName":"role-1","subjects":[{"kind":"User","name":"test@example.com"}]}`,
-			expectedResponse: `{"error":{"code":404,"message":"clusterroles.rbac.authorization.k8s.io \"api:role-1\" not found"}}`,
+			expectedResponse: `{"error":{"code":404,"message":"clusterroles.rbac.authorization.k8s.io \"role-1\" not found"}}`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusNotFound,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
