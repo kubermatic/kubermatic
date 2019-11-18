@@ -261,6 +261,7 @@ authConfig:
   requestHeader:
     clientCA: /etc/kubernetes/pki/front-proxy/client/ca.crt
     clientCommonNames:
+    - apiserver-aggregator
     - kube-apiserver-proxy
     - system:kube-apiserver-proxy
     - system:openshift-aggregator
