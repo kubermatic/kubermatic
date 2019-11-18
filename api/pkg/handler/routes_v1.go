@@ -265,6 +265,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listRole())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/rolenames").
+		Handler(r.listRoleNames())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}").
 		Handler(r.getRole())
 
@@ -3081,6 +3085,31 @@ func (r Routing) listRole() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.ListRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeListClusterRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/rolenames project listRoleNames
+//
+//     Lists all Role names with namespaces
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []RoleName
+//       401: empty
+//       403: empty
+func (r Routing) listRoleNames() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.ListRoleNamesEndpoint(r.userInfoGetter)),
 		cluster.DecodeListClusterRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
