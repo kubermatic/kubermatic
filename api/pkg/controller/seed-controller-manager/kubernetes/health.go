@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.ExtendedClusterHealth, error) {
@@ -34,7 +37,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		if err != nil {
 			return nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
-		*healthMapping[name].healthStatus = status
+		*healthMapping[name].healthStatus = getStatus(status, cluster)
 	}
 
 	var err error
@@ -44,7 +47,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	if err != nil {
 		return nil, fmt.Errorf("failed to get etcd health: %v", err)
 	}
-	extendedHealth.Etcd = etcdHealthStatus
+	extendedHealth.Etcd = getStatus(etcdHealthStatus, cluster)
 
 	return extendedHealth, nil
 }
@@ -60,5 +63,41 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 		})
 	}
 
+	if err != nil {
+		return err
+	}
+
+	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && isClusterInitialized(cluster) {
+		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+			helper.SetClusterCondition(
+				c,
+				kubermaticv1.ClusterConditionClusterInitialized,
+				corev1.ConditionTrue,
+				"",
+				"Cluster has been initialized successfully",
+			)
+		})
+	}
+
 	return err
+}
+
+// We assume that te cluster is still provisioning if it was not initialized fully at least once.
+func getStatus(status kubermaticv1.HealthStatus, cluster *kubermaticv1.Cluster) kubermaticv1.HealthStatus {
+	if status == kubermaticv1.HealthStatusDown && !isClusterInitialized(cluster) {
+		return kubermaticv1.HealthStatusProvisioning
+	}
+
+	return status
+}
+
+func isClusterInitialized(cluster *kubermaticv1.Cluster) bool {
+	isInitialized := cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue)
+	// If was set to true at least once just return true
+	if isInitialized {
+		return true
+	}
+
+	_, success := helper.ClusterReconciliationSuccessful(cluster)
+	return success && cluster.Status.ExtendedHealth.AllHealthy()
 }
