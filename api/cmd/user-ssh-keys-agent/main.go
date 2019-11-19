@@ -11,6 +11,8 @@ import (
 
 	usersshkeys "github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeysagent"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -47,7 +49,7 @@ func main() {
 	done := ctx.Done()
 	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
-	mgr, err := manager.New(cfg, manager.Options{})
+	mgr, err := manager.New(cfg, manager.Options{Namespace: metav1.NamespaceSystem})
 	if err != nil {
 		log.Fatalw("Failed creating user ssh key controller", zap.Error(err))
 	}

@@ -14,8 +14,6 @@ import (
 
 const (
 	daemonSetName = "user-ssh-keys-agent"
-	mainRepoName  = "kubermatic"
-	tag           = "latest"
 )
 
 var (
@@ -42,8 +40,8 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 				{
 					Name:            daemonSetName,
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           resources.RegistryQuay + "/" + mainRepoName + "/" + daemonSetName + ":" + tag,
-					Command:         []string{fmt.Sprintf("/bin/%v", daemonSetName)},
+					Image:           fmt.Sprintf("quay.io/kubermatic/user-ssh-keys-agent:%s" + resources.KUBERMATICCOMMIT),
+					Command:         []string{fmt.Sprintf("/usr/local/bin/%v", daemonSetName)},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "root",
@@ -62,17 +60,6 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 							MountPath: "/home/ubuntu/.ssh/authorized_keys",
 						},
 					},
-				},
-			}
-
-			ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
-				{
-					Effect:   corev1.TaintEffectNoSchedule,
-					Operator: corev1.TolerationOpExists,
-				},
-				{
-					Effect:   corev1.TaintEffectNoExecute,
-					Operator: corev1.TolerationOpExists,
 				},
 			}
 

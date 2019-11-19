@@ -91,12 +91,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	secret, err := r.fetchUserSSHKeySecret(ctx, request.NamespacedName.Namespace)
 	if err != nil || secret == nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("failed to fetch user ssh keys: %v", err)
 	}
 
 	if err := r.updateAuthorizedKeys(secret.Data); err != nil {
 		log.Errorw("Failed reconciling user ssh key secret", zap.Error(err))
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("failed to reconcile user ssh keys: %v", err)
 	}
 
 	return reconcile.Result{}, nil
@@ -122,6 +122,7 @@ func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) er
 				if !ok {
 					return
 				}
+				r.log.Errorw("Error occurred during watching authorized_keys file", zap.Error(err))
 				r.events <- event.GenericEvent{}
 			}
 		}
