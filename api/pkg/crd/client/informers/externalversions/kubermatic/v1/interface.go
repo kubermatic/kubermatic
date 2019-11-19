@@ -10,6 +10,8 @@ import (
 type Interface interface {
 	// Addons returns a AddonInformer.
 	Addons() AddonInformer
+	// AddonConfigs returns a AddonConfigInformer.
+	AddonConfigs() AddonConfigInformer
 	// Clusters returns a ClusterInformer.
 	Clusters() ClusterInformer
 	// KubermaticSettings returns a KubermaticSettingInformer.
@@ -38,6 +40,11 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // Addons returns a AddonInformer.
 func (v *version) Addons() AddonInformer {
 	return &addonInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// AddonConfigs returns a AddonConfigInformer.
+func (v *version) AddonConfigs() AddonConfigInformer {
+	return &addonConfigInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Clusters returns a ClusterInformer.
