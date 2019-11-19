@@ -1,3 +1,13 @@
+### [v2.12.2]()
+
+
+- The robustness of vSphere machine reconciliation has been improved. [#4651](https://github.com/kubermatic/kubermatic/issues/4651) ([alvaroaleman](https://github.com/alvaroaleman))
+- Fixe Seed Validation Webhook rejecting new Seeds in certain situations [#4662](https://github.com/kubermatic/kubermatic/issues/4662) ([xrstf](https://github.com/xrstf))
+- Rolled nginx-ingress-controller back to 0.25.1 to fix SSL redirect issues. [#4693](https://github.com/kubermatic/kubermatic/issues/4693) ([xrstf](https://github.com/xrstf))
+
+
+
+
 ### [v2.12.1]()
 
 
