@@ -140,6 +140,20 @@ Supported Kubernetes versions:
 
 
 
+### [v2.11.7]()
+
+
+- Kubernetes 1.13 which is end-of-life has been removed. [#4327](https://github.com/kubermatic/kubermatic/issues/4327) ([kdomanski](https://github.com/kdomanski))
+- Added Kubernetes v1.15.4 [#4329](https://github.com/kubermatic/kubermatic/issues/4329) ([kdomanski](https://github.com/kdomanski))
+- Added Kubernetes v1.14.7 [#4330](https://github.com/kubermatic/kubermatic/issues/4330) ([kdomanski](https://github.com/kdomanski))
+- A bug that prevented node Labels, Taints and Annotations from getting applied correctly was fixed. [#4368](https://github.com/kubermatic/kubermatic/issues/4368) ([alvaroaleman](https://github.com/alvaroaleman))
+- Removed K8S releases affected by CVE-2019-11253 [#4515](https://github.com/kubermatic/kubermatic/issues/4515) ([kdomanski](https://github.com/kdomanski))
+- A fix for CVE-2019-11253 for clusters that were created with a Kubernetes version &lt; 1.14 was deployed [#4520](https://github.com/kubermatic/kubermatic/issues/4520) ([alvaroaleman](https://github.com/alvaroaleman))
+- Openstack: fixed API usage for datacenters with only one region [#4536](https://github.com/kubermatic/kubermatic/issues/4536) ([zreigz](https://github.com/zreigz))
+
+
+
+
 ### [v2.11.6]()
 
 
