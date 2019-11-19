@@ -178,7 +178,7 @@ type ClusterStatus struct {
 	// NamespaceName defines the namespace the control plane of this cluster is deployed in
 	NamespaceName string `json:"namespaceName"`
 
-	// UserName contains the name of the owner of this cluster
+	// UserEmail contains the name of the owner of this cluster
 	UserName string `json:"userName,omitempty"`
 	// UserEmail contains the email of the owner of this cluster
 	UserEmail string `json:"userEmail"`

@@ -1649,7 +1649,7 @@
         }
       },
       "post": {
-        "description": "Creates cluster role binding",
+        "description": "Binds user to cluster role",
         "consumes": [
           "application/json"
         ],
@@ -1659,7 +1659,7 @@
         "tags": [
           "project"
         ],
-        "operationId": "createClusterRoleBinding",
+        "operationId": "bindUserToClusterRole",
         "parameters": [
           {
             "type": "string",
@@ -1693,223 +1693,12 @@
             "name": "Body",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/ClusterRoleBinding"
+              "$ref": "#/definitions/ClusterRoleUser"
             }
           }
         ],
         "responses": {
           "201": {
-            "description": "ClusterRoleBinding",
-            "schema": {
-              "$ref": "#/definitions/ClusterRoleBinding"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings/{binding_id}": {
-      "get": {
-        "description": "Get cluster role binding",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "operationId": "getClusterRoleBinding",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "RoleID",
-            "name": "role_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "BindingID",
-            "name": "binding_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterRoleBinding",
-            "schema": {
-              "$ref": "#/definitions/ClusterRoleBinding"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      },
-      "delete": {
-        "description": "Delete cluster role binding",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "operationId": "deleteClusterRoleBinding",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "RoleID",
-            "name": "role_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "BindingID",
-            "name": "binding_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      },
-      "patch": {
-        "description": "Update cluster role binding",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "operationId": "patchClusterRoleBinding",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "RoleID",
-            "name": "role_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "BindingID",
-            "name": "binding_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Patch",
-            "in": "body",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "integer",
-                "format": "uint8"
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
             "description": "ClusterRoleBinding",
             "schema": {
               "$ref": "#/definitions/ClusterRoleBinding"
@@ -7636,28 +7425,6 @@
       "type": "object",
       "title": "ClusterRoleBinding references a cluster role, but does not contain it.",
       "properties": {
-        "creationTimestamp": {
-          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "CreationTimestamp"
-        },
-        "deletionTimestamp": {
-          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "DeletionTimestamp"
-        },
-        "id": {
-          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
-          "type": "string",
-          "x-go-name": "ID"
-        },
-        "name": {
-          "description": "Name represents human readable name for the resource",
-          "type": "string",
-          "x-go-name": "Name"
-        },
         "roleRefName": {
           "type": "string",
           "x-go-name": "RoleRefName"
@@ -7681,6 +7448,17 @@
           "description": "Name of the cluster role.",
           "type": "string",
           "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ClusterRoleUser": {
+      "description": "ClusterRoleUser defines associated user with cluster role",
+      "type": "object",
+      "properties": {
+        "userEmail": {
+          "type": "string",
+          "x-go-name": "UserEmail"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -10067,6 +9845,17 @@
             "type": "string"
           },
           "x-go-name": "Namespace"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "RoleUser": {
+      "description": "RoleUser defines associated user with role",
+      "type": "object",
+      "properties": {
+        "userEmail": {
+          "type": "string",
+          "x-go-name": "UserEmail"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
