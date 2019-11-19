@@ -19,7 +19,8 @@ cd cmd/nodeport-proxy && export TAG=${1} && make docker && unset TAG && cd -
 cd cmd/kubeletdnat-controller && export TAG=${1} && make docker && unset TAG && cd -
 docker build -t "quay.io/kubermatic/addons:${1}" ../addons
 docker build -t "quay.io/kubermatic/openshift-addons:${1}" ../openshift_addons
-docker build -t "quay.io/kubermatic/user-ssh-keys-agent:${1}" ./cmd/user-ssh-keys-agent
+
+cd cmd/user-ssh-keys-agent && export TAG=${1} && make docker && unset TAG && cd -
 
 for TAG in "$@"
 do
