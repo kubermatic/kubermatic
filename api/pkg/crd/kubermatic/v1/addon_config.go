@@ -22,9 +22,10 @@ const (
 )
 
 //+genclient
+//+genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // AddonConfig specifies addon configuration
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AddonConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -54,8 +55,9 @@ type AddonFormControl struct {
 	Type string `json:"type,omitempty"`
 }
 
-// AddonConfigList is a list of addon configs
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// AddonConfigList is a list of addon configs
 type AddonConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

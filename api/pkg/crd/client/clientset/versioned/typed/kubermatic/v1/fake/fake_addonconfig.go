@@ -15,7 +15,6 @@ import (
 // FakeAddonConfigs implements AddonConfigInterface
 type FakeAddonConfigs struct {
 	Fake *FakeKubermaticV1
-	ns   string
 }
 
 var addonconfigsResource = schema.GroupVersionResource{Group: "kubermatic.k8s.io", Version: "v1", Resource: "addonconfigs"}
@@ -25,8 +24,7 @@ var addonconfigsKind = schema.GroupVersionKind{Group: "kubermatic.k8s.io", Versi
 // Get takes name of the addonConfig, and returns the corresponding addonConfig object, and an error if there is any.
 func (c *FakeAddonConfigs) Get(name string, options v1.GetOptions) (result *kubermaticv1.AddonConfig, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(addonconfigsResource, c.ns, name), &kubermaticv1.AddonConfig{})
-
+		Invokes(testing.NewRootGetAction(addonconfigsResource, name), &kubermaticv1.AddonConfig{})
 	if obj == nil {
 		return nil, err
 	}
@@ -36,8 +34,7 @@ func (c *FakeAddonConfigs) Get(name string, options v1.GetOptions) (result *kube
 // List takes label and field selectors, and returns the list of AddonConfigs that match those selectors.
 func (c *FakeAddonConfigs) List(opts v1.ListOptions) (result *kubermaticv1.AddonConfigList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(addonconfigsResource, addonconfigsKind, c.ns, opts), &kubermaticv1.AddonConfigList{})
-
+		Invokes(testing.NewRootListAction(addonconfigsResource, addonconfigsKind, opts), &kubermaticv1.AddonConfigList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -58,15 +55,13 @@ func (c *FakeAddonConfigs) List(opts v1.ListOptions) (result *kubermaticv1.Addon
 // Watch returns a watch.Interface that watches the requested addonConfigs.
 func (c *FakeAddonConfigs) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(addonconfigsResource, c.ns, opts))
-
+		InvokesWatch(testing.NewRootWatchAction(addonconfigsResource, opts))
 }
 
 // Create takes the representation of a addonConfig and creates it.  Returns the server's representation of the addonConfig, and an error, if there is any.
 func (c *FakeAddonConfigs) Create(addonConfig *kubermaticv1.AddonConfig) (result *kubermaticv1.AddonConfig, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(addonconfigsResource, c.ns, addonConfig), &kubermaticv1.AddonConfig{})
-
+		Invokes(testing.NewRootCreateAction(addonconfigsResource, addonConfig), &kubermaticv1.AddonConfig{})
 	if obj == nil {
 		return nil, err
 	}
@@ -76,8 +71,7 @@ func (c *FakeAddonConfigs) Create(addonConfig *kubermaticv1.AddonConfig) (result
 // Update takes the representation of a addonConfig and updates it. Returns the server's representation of the addonConfig, and an error, if there is any.
 func (c *FakeAddonConfigs) Update(addonConfig *kubermaticv1.AddonConfig) (result *kubermaticv1.AddonConfig, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(addonconfigsResource, c.ns, addonConfig), &kubermaticv1.AddonConfig{})
-
+		Invokes(testing.NewRootUpdateAction(addonconfigsResource, addonConfig), &kubermaticv1.AddonConfig{})
 	if obj == nil {
 		return nil, err
 	}
@@ -87,14 +81,13 @@ func (c *FakeAddonConfigs) Update(addonConfig *kubermaticv1.AddonConfig) (result
 // Delete takes name of the addonConfig and deletes it. Returns an error if one occurs.
 func (c *FakeAddonConfigs) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(addonconfigsResource, c.ns, name), &kubermaticv1.AddonConfig{})
-
+		Invokes(testing.NewRootDeleteAction(addonconfigsResource, name), &kubermaticv1.AddonConfig{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeAddonConfigs) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(addonconfigsResource, c.ns, listOptions)
+	action := testing.NewRootDeleteCollectionAction(addonconfigsResource, listOptions)
 
 	_, err := c.Fake.Invokes(action, &kubermaticv1.AddonConfigList{})
 	return err
@@ -103,8 +96,7 @@ func (c *FakeAddonConfigs) DeleteCollection(options *v1.DeleteOptions, listOptio
 // Patch applies the patch and returns the patched addonConfig.
 func (c *FakeAddonConfigs) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *kubermaticv1.AddonConfig, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(addonconfigsResource, c.ns, name, pt, data, subresources...), &kubermaticv1.AddonConfig{})
-
+		Invokes(testing.NewRootPatchSubresourceAction(addonconfigsResource, name, pt, data, subresources...), &kubermaticv1.AddonConfig{})
 	if obj == nil {
 		return nil, err
 	}

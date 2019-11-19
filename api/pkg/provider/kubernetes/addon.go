@@ -147,6 +147,26 @@ func (p *AddonProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv
 	return seedImpersonatedClient.Addons(cluster.Status.NamespaceName).Delete(addonName, &metav1.DeleteOptions{})
 }
 
+// Get addon configuration
+func (p *AddonProvider) GetConfig(userInfo *provider.UserInfo, addonName string) (*kubermaticv1.AddonConfig, error) {
+	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	return seedImpersonatedClient.AddonConfigs().Get(addonName, metav1.GetOptions{})
+}
+
+// List available addon configurations
+func (p *AddonProvider) ListConfigs(userInfo *provider.UserInfo) (*kubermaticv1.AddonConfigList, error) {
+	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	return seedImpersonatedClient.AddonConfigs().List(metav1.ListOptions{})
+}
+
 func AddonProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, accessibleAddons sets.String) provider.AddonProviderGetter {
 	return func(seed *kubermaticv1.Seed) (provider.AddonProvider, error) {
 		cfg, err := seedKubeconfigGetter(seed)

@@ -13,8 +13,8 @@ import (
 type AddonConfigLister interface {
 	// List lists all AddonConfigs in the indexer.
 	List(selector labels.Selector) (ret []*v1.AddonConfig, err error)
-	// AddonConfigs returns an object that can list and get AddonConfigs.
-	AddonConfigs(namespace string) AddonConfigNamespaceLister
+	// Get retrieves the AddonConfig from the index for a given name.
+	Get(name string) (*v1.AddonConfig, error)
 	AddonConfigListerExpansion
 }
 
@@ -36,38 +36,9 @@ func (s *addonConfigLister) List(selector labels.Selector) (ret []*v1.AddonConfi
 	return ret, err
 }
 
-// AddonConfigs returns an object that can list and get AddonConfigs.
-func (s *addonConfigLister) AddonConfigs(namespace string) AddonConfigNamespaceLister {
-	return addonConfigNamespaceLister{indexer: s.indexer, namespace: namespace}
-}
-
-// AddonConfigNamespaceLister helps list and get AddonConfigs.
-type AddonConfigNamespaceLister interface {
-	// List lists all AddonConfigs in the indexer for a given namespace.
-	List(selector labels.Selector) (ret []*v1.AddonConfig, err error)
-	// Get retrieves the AddonConfig from the indexer for a given namespace and name.
-	Get(name string) (*v1.AddonConfig, error)
-	AddonConfigNamespaceListerExpansion
-}
-
-// addonConfigNamespaceLister implements the AddonConfigNamespaceLister
-// interface.
-type addonConfigNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all AddonConfigs in the indexer for a given namespace.
-func (s addonConfigNamespaceLister) List(selector labels.Selector) (ret []*v1.AddonConfig, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1.AddonConfig))
-	})
-	return ret, err
-}
-
-// Get retrieves the AddonConfig from the indexer for a given namespace and name.
-func (s addonConfigNamespaceLister) Get(name string) (*v1.AddonConfig, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
+// Get retrieves the AddonConfig from the index for a given name.
+func (s *addonConfigLister) Get(name string) (*v1.AddonConfig, error) {
+	obj, exists, err := s.indexer.GetByKey(name)
 	if err != nil {
 		return nil, err
 	}

@@ -44,7 +44,7 @@ func (v *version) Addons() AddonInformer {
 
 // AddonConfigs returns a AddonConfigInformer.
 func (v *version) AddonConfigs() AddonConfigInformer {
-	return &addonConfigInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+	return &addonConfigInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // Clusters returns a ClusterInformer.

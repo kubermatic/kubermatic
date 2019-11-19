@@ -16,7 +16,7 @@ import (
 // AddonConfigsGetter has a method to return a AddonConfigInterface.
 // A group's client should implement this interface.
 type AddonConfigsGetter interface {
-	AddonConfigs(namespace string) AddonConfigInterface
+	AddonConfigs() AddonConfigInterface
 }
 
 // AddonConfigInterface has methods to work with AddonConfig resources.
@@ -35,14 +35,12 @@ type AddonConfigInterface interface {
 // addonConfigs implements AddonConfigInterface
 type addonConfigs struct {
 	client rest.Interface
-	ns     string
 }
 
 // newAddonConfigs returns a AddonConfigs
-func newAddonConfigs(c *KubermaticV1Client, namespace string) *addonConfigs {
+func newAddonConfigs(c *KubermaticV1Client) *addonConfigs {
 	return &addonConfigs{
 		client: c.RESTClient(),
-		ns:     namespace,
 	}
 }
 
@@ -50,7 +48,6 @@ func newAddonConfigs(c *KubermaticV1Client, namespace string) *addonConfigs {
 func (c *addonConfigs) Get(name string, options metav1.GetOptions) (result *v1.AddonConfig, err error) {
 	result = &v1.AddonConfig{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("addonconfigs").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -67,7 +64,6 @@ func (c *addonConfigs) List(opts metav1.ListOptions) (result *v1.AddonConfigList
 	}
 	result = &v1.AddonConfigList{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("addonconfigs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -84,7 +80,6 @@ func (c *addonConfigs) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Namespace(c.ns).
 		Resource("addonconfigs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -95,7 +90,6 @@ func (c *addonConfigs) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 func (c *addonConfigs) Create(addonConfig *v1.AddonConfig) (result *v1.AddonConfig, err error) {
 	result = &v1.AddonConfig{}
 	err = c.client.Post().
-		Namespace(c.ns).
 		Resource("addonconfigs").
 		Body(addonConfig).
 		Do().
@@ -107,7 +101,6 @@ func (c *addonConfigs) Create(addonConfig *v1.AddonConfig) (result *v1.AddonConf
 func (c *addonConfigs) Update(addonConfig *v1.AddonConfig) (result *v1.AddonConfig, err error) {
 	result = &v1.AddonConfig{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("addonconfigs").
 		Name(addonConfig.Name).
 		Body(addonConfig).
@@ -119,7 +112,6 @@ func (c *addonConfigs) Update(addonConfig *v1.AddonConfig) (result *v1.AddonConf
 // Delete takes name of the addonConfig and deletes it. Returns an error if one occurs.
 func (c *addonConfigs) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("addonconfigs").
 		Name(name).
 		Body(options).
@@ -134,7 +126,6 @@ func (c *addonConfigs) DeleteCollection(options *metav1.DeleteOptions, listOptio
 		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("addonconfigs").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -147,7 +138,6 @@ func (c *addonConfigs) DeleteCollection(options *metav1.DeleteOptions, listOptio
 func (c *addonConfigs) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.AddonConfig, err error) {
 	result = &v1.AddonConfig{}
 	err = c.client.Patch(pt).
-		Namespace(c.ns).
 		Resource("addonconfigs").
 		SubResource(subresources...).
 		Name(name).

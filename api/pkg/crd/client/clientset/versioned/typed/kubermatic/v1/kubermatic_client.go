@@ -29,8 +29,8 @@ func (c *KubermaticV1Client) Addons(namespace string) AddonInterface {
 	return newAddons(c, namespace)
 }
 
-func (c *KubermaticV1Client) AddonConfigs(namespace string) AddonConfigInterface {
-	return newAddonConfigs(c, namespace)
+func (c *KubermaticV1Client) AddonConfigs() AddonConfigInterface {
+	return newAddonConfigs(c)
 }
 
 func (c *KubermaticV1Client) Clusters() ClusterInterface {
