@@ -3,7 +3,7 @@ kind: Role
 metadata:
   labels:
     component: userClusterRole
-  name: space-editor
+  name: namespace-editor
   namespace: kube-system
 rules:
   - apiGroups:

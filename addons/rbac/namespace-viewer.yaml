@@ -3,7 +3,7 @@ kind: Role
 metadata:
   labels:
     component: userClusterRole
-  name: space-viewer
+  name: namespace-viewer
   namespace: kube-system
 rules:
   - apiGroups:
