@@ -3,6 +3,7 @@ package kubermatic
 import (
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/certificate/resources"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -26,14 +27,6 @@ const (
 
 func clusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
 	return fmt.Sprintf("%s:%s-master:cluster-admin", cfg.Namespace, cfg.Name)
-}
-
-func NamespaceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
-	return func() (string, reconciling.NamespaceCreator) {
-		return cfg.Namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
-			return ns, nil
-		}
-	}
 }
 
 func PresetsSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
@@ -102,7 +95,8 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 
 			i.Spec.TLS = []extensionsv1beta1.IngressTLS{
 				{
-					Hosts: []string{cfg.Spec.Domain},
+					Hosts:      []string{cfg.Spec.Domain},
+					SecretName: resources.CertificateSecretName,
 				},
 			}
 

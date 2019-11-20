@@ -162,6 +162,7 @@ func (in *KubermaticConfigurationSpec) DeepCopyInto(out *KubermaticConfiguration
 			(*out)[key] = val
 		}
 	}
+	in.CertificateIssuer.DeepCopyInto(&out.CertificateIssuer)
 	return
 }
 
