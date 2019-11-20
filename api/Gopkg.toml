@@ -204,3 +204,11 @@ required = [
 [[constraint]]
   name = "github.com/docker/distribution"
   version = "v2.7.1"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/rancher/norman"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/rancher/types"
