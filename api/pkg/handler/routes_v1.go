@@ -242,23 +242,11 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings").
-		Handler(r.createClusterRoleBinding())
+		Handler(r.bindUserToClusterRole())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings").
 		Handler(r.listClusterRoleBinding())
-
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings/{binding_id}").
-		Handler(r.getClusterRoleBinding())
-
-	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings/{binding_id}").
-		Handler(r.deleteClusterRoleBinding())
-
-	mux.Methods(http.MethodPatch).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings/{binding_id}").
-		Handler(r.patchClusterRoleBinding())
 
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles").
@@ -3452,9 +3440,9 @@ func (r Routing) patchRoleBinding() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings project createClusterRoleBinding
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings project bindUserToClusterRole
 //
-//    Creates cluster role binding
+//    Binds user to cluster role
 //
 //     Consumes:
 //     - application/json
@@ -3467,14 +3455,14 @@ func (r Routing) patchRoleBinding() http.Handler {
 //       201: ClusterRoleBinding
 //       401: empty
 //       403: empty
-func (r Routing) createClusterRoleBinding() http.Handler {
+func (r Routing) bindUserToClusterRole() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.CreateClusterRoleBindingEndpoint(r.userInfoGetter)),
-		cluster.DecodeCreateClusterRoleBindingReq,
+		)(cluster.BindUserToClusterRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeBindUserToClusterRoleReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -3501,84 +3489,6 @@ func (r Routing) listClusterRoleBinding() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.ListClusterRoleBindingEndpoint(r.userInfoGetter)),
 		cluster.DecodeListClusterRoleBindingReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings/{binding_id} project getClusterRoleBinding
-//
-//    Get cluster role binding
-//
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: ClusterRoleBinding
-//       401: empty
-//       403: empty
-func (r Routing) getClusterRoleBinding() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
-			middleware.UserSaver(r.userProvider),
-			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.GetClusterRoleBindingEndpoint(r.userInfoGetter)),
-		cluster.DecodeClusterRoleBindingReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings/{binding_id} project deleteClusterRoleBinding
-//
-//    Delete cluster role binding
-//
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
-func (r Routing) deleteClusterRoleBinding() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
-			middleware.UserSaver(r.userProvider),
-			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.DeleteClusterRoleBindingEndpoint(r.userInfoGetter)),
-		cluster.DecodeClusterRoleBindingReq,
-		encodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings/{binding_id} project patchClusterRoleBinding
-//
-//    Update cluster role binding
-//
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: ClusterRoleBinding
-//       401: empty
-//       403: empty
-func (r Routing) patchClusterRoleBinding() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
-			middleware.UserSaver(r.userProvider),
-			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.PatchClusterRoleBindingEndpoint(r.userInfoGetter)),
-		cluster.DecodePatchClusterRoleBindingReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

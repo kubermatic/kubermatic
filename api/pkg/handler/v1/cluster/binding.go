@@ -20,6 +20,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/rand"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -446,9 +447,9 @@ func DecodePatchRoleBindingReq(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-func CreateClusterRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func BindUserToClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(createClusterRoleBindingReq)
+		req := request.(bindUserToClusterRoleReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest("invalid request: %v", err)
@@ -472,56 +473,80 @@ func CreateClusterRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) en
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		binding := req.Body
-		clusterRoleBinding, err := generateRBACClusterRoleBinding(binding.Name, req.RoleID, binding.Subjects)
+		labelSelector, err := labels.Parse(UserClusterBindingLabelSelector)
 		if err != nil {
-			return nil, errors.NewBadRequest("invalid cluster role binding: %v", err)
-		}
-
-		if err := client.Create(ctx, clusterRoleBinding); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return convertInternalClusterRoleBindingToExternal(clusterRoleBinding), nil
+
+		clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
+		if err := client.List(ctx, clusterRoleBindingList, &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var existingClusterRoleBinding *rbacv1.ClusterRoleBinding
+		for _, clusterRoleBinding := range clusterRoleBindingList.Items {
+			if clusterRoleBinding.RoleRef.Name == req.RoleID {
+				existingClusterRoleBinding = clusterRoleBinding.DeepCopy()
+				break
+			}
+		}
+
+		if existingClusterRoleBinding == nil {
+			existingClusterRoleBinding, err = generateRBACClusterRoleBinding(ctx, client, req.RoleID)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+		}
+
+		clusterRoleUser := req.Body
+
+		oldBinding := existingClusterRoleBinding.DeepCopy()
+		for _, subject := range existingClusterRoleBinding.Subjects {
+			if subject.Name == clusterRoleUser.UserEmail {
+				return nil, errors.NewBadRequest("user %s already connected to role %s", clusterRoleUser.UserEmail, req.RoleID)
+			}
+		}
+
+		existingClusterRoleBinding.Subjects = append(existingClusterRoleBinding.Subjects,
+			rbacv1.Subject{
+				Kind:     rbacv1.UserKind,
+				APIGroup: rbacv1.GroupName,
+				Name:     clusterRoleUser.UserEmail,
+			})
+
+		if err := client.Patch(ctx, existingClusterRoleBinding, ctrlruntimeclient.MergeFrom(oldBinding)); err != nil {
+			return nil, fmt.Errorf("failed to update node: %v", err)
+		}
+
+		return convertInternalClusterRoleBindingToExternal(existingClusterRoleBinding), nil
 	}
 }
 
-// Validate validates createRoleReq request
-func (r createClusterRoleBindingReq) Validate() error {
+// Validate validates bindUserToClusterRoleReq request
+func (r bindUserToClusterRoleReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the project ID and datacenter cannot be empty")
 	}
-
-	if r.Body.Name == "" {
-		return fmt.Errorf("the request Body name cannot be empty")
-	}
-
-	if r.Body.RoleRefName != r.RoleID {
-		return fmt.Errorf("the request RoleRefName must be the same as RoleID")
-	}
-
-	for _, subject := range r.Body.Subjects {
-		if subject.Kind == rbacv1.GroupKind || subject.Kind == rbacv1.UserKind {
-			continue
-		}
-		return fmt.Errorf("the request Body subjects contain wrong kind name: '%s'. Should be 'Group' or 'User'", subject.Kind)
+	if r.Body.UserEmail == "" {
+		return fmt.Errorf("the user email cannot be empty")
 	}
 
 	return nil
 }
 
-// createClusterRoleBindingReq defines HTTP request for createClusterRoleBinding endpoint
-// swagger:parameters createClusterRoleBinding
-type createClusterRoleBindingReq struct {
+// bindUserToClusterRoleReq defines HTTP request for bindUserToClusterRole endpoint
+// swagger:parameters bindUserToClusterRole
+type bindUserToClusterRoleReq struct {
 	common.GetClusterReq
 	// in: path
 	// required: true
 	RoleID string `json:"role_id"`
 	// in: body
-	Body apiv1.ClusterRoleBinding
+	Body apiv1.ClusterRoleUser
 }
 
-func DecodeCreateClusterRoleBindingReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req createClusterRoleBindingReq
+func DecodeBindUserToClusterRoleReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req bindUserToClusterRoleReq
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
 		return nil, err
@@ -619,219 +644,6 @@ func DecodeListClusterRoleBindingReq(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
-func GetClusterRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(clusterRoleBindingReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID}, &rbacv1.ClusterRole{}); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		binding := &rbacv1.ClusterRoleBinding{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.BindingID}, binding); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return convertInternalClusterRoleBindingToExternal(binding), nil
-	}
-}
-
-func DeleteClusterRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(clusterRoleBindingReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID}, &rbacv1.ClusterRole{}); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		binding := &rbacv1.ClusterRoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: req.BindingID,
-			},
-		}
-
-		if err := client.Delete(ctx, binding); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return nil, nil
-	}
-}
-
-// clusterRoleBindingReq defines HTTP request for getClusterRoleBinding endpoint
-// swagger:parameters getClusterRoleBinding deleteClusterRoleBinding
-type clusterRoleBindingReq struct {
-	common.GetClusterReq
-	// in: path
-	// required: true
-	RoleID string `json:"role_id"`
-	// in: path
-	// required: true
-	BindingID string `json:"binding_id"`
-}
-
-func DecodeClusterRoleBindingReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req clusterRoleBindingReq
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.DCReq = dcr.(common.DCReq)
-	req.ClusterID = clusterID
-
-	roleID := mux.Vars(r)["role_id"]
-	if roleID == "" {
-		return "", fmt.Errorf("'role_id' parameter is required but was not provided")
-	}
-	req.RoleID = roleID
-
-	bindingID := mux.Vars(r)["binding_id"]
-	if bindingID == "" {
-		return "", fmt.Errorf("'binding_id' parameter is required but was not provided")
-	}
-	req.BindingID = bindingID
-	return req, nil
-}
-
-// PatchClusterRoleBindingEndpoint edits ClusterRoleBindings subjects
-func PatchClusterRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(patchClusterRoleBindingReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		// check if ClusterRole exists for the binding
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID}, &rbacv1.ClusterRole{}); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		// Get kubernetes ClusterRoleBinding and patch it with kubermatic API ClusterRoleBinding.
-		// The kubermatic ClusterRoleBinding contains kubernetes Subjects type and can be apply on
-		// the kubernetes subject object.
-		existingBinding := &rbacv1.ClusterRoleBinding{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.BindingID}, existingBinding); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		existingBindingJSON, err := json.Marshal(existingBinding)
-		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode existing cluster role binding: %v", err)
-		}
-
-		patchedBindingJSON, err := jsonpatch.MergePatch(existingBindingJSON, req.Patch)
-		if err != nil {
-			return nil, errors.NewBadRequest("cannot patch role binding: %v", err)
-		}
-
-		var patchedBinding *rbacv1.ClusterRoleBinding
-		err = json.Unmarshal(patchedBindingJSON, &patchedBinding)
-		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode patched cluster role binding: %v", err)
-		}
-
-		if err := client.Update(ctx, patchedBinding); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return convertInternalClusterRoleBindingToExternal(patchedBinding), nil
-	}
-}
-
-// patchClusterRoleBindingReq defines HTTP request for patchClusterRoleBinding endpoint
-// swagger:parameters patchClusterRoleBinding
-type patchClusterRoleBindingReq struct {
-	common.GetClusterReq
-	// in: path
-	// required: true
-	RoleID string `json:"role_id"`
-	// in: path
-	// required: true
-	BindingID string `json:"binding_id"`
-	// in: body
-	Patch []byte
-}
-
-func DecodePatchClusterRoleBindingReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req patchClusterRoleBindingReq
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.DCReq = dcr.(common.DCReq)
-	req.ClusterID = clusterID
-
-	roleID := mux.Vars(r)["role_id"]
-	if roleID == "" {
-		return "", fmt.Errorf("'role_id' parameter is required but was not provided")
-	}
-	req.RoleID = roleID
-
-	bindingID := mux.Vars(r)["binding_id"]
-	if bindingID == "" {
-		return "", fmt.Errorf("'binding_id' parameter is required but was not provided")
-	}
-	req.BindingID = bindingID
-
-	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // generateRBACRoleBinding creates role binding
 func generateRBACRoleBinding(name, namespace, roleName string, subjects []rbacv1.Subject) (*rbacv1.RoleBinding, error) {
 
@@ -864,11 +676,11 @@ func generateRBACRoleBinding(name, namespace, roleName string, subjects []rbacv1
 }
 
 // generateRBACClusterRoleBinding creates cluster role binding
-func generateRBACClusterRoleBinding(name, roleName string, subjects []rbacv1.Subject) (*rbacv1.ClusterRoleBinding, error) {
+func generateRBACClusterRoleBinding(ctx context.Context, client ctrlruntimeclient.Client, roleName string) (*rbacv1.ClusterRoleBinding, error) {
 
-	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+	crb := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
+			Name:   fmt.Sprintf("%s:%s", rand.String(10), roleName),
 			Labels: map[string]string{UserClusterComponentKey: UserClusterBindingComponentValue},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -878,19 +690,10 @@ func generateRBACClusterRoleBinding(name, roleName string, subjects []rbacv1.Sub
 		},
 		Subjects: []rbacv1.Subject{},
 	}
-
-	for _, subject := range subjects {
-		newSubject := rbacv1.Subject{
-			Kind:     rbacv1.UserKind,
-			APIGroup: rbacv1.GroupName,
-			Name:     subject.Name,
-		}
-		if subject.Kind == "Group" {
-			newSubject.Kind = rbacv1.GroupKind
-		}
-		clusterRoleBinding.Subjects = append(clusterRoleBinding.Subjects, newSubject)
+	if err := client.Create(ctx, crb); err != nil {
+		return nil, err
 	}
-	return clusterRoleBinding, nil
+	return crb, nil
 }
 
 func convertInternalRoleBindingToExternal(clusterRole *rbacv1.RoleBinding) *apiv1.RoleBinding {
@@ -920,12 +723,6 @@ func convertInternalRoleBindingsToExternal(roleBindings []rbacv1.RoleBinding) []
 
 func convertInternalClusterRoleBindingToExternal(clusterRoleBinding *rbacv1.ClusterRoleBinding) *apiv1.ClusterRoleBinding {
 	binding := &apiv1.ClusterRoleBinding{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                clusterRoleBinding.Name,
-			Name:              clusterRoleBinding.Name,
-			DeletionTimestamp: nil,
-			CreationTimestamp: apiv1.NewTime(clusterRoleBinding.CreationTimestamp.Time),
-		},
 		RoleRefName: clusterRoleBinding.RoleRef.Name,
 		Subjects:    clusterRoleBinding.Subjects,
 	}
