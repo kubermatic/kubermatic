@@ -20,6 +20,7 @@ import (
 	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/openvpn"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/rancherserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/scheduler"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/usercluster"
@@ -45,6 +46,9 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return err
 	}
 
+	if err := r.ensureClusterRoleBindings(ctx, cluster, data); err != nil {
+		return err
+	}
 	// Set the hostname & url
 	if err := r.syncAddress(ctx, r.log.With("cluster", cluster.Name), cluster, seed); err != nil {
 		return fmt.Errorf("failed to sync address: %v", err)
@@ -196,6 +200,7 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 		dns.ServiceCreator(),
 		machinecontroller.ServiceCreator(),
 		metricsserver.ServiceCreator(),
+		rancherserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy),
 	}
 
 	if data.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
@@ -223,6 +228,7 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		metricsserver.DeploymentCreator(data),
 		usercluster.DeploymentCreator(data, false),
 		kubernetesdashboard.DeploymentCreator(data),
+		// rancherserver.DeploymentCreator(),
 	}
 	if data.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" &&
 		data.Cluster().Spec.Version.Minor() > 13 {
@@ -307,6 +313,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster,
 func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.Cluster) error {
 	namedServiceAccountCreatorGetters := []reconciling.NamedServiceAccountCreatorGetter{
 		usercluster.ServiceAccountCreator,
+		rancherserver.ServiceAccountCreator,
 	}
 	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure ServiceAccounts: %v", err)
@@ -360,6 +367,7 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Clust
 func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool) []reconciling.NamedStatefulSetCreatorGetter {
 	return []reconciling.NamedStatefulSetCreatorGetter{
 		etcd.StatefulSetCreator(data, enableDataCorruptionChecks),
+		rancherserver.StatefulSetCreator(data),
 	}
 }
 
@@ -424,4 +432,15 @@ func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Clu
 	creators := GetStatefulSetCreators(data, r.features.EtcdDataCorruptionChecks)
 
 	return reconciling.ReconcileStatefulSets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
+}
+
+func GetClusterRoleBindingCreators(clusterNamespace string) []reconciling.NamedClusterRoleBindingCreatorGetter {
+	return []reconciling.NamedClusterRoleBindingCreatorGetter{
+		rancherserver.ClusterRoleBindingCreator(clusterNamespace),
+	}
+}
+
+func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	creators := GetClusterRoleBindingCreators(c.Status.NamespaceName)
+	return reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client)
 }

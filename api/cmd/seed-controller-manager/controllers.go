@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/rancherinit"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/addon"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/addoninstaller"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/backup"
@@ -42,6 +43,7 @@ var AllControllers = map[string]controllerCreator{
 	openshiftcontroller.ControllerName:            createOpenshiftController,
 	clustercomponentdefaulter.ControllerName:      createClusterComponentDefaulter,
 	seedresourcesuptodatecondition.ControllerName: createSeedConditionUpToDateController,
+	rancherinit.ControllerName:                    createRancherInitController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -305,4 +307,19 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		kubernetesAddons,
 		openshiftAddons)
+}
+
+func createUserSSHKeyController(ctrlCtx *controllerContext) error {
+	return usersshkeys.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.runOptions.workerCount)
+}
+
+func createRancherInitController(ctrlCtx *controllerContext) error {
+	return rancherinit.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.clientProvider)
 }

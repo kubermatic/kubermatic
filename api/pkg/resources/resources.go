@@ -38,6 +38,15 @@ var KUBERMATICCOMMIT string
 var KUBERMATICGITTAG = "manual_build"
 
 const (
+	RancherStatefulSetName              = "rancher-server"
+	RancherServerServiceAccountName     = "rancher-server-sa"
+	RancherServerClusterRoleBindingName = "rancher-server-crb"
+	RancherServerClusterRoleName        = "rancher-server-rb"
+	RancherServerServiceName            = "rancher-server-svc"
+	RancherServerIngressName            = "rancher-server-ingress"
+)
+
+const (
 	// ApiserverDeploymentName is the name of the apiserver deployment
 	ApiserverDeploymentName = "apiserver"
 	//ControllerManagerDeploymentName is the name for the controller manager deployment

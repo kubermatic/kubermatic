@@ -2215,6 +2215,7 @@
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",
     "github.com/rancher/norman/clientbase",
+    "github.com/rancher/norman/types",
     "github.com/rancher/types/client/management/v3",
     "github.com/robfig/cron",
     "github.com/sirupsen/logrus",
