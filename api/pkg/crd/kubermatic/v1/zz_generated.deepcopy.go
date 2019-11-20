@@ -331,6 +331,13 @@ func (in *Cluster) DeepCopyInto(out *Cluster) {
 	in.Spec.DeepCopyInto(&out.Spec)
 	out.Address = in.Address
 	in.Status.DeepCopyInto(&out.Status)
+	if in.InheritedLabels != nil {
+		in, out := &in.InheritedLabels, &out.InheritedLabels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	return
 }
 

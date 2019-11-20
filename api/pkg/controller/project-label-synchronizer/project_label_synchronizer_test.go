@@ -24,7 +24,8 @@ func TestReconciliation(t *testing.T) {
 		masterClient ctrlruntimeclient.Client
 		seedClient   ctrlruntimeclient.Client
 		// expectedLabels is a map clustername -> LabelMap
-		expectedLabels map[string]map[string]string
+		expectedLabels          map[string]map[string]string
+		expectedInheritedLabels map[string]map[string]string
 	}{
 		{
 			name:         "Label gets set on matching projectID",
@@ -35,6 +36,9 @@ func TestReconciliation(t *testing.T) {
 			expectedLabels: map[string]map[string]string{"baz": {
 				"foo":                          "bar",
 				kubermaticv1.ProjectIDLabelKey: projectName,
+			}},
+			expectedInheritedLabels: map[string]map[string]string{"baz": {
+				"foo": "bar",
 			}},
 		},
 		{
@@ -57,6 +61,9 @@ func TestReconciliation(t *testing.T) {
 			expectedLabels: map[string]map[string]string{"baz": {
 				kubermaticv1.ProjectIDLabelKey: projectName,
 				"foo":                          "bar",
+			}},
+			expectedInheritedLabels: map[string]map[string]string{"baz": {
+				"foo": "bar",
 			}},
 		},
 		{
@@ -118,6 +125,10 @@ func TestReconciliation(t *testing.T) {
 			for _, cluster := range clusters.Items {
 				if diff := deep.Equal(cluster.Labels, tc.expectedLabels[cluster.Name]); diff != nil {
 					t.Errorf("Expected labels on cluster %q do not match actual labels, diff: %v", cluster.Name, diff)
+				}
+
+				if diff := deep.Equal(cluster.InheritedLabels, tc.expectedInheritedLabels[cluster.Name]); diff != nil {
+					t.Errorf("Expected inherited labels on cluster %q do not match actual inherited labels, diff: %v", cluster.Name, diff)
 				}
 			}
 		})

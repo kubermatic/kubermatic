@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,9 +48,10 @@ type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec    ClusterSpec    `json:"spec"`
-	Address ClusterAddress `json:"address,omitempty"`
-	Status  ClusterStatus  `json:"status,omitempty"`
+	Spec            ClusterSpec       `json:"spec"`
+	Address         ClusterAddress    `json:"address,omitempty"`
+	Status          ClusterStatus     `json:"status,omitempty"`
+	InheritedLabels map[string]string `json:"inheritedLabels"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
