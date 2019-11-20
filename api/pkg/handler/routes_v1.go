@@ -244,6 +244,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings").
 		Handler(r.bindUserToClusterRole())
 
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings").
+		Handler(r.unbindUserFromClusterRoleBinding())
+
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterbindings").
 		Handler(r.listClusterRoleBinding())
@@ -275,6 +279,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings").
 		Handler(r.bindUserToRole())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings").
+		Handler(r.unbindUserFromRoleBinding())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings").
@@ -3318,7 +3326,35 @@ func (r Routing) bindUserToRole() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.BindUserToRoleEndpoint(r.userInfoGetter)),
-		cluster.DecodeBindUserToRoleReq,
+		cluster.DecodeRoleUserReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings project unbindUserFromRoleBinding
+//
+//    Unbinds user from the role binding
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: RoleBinding
+//       401: empty
+//       403: empty
+func (r Routing) unbindUserFromRoleBinding() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.UnbindUserFromRoleBindingEndpoint(r.userInfoGetter)),
+		cluster.DecodeRoleUserReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -3372,7 +3408,35 @@ func (r Routing) bindUserToClusterRole() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.BindUserToClusterRoleEndpoint(r.userInfoGetter)),
-		cluster.DecodeBindUserToClusterRoleReq,
+		cluster.DecodeClusterRoleUserReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings project unbindUserFromClusterRoleBinding
+//
+//    Unbinds user from cluster role binding
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ClusterRoleBinding
+//       401: empty
+//       403: empty
+func (r Routing) unbindUserFromClusterRoleBinding() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.UnbindUserFromClusterRoleBindingEndpoint(r.userInfoGetter)),
+		cluster.DecodeClusterRoleUserReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

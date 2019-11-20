@@ -30,7 +30,7 @@ const (
 
 func BindUserToRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(bindUserToRoleReq)
+		req := request.(roleUserReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest("invalid request: %v", err)
@@ -103,8 +103,75 @@ func BindUserToRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.End
 	}
 }
 
-// Validate validates bindUserToRoleReq request
-func (r bindUserToRoleReq) Validate() error {
+func UnbindUserFromRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(roleUserReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest("invalid request: %v", err)
+		}
+
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID, Namespace: req.Namespace}, &rbacv1.Role{}); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		labelSelector, err := labels.Parse(UserClusterBindingLabelSelector)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		roleBindingList := &rbacv1.RoleBindingList{}
+		if err := client.List(ctx, roleBindingList, &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector, Namespace: req.Namespace}); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var existingRoleBinding *rbacv1.RoleBinding
+		for _, roleBinding := range roleBindingList.Items {
+			if roleBinding.RoleRef.Name == req.RoleID {
+				existingRoleBinding = roleBinding.DeepCopy()
+				break
+			}
+		}
+
+		if existingRoleBinding == nil {
+			return nil, errors.NewBadRequest("the role binding not found in namespace %s", req.Namespace)
+		}
+
+		roleUser := req.Body
+		binding := existingRoleBinding.DeepCopy()
+		var newSubjects []rbacv1.Subject
+		for _, subject := range binding.Subjects {
+			if subject.Name == roleUser.UserEmail {
+				continue
+			}
+			newSubjects = append(newSubjects, subject)
+		}
+		binding.Subjects = newSubjects
+
+		if err := client.Update(ctx, binding); err != nil {
+			return nil, fmt.Errorf("failed to update role binding: %v", err)
+		}
+
+		return convertInternalRoleBindingToExternal(binding), nil
+	}
+}
+
+// Validate validates roleUserReq request
+func (r roleUserReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the project ID and datacenter cannot be empty")
 	}
@@ -114,9 +181,9 @@ func (r bindUserToRoleReq) Validate() error {
 	return nil
 }
 
-// bindUserToRoleReq defines HTTP request for bindUserToRole endpoint
-// swagger:parameters bindUserToRole
-type bindUserToRoleReq struct {
+// roleUserReq defines HTTP request for bindUserToRole endpoint
+// swagger:parameters bindUserToRole unbindUserFromRoleBinding
+type roleUserReq struct {
 	common.GetClusterReq
 	// in: path
 	// required: true
@@ -128,8 +195,8 @@ type bindUserToRoleReq struct {
 	Body apiv1.RoleUser
 }
 
-func DecodeBindUserToRoleReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req bindUserToRoleReq
+func DecodeRoleUserReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req roleUserReq
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
 		return nil, err
@@ -199,7 +266,7 @@ func ListRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.En
 
 func BindUserToClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(bindUserToClusterRoleReq)
+		req := request.(clusterRoleUserReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest("invalid request: %v", err)
@@ -272,8 +339,75 @@ func BindUserToClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpo
 	}
 }
 
-// Validate validates bindUserToClusterRoleReq request
-func (r bindUserToClusterRoleReq) Validate() error {
+func UnbindUserFromClusterRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(clusterRoleUserReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest("invalid request: %v", err)
+		}
+
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return nil, err
+		}
+
+		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID}, &rbacv1.ClusterRole{}); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		labelSelector, err := labels.Parse(UserClusterBindingLabelSelector)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
+		if err := client.List(ctx, clusterRoleBindingList, &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var existingClusterRoleBinding *rbacv1.ClusterRoleBinding
+		for _, clusterRoleBinding := range clusterRoleBindingList.Items {
+			if clusterRoleBinding.RoleRef.Name == req.RoleID {
+				existingClusterRoleBinding = clusterRoleBinding.DeepCopy()
+				break
+			}
+		}
+
+		if existingClusterRoleBinding == nil {
+			return nil, errors.NewBadRequest("the cluster role binding not found")
+		}
+
+		clusterRoleUser := req.Body
+		binding := existingClusterRoleBinding.DeepCopy()
+		var newSubjects []rbacv1.Subject
+		for _, subject := range binding.Subjects {
+			if subject.Name == clusterRoleUser.UserEmail {
+				continue
+			}
+			newSubjects = append(newSubjects, subject)
+		}
+		binding.Subjects = newSubjects
+
+		if err := client.Update(ctx, binding); err != nil {
+			return nil, fmt.Errorf("failed to update cluster role binding: %v", err)
+		}
+
+		return convertInternalClusterRoleBindingToExternal(binding), nil
+	}
+}
+
+// Validate validates clusterRoleUserReq request
+func (r clusterRoleUserReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the project ID and datacenter cannot be empty")
 	}
@@ -284,9 +418,9 @@ func (r bindUserToClusterRoleReq) Validate() error {
 	return nil
 }
 
-// bindUserToClusterRoleReq defines HTTP request for bindUserToClusterRole endpoint
-// swagger:parameters bindUserToClusterRole
-type bindUserToClusterRoleReq struct {
+// clusterRoleUserReq defines HTTP request for bindUserToClusterRole endpoint
+// swagger:parameters bindUserToClusterRole unbindUserFromClusterRoleBinding
+type clusterRoleUserReq struct {
 	common.GetClusterReq
 	// in: path
 	// required: true
@@ -295,8 +429,8 @@ type bindUserToClusterRoleReq struct {
 	Body apiv1.ClusterRoleUser
 }
 
-func DecodeBindUserToClusterRoleReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req bindUserToClusterRoleReq
+func DecodeClusterRoleUserReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req clusterRoleUserReq
 	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
 		return nil, err

@@ -129,6 +129,66 @@ func TestBindUserToRole(t *testing.T) {
 	}
 }
 
+func TestUnbindUserFromRoleBinding(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name                   string
+		body                   string
+		roleName               string
+		namespace              string
+		expectedResponse       string
+		httpStatus             int
+		clusterToGet           string
+		existingAPIUser        *apiv1.User
+		existingKubermaticObjs []runtime.Object
+		existingKubernrtesObjs []runtime.Object
+	}{
+
+		{
+			name:             "scenario 1: remove user from the binding",
+			roleName:         "role-1",
+			namespace:        "default",
+			body:             `{"userEmail":"bob@acme.com"}`,
+			expectedResponse: `{"namespace":"default","roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultRole("role-1", "default"),
+				genDefaultRoleBinding("test", "default", "role-1", "bob@acme.com"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
+			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/roles/%s/%s/bindings", test.ProjectName, tc.clusterToGet, tc.namespace, tc.roleName), strings.NewReader(tc.body))
+			res := httptest.NewRecorder()
+			var kubermaticObj []runtime.Object
+			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
+	}
+}
+
 func TestListRoleBinding(t *testing.T) {
 	t.Parallel()
 
@@ -313,6 +373,65 @@ func TestBindUserToClusterRole(t *testing.T) {
 			var kubermaticObj []runtime.Object
 			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles/%s/clusterbindings", test.ProjectName, tc.clusterToGet, tc.roleName), strings.NewReader(tc.body))
+			res := httptest.NewRecorder()
+
+			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
+	}
+}
+
+func TestUnbindUserFromClusterRoleBinding(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name                   string
+		body                   string
+		roleName               string
+		expectedResponse       string
+		httpStatus             int
+		clusterToGet           string
+		existingAPIUser        *apiv1.User
+		existingKubermaticObjs []runtime.Object
+		existingKubernrtesObjs []runtime.Object
+	}{
+		// scenario 1
+		{
+			name:             "scenario 1: remove user from existing cluster role binding",
+			roleName:         "role-1",
+			body:             `{"userEmail":"bob@acme.com"}`,
+			expectedResponse: `{"roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultClusterRole("role-2"),
+				genDefaultClusterRoleBinding("test", "role-1", "bob@acme.com"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
+			var kubermaticObj []runtime.Object
+			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles/%s/clusterbindings", test.ProjectName, tc.clusterToGet, tc.roleName), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
