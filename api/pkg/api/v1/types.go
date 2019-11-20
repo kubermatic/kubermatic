@@ -1234,6 +1234,18 @@ type ClusterRoleName struct {
 	Name string `json:"name"`
 }
 
+// RoleUser defines associated user with role
+// swagger:model RoleUser
+type RoleUser struct {
+	UserEmail string `json:"userEmail"`
+}
+
+// ClusterRoleUser defines associated user with cluster role
+// swagger:model ClusterRoleUser
+type ClusterRoleUser struct {
+	UserEmail string `json:"userEmail"`
+}
+
 // Role defines RBAC role for the user cluster
 // swagger:model Role
 type Role struct {
@@ -1257,7 +1269,6 @@ type RoleBinding struct {
 
 // ClusterRoleBinding references a cluster role, but does not contain it.
 type ClusterRoleBinding struct {
-	ObjectMeta `json:",inline"`
 	// Subjects holds references to the objects the role applies to.
 	Subjects []rbacv1.Subject `json:"subjects,omitempty"`
 
