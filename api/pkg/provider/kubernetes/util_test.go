@@ -298,6 +298,16 @@ func genCluster(name, clusterType, projectID, workerName, userEmail string) *kub
 	}
 	cluster.Address = kubermaticv1.ClusterAddress{}
 	cluster.Finalizers = []string{TestFakeFinalizer}
+	cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
+		Apiserver:                    kubermaticv1.HealthStatusProvisioning,
+		Scheduler:                    kubermaticv1.HealthStatusProvisioning,
+		Controller:                   kubermaticv1.HealthStatusProvisioning,
+		MachineController:            kubermaticv1.HealthStatusProvisioning,
+		Etcd:                         kubermaticv1.HealthStatusProvisioning,
+		OpenVPN:                      kubermaticv1.HealthStatusProvisioning,
+		CloudProviderInfrastructure:  kubermaticv1.HealthStatusProvisioning,
+		UserClusterControllerManager: kubermaticv1.HealthStatusProvisioning,
+	}
 
 	if clusterType == "openshift" {
 		cluster.Annotations = map[string]string{
