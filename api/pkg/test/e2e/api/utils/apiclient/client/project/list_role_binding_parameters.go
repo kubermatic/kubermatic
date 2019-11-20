@@ -65,12 +65,8 @@ type ListRoleBindingParams struct {
 	ClusterID string
 	/*Dc*/
 	Dc string
-	/*Namespace*/
-	Namespace string
 	/*ProjectID*/
 	ProjectID string
-	/*RoleID*/
-	RoleID string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -132,17 +128,6 @@ func (o *ListRoleBindingParams) SetDc(dc string) {
 	o.Dc = dc
 }
 
-// WithNamespace adds the namespace to the list role binding params
-func (o *ListRoleBindingParams) WithNamespace(namespace string) *ListRoleBindingParams {
-	o.SetNamespace(namespace)
-	return o
-}
-
-// SetNamespace adds the namespace to the list role binding params
-func (o *ListRoleBindingParams) SetNamespace(namespace string) {
-	o.Namespace = namespace
-}
-
 // WithProjectID adds the projectID to the list role binding params
 func (o *ListRoleBindingParams) WithProjectID(projectID string) *ListRoleBindingParams {
 	o.SetProjectID(projectID)
@@ -152,17 +137,6 @@ func (o *ListRoleBindingParams) WithProjectID(projectID string) *ListRoleBinding
 // SetProjectID adds the projectId to the list role binding params
 func (o *ListRoleBindingParams) SetProjectID(projectID string) {
 	o.ProjectID = projectID
-}
-
-// WithRoleID adds the roleID to the list role binding params
-func (o *ListRoleBindingParams) WithRoleID(roleID string) *ListRoleBindingParams {
-	o.SetRoleID(roleID)
-	return o
-}
-
-// SetRoleID adds the roleId to the list role binding params
-func (o *ListRoleBindingParams) SetRoleID(roleID string) {
-	o.RoleID = roleID
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -183,18 +157,8 @@ func (o *ListRoleBindingParams) WriteToRequest(r runtime.ClientRequest, reg strf
 		return err
 	}
 
-	// path param namespace
-	if err := r.SetPathParam("namespace", o.Namespace); err != nil {
-		return err
-	}
-
 	// path param project_id
 	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
-		return err
-	}
-
-	// path param role_id
-	if err := r.SetPathParam("role_id", o.RoleID); err != nil {
 		return err
 	}
 
