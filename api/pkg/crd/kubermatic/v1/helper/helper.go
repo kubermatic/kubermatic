@@ -43,7 +43,7 @@ func ClusterReconcileWrapper(
 	errs := []error{err}
 	oldCluster := cluster.DeepCopy()
 	SetClusterCondition(cluster, conditionType, reconcilingStatus, "", "")
-	errs = append(errs, client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)))
+	errs = append(errs, ctrlruntimeclient.IgnoreNotFound(client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))))
 	return result, utilerrors.NewAggregate(errs)
 }
 
