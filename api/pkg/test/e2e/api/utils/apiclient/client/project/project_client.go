@@ -1550,6 +1550,64 @@ func (a *Client) RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams
 }
 
 /*
+UnbindUserFromClusterRoleBinding Unbinds user from cluster role binding
+*/
+func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromClusterRoleBindingCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUnbindUserFromClusterRoleBindingParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "unbindUserFromClusterRoleBinding",
+		Method:             "DELETE",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UnbindUserFromClusterRoleBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*UnbindUserFromClusterRoleBindingCreated), nil
+
+}
+
+/*
+UnbindUserFromRoleBinding Unbinds user from the role binding
+*/
+func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUnbindUserFromRoleBindingParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "unbindUserFromRoleBinding",
+		Method:             "DELETE",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UnbindUserFromRoleBindingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*UnbindUserFromRoleBindingCreated), nil
+
+}
+
+/*
 UpdateProject Updates the given project
 */
 func (a *Client) UpdateProject(params *UpdateProjectParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateProjectOK, error) {
