@@ -162,10 +162,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kubeapierrors.IsNotFound(err) {
-			log.Errorw("Couldn't find cluster", zap.Error(err))
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %v", err)
 	}
 
 	log = log.With("cluster", cluster.Name)
