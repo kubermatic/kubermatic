@@ -136,8 +136,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			finalizers.Has(kubermaticapiv1.NodeDeletionFinalizer) {
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
-		_, err := prov.CleanUpCloudProvider(cluster, r.updateCluster)
-		return nil, fmt.Errorf("failed cloud provider cleanup: %v", err)
+		if _, err := prov.CleanUpCloudProvider(cluster, r.updateCluster); err != nil {
+			return nil, fmt.Errorf("failed cloud provider cleanup: %v", err)
+		}
+		return nil, nil
+
 	}
 
 	// We do the migration inside the controller because it has a decent potential to fail (e.G. due
