@@ -7,14 +7,14 @@ metadata:
     app.kubernetes.io/name: cainjector
     app.kubernetes.io/instance: {{ .Release.Name }}
 rules:
-- apiGroups: ["certmanager.k8s.io"]
+- apiGroups: ["cert-manager.io"]
   resources: ["certificates"]
   verbs: ["get", "list", "watch"]
 - apiGroups: [""]
   resources: ["secrets"]
   verbs: ["get", "list", "watch"]
 - apiGroups: [""]
-  resources: ["configmaps", "events"]
+  resources: ["events"]
   verbs: ["get", "create", "update", "patch"]
 - apiGroups: ["admissionregistration.k8s.io"]
   resources: ["validatingwebhookconfigurations", "mutatingwebhookconfigurations"]
@@ -39,6 +39,43 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cert-manager-cainjector
+subjects:
+- name: cainjector
+  namespace: {{ .Release.Namespace }}
+  kind: ServiceAccount
+
+---
+# leader election rules
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: cert-manager-cainjector:leaderelection
+  labels:
+    app: cainjector
+    app.kubernetes.io/name: cainjector
+    app.kubernetes.io/instance: {{ .Release.Name }}
+rules:
+# Used for leader election by the controller
+# TODO: refine the permission to *just* the leader election configmap
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "create", "update", "patch"]
+
+---
+# grant cert-manager permission to manage the leaderelection configmap in the
+# leader election namespace
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: cert-manager-cainjector:leaderelection
+  labels:
+    app: cainjector
+    app.kubernetes.io/name: cainjector
+    app.kubernetes.io/instance: {{ .Release.Name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cert-manager-cainjector:leaderelection
 subjects:
 - name: cainjector
   namespace: {{ .Release.Namespace }}

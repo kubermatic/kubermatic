@@ -52,7 +52,7 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 rules:
 - apiGroups:
-  - admission.certmanager.k8s.io
+  - admission.cert-manager.io
   resources:
   - certificates
   - certificaterequests
