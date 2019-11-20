@@ -687,7 +687,8 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 				return nil
 			}(),
 		},
-		Labels: label.FilterLabels(label.ClusterResourceType, internalCluster.Labels),
+		Labels:          label.FilterLabels(label.ClusterResourceType, internalCluster.Labels),
+		InheritedLabels: internalCluster.InheritedLabels,
 		Spec: apiv1.ClusterSpec{
 			Cloud:                               internalCluster.Spec.Cloud,
 			Version:                             internalCluster.Spec.Version,
