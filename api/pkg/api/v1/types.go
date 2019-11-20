@@ -1258,7 +1258,6 @@ type Role struct {
 
 // RoleBinding references a role, but does not contain it.
 type RoleBinding struct {
-	ObjectMeta `json:",inline"`
 	// Indicates the scope of this binding.
 	Namespace string `json:"namespace,omitempty"`
 	// Subjects holds references to the objects the role applies to.
