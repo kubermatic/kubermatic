@@ -72,7 +72,7 @@ type ListRoleBindingOK struct {
 }
 
 func (o *ListRoleBindingOK) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] listRoleBindingOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBindingOK  %+v", 200, o.Payload)
 }
 
 func (o *ListRoleBindingOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,7 +98,7 @@ type ListRoleBindingUnauthorized struct {
 }
 
 func (o *ListRoleBindingUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] listRoleBindingUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBindingUnauthorized ", 401)
 }
 
 func (o *ListRoleBindingUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -119,7 +119,7 @@ type ListRoleBindingForbidden struct {
 }
 
 func (o *ListRoleBindingForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] listRoleBindingForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBindingForbidden ", 403)
 }
 
 func (o *ListRoleBindingForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -150,7 +150,7 @@ func (o *ListRoleBindingDefault) Code() int {
 }
 
 func (o *ListRoleBindingDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] listRoleBinding default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBinding default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *ListRoleBindingDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
