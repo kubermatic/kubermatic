@@ -40,7 +40,7 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 				{
 					Name:            daemonSetName,
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           fmt.Sprintf("quay.io/kubermatic/user-ssh-keys-agent:%s" + resources.KUBERMATICCOMMIT),
+					Image:           fmt.Sprintf("quay.io/kubermatic/user-ssh-keys-agent:%s", resources.KUBERMATICCOMMIT),
 					Command:         []string{fmt.Sprintf("/usr/local/bin/%v", daemonSetName)},
 					VolumeMounts: []corev1.VolumeMount{
 						{
