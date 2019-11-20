@@ -9,5 +9,5 @@ spec:
     listKind: AddonConfigList
     plural: addonconfigs
     singular: addonconfig
-  scope: Namespaced
+  scope: Cluster
   version: v1
