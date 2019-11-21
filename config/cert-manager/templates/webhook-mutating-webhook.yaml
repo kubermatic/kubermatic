@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:
-    cert-manager.io/inject-ca-from-secret: "{{ .Release.Namespace }}/{{ include "webhook.servingCertificate" . }}"
+    cert-manager.io/inject-ca-from-secret: "{{ .Release.Namespace }}/webhook-tls"
 webhooks:
   - name: webhook.cert-manager.io
     rules:
@@ -25,6 +25,6 @@ webhooks:
     sideEffects: None
     clientConfig:
       service:
-        name: cert-manager-webhook
+        name: webhook
         namespace: {{ .Release.Namespace }}
         path: /mutate
