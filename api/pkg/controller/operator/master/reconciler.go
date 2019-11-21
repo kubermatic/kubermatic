@@ -29,6 +29,10 @@ type Reconciler struct {
 	scheme     *runtime.Scheme
 	workerName string
 	ctx        context.Context
+
+	// this is triggered once the cert-manager CRDs are detected and
+	// signals that we can reconcile Certificates
+	hasCertManager bool
 }
 
 // Reconcile acts upon requests and will restore the state of resources
@@ -98,6 +102,12 @@ func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration,
 
 	if err := r.reconcileIngresses(config, logger); err != nil {
 		return err
+	}
+
+	if r.hasCertManager {
+		if err := r.reconcileCertificates(config, logger); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -231,6 +241,20 @@ func (r *Reconciler) reconcileIngresses(config *operatorv1alpha1.KubermaticConfi
 
 	if err := reconciling.ReconcileIngresses(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Ingresses: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileCertificates(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	logger.Debug("Reconciling Certificates")
+
+	creators := []reconciling.NamedCertificateCreatorGetter{
+		kubermatic.CertificateCreator(config),
+	}
+
+	if err := reconciling.ReconcileCertificates(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+		return fmt.Errorf("failed to reconcile Certificates: %v", err)
 	}
 
 	return nil

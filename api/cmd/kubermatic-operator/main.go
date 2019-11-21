@@ -8,7 +8,6 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	certificatectrl "github.com/kubermatic/kubermatic/api/pkg/controller/operator/certificate"
 	masterctrl "github.com/kubermatic/kubermatic/api/pkg/controller/operator/master"
 	seedctrl "github.com/kubermatic/kubermatic/api/pkg/controller/operator/seed"
 	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-lifecycle"
@@ -18,6 +17,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 
+	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
@@ -90,6 +90,10 @@ func main() {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiextensionsv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
 
+	if err := certmanagerv1alpha2.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", certmanagerv1alpha2.SchemeGroupVersion), zap.Error(err))
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -105,10 +109,6 @@ func main() {
 
 	if err := masterctrl.Add(ctx, mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
-	}
-
-	if err := certificatectrl.Add(ctx, mgr, log, opt.namespace, opt.workerCount); err != nil {
-		log.Fatalw("Failed to add operator-master-certificate controller", zap.Error(err))
 	}
 
 	ctrlCtx := seedOperatorContext{

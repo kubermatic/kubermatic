@@ -1,12 +1,13 @@
 package kubermatic
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/certificate/resources"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
+	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -23,6 +24,8 @@ const (
 	masterControllerManagerDeploymentName = "kubermatic-master-controller-manager"
 	apiServiceName                        = "kubermatic-api"
 	uiServiceName                         = "kubermatic-ui"
+	certificateName                       = "kubermatic"
+	certificateSecretName                 = "kubermatic-tls"
 )
 
 func clusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
@@ -96,7 +99,7 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 			i.Spec.TLS = []extensionsv1beta1.IngressTLS{
 				{
 					Hosts:      []string{cfg.Spec.Domain},
-					SecretName: resources.CertificateSecretName,
+					SecretName: certificateSecretName,
 				},
 			}
 
@@ -129,6 +132,37 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 			}
 
 			return i, nil
+		}
+	}
+}
+
+func CertificateCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedCertificateCreatorGetter {
+	return func() (string, reconciling.CertificateCreator) {
+		return certificateName, func(c *certmanagerv1alpha2.Certificate) (*certmanagerv1alpha2.Certificate, error) {
+			name := cfg.Spec.CertificateIssuer.Name
+			if name == "" {
+				return nil, errors.New("no certificateIssuer configured in KubermaticConfiguration")
+			}
+
+			// cert-manager's default is Issuer, but since we do not create an Issuer,
+			// it does not make sense to force to change the configuration for the
+			// default case
+			kind := cfg.Spec.CertificateIssuer.Kind
+			if kind == "" {
+				kind = certmanagerv1alpha2.ClusterIssuerKind
+			}
+
+			c.Spec.IssuerRef.Name = name
+			c.Spec.IssuerRef.Kind = kind
+
+			if group := cfg.Spec.CertificateIssuer.APIGroup; group != nil {
+				c.Spec.IssuerRef.Group = *group
+			}
+
+			c.Spec.SecretName = certificateSecretName
+			c.Spec.DNSNames = []string{cfg.Spec.Domain}
+
+			return c, nil
 		}
 	}
 }
