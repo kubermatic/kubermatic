@@ -11,6 +11,7 @@ import (
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/cache"
@@ -62,7 +63,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
-	return reconcile.Result{}, r.reconcile(config, logger)
+	err = r.reconcile(config, logger)
+	if err != nil {
+		r.recorder.Event(config, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+	}
+
+	return reconcile.Result{}, err
 }
 
 func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
@@ -97,6 +103,10 @@ func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration,
 	}
 
 	if err := r.reconcileIngresses(config, logger); err != nil {
+		return err
+	}
+
+	if err := r.reconcileCertificates(config, logger); err != nil {
 		return err
 	}
 
@@ -231,6 +241,20 @@ func (r *Reconciler) reconcileIngresses(config *operatorv1alpha1.KubermaticConfi
 
 	if err := reconciling.ReconcileIngresses(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Ingresses: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileCertificates(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	logger.Debug("Reconciling Certificates")
+
+	creators := []reconciling.NamedCertificateCreatorGetter{
+		kubermatic.CertificateCreator(config),
+	}
+
+	if err := reconciling.ReconcileCertificates(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+		return fmt.Errorf("failed to reconcile Certificates: %v", err)
 	}
 
 	return nil

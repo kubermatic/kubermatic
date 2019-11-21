@@ -10,6 +10,7 @@ import (
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 
+	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -115,6 +116,7 @@ func Add(
 		&extensionsv1beta1.Ingress{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&certmanagerv1alpha2.Certificate{},
 	}
 
 	for _, t := range typesToWatch {

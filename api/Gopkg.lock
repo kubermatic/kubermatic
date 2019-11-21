@@ -744,6 +744,21 @@
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:4697f6e9ad78042e5457d82c857d9537f5e56e51743942eac7e16e20b1072db4"
+  name = "github.com/jetstack/cert-manager"
+  packages = [
+    "pkg/apis/acme",
+    "pkg/apis/acme/v1alpha2",
+    "pkg/apis/certmanager",
+    "pkg/apis/certmanager/v1alpha2",
+    "pkg/apis/meta",
+    "pkg/apis/meta/v1",
+  ]
+  pruneopts = "NUT"
+  revision = "b030b7eb4865adf031b0ad92c6b44576dec14d4e"
+  version = "v0.11.0"
+
+[[projects]]
   digest = "1:1f2aebae7e7c856562355ec0198d8ca2fa222fb05e5b1b66632a1fce39631885"
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
@@ -2040,6 +2055,7 @@
     "github.com/heptiolabs/healthcheck",
     "github.com/hetznercloud/hcloud-go/hcloud",
     "github.com/iancoleman/strcase",
+    "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2",
     "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1",
     "github.com/kubermatic/machine-controller/pkg/apis/plugin",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types",
