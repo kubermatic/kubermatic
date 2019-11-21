@@ -7,29 +7,24 @@ metadata:
     app.kubernetes.io/name: webhook
     app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:
-{{- if .Values.certManager.webhook.injectAPIServerCA }}
-    certmanager.k8s.io/inject-apiserver-ca: 'true'
-{{- end }}
+    cert-manager.io/inject-ca-from-secret: "{{ .Release.Namespace }}/webhook-tls"
 webhooks:
-  - name: webhook.certmanager.k8s.io
+  - name: webhook.cert-manager.io
     rules:
       - apiGroups:
-          - "certmanager.k8s.io"
+          - "cert-manager.io"
+          - "acme.cert-manager.io"
         apiVersions:
-          - v1alpha1
+          - v1alpha2
         operations:
           - CREATE
           - UPDATE
         resources:
-          - certificates
-          - issuers
-          - clusterissuers
-          - orders
-          - challenges
-          - certificaterequests
+          - "*/*"
     failurePolicy: Fail
+    sideEffects: None
     clientConfig:
       service:
-        name: kubernetes
-        namespace: default
-        path: /apis/webhook.certmanager.k8s.io/v1beta1/mutations
+        name: webhook
+        namespace: {{ .Release.Namespace }}
+        path: /mutate
