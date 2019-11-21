@@ -5,14 +5,16 @@ import (
 	"errors"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/seed/resources/kubermatic"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
-	"go.uber.org/zap"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -28,6 +30,7 @@ type Reconciler struct {
 
 	ctx            context.Context
 	log            *zap.SugaredLogger
+	recorder       record.EventRecorder
 	scheme         *runtime.Scheme
 	namespace      string
 	masterClient   ctrlruntimeclient.Client
@@ -60,7 +63,8 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 		return fmt.Errorf("failed to get seeds: %v", err)
 	}
 
-	if _, exists := seeds[seedName]; !exists {
+	seed, exists := seeds[seedName]
+	if !exists {
 		log.Debug("ignoring request for non-existing seed")
 		return nil
 	}
@@ -105,14 +109,24 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 
 	if err := seedClient.Get(r.ctx, name, seedCopy); err != nil {
 		if kerrors.IsNotFound(err) {
-			return errors.New("seed cluster has not yet been provisioned and contains no Seed CR yet")
+			err = errors.New("seed cluster has not yet been provisioned and contains no Seed CR yet")
+
+			r.recorder.Event(seed, corev1.EventTypeWarning, "ReconcilingSkipped", err.Error())
+			r.recorder.Event(&config, corev1.EventTypeWarning, "SeedReconcilingSkipped", fmt.Sprintf("%s: %v", seedName, err))
+			return err
 		}
 
 		return fmt.Errorf("failed to get Seed in seed cluster: %v", err)
 	}
 
 	// make sure to use the seedCopy so the owner ref has the correct UID
-	return r.reconcileResources(&config, seedCopy, seedClient, log)
+	if err := r.reconcileResources(&config, seedCopy, seedClient, log); err != nil {
+		r.recorder.Event(seed, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(&config, corev1.EventTypeWarning, "SeedReconcilingError", fmt.Sprintf("%s: %v", seedName, err))
+		return err
+	}
+
+	return nil
 }
 
 func (r *Reconciler) reconcileResources(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {

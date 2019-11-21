@@ -11,6 +11,7 @@ import (
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/cache"
@@ -66,7 +67,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
-	return reconcile.Result{}, r.reconcile(config, logger)
+	err = r.reconcile(config, logger)
+	if err != nil {
+		r.recorder.Event(config, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+	}
+
+	return reconcile.Result{}, err
 }
 
 func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
@@ -108,6 +114,8 @@ func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration,
 		if err := r.reconcileCertificates(config, logger); err != nil {
 			return err
 		}
+	} else {
+		r.recorder.Event(config, corev1.EventTypeWarning, "CertReconcilingSkipped", "skipping Certificate reconciling because no compatible cert-manager CRD was detected")
 	}
 
 	return nil
