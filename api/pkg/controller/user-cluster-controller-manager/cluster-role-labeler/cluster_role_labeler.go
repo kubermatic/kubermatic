@@ -6,12 +6,12 @@ import (
 
 	"go.uber.org/zap"
 
+	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -25,23 +25,6 @@ const (
 	// This controller adds special label for build-it cluster roles to make them visible in the API
 	controllerName = "cluster_role_label_controller"
 )
-
-var mapFn = handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
-	return []reconcile.Request{
-		{NamespacedName: types.NamespacedName{
-			Name:      "view",
-			Namespace: "",
-		}},
-		{NamespacedName: types.NamespacedName{
-			Name:      "edit",
-			Namespace: "",
-		}},
-		{NamespacedName: types.NamespacedName{
-			Name:      "admin",
-			Namespace: "",
-		}},
-	}
-})
 
 type reconciler struct {
 	ctx      context.Context
@@ -67,8 +50,14 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error
 	}
 
 	// Watch for changes to ClusterRoles
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
-		return fmt.Errorf("failed to establish watch for ClusterRoles: %v", err)
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByName("view")); err != nil {
+		return fmt.Errorf("failed to establish watch for the view ClusterRoles %v", err)
+	}
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByName("edit")); err != nil {
+		return fmt.Errorf("failed to establish watch for the edit ClusterRoles %v", err)
+	}
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByName("admin")); err != nil {
+		return fmt.Errorf("failed to establish watch for the admin ClusterRoles %v", err)
 	}
 
 	return nil

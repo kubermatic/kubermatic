@@ -30,3 +30,10 @@ func ByNamespace(namespace string) predicate.Funcs {
 		return m.GetNamespace() == namespace
 	})
 }
+
+// ByName returns a predicate func that only includes objects in the given name
+func ByName(name string) predicate.Funcs {
+	return Factory(func(m metav1.Object, r runtime.Object) bool {
+		return m.GetName() == name
+	})
+}
