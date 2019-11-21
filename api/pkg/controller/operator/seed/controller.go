@@ -19,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -57,9 +58,10 @@ func Add(
 		scheme:         masterManager.GetScheme(),
 		namespace:      namespace,
 		masterClient:   masterManager.GetClient(),
-		seedsGetter:    seedsGetter,
-		seedClients:    map[string]ctrlruntimeclient.Client{},
 		masterRecorder: masterManager.GetEventRecorderFor(ControllerName),
+		seedClients:    map[string]ctrlruntimeclient.Client{},
+		seedRecorders:  map[string]record.EventRecorder{},
+		seedsGetter:    seedsGetter,
 		workerName:     workerName,
 	}
 
@@ -101,6 +103,7 @@ func Add(
 	// watch all resources we manage inside all configured seeds
 	for key, manager := range seedManagers {
 		reconciler.seedClients[key] = manager.GetClient()
+		reconciler.seedRecorders[key] = manager.GetEventRecorderFor(ControllerName)
 
 		if err := createSeedWatches(c, key, manager, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to setup watches for seed %s: %v", key, err)
