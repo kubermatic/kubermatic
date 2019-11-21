@@ -18,7 +18,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -84,10 +83,6 @@ func main() {
 
 	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", operatorv1alpha1.SchemeGroupVersion), zap.Error(err))
-	}
-
-	if err := apiextensionsv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiextensionsv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	if err := certmanagerv1alpha2.AddToScheme(mgr.GetScheme()); err != nil {
