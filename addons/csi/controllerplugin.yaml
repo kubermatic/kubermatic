@@ -46,7 +46,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-provisioner
-          image: quay.io/k8scsi/csi-provisioner:v1.3.0
+          image: quay.io/k8scsi/csi-provisioner:v1.3.1
           args:
             - "--csi-address=$(ADDRESS)"
             - "--feature-gates=Topology=true"
@@ -58,7 +58,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-          image: quay.io/k8scsi/csi-snapshotter:v1.2.0
+          image: quay.io/k8scsi/csi-snapshotter:v1.2.2
           args:
             - "--csi-address=$(ADDRESS)"
           env:
@@ -69,7 +69,7 @@ spec:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
         - name: csi-resizer
-          image: quay.io/k8scsi/csi-resizer:v0.2.0
+          image: quay.io/k8scsi/csi-resizer:v0.3.0
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
