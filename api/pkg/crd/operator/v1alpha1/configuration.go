@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -51,6 +52,11 @@ type KubermaticConfigurationSpec struct {
 	// ExposeStrategy is the strategy to expose the cluster with.
 	// Note: The `seed_dns_overwrite` setting of the `datacenters.yaml` doesn't have any effect if this is set to LoadBalancerStrategy.
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
+	// CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)
+	// that will be used to acquire the certificate for the configured domain.
+	// To use a namespaced Issuer, set the Kind to "Issuer" and manually create the
+	// match Issuer in Kubermatic's namespace.
+	CertificateIssuer corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
