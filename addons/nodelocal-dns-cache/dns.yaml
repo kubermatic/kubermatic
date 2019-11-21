@@ -95,10 +95,8 @@ spec:
         operator: "Exists"
       containers:
       - name: node-cache
-        image: {{ Registry "gcr.io" }}/google_containers/k8s-dns-node-cache:1.15.2
+        image: {{ Registry "gcr.io" }}/google_containers/k8s-dns-node-cache:1.15.7
         resources:
-          limits:
-            memory: 30Mi
           requests:
             cpu: 25m
             memory: 5Mi
