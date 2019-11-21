@@ -30,10 +30,6 @@ type Reconciler struct {
 	scheme     *runtime.Scheme
 	workerName string
 	ctx        context.Context
-
-	// this is triggered once the cert-manager CRDs are detected and
-	// signals that we can reconcile Certificates
-	hasCertManager bool
 }
 
 // Reconcile acts upon requests and will restore the state of resources
@@ -110,12 +106,8 @@ func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration,
 		return err
 	}
 
-	if r.hasCertManager {
-		if err := r.reconcileCertificates(config, logger); err != nil {
-			return err
-		}
-	} else {
-		r.recorder.Event(config, corev1.EventTypeWarning, "CertReconcilingSkipped", "skipping Certificate reconciling because no compatible cert-manager CRD was detected")
+	if err := r.reconcileCertificates(config, logger); err != nil {
+		return err
 	}
 
 	return nil

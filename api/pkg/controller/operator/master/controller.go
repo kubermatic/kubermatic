@@ -15,7 +15,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -47,13 +46,12 @@ func Add(
 	workerName string,
 ) error {
 	reconciler := &Reconciler{
-		Client:         mgr.GetClient(),
-		scheme:         mgr.GetScheme(),
-		recorder:       mgr.GetEventRecorderFor(ControllerName),
-		log:            log.Named(ControllerName),
-		workerName:     workerName,
-		ctx:            ctx,
-		hasCertManager: false,
+		Client:     mgr.GetClient(),
+		scheme:     mgr.GetScheme(),
+		recorder:   mgr.GetEventRecorderFor(ControllerName),
+		log:        log.Named(ControllerName),
+		workerName: workerName,
+		ctx:        ctx,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
@@ -118,55 +116,13 @@ func Add(
 		&extensionsv1beta1.Ingress{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&certmanagerv1alpha2.Certificate{},
 	}
 
 	for _, t := range typesToWatch {
 		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
-	}
-
-	// watch CRDs to detect cert-manager Certificates
-	crdEventHandler := newEventHandler(func(a handler.MapObject) []reconcile.Request {
-		// we only care for the first time we detect a matching CRD; if the CRD is removed the
-		// existing watches break anyway and will crash the controller
-		if reconciler.hasCertManager {
-			return nil
-		}
-
-		crd, ok := a.Object.(*apiextensionsv1beta1.CustomResourceDefinition)
-		if !ok {
-			return nil
-		}
-
-		gvk := certmanagerv1alpha2.SchemeGroupVersion.WithKind(certmanagerv1alpha2.CertificateKind)
-
-		// ignore other CRDs
-		if crd.Spec.Group != gvk.Group || crd.Spec.Names.Kind != gvk.Kind {
-			return nil
-		}
-
-		// check that our version is supported
-		for _, v := range crd.Spec.Versions {
-			if v.Served && v.Name == gvk.Version {
-				log.Infow("cert-manager CRD detected, enabling certificate reconciling", "gvk", gvk)
-				reconciler.hasCertManager = true
-
-				cert := &certmanagerv1alpha2.Certificate{}
-				if err := c.Watch(&source.Kind{Type: cert}, childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
-					utilruntime.HandleError(fmt.Errorf("failed to create watcher for %T: %v", cert, err))
-				}
-
-				break
-			}
-		}
-
-		return nil
-	})
-
-	crd := &apiextensionsv1beta1.CustomResourceDefinition{}
-	if err := c.Watch(&source.Kind{Type: crd}, crdEventHandler); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %v", crd, err)
 	}
 
 	return nil
