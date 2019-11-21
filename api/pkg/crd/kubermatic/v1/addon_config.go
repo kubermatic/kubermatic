@@ -4,23 +4,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	// AddonConfigResourceName represents "Resource" defined in Kubernetes
-	AddonConfigResourceName = "addonconfigs"
-
-	// AddonKindName represents "Kind" defined in Kubernetes
-	AddonConfigKindName = "AddonConfig"
-
-	// ControlTypeBool represents bool type.
-	ControlTypeBool = "bool"
-
-	// ControlTypeString represents string type.
-	ControlTypeString = "string"
-
-	// ControlTypeNumber represents number type.
-	ControlTypeNumber = "number"
-)
-
 //+genclient
 //+genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
