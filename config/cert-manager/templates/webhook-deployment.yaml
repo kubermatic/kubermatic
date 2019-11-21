@@ -28,10 +28,19 @@ spec:
         image: '{{ .Values.certManager.webhook.image.repository }}:{{ .Values.certManager.webhook.image.tag }}'
         imagePullPolicy: {{ .Values.certManager.webhook.image.pullPolicy }}
         args:
-        - --v=4
-        - --secure-port=6443
+        - --secure-port={{ .Values.certManager.webhook.securePort }}
         - --tls-cert-file=/certs/tls.crt
         - --tls-private-key-file=/certs/tls.key
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: 6080
+            scheme: HTTP
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 6080
+            scheme: HTTP
         env:
         - name: POD_NAMESPACE
           valueFrom:
