@@ -33,7 +33,7 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 					fmt.Sprintf("%v%v", os.TempDir(), time.Now().Nanosecond()),
 				},
 			},
-			expectedSSHKey: "ssh-rsa test_user_ssh_key",
+			expectedSSHKey: "ssh-rsa test_user_ssh_key\nssh-rsa test_user_ssh_key_2",
 		},
 	}
 
@@ -52,7 +52,8 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 						Namespace:       metav1.NamespaceSystem,
 					},
 					Data: map[string][]byte{
-						"key-test": []byte("ssh-rsa test_user_ssh_key"),
+						"key-test":   []byte("ssh-rsa test_user_ssh_key"),
+						"key-test-2": []byte("ssh-rsa test_user_ssh_key_2"),
 					},
 				})
 			if _, err := tc.reconciler.Reconcile(reconcile.Request{

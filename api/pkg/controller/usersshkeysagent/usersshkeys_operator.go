@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 
 	"go.uber.org/zap"
-
 	"gopkg.in/fsnotify.v1"
 
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
@@ -52,7 +52,7 @@ func Add(
 
 	c, err := controller.New(operatorName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed creating a new runtime controller: %v", err)
 	}
 
 	namePredicate := predicateutil.ByName(resources.UserSSHKeys)
@@ -105,7 +105,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed creating a new file watcher: %v", err)
 	}
 
 	go func() {
@@ -118,7 +118,7 @@ func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) er
 				if e.Op&fsnotify.Write == fsnotify.Write {
 					r.events <- event.GenericEvent{}
 				}
-			case _, ok := <-watcher.Errors:
+			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
 				}
@@ -131,7 +131,7 @@ func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) er
 	for _, path := range paths {
 		err = watcher.Add(path)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed adding a new path to the files watcher: %v", err)
 		}
 	}
 
@@ -153,21 +153,18 @@ func (r *Reconciler) fetchUserSSHKeySecret(ctx context.Context, namespace string
 }
 
 func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
-	expectedUserSSHKeys := bytes.Buffer{}
-	for _, secretData := range sshKeys {
-		secretData = append(secretData, []byte("\n")...)
-		if _, err := expectedUserSSHKeys.Write(secretData); err != nil {
-			return err
-		}
+	expectedUserSSHKeys, err := createBuffer(sshKeys)
+	if err != nil {
+		return fmt.Errorf("failed creating user ssh keys buffer: %v", err)
 	}
 
 	for _, path := range r.authorizedKeysPath {
 		if _, err := os.Stat(path); err != nil {
 			if !os.IsNotExist(err) {
-				return err
+				return fmt.Errorf("faild accessing the authorized_keys file in path %s: %v", path, err)
 			}
 			if err := ioutil.WriteFile(path, expectedUserSSHKeys.Bytes(), 0600); err != nil {
-				return err
+				return fmt.Errorf("failed writing a new authorzied_keys file in path %s: %v", path, err)
 			}
 
 			return nil
@@ -175,12 +172,12 @@ func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 
 		actualUserSSHKeys, err := ioutil.ReadFile(path)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed reading authorized key file in path %s: %v", path, err)
 		}
 
 		if !bytes.Equal(actualUserSSHKeys, expectedUserSSHKeys.Bytes()) {
 			if err := ioutil.WriteFile(path, expectedUserSSHKeys.Bytes(), 0600); err != nil {
-				return err
+				return fmt.Errorf("failed to overwrite authorized_keys file in path %s: %v", path, err)
 			}
 		}
 	}
@@ -194,4 +191,27 @@ func newEventHandler(rf handler.ToRequestsFunc) *handler.EnqueueRequestsFromMapF
 	return &handler.EnqueueRequestsFromMapFunc{
 		ToRequests: rf,
 	}
+}
+
+func createBuffer(data map[string][]byte) (*bytes.Buffer, error) {
+	var (
+		keys   = make([]string, 0, len(data))
+		buffer = &bytes.Buffer{}
+	)
+
+	for key := range data {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	for k := range keys {
+		key := keys[k]
+		data[key] = append(data[key], []byte("\n")...)
+		if _, err := buffer.Write(data[key]); err != nil {
+			return nil, fmt.Errorf("failed writing user ssh keys to buffer: %v", err)
+		}
+	}
+
+	return buffer, nil
 }

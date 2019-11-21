@@ -74,17 +74,6 @@ func availableUsersPaths() ([]string, error) {
 		if user != "root" {
 			path = fmt.Sprintf("/home%v", path)
 		}
-		file, err := os.Stat(path)
-		if err != nil {
-			if os.IsNotExist(err) {
-				continue
-			}
-
-			return nil, err
-		}
-		if file.IsDir() {
-			continue
-		}
 
 		paths = append(paths, path)
 	}
