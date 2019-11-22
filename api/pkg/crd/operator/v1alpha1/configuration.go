@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -125,10 +124,14 @@ type KubermaticUserClusterMonitoringConfiguration struct {
 	DisableDefaultRules bool `json:"disableDefaultRules,omitempty"`
 	// DisableDefaultScrapingConfigs disables the default scraping targets.
 	DisableDefaultScrapingConfigs bool `json:"disableDefaultScrapingConfigs,omitempty"`
-	// CustomRules can be used to inject custom recording and alerting rules.
-	CustomRules runtime.RawExtension `json:"customRules,omitempty"`
-	// CustomScrapingConfigs can be used to inject custom scraping rules.
-	CustomScrapingConfigs []runtime.RawExtension `json:"customScrapingConfigs,omitempty"`
+	// CustomRules can be used to inject custom recording and alerting rules. This field
+	// must be a YAML-formatted string with a `group` element at its root, as documented
+	// on https://prometheus.io/docs/prometheus/2.14/configuration/alerting_rules/.
+	CustomRules string `json:"customRules,omitempty"`
+	// CustomScrapingConfigs can be used to inject custom scraping rules. This must be a
+	// YAML-formatted string containing an array of scrape configurations as documented
+	// on https://prometheus.io/docs/prometheus/2.14/configuration/configuration/#scrape_config.
+	CustomScrapingConfigs string `json:"customScrapingConfigs,omitempty"`
 	// ScrapeAnnotationPrefix (if set) is used to make the in-cluster Prometheus scrape pods
 	// inside the user clusters.
 	ScrapeAnnotationPrefix string `json:"scrapeAnnotationPrefix,omitempty"`

@@ -188,30 +188,30 @@ func SeedControllerManagerDeploymentCreator(workerName string, cfg *operatorv1al
 			}
 
 			if len(cfg.Spec.SeedController.Monitoring.CustomScrapingConfigs) > 0 {
-				path := "/opt/" + clusterNamespacePrometheusScrapingConfigMapName
-				args = append(args, fmt.Sprintf("-in-cluster-prometheus-scraping-configs-file=%s/_custom-scraping-configs.yaml", path))
+				path := "/opt/" + clusterNamespacePrometheusScrapingConfigsConfigMapName
+				args = append(args, fmt.Sprintf("-in-cluster-prometheus-scraping-configs-file=%s/%s", path, clusterNamespacePrometheusScrapingConfigsKey))
 
 				volumes = append(volumes, corev1.Volume{
-					Name: clusterNamespacePrometheusScrapingConfigMapName,
+					Name: clusterNamespacePrometheusScrapingConfigsConfigMapName,
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: clusterNamespacePrometheusScrapingConfigMapName,
+								Name: clusterNamespacePrometheusScrapingConfigsConfigMapName,
 							},
 						},
 					},
 				})
 
 				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					Name:      clusterNamespacePrometheusScrapingConfigMapName,
+					Name:      clusterNamespacePrometheusScrapingConfigsConfigMapName,
 					MountPath: path,
 					ReadOnly:  true,
 				})
 			}
 
-			if cfg.Spec.SeedController.Monitoring.CustomRules.Size() > 0 {
+			if len(cfg.Spec.SeedController.Monitoring.CustomRules) > 0 {
 				path := "/opt/" + clusterNamespacePrometheusRulesConfigMapName
-				args = append(args, fmt.Sprintf("-in-cluster-prometheus-rules-file=%s/_customrules.yaml", path))
+				args = append(args, fmt.Sprintf("-in-cluster-prometheus-rules-file=%s/%s", path, clusterNamespacePrometheusRulesKey))
 
 				volumes = append(volumes, corev1.Volume{
 					Name: clusterNamespacePrometheusRulesConfigMapName,

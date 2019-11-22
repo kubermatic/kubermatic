@@ -193,7 +193,7 @@ func (r *Reconciler) reconcileConfigMaps(cfg *operatorv1alpha1.KubermaticConfigu
 		kubermatic.BackupContainersConfigMapCreator(cfg),
 	}
 
-	if creator := kubermatic.ClusterNamespacePrometheusScrapingConfigMapCreator(cfg); creator != nil {
+	if creator := kubermatic.ClusterNamespacePrometheusScrapingConfigsConfigMapCreator(cfg); creator != nil {
 		creators = append(creators, creator)
 	}
 
