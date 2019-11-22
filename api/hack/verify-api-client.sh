@@ -5,9 +5,9 @@ set -o nounset
 set -o pipefail
 
 function cleanup() {
-    if [[ -n "${TMP_DIFFROOT:-}" ]]; then
-        rm -rf "${TMP_DIFFROOT}"
-    fi
+	if [[ -n "${TMP_DIFFROOT:-}" ]]; then
+		rm -rf "${TMP_DIFFROOT}"
+	fi
 }
 trap cleanup EXIT SIGINT SIGTERM
 
@@ -27,10 +27,9 @@ diff -Naupr "${DIFFROOT}" "${TMP_DIFFROOT}" || ret=$?
 cp -a "${TMP_DIFFROOT}"/client "${DIFFROOT}"
 cp -a "${TMP_DIFFROOT}"/models "${DIFFROOT}"
 
-if [[ $ret -eq 0 ]]
-then
-    echo "${DIFFROOT} up to date."
+if [[ $ret -eq 0 ]]; then
+	echo "${DIFFROOT} up to date."
 else
-    echo "${DIFFROOT} is out of date. Please run hack/gen-api-client.sh"
-    exit 1
+	echo "${DIFFROOT} is out of date. Please run hack/gen-api-client.sh"
+	exit 1
 fi

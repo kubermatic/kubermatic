@@ -30,6 +30,6 @@ make runbook
 git add .
 
 if ! git diff --cached --stat --exit-code; then
-  git commit -m "Syncing with kubermatic/kubermatic@$REVISION"
-  git push
+	git commit -m "Syncing with kubermatic/kubermatic@$REVISION"
+	git push
 fi

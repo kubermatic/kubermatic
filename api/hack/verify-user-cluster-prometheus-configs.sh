@@ -13,12 +13,12 @@ touch /etc/kubernetes/prometheus-client.key
 cd "$(dirname "$0")/../"
 
 for CM in pkg/resources/test/fixtures/configmap-*-prometheus.yaml; do
-  echo "Checking ${CM} ..."
-  cat ${CM} | yaml2json | jq -r '.data["rules.yaml"]' > rules.yaml
-  promtool check rules rules.yaml
-  rm rules.yaml
+	echo "Checking ${CM} ..."
+	cat ${CM} | yaml2json | jq -r '.data["rules.yaml"]' >rules.yaml
+	promtool check rules rules.yaml
+	rm rules.yaml
 
-  cat ${CM} | yaml2json | jq -r '.data["prometheus.yaml"]' > prometheus.yaml
-  promtool check config prometheus.yaml
-  rm prometheus.yaml
+	cat ${CM} | yaml2json | jq -r '.data["prometheus.yaml"]' >prometheus.yaml
+	promtool check config prometheus.yaml
+	rm prometheus.yaml
 done

@@ -5,11 +5,11 @@ set -o nounset
 set -o pipefail
 
 function cleanup() {
-    rm -f $TMP_SWAGGER
+	rm -f $TMP_SWAGGER
 
-    if [[ -n "${TMP_DIR:-}" ]]; then
-        rm -rf "${TMP_DIR}"
-    fi
+	if [[ -n "${TMP_DIR:-}" ]]; then
+		rm -rf "${TMP_DIR}"
+	fi
 }
 trap cleanup EXIT SIGINT SIGTERM
 

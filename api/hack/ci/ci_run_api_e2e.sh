@@ -3,8 +3,8 @@ set -euo pipefail
 
 SDIR=$(dirname $0)
 
-function cleanup {
-  cat ${SDIR}/../../pkg/test/e2e/api/utils/oidc-proxy-client/_build/oidc-proxy-client-errors
+function cleanup() {
+	cat ${SDIR}/../../pkg/test/e2e/api/utils/oidc-proxy-client/_build/oidc-proxy-client-errors
 
 	# Kill all descendant processes
 	pkill -P $$
@@ -33,10 +33,10 @@ presets:
           domain: ${OS_DOMAIN}
 EOF
 
-export ADDITIONAL_HELM_ARGS="--set=kubermatic.presets=$(cat preset.yaml|base64 -w0)"
+export ADDITIONAL_HELM_ARGS="--set=kubermatic.presets=$(cat preset.yaml | base64 -w0)"
 source "${SDIR}/ci-setup-kubermatic-in-kind.sh"
 
-cat <<EOF > user.yaml
+cat <<EOF >user.yaml
 apiVersion: kubermatic.k8s.io/v1
 kind: User
 metadata:
@@ -57,9 +57,9 @@ export KUBERMATIC_OIDC_CLIENT_SECRET="ZXhhbXBsZS1hcHAtc2VjcmV0"
 export KUBERMATIC_OIDC_ISSUER="http://dex.oauth:5556"
 export KUBERMATIC_OIDC_REDIRECT_URI="http://localhost:8000"
 (
-cd ${SDIR}/../../pkg/test/e2e/api/utils/oidc-proxy-client
-make build
-make run > /dev/null 2> ./_build/oidc-proxy-client-errors &
+	cd ${SDIR}/../../pkg/test/e2e/api/utils/oidc-proxy-client
+	make build
+	make run >/dev/null 2>./_build/oidc-proxy-client-errors &
 )
 
 # Run e2e tests

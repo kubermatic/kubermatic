@@ -7,12 +7,12 @@ set -x
 
 cd $(dirname $0)
 
-function cleanup {
-  set +e
-  MAIN_PID=$(jobs -l|grep run-api.sh|awk '{print $2}')
-  # There is no `kill job and all its children` :(
-  kill $(pgrep -P $MAIN_PID)
-  kill $MAIN_PID
+function cleanup() {
+	set +e
+	MAIN_PID=$(jobs -l | grep run-api.sh | awk '{print $2}')
+	# There is no `kill job and all its children` :(
+	kill $(pgrep -P $MAIN_PID)
+	kill $MAIN_PID
 }
 trap cleanup EXIT
 

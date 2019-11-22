@@ -39,30 +39,30 @@ TEST_NAME="Get Vault token"
 echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
 export VAULT_TOKEN=$(vault write \
-  --format=json auth/approle/login \
-  role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID \
-  | jq .auth.client_token -r)
+	--format=json auth/approle/login \
+	role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID |
+	jq .auth.client_token -r)
 export VALUES_FILE=/tmp/values.yaml
 TEST_NAME="Get Values file from Vault"
 retry 5 vault kv get -field=values.yaml \
-  dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
+	dev/seed-clusters/ci.kubermatic.io >$VALUES_FILE
 
 # Set docker config
-echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json
+echo $IMAGE_PULL_SECRET_DATA | base64 -d >/config.json
 
 # Start docker daemon
 echodate "Starting docker"
-dockerd > /tmp/docker.log 2>&1 &
+dockerd >/tmp/docker.log 2>&1 &
 echodate "Started docker"
 
-function docker_logs {
-  originalRC=$?
-  if [[ $originalRC -ne 0 ]]; then
-    echodate "Printing docker logs"
-    cat /tmp/docker.log
-    echodate "Done printing docker logs"
-  fi
-  return $originalRC
+function docker_logs() {
+	originalRC=$?
+	if [[ $originalRC -ne 0 ]]; then
+		echodate "Printing docker logs"
+		cat /tmp/docker.log
+		echodate "Done printing docker logs"
+	fi
+	return $originalRC
 }
 trap docker_logs EXIT
 
@@ -80,7 +80,6 @@ echodate "Loaded kindest image"
 echodate "Setting iptables rule to clamp mss to path mtu"
 iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 echodate "Set iptables rule to clamp mss to path mtu"
-
 
 # Make debugging a bit better
 echodate "Setting aliases in .bashrc"
@@ -108,7 +107,7 @@ echodate "Set aliases in .bashrc"
 # which is what sed -i does, so write to a tempfile and write the tempfiles content back
 echodate "Setting dex.oauth alias in /etc/hosts"
 temp_hosts="$(mktemp)"
-sed 's/localhost/localhost dex.oauth/' /etc/hosts > $temp_hosts
+sed 's/localhost/localhost dex.oauth/' /etc/hosts >$temp_hosts
 cat $temp_hosts >/etc/hosts
 echodate "Set dex.oauth alias in /etc/hosts"
 
@@ -122,21 +121,21 @@ echodate "Starting clusterexposer"
 make -C api download-gocache
 CGO_ENABLED=0 go build -v -o /dev/null ./api/pkg/test/clusterexposer/cmd
 CGO_ENABLED=0 go run ./api/pkg/test/clusterexposer/cmd \
-  --kubeconfig-inner "$KUBECONFIG" \
-  --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
-  --build-id "$PROW_JOB_ID" &> /var/log/clusterexposer.log &
+	--kubeconfig-inner "$KUBECONFIG" \
+	--kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
+	--build-id "$PROW_JOB_ID" &>/var/log/clusterexposer.log &
 
-function print_cluster_exposer_logs {
-  originalRC=$?
+function print_cluster_exposer_logs() {
+	originalRC=$?
 
-  # Tolerate errors and just continue
-  set +e
-  echodate "Printing clusterexposer logs"
-  cat /var/log/clusterexposer.log
-  echodate "Done printing clusterexposer logs"
-  set -e
+	# Tolerate errors and just continue
+	set +e
+	echodate "Printing clusterexposer logs"
+	cat /var/log/clusterexposer.log
+	echodate "Done printing clusterexposer logs"
+	set -e
 
-  return $originalRC
+	return $originalRC
 }
 trap print_cluster_exposer_logs EXIT
 
@@ -187,104 +186,103 @@ cp ./api/hack/ci/testdata/oauth_configmap.yaml config/oauth/templates/configmap.
 
 echodate "Creating kubermatic-fast storageclass"
 TEST_NAME="Create kubermatic-fast storageclass"
-retry 5 kubectl get storageclasses.storage.k8s.io standard -o json \
-  |jq 'del(.metadata)|.metadata.name = "kubermatic-fast"'\
-  |kubectl apply -f -
+retry 5 kubectl get storageclasses.storage.k8s.io standard -o json |
+	jq 'del(.metadata)|.metadata.name = "kubermatic-fast"' |
+	kubectl apply -f -
 echodate "Successfully created kubermatic-fast storageclass"
 
 helm install --wait --timeout 180 \
-  --set-string=dex.ingress.host=http://dex.oauth:5556 \
-  --values ./api/hack/ci/testdata/oauth_values.yaml \
-  --namespace oauth \
-  --name kubermatic-oauth-e2e ./config/oauth
+	--set-string=dex.ingress.host=http://dex.oauth:5556 \
+	--values ./api/hack/ci/testdata/oauth_values.yaml \
+	--namespace oauth \
+	--name kubermatic-oauth-e2e ./config/oauth
 
 TEST_NAME="Deploying kubermatic CRDs"
 retry 5 kubectl apply -f config/kubermatic/crd
 
-if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
-  # Build kubermatic binaries and push the image
-  echodate "Building containers with tag $KUBERMATIC_VERSION"
-  echodate "Building binaries"
-  TEST_NAME="Build Kubermatic binaries"
-  time retry 1 make -C api build
+if [[ "${KUBERMATIC_SKIP_BUILDING}" == "false" ]]; then
+	# Build kubermatic binaries and push the image
+	echodate "Building containers with tag $KUBERMATIC_VERSION"
+	echodate "Building binaries"
+	TEST_NAME="Build Kubermatic binaries"
+	time retry 1 make -C api build
 
-  (
-    echodate "Building docker image"
-    TEST_NAME="Build Kubermatic Docker image"
-    cd api
-    IMAGE_NAME="quay.io/kubermatic/api:$KUBERMATIC_VERSION"
-    time retry 5 docker build -t "$IMAGE_NAME" .
-    time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
-  )
-  (
-    echodate "Building addons image"
-    TEST_NAME="Build addons Docker image"
-    cd addons
-    IMAGE_NAME="quay.io/kubermatic/addons:$KUBERMATIC_VERSION"
-    time retry 5 docker build -t "${IMAGE_NAME}" .
-    time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
-  )
-  (
-    echodate "Building openshift addons image"
-    TEST_NAME="Build openshift Docker image"
-    cd openshift_addons
-    IMAGE_NAME="quay.io/kubermatic/openshift-addons:$KUBERMATIC_VERSION"
-    time retry 5 docker build -t "${IMAGE_NAME}" .
-    time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
-  )
-  (
-    echodate "Building dnatcontroller image"
-    TEST_NAME="Build dnatcontroller Docker image"
-    cd api/cmd/kubeletdnat-controller
-    make build
-    IMAGE_NAME="quay.io/kubermatic/kubeletdnat-controller:$KUBERMATIC_VERSION"
-    time retry 5 docker build -t "${IMAGE_NAME}" .
-    time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
-  )
-  (
-    echodate "Building user-ssh-keys-agent image"
-    TEST_NAME="Build user-ssh-keys-agent Docker image"
-    cd api/cmd/user-ssh-keys-agent
-    make build
-    retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-    IMAGE_NAME=quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION
-    time retry 5 docker build -t "${IMAGE_NAME}" .
-    time retry 5 docker push "quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
-  )
-  echodate "Successfully built and loaded all images"
+	(
+		echodate "Building docker image"
+		TEST_NAME="Build Kubermatic Docker image"
+		cd api
+		IMAGE_NAME="quay.io/kubermatic/api:$KUBERMATIC_VERSION"
+		time retry 5 docker build -t "$IMAGE_NAME" .
+		time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
+	)
+	(
+		echodate "Building addons image"
+		TEST_NAME="Build addons Docker image"
+		cd addons
+		IMAGE_NAME="quay.io/kubermatic/addons:$KUBERMATIC_VERSION"
+		time retry 5 docker build -t "${IMAGE_NAME}" .
+		time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
+	)
+	(
+		echodate "Building openshift addons image"
+		TEST_NAME="Build openshift Docker image"
+		cd openshift_addons
+		IMAGE_NAME="quay.io/kubermatic/openshift-addons:$KUBERMATIC_VERSION"
+		time retry 5 docker build -t "${IMAGE_NAME}" .
+		time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
+	)
+	(
+		echodate "Building dnatcontroller image"
+		TEST_NAME="Build dnatcontroller Docker image"
+		cd api/cmd/kubeletdnat-controller
+		make build
+		IMAGE_NAME="quay.io/kubermatic/kubeletdnat-controller:$KUBERMATIC_VERSION"
+		time retry 5 docker build -t "${IMAGE_NAME}" .
+		time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
+	)
+	(
+		echodate "Building user-ssh-keys-agent image"
+		TEST_NAME="Build user-ssh-keys-agent Docker image"
+		cd api/cmd/user-ssh-keys-agent
+		make build
+		retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
+		IMAGE_NAME=quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION
+		time retry 5 docker build -t "${IMAGE_NAME}" .
+		time retry 5 docker push "quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
+	)
+	echodate "Successfully built and loaded all images"
 fi
-
 
 # --force is needed in case the first attempt at installing didn't succeed
 # see https://github.com/helm/helm/pull/3597
 retry 3 helm upgrade --install --force --wait --timeout 300 \
-  --set=kubermatic.isMaster=true \
-  --set=kubermatic.imagePullSecretData=$IMAGE_PULL_SECRET_DATA \
-  --set-string=kubermatic.controller.addons.kubernetes.image.tag="$KUBERMATIC_VERSION" \
-  --set-string=kubermatic.controller.image.tag="$KUBERMATIC_VERSION" \
-  --set-string=kubermatic.controller.addons.openshift.image.tag="$KUBERMATIC_VERSION" \
-  --set-string=kubermatic.api.image.tag="$KUBERMATIC_VERSION" \
-  --set=kubermatic.controller.datacenterName=${SEED_NAME} \
-  --set=kubermatic.api.replicas=1 \
-  --set-string=kubermatic.masterController.image.tag="$KUBERMATIC_VERSION" \
-  --set-string=kubermatic.ui.image.tag=${KUBERMATIC_DASHBOARD_VERSION} \
-  --set=kubermatic.ui.replicas="${KUBERMATIC_UI_REPLICAS}" \
-  --set=kubermatic.ingressClass=non-existent \
-  --set=kubermatic.checks.crd.disable=true \
-  --set=kubermatic.datacenters='' \
-  --set=kubermatic.dynamicDatacenters=true \
-  --set=kubermatic.kubeconfig="$(cat $KUBECONFIG|sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./'|base64 -w0)" \
-  --set=kubermatic.auth.tokenIssuer=http://dex.oauth:5556 \
-  --set=kubermatic.auth.clientID=kubermatic \
-  --set=kubermatic.auth.serviceAccountKey=$SERVICE_ACCOUNT_KEY \
-  --set=kubermatic.apiserverDefaultReplicas=1 \
-  --set=kubermatic.deployVPA=false \
-  --namespace=kubermatic \
-  ${ADDITIONAL_HELM_ARGS} \
-  ${OPENSHIFT_HELM_ARGS:-} \
-  --values ${VALUES_FILE} \
-  kubermatic \
-  ./config/kubermatic/
+	--set=kubermatic.isMaster=true \
+	--set=kubermatic.imagePullSecretData=$IMAGE_PULL_SECRET_DATA \
+	--set-string=kubermatic.controller.addons.kubernetes.image.tag="$KUBERMATIC_VERSION" \
+	--set-string=kubermatic.controller.image.tag="$KUBERMATIC_VERSION" \
+	--set-string=kubermatic.controller.addons.openshift.image.tag="$KUBERMATIC_VERSION" \
+	--set-string=kubermatic.api.image.tag="$KUBERMATIC_VERSION" \
+	--set=kubermatic.controller.datacenterName=${SEED_NAME} \
+	--set=kubermatic.api.replicas=1 \
+	--set-string=kubermatic.masterController.image.tag="$KUBERMATIC_VERSION" \
+	--set-string=kubermatic.ui.image.tag=${KUBERMATIC_DASHBOARD_VERSION} \
+	--set=kubermatic.ui.replicas="${KUBERMATIC_UI_REPLICAS}" \
+	--set=kubermatic.ingressClass=non-existent \
+	--set=kubermatic.checks.crd.disable=true \
+	--set=kubermatic.datacenters='' \
+	--set=kubermatic.dynamicDatacenters=true \
+	--set=kubermatic.kubeconfig="$(cat $KUBECONFIG | sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./' | base64 -w0)" \
+	--set=kubermatic.auth.tokenIssuer=http://dex.oauth:5556 \
+	--set=kubermatic.auth.clientID=kubermatic \
+	--set=kubermatic.auth.serviceAccountKey=$SERVICE_ACCOUNT_KEY \
+	--set=kubermatic.apiserverDefaultReplicas=1 \
+	--set=kubermatic.deployVPA=false \
+	--namespace=kubermatic \
+	${ADDITIONAL_HELM_ARGS} \
+	${OPENSHIFT_HELM_ARGS:-} \
+	--values ${VALUES_FILE} \
+	kubermatic \
+	./config/kubermatic/
 echodate "Finished installing Kubermatic"
 
 echodate "Installing seeds"
@@ -296,7 +294,7 @@ metadata:
   name: ${SEED_NAME}-kubeconfig
   namespace: kubermatic
 data:
-  kubeconfig: "$(cat $KUBECONFIG|sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./'|base64 -w0)"
+  kubeconfig: "$(cat $KUBECONFIG | sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./' | base64 -w0)"
 ---
 kind: Seed
 apiVersion: kubermatic.k8s.io/v1
@@ -409,7 +407,7 @@ echodate "Finished installing seed"
 
 # Expose dex to localhost
 TEST_NAME="Expose dex and kubermatic API to localhost"
-kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556  &
+kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556 &
 
 # Expose kubermatic API to localhost
 kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 &
@@ -423,19 +421,19 @@ echodate "Waiting for api to be ready"
 retry 5 curl --fail http://127.0.0.1:8080/api/v1/healthz
 echodate "API got ready"
 
-function cleanup_kubermatic_clusters_in_kind {
-  originalRC=$?
+function cleanup_kubermatic_clusters_in_kind() {
+	originalRC=$?
 
-  # Tolerate errors and just continue
-  set +e
-  # Clean up clusters
-  kubectl delete cluster --all --ignore-not-found=true
+	# Tolerate errors and just continue
+	set +e
+	# Clean up clusters
+	kubectl delete cluster --all --ignore-not-found=true
 
-  # Kill all descendant processes
-  pkill -P $$
-  set -e
+	# Kill all descendant processes
+	pkill -P $$
+	set -e
 
-  return $originalRC
+	return $originalRC
 }
 trap cleanup_kubermatic_clusters_in_kind EXIT
 

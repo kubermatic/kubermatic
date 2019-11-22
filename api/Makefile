@@ -89,6 +89,14 @@ GFMT=find . -not \( \( -wholename "./vendor" \) -prune \) -name "*.go" | xargs g
 gofmt:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "gofmt needed on" $$UNFMT && exit 1; fi
 
+shfmt:
+	shfmt -w hack
+	shfmt -w cmd
+
+shfmt-check:
+	shfmt -d hack
+	shfmt -d cmd
+
 fix:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 

@@ -22,7 +22,7 @@ git fetch origin ${UPGRADE_TEST_BASE_HASH}
 # as the image tag later on. Also make sure we use the branch versions from upstream, as the local version
 # may be different.
 git checkout origin/${UPGRADE_TEST_BASE_HASH}
-export UPGRADE_TEST_BASE_HASH="$(git rev-parse HEAD|tr -d '\n')"
+export UPGRADE_TEST_BASE_HASH="$(git rev-parse HEAD | tr -d '\n')"
 git checkout -
 
 ./ci-run-minimal-conformance-tests.sh

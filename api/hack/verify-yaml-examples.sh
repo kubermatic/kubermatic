@@ -8,7 +8,7 @@ source ./api/hack/lib.sh
 tmpdir=docs-old
 
 cleanup() {
-  rm -rf "$tmpdir"
+	rm -rf "$tmpdir"
 }
 trap "cleanup" EXIT SIGINT
 

@@ -10,7 +10,7 @@ cd config/monitoring/grafana
 tmpdir=tmp-dashboards
 
 function cleanup() {
-  rm -rf $tmpdir
+	rm -rf $tmpdir
 }
 trap cleanup EXIT SIGINT SIGTERM
 
@@ -19,7 +19,7 @@ cp -r dashboards $tmpdir
 
 echodate "Verifying dashboards..."
 for dashboard in $tmpdir/*/*.json; do
-  format_dashboard "$dashboard"
+	format_dashboard "$dashboard"
 done
 diff -rdu dashboards $tmpdir
 echodate "Dashboards are properly formatted."

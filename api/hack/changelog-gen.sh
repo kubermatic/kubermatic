@@ -9,40 +9,42 @@ set -e
 cd $(dirname $0)/../..
 CHANGELOG_FILE=CHANGELOG.md
 
-usage(){
-  echo "Usage: changelog-gen.sh -r NEW-RELEASE_TAG - create changelog, commit and tag new release, using closed PRs release-note"
-  exit 1
+usage() {
+	echo "Usage: changelog-gen.sh -r NEW-RELEASE_TAG - create changelog, commit and tag new release, using closed PRs release-note"
+	exit 1
 }
 
 # Get arguments from cli
 while getopts r:help: opts; do
-   case ${opts} in
-      r) NEW_RELEASE=${OPTARG}
-        ;;
-      ?) usage
-        ;;
-   esac
+	case ${opts} in
+	r)
+		NEW_RELEASE=${OPTARG}
+		;;
+	?)
+		usage
+		;;
+	esac
 done
 
 # Check if a version flag is provided.
 if [ "$NEW_RELEASE" == "" ]; then
-  usage
+	usage
 fi
 
 if [ "$(git rev-parse --abbrev-ref HEAD)" == "master" ]; then
-  echo "Error, releases must not be created on master branch!"
-  exit 1
+	echo "Error, releases must not be created on master branch!"
+	exit 1
 fi
 
-if git tag -l|grep -q $NEW_RELEASE; then
-  echo "Error: Tag $NEW_RELEASE already exists!"
-  exit 1
+if git tag -l | grep -q $NEW_RELEASE; then
+	echo "Error: Tag $NEW_RELEASE already exists!"
+	exit 1
 fi
 
-if ! echo -n $NEW_RELEASE|egrep -q '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'; then
-  echo "Error: Release version \"$NEW_RELEASE\" does not match regex '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'"
-  echo "Valid version must look like this: v1.2.3"
-  exit 1
+if ! echo -n $NEW_RELEASE | egrep -q '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'; then
+	echo "Error: Release version \"$NEW_RELEASE\" does not match regex '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'"
+	echo "Valid version must look like this: v1.2.3"
+	exit 1
 fi
 
 # Install gchl if not installed
@@ -54,11 +56,11 @@ if ! [ -x "$(command -v gchl)" ]; then
 fi
 
 # Create CHANGELOG.md if not exists in order for the cat not to fail
-[ -f $CHANGELOG_FILE ] ||  touch $CHANGELOG_FILE
+[ -f $CHANGELOG_FILE ] || touch $CHANGELOG_FILE
 
 # Generate changelog
 OUTPUT="$(gchl --for-version $NEW_RELEASE since $(git describe --abbrev=0 --tags) --release-notes)"
-echo "${OUTPUT}" | cat - $CHANGELOG_FILE > temp
+echo "${OUTPUT}" | cat - $CHANGELOG_FILE >temp
 mv temp $CHANGELOG_FILE
 
 # Commit generated changelog and create a new tag
