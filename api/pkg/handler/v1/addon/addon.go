@@ -50,6 +50,13 @@ type patchReq struct {
 	Body apiv1.Addon
 }
 
+// patchReq defines HTTP request for getAddonConfig endpoint
+// swagger:parameters getAddonConfig
+type getConfigReq struct {
+	// in: path
+	AddonID string `json:"addon_id"`
+}
+
 func DecodeGetAddon(c context.Context, r *http.Request) (interface{}, error) {
 	var req addonReq
 
@@ -111,6 +118,19 @@ func DecodePatchAddon(c context.Context, r *http.Request) (interface{}, error) {
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+func DecodeGetConfig(c context.Context, r *http.Request) (interface{}, error) {
+	var req getConfigReq
+
+	addonID, err := decodeAddonID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.AddonID = addonID
 
 	return req, nil
 }
@@ -324,6 +344,43 @@ func DeleteAddonEndpoint(projectProvider provider.ProjectProvider, userInfoGette
 	}
 }
 
+func ListAddonConfigsEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		list, err := addonProvider.ListConfigs(userInfo)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalAddonConfigsToExternal(list)
+	}
+}
+
+func GetAddonConfigEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getConfigReq)
+		addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		addon, err := addonProvider.GetConfig(userInfo, req.AddonID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalAddonConfigToExternal(addon)
+	}
+}
+
 func convertInternalAddonToExternal(internalAddon *kubermaticapiv1.Addon) (*apiv1.Addon, error) {
 	result := &apiv1.Addon{
 		ObjectMeta: apiv1.ObjectMeta{
@@ -355,6 +412,38 @@ func convertInternalAddonsToExternal(internalAddons []*kubermaticapiv1.Addon) ([
 
 	for _, addon := range internalAddons {
 		converted, err := convertInternalAddonToExternal(addon)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, converted)
+	}
+
+	return result, nil
+}
+
+func convertInternalAddonConfigToExternal(internalAddonConfig *kubermaticapiv1.AddonConfig) (*apiv1.AddonConfig, error) {
+	return &apiv1.AddonConfig{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:                internalAddonConfig.Name,
+			Name:              internalAddonConfig.Name,
+			CreationTimestamp: apiv1.NewTime(internalAddonConfig.CreationTimestamp.Time),
+			DeletionTimestamp: func() *apiv1.Time {
+				if internalAddonConfig.DeletionTimestamp != nil {
+					deletionTimestamp := apiv1.NewTime(internalAddonConfig.DeletionTimestamp.Time)
+					return &deletionTimestamp
+				}
+				return nil
+			}(),
+		},
+		Spec: internalAddonConfig.Spec,
+	}, nil
+}
+
+func convertInternalAddonConfigsToExternal(internalAddonConfigs *kubermaticapiv1.AddonConfigList) ([]*apiv1.AddonConfig, error) {
+	result := []*apiv1.AddonConfig{}
+
+	for _, internalAddonConfig := range internalAddonConfigs.Items {
+		converted, err := convertInternalAddonConfigToExternal(&internalAddonConfig)
 		if err != nil {
 			return nil, err
 		}
