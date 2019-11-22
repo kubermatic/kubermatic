@@ -4,6 +4,8 @@ package v1
 
 type AddonExpansion interface{}
 
+type AddonConfigExpansion interface{}
+
 type ClusterExpansion interface{}
 
 type KubermaticSettingExpansion interface{}

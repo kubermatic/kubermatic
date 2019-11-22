@@ -351,6 +351,14 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAccessibleAddons())
 
 	mux.Methods(http.MethodGet).
+		Path("/addonconfigs/{addon_id}").
+		Handler(r.getAddonConfig())
+
+	mux.Methods(http.MethodGet).
+		Path("/addonconfigs").
+		Handler(r.listAddonConfigs())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons").
 		Handler(r.listInstallableAddons())
 
@@ -3486,6 +3494,52 @@ func (r Routing) listSystemLabels() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 		)(label.ListSystemLabels()),
+		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/addonconfigs/{addon_id} getAddonConfig
+//
+//     Returns specified addon config.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AddonConfig
+//       401: empty
+func (r Routing) getAddonConfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(addon.GetAddonConfigEndpoint(r.userInfoGetter)),
+		addon.DecodeGetConfig,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/addonconfigs listAddonConfigs
+//
+//     Returns all available addon configs.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []AddonConfig
+//       401: empty
+func (r Routing) listAddonConfigs() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(addon.ListAddonConfigsEndpoint(r.userInfoGetter)),
 		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

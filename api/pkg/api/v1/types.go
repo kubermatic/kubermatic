@@ -827,6 +827,14 @@ type AddonSpec struct {
 	IsDefault bool `json:"isDefault,omitempty"`
 }
 
+// AddonConfig represents a addon configuration
+// swagger:model AddonConfig
+type AddonConfig struct {
+	ObjectMeta `json:",inline"`
+
+	Spec kubermaticv1.AddonConfigSpec `json:"spec"`
+}
+
 // ClusterList represents a list of clusters
 // swagger:model ClusterList
 type ClusterList []Cluster

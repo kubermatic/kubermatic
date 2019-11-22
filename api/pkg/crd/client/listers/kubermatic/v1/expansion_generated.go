@@ -10,6 +10,10 @@ type AddonListerExpansion interface{}
 // AddonNamespaceLister.
 type AddonNamespaceListerExpansion interface{}
 
+// AddonConfigListerExpansion allows custom methods to be added to
+// AddonConfigLister.
+type AddonConfigListerExpansion interface{}
+
 // ClusterListerExpansion allows custom methods to be added to
 // ClusterLister.
 type ClusterListerExpansion interface{}
