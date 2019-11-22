@@ -75,6 +75,9 @@ func SeedControllerManagerDeploymentCreator(workerName string, cfg *operatorv1al
 				fmt.Sprintf("-scheduler-default-replicas=%d", 1),
 				fmt.Sprintf("-max-parallel-reconcile=%d", 10),
 				fmt.Sprintf("-apiserver-reconciling-disabled-by-default=%v", false),
+				fmt.Sprintf("-in-cluster-prometheus-disable-default-rules=%v", cfg.Spec.SeedController.Monitoring.DisableDefaultRules),
+				fmt.Sprintf("-in-cluster-prometheus-disable-default-scraping-configs=%v", cfg.Spec.SeedController.Monitoring.DisableDefaultScrapingConfigs),
+				fmt.Sprintf("-monitoring-scrape-annotation-prefix=%s", cfg.Spec.SeedController.Monitoring.ScrapeAnnotationPrefix),
 			}
 
 			sharedAddonVolume := "addons"
@@ -180,6 +183,50 @@ func SeedControllerManagerDeploymentCreator(workerName string, cfg *operatorv1al
 				volumeMounts = append(volumeMounts, corev1.VolumeMount{
 					Name:      "dex-ca",
 					MountPath: "/opt/dex-ca",
+					ReadOnly:  true,
+				})
+			}
+
+			if len(cfg.Spec.SeedController.Monitoring.CustomScrapingConfigs) > 0 {
+				path := "/opt/" + clusterNamespacePrometheusScrapingConfigsConfigMapName
+				args = append(args, fmt.Sprintf("-in-cluster-prometheus-scraping-configs-file=%s/%s", path, clusterNamespacePrometheusScrapingConfigsKey))
+
+				volumes = append(volumes, corev1.Volume{
+					Name: clusterNamespacePrometheusScrapingConfigsConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: clusterNamespacePrometheusScrapingConfigsConfigMapName,
+							},
+						},
+					},
+				})
+
+				volumeMounts = append(volumeMounts, corev1.VolumeMount{
+					Name:      clusterNamespacePrometheusScrapingConfigsConfigMapName,
+					MountPath: path,
+					ReadOnly:  true,
+				})
+			}
+
+			if len(cfg.Spec.SeedController.Monitoring.CustomRules) > 0 {
+				path := "/opt/" + clusterNamespacePrometheusRulesConfigMapName
+				args = append(args, fmt.Sprintf("-in-cluster-prometheus-rules-file=%s/%s", path, clusterNamespacePrometheusRulesKey))
+
+				volumes = append(volumes, corev1.Volume{
+					Name: clusterNamespacePrometheusRulesConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: clusterNamespacePrometheusRulesConfigMapName,
+							},
+						},
+					},
+				})
+
+				volumeMounts = append(volumeMounts, corev1.VolumeMount{
+					Name:      clusterNamespacePrometheusRulesConfigMapName,
+					MountPath: path,
 					ReadOnly:  true,
 				})
 			}
