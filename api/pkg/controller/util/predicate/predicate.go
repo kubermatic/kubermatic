@@ -3,6 +3,7 @@ package predicate
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -31,9 +32,10 @@ func ByNamespace(namespace string) predicate.Funcs {
 	})
 }
 
-// ByName returns a predicate func that only includes objects in the given name
-func ByName(name string) predicate.Funcs {
+// ByName returns a predicate func that only includes objects in the given names
+func ByName(names ...string) predicate.Funcs {
+	namesSet := sets.NewString(names...)
 	return Factory(func(m metav1.Object, r runtime.Object) bool {
-		return m.GetName() == name
+		return namesSet.Has(m.GetName())
 	})
 }

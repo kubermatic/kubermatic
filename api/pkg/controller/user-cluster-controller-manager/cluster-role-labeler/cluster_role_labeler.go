@@ -50,14 +50,8 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error
 	}
 
 	// Watch for changes to ClusterRoles
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByName("view")); err != nil {
-		return fmt.Errorf("failed to establish watch for the view ClusterRoles %v", err)
-	}
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByName("edit")); err != nil {
-		return fmt.Errorf("failed to establish watch for the edit ClusterRoles %v", err)
-	}
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByName("admin")); err != nil {
-		return fmt.Errorf("failed to establish watch for the admin ClusterRoles %v", err)
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByName("admin", "view", "edit")); err != nil {
+		return fmt.Errorf("failed to establish watch for the ClusterRoles %v", err)
 	}
 
 	return nil
@@ -92,7 +86,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, clusterRole *rbacv1.Clust
 
 	if value, ok := clusterRole.Labels[cluster.UserClusterComponentKey]; ok {
 		if value == cluster.UserClusterRoleComponentValue {
-			log.Debug("Label %s exists, not updating cluster role %s", cluster.UserClusterRoleLabelSelector, clusterRole.Name)
+			log.Debug("label ", cluster.UserClusterRoleLabelSelector, " exists, not updating cluster role: ", clusterRole.Name)
 			return nil
 		}
 	}
