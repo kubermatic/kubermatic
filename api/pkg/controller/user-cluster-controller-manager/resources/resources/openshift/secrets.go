@@ -51,7 +51,7 @@ func OAuthBootstrapPassword() (string, reconciling.SecretCreator) {
 			return s, nil
 		}
 
-		rawPassword, err := generateNewOAuthSecret()
+		rawPassword, err := generateNewSecret()
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate password: %v", err)
 		}
@@ -65,7 +65,7 @@ func OAuthBootstrapPassword() (string, reconciling.SecretCreator) {
 	}
 }
 
-func generateNewOAuthSecret() (string, error) {
+func generateNewSecret() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		return "", fmt.Errorf("failed to read from crypto/rand: %v", err)

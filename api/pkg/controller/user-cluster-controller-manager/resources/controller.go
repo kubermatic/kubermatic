@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/heptiolabs/healthcheck"
 	"go.uber.org/zap"
@@ -21,10 +22,12 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -50,11 +53,9 @@ func Add(
 	openvpnServerPort int,
 	registerReconciledCheck func(name string, check healthcheck.Check),
 	cloudCredentialSecretTemplate *corev1.Secret,
+	openshiftConsoleCallbackURI string,
 	log *zap.SugaredLogger) error {
-	reconciler := &reconciler{
-		Client:                        mgr.GetClient(),
-		seedClient:                    seedMgr.GetClient(),
-		cache:                         mgr.GetCache(),
+	r := &reconciler{
 		openshift:                     openshift,
 		version:                       version,
 		rLock:                         &sync.Mutex{},
@@ -64,8 +65,39 @@ func Add(
 		cloudCredentialSecretTemplate: cloudCredentialSecretTemplate,
 		log:                           log,
 		platform:                      cloudProviderName,
+		openshiftConsoleCallbackURI:   openshiftConsoleCallbackURI,
 	}
-	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
+
+	if r.openshift {
+		// We have to run one initial reconciliation before we can create the watches, to make sure
+		// all apiGroups exist
+		apiReadingUserClusterClient := apiReadingClient(mgr.GetAPIReader(), mgr.GetClient())
+		apiReadingSeedClusterClient := apiReadingClient(seedMgr.GetAPIReader(), seedMgr.GetClient())
+		r.Client = apiReadingUserClusterClient
+		r.seedClient = apiReadingSeedClusterClient
+		if _, err := r.Reconcile(reconcile.Request{}); err != nil {
+			return fmt.Errorf("initial reconciliation failed: %v", err)
+		}
+		// We must wait for this, otherwise the controller crashes when trying to establish
+		// an informer
+		oauthClientList := &unstructured.UnstructuredList{}
+		oauthClientList.SetAPIVersion("oauth.openshift.io/v1")
+		oauthClientList.SetKind("OAuthClient")
+		if err := wait.PollImmediate(5*time.Second, time.Minute, func() (bool, error) {
+			if err := mgr.GetAPIReader().List(context.Background(), oauthClientList); err != nil {
+				return false, nil
+			}
+			return true, nil
+		}); err != nil {
+			return errors.New("timed out waiting for OAuthClient api to become ready")
+		}
+	}
+
+	r.Client = mgr.GetClient()
+	r.seedClient = seedMgr.GetClient()
+	r.cache = mgr.GetCache()
+
+	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
@@ -105,7 +137,10 @@ func Add(
 		clusterVersionConfigKind := &unstructured.Unstructured{}
 		clusterVersionConfigKind.SetKind("ClusterVersion")
 		clusterVersionConfigKind.SetAPIVersion("config.openshift.io/v1")
-		typesToWatch = append(typesToWatch, infrastructureConfigKind, clusterVersionConfigKind)
+		oauthClientConfigKind := &unstructured.Unstructured{}
+		oauthClientConfigKind.SetAPIVersion("oauth.openshift.io/v1")
+		oauthClientConfigKind.SetKind("OAuthClient")
+		typesToWatch = append(typesToWatch, infrastructureConfigKind, clusterVersionConfigKind, oauthClientConfigKind)
 	}
 
 	// Avoid getting triggered by the leader lease AKA: If the annotation exists AND changed on
@@ -143,9 +178,9 @@ func Add(
 
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
 	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func() error {
-		reconciler.rLock.Lock()
-		defer reconciler.rLock.Unlock()
-		if !reconciler.reconciledSuccessfullyOnce {
+		r.rLock.Lock()
+		defer r.rLock.Unlock()
+		if !r.reconciledSuccessfullyOnce {
 			return errors.New("no successful reconciliation so far")
 		}
 		return nil
@@ -166,6 +201,7 @@ type reconciler struct {
 	openvpnServerPort             int
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
+	openshiftConsoleCallbackURI   string
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
@@ -207,4 +243,16 @@ func (r *reconciler) userSSHKeys(ctx context.Context) (map[string][]byte, error)
 		return nil, err
 	}
 	return secret.Data, nil
+}
+
+func apiReadingClient(apiReader ctrlruntimeclient.Reader, writer ctrlruntimeclient.Client) ctrlruntimeclient.Client {
+	return struct {
+		ctrlruntimeclient.Reader
+		ctrlruntimeclient.Writer
+		ctrlruntimeclient.StatusClient
+	}{
+		Reader:       apiReader,
+		Writer:       writer,
+		StatusClient: writer,
+	}
 }
