@@ -94,3 +94,32 @@ certManager:
     # defaultIssuerName: ""
     # defaultIssuerKind: ""
     # defaultIssuerGroup: ""
+
+  clusterIssuers:
+    letsencrypt-prod:
+      server: https://acme-v02.api.letsencrypt.org/directory
+      email: dev@loodse.com
+      solver:
+        selector: {}
+        # if DNS validation is disabled, HTTP01 validation using
+        # ingresses with class=nginx will be used
+        dnsValidation:
+          enabled: false
+          route53:
+            region: ''
+            accessKeyID: ''
+            secretAccessKey: ''
+
+    letsencrypt-staging:
+      server: https://acme-staging-v02.api.letsencrypt.org/directory
+      email: dev@loodse.com
+      solver:
+        selector: {}
+        # if DNS validation is disabled, HTTP01 validation using
+        # ingresses with class=nginx will be used
+        dnsValidation:
+          enabled: false
+          route53:
+            region: ''
+            accessKeyID: ''
+            secretAccessKey: ''
