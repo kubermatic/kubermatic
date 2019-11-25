@@ -41,7 +41,7 @@ const (
 	tag = "v0.3.4"
 )
 
-// metricsServerData is the data needed to consturct the metrics-server components
+// metricsServerData is the data needed to construct the metrics-server components
 type metricsServerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
