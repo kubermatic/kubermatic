@@ -41,7 +41,7 @@ spec:
         [Workspace]
         server            = "vsphere.local"
         datacenter        = "vsphere-datacenter"
-        folder            = "vsphere-1a2b3c4d5e"
+        folder            = ""
         default-datastore = "vsphere-datastore"
         resourcepool-path = ""
 

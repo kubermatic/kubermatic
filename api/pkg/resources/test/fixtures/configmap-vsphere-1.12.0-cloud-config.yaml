@@ -16,7 +16,7 @@ data:
     [Workspace]
     server            = "vs-endpoint.io"
     datacenter        = "vs-datacenter"
-    folder            = "de-test-01"
+    folder            = ""
     default-datastore = "vs-datastore"
     resourcepool-path = ""
 

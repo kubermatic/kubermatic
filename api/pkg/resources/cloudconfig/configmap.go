@@ -226,7 +226,7 @@ func getVsphereCloudConfig(
 			// if they are not - But maybe that will change at some point
 			VCenterIP:        vspherURL.Hostname(),
 			Datacenter:       dc.Spec.VSphere.Datacenter,
-			Folder:           cluster.Name,
+			Folder:           cluster.Spec.Cloud.VSphere.Folder,
 			DefaultDatastore: dc.Spec.VSphere.Datastore,
 		},
 		Disk: vsphere.DiskOpts{
