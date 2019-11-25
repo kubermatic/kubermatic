@@ -16,7 +16,7 @@ const (
 )
 
 func ClusterNamespacePrometheusScrapingConfigsConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {
-	if len(cfg.Spec.SeedController.Monitoring.CustomScrapingConfigs) == 0 {
+	if len(cfg.Spec.UserCluster.Monitoring.CustomScrapingConfigs) == 0 {
 		return nil
 	}
 
@@ -26,7 +26,7 @@ func ClusterNamespacePrometheusScrapingConfigsConfigMapCreator(cfg *operatorv1al
 				c.Data = make(map[string]string)
 			}
 
-			c.Data[clusterNamespacePrometheusScrapingConfigsKey] = cfg.Spec.SeedController.Monitoring.CustomScrapingConfigs
+			c.Data[clusterNamespacePrometheusScrapingConfigsKey] = cfg.Spec.UserCluster.Monitoring.CustomScrapingConfigs
 
 			return c, nil
 		}
@@ -34,7 +34,7 @@ func ClusterNamespacePrometheusScrapingConfigsConfigMapCreator(cfg *operatorv1al
 }
 
 func ClusterNamespacePrometheusRulesConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {
-	if len(cfg.Spec.SeedController.Monitoring.CustomRules) == 0 {
+	if len(cfg.Spec.UserCluster.Monitoring.CustomRules) == 0 {
 		return nil
 	}
 
@@ -44,7 +44,7 @@ func ClusterNamespacePrometheusRulesConfigMapCreator(cfg *operatorv1alpha1.Kuber
 				c.Data = make(map[string]string)
 			}
 
-			c.Data[clusterNamespacePrometheusRulesKey] = cfg.Spec.SeedController.Monitoring.CustomRules
+			c.Data[clusterNamespacePrometheusRulesKey] = cfg.Spec.UserCluster.Monitoring.CustomRules
 
 			return c, nil
 		}

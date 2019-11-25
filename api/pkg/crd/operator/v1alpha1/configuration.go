@@ -47,6 +47,8 @@ type KubermaticConfigurationSpec struct {
 	SeedController KubermaticSeedControllerConfiguration `json:"seedController,omitempty"`
 	// MasterController configures the master-controller-manager.
 	MasterController KubermaticMasterControllerConfiguration `json:"masterController,omitempty"`
+	// UserCluster configures various aspects of the user-created clusters.
+	UserCluster KubermaticUserClusterConfiguration `json:"userClusters,omitempty"`
 	// MasterFiles is a map of additional files to mount into each master component.
 	MasterFiles map[string]string `json:"masterFiles,omitempty"`
 	// ExposeStrategy is the strategy to expose the cluster with.
@@ -74,8 +76,8 @@ type KubermaticAuthConfiguration struct {
 
 // KubermaticAPIConfiguration configures the dashboard.
 type KubermaticAPIConfiguration struct {
-	// Image is the Docker image containing the Kubermatic REST API.
-	Image string `json:"image,omitempty"`
+	// DockerRepository is the repository containing the Kubermatic REST API image.
+	DockerRepository string `json:"dockerRepository,omitempty"`
 	// AccessibleAddons is a list of addons that should be enabled in the API.
 	AccessibleAddons []string `json:"accessibleAddons,omitempty"`
 	// PProfEndpoint controls the port the API should listen on to provide pprof
@@ -87,8 +89,8 @@ type KubermaticAPIConfiguration struct {
 
 // KubermaticUIConfiguration configures the dashboard.
 type KubermaticUIConfiguration struct {
-	// Image is the Docker image containing the Kubermatic dashboard.
-	Image string `json:"image,omitempty"`
+	// DockerRepository is the repository containing the Kubermatic dashboard image.
+	DockerRepository string `json:"dockerRepository,omitempty"`
 	// Config sets flags for various dashboard features.
 	Config string `json:"config,omitempty"`
 	// Presets is a YAML string containing pre-defined credentials for cloud providers.
@@ -97,31 +99,36 @@ type KubermaticUIConfiguration struct {
 
 // KubermaticSeedControllerConfiguration configures the Kubermatic seed controller-manager.
 type KubermaticSeedControllerConfiguration struct {
-	// Image is the Docker image containing the Kubermatic controller-manager.
-	Image string `json:"image,omitempty"`
+	// DockerRepository is the repository containing the Kubermatic seed-controller-manager image.
+	DockerRepository string `json:"dockerRepository,omitempty"`
+	// BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
+	BackupStoreContainer string `json:"backupStoreContainer,omitempty"`
+	// BackupCleanupContainer is the container used for removing expired backups from the storage location.
+	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
+}
+
+// KubermaticUserClusterConfiguration controls various aspects of the user-created clusters.
+type KubermaticUserClusterConfiguration struct {
+	// KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
+	KubermaticDockerRepository string `json:"kubermaticDockerRepository,omitempty"`
+	// DNATControllerDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
+	DNATControllerDockerRepository string `json:"dnatControllerDockerRepository,omitempty"`
+	// OverwriteRegistry specifies a custom Docker registry which will be used for all images
+	// used inside user clusters (user cluster control plane + addons). This also applies to
+	// the KubermaticDockerRepository and DNATControllerDockerRepository fields.
+	OverwriteRegistry string `json:"overwriteRegistry,omitempty"`
 	// Addons controls the optional additions installed into each user cluster.
 	Addons KubermaticAddonsConfiguration `json:"addons,omitempty"`
 	// NodePortRange is the port range for customer clusters - this must match the NodePort
 	// range of the seed cluster.
 	NodePortRange string `json:"nodePortRange,omitempty"`
-	// OverwriteRegistry specifies a custom Docker registry which will be used for all images
-	// (user cluster control plane + addons)
-	OverwriteRegistry string `json:"overwriteRegistry,omitempty"`
-	// BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
-	BackupStoreContainer string `json:"backupStoreContainer,omitempty"`
-	// BackupCleanupContainer is the container used for removing expired backups from the storage location.
-	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
-	// KubermaticImage can be used to overwrite the Docker image that is deployed inside user clusters.
-	KubermaticImage string `json:"kubermaticImage,omitempty"`
-	// DNATControllerImage can be used to overwrite the Docker image that is deployed inside user clusters.
-	DNATControllerImage string `json:"dnatControllerImage,omitempty"`
 	// Monitoring can be used to fine-tune to in-cluster Prometheus.
 	Monitoring KubermaticUserClusterMonitoringConfiguration `json:"monitoring,omitempty"`
 	// DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
 	// the Kubernetes API server.
 	DisableAPIServerEndpointReconciling bool `json:"disableApiserverEndpointReconciling,omitempty"`
-	// EtcdDiskSize configures the volume size to use for each etcd pod inside user clusters.
-	EtcdDiskSize string `json:"etcdDiskSize,omitempty"`
+	// EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
+	EtcdVolumeSize string `json:"etcdVolumeSize,omitempty"`
 	// PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
 	// data. This port is never exposed from the container and only available via port-forwardings.
 	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
@@ -158,14 +165,15 @@ type KubermaticUserClusterMonitoringConfiguration struct {
 type KubermaticAddonConfiguration struct {
 	// Default is the list of addons to be installed by default into each cluster.
 	Default []string `json:"default,omitempty"`
-	// Image is the Docker image containing the possible addon manifests.
-	Image string `json:"image,omitempty"`
+	// DockerRepository is the repository containing the Docker image containing
+	// the possible addon manifests.
+	DockerRepository string `json:"dockerRepository,omitempty"`
 }
 
 // KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.
 type KubermaticMasterControllerConfiguration struct {
-	// Image is the Docker image containing the Kubermatic master controller-manager.
-	Image string `json:"image,omitempty"`
+	// DockerRepository is the repository containing the Kubermatic master-controller-manager image.
+	DockerRepository string `json:"dockerRepository,omitempty"`
 	// ProjectsMigrator configures the migrator for user projects.
 	ProjectsMigrator KubermaticProjectsMigratorConfiguration `json:"projectsMigrator,omitempty"`
 	// PProfEndpoint controls the port the master-controller-manager should listen on to provide pprof

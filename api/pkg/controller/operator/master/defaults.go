@@ -5,6 +5,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/docker/distribution/reference"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
@@ -45,15 +46,29 @@ func (r *Reconciler) defaultConfiguration(config *operatorv1alpha1.KubermaticCon
 
 	config.Spec.Auth = auth
 
-	kubermaticDefaultImage := fmt.Sprintf("quay.io/kubermatic/api:%s", resources.KUBERMATICCOMMIT)
-	addonsDefaultImage := fmt.Sprintf("quay.io/kubermatic/addons:%s", resources.KUBERMATICCOMMIT)
+	if err := r.defaultDockerRepo(&config.Spec.API.DockerRepository, resources.DefaultKubermaticImage, "api.dockerRepository", logger); err != nil {
+		return false, err
+	}
 
-	r.defaultImage(&config.Spec.API.Image, kubermaticDefaultImage, "api.image", logger)
-	r.defaultImage(&config.Spec.UI.Image, "quay.io/kubermatic/ui-v2:v1.3.0", "ui.image", logger)
-	r.defaultImage(&config.Spec.MasterController.Image, kubermaticDefaultImage, "masterController.image", logger)
-	r.defaultImage(&config.Spec.SeedController.Image, kubermaticDefaultImage, "seedController.image", logger)
-	r.defaultImage(&config.Spec.SeedController.Addons.Kubernetes.Image, addonsDefaultImage, "seedController.addons.kubernetes.image", logger)
-	r.defaultImage(&config.Spec.SeedController.Addons.Openshift.Image, "quay.io/kubermatic/openshift-addons:v0.9", "seedController.addons.openshift.image", logger)
+	if err := r.defaultDockerRepo(&config.Spec.UI.DockerRepository, resources.DefaultDashboardImage, "ui.dockerRepository", logger); err != nil {
+		return false, err
+	}
+
+	if err := r.defaultDockerRepo(&config.Spec.MasterController.DockerRepository, resources.DefaultKubermaticImage, "masterController.dockerRepository", logger); err != nil {
+		return false, err
+	}
+
+	if err := r.defaultDockerRepo(&config.Spec.SeedController.DockerRepository, resources.DefaultKubermaticImage, "seedController.dockerRepository", logger); err != nil {
+		return false, err
+	}
+
+	if err := r.defaultDockerRepo(&config.Spec.UserCluster.Addons.Kubernetes.DockerRepository, resources.DefaultKubernetesAddonImage, "userCluster.addons.kubernetes.image", logger); err != nil {
+		return false, err
+	}
+
+	if err := r.defaultDockerRepo(&config.Spec.UserCluster.Addons.Openshift.DockerRepository, resources.DefaultOpenshiftAddonImage, "userCluster.addons.openshift.image", logger); err != nil {
+		return false, err
+	}
 
 	var (
 		err       error
@@ -68,9 +83,22 @@ func (r *Reconciler) defaultConfiguration(config *operatorv1alpha1.KubermaticCon
 	return defaulted, err
 }
 
-func (r *Reconciler) defaultImage(img *string, defaultImage string, key string, logger *zap.SugaredLogger) {
-	if *img == "" {
-		*img = defaultImage
-		logger.Debugf("Defaulting Docker image for %s to %s", key, defaultImage)
+func (r *Reconciler) defaultDockerRepo(repo *string, defaultRepo string, key string, logger *zap.SugaredLogger) error {
+	if *repo == "" {
+		*repo = defaultRepo
+		logger.Debugw("Defaulting Docker repository", "key", key, "repo", defaultRepo)
+
+		return nil
 	}
+
+	ref, err := reference.Parse(*repo)
+	if err != nil {
+		return fmt.Errorf("invalid docker repository '%s' configured for %s: %v", *repo, key, err)
+	}
+
+	if _, ok := ref.(reference.Tagged); ok {
+		return fmt.Errorf("it is not allowed to specify an image tag for the %s repository", key)
+	}
+
+	return nil
 }

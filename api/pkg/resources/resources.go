@@ -329,11 +329,20 @@ const (
 	// InternalUserClusterAdminKubeconfigCertUsername is the name of the user coming from kubeconfig cert
 	InternalUserClusterAdminKubeconfigCertUsername = "kubermatic-controllers"
 
-	// DefaultKubermaticImage defines the default image which contains the Kubermatic applications
+	// DefaultKubermaticImage defines the default Docker repository containing the Kubermatic API image.
 	DefaultKubermaticImage = "quay.io/kubermatic/api"
 
-	// DefaultDNATControllerImage defines the default image containing the dnat controller
+	// DefaultDNATControllerImage defines the default Docker repository containing the DNAT controller image.
 	DefaultDNATControllerImage = "quay.io/kubermatic/kubeletdnat-controller"
+
+	// DefaultDashboardAddonImage defines the default Docker repository containing the dashboard image.
+	DefaultDashboardImage = "quay.io/kubermatic/ui-v2"
+
+	// DefaultKubernetesAddonImage defines the default Docker repository containing the Kubernetes addons.
+	DefaultKubernetesAddonImage = "quay.io/kubermatic/addons"
+
+	// DefaultOpenshiftAddonImage defines the default Docker repository containing the Openshift addons.
+	DefaultOpenshiftAddonImage = "quay.io/kubermatic/openshift-addons"
 
 	// IPVSProxyMode defines the ipvs kube-proxy mode.
 	IPVSProxyMode = "ipvs"

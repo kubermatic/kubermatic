@@ -23,7 +23,7 @@ func masterControllerManagerPodLabels() map[string]string {
 	}
 }
 
-func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerName string) reconciling.NamedDeploymentCreatorGetter {
+func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerName string, versions common.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return masterControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(2)
@@ -80,7 +80,7 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "controller-manager",
-					Image:   cfg.Spec.MasterController.Image,
+					Image:   cfg.Spec.MasterController.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"master-controller-manager"},
 					Args:    args,
 					Ports: []corev1.ContainerPort{
