@@ -19,6 +19,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/cloudcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -312,6 +313,7 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 		controllermanager.ClusterRoleBindingAuthDelegator(),
 		clusterautoscaler.ClusterRoleBindingCreator(),
 		systembasicuser.ClusterRoleBinding,
+		cloudcontroller.ClusterRoleBindingCreator(),
 	}
 
 	if r.openshift {
@@ -412,6 +414,10 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		if r.cloudCredentialSecretTemplate != nil {
 			creators = append(creators, openshift.CloudCredentialSecretCreator(*r.cloudCredentialSecretTemplate))
 		}
+	}
+
+	if len(r.cloudConfig) > 0 {
+		creators = append(creators, cloudcontroller.CloudConfig(r.cloudConfig))
 	}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {

@@ -424,9 +424,10 @@ func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kuberm
 
 func getImagesFromAddons(log *zap.Logger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
 	addonData := &addonutil.TemplateData{
-		Cluster:   cluster,
-		Addon:     &kubermaticv1.Addon{},
-		Variables: map[string]interface{}{},
+		Cluster:           cluster,
+		MajorMinorVersion: cluster.Spec.Version.MajorMinor(),
+		Addon:             &kubermaticv1.Addon{},
+		Variables:         map[string]interface{}{},
 	}
 	infos, err := ioutil.ReadDir(addonsPath)
 	if err != nil {
