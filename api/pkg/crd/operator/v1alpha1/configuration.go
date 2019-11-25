@@ -43,9 +43,9 @@ type KubermaticConfigurationSpec struct {
 	UI KubermaticUIConfiguration `json:"ui,omitempty"`
 	// API configures the frontend REST API used by the dashboard.
 	API KubermaticAPIConfiguration `json:"api,omitempty"`
-	// SeedController configures the controller-manager.
+	// SeedController configures the seed-controller-manager.
 	SeedController KubermaticSeedControllerConfiguration `json:"seedController,omitempty"`
-	// MasterController configures the controller-manager.
+	// MasterController configures the master-controller-manager.
 	MasterController KubermaticMasterControllerConfiguration `json:"masterController,omitempty"`
 	// MasterFiles is a map of additional files to mount into each master component.
 	MasterFiles map[string]string `json:"masterFiles,omitempty"`
@@ -76,6 +76,13 @@ type KubermaticAuthConfiguration struct {
 type KubermaticAPIConfiguration struct {
 	// Image is the Docker image containing the Kubermatic REST API.
 	Image string `json:"image,omitempty"`
+	// AccessibleAddons is a list of addons that should be enabled in the API.
+	AccessibleAddons []string `json:"accessibleAddons,omitempty"`
+	// PProfEndpoint controls the port the API should listen on to provide pprof
+	// data. This port is never exposed from the container and only available via port-forwardings.
+	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
+	// DebugLog enables more verbose logging.
+	DebugLog bool `json:"debugLog,omitempty"`
 }
 
 // KubermaticUIConfiguration configures the dashboard.
@@ -106,8 +113,18 @@ type KubermaticSeedControllerConfiguration struct {
 	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
 	// KubermaticImage can be used to overwrite the Docker image that is deployed inside user clusters.
 	KubermaticImage string `json:"kubermaticImage,omitempty"`
+	// DNATControllerImage can be used to overwrite the Docker image that is deployed inside user clusters.
+	DNATControllerImage string `json:"dnatControllerImage,omitempty"`
 	// Monitoring can be used to fine-tune to in-cluster Prometheus.
 	Monitoring KubermaticUserClusterMonitoringConfiguration `json:"monitoring,omitempty"`
+	// DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
+	// the Kubernetes API server.
+	DisableAPIServerEndpointReconciling bool `json:"disableApiserverEndpointReconciling,omitempty"`
+	// EtcdDiskSize configures the volume size to use for each etcd pod inside user clusters.
+	EtcdDiskSize string `json:"etcdDiskSize,omitempty"`
+	// PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
+	// data. This port is never exposed from the container and only available via port-forwardings.
+	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
 }
 
 // KubermaticAddonsConfiguration controls the optional additions installed into each user cluster.
@@ -151,6 +168,11 @@ type KubermaticMasterControllerConfiguration struct {
 	Image string `json:"image,omitempty"`
 	// ProjectsMigrator configures the migrator for user projects.
 	ProjectsMigrator KubermaticProjectsMigratorConfiguration `json:"projectsMigrator,omitempty"`
+	// PProfEndpoint controls the port the master-controller-manager should listen on to provide pprof
+	// data. This port is never exposed from the container and only available via port-forwardings.
+	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
+	// DebugLog enables more verbose logging.
+	DebugLog bool `json:"debugLog,omitempty"`
 }
 
 // KubermaticProjectsMigratorConfiguration configures the Kubermatic master controller-manager.
