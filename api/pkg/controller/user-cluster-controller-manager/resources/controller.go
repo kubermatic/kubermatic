@@ -54,6 +54,7 @@ func Add(
 	registerReconciledCheck func(name string, check healthcheck.Check),
 	cloudCredentialSecretTemplate *corev1.Secret,
 	openshiftConsoleCallbackURI string,
+	cloudConfig []byte,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
 		openshift:                     openshift,
@@ -63,6 +64,7 @@ func Add(
 		clusterURL:                    clusterURL,
 		openvpnServerPort:             openvpnServerPort,
 		cloudCredentialSecretTemplate: cloudCredentialSecretTemplate,
+		cloudConfig:                   cloudConfig,
 		log:                           log,
 		platform:                      cloudProviderName,
 		openshiftConsoleCallbackURI:   openshiftConsoleCallbackURI,
@@ -202,6 +204,7 @@ type reconciler struct {
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
 	openshiftConsoleCallbackURI   string
+	cloudConfig                   []byte
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

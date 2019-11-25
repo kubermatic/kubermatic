@@ -93,6 +93,9 @@ type ClusterSpec struct {
 
 	OIDC OIDCSettings `json:"oidc,omitempty"`
 
+	// Feature flags
+	Features map[string]bool `json:"features"`
+
 	// Openshift holds all openshift-specific settings
 	Openshift *Openshift `json:"openshift,omitempty"`
 

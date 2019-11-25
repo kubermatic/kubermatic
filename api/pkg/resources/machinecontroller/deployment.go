@@ -114,12 +114,14 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 				return nil, err
 			}
 
+			externalCloudProvider := data.Cluster().Spec.Features[resources.FeatureNameExternalCloudProvider]
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
 					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    getFlags(clusterDNSIP, data.DC().Node),
+					Args:    getFlags(clusterDNSIP, data.DC().Node, externalCloudProvider),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -215,7 +217,7 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	return vars, nil
 }
 
-func getFlags(clusterDNSIP string, nodeSettings kubermaticv1.NodeSettings) []string {
+func getFlags(clusterDNSIP string, nodeSettings kubermaticv1.NodeSettings, externalCloudProvider bool) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-logtostderr",
@@ -237,6 +239,10 @@ func getFlags(clusterDNSIP string, nodeSettings kubermaticv1.NodeSettings) []str
 	}
 	if nodeSettings.HyperkubeImage != "" {
 		flags = append(flags, "-node-hyperkube-image", nodeSettings.HyperkubeImage)
+	}
+
+	if externalCloudProvider {
+		flags = append(flags, "-external-cloud-provider=true")
 	}
 
 	return flags
