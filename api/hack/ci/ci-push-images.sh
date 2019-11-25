@@ -16,6 +16,11 @@ docker ps > /dev/null 2>&1 || start-docker.sh
 retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
 echodate "Successfully logged into Quay"
 
+# inject current dashboard version into Kubermatic Operator;
+# PULL_BASE_REF is the name of the current branch in case of a post-submit
+# or the name of the base branch in case of a PR.
+DASHBOARDCOMMIT="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
+
 TEST_NAME="Build binaries"
 echodate "Building binaries"
 # Retry is used to get the junit wrapping
