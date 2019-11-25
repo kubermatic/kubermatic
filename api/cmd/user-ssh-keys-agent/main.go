@@ -74,6 +74,18 @@ func availableUsersPaths() ([]string, error) {
 		if user != "root" {
 			path = fmt.Sprintf("/home%v", path)
 		}
+		fileInfo, err := os.Stat(path)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+
+			return nil, fmt.Errorf("failed describing file info: %v", err)
+		}
+
+		if fileInfo.IsDir() {
+			continue
+		}
 
 		paths = append(paths, path)
 	}

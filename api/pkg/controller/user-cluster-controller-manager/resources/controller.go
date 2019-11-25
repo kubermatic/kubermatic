@@ -205,7 +205,6 @@ type reconciler struct {
 	cloudCredentialSecretTemplate *corev1.Secret
 	openshiftConsoleCallbackURI   string
 	cloudConfig                   []byte
-	overwriteRegistry             string
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

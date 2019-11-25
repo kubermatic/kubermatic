@@ -51,9 +51,8 @@ func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 			}
 			rb.Subjects = []rbacv1.Subject{
 				{
-					Kind:     rbacv1.UserKind,
-					Name:     serviceAccountName,
-					APIGroup: rbacv1.GroupName,
+					Name: serviceAccountName,
+					Kind: rbacv1.ServiceAccountKind,
 				},
 			}
 			return rb, nil

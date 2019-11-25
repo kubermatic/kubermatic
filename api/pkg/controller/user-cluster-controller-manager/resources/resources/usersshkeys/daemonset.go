@@ -45,19 +45,11 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "root",
-							MountPath: "/root/.ssh/authorized_keys",
+							MountPath: "/root",
 						},
 						{
-							Name:      "core",
-							MountPath: "/home/core/.ssh/authorized_keys",
-						},
-						{
-							Name:      "centos",
-							MountPath: "/home/centos/.ssh/authorized_keys",
-						},
-						{
-							Name:      "ubuntu",
-							MountPath: "/home/ubuntu/.ssh/authorized_keys",
+							Name:      "home",
+							MountPath: "/home",
 						},
 					},
 				},
@@ -68,34 +60,16 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 					Name: "root",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/root/.ssh/authorized_keys",
+							Path: "/root",
 							Type: &hostPathType,
 						},
 					},
 				},
 				{
-					Name: "core",
+					Name: "home",
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/home/core/.ssh/authorized_keys",
-							Type: &hostPathType,
-						},
-					},
-				},
-				{
-					Name: "centos",
-					VolumeSource: corev1.VolumeSource{
-						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/home/centos/.ssh/authorized_keys",
-							Type: &hostPathType,
-						},
-					},
-				},
-				{
-					Name: "ubuntu",
-					VolumeSource: corev1.VolumeSource{
-						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/home/ubuntu/.ssh/authorized_keys",
+							Path: "/home",
 							Type: &hostPathType,
 						},
 					},

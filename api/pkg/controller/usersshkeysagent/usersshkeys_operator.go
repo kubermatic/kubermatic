@@ -7,14 +7,16 @@ import (
 	"io/ioutil"
 	"os"
 	"sort"
+	"strings"
+	"syscall"
+
+	"gopkg.in/fsnotify.v1"
 
 	"go.uber.org/zap"
-	"gopkg.in/fsnotify.v1"
 
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
-	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -26,10 +28,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
-	operatorName = "usersshkeys-notifier"
+	operatorName = "usersshkeys-operator"
 )
 
 type Reconciler struct {
@@ -161,13 +164,17 @@ func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 	for _, path := range r.authorizedKeysPath {
 		if _, err := os.Stat(path); err != nil {
 			if !os.IsNotExist(err) {
-				return fmt.Errorf("faild accessing the authorized_keys file in path %s: %v", path, err)
+				return fmt.Errorf("faild describing the authorized_keys file in path %s: %v", path, err)
 			}
 			if err := ioutil.WriteFile(path, expectedUserSSHKeys.Bytes(), 0600); err != nil {
 				return fmt.Errorf("failed writing a new authorzied_keys file in path %s: %v", path, err)
 			}
 
 			return nil
+		}
+
+		if err := updateOwnAndPermissions(path); err != nil {
+			return fmt.Errorf("failed updating permissions %s: %v", path, err)
 		}
 
 		actualUserSSHKeys, err := ioutil.ReadFile(path)
@@ -214,4 +221,34 @@ func createBuffer(data map[string][]byte) (*bytes.Buffer, error) {
 	}
 
 	return buffer, nil
+}
+
+func updateOwnAndPermissions(path string) error {
+	if err := os.Chmod(path, os.FileMode(0600)); err != nil {
+		return fmt.Errorf("failed to change permission on file: %v", err)
+	}
+
+	sshPath := strings.TrimSuffix(path, "/authorized_keys")
+	if err := os.Chmod(sshPath, os.FileMode(0600)); err != nil {
+		return fmt.Errorf("failed to change permission on file: %v", err)
+	}
+
+	userHome := strings.TrimSuffix(sshPath, "/.ssh")
+	fileInfo, err := os.Stat(userHome)
+	if err != nil {
+		return fmt.Errorf("faild describing the authorized_keys file in path %s: %v", userHome, err)
+	}
+
+	uid := fileInfo.Sys().(*syscall.Stat_t).Uid
+	gid := fileInfo.Sys().(*syscall.Stat_t).Gid
+
+	if err := os.Chown(path, int(uid), int(gid)); err != nil {
+		return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", path, err)
+	}
+
+	if err := os.Chown(sshPath, int(uid), int(gid)); err != nil {
+		return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", sshPath, err)
+	}
+
+	return nil
 }
