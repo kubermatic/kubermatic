@@ -1,0 +1,42 @@
+{{ range $name, $issuer := .Values.certManager.clusterIssuers }}
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: ClusterIssuer
+metadata:
+  name: {{ $name }}
+spec:
+  acme:
+    server: {{ $issuer.server }}
+    email: {{ $issuer.email }}
+    privateKeySecretRef:
+      name: {{ $name }}-acme-account-key
+    solvers:
+    - selector:
+{{ toYaml $issuer.solver.selector | indent 8 }}
+      {{- if $issuer.solver.dnsValidation.enabled }}
+      dns01:
+        {{- with $issuer.solver.dnsValidation.route53 }}
+        route53:
+           region: {{ .region | quote }}
+           accessKeyID: {{ .accessKeyID | quote }}
+           secretAccessKeySecretRef:
+             name: {{ $name }}-dns-route53
+             key: secret-access-key
+        {{- end }}
+      {{- else }}
+      http01:
+        ingress:
+          class: nginx
+      {{- end }}
+
+{{- if and $issuer.solver.dnsValidation.enabled $issuer.solver.dnsValidation.route53.region }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $name }}-dns-route53
+type: Opaque
+data:
+  secret-access-key: {{ $issuer.solver.dnsValidation.route53.secretAccessKey | b64enc | quote }}
+{{- end }}
+{{ end }}
