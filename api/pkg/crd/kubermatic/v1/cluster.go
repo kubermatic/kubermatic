@@ -571,3 +571,11 @@ func (cluster *Cluster) GetSecretName() string {
 	}
 	return ""
 }
+
+func (cluster *Cluster) IsOpenshift() bool {
+	return cluster.Annotations["kubermatic.io/openshift"] != ""
+}
+
+func (cluster *Cluster) IsKubernetes() bool {
+	return !cluster.IsOpenshift()
+}

@@ -37,7 +37,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		if err != nil {
 			return nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
-		*healthMapping[name].healthStatus = getStatus(status, cluster)
+		*healthMapping[name].healthStatus = helper.GetHealthStatus(status, cluster)
 	}
 
 	var err error
@@ -47,7 +47,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	if err != nil {
 		return nil, fmt.Errorf("failed to get etcd health: %v", err)
 	}
-	extendedHealth.Etcd = getStatus(etcdHealthStatus, cluster)
+	extendedHealth.Etcd = helper.GetHealthStatus(etcdHealthStatus, cluster)
 
 	return extendedHealth, nil
 }
@@ -67,7 +67,7 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 		return err
 	}
 
-	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && isClusterInitialized(cluster) {
+	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && helper.IsClusterInitialized(cluster) {
 		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			helper.SetClusterCondition(
 				c,
@@ -80,24 +80,4 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	return err
-}
-
-// We assume that te cluster is still provisioning if it was not initialized fully at least once.
-func getStatus(status kubermaticv1.HealthStatus, cluster *kubermaticv1.Cluster) kubermaticv1.HealthStatus {
-	if status == kubermaticv1.HealthStatusDown && !isClusterInitialized(cluster) {
-		return kubermaticv1.HealthStatusProvisioning
-	}
-
-	return status
-}
-
-func isClusterInitialized(cluster *kubermaticv1.Cluster) bool {
-	isInitialized := cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue)
-	// If was set to true at least once just return true
-	if isInitialized {
-		return true
-	}
-
-	_, success := helper.ClusterReconciliationSuccessful(cluster)
-	return success && cluster.Status.ExtendedHealth.AllHealthy()
 }
