@@ -109,7 +109,7 @@ func (r *reconciler) reconcile(cluster *kubermaticv1.Cluster) error {
 			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
 			corev1.ConditionFalse,
 			kubermaticv1.ReasonClusterUpdateSuccessful,
-			"Some controlplane components did not finish updating",
+			"Some control plane components did not finish updating",
 		)
 		return r.client.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 	}
@@ -119,7 +119,7 @@ func (r *reconciler) reconcile(cluster *kubermaticv1.Cluster) error {
 		kubermaticv1.ClusterConditionSeedResourcesUpToDate,
 		corev1.ConditionTrue,
 		kubermaticv1.ReasonClusterUpdateSuccessful,
-		"All controlplane components are up to date",
+		"All control plane components are up to date",
 	)
 	return r.client.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }

@@ -114,6 +114,16 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 			NamespaceName:          NamespaceName(name),
 			CloudMigrationRevision: cloud.CurrentMigrationRevision,
 			KubermaticVersion:      resources.KUBERMATICCOMMIT,
+			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
+				Apiserver:                    kubermaticv1.HealthStatusProvisioning,
+				Scheduler:                    kubermaticv1.HealthStatusProvisioning,
+				Controller:                   kubermaticv1.HealthStatusProvisioning,
+				MachineController:            kubermaticv1.HealthStatusProvisioning,
+				Etcd:                         kubermaticv1.HealthStatusProvisioning,
+				OpenVPN:                      kubermaticv1.HealthStatusProvisioning,
+				CloudProviderInfrastructure:  kubermaticv1.HealthStatusProvisioning,
+				UserClusterControllerManager: kubermaticv1.HealthStatusProvisioning,
+			},
 		},
 		Address: kubermaticv1.ClusterAddress{},
 	}

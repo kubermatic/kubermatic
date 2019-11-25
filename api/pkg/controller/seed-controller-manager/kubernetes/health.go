@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.ExtendedClusterHealth, error) {
@@ -34,7 +37,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		if err != nil {
 			return nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
-		*healthMapping[name].healthStatus = status
+		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster)
 	}
 
 	var err error
@@ -44,7 +47,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	if err != nil {
 		return nil, fmt.Errorf("failed to get etcd health: %v", err)
 	}
-	extendedHealth.Etcd = etcdHealthStatus
+	extendedHealth.Etcd = kubermaticv1helper.GetHealthStatus(etcdHealthStatus, cluster)
 
 	return extendedHealth, nil
 }
@@ -57,6 +60,22 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 	if cluster.Status.ExtendedHealth != *extendedHealth {
 		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.ExtendedHealth = *extendedHealth
+		})
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && kubermaticv1helper.IsClusterInitialized(cluster) {
+		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+			kubermaticv1helper.SetClusterCondition(
+				c,
+				kubermaticv1.ClusterConditionClusterInitialized,
+				corev1.ConditionTrue,
+				"",
+				"Cluster has been initialized successfully",
+			)
 		})
 	}
 

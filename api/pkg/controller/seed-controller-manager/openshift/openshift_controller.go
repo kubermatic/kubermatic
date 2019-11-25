@@ -335,7 +335,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, fmt.Errorf("failed to sync health: %v", err)
 	}
 
-	if kubermaticv1.HealthStatusDown == osData.Cluster().Status.ExtendedHealth.Apiserver {
+	if kubermaticv1.HealthStatusDown == osData.Cluster().Status.ExtendedHealth.Apiserver ||
+		kubermaticv1.HealthStatusProvisioning == osData.Cluster().Status.ExtendedHealth.Apiserver {
 		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
@@ -395,7 +396,8 @@ func (r *Reconciler) clusterIsReachable(ctx context.Context, c *kubermaticv1.Clu
 }
 
 func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error {
-	currentHealth := osData.Cluster().Status.ExtendedHealth.DeepCopy()
+	cluster := osData.Cluster()
+	currentHealth := cluster.Status.ExtendedHealth.DeepCopy()
 	type depInfo struct {
 		healthStatus *kubermaticv1.HealthStatus
 		minReady     int32
@@ -410,30 +412,42 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 	}
 
 	for name := range healthMapping {
-		status, err := resources.HealthyDeployment(ctx, r.Client, nn(osData.Cluster().Status.NamespaceName, name), healthMapping[name].minReady)
+		status, err := resources.HealthyDeployment(ctx, r.Client, nn(cluster.Status.NamespaceName, name), healthMapping[name].minReady)
 		if err != nil {
 			return fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
-		*healthMapping[name].healthStatus = status
+		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster)
 	}
 
-	status, err := resources.HealthyStatefulSet(ctx, r.Client, nn(osData.Cluster().Status.NamespaceName, resources.EtcdStatefulSetName), 2)
+	status, err := resources.HealthyStatefulSet(ctx, r.Client, nn(cluster.Status.NamespaceName, resources.EtcdStatefulSetName), 2)
 	if err != nil {
 		return fmt.Errorf("failed to get etcd health: %v", err)
 	}
-	currentHealth.Etcd = status
+	currentHealth.Etcd = kubermaticv1helper.GetHealthStatus(status, cluster)
 
 	//TODO: Revisit this. This is a tiny bit ugly, but Openshift doesn't have a distinct scheduler
 	// and introducing a distinct health struct for Openshift means we have to change the API as well
 	currentHealth.Scheduler = currentHealth.Controller
 
-	if osData.Cluster().Status.ExtendedHealth != *currentHealth {
-		return r.updateCluster(ctx, osData.Cluster(), func(c *kubermaticv1.Cluster) {
+	if cluster.Status.ExtendedHealth != *currentHealth {
+		return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.ExtendedHealth = *currentHealth
 		})
 	}
 
-	return nil
+	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && kubermaticv1helper.IsClusterInitialized(cluster) {
+		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+			kubermaticv1helper.SetClusterCondition(
+				c,
+				kubermaticv1.ClusterConditionClusterInitialized,
+				corev1.ConditionTrue,
+				"",
+				"Cluster has been initialized successfully",
+			)
+		})
+	}
+
+	return err
 }
 
 func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
