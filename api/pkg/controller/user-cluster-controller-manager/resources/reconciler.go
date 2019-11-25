@@ -472,9 +472,15 @@ func (r *reconciler) reconcileUnstructured(ctx context.Context) error {
 		return nil
 	}
 
+	// On the very first reconciliation we don't have a cache yet
+	if r.cache == nil {
+		return nil
+	}
+
 	creators := []reconciling.NamedUnstructuredCreatorGetter{
 		openshift.InfrastructureCreatorGetter(r.platform),
 		openshift.ClusterVersionCreatorGetter(r.namespace),
+		openshift.ConsoleOAuthClientCreator(r.openshiftConsoleCallbackURI),
 	}
 	r.log.Debug("Reconciling unstructured")
 	// The delegatingReader from the `mgr` always redirects request for unstructured.Unstructured

@@ -2,9 +2,6 @@ package resources
 
 import (
 	"bytes"
-	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"strconv"
 	"text/template"
@@ -17,10 +14,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	utilpointer "k8s.io/utils/pointer"
 )
@@ -30,9 +24,8 @@ var (
 )
 
 const (
-	consoleOAuthSecretName       = "openshift-console-oauth-client-secret"
+	ConsoleOAuthSecretName       = "openshift-console-oauth-client-secret"
 	consoleServingCertSecretName = "openshift-console-serving-cert"
-	consoleOAuthClientObjectName = "console"
 	consoleConfigMapName         = "openshift-console-config"
 	consoleConfigMapKey          = "console-config.yaml"
 	consoleDeploymentName        = "openshift-console"
@@ -101,7 +94,7 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
-						Name:      consoleOAuthSecretName,
+						Name:      ConsoleOAuthSecretName,
 						MountPath: "/var/oauth-config",
 					},
 					{
@@ -137,9 +130,9 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 					},
 				},
 				{
-					Name: consoleOAuthSecretName,
+					Name: ConsoleOAuthSecretName,
 					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{SecretName: consoleOAuthSecretName},
+						Secret: &corev1.SecretVolumeSource{SecretName: ConsoleOAuthSecretName},
 					},
 				},
 				{
@@ -222,65 +215,4 @@ func ConsoleServingCertCreator(caGetter servingcerthelper.CAGetter) reconciling.
 		"console.openshift.seed.tld",
 		[]string{"console.openshift.seed.tld"},
 		nil)
-}
-
-func ConsoleOAuthClientSecretCreator(data openshiftData) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return consoleOAuthSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			oauthClientObject := &unstructured.Unstructured{}
-			oauthClientObject.SetAPIVersion("oauth.openshift.io/v1")
-			oauthClientObject.SetKind("OAuthClient")
-
-			client, err := data.Client()
-			if err != nil {
-				return nil, fmt.Errorf("failed to get usercluster client: %v", err)
-			}
-
-			// Create oauthClient object in the usercluster first, as it can not be reset otherwise
-			// because end-users do not have access to the seed
-			name := types.NamespacedName{Name: consoleOAuthClientObjectName}
-			if err := client.Get(context.Background(), name, oauthClientObject); err != nil {
-				if !kerrors.IsNotFound(err) {
-					return nil, fmt.Errorf("failed to get OAuthClient %q from usercluster: %v", consoleOAuthClientObjectName, err)
-				}
-				secret, err := generateNewSecret()
-				if err != nil {
-					return nil, fmt.Errorf("failed to generate OAuthClient secret: %v", err)
-				}
-				if oauthClientObject.Object == nil {
-					oauthClientObject.Object = map[string]interface{}{}
-				}
-				oauthClientObject.Object["secret"] = secret
-				oauthClientObject.Object["redirectURIs"] = []string{
-					fmt.Sprintf("https://%s/api/v1/projects/%s/dc/%s/clusters/%s/openshift/console/proxy/auth/callback",
-						data.ExternalURL(), data.Cluster().Labels[kubermaticv1.ProjectIDLabelKey], data.Seed().Name, data.Cluster().Name),
-				}
-				oauthClientObject.Object["grantMethod"] = "auto"
-				oauthClientObject.SetName(consoleOAuthClientObjectName)
-				if err := client.Create(context.Background(), oauthClientObject); err != nil {
-					return nil, fmt.Errorf("failed to create OAuthClient object in user cluster: %v", err)
-				}
-			}
-
-			stringVal, ok := oauthClientObject.Object["secret"].(string)
-			if !ok {
-				return nil, fmt.Errorf("`secret` field of OAuthClient object was not a string but a %T", oauthClientObject.Object["secret"])
-			}
-
-			if s.Data == nil {
-				s.Data = map[string][]byte{}
-			}
-			s.Data["clientSecret"] = []byte(stringVal)
-
-			return s, nil
-		}
-	}
-}
-
-func generateNewSecret() (string, error) {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return "", fmt.Errorf("failed to read from crypto/rand: %v", err)
-	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
 }

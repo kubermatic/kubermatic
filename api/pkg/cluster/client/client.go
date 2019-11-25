@@ -54,21 +54,18 @@ type Provider struct {
 // GetAdminKubeconfig returns the admin kubeconfig for the given cluster
 func (p *Provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
 	s := &corev1.Secret{}
-	var err error
-	if p.useExternalAddress {
-		// Load the admin kubeconfig secret, it uses the external apiserver address
-		err = p.seedClient.Get(context.Background(), types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.AdminKubeconfigSecretName}, s)
-	} else {
-		// Load the internal admin kubeconfig secret
-		err = p.seedClient.Get(context.Background(), types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.InternalUserClusterAdminKubeconfigSecretName}, s)
-	}
-	if err != nil {
+	if err := p.seedClient.Get(context.Background(), types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.InternalUserClusterAdminKubeconfigSecretName}, s); err != nil {
 		return nil, err
 	}
 	d := s.Data[resources.KubeconfigSecretKey]
 	if len(d) == 0 {
 		return nil, fmt.Errorf("no kubeconfig found")
 	}
+
+	if p.useExternalAddress {
+		return setExternalAddress(c, d)
+	}
+
 	return d, nil
 }
 
@@ -84,7 +81,28 @@ func (p *Provider) GetViewerKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) 
 	if len(d) == 0 {
 		return nil, fmt.Errorf("no kubeconfig found")
 	}
+
+	if p.useExternalAddress {
+		return setExternalAddress(c, d)
+	}
+
 	return d, nil
+}
+
+func setExternalAddress(c *kubermaticv1.Cluster, config []byte) ([]byte, error) {
+	cfg, err := clientcmd.Load(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load kubeconfig: %v", err)
+	}
+	for _, cluster := range cfg.Clusters {
+		cluster.Server = c.Address.URL
+	}
+	data, err := clientcmd.Write(*cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal kubeconfig: %v", err)
+	}
+
+	return data, nil
 }
 
 // RevokeViewerKubeconfig deletes viewer token to deploy new one and regenerate viewer-kubeconfig
@@ -142,6 +160,12 @@ func (p *Provider) GetClientConfig(c *kubermaticv1.Cluster, options ...ConfigOpt
 	cfg, err := clientcmd.Load(b)
 	if err != nil {
 		return nil, err
+	}
+
+	if p.useExternalAddress {
+		for _, cluster := range cfg.Clusters {
+			cluster.Server = c.Address.URL
+		}
 	}
 
 	iconfig := clientcmd.NewNonInteractiveClientConfig(

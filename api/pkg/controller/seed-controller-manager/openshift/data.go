@@ -306,10 +306,6 @@ func (od *openshiftData) GetOauthExternalNodePort() (int32, error) {
 	return svc.Spec.Ports[0].NodePort, nil
 }
 
-func (od *openshiftData) Client() (ctrlruntimeclient.Client, error) {
-	return od.userClusterClient()
-}
-
 func (od *openshiftData) ExternalURL() string {
 	return od.externalURL
 }

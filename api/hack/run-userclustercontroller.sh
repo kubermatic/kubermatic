@@ -38,6 +38,7 @@ kubectl config view  --flatten --minify -ojson \
 CLUSTER_VERSION="$(echo $CLUSTER_RAW|jq -r '.spec.version')"
 CLUSTER_URL="$(echo $CLUSTER_RAW | jq -r .address.url)"
 OPENVPN_SERVER_NODEPORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r .spec.ports[0].nodePort)"
+CONSOLE_CALLBACK_URI="$(echo $CLUSTER_RAW|jq '.address.openshiftConsoleCallback' -r)"
 
 ARGS=""
 if echo $CLUSTER_RAW |grep openshift -q; then
@@ -56,6 +57,7 @@ fi
     -openvpn-server-port=${OPENVPN_SERVER_NODEPORT} \
     -cluster-url=${CLUSTER_URL} \
     -version=${CLUSTER_VERSION} \
+    -openshift-console-callback-uri="${CONSOLE_CALLBACK_URI}" \
     -log-debug=true \
     -log-format=Console \
     -logtostderr \

@@ -10,7 +10,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Openshift data contains all data required for Openshift control plane components
@@ -35,7 +34,6 @@ type openshiftData interface {
 	KubermaticAPIImage() string
 	DNATControllerImage() string
 	GetOauthExternalNodePort() (int32, error)
-	Client() (ctrlruntimeclient.Client, error)
 	ExternalURL() string
 	Seed() *kubermaticv1.Seed
 }
