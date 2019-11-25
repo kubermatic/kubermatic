@@ -54,12 +54,16 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	logger := r.log.With("config", identifier)
 
-	defaulted, err := r.defaultConfiguration(config, logger)
+	defaulted, err := DefaultConfiguration(config, logger)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to apply defaults: %v", err)
 	}
 
 	if defaulted {
+		if err := r.Client.Update(r.ctx, config); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to patch the defaulted configuration: %v", err)
+		}
+
 		logger.Info("Applied default values to configuration")
 		return reconcile.Result{}, err
 	}
