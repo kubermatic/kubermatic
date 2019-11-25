@@ -14,7 +14,6 @@ import (
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift/resources"
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -417,14 +416,14 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 		if err != nil {
 			return fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
-		*healthMapping[name].healthStatus = helper.GetHealthStatus(status, cluster)
+		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster)
 	}
 
 	status, err := resources.HealthyStatefulSet(ctx, r.Client, nn(cluster.Status.NamespaceName, resources.EtcdStatefulSetName), 2)
 	if err != nil {
 		return fmt.Errorf("failed to get etcd health: %v", err)
 	}
-	currentHealth.Etcd = helper.GetHealthStatus(status, cluster)
+	currentHealth.Etcd = kubermaticv1helper.GetHealthStatus(status, cluster)
 
 	//TODO: Revisit this. This is a tiny bit ugly, but Openshift doesn't have a distinct scheduler
 	// and introducing a distinct health struct for Openshift means we have to change the API as well
@@ -436,9 +435,9 @@ func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error
 		})
 	}
 
-	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && helper.IsClusterInitialized(cluster) {
+	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && kubermaticv1helper.IsClusterInitialized(cluster) {
 		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			helper.SetClusterCondition(
+			kubermaticv1helper.SetClusterCondition(
 				c,
 				kubermaticv1.ClusterConditionClusterInitialized,
 				corev1.ConditionTrue,
