@@ -7,9 +7,11 @@ TAGS?=$(GITTAG)
 DOCKERTAGS=$(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
 KUBERMATICCOMMIT?=$(shell git log -1 --format=%H)
+UICOMMIT?=NA
 LDFLAGS += -extldflags '-static' \
   -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICCOMMIT=$(KUBERMATICCOMMIT) \
-  -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICGITTAG=$(GITTAG)
+  -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICGITTAG=$(GITTAG) \
+  -X github.com/kubermatic/kubermatic/api/pkg/controller/operator/common.UIVERSION=$(UICOMMIT)
 HAS_DEP:= $(shell command -v dep 2> /dev/null)
 HAS_GIT:= $(shell command -v git 2> /dev/null)
 BUILD_DEST?=_build
