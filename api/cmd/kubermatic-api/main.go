@@ -192,6 +192,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userMasterLister, kubernetesprovider.IsServiceAccount)
 	settingsProvider := kubernetesprovider.NewSettingsProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().KubermaticSettings().Lister())
+	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().AddonConfigs().Lister())
 	adminProvider := kubernetesprovider.NewAdminProvider(kubermaticMasterClient, userMasterLister)
 
 	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, kubeMasterInformerFactory.Core().V1().Secrets().Lister())
@@ -239,6 +240,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		clusterProviderGetter:                 clusterProviderGetter,
 		seedsGetter:                           seedsGetter,
 		addons:                                addonProviderGetter,
+		addonConfigProvider:                   addonConfigProvider,
 		userInfoGetter:                        userInfoGetter,
 		settingsProvider:                      settingsProvider,
 		adminProvider:                         adminProvider}, nil
@@ -309,6 +311,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.seedsGetter,
 		prov.clusterProviderGetter,
 		prov.addons,
+		prov.addonConfigProvider,
 		prov.sshKey,
 		prov.user,
 		prov.serviceAccountProvider,

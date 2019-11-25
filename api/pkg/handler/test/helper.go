@@ -125,6 +125,7 @@ type newRoutingFunc func(
 	seedsGetter provider.SeedsGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
+	addonConfigProviderGetter provider.AddonConfigProviderGetter,
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,

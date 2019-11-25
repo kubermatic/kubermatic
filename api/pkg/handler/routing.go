@@ -34,6 +34,7 @@ type Routing struct {
 	tokenExtractors             auth.TokenExtractor
 	clusterProviderGetter       provider.ClusterProviderGetter
 	addonProviderGetter         provider.AddonProviderGetter
+	addonConfigProvider         provider.AddonConfigProvider
 	updateManager               common.UpdateManager
 	prometheusClient            prometheusapi.Client
 	projectMemberProvider       provider.ProjectMemberProvider
@@ -55,6 +56,7 @@ func NewRouting(
 	seedsGetter provider.SeedsGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
+	addonConfigProvider provider.AddonConfigProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
@@ -83,6 +85,7 @@ func NewRouting(
 		seedsGetter:                 seedsGetter,
 		clusterProviderGetter:       clusterProviderGetter,
 		addonProviderGetter:         addonProviderGetter,
+		addonConfigProvider:         addonConfigProvider,
 		sshKeyProvider:              newSSHKeyProvider,
 		userProvider:                userProvider,
 		serviceAccountProvider:      serviceAccountProvider,
