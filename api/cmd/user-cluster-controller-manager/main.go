@@ -17,6 +17,7 @@ import (
 	"github.com/oklog/run"
 	"go.uber.org/zap"
 
+	clusterrolelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
 	containerlinux "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/container-linux"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/ipam"
 	nodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler"
@@ -277,6 +278,11 @@ func main() {
 		log.Fatalw("Failed to register nodelabel controller", zap.Error(err))
 	}
 	log.Info("Registered nodelabel controller")
+
+	if err := clusterrolelabeler.Add(ctx, log, mgr); err != nil {
+		log.Fatalw("Failed to register clusterrolelabeler controller", zap.Error(err))
+	}
+	log.Info("Registered clusterrolelabeler controller")
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
