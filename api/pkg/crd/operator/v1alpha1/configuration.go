@@ -48,7 +48,7 @@ type KubermaticConfigurationSpec struct {
 	// MasterController configures the master-controller-manager.
 	MasterController KubermaticMasterControllerConfiguration `json:"masterController,omitempty"`
 	// UserCluster configures various aspects of the user-created clusters.
-	UserCluster KubermaticUserClusterConfiguration `json:"userClusters,omitempty"`
+	UserCluster KubermaticUserClusterConfiguration `json:"userCluster,omitempty"`
 	// MasterFiles is a map of additional files to mount into each master component.
 	MasterFiles map[string]string `json:"masterFiles,omitempty"`
 	// ExposeStrategy is the strategy to expose the cluster with.
