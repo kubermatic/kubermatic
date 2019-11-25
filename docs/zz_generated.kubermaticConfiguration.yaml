@@ -1,0 +1,111 @@
+apiVersion: operator.kubermatic.io/v1alpha1
+kind: KubermaticConfiguration
+metadata:
+  name: <<mykubermatic>>
+  namespace: kubermatic
+spec:
+  # API configures the frontend REST API used by the dashboard.
+  api:
+    # Image is the Docker image containing the Kubermatic REST API.
+    image: 'quay.io/kubermatic/api:'
+  # Auth defines keys and URLs for Dex.
+  auth:
+    cABundle: ""
+    clientID: kubermatic
+    issuerClientID: kubermaticIssuer
+    issuerClientSecret: ""
+    issuerCookieKey: ""
+    issuerRedirectURL: https://example.com/api/v1/kubeconfig
+    serviceAccountKey: ""
+    skipTokenIssuerTLSVerify: false
+    tokenIssuer: https://example.com/dex
+  # CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)
+  # that will be used to acquire the certificate for the configured domain.
+  # To use a namespaced Issuer, set the Kind to "Issuer" and manually create the
+  # matching Issuer in Kubermatic's namespace.
+  certificateIssuer:
+    # APIGroup is the group for the resource being referenced.
+    # If APIGroup is not specified, the specified Kind must be in the core API group.
+    # For any other third-party types, APIGroup is required.
+    apiGroup: null
+    # Kind is the type of resource being referenced
+    kind: ""
+    # Name is the name of resource being referenced
+    name: ""
+  # Domain is the base domain where the dashboard shall be available.
+  domain: example.com
+  # ExposeStrategy is the strategy to expose the cluster with.
+  # Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
+  # if this is set to LoadBalancerStrategy.
+  exposeStrategy: NodePort
+  # FeatureGates are used to optionally enable certain features.
+  featureGates: null
+  # ImagePullSecret is used to authenticate against Docker registries.
+  imagePullSecret: ""
+  # MasterController configures the controller-manager.
+  masterController:
+    # Image is the Docker image containing the Kubermatic master controller-manager.
+    image: 'quay.io/kubermatic/api:'
+    # ProjectsMigrator configures the migrator for user projects.
+    projectsMigrator:
+      # DryRun makes the migrator only log the actions it would take.
+      dryRun: false
+  # MasterFiles is a map of additional files to mount into each master component.
+  masterFiles: null
+  # Namespace into which to install Kubermatic
+  namespace: ""
+  # SeedController configures the controller-manager.
+  seedController:
+    # Addons controls the optional additions installed into each user cluster.
+    addons:
+      # Kubernetes controls the addons for Kubernetes-based clusters.
+      kubernetes:
+        # Default is the list of addons to be installed by default into each cluster.
+        default: null
+        # Image is the Docker image containing the possible addon manifests.
+        image: 'quay.io/kubermatic/addons:'
+      # Openshift controls the addons for Openshift-based clusters.
+      openshift:
+        # Default is the list of addons to be installed by default into each cluster.
+        default: null
+        # Image is the Docker image containing the possible addon manifests.
+        image: quay.io/kubermatic/openshift-addons:v0.9
+    # BackupCleanupContainer is the container used for removing expired backups from the storage location.
+    backupCleanupContainer: ""
+    # BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
+    backupStoreContainer: ""
+    # Image is the Docker image containing the Kubermatic controller-manager.
+    image: 'quay.io/kubermatic/api:'
+    # KubermaticImage can be used to overwrite the Docker image that is deployed inside user clusters.
+    kubermaticImage: ""
+    # Monitoring can be used to fine-tune to in-cluster Prometheus.
+    monitoring:
+      # CustomRules can be used to inject custom recording and alerting rules. This field
+      # must be a YAML-formatted string with a `group` element at its root, as documented
+      # on https://prometheus.io/docs/prometheus/2.14/configuration/alerting_rules/.
+      customRules: ""
+      # CustomScrapingConfigs can be used to inject custom scraping rules. This must be a
+      # YAML-formatted string containing an array of scrape configurations as documented
+      # on https://prometheus.io/docs/prometheus/2.14/configuration/configuration/#scrape_config.
+      customScrapingConfigs: ""
+      # DisableDefaultRules disables the recording and alerting rules.
+      disableDefaultRules: false
+      # DisableDefaultScrapingConfigs disables the default scraping targets.
+      disableDefaultScrapingConfigs: false
+      # ScrapeAnnotationPrefix (if set) is used to make the in-cluster Prometheus scrape pods
+      # inside the user clusters.
+      scrapeAnnotationPrefix: ""
+    # NodePortRange is the port range for customer clusters - this must match the NodePort
+    # range of the seed cluster.
+    nodePortRange: ""
+    # OverwriteRegistry specifies a custom Docker registry which will be used for all images
+    # (user cluster control plane + addons)
+    overwriteRegistry: ""
+  # UI configures the dashboard.
+  ui:
+    # Config sets flags for various dashboard features.
+    config: ""
+    # Image is the Docker image containing the Kubermatic dashboard.
+    image: quay.io/kubermatic/ui-v2:v1.3.0
+    # Presets is a YAML string containing pre-defined credentials for cloud providers.
+    presets: ""
