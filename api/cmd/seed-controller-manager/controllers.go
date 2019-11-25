@@ -18,7 +18,6 @@ import (
 	openshiftcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/update"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/usersshkeys"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -41,7 +40,6 @@ var AllControllers = map[string]controllerCreator{
 	cloudcontroller.ControllerName:                createCloudController,
 	openshiftcontroller.ControllerName:            createOpenshiftController,
 	clustercomponentdefaulter.ControllerName:      createClusterComponentDefaulter,
-	usersshkeys.ControllerName:                    createUserSSHKeyController,
 	seedresourcesuptodatecondition.ControllerName: createSeedConditionUpToDateController,
 }
 
@@ -306,12 +304,4 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		kubernetesAddons,
 		openshiftAddons)
-}
-
-func createUserSSHKeyController(ctrlCtx *controllerContext) error {
-	return usersshkeys.Add(
-		ctrlCtx.mgr,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.runOptions.workerCount)
 }
