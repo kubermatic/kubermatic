@@ -62,11 +62,11 @@ func (r *Reconciler) defaultConfiguration(config *operatorv1alpha1.KubermaticCon
 		return false, err
 	}
 
-	if err := r.defaultDockerRepo(&config.Spec.UserCluster.Addons.Kubernetes.DockerRepository, resources.DefaultKubernetesAddonImage, "userCluster.addons.kubernetes.image", logger); err != nil {
+	if err := r.defaultDockerRepo(&config.Spec.UserCluster.Addons.Kubernetes.DockerRepository, resources.DefaultKubernetesAddonImage, "userCluster.addons.kubernetes.dockerRepository", logger); err != nil {
 		return false, err
 	}
 
-	if err := r.defaultDockerRepo(&config.Spec.UserCluster.Addons.Openshift.DockerRepository, resources.DefaultOpenshiftAddonImage, "userCluster.addons.openshift.image", logger); err != nil {
+	if err := r.defaultDockerRepo(&config.Spec.UserCluster.Addons.Openshift.DockerRepository, resources.DefaultOpenshiftAddonImage, "userCluster.addons.openshift.dockerRepository", logger); err != nil {
 		return false, err
 	}
 
