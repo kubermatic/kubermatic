@@ -98,10 +98,10 @@ func SetClusterCondition(
 
 func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster) (missingConditions []kubermaticv1.ClusterConditionType, success bool) {
 	conditionsToExclude := []kubermaticv1.ClusterConditionType{kubermaticv1.ClusterConditionSeedResourcesUpToDate}
-	if IsOpenshiftCluster(cluster) {
+	if cluster.IsOpenshift() {
 		conditionsToExclude = append(conditionsToExclude, kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess)
 	}
-	if IsKubernetesCluster(cluster) {
+	if cluster.IsKubernetes() {
 		conditionsToExclude = append(conditionsToExclude, kubermaticv1.ClusterConditionOpenshiftControllerReconcilingSuccess)
 	}
 
@@ -153,10 +153,23 @@ func clusterHasCurrentSuccessfullConditionType(
 	return false
 }
 
-func IsOpenshiftCluster(cluster *kubermaticv1.Cluster) bool {
-	return cluster.Annotations["kubermatic.io/openshift"] != ""
+func IsClusterInitialized(cluster *kubermaticv1.Cluster) bool {
+	isInitialized := cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue)
+	// If was set to true at least once just return true
+	if isInitialized {
+		return true
+	}
+
+	_, success := ClusterReconciliationSuccessful(cluster)
+	upToDate := cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionSeedResourcesUpToDate, corev1.ConditionTrue)
+	return success && upToDate && cluster.Status.ExtendedHealth.AllHealthy()
 }
 
-func IsKubernetesCluster(cluster *kubermaticv1.Cluster) bool {
-	return !IsOpenshiftCluster(cluster)
+// We assume that te cluster is still provisioning if it was not initialized fully at least once.
+func GetHealthStatus(status kubermaticv1.HealthStatus, cluster *kubermaticv1.Cluster) kubermaticv1.HealthStatus {
+	if status == kubermaticv1.HealthStatusDown && !IsClusterInitialized(cluster) {
+		return kubermaticv1.HealthStatusProvisioning
+	}
+
+	return status
 }

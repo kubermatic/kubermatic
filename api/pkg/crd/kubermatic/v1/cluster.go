@@ -107,7 +107,7 @@ type ClusterSpec struct {
 type ClusterConditionType string
 
 const (
-	// ClusterConditionSeedResourcesUpToDate indicates that alle controllers have finished setting up the
+	// ClusterConditionSeedResourcesUpToDate indicates that all controllers have finished setting up the
 	// resources for a user clusters that run inside the seed cluster, i.e. this ignores
 	// the status of cloud provider resources for a given cluster.
 	ClusterConditionSeedResourcesUpToDate ClusterConditionType = "SeedResourcesUpToDate"
@@ -121,9 +121,10 @@ const (
 	ClusterConditionUpdateControllerReconcilingSuccess         ClusterConditionType = "UpdateControllerReconciledSuccessfully"
 	ClusterConditionMonitoringControllerReconcilingSuccess     ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
 	ClusterConditionOpenshiftControllerReconcilingSuccess      ClusterConditionType = "OpenshiftControllerReconciledSuccessfully"
+	ClusterConditionClusterInitialized                         ClusterConditionType = "ClusterInitialized"
 
 	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
-	ReasonClusterUpadteInProgress = "ClusterUpdateInProgress"
+	ReasonClusterUpdateInProgress = "ClusterUpdateInProgress"
 )
 
 var AllClusterConditionTypes = []ClusterConditionType{
@@ -569,4 +570,12 @@ func (cluster *Cluster) GetSecretName() string {
 		return fmt.Sprintf("%s-vsphere-%s", CredentialPrefix, cluster.Name)
 	}
 	return ""
+}
+
+func (cluster *Cluster) IsOpenshift() bool {
+	return cluster.Annotations["kubermatic.io/openshift"] != ""
+}
+
+func (cluster *Cluster) IsKubernetes() bool {
+	return !cluster.IsOpenshift()
 }
