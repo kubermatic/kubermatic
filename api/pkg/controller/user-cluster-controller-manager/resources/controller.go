@@ -54,7 +54,6 @@ func Add(
 	registerReconciledCheck func(name string, check healthcheck.Check),
 	cloudCredentialSecretTemplate *corev1.Secret,
 	openshiftConsoleCallbackURI string,
-	cloudConfig []byte,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
 		openshift:                     openshift,
@@ -64,7 +63,6 @@ func Add(
 		clusterURL:                    clusterURL,
 		openvpnServerPort:             openvpnServerPort,
 		cloudCredentialSecretTemplate: cloudCredentialSecretTemplate,
-		cloudConfig:                   cloudConfig,
 		log:                           log,
 		platform:                      cloudProviderName,
 		openshiftConsoleCallbackURI:   openshiftConsoleCallbackURI,
@@ -167,6 +165,7 @@ func Add(
 
 	seedTypesToWatch := []runtime.Object{
 		&corev1.Secret{},
+		&corev1.ConfigMap{},
 	}
 	for _, t := range seedTypesToWatch {
 		seedWatch := &source.Kind{Type: t}
@@ -204,7 +203,6 @@ type reconciler struct {
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
 	openshiftConsoleCallbackURI   string
-	cloudConfig                   []byte
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
@@ -246,6 +244,19 @@ func (r *reconciler) userSSHKeys(ctx context.Context) (map[string][]byte, error)
 		return nil, err
 	}
 	return secret.Data, nil
+}
+
+func (r *reconciler) cloudConfig(ctx context.Context) ([]byte, error) {
+	configmap := &corev1.ConfigMap{}
+	name := types.NamespacedName{Namespace: r.namespace, Name: resources.CloudConfigConfigMapName}
+	if err := r.seedClient.Get(ctx, name, configmap); err != nil {
+		return nil, fmt.Errorf("failed to get cloud-config: %v", err)
+	}
+	value, exists := configmap.Data[resources.CloudConfigConfigMapKey]
+	if !exists {
+		return nil, fmt.Errorf("cloud-config configmap contains no data for key %s", resources.CloudConfigConfigMapKey)
+	}
+	return []byte(value), nil
 }
 
 func apiReadingClient(apiReader ctrlruntimeclient.Reader, writer ctrlruntimeclient.Client) ctrlruntimeclient.Client {
