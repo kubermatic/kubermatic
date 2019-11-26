@@ -22,7 +22,6 @@ spec:
       creationTimestamp: null
       labels:
         app: usercluster-controller
-        cloud-config-configmap-revision: "123456"
         cluster: de-test-01
         internal-admin-kubeconfig-secret-revision: "123456"
     spec:
@@ -38,7 +37,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/user-cluster-controller-manager","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-metrics-listen-address","0.0.0.0:8085","-health-listen-address","0.0.0.0:8086","-namespace","$(NAMESPACE)","-cluster-url","","-cloud-config","/etc/kubernetes/cloud/config","-openvpn-server-port","30003","-overwrite-registry","","-openshift=false","-version","1.13.0","-cloud-provider-name","vsphere","--ipam-controller-network","192.168.1.1/24,192.168.1.1,8.8.8.8","-node-labels","{\"my-label\":\"my-value\"}"]}'
+        - '{"command":"/usr/local/bin/user-cluster-controller-manager","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-metrics-listen-address","0.0.0.0:8085","-health-listen-address","0.0.0.0:8086","-namespace","$(NAMESPACE)","-cluster-url","","-openvpn-server-port","30003","-overwrite-registry","","-openshift=false","-version","1.13.0","-cloud-provider-name","vsphere","--ipam-controller-network","192.168.1.1/24,192.168.1.1,8.8.8.8","-node-labels","{\"my-label\":\"my-value\"}"]}'
         command:
         - /http-prober-bin/http-prober
         env:
@@ -69,9 +68,6 @@ spec:
         - mountPath: /etc/kubernetes/kubeconfig
           name: internal-admin-kubeconfig
           readOnly: true
-        - mountPath: /etc/kubernetes/cloud
-          name: cloud-config
-          readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
       imagePullSecrets:
@@ -92,9 +88,6 @@ spec:
       - name: internal-admin-kubeconfig
         secret:
           secretName: internal-admin-kubeconfig
-      - configMap:
-          name: cloud-config
-        name: cloud-config
       - emptyDir: {}
         name: http-prober-bin
 status: {}
