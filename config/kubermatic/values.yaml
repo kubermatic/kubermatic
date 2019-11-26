@@ -194,36 +194,12 @@ kubermatic:
       tag: "__DASHBOARD_TAG__"
       pullPolicy: "IfNotPresent"
     # Config options for the dashboard:
-    # default_node_count: Specify the default number of nodes.
     # share_kubeconfig: Specify if the button for "Share Kubeconfig" is visible.
-    # show_demo_info: Specify if the string "Demo System" should be displayed in footer.
-    # show_terms_of_service: Specify if the link to "Terms of Service" should be displayed in footer.
-    # show_api_docs: Specify if link to API Docs should be displayed in footer.
-    # cleanup_cluster: Specify if checkboxes for "Cleanup connected Load Balancers" &
-    #                  "Cleanup connected volumes (PVs and PVCs)" should be selected by default
-    #                  on cluster deletion. Users are able to deselect them via click.
-    # enforce_cleanup_cluster: Enforce "Cleanup connected Load Balancers" &
-    #                          "Cleanup connected volumes (PVs and PVCs)" on cluster deletion.
-    #                          Checkboxes will be selected and disabled. Users are not allowed to
-    #                          deselect.
-    # custom_links: Specify custom links, that should be added to the menu, by defining objects with
-    #               "label" and "url".
-    # hide_kubernetes: Specify if button for choosing "Kubernetes" as type should be visible in wizard.
-    # hide_openshift: Specify if button for choosing "OpenShift" as type should be visible in wizard.
     # oidc_provider_url: Change the base URL of the OIDC provider (BASE_URL).
     # oidc_provider_scope: Change the scope of the OIDC provider (SCOPE).
     config: |
       {
-        "default_node_count": 3,
-        "share_kubeconfig": false,
-        "show_demo_info": false,
-        "show_terms_of_service": false,
-        "show_api_docs": false,
-        "cleanup_cluster": false,
-        "enforce_cleanup_cluster": false,
-        "custom_links": [],
-        "hide_kubernetes": false,
-        "hide_openshift": false
+        "share_kubeconfig": false
       }
     resources:
       requests:
