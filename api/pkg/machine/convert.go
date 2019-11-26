@@ -86,6 +86,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			AMI:              config.AMI.Value,
 			AvailabilityZone: config.AvailabilityZone.Value,
 			SubnetID:         config.SubnetID.Value,
+			AssignPublicIP:   config.AssignPublicIP,
 		}
 	case providerconfig.CloudProviderAzure:
 		config := &azure.RawConfig{}
