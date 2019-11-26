@@ -71,6 +71,9 @@ type SecretKeySelectorValueFunc func(configVar *providerconfig.GlobalSecretKeySe
 
 func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimeclient.Client) SecretKeySelectorValueFunc {
 	return func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+		if configVar == nil {
+			return "", errors.New("configVar is nil")
+		}
 		if configVar.Name == "" {
 			return "", errors.New("configVar.Name is empty")
 		}
