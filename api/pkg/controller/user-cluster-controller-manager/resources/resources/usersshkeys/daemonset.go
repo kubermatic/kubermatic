@@ -18,7 +18,7 @@ const (
 
 var (
 	daemonSetMaxUnavailable = intstr.FromInt(1)
-	hostPathType            = corev1.HostPathUnset
+	hostPathType            = corev1.HostPathDirectoryOrCreate
 )
 
 func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
