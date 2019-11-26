@@ -138,7 +138,7 @@ func applyDistributionLabel(log *zap.SugaredLogger, node *corev1.Node) (changed 
 		}
 	}
 	if wantValue == "" {
-		return false, fmt.Errorf("Could not detect distribution from image name %s", osImage)
+		return false, fmt.Errorf("Could not detect distribution from image name %q", osImage)
 	}
 
 	if node.Labels[api.DistributionLabelKey] == wantValue {

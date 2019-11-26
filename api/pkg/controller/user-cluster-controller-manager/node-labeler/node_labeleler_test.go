@@ -102,6 +102,15 @@ func TestReconcile(t *testing.T) {
 			},
 			expectedLabels: map[string]string{"x-kubernetes.io/distribution": "container-linux"},
 		},
+		{
+			name: "unknown os, error",
+			node: &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: requestName,
+				},
+			},
+			expectedErr: `failed to apply distribution label: Could not detect distribution from image name ""`,
+		},
 	}
 
 	for idx := range testCases {
@@ -122,8 +131,13 @@ func TestReconcile(t *testing.T) {
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: requestName}}
-			if _, err := r.Reconcile(request); err != nil {
-				t.Fatalf("reconciling failed: %v", err)
+			_, err := r.Reconcile(request)
+			var actualErr string
+			if err != nil {
+				actualErr = err.Error()
+			}
+			if actualErr != tc.expectedErr {
+				t.Fatalf("Got err %q, expected err %q", actualErr, tc.expectedErr)
 			}
 
 			if tc.node == nil {
