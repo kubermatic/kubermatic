@@ -86,10 +86,7 @@ spec:
   ui:
     config: |
       {
-        "default_node_count": 1,
-        "share_kubeconfig": true,
-        "cleanup_cluster": true,
-        "custom_links": []
+        "share_kubeconfig": true
       }
 ```
 
