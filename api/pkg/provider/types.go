@@ -480,12 +480,11 @@ type AddonProvider interface {
 
 	// Delete deletes the given addon
 	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string) error
+}
 
-	// Get addon configuration
-	GetConfig(userInfo *UserInfo, addonName string) (*kubermaticv1.AddonConfig, error)
-
-	// List available addon configurations
-	ListConfigs(userInfo *UserInfo) (*kubermaticv1.AddonConfigList, error)
+type AddonConfigProvider interface {
+	Get(addonName string) (*kubermaticv1.AddonConfig, error)
+	List() (*kubermaticv1.AddonConfigList, error)
 }
 
 // SettingsProvider declares the set of methods for interacting global settings

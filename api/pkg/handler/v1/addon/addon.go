@@ -344,16 +344,9 @@ func DeleteAddonEndpoint(projectProvider provider.ProjectProvider, userInfoGette
 	}
 }
 
-func ListAddonConfigsEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListAddonConfigsEndpoint(addonConfigProvider provider.AddonConfigProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
-
-		userInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		list, err := addonProvider.ListConfigs(userInfo)
+		list, err := addonConfigProvider.List()
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -362,17 +355,11 @@ func ListAddonConfigsEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.E
 	}
 }
 
-func GetAddonConfigEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetAddonConfigEndpoint(addonConfigProvider provider.AddonConfigProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getConfigReq)
-		addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
 
-		userInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		addon, err := addonProvider.GetConfig(userInfo, req.AddonID)
+		addon, err := addonConfigProvider.Get(req.AddonID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

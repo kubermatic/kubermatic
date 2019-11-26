@@ -3516,7 +3516,7 @@ func (r Routing) getAddonConfig() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(addon.GetAddonConfigEndpoint(r.userInfoGetter)),
+		)(addon.GetAddonConfigEndpoint(r.addonConfigProvider)),
 		addon.DecodeGetConfig,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3539,7 +3539,7 @@ func (r Routing) listAddonConfigs() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(addon.ListAddonConfigsEndpoint(r.userInfoGetter)),
+		)(addon.ListAddonConfigsEndpoint(r.addonConfigProvider)),
 		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
