@@ -152,7 +152,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 			}
 			oldCluster := cluster.DeepCopy()
 			cluster.Labels = newClusterLabels
-			cluster.InheritedLabels = getInheritedLabels(project.Labels)
+			cluster.Status.InheritedLabels = getInheritedLabels(project.Labels)
 			log.Debug("Updating labels on cluster")
 			if err := seedClient.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 				errs = append(errs, fmt.Errorf("failed to update cluster %q", cluster.Name))
