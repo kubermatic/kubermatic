@@ -122,6 +122,7 @@ func Add(
 		&corev1.ServiceAccount{},
 		&corev1.Service{},
 		&corev1.ConfigMap{},
+		&corev1.Secret{},
 		&rbacv1.Role{},
 		&rbacv1.RoleBinding{},
 		&rbacv1.ClusterRole{},
