@@ -62,6 +62,14 @@ func (r *Reconciler) defaultConfiguration(config *operatorv1alpha1.KubermaticCon
 		return false, err
 	}
 
+	if err := r.defaultDockerRepo(&config.Spec.UserCluster.KubermaticDockerRepository, resources.DefaultKubermaticImage, "userCluster.addons.kubermaticDockerRepository", logger); err != nil {
+		return false, err
+	}
+
+	if err := r.defaultDockerRepo(&config.Spec.UserCluster.DNATControllerDockerRepository, resources.DefaultDNATControllerImage, "userCluster.addons.dnatControllerDockerRepository", logger); err != nil {
+		return false, err
+	}
+
 	if err := r.defaultDockerRepo(&config.Spec.UserCluster.Addons.Kubernetes.DockerRepository, resources.DefaultKubernetesAddonImage, "userCluster.addons.kubernetes.dockerRepository", logger); err != nil {
 		return false, err
 	}
