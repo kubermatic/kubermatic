@@ -2,6 +2,8 @@ package helper
 
 import (
 	"context"
+	"reflect"
+	"sort"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -43,7 +45,9 @@ func ClusterReconcileWrapper(
 	errs := []error{err}
 	oldCluster := cluster.DeepCopy()
 	SetClusterCondition(cluster, conditionType, reconcilingStatus, "", "")
-	errs = append(errs, ctrlruntimeclient.IgnoreNotFound(client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))))
+	if !reflect.DeepEqual(oldCluster, cluster) {
+		errs = append(errs, ctrlruntimeclient.IgnoreNotFound(client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))))
+	}
 	return result, utilerrors.NewAggregate(errs)
 }
 
@@ -94,6 +98,10 @@ func SetClusterCondition(
 	} else {
 		c.Status.Conditions = append(c.Status.Conditions, newCondition)
 	}
+	// Has to be sorted, otherwise we may end up creating patches that just re-arrange them.
+	sort.SliceStable(c.Status.Conditions, func(i, j int) bool {
+		return c.Status.Conditions[i].Type < c.Status.Conditions[j].Type
+	})
 }
 
 func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster) (missingConditions []kubermaticv1.ClusterConditionType, success bool) {

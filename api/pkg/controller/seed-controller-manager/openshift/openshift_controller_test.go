@@ -10,6 +10,7 @@ import (
 
 	"go.uber.org/zap"
 
+	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
@@ -144,10 +145,17 @@ func TestResources(t *testing.T) {
 			}
 			tc.reconciler.externalURL = "dev.kubermatic.io"
 			tc.reconciler.oidc.CAFile = certLocation
+			var err error
+			tc.reconciler.userClusterConnProvider, err = clusterclient.NewInternal(tc.reconciler.Client)
+			if err != nil {
+				t.Fatalf("error getting usercluster connection provider: %v", err)
+			}
 
 			if _, err := tc.reconciler.Reconcile(reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: "test-cluster"}}); err != nil {
-				t.Fatalf("failed to run reconcile: %v", err)
+				if !strings.HasPrefix(err.Error(), "failed to check if cluster is reachable: failed to create restMapper:") {
+					t.Fatalf("failed to run reconcile: %v", err)
+				}
 			}
 
 			object := tc.object.DeepCopyObject()

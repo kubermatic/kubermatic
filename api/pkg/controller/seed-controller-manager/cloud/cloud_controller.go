@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	"go.uber.org/zap"
@@ -226,6 +227,9 @@ func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluste
 	}
 	oldCluster := cluster.DeepCopy()
 	modify(cluster)
+	if reflect.DeepEqual(oldCluster, cluster) {
+		return cluster, nil
+	}
 	return cluster, r.Patch(context.Background(), cluster, client.MergeFrom(oldCluster))
 }
 
