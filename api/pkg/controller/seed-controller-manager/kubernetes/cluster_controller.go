@@ -47,6 +47,7 @@ type Features struct {
 	VPA                          bool
 	EtcdDataCorruptionChecks     bool
 	KubernetesOIDCAuthentication bool
+	RancherServerIntegration     bool
 }
 
 // Reconciler is a controller which is responsible for managing clusters

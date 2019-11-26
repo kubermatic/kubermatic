@@ -603,7 +603,7 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				serviceCreators := kubernetescontroller.GetServiceCreators(data)
+				serviceCreators := kubernetescontroller.GetServiceCreators(data, true)
 				for _, creatorGetter := range serviceCreators {
 					name, create := creatorGetter()
 					res, err := create(&corev1.Service{})
@@ -616,7 +616,7 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				var statefulSetCreators []reconciling.NamedStatefulSetCreatorGetter
-				statefulSetCreators = append(statefulSetCreators, kubernetescontroller.GetStatefulSetCreators(data, false)...)
+				statefulSetCreators = append(statefulSetCreators, kubernetescontroller.GetStatefulSetCreators(data, false, true)...)
 				statefulSetCreators = append(statefulSetCreators, monitoringcontroller.GetStatefulSetCreators(data)...)
 				for _, creatorGetter := range statefulSetCreators {
 					_, create := creatorGetter()

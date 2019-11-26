@@ -23,10 +23,19 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("2"),
 		},
 	}
+
+	rancherServerDiskRequirement = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceStorage: resource.MustParse("2Gi"),
+		},
+	}
 )
 
 // StatefulSetCreator returns the function to reconcile the etcd StatefulSet
-func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulSetCreatorGetter {
+func StatefulSetCreator(data *resources.TemplateData, enabled bool) reconciling.NamedStatefulSetCreatorGetter {
+	if !enabled {
+		return nil
+	}
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.RancherStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			set.Name = resources.RancherStatefulSetName
@@ -107,7 +116,6 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 				},
 			}
 
-			diskSize, _ := resource.ParseQuantity("2Gi")
 			if len(set.Spec.VolumeClaimTemplates) == 0 {
 				set.Spec.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
 					{
@@ -118,9 +126,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 						Spec: corev1.PersistentVolumeClaimSpec{
 							StorageClassName: resources.String("kubermatic-fast"),
 							AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-							Resources: corev1.ResourceRequirements{
-								Requests: corev1.ResourceList{corev1.ResourceStorage: diskSize},
-							},
+							Resources:        rancherServerDiskRequirement,
 						},
 					},
 				}

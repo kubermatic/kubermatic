@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rancherinit"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/rancher"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/addon"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/addoninstaller"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/backup"
@@ -43,7 +43,7 @@ var AllControllers = map[string]controllerCreator{
 	openshiftcontroller.ControllerName:            createOpenshiftController,
 	clustercomponentdefaulter.ControllerName:      createClusterComponentDefaulter,
 	seedresourcesuptodatecondition.ControllerName: createSeedConditionUpToDateController,
-	rancherinit.ControllerName:                    createRancherInitController,
+	rancher.ControllerName:                        createrancherController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -162,6 +162,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 			VPA:                          ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
 			EtcdDataCorruptionChecks:     ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),
 			KubernetesOIDCAuthentication: ctrlCtx.runOptions.featureGates.Enabled(features.OpenIDAuthPlugin),
+			RancherServerIntegration:     ctrlCtx.runOptions.featureGates.Enabled(features.RancherServerIntegration),
 		},
 	)
 }
@@ -309,16 +310,11 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 		openshiftAddons)
 }
 
-func createUserSSHKeyController(ctrlCtx *controllerContext) error {
-	return usersshkeys.Add(
-		ctrlCtx.mgr,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.runOptions.workerCount)
-}
-
-func createRancherInitController(ctrlCtx *controllerContext) error {
-	return rancherinit.Add(
+func createrancherController(ctrlCtx *controllerContext) error {
+	if !ctrlCtx.runOptions.featureGates.Enabled(features.RancherServerIntegration) {
+		return nil
+	}
+	return rancher.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.clientProvider)

@@ -20,7 +20,6 @@ spec:
     spec:
       containers:
       - args:
-        - --debug
         - --http-listen-port=80
         - --https-listen-port=443
         - --add-local=false
@@ -58,13 +57,15 @@ spec:
         resources:
           limits:
             cpu: "2"
-            memory: 2Gi
+            memory: 1Gi
           requests:
             cpu: 50m
             memory: 256Mi
         volumeMounts:
         - mountPath: /var/lib/rancher/
           name: rancher-data
+      imagePullSecrets:
+      - name: dockercfg
   updateStrategy: {}
   volumeClaimTemplates:
   - metadata:
