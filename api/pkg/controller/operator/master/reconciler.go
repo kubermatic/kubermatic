@@ -184,7 +184,7 @@ func (r *Reconciler) reconcileDeployments(config *operatorv1alpha1.KubermaticCon
 	logger.Debug("Reconciling Deployments")
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		kubermatic.APIDeploymentCreator(config),
+		kubermatic.APIDeploymentCreator(config, r.workerName),
 		kubermatic.UIDeploymentCreator(config),
 		kubermatic.MasterControllerManagerDeploymentCreator(config, r.workerName),
 	}

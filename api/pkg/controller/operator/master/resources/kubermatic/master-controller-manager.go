@@ -5,6 +5,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -34,7 +35,7 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 			d.Spec.Template.Annotations = map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   "8085",
-				"fluentbit.io/parser":  "glog",
+				"fluentbit.io/parser":  "json_iso",
 			}
 
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
@@ -44,11 +45,32 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 				},
 			}
 
+			d.Spec.Template.Spec.Volumes = []corev1.Volume{
+				{
+					Name: "seed-webhook-serving-cert",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: common.SeedWebhookServingCertSecretName,
+						},
+					},
+				},
+			}
+
 			args := []string{
-				"-v=4",
 				"-logtostderr",
 				"-internal-address=0.0.0.0:8085",
 				"-dynamic-datacenters=true",
+				"-worker-count=20",
+				fmt.Sprintf("-namespace=%s", cfg.Namespace),
+				fmt.Sprintf("-pprof-listen-address=%s", cfg.Spec.MasterController.PProfEndpoint),
+				fmt.Sprintf("-seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertSecretKey),
+				fmt.Sprintf("-seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertKeySecretKey),
+			}
+
+			if cfg.Spec.MasterController.DebugLog {
+				args = append(args, "-v4", "-log-debug=true")
+			} else {
+				args = append(args, "-v2")
 			}
 
 			if workerName != "" {
@@ -66,6 +88,13 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 							Name:          "metrics",
 							ContainerPort: 8085,
 							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "seed-webhook-serving-cert",
+							MountPath: "/opt/seed-webhook-serving-cert/",
+							ReadOnly:  true,
 						},
 					},
 					Resources: corev1.ResourceRequirements{
