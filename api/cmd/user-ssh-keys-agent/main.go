@@ -88,12 +88,12 @@ func availableUsersPaths() ([]string, error) {
 		gid := fileInfo.Sys().(*syscall.Stat_t).Gid
 
 		sshPath := fmt.Sprintf("%v/.ssh", path)
-		if err := createIfNotExist(sshPath, int(uid), int(gid)); err != nil {
+		if err := createDirIfNotExist(sshPath, int(uid), int(gid)); err != nil {
 			return nil, err
 		}
 
 		authorizedKeysPath := fmt.Sprintf("%v/authorized_keys", sshPath)
-		if err := createIfNotExist(authorizedKeysPath, int(uid), int(gid)); err != nil {
+		if err := createFileIfNotExist(authorizedKeysPath, int(uid), int(gid)); err != nil {
 			return nil, err
 		}
 
@@ -103,7 +103,7 @@ func availableUsersPaths() ([]string, error) {
 	return paths, nil
 }
 
-func createIfNotExist(path string, uid, gid int) error {
+func createDirIfNotExist(path string, uid, gid int) error {
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -111,7 +111,30 @@ func createIfNotExist(path string, uid, gid int) error {
 				return fmt.Errorf("failed creating .ssh dir in %s: %v", path, err)
 			}
 
-			if err := os.Chown(path, int(uid), int(gid)); err != nil {
+			if err := os.Chown(path, uid, gid); err != nil {
+				return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", path, err)
+			}
+		}
+
+		return fmt.Errorf("failed describing file info: %v", err)
+	}
+
+	return nil
+}
+
+func createFileIfNotExist(path string, uid, gid int) error {
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if _, err := os.Create(path); err != nil {
+				return fmt.Errorf("failed creating authorized_keys file in %s: %v", path, err)
+			}
+
+			if err := os.Chmod(path, os.FileMode(0600)); err != nil {
+				return fmt.Errorf("failed changing file mode for authorized_keys file in %s: %v", path, err)
+			}
+
+			if err := os.Chown(path, uid, gid); err != nil {
 				return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", path, err)
 			}
 		}
