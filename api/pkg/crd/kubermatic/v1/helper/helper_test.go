@@ -56,6 +56,27 @@ func TestGetClusterCondition(t *testing.T) {
 	}
 }
 
+func TestSetClusterCondition_sorts(t *testing.T) {
+	cluster := &kubermaticv1.Cluster{
+		Status: kubermaticv1.ClusterStatus{
+			Conditions: []kubermaticv1.ClusterCondition{
+				{Type: kubermaticv1.ClusterConditionCloudControllerReconcilingSuccess},
+				{Type: kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess},
+			},
+		},
+	}
+	SetClusterCondition(
+		cluster,
+		kubermaticv1.ClusterConditionUpdateControllerReconcilingSuccess,
+		corev1.ConditionTrue,
+		"",
+		"",
+	)
+	if cluster.Status.Conditions[0].Type != kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess {
+		t.Fatal("ClusterConditions are unsorted")
+	}
+}
+
 func TestSetClusterCondition(t *testing.T) {
 	conditionType := kubermaticv1.ClusterConditionSeedResourcesUpToDate
 	testCases := []struct {
