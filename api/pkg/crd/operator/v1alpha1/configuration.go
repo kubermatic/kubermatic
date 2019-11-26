@@ -105,6 +105,11 @@ type KubermaticSeedControllerConfiguration struct {
 	BackupStoreContainer string `json:"backupStoreContainer,omitempty"`
 	// BackupCleanupContainer is the container used for removing expired backups from the storage location.
 	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
+	// PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
+	// data. This port is never exposed from the container and only available via port-forwardings.
+	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
+	// DebugLog enables more verbose logging.
+	DebugLog bool `json:"debugLog,omitempty"`
 }
 
 // KubermaticUserClusterConfiguration controls various aspects of the user-created clusters.
@@ -129,9 +134,6 @@ type KubermaticUserClusterConfiguration struct {
 	DisableAPIServerEndpointReconciling bool `json:"disableApiserverEndpointReconciling,omitempty"`
 	// EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
 	EtcdVolumeSize string `json:"etcdVolumeSize,omitempty"`
-	// PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
-	// data. This port is never exposed from the container and only available via port-forwardings.
-	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
 }
 
 // KubermaticAddonsConfiguration controls the optional additions installed into each user cluster.

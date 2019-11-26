@@ -48,6 +48,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 			}
 
 			args := []string{
+				"-logtostderr",
 				"-dynamic-datacenters=true",
 				"-internal-address=0.0.0.0:8085",
 				"-kubernetes-addons-path=/opt/addons/kubernetes",
@@ -79,6 +80,12 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 				fmt.Sprintf("-in-cluster-prometheus-disable-default-rules=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultRules),
 				fmt.Sprintf("-in-cluster-prometheus-disable-default-scraping-configs=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultScrapingConfigs),
 				fmt.Sprintf("-monitoring-scrape-annotation-prefix=%s", cfg.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix),
+			}
+
+			if cfg.Spec.SeedController.DebugLog {
+				args = append(args, "-v4", "-log-debug=true")
+			} else {
+				args = append(args, "-v2")
 			}
 
 			sharedAddonVolume := "addons"
