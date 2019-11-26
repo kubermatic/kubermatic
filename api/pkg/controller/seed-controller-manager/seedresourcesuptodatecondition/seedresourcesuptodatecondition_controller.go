@@ -3,6 +3,7 @@ package seedresourcesuptodatecondition
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"go.uber.org/zap"
 
@@ -111,16 +112,19 @@ func (r *reconciler) reconcile(cluster *kubermaticv1.Cluster) error {
 			kubermaticv1.ReasonClusterUpdateSuccessful,
 			"Some control plane components did not finish updating",
 		)
-		return r.client.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	} else {
+		kubermaticv1helper.SetClusterCondition(
+			cluster,
+			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
+			corev1.ConditionTrue,
+			kubermaticv1.ReasonClusterUpdateSuccessful,
+			"All control plane components are up to date",
+		)
+	}
+	if reflect.DeepEqual(oldCluster, cluster) {
+		return nil
 	}
 
-	kubermaticv1helper.SetClusterCondition(
-		cluster,
-		kubermaticv1.ClusterConditionSeedResourcesUpToDate,
-		corev1.ConditionTrue,
-		kubermaticv1.ReasonClusterUpdateSuccessful,
-		"All control plane components are up to date",
-	)
 	return r.client.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
