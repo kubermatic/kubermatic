@@ -104,7 +104,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, node *corev1.Node) error 
 	}
 	for key, value := range r.labels {
 		if node.Labels[key] != value {
-			log.Debugf("Setting label %q from value %q to value %q", key, node.Labels[key], value)
+			log.Debugw("Setting label", "label-key", key, "old-label-value", node.Labels[key], "new-label-value", value)
 			labelsChanged = true
 			node.Labels[key] = value
 		}
@@ -146,6 +146,6 @@ func applyDistributionLabel(log *zap.SugaredLogger, node *corev1.Node) (changed 
 	}
 
 	node.Labels[api.DistributionLabelKey] = wantValue
-	log.Debugf("Setting label %q from value %q to value %q", api.DistributionLabelKey, node.Labels[api.DistributionLabelKey], wantValue)
+	log.Debugw("Setting label", "label-key", api.DistributionLabelKey, "old-label-value", node.Labels[api.DistributionLabelKey], "new-label-value", wantValue)
 	return true, nil
 }
