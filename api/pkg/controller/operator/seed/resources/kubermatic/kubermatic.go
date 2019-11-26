@@ -14,6 +14,8 @@ import (
 const (
 	serviceAccountName                  = "kubermatic-seed"
 	backupContainersConfigMapName       = "backup-containers"
+	storeContainerKey                   = "store-container.yaml"
+	cleanupContainerKey                 = "cleanup-container.yaml"
 	seedControllerManagerDeploymentName = "kubermatic-seed-controller-manager"
 	openIDAuthFeatureFlag               = "OpenIDAuthPlugin"
 	nameLabel                           = "app.kubernetes.io/name"
@@ -62,8 +64,8 @@ func BackupContainersConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfigurat
 				c.Data = make(map[string]string)
 			}
 
-			c.Data["store-container.yaml"] = cfg.Spec.SeedController.BackupStoreContainer
-			c.Data["cleanup-container.yaml"] = cfg.Spec.SeedController.BackupCleanupContainer
+			c.Data[storeContainerKey] = cfg.Spec.SeedController.BackupStoreContainer
+			c.Data[cleanupContainerKey] = cfg.Spec.SeedController.BackupCleanupContainer
 
 			return c, nil
 		}

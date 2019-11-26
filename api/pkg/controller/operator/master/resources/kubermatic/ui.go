@@ -35,6 +35,11 @@ func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcil
 				},
 			}
 
+			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				RunAsNonRoot: pointer.BoolPtr(true),
+				RunAsUser:    pointer.Int64Ptr(65534),
+			}
+
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  "webserver",
