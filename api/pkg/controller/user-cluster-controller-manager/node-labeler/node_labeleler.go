@@ -7,6 +7,8 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler/api"
+
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -126,33 +128,11 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, node *corev1.Node) error 
 	return nil
 }
 
-const (
-	// distributionLabelKey is the label that gets applied.
-	distributionLabelKey = "x-kubernetes.io/distribution"
-
-	// centOSLabelValue is the value of the label for CentOS
-	centOSLabelValue = "centos"
-
-	// ubuntuLabelValue is the value of the label for Ubuntu
-	ubuntuLabelValue = "ubuntu"
-
-	// containerLinuxLabelValue is the value of the label for Container Linux
-	containerLinuxLabelValue = "container-linux"
-)
-
-// osLabelMatchValues is a mapping between OS labels and the strings to match on in OSImage.
-// Note that these are all lower case.
-var osLabelMatchValues = map[string]string{
-	centOSLabelValue:         "centos",
-	ubuntuLabelValue:         "ubuntu",
-	containerLinuxLabelValue: "container linux",
-}
-
 func applyDistributionLabel(log *zap.SugaredLogger, node *corev1.Node) (changed bool, err error) {
 	osImage := strings.ToLower(node.Status.NodeInfo.OSImage)
 
 	var wantValue string
-	for k, v := range osLabelMatchValues {
+	for k, v := range api.OSLabelMatchValues {
 		if strings.Contains(osImage, v) {
 			wantValue = k
 		}
@@ -161,11 +141,11 @@ func applyDistributionLabel(log *zap.SugaredLogger, node *corev1.Node) (changed 
 		return false, fmt.Errorf("Could not detect distribution from image name %s", osImage)
 	}
 
-	if node.Labels[distributionLabelKey] == wantValue {
+	if node.Labels[api.DistributionLabelKey] == wantValue {
 		return false, nil
 	}
 
-	node.Labels[distributionLabelKey] = wantValue
-	log.Debugf("Setting label %q from value %q to value %q", distributionLabelKey, node.Labels[distributionLabelKey], wantValue)
+	node.Labels[api.DistributionLabelKey] = wantValue
+	log.Debugf("Setting label %q from value %q to value %q", api.DistributionLabelKey, node.Labels[api.DistributionLabelKey], wantValue)
 	return true, nil
 }
