@@ -3,19 +3,19 @@ package containerlinux
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/container-linux/resources"
+	nodelabelerapi "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler/api"
+	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -46,13 +46,9 @@ func Add(mgr manager.Manager, overwriteRegistry string) error {
 		return err
 	}
 
-	predicates := predicate.Funcs{
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			newNode := e.ObjectNew.(*corev1.Node)
-			// Only sync if the node uses ContainerLinux & is missing the label
-			return isContainerLinuxNode(newNode) && !hasContainerLinuxLabel(newNode)
-		},
-	}
+	predicates := predicateutil.Factory(func(m metav1.Object, _ runtime.Object) bool {
+		return m.GetLabels()[nodelabelerapi.DistributionLabelKey] == nodelabelerapi.ContainerLinuxLabelValue
+	})
 	return c.Watch(&source.Kind{Type: &corev1.Node{}}, &handler.EnqueueRequestForObject{}, predicates)
 }
 
@@ -60,53 +56,11 @@ func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	hasContainerLinuxNodes, err := r.labelAllContainerLinuxNodes(ctx)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to ensure that all ContainerLinux nodes have the %s label: %v", resources.NodeSelectorLabelKey, err)
-	}
-
-	// If we have no ContainerLinux node, we just skip the rest
-	if !hasContainerLinuxNodes {
-		return reconcile.Result{}, nil
-	}
-
 	if err := r.reconcileUpdateOperatorResources(ctx); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile the UpdateOperator resources: %v", err)
 	}
 
 	return reconcile.Result{}, nil
-}
-
-// labelAllContainerLinuxNodes labels all nodes which use ContainerLinux.
-// If at least one ContainerLinux node exists, true will be returned
-func (r *Reconciler) labelAllContainerLinuxNodes(ctx context.Context) (bool, error) {
-	var hasContainerLinuxNode bool
-	nodeList := &corev1.NodeList{}
-	if err := r.List(ctx, nodeList); err != nil {
-		return false, fmt.Errorf("failed to list nodes: %v", err)
-	}
-
-	for _, node := range nodeList.Items {
-		usesContainerLinux := isContainerLinuxNode(&node)
-		hasLabel := hasContainerLinuxLabel(&node)
-
-		if usesContainerLinux && !hasLabel {
-			oldNode := node.DeepCopy()
-			if node.Labels == nil {
-				node.Labels = map[string]string{}
-			}
-			node.Labels[resources.NodeSelectorLabelKey] = resources.NodeSelectorLabelValue
-			if err := r.Client.Patch(ctx, &node, ctrlruntimeclient.MergeFrom(oldNode)); err != nil {
-				return false, fmt.Errorf("failed to update node %q: %v", node.Name, err)
-			}
-		}
-
-		if usesContainerLinux {
-			hasContainerLinuxNode = true
-		}
-	}
-
-	return hasContainerLinuxNode, nil
 }
 
 // reconcileUpdateOperatorResources deploys the ContainerLinuxUpdateOperator
@@ -153,15 +107,6 @@ func getRegistryDefaultFunc(overwriteRegistry string) func(defaultRegistry strin
 		}
 		return defaultRegistry
 	}
-}
-
-func isContainerLinuxNode(node *corev1.Node) bool {
-	osImage := strings.ToLower(node.Status.NodeInfo.OSImage)
-	return strings.Contains(osImage, "container linux")
-}
-
-func hasContainerLinuxLabel(node *corev1.Node) bool {
-	return node.Labels[resources.NodeSelectorLabelKey] == resources.NodeSelectorLabelValue
 }
 
 func GetDeploymentCreators(overwriteRegistry string) []reconciling.NamedDeploymentCreatorGetter {

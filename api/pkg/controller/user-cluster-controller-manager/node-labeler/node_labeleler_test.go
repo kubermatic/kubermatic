@@ -24,26 +24,92 @@ func TestReconcile(t *testing.T) {
 		node             *corev1.Node
 		reconcilerLabels map[string]string
 		expectedLabels   map[string]string
+		expectedErr      string
 	}{
 		{
 			name: "node not found, no error",
 		},
 		{
 			name: "labels get added",
-			node: &corev1.Node{ObjectMeta: metav1.ObjectMeta{
-				Name: requestName,
-			}},
+			node: &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: requestName,
+				},
+				Status: corev1.NodeStatus{
+					NodeInfo: corev1.NodeSystemInfo{
+						OSImage: "ubuntu",
+					},
+				},
+			},
 			reconcilerLabels: map[string]string{"foo": "bar"},
-			expectedLabels:   map[string]string{"foo": "bar"},
+			expectedLabels:   map[string]string{"foo": "bar", "x-kubernetes.io/distribution": "ubuntu"},
 		},
 		{
 			name: "adding new labels keeps existing labels",
-			node: &corev1.Node{ObjectMeta: metav1.ObjectMeta{
-				Name:   requestName,
-				Labels: map[string]string{"baz": "boo"},
-			}},
+			node: &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   requestName,
+					Labels: map[string]string{"baz": "boo"},
+				},
+				Status: corev1.NodeStatus{
+					NodeInfo: corev1.NodeSystemInfo{
+						OSImage: "ubuntu",
+					},
+				},
+			},
 			reconcilerLabels: map[string]string{"foo": "bar"},
-			expectedLabels:   map[string]string{"foo": "bar", "baz": "boo"},
+			expectedLabels:   map[string]string{"foo": "bar", "baz": "boo", "x-kubernetes.io/distribution": "ubuntu"},
+		},
+		{
+			name: "ubuntu label gets added",
+			node: &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: requestName,
+				},
+				Status: corev1.NodeStatus{
+					NodeInfo: corev1.NodeSystemInfo{
+						OSImage: "ubuntu",
+					},
+				},
+			},
+			expectedLabels: map[string]string{"x-kubernetes.io/distribution": "ubuntu"},
+		},
+		{
+			name: "centos label gets added",
+			node: &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: requestName,
+				},
+				Status: corev1.NodeStatus{
+					NodeInfo: corev1.NodeSystemInfo{
+						OSImage: "centos",
+					},
+				},
+			},
+			expectedLabels: map[string]string{"x-kubernetes.io/distribution": "centos"},
+		},
+		{
+			name: "container linux label gets added",
+			node: &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: requestName,
+				},
+				Status: corev1.NodeStatus{
+					NodeInfo: corev1.NodeSystemInfo{
+						OSImage: "container linux",
+					},
+				},
+			},
+			expectedLabels: map[string]string{"x-kubernetes.io/distribution": "container-linux"},
+		},
+		{
+			name: "unknown os, error",
+			node: &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: requestName,
+				},
+			},
+			expectedErr: `failed to apply distribution label: Could not detect distribution from image name ""`,
 		},
 	}
 
@@ -65,8 +131,13 @@ func TestReconcile(t *testing.T) {
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: requestName}}
-			if _, err := r.Reconcile(request); err != nil {
-				t.Fatalf("reconciling failed: %v", err)
+			_, err := r.Reconcile(request)
+			var actualErr string
+			if err != nil {
+				actualErr = err.Error()
+			}
+			if actualErr != tc.expectedErr {
+				t.Fatalf("Got err %q, expected err %q", actualErr, tc.expectedErr)
 			}
 
 			if tc.node == nil {
