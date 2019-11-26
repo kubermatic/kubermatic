@@ -15,7 +15,7 @@ spec:
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/scrape_port: '8085'
-        fluentbit.io/parser: json
+        fluentbit.io/parser: json_iso
     spec:
       serviceAccountName: kubermatic-operator
       containers:
@@ -28,6 +28,7 @@ spec:
         - -internal-address=0.0.0.0:8085
         - -namespace=$(POD_NAMESPACE)
         - -log-format=json
+        - -worker-name=kubermatic-operator
         env:
         - name: POD_NAMESPACE
           valueFrom:
