@@ -3,6 +3,7 @@ package nodelabeler
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -107,6 +108,12 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, node *corev1.Node) error 
 		}
 	}
 
+	distributionLabelChanged, err := applyDistributionLabel(log, node)
+	if err != nil {
+		return fmt.Errorf("failed to apply distribution label: %v", err)
+	}
+
+	labelsChanged = labelsChanged || distributionLabelChanged
 	if !labelsChanged {
 		log.Debug("No label changes, not updating node")
 		return nil
@@ -117,4 +124,48 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, node *corev1.Node) error 
 	}
 
 	return nil
+}
+
+const (
+	// distributionLabelKey is the label that gets applied.
+	distributionLabelKey = "x-kubernetes.io/distribution"
+
+	// centOSLabelValue is the value of the label for CentOS
+	centOSLabelValue = "centos"
+
+	// ubuntuLabelValue is the value of the label for Ubuntu
+	ubuntuLabelValue = "ubuntu"
+
+	// containerLinuxLabelValue is the value of the label for Container Linux
+	containerLinuxLabelValue = "container-linux"
+)
+
+// osLabelMatchValues is a mapping between OS labels and the strings to match on in OSImage.
+// Note that these are all lower case.
+var osLabelMatchValues = map[string]string{
+	centOSLabelValue:         "centos",
+	ubuntuLabelValue:         "ubuntu",
+	containerLinuxLabelValue: "container linux",
+}
+
+func applyDistributionLabel(log *zap.SugaredLogger, node *corev1.Node) (changed bool, err error) {
+	osImage := strings.ToLower(node.Status.NodeInfo.OSImage)
+
+	var wantValue string
+	for k, v := range osLabelMatchValues {
+		if strings.Contains(osImage, v) {
+			wantValue = k
+		}
+	}
+	if wantValue == "" {
+		return false, fmt.Errorf("Could not detect distribution from image name %s", osImage)
+	}
+
+	if node.Labels[distributionLabelKey] == wantValue {
+		return false, nil
+	}
+
+	node.Labels[distributionLabelKey] = wantValue
+	log.Debugf("Setting label %q from value %q to value %q", distributionLabelKey, node.Labels[distributionLabelKey], wantValue)
+	return true, nil
 }
