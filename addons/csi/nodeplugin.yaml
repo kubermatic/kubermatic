@@ -24,7 +24,7 @@ spec:
       serviceAccount: csi-cinder-node-sa
       hostNetwork: true
       nodeSelector:
-        kubermatic.io/distribution: ubuntu
+        x-kubernetes.io/distribution: ubuntu
       containers:
         - name: node-driver-registrar
           image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
@@ -137,7 +137,7 @@ spec:
       serviceAccount: csi-cinder-node-sa
       hostNetwork: true
       nodeSelector:
-        kubermatic.io/distribution: centos
+        x-kubernetes.io/distribution: centos
       containers:
         - name: node-driver-registrar
           image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
@@ -250,7 +250,7 @@ spec:
       serviceAccount: csi-cinder-node-sa
       hostNetwork: true
       nodeSelector:
-        kubermatic.io/distribution: container-linux
+        x-kubernetes.io/distribution: container-linux
       containers:
         - name: node-driver-registrar
           image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
