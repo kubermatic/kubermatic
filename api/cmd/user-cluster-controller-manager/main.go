@@ -23,7 +23,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/ipam"
 	nodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/nodecsrapprover"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/nodelabel"
 	openshiftmasternodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-master-node-labeler"
 	openshiftseedsyncer "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-seed-syncer"
 	rbacusercluster "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/rbac"
@@ -272,10 +271,6 @@ func main() {
 		log.Fatalw("Failed to register clusterrolelabeler controller", zap.Error(err))
 	}
 	log.Info("Registered clusterrolelabeler controller")
-
-	if err := nodelabel.Add(log, mgr); err != nil {
-		log.Fatalf("Failed to register the node label controller: %v", err)
-	}
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{

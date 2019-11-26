@@ -1,8 +1,8 @@
-package resources
+package api
 
 const (
 	// DistributionLabelKey is the label that gets applied.
-	DistributionLabelKey = "kubermatic.io/distribution"
+	DistributionLabelKey = "x-kubernetes.io/distribution"
 
 	// CentOSLabelValue is the value of the label for CentOS
 	CentOSLabelValue = "centos"

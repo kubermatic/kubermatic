@@ -1,6 +1,7 @@
 package resources
 
 import (
+	nodelabelerapi "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -34,7 +35,7 @@ func DaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCr
 			ds.Spec.Template.ObjectMeta.Labels = labels
 
 			// The agent should only run on ContainerLinux nodes
-			ds.Spec.Template.Spec.NodeSelector = map[string]string{NodeSelectorLabelKey: NodeSelectorLabelValue}
+			ds.Spec.Template.Spec.NodeSelector = map[string]string{nodelabelerapi.DistributionLabelKey: nodelabelerapi.ContainerLinuxLabelValue}
 
 			ds.Spec.Template.Spec.ServiceAccountName = ServiceAccountName
 

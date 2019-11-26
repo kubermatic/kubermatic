@@ -3,8 +3,11 @@ package nodelabeler
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
+
+	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -101,12 +104,18 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, node *corev1.Node) error 
 	}
 	for key, value := range r.labels {
 		if node.Labels[key] != value {
-			log.Debugf("Setting label %q from value %q to value %q", key, node.Labels[key], value)
+			log.Debugw("Setting label", "label-key", key, "old-label-value", node.Labels[key], "new-label-value", value)
 			labelsChanged = true
 			node.Labels[key] = value
 		}
 	}
 
+	distributionLabelChanged, err := applyDistributionLabel(log, node)
+	if err != nil {
+		return fmt.Errorf("failed to apply distribution label: %v", err)
+	}
+
+	labelsChanged = labelsChanged || distributionLabelChanged
 	if !labelsChanged {
 		log.Debug("No label changes, not updating node")
 		return nil
@@ -117,4 +126,26 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, node *corev1.Node) error 
 	}
 
 	return nil
+}
+
+func applyDistributionLabel(log *zap.SugaredLogger, node *corev1.Node) (changed bool, err error) {
+	osImage := strings.ToLower(node.Status.NodeInfo.OSImage)
+
+	var wantValue string
+	for k, v := range api.OSLabelMatchValues {
+		if strings.Contains(osImage, v) {
+			wantValue = k
+		}
+	}
+	if wantValue == "" {
+		return false, fmt.Errorf("Could not detect distribution from image name %q", osImage)
+	}
+
+	if node.Labels[api.DistributionLabelKey] == wantValue {
+		return false, nil
+	}
+
+	node.Labels[api.DistributionLabelKey] = wantValue
+	log.Debugw("Setting label", "label-key", api.DistributionLabelKey, "old-label-value", node.Labels[api.DistributionLabelKey], "new-label-value", wantValue)
+	return true, nil
 }
