@@ -6917,6 +6917,11 @@
           "description": "Logo of the configured addon, encoded in base64",
           "type": "string",
           "x-go-name": "Logo"
+        },
+        "logoFormat": {
+          "description": "LogoFormat contains logo format of the configured addon, i.e. svg+xml.",
+          "type": "string",
+          "x-go-name": "LogoFormat"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
