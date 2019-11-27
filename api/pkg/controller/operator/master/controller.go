@@ -52,6 +52,7 @@ func Add(
 		log:        log.Named(ControllerName),
 		workerName: workerName,
 		ctx:        ctx,
+		versions:   common.NewDefaultVersions(),
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}

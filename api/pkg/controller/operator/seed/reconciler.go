@@ -38,6 +38,7 @@ type Reconciler struct {
 	seedRecorders  map[string]record.EventRecorder
 	seedsGetter    provider.SeedsGetter
 	workerName     string
+	versions       common.Versions
 }
 
 // Reconcile acts upon requests and will restore the state of resources
@@ -233,7 +234,7 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 	log.Debug("reconciling Deployments")
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		kubermatic.SeedControllerManagerDeploymentCreator(r.workerName, cfg, seed),
+		kubermatic.SeedControllerManagerDeploymentCreator(r.workerName, r.versions, cfg, seed),
 	}
 
 	modifiers := []reconciling.ObjectModifier{

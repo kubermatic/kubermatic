@@ -30,6 +30,7 @@ type Reconciler struct {
 	scheme     *runtime.Scheme
 	workerName string
 	ctx        context.Context
+	versions   common.Versions
 }
 
 // Reconcile acts upon requests and will restore the state of resources
@@ -184,9 +185,9 @@ func (r *Reconciler) reconcileDeployments(config *operatorv1alpha1.KubermaticCon
 	logger.Debug("Reconciling Deployments")
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		kubermatic.APIDeploymentCreator(config, r.workerName),
-		kubermatic.UIDeploymentCreator(config),
-		kubermatic.MasterControllerManagerDeploymentCreator(config, r.workerName),
+		kubermatic.APIDeploymentCreator(config, r.workerName, r.versions),
+		kubermatic.UIDeploymentCreator(config, r.versions),
+		kubermatic.MasterControllerManagerDeploymentCreator(config, r.workerName, r.versions),
 	}
 
 	modifiers := []reconciling.ObjectModifier{

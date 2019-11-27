@@ -63,6 +63,7 @@ func Add(
 		seedRecorders:  map[string]record.EventRecorder{},
 		seedsGetter:    seedsGetter,
 		workerName:     workerName,
+		versions:       common.NewDefaultVersions(),
 	}
 
 	ctrlOpts := controller.Options{
