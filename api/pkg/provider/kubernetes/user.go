@@ -14,11 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-const (
-	// UserLabelKey defines the label key for the user -> cluster relation
-	UserLabelKey = "user"
-)
-
 // NewUserProvider returns a user provider
 func NewUserProvider(client kubermaticclientset.Interface, userLister kubermaticv1lister.UserLister, isServiceAccountFunc func(email string) bool) *UserProvider {
 	return &UserProvider{
