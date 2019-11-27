@@ -130,7 +130,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		partialCluster.Name = rand.String(10)
 
 		if cloudcontroller.ExternalCloudControllerFeatureSupported(partialCluster) {
-			partialCluster.Spec.Features = map[kubermaticv1.ClusterFeature]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
+			partialCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
 		}
 
 		if err := kubernetesprovider.CreateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster, req.ProjectID); err != nil {

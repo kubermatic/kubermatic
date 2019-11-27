@@ -93,7 +93,9 @@ type ClusterSpec struct {
 	OIDC OIDCSettings `json:"oidc,omitempty"`
 
 	// Feature flags
-	Features map[ClusterFeature]bool `json:"features"`
+	// This unfortunately has to be a string map, because we use it in templating and that
+	// can not cope with string types
+	Features map[string]bool `json:"features"`
 
 	// Openshift holds all openshift-specific settings
 	Openshift *Openshift `json:"openshift,omitempty"`
@@ -103,13 +105,11 @@ type ClusterSpec struct {
 	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 }
 
-type ClusterFeature string
-
 const (
 	// ClusterFeatureExternalCloudProvider describes the external cloud provider feature. It is
 	// only supported on a limited set of providers for a specific set of Kube versions. It must
 	// not be set if its not supported.
-	ClusterFeatureExternalCloudProvider ClusterFeature = "externalCloudProvider"
+	ClusterFeatureExternalCloudProvider = "externalCloudProvider"
 )
 
 // ClusterConditionType is used to indicate the type of a cluster condition. For all condition

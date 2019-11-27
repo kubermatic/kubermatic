@@ -551,7 +551,7 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 	out.OIDC = in.OIDC
 	if in.Features != nil {
 		in, out := &in.Features, &out.Features
-		*out = make(map[ClusterFeature]bool, len(*in))
+		*out = make(map[string]bool, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
 		}
