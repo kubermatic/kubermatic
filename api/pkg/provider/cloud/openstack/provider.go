@@ -618,3 +618,17 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 		Domain:   domain,
 	}, nil
 }
+
+func ignoreRouterAlreadyHasPortInSubnetError(err error, subnetID string) error {
+	gopherCloud400Err, ok := err.(gophercloud.ErrDefault400)
+	if !ok {
+		return err
+	}
+
+	matchString := fmt.Sprintf("Router already has a port on subnet %s", subnetID)
+	if !strings.Contains(string(gopherCloud400Err.Body), matchString) {
+		return err
+	}
+
+	return nil
+}
