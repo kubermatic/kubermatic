@@ -22,6 +22,8 @@ type AddonConfigSpec struct {
 	Description string `json:"description,omitempty"`
 	// Logo of the configured addon, encoded in base64
 	Logo string `json:"logo,omitempty"`
+	// LogoFormat contains logo format of the configured addon, i.e. svg+xml.
+	LogoFormat string `json:"logoFormat,omitempty"`
 	// Controls that can be set for configured addon
 	Controls []AddonFormControl `json:"formSpec,omitempty"`
 }
