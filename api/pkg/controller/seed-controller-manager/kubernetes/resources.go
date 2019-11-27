@@ -228,7 +228,7 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		data.Cluster().Spec.Version.Minor() > 13 {
 		deployments = append(deployments, clusterautoscaler.DeploymentCreator(data))
 	}
-	if flag := data.Cluster().Spec.Features[resources.FeatureNameExternalCloudProvider]; flag {
+	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
 		deployments = append(deployments, cloudcontroller.DeploymentCreator(data))
 	}
 
@@ -277,7 +277,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		creators = append(creators, resources.GetInternalKubeconfigCreator(resources.ClusterAutoscalerKubeconfigSecretName, resources.ClusterAutoscalerCertUsername, nil, data))
 	}
 
-	if flag := data.Cluster().Spec.Features[resources.FeatureNameExternalCloudProvider]; flag {
+	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
 		creators = append(creators, resources.GetInternalKubeconfigCreator(
 			resources.CloudControllerManagerKubeconfigSecretName, resources.CloudControllerManagerCertUsername, nil, data,
 		))

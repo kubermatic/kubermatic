@@ -25,6 +25,7 @@ import (
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cluster"
 	machineresource "github.com/kubermatic/kubermatic/api/pkg/resources/machine"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -127,6 +128,10 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		}
 		// generate the name here so that it can be used in the secretName below
 		partialCluster.Name = rand.String(10)
+
+		if cloudcontroller.ExternalCloudControllerFeatureSupported(partialCluster) {
+			partialCluster.Spec.Features = map[kubermaticv1.ClusterFeature]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
+		}
 
 		if err := kubernetesprovider.CreateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster, req.ProjectID); err != nil {
 			return nil, err

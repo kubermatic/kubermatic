@@ -333,7 +333,7 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
 		return "aws"
 	}
 	if cluster.Spec.Cloud.Openstack != nil {
-		if flag := cluster.Spec.Features[FeatureNameExternalCloudProvider]; flag {
+		if flag := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
 			return "external"
 		}
 		return "openstack"
