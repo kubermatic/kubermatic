@@ -77,10 +77,6 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 			// We don't persist data, so there's no need for a graceful shutdown.
 			// The faster restart time is preferable
 			set.Spec.Template.Spec.TerminationGracePeriodSeconds = resources.Int64(0)
-			resourceRequirements := defaultResourceRequirements
-			if data.Cluster().Spec.ComponentsOverride.Prometheus.Resources != nil {
-				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Prometheus.Resources
-			}
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -103,7 +99,6 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					Resources: resourceRequirements,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      volumeConfigName,
@@ -155,7 +150,17 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 					},
 				},
 			}
-
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				name: defaultResourceRequirements.DeepCopy(),
+			}
+			overrides := map[string]*corev1.ResourceRequirements{}
+			if data.Cluster().Spec.ComponentsOverride.Prometheus.Resources != nil {
+				overrides[name] = data.Cluster().Spec.ComponentsOverride.Prometheus.Resources.DeepCopy()
+			}
+			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defResourceRequirements, overrides, set.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
 			set.Spec.Template.Spec.Volumes = volumes
 
 			return set, nil

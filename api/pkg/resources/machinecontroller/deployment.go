@@ -126,7 +126,6 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 						Name:  "KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
 					}),
-					Resources: controllerResourceRequirements,
 					LivenessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
@@ -149,6 +148,12 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 						},
 					},
 				},
+			}
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
+				Name: controllerResourceRequirements.DeepCopy(),
+			}, nil, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 
 			return dep, nil

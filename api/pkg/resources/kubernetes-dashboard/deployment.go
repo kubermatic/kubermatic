@@ -70,6 +70,12 @@ func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeployment
 
 			dep.Spec.Template.Spec.Volumes = volumes
 			dep.Spec.Template.Spec.Containers = getContainers(data, dep.Spec.Template.Spec.Containers)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
+				name: defaultResourceRequirements.DeepCopy(),
+			}, nil, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
@@ -105,7 +111,6 @@ func getContainers(data kubernetesDashboardData, existingContainers []corev1.Con
 			"--namespace", Namespace,
 			"--enable-insecure-login",
 		},
-		Resources: defaultResourceRequirements,
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				Name:      resources.KubernetesDashboardKubeconfigSecretName,

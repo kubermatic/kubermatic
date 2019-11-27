@@ -87,10 +87,6 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			if err != nil {
 				return nil, err
 			}
-			resourceRequirements := defaultResourceRequirements
-			if data.Cluster().Spec.ComponentsOverride.Etcd.Resources != nil {
-				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Etcd.Resources
-			}
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -133,7 +129,6 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 							Name:          "peer",
 						},
 					},
-					Resources: resourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						TimeoutSeconds:      10,
 						PeriodSeconds:       30,
@@ -173,6 +168,17 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 						},
 					},
 				},
+			}
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				name: defaultResourceRequirements.DeepCopy(),
+			}
+			overrides := map[string]*corev1.ResourceRequirements{}
+			if data.Cluster().Spec.ComponentsOverride.Etcd.Resources != nil {
+				overrides[name] = data.Cluster().Spec.ComponentsOverride.Etcd.Resources.DeepCopy()
+			}
+			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defResourceRequirements, overrides, set.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 
 			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.EtcdStatefulSetName, data.Cluster().Name)

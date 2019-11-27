@@ -92,7 +92,6 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					Resources: defaultResourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
@@ -107,6 +106,12 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 						TimeoutSeconds:   15,
 					},
 				},
+			}
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
+				name: defaultResourceRequirements.DeepCopy(),
+			}, nil, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))

@@ -145,7 +145,6 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 							},
 						},
 					},
-					Resources: defaultResourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
@@ -167,6 +166,12 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 						},
 					},
 				},
+			}
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
+				name: defaultResourceRequirements.DeepCopy(),
+			}, nil, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 

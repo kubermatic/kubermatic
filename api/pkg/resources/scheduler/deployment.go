@@ -83,10 +83,6 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			resourceRequirements := defaultResourceRequirements
-			if data.Cluster().Spec.ComponentsOverride.Scheduler.Resources != nil {
-				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Scheduler.Resources
-			}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
@@ -106,7 +102,6 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 							ReadOnly:  true,
 						},
 					},
-					Resources: resourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: getHealthGetAction(data),
@@ -127,6 +122,18 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 						TimeoutSeconds:      15,
 					},
 				},
+			}
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				name:                defaultResourceRequirements.DeepCopy(),
+				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
+			}
+			overrides := map[string]*corev1.ResourceRequirements{}
+			if data.Cluster().Spec.ComponentsOverride.Scheduler.Resources != nil {
+				overrides[name] = data.Cluster().Spec.ComponentsOverride.Scheduler.Resources.DeepCopy()
+			}
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)

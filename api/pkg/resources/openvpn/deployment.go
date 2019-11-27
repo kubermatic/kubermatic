@@ -188,7 +188,6 @@ iptables -A INPUT -i tun0 -j DROP
 						Privileged: resources.Bool(true),
 						ProcMount:  &procMountType,
 					},
-					Resources: defaultResourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							Exec: &corev1.ExecAction{
@@ -241,8 +240,15 @@ done`,
 						Privileged: resources.Bool(true),
 						ProcMount:  &procMountType,
 					},
-					Resources: ipForwardRequirements,
 				},
+			}
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				name:       defaultResourceRequirements.DeepCopy(),
+				"ip-fixup": ipForwardRequirements.DeepCopy(),
+			}
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 
 			return dep, nil
