@@ -44,6 +44,20 @@ const (
 	OpenIDAuthFeatureFlag = "OpenIDAuthPlugin"
 )
 
+func LabelledNamespaceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
+	return func() (string, reconciling.NamespaceCreator) {
+		return cfg.Namespace, func(n *corev1.Namespace) (*corev1.Namespace, error) {
+			if n.Labels == nil {
+				n.Labels = map[string]string{}
+			}
+
+			n.Labels[NameLabel] = cfg.Namespace
+
+			return n, nil
+		}
+	}
+}
+
 func DockercfgSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return DockercfgSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
@@ -117,45 +131,48 @@ func SeedWebhookServingCertSecretCreator(cfg *operatorv1alpha1.KubermaticConfigu
 	return servingcerthelper.ServingCertSecretCreator(caGetter, SeedWebhookServingCertSecretName, seedWebhookCommonName, altNames, nil)
 }
 
-func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerName string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func seedAdmissionWebhookName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
+	return fmt.Sprintf("kubermatic-seeds-%s", cfg.Namespace)
+}
+
+func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
-		return SeedAdmissionWebhookName, func(hook *admissionregistrationv1beta1.ValidatingWebhookConfiguration) (*admissionregistrationv1beta1.ValidatingWebhookConfiguration, error) {
+		return seedAdmissionWebhookName(cfg), func(hook *admissionregistrationv1beta1.ValidatingWebhookConfiguration) (*admissionregistrationv1beta1.ValidatingWebhookConfiguration, error) {
 			policy := admissionregistrationv1beta1.Fail
 			sideEffects := admissionregistrationv1beta1.SideEffectClassUnknown
-			objectSelector := &metav1.LabelSelector{}
+			scope := admissionregistrationv1beta1.AllScopes
 
-			if workerName == "" {
-				objectSelector.MatchExpressions = []metav1.LabelSelectorRequirement{{
-					Key:      kubermaticv1.WorkerNameLabelKey,
-					Operator: metav1.LabelSelectorOpDoesNotExist,
-				}}
-			} else {
-				objectSelector.MatchLabels = map[string]string{
-					kubermaticv1.WorkerNameLabelKey: workerName,
-				}
+			ca, err := seedWebhookCABundle(cfg, client)
+			if err != nil {
+				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %v", err)
 			}
 
 			hook.Webhooks = []admissionregistrationv1beta1.ValidatingWebhook{
 				{
-					Name:                    SeedAdmissionWebhookName,
+					Name:                    "seeds.kubermatic.io", // this should be a FQDN
 					AdmissionReviewVersions: []string{admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					FailurePolicy:           &policy,
 					SideEffects:             &sideEffects,
 					TimeoutSeconds:          pointer.Int32Ptr(30),
 					ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
-						CABundle: []byte("foo"),
+						CABundle: ca,
 						Service: &admissionregistrationv1beta1.ServiceReference{
 							Name:      seedWebhookServiceName,
 							Namespace: cfg.Namespace,
 						},
 					},
-					ObjectSelector: objectSelector,
+					NamespaceSelector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							NameLabel: cfg.Namespace,
+						},
+					},
 					Rules: []admissionregistrationv1beta1.RuleWithOperations{
 						{
 							Rule: admissionregistrationv1beta1.Rule{
 								APIGroups:   []string{kubermaticv1.GroupName},
 								APIVersions: []string{"*"},
 								Resources:   []string{"seeds"},
+								Scope:       &scope,
 							},
 							Operations: []admissionregistrationv1beta1.OperationType{
 								admissionregistrationv1beta1.OperationAll,
@@ -226,4 +243,24 @@ func determineWebhookServiceSelector(cfg *operatorv1alpha1.KubermaticConfigurati
 	}
 
 	return nil, fmt.Errorf("neither master- nor seed-controller-manager exist in namespace %s", cfg.Namespace)
+}
+
+func seedWebhookCABundle(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) ([]byte, error) {
+	secret := corev1.Secret{}
+	key := types.NamespacedName{
+		Name:      SeedWebhookServingCASecretName,
+		Namespace: cfg.Namespace,
+	}
+
+	err := client.Get(context.Background(), key, &secret)
+	if err != nil {
+		return nil, fmt.Errorf("cannot retrieve seed admission webhook CA Secret %s: %v", SeedWebhookServingCASecretName, err)
+	}
+
+	cert, ok := secret.Data[resources.CACertSecretKey]
+	if !ok {
+		return nil, fmt.Errorf("Secret %s does not contain CA certificate at key %s", SeedWebhookServingCASecretName, resources.CACertSecretKey)
+	}
+
+	return cert, nil
 }
