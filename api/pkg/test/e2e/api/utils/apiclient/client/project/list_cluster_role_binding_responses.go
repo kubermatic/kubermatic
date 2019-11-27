@@ -72,7 +72,7 @@ type ListClusterRoleBindingOK struct {
 }
 
 func (o *ListClusterRoleBindingOK) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] listClusterRoleBindingOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterbindings][%d] listClusterRoleBindingOK  %+v", 200, o.Payload)
 }
 
 func (o *ListClusterRoleBindingOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,7 +98,7 @@ type ListClusterRoleBindingUnauthorized struct {
 }
 
 func (o *ListClusterRoleBindingUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] listClusterRoleBindingUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterbindings][%d] listClusterRoleBindingUnauthorized ", 401)
 }
 
 func (o *ListClusterRoleBindingUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -119,7 +119,7 @@ type ListClusterRoleBindingForbidden struct {
 }
 
 func (o *ListClusterRoleBindingForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] listClusterRoleBindingForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterbindings][%d] listClusterRoleBindingForbidden ", 403)
 }
 
 func (o *ListClusterRoleBindingForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -150,7 +150,7 @@ func (o *ListClusterRoleBindingDefault) Code() int {
 }
 
 func (o *ListClusterRoleBindingDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] listClusterRoleBinding default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterbindings][%d] listClusterRoleBinding default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *ListClusterRoleBindingDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

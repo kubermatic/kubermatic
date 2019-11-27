@@ -328,6 +328,8 @@ func getSecurityGroupByID(client ec2iface.EC2API, vpc *ec2.Vpc, id string) (*ec2
 // in a sg must be unique within the vpc (no pre-existing sg with
 // that name is allowed).
 func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (string, error) {
+	var securityGroupID string
+
 	newSecurityGroupName := resourceNamePrefix + clusterName
 	csgOut, err := client.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
 		VpcId:       &vpcID,
@@ -335,35 +337,44 @@ func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (str
 		Description: aws.String(fmt.Sprintf("Security group for the Kubernetes cluster %s", clusterName)),
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to create security group %s: %v", newSecurityGroupName, err)
+		if awsErr, ok := err.(awserr.Error); !ok || awsErr.Code() != "InvalidGroup.Duplicate" {
+			return "", fmt.Errorf("failed to create security group %s: %v", newSecurityGroupName, err)
+		}
+		describeOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+			Filters: []*ec2.Filter{{
+				Name:   aws.String("group-name"),
+				Values: []*string{aws.String(newSecurityGroupName)}}},
+		})
+		if err != nil {
+			return "", fmt.Errorf("failed to get security group after creation failed because the group already existed: %v", err)
+		}
+		if n := len(describeOut.SecurityGroups); n != 1 {
+			return "", fmt.Errorf("expected to get exactly one security group after create failed because the group already existed, got %d", n)
+		}
+
+		securityGroupID = aws.StringValue(describeOut.SecurityGroups[0].GroupId)
 	}
-	sgid := aws.StringValue(csgOut.GroupId)
-	klog.V(2).Infof("Security group %s for cluster %s created with id %s.", newSecurityGroupName, clusterName, sgid)
+	if csgOut != nil && csgOut.GroupId != nil {
+		securityGroupID = *csgOut.GroupId
+	}
+	klog.V(2).Infof("Security group %s for cluster %s created with id %s.", newSecurityGroupName, clusterName, securityGroupID)
 
 	// Add permissions.
 	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		GroupId: aws.String(sgid),
+		GroupId: aws.String(securityGroupID),
 		IpPermissions: []*ec2.IpPermission{
 			(&ec2.IpPermission{}).
 				// all protocols from within the sg
 				SetIpProtocol("-1").
 				SetUserIdGroupPairs([]*ec2.UserIdGroupPair{
 					(&ec2.UserIdGroupPair{}).
-						SetGroupId(sgid),
+						SetGroupId(securityGroupID),
 				}),
 			(&ec2.IpPermission{}).
 				// tcp:22 from everywhere
 				SetIpProtocol("tcp").
 				SetFromPort(provider.DefaultSSHPort).
 				SetToPort(provider.DefaultSSHPort).
-				SetIpRanges([]*ec2.IpRange{
-					{CidrIp: aws.String("0.0.0.0/0")},
-				}),
-			(&ec2.IpPermission{}).
-				// tcp:10250 from everywhere
-				SetIpProtocol("tcp").
-				SetFromPort(provider.DefaultKubeletPort).
-				SetToPort(provider.DefaultKubeletPort).
 				SetIpRanges([]*ec2.IpRange{
 					{CidrIp: aws.String("0.0.0.0/0")},
 				}),
@@ -386,10 +397,12 @@ func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (str
 		},
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to authorize security group %s with id %s: %v", newSecurityGroupName, sgid, err)
+		if awsErr, ok := err.(awserr.Error); !ok || awsErr.Code() != "InvalidPermission.Duplicate" {
+			return "", fmt.Errorf("failed to authorize security group %s with id %s: %v", newSecurityGroupName, securityGroupID, err)
+		}
 	}
 
-	return sgid, nil
+	return securityGroupID, nil
 }
 
 func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {

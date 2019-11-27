@@ -62,30 +62,28 @@ write_junit() {
 EOF
 }
 
-get_latest_dashboard_tag() {
-  FOR_BRANCH="$1"
+ensure_github_host_pubkey() {
+  # check whether we already have a known_hosts entry for Github
+  if ssh-keygen -F github.com >/dev/null 2>&1; then
+    echo " [*] Github's SSH host key already present" >/dev/stderr
+  else
+    local github_rsa_key
+    # https://help.github.com/en/github/authenticating-to-github/githubs-ssh-key-fingerprints
+    github_rsa_key="github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
 
-  git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /ssh/id_rsa'
-  local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
-
-  MINOR_VERSION="${FOR_BRANCH##release/}"
-  # --sort=-version:refname will treat the tag names as semvers and sort by version number.
-  # -c versionsort.suffix=-alpha -c versionsort.suffix=-rc tell git that alphas and RCs come before versions wihtout any suffix.
-  FOUND_TAG="$(retry 5 git -c versionsort.suffix=-alpha -c versionsort.suffix=-rc ls-remote --sort=-version:refname "$DASHBOARD_URL" "refs/tags/$MINOR_VERSION*" | head -n1 | awk '{print $2}')"
-  if [ -z "$FOUND_TAG" ]; then
-    echo "Error, no Dashboard tags contain $MINOR_VERSION" >/dev/stderr
-    exit 1
+    echo " [*] Adding Github's SSH host key to known hosts" >/dev/stderr
+    mkdir -p "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+    echo "$github_rsa_key" >> "$HOME/.ssh/known_hosts"
+    chmod 600 "$HOME/.ssh/known_hosts"
   fi
-
-  local TAG="${FOUND_TAG##refs/tags/}"
-  echodate "The latest dashboard tag for $FOR_BRANCH is $TAG" >/dev/stderr
-  echo "$TAG"
 }
 
 get_latest_dashboard_hash() {
   FOR_BRANCH="$1"
 
-  git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i /ssh/id_rsa'
+  ensure_github_host_pubkey
+  git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
   local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
 
   # `local` always sets the rc to 0, so declare as local _before_ doing the substitution

@@ -58,19 +58,19 @@ func NewPatchCurrentUserSettingsOK() *PatchCurrentUserSettingsOK {
 
 /*PatchCurrentUserSettingsOK handles this case with default header values.
 
-User
+UserSettings
 */
 type PatchCurrentUserSettingsOK struct {
-	Payload *models.User
+	Payload *models.UserSettings
 }
 
 func (o *PatchCurrentUserSettingsOK) Error() string {
-	return fmt.Sprintf("[GET /api/v1/me][%d] patchCurrentUserSettingsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[PATCH /api/v1/me/settings][%d] patchCurrentUserSettingsOK  %+v", 200, o.Payload)
 }
 
 func (o *PatchCurrentUserSettingsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.User)
+	o.Payload = new(models.UserSettings)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -93,7 +93,7 @@ type PatchCurrentUserSettingsUnauthorized struct {
 }
 
 func (o *PatchCurrentUserSettingsUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v1/me][%d] patchCurrentUserSettingsUnauthorized ", 401)
+	return fmt.Sprintf("[PATCH /api/v1/me/settings][%d] patchCurrentUserSettingsUnauthorized ", 401)
 }
 
 func (o *PatchCurrentUserSettingsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -124,7 +124,7 @@ func (o *PatchCurrentUserSettingsDefault) Code() int {
 }
 
 func (o *PatchCurrentUserSettingsDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v1/me][%d] patchCurrentUserSettings default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[PATCH /api/v1/me/settings][%d] patchCurrentUserSettings default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *PatchCurrentUserSettingsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

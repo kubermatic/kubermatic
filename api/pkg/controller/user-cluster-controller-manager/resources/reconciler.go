@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
+	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
@@ -19,6 +19,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/cloudcontroller"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -29,8 +31,31 @@ import (
 
 // Reconcile creates, updates, or deletes Kubernetes resources to match the desired state.
 func (r *reconciler) reconcile(ctx context.Context) error {
+	caCert, err := r.caCert(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get caCert: %v", err)
+	}
+	openVPNCACert, err := r.openVPNCA(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get openVPN CA cert: %v", err)
+	}
+	userSSHKeys, err := r.userSSHKeys(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get userSSHKeys: %v", err)
+	}
+	cloudConfig, err := r.cloudConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get cloudConfig: %v", err)
+	}
+	data := reconcileData{
+		caCert:        caCert,
+		openVPNCACert: openVPNCACert,
+		userSSHKeys:   userSSHKeys,
+		cloudConfig:   cloudConfig,
+	}
+
 	// Must be first because of openshift
-	if err := r.ensureAPIServices(ctx); err != nil {
+	if err := r.ensureAPIServices(ctx, data); err != nil {
 		return err
 	}
 
@@ -56,14 +81,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileRoles(ctx); err != nil {
-		return err
-	}
-
-	if err := r.reconcileRoleBindings(ctx); err != nil {
-		return err
-	}
-
 	if err := r.reconcileClusterRoles(ctx); err != nil {
 		return err
 	}
@@ -72,28 +89,36 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
+	if err := r.reconcileRoles(ctx); err != nil {
+		return err
+	}
+
+	if err := r.reconcileRoleBindings(ctx); err != nil {
+		return err
+	}
+
 	if err := r.reconcileCRDs(ctx); err != nil {
 		return err
 	}
 
-	if err := r.reconcileMutatingWebhookConfigurations(ctx); err != nil {
+	if err := r.reconcileMutatingWebhookConfigurations(ctx, data); err != nil {
 		return err
 	}
 
-	if err := r.reconcileConfigMaps(ctx); err != nil {
+	if err := r.reconcileConfigMaps(ctx, data); err != nil {
 		return err
 	}
 
-	if err := r.reconcileSecrets(ctx); err != nil {
+	if err := r.reconcileSecrets(ctx, data); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *reconciler) ensureAPIServices(ctx context.Context) error {
+func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedAPIServiceCreatorGetter{}
-	caCert := triple.EncodeCertPEM(r.caCert.Cert)
+	caCert := triple.EncodeCertPEM(data.caCert.Cert)
 	if r.openshift {
 		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion(r.version, caCert)
 		if err != nil {
@@ -113,6 +138,10 @@ func (r *reconciler) ensureAPIServices(ctx context.Context) error {
 func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		userauth.ServiceAccountCreator(),
+	}
+
+	if r.openshift {
+		creators = append(creators, openshift.TokenOwnerServiceAccount)
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -289,6 +318,11 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 		controllermanager.ClusterRoleBindingAuthDelegator(),
 		clusterautoscaler.ClusterRoleBindingCreator(),
 		systembasicuser.ClusterRoleBinding,
+		cloudcontroller.ClusterRoleBindingCreator(),
+	}
+
+	if r.openshift {
+		creators = append(creators, openshift.TokenOwnerServiceAccountClusterRoleBinding)
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
@@ -311,9 +345,12 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context) error {
+func (r *reconciler) reconcileMutatingWebhookConfigurations(
+	ctx context.Context,
+	data reconcileData,
+) error {
 	creators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
-		machinecontroller.MutatingwebhookConfigurationCreator(r.caCert.Cert, r.namespace),
+		machinecontroller.MutatingwebhookConfigurationCreator(data.caCert.Cert, r.namespace),
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -350,9 +387,9 @@ func (r *reconciler) reconcileServices(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) reconcileConfigMaps(ctx context.Context) error {
+func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		machinecontroller.ClusterInfoConfigMapCreator(r.clusterURL.String(), r.caCert.Cert),
+		machinecontroller.ClusterInfoConfigMapCreator(r.clusterURL.String(), data.caCert.Cert),
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespacePublic, r.Client); err != nil {
@@ -372,12 +409,14 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) reconcileSecrets(ctx context.Context) error {
+func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedSecretCreatorGetter{
-		openvpn.ClientCertificate(r.openVPNCA),
-		usersshkeys.SecretCreator(r.userSSHKeys),
+		openvpn.ClientCertificate(data.openVPNCACert),
+		usersshkeys.SecretCreator(data.userSSHKeys),
+		cloudcontroller.CloudConfig(data.cloudConfig),
 	}
 	if r.openshift {
+		creators = append(creators, openshift.OAuthBootstrapPassword)
 		if r.cloudCredentialSecretTemplate != nil {
 			creators = append(creators, openshift.CloudCredentialSecretCreator(*r.cloudCredentialSecretTemplate))
 		}
@@ -400,7 +439,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context) error {
 	}
 
 	if r.openshift {
-		creators = []reconciling.NamedSecretCreatorGetter{openshift.RegistryServingCert(r.caCert)}
+		creators = []reconciling.NamedSecretCreatorGetter{openshift.RegistryServingCert(data.caCert)}
 		if err := reconciling.ReconcileSecrets(ctx, creators, openshiftresources.RegistryNamespaceName, r.Client); err != nil {
 			return fmt.Errorf("failed to create secrets in %q namespace: %v", openshiftresources.RegistryNamespaceName, err)
 		}
@@ -441,9 +480,15 @@ func (r *reconciler) reconcileUnstructured(ctx context.Context) error {
 		return nil
 	}
 
+	// On the very first reconciliation we don't have a cache yet
+	if r.cache == nil {
+		return nil
+	}
+
 	creators := []reconciling.NamedUnstructuredCreatorGetter{
 		openshift.InfrastructureCreatorGetter(r.platform),
 		openshift.ClusterVersionCreatorGetter(r.namespace),
+		openshift.ConsoleOAuthClientCreator(r.openshiftConsoleCallbackURI),
 	}
 	r.log.Debug("Reconciling unstructured")
 	// The delegatingReader from the `mgr` always redirects request for unstructured.Unstructured
@@ -483,4 +528,11 @@ func (r *reconciler) reconcileDeployments(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+type reconcileData struct {
+	caCert        *triple.KeyPair
+	openVPNCACert *resources.ECDSAKeyPair
+	userSSHKeys   map[string][]byte
+	cloudConfig   []byte
 }

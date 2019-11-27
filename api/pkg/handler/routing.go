@@ -34,6 +34,7 @@ type Routing struct {
 	tokenExtractors             auth.TokenExtractor
 	clusterProviderGetter       provider.ClusterProviderGetter
 	addonProviderGetter         provider.AddonProviderGetter
+	addonConfigProvider         provider.AddonConfigProvider
 	updateManager               common.UpdateManager
 	prometheusClient            prometheusapi.Client
 	projectMemberProvider       provider.ProjectMemberProvider
@@ -46,6 +47,7 @@ type Routing struct {
 	accessibleAddons            sets.String
 	userInfoGetter              provider.UserInfoGetter
 	settingsProvider            provider.SettingsProvider
+	adminProvider               provider.AdminProvider
 }
 
 // NewRouting creates a new Routing.
@@ -54,6 +56,7 @@ func NewRouting(
 	seedsGetter provider.SeedsGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
+	addonConfigProvider provider.AddonConfigProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
@@ -75,12 +78,14 @@ func NewRouting(
 	accessibleAddons sets.String,
 	userInfoGetter provider.UserInfoGetter,
 	settingsProvider provider.SettingsProvider,
+	adminProvider provider.AdminProvider,
 ) Routing {
 	return Routing{
 		log:                         logger,
 		seedsGetter:                 seedsGetter,
 		clusterProviderGetter:       clusterProviderGetter,
 		addonProviderGetter:         addonProviderGetter,
+		addonConfigProvider:         addonConfigProvider,
 		sshKeyProvider:              newSSHKeyProvider,
 		userProvider:                userProvider,
 		serviceAccountProvider:      serviceAccountProvider,
@@ -103,6 +108,7 @@ func NewRouting(
 		accessibleAddons:            accessibleAddons,
 		userInfoGetter:              userInfoGetter,
 		settingsProvider:            settingsProvider,
+		adminProvider:               adminProvider,
 	}
 }
 

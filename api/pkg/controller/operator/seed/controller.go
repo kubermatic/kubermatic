@@ -6,11 +6,12 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -36,19 +38,6 @@ const (
 
 	// VersionLabel is the label containing the application's version.
 	VersionLabel = "app.kubernetes.io/version"
-
-	// ManagedByLabel is the label used to identify the resources
-	// created by this controller.
-	ManagedByLabel = "app.kubernetes.io/managed-by"
-
-	// ConfigurationOwnerAnnotation is the annotation containing a resource's
-	// owning configuration name and namespace.
-	ConfigurationOwnerAnnotation = "operator.kubermatic.io/configuration"
-
-	// WorkerNameLabel is the label containing the worker-name,
-	// restricting the operator that is willing to work on a given
-	// resource.
-	WorkerNameLabel = "operator.kubermatic.io/worker"
 )
 
 func Add(
@@ -62,15 +51,17 @@ func Add(
 	workerName string,
 ) error {
 	namespacePredicate := predicateutil.ByNamespace(namespace)
-	workerNamePredicate := workerlabel.Predicates(workerName)
 
 	reconciler := &Reconciler{
 		ctx:            ctx,
 		log:            log.Named(ControllerName),
+		scheme:         masterManager.GetScheme(),
 		namespace:      namespace,
 		masterClient:   masterManager.GetClient(),
-		seedClients:    map[string]ctrlruntimeclient.Client{},
 		masterRecorder: masterManager.GetEventRecorderFor(ControllerName),
+		seedClients:    map[string]ctrlruntimeclient.Client{},
+		seedRecorders:  map[string]record.EventRecorder{},
+		seedsGetter:    seedsGetter,
 		workerName:     workerName,
 	}
 
@@ -105,13 +96,16 @@ func Add(
 		return requests
 	})
 
-	if err := c.Watch(&source.Kind{Type: obj}, configEventHandler, workerNamePredicate); err != nil {
+	if err := c.Watch(&source.Kind{Type: obj}, configEventHandler, namespacePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %v", obj, err)
 	}
 
 	// watch all resources we manage inside all configured seeds
 	for key, manager := range seedManagers {
-		if err := createSeedWatches(c, key, manager, namespacePredicate); err != nil {
+		reconciler.seedClients[key] = manager.GetClient()
+		reconciler.seedRecorders[key] = manager.GetEventRecorderFor(ControllerName)
+
+		if err := createSeedWatches(c, key, manager, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to setup watches for seed %s: %v", key, err)
 		}
 	}
@@ -131,6 +125,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 		&corev1.ServiceAccount{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&kubermaticv1.Seed{},
 	}
 
 	for _, t := range typesToWatch {

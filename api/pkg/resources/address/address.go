@@ -114,6 +114,16 @@ func SyncClusterAddress(ctx context.Context,
 		klog.V(2).Infof("Set URL for cluster %s to '%s'", cluster.Name, url)
 	}
 
+	if _, ok := cluster.Annotations["kubermatic.io/openshift"]; ok {
+		openshiftConsoleCallBackURL := fmt.Sprintf("https://%s/api/v1/projects/%s/dc/%s/clusters/%s/openshift/console/proxy/auth/callback",
+			externalURL, cluster.Labels[kubermaticv1.ProjectIDLabelKey], seed.Name, cluster.Name)
+		if cluster.Address.OpenshiftConsoleCallBack != openshiftConsoleCallBackURL {
+			modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
+				c.Address.OpenshiftConsoleCallBack = openshiftConsoleCallBackURL
+			})
+		}
+	}
+
 	return modifiers, nil
 }
 

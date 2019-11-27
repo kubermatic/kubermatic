@@ -6,17 +6,19 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
+	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/cache"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -33,19 +35,6 @@ const (
 
 	// VersionLabel is the label containing the application's version.
 	VersionLabel = "app.kubernetes.io/version"
-
-	// ManagedByLabel is the label used to identify the resources
-	// created by this controller.
-	ManagedByLabel = "app.kubernetes.io/managed-by"
-
-	// ConfigurationOwnerAnnotation is the annotation containing a resource's
-	// owning configuration name and namespace.
-	ConfigurationOwnerAnnotation = "operator.kubermatic.io/configuration"
-
-	// WorkerNameLabel is the label containing the worker-name,
-	// restricting the operator that is willing to work on a given
-	// resource.
-	WorkerNameLabel = "operator.kubermatic.io/worker"
 )
 
 func Add(
@@ -58,6 +47,7 @@ func Add(
 ) error {
 	reconciler := &Reconciler{
 		Client:     mgr.GetClient(),
+		scheme:     mgr.GetScheme(),
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		log:        log.Named(ControllerName),
 		workerName: workerName,
@@ -71,7 +61,6 @@ func Add(
 	}
 
 	namespacePredicate := predicateutil.ByNamespace(namespace)
-	workerNamePredicate := workerlabel.Predicates(workerName)
 
 	// put the config's identifier on the queue
 	kubermaticConfigHandler := newEventHandler(func(a handler.MapObject) []reconcile.Request {
@@ -85,35 +74,37 @@ func Add(
 		}
 	})
 
-	obj := &operatorv1alpha1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: obj}, kubermaticConfigHandler, namespacePredicate, workerNamePredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %v", obj, err)
+	cfg := &operatorv1alpha1.KubermaticConfiguration{}
+	if err := c.Watch(&source.Kind{Type: cfg}, kubermaticConfigHandler, namespacePredicate); err != nil {
+		return fmt.Errorf("failed to create watcher for %T: %v", cfg, err)
 	}
 
 	// for each child put the parent configuration onto the queue
 	childEventHandler := newEventHandler(func(a handler.MapObject) []reconcile.Request {
-		if a.Meta.GetLabels()[ManagedByLabel] != ControllerName {
+		configs := &operatorv1alpha1.KubermaticConfigurationList{}
+		options := &ctrlruntimeclient.ListOptions{Namespace: namespace}
+
+		if err := mgr.GetClient().List(ctx, configs, options); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list KubermaticConfigurations: %v", err))
 			return nil
 		}
 
-		owner := a.Meta.GetAnnotations()[ConfigurationOwnerAnnotation]
-		if owner == "" {
+		if len(configs.Items) == 0 {
+			log.Warnw("could not find KubermaticConfiguration this object belongs to", "object", a)
 			return nil
 		}
 
-		ns, n, err := cache.SplitMetaNamespaceKey(owner)
-		if err != nil {
+		if len(configs.Items) > 1 {
+			log.Warnw("found multiple KubermaticConfigurations in this namespace, refusing to guess the owner", "namespace", namespace)
 			return nil
 		}
 
-		return []reconcile.Request{
-			{
-				NamespacedName: types.NamespacedName{
-					Namespace: ns,
-					Name:      n,
-				},
+		return []reconcile.Request{{
+			NamespacedName: types.NamespacedName{
+				Namespace: configs.Items[0].Namespace,
+				Name:      configs.Items[0].Name,
 			},
-		}
+		}}
 	})
 
 	typesToWatch := []runtime.Object{
@@ -125,10 +116,11 @@ func Add(
 		&extensionsv1beta1.Ingress{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&certmanagerv1alpha2.Certificate{},
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, namespacePredicate); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}

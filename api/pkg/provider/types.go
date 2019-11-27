@@ -71,6 +71,9 @@ type SecretKeySelectorValueFunc func(configVar *providerconfig.GlobalSecretKeySe
 
 func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimeclient.Client) SecretKeySelectorValueFunc {
 	return func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+		if configVar == nil {
+			return "", errors.New("configVar is nil")
+		}
 		if configVar.Name == "" {
 			return "", errors.New("configVar.Name is empty")
 		}
@@ -142,6 +145,9 @@ type ClusterProvider interface {
 
 	// RevokeViewerKubeconfig revokes viewer token and kubeconfig
 	RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error
+
+	// RevokeAdminKubeconfig revokes the viewer token and kubeconfig
+	RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error
 
 	// GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
 	//
@@ -476,8 +482,19 @@ type AddonProvider interface {
 	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string) error
 }
 
+type AddonConfigProvider interface {
+	Get(addonName string) (*kubermaticv1.AddonConfig, error)
+	List() (*kubermaticv1.AddonConfigList, error)
+}
+
 // SettingsProvider declares the set of methods for interacting global settings
 type SettingsProvider interface {
-	GetGlobalSettings(userInfo *UserInfo) (*kubermaticv1.KubermaticSetting, error)
+	GetGlobalSettings() (*kubermaticv1.KubermaticSetting, error)
 	UpdateGlobalSettings(userInfo *UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error)
+}
+
+// AdminProvider declares the set of methods for interacting with admin
+type AdminProvider interface {
+	SetAdmin(userInfo *UserInfo, email string, isAdmin bool) (*kubermaticv1.User, error)
+	GetAdmins(userInfo *UserInfo) ([]kubermaticv1.User, error)
 }

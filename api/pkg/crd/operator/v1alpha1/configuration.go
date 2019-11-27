@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -42,15 +43,20 @@ type KubermaticConfigurationSpec struct {
 	UI KubermaticUIConfiguration `json:"ui,omitempty"`
 	// API configures the frontend REST API used by the dashboard.
 	API KubermaticAPIConfiguration `json:"api,omitempty"`
-	// SeedController configures the controller-manager.
+	// SeedController configures the seed-controller-manager.
 	SeedController KubermaticSeedControllerConfiguration `json:"seedController,omitempty"`
-	// MasterController configures the controller-manager.
+	// MasterController configures the master-controller-manager.
 	MasterController KubermaticMasterControllerConfiguration `json:"masterController,omitempty"`
 	// MasterFiles is a map of additional files to mount into each master component.
 	MasterFiles map[string]string `json:"masterFiles,omitempty"`
 	// ExposeStrategy is the strategy to expose the cluster with.
 	// Note: The `seed_dns_overwrite` setting of the `datacenters.yaml` doesn't have any effect if this is set to LoadBalancerStrategy.
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
+	// CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)
+	// that will be used to acquire the certificate for the configured domain.
+	// To use a namespaced Issuer, set the Kind to "Issuer" and manually create the
+	// match Issuer in Kubermatic's namespace.
+	CertificateIssuer corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
@@ -70,6 +76,13 @@ type KubermaticAuthConfiguration struct {
 type KubermaticAPIConfiguration struct {
 	// Image is the Docker image containing the Kubermatic REST API.
 	Image string `json:"image,omitempty"`
+	// AccessibleAddons is a list of addons that should be enabled in the API.
+	AccessibleAddons []string `json:"accessibleAddons,omitempty"`
+	// PProfEndpoint controls the port the API should listen on to provide pprof
+	// data. This port is never exposed from the container and only available via port-forwardings.
+	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
+	// DebugLog enables more verbose logging.
+	DebugLog bool `json:"debugLog,omitempty"`
 }
 
 // KubermaticUIConfiguration configures the dashboard.
@@ -100,8 +113,18 @@ type KubermaticSeedControllerConfiguration struct {
 	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
 	// KubermaticImage can be used to overwrite the Docker image that is deployed inside user clusters.
 	KubermaticImage string `json:"kubermaticImage,omitempty"`
+	// DNATControllerImage can be used to overwrite the Docker image that is deployed inside user clusters.
+	DNATControllerImage string `json:"dnatControllerImage,omitempty"`
 	// Monitoring can be used to fine-tune to in-cluster Prometheus.
-	Monitoring KubermaticSeedMonitoringConfiguration `json:"monitoring,omitempty"`
+	Monitoring KubermaticUserClusterMonitoringConfiguration `json:"monitoring,omitempty"`
+	// DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
+	// the Kubernetes API server.
+	DisableAPIServerEndpointReconciling bool `json:"disableApiserverEndpointReconciling,omitempty"`
+	// EtcdDiskSize configures the volume size to use for each etcd pod inside user clusters.
+	EtcdDiskSize string `json:"etcdDiskSize,omitempty"`
+	// PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
+	// data. This port is never exposed from the container and only available via port-forwardings.
+	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
 }
 
 // KubermaticAddonsConfiguration controls the optional additions installed into each user cluster.
@@ -112,15 +135,19 @@ type KubermaticAddonsConfiguration struct {
 	Openshift KubermaticAddonConfiguration `json:"openshift,omitempty"`
 }
 
-// KubermaticSeedMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
-type KubermaticSeedMonitoringConfiguration struct {
+// KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
+type KubermaticUserClusterMonitoringConfiguration struct {
 	// DisableDefaultRules disables the recording and alerting rules.
 	DisableDefaultRules bool `json:"disableDefaultRules,omitempty"`
 	// DisableDefaultScrapingConfigs disables the default scraping targets.
 	DisableDefaultScrapingConfigs bool `json:"disableDefaultScrapingConfigs,omitempty"`
-	// CustomRules can be used to inject custom recording and alerting rules.
+	// CustomRules can be used to inject custom recording and alerting rules. This field
+	// must be a YAML-formatted string with a `group` element at its root, as documented
+	// on https://prometheus.io/docs/prometheus/2.14/configuration/alerting_rules/.
 	CustomRules string `json:"customRules,omitempty"`
-	// CustomScrapingConfigs can be used to inject custom scraping rules.
+	// CustomScrapingConfigs can be used to inject custom scraping rules. This must be a
+	// YAML-formatted string containing an array of scrape configurations as documented
+	// on https://prometheus.io/docs/prometheus/2.14/configuration/configuration/#scrape_config.
 	CustomScrapingConfigs string `json:"customScrapingConfigs,omitempty"`
 	// ScrapeAnnotationPrefix (if set) is used to make the in-cluster Prometheus scrape pods
 	// inside the user clusters.
@@ -141,6 +168,11 @@ type KubermaticMasterControllerConfiguration struct {
 	Image string `json:"image,omitempty"`
 	// ProjectsMigrator configures the migrator for user projects.
 	ProjectsMigrator KubermaticProjectsMigratorConfiguration `json:"projectsMigrator,omitempty"`
+	// PProfEndpoint controls the port the master-controller-manager should listen on to provide pprof
+	// data. This port is never exposed from the container and only available via port-forwardings.
+	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
+	// DebugLog enables more verbose logging.
+	DebugLog bool `json:"debugLog,omitempty"`
 }
 
 // KubermaticProjectsMigratorConfiguration configures the Kubermatic master controller-manager.

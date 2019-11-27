@@ -13,9 +13,11 @@ import (
 	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-lifecycle"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/api/pkg/pprof"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 
+	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -35,6 +37,8 @@ type controllerRunOptions struct {
 
 func main() {
 	klog.InitFlags(nil)
+	pprofOpts := &pprof.Opts{}
+	pprofOpts.AddFlags(flag.CommandLine)
 	opt := &controllerRunOptions{}
 	flag.StringVar(&opt.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if outside of cluster.")
 	flag.StringVar(&opt.namespace, "namespace", "", "The namespace the operator runs in, uses to determine where to look for KubermaticConfigurations.")
@@ -73,8 +77,16 @@ func main() {
 		log.Fatalw("Failed to create Controller Manager instance: %v", err)
 	}
 
+	if err := mgr.Add(pprofOpts); err != nil {
+		log.Fatalw("Failed to add pprof endpoint", zap.Error(err))
+	}
+
 	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register types in Scheme", zap.Error(err))
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", operatorv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+
+	if err := certmanagerv1alpha2.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", certmanagerv1alpha2.SchemeGroupVersion), zap.Error(err))
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

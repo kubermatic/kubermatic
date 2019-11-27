@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
@@ -24,6 +25,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -117,11 +119,13 @@ func GetUser(email, id, name string) apiv1.User {
 // this function is temporal until all types end up in their own packages.
 // it is meant to be used by legacy handler.createTestEndpointAndGetClients function
 type newRoutingFunc func(
+	adminProvider provider.AdminProvider,
 	settingsProvider provider.SettingsProvider,
 	userInfoGetter provider.UserInfoGetter,
 	seedsGetter provider.SeedsGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
+	addonConfigProvider provider.AddonConfigProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
@@ -162,7 +166,9 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, userLister, kubernetes.IsServiceAccount)
+	adminProvider := kubernetes.NewAdminProvider(kubermaticClient, userLister)
 	settingsProvider := kubernetes.NewSettingsProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().KubermaticSettings().Lister())
+	addonConfigProvider := kubernetes.NewAddonConfigProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().AddonConfigs().Lister())
 	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(TestServiceAccountHashKey))
 	if err != nil {
 		return nil, nil, err
@@ -256,11 +262,13 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	var prometheusClient prometheusapi.Client
 
 	mainRouter := routingFunc(
+		adminProvider,
 		settingsProvider,
 		userInfoGetter,
 		seedsGetter,
 		clusterProviderGetter,
 		addonProviderGetter,
+		addonConfigProvider,
 		sshKeyProvider,
 		userProvider,
 		serviceAccountProvider,
@@ -394,6 +402,10 @@ func (f *fakeUserClusterConnection) GetViewerKubeconfig(c *kubermaticv1.Cluster)
 }
 func (f *fakeUserClusterConnection) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error {
 	return nil
+}
+func (f *fakeUserClusterConnection) RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error {
+	c.Address.AdminToken = kuberneteshelper.GenerateToken()
+	return f.fakeDynamicClient.Update(context.Background(), c)
 }
 
 // ClientsSets a simple wrapper that holds fake client sets

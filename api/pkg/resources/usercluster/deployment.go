@@ -31,11 +31,7 @@ var (
 	}
 )
 
-const (
-	name                = "usercluster-controller"
-	openvpnCAMountDir   = "/etc/kubernetes/pki/openvpn"
-	userSSHKeysMountDir = "/etc/kubernetes/usersshkeys"
-)
+const name = "usercluster-controller"
 
 // userclusterControllerData is the subet of the deploymentData interface
 // that is actually required by the usercluster deployment
@@ -104,18 +100,17 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				"-metrics-listen-address", "0.0.0.0:8085",
 				"-health-listen-address", "0.0.0.0:8086",
 				"-namespace", "$(NAMESPACE)",
-				"-ca-cert", "/etc/kubernetes/pki/ca/ca.crt",
-				"-ca-key", "/etc/kubernetes/pki/ca/ca.key",
 				"-cluster-url", data.Cluster().Address.URL,
 				"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
 				"-overwrite-registry", data.ImageRegistry(""),
 				fmt.Sprintf("-openshift=%t", openshift),
 				"-version", data.Cluster().Spec.Version.String(),
 				"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
-				fmt.Sprintf("-openvpn-ca-cert-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCACertKey),
-				fmt.Sprintf("-openvpn-ca-key-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCAKeyKey),
-				fmt.Sprintf("-user-ssh-keys-dir-path=%s", userSSHKeysMountDir),
 			}, getNetworkArgs(data)...)
+
+			if openshiftConsoleCallbackURI := data.Cluster().Address.OpenshiftConsoleCallBack; openshiftConsoleCallbackURI != "" {
+				args = append(args, "-openshift-console-callback-uri", openshiftConsoleCallbackURI)
+			}
 
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())
 			if err != nil {
@@ -170,24 +165,10 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 							MountPath: "/etc/kubernetes/kubeconfig",
 							ReadOnly:  true,
 						},
-						{
-							Name:      resources.CASecretName,
-							MountPath: "/etc/kubernetes/pki/ca",
-							ReadOnly:  true,
-						},
-						{
-							Name:      resources.OpenVPNCASecretName,
-							MountPath: openvpnCAMountDir,
-							ReadOnly:  true,
-						},
-						{
-							Name:      resources.UserSSHKeys,
-							MountPath: userSSHKeysMountDir,
-							ReadOnly:  true,
-						},
 					},
 				},
 			}
+			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {
@@ -207,30 +188,6 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
-				},
-			},
-		},
-		{
-			Name: resources.CASecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.CASecretName,
-				},
-			},
-		},
-		{
-			Name: resources.OpenVPNCASecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNCASecretName,
-				},
-			},
-		},
-		{
-			Name: resources.UserSSHKeys,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.UserSSHKeys,
 				},
 			},
 		},

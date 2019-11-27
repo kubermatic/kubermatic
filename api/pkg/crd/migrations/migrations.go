@@ -10,7 +10,9 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
@@ -97,6 +99,8 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	tasks := []ClusterTask{
 		setExposeStrategyIfEmpty,
 		setProxyModeIfEmpty,
+		cleanupDashboardAddon,
+		migrateClusterUserLabel,
 	}
 
 	w := sync.WaitGroup{}
@@ -154,5 +158,39 @@ func setProxyModeIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext) err
 		}
 		*cluster = *updatedCluster
 	}
+	return nil
+}
+
+func cleanupDashboardAddon(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	if err := ctx.kubermaticClient.KubermaticV1().Addons(cluster.Status.NamespaceName).Delete("dashboard", &metav1.DeleteOptions{}); err != nil {
+		if !kerrors.IsNotFound(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+func migrateClusterUserLabel(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	// If there is not label - nothing to migrate
+	if cluster.Labels == nil {
+		return nil
+	}
+	newLabels := map[string]string{}
+	userLabelSet := sets.NewString("user", "user_RAW")
+	for key, value := range cluster.Labels {
+		if userLabelSet.Has(key) {
+			continue
+		}
+		newLabels[key] = value
+	}
+	if len(newLabels) != len(cluster.Labels) {
+		cluster.Labels = newLabels
+		updatedCluster, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
+		if err != nil {
+			return err
+		}
+		*cluster = *updatedCluster
+	}
+
 	return nil
 }

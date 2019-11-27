@@ -16,7 +16,7 @@ import (
 	transporthttp "github.com/go-kit/kit/transport/http"
 	"go.uber.org/zap"
 
-	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/openshift/resources"
+	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"

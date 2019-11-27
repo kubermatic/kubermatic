@@ -151,6 +151,8 @@ type providers struct {
 	clusterProviderGetter                 provider.ClusterProviderGetter
 	seedsGetter                           provider.SeedsGetter
 	addons                                provider.AddonProviderGetter
+	addonConfigProvider                   provider.AddonConfigProvider
 	userInfoGetter                        provider.UserInfoGetter
 	settingsProvider                      provider.SettingsProvider
+	adminProvider                         provider.AdminProvider
 }

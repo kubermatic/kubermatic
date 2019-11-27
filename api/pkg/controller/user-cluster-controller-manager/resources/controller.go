@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/heptiolabs/healthcheck"
 	"go.uber.org/zap"
@@ -17,13 +18,16 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -40,35 +44,60 @@ const (
 // Add creates a new user cluster controller.
 func Add(
 	mgr manager.Manager,
+	seedMgr manager.Manager,
 	openshift bool,
 	version string,
 	namespace string,
 	cloudProviderName string,
-	caCert *triple.KeyPair,
 	clusterURL *url.URL,
 	openvpnServerPort int,
-	userSSHKeys map[string][]byte,
 	registerReconciledCheck func(name string, check healthcheck.Check),
-	openVPNCA *resources.ECDSAKeyPair,
 	cloudCredentialSecretTemplate *corev1.Secret,
+	openshiftConsoleCallbackURI string,
 	log *zap.SugaredLogger) error {
-	reconciler := &reconciler{
-		Client:                        mgr.GetClient(),
-		cache:                         mgr.GetCache(),
+	r := &reconciler{
 		openshift:                     openshift,
 		version:                       version,
 		rLock:                         &sync.Mutex{},
 		namespace:                     namespace,
-		caCert:                        caCert,
 		clusterURL:                    clusterURL,
 		openvpnServerPort:             openvpnServerPort,
-		openVPNCA:                     openVPNCA,
 		cloudCredentialSecretTemplate: cloudCredentialSecretTemplate,
 		log:                           log,
 		platform:                      cloudProviderName,
-		userSSHKeys:                   userSSHKeys,
+		openshiftConsoleCallbackURI:   openshiftConsoleCallbackURI,
 	}
-	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconciler})
+
+	if r.openshift {
+		// We have to run one initial reconciliation before we can create the watches, to make sure
+		// all apiGroups exist
+		apiReadingUserClusterClient := apiReadingClient(mgr.GetAPIReader(), mgr.GetClient())
+		apiReadingSeedClusterClient := apiReadingClient(seedMgr.GetAPIReader(), seedMgr.GetClient())
+		r.Client = apiReadingUserClusterClient
+		r.seedClient = apiReadingSeedClusterClient
+		if _, err := r.Reconcile(reconcile.Request{}); err != nil {
+			return fmt.Errorf("initial reconciliation failed: %v", err)
+		}
+		// We must wait for this, otherwise the controller crashes when trying to establish
+		// an informer
+		oauthClientList := &unstructured.UnstructuredList{}
+		oauthClientList.SetAPIVersion("oauth.openshift.io/v1")
+		oauthClientList.SetKind("OAuthClient")
+		if err := wait.PollImmediate(5*time.Second, time.Minute, func() (bool, error) {
+			if err := mgr.GetAPIReader().List(context.Background(), oauthClientList); err != nil {
+				return false, nil
+			}
+			return true, nil
+		}); err != nil {
+			return errors.New("timed out waiting for OAuthClient api to become ready")
+		}
+	}
+
+	r.Client = mgr.GetClient()
+	r.seedClient = seedMgr.GetClient()
+	r.cache = mgr.GetCache()
+
+	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
@@ -93,6 +122,7 @@ func Add(
 		&corev1.ServiceAccount{},
 		&corev1.Service{},
 		&corev1.ConfigMap{},
+		&corev1.Secret{},
 		&rbacv1.Role{},
 		&rbacv1.RoleBinding{},
 		&rbacv1.ClusterRole{},
@@ -108,7 +138,10 @@ func Add(
 		clusterVersionConfigKind := &unstructured.Unstructured{}
 		clusterVersionConfigKind.SetKind("ClusterVersion")
 		clusterVersionConfigKind.SetAPIVersion("config.openshift.io/v1")
-		typesToWatch = append(typesToWatch, infrastructureConfigKind, clusterVersionConfigKind)
+		oauthClientConfigKind := &unstructured.Unstructured{}
+		oauthClientConfigKind.SetAPIVersion("oauth.openshift.io/v1")
+		oauthClientConfigKind.SetKind("OAuthClient")
+		typesToWatch = append(typesToWatch, infrastructureConfigKind, clusterVersionConfigKind, oauthClientConfigKind)
 	}
 
 	// Avoid getting triggered by the leader lease AKA: If the annotation exists AND changed on
@@ -131,11 +164,25 @@ func Add(
 		}
 	}
 
+	seedTypesToWatch := []runtime.Object{
+		&corev1.Secret{},
+		&corev1.ConfigMap{},
+	}
+	for _, t := range seedTypesToWatch {
+		seedWatch := &source.Kind{Type: t}
+		if err := seedWatch.InjectCache(seedMgr.GetCache()); err != nil {
+			return fmt.Errorf("failed to inject cache in seed cluster watch for %T: %v", t, err)
+		}
+		if err := c.Watch(seedWatch, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
+			return fmt.Errorf("failed to watch %T in seed: %v", t, err)
+		}
+	}
+
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
 	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func() error {
-		reconciler.rLock.Lock()
-		defer reconciler.rLock.Unlock()
-		if !reconciler.reconciledSuccessfullyOnce {
+		r.rLock.Lock()
+		defer r.rLock.Unlock()
+		if !r.reconciledSuccessfullyOnce {
 			return errors.New("no successful reconciliation so far")
 		}
 		return nil
@@ -147,17 +194,16 @@ func Add(
 // reconcileUserCluster reconciles objects in the user cluster
 type reconciler struct {
 	client.Client
+	seedClient                    client.Client
 	openshift                     bool
 	version                       string
 	cache                         cache.Cache
 	namespace                     string
-	caCert                        *triple.KeyPair
 	clusterURL                    *url.URL
 	openvpnServerPort             int
-	openVPNCA                     *resources.ECDSAKeyPair
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
-	userSSHKeys                   map[string][]byte
+	openshiftConsoleCallbackURI   string
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
@@ -176,4 +222,52 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	defer r.rLock.Unlock()
 	r.reconciledSuccessfullyOnce = true
 	return reconcile.Result{}, nil
+}
+
+func (r *reconciler) caCert(ctx context.Context) (*triple.KeyPair, error) {
+	return resources.GetClusterRootCA(ctx, r.namespace, r.seedClient)
+}
+
+func (r *reconciler) openVPNCA(ctx context.Context) (*resources.ECDSAKeyPair, error) {
+	return resources.GetOpenVPNCA(ctx, r.namespace, r.seedClient)
+}
+
+func (r *reconciler) userSSHKeys(ctx context.Context) (map[string][]byte, error) {
+	secret := &corev1.Secret{}
+	if err := r.seedClient.Get(
+		ctx,
+		types.NamespacedName{Namespace: r.namespace, Name: resources.UserSSHKeys},
+		secret,
+	); err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return secret.Data, nil
+}
+
+func (r *reconciler) cloudConfig(ctx context.Context) ([]byte, error) {
+	configmap := &corev1.ConfigMap{}
+	name := types.NamespacedName{Namespace: r.namespace, Name: resources.CloudConfigConfigMapName}
+	if err := r.seedClient.Get(ctx, name, configmap); err != nil {
+		return nil, fmt.Errorf("failed to get cloud-config: %v", err)
+	}
+	value, exists := configmap.Data[resources.CloudConfigConfigMapKey]
+	if !exists {
+		return nil, fmt.Errorf("cloud-config configmap contains no data for key %s", resources.CloudConfigConfigMapKey)
+	}
+	return []byte(value), nil
+}
+
+func apiReadingClient(apiReader ctrlruntimeclient.Reader, writer ctrlruntimeclient.Client) ctrlruntimeclient.Client {
+	return struct {
+		ctrlruntimeclient.Reader
+		ctrlruntimeclient.Writer
+		ctrlruntimeclient.StatusClient
+	}{
+		Reader:       apiReader,
+		Writer:       writer,
+		StatusClient: writer,
+	}
 }

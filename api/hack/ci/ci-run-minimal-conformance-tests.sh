@@ -92,6 +92,10 @@ function cleanup {
   helm delete --purge kubermatic-$BUILD_ID  \
     --tiller-namespace=$NAMESPACE
 
+  # Delete our custom seed so that a stuck webhook will not cause the
+  # namespace to be stuck in Terminating state.
+  kubectl delete -n $NAMESPACE seeds $SEED_NAME
+
   # Delete the Helm installation
   kubectl delete clusterrolebinding -l prowjob=$BUILD_ID
   kubectl delete namespace $NAMESPACE --wait=false
@@ -475,7 +479,7 @@ git checkout ${GIT_HEAD_HASH}
 build_tag_if_not_exists
 
 echodate "Installing current version of Kubermatic"
-retry 3 helm upgrade --install --force --wait --timeout 300 \
+retry 3 helm upgrade --install --force --atomic --timeout 300 \
   --tiller-namespace=$NAMESPACE \
   --set=kubermatic.isMaster=true \
   --set-string=kubermatic.controller.addons.kubernetes.image.tag=${GIT_HEAD_HASH} \

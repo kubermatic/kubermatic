@@ -687,7 +687,8 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 				return nil
 			}(),
 		},
-		Labels: label.FilterLabels(label.ClusterResourceType, internalCluster.Labels),
+		Labels:          label.FilterLabels(label.ClusterResourceType, internalCluster.Labels),
+		InheritedLabels: internalCluster.Status.InheritedLabels,
 		Spec: apiv1.ClusterSpec{
 			Cloud:                               internalCluster.Spec.Cloud,
 			Version:                             internalCluster.Spec.Version,
@@ -1105,20 +1106,13 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider, userInfo
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
 		}
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
 
 		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster.Address.AdminToken = kuberneteshelper.GenerateToken()
-
-		_, err = clusterProvider.Update(project, userInfo, cluster)
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeAdminKubeconfig(cluster))
 	}
 }
 
@@ -1137,9 +1131,7 @@ func RevokeViewerTokenEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		err = clusterProvider.RevokeViewerKubeconfig(cluster)
-
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeViewerKubeconfig(cluster))
 	}
 }
 

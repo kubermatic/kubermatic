@@ -2,7 +2,9 @@ package kubermatic
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -21,7 +23,7 @@ func apiPodLabels() map[string]string {
 	}
 }
 
-func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
+func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerName string) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return apiDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			probe := corev1.Probe{
@@ -48,22 +50,23 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 			d.Spec.Template.Annotations = map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   "8085",
-				"fluentbit.io/parser":  "glog",
+				"fluentbit.io/parser":  "json_iso",
 			}
 
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{
-					Name: dockercfgSecretName,
+					Name: common.DockercfgSecretName,
 				},
 			}
 
 			args := []string{
-				"-v=2",
 				"-logtostderr",
 				"-address=0.0.0.0:8080",
 				"-internal-address=0.0.0.0:8085",
 				"-dynamic-datacenters=true",
+				"-swagger=/opt/swagger.json",
+				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-oidc-url=%s", cfg.Spec.Auth.TokenIssuer),
 				fmt.Sprintf("-oidc-authenticator-client-id=%s", cfg.Spec.Auth.ClientID),
 				fmt.Sprintf("-oidc-skip-tls-verify=%v", cfg.Spec.Auth.SkipTokenIssuerTLSVerify),
@@ -71,6 +74,14 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 				fmt.Sprintf("-service-account-signing-key=%s", cfg.Spec.Auth.ServiceAccountKey),
 				fmt.Sprintf("-expose-strategy=%s", cfg.Spec.ExposeStrategy),
 				fmt.Sprintf("-feature-gates=%s", featureGates(cfg)),
+				fmt.Sprintf("-pprof-listen-address=%s", cfg.Spec.API.PProfEndpoint),
+				fmt.Sprintf("-accessible-addons=%s", strings.Join(cfg.Spec.API.AccessibleAddons, ",")),
+			}
+
+			if cfg.Spec.API.DebugLog {
+				args = append(args, "-v4", "-log-debug=true")
+			} else {
+				args = append(args, "-v2")
 			}
 
 			if cfg.Spec.FeatureGates.Has("OIDCKubeCfgEndpoint") {
@@ -81,6 +92,10 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 					fmt.Sprintf("-oidc-issuer-client-secret=%s", cfg.Spec.Auth.IssuerClientSecret),
 					fmt.Sprintf("-oidc-issuer-cookie-hash-key=%s", cfg.Spec.Auth.IssuerCookieKey),
 				)
+			}
+
+			if workerName != "" {
+				args = append(args, fmt.Sprintf("-worker-name=%s", workerName))
 			}
 
 			volumes := []corev1.Volume{}
@@ -98,7 +113,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconci
 					Name: "master-files",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: masterFilesSecretName,
+							SecretName: common.MasterFilesSecretName,
 						},
 					},
 				})

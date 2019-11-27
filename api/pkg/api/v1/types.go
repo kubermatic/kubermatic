@@ -383,12 +383,25 @@ type User struct {
 
 	// Email an email address of the user
 	Email string `json:"email"`
+	// IsAdmin indicates admin role
+	IsAdmin bool `json:"isAdmin,omitempty"`
 
 	// Projects holds the list of project the user belongs to
 	// along with the group names
 	Projects []ProjectGroup `json:"projects,omitempty"`
 
 	Settings *kubermaticv1.UserSettings `json:"userSettings,omitempty"`
+}
+
+// Admin represents admin user
+// swagger:model Admin
+type Admin struct {
+	// Email address of the admin user
+	Email string `json:"email"`
+	// Name of the admin user
+	Name string `json:"name,omitempty"`
+	// IsAdmin indicates admin role
+	IsAdmin bool `json:"isAdmin"`
 }
 
 // ProjectGroup is a helper data structure that
@@ -563,12 +576,13 @@ const (
 //
 // swagger:model Cluster
 type Cluster struct {
-	ObjectMeta `json:",inline"`
-	Labels     map[string]string `json:"labels,omitempty"`
-	Type       string            `json:"type"`
-	Credential string            `json:"credential,omitempty"`
-	Spec       ClusterSpec       `json:"spec"`
-	Status     ClusterStatus     `json:"status"`
+	ObjectMeta      `json:",inline"`
+	Labels          map[string]string `json:"labels,omitempty"`
+	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
+	Type            string            `json:"type"`
+	Credential      string            `json:"credential,omitempty"`
+	Spec            ClusterSpec       `json:"spec"`
+	Status          ClusterStatus     `json:"status"`
 }
 
 // ClusterSpec defines the cluster specification
@@ -811,6 +825,14 @@ type AddonSpec struct {
 	Variables map[string]interface{} `json:"variables,omitempty"`
 	// IsDefault indicates whether the addon is default
 	IsDefault bool `json:"isDefault,omitempty"`
+}
+
+// AddonConfig represents a addon configuration
+// swagger:model AddonConfig
+type AddonConfig struct {
+	ObjectMeta `json:",inline"`
+
+	Spec kubermaticv1.AddonConfigSpec `json:"spec"`
 }
 
 // ClusterList represents a list of clusters
@@ -1205,6 +1227,34 @@ type ClusterRole struct {
 	Rules []rbacv1.PolicyRule `json:"rules"`
 }
 
+// RoleName defines RBAC role name object for the user cluster
+// swagger:model RoleName
+type RoleName struct {
+	// Name of the role.
+	Name string `json:"name"`
+	// Indicates the scopes of this role.
+	Namespace []string `json:"namespace"`
+}
+
+// ClusterRoleName defines RBAC cluster role name object for the user cluster
+// swagger:model ClusterRoleName
+type ClusterRoleName struct {
+	// Name of the cluster role.
+	Name string `json:"name"`
+}
+
+// RoleUser defines associated user with role
+// swagger:model RoleUser
+type RoleUser struct {
+	UserEmail string `json:"userEmail"`
+}
+
+// ClusterRoleUser defines associated user with cluster role
+// swagger:model ClusterRoleUser
+type ClusterRoleUser struct {
+	UserEmail string `json:"userEmail"`
+}
+
 // Role defines RBAC role for the user cluster
 // swagger:model Role
 type Role struct {
@@ -1217,7 +1267,6 @@ type Role struct {
 
 // RoleBinding references a role, but does not contain it.
 type RoleBinding struct {
-	ObjectMeta `json:",inline"`
 	// Indicates the scope of this binding.
 	Namespace string `json:"namespace,omitempty"`
 	// Subjects holds references to the objects the role applies to.
@@ -1228,7 +1277,6 @@ type RoleBinding struct {
 
 // ClusterRoleBinding references a cluster role, but does not contain it.
 type ClusterRoleBinding struct {
-	ObjectMeta `json:",inline"`
 	// Subjects holds references to the objects the role applies to.
 	Subjects []rbacv1.Subject `json:"subjects,omitempty"`
 
@@ -1267,11 +1315,7 @@ type ResourceLabelMap map[ResourceType]LabelKeyList
 
 // GlobalSettings defines global settings
 // swagger:model GlobalSettings
-type GlobalSettings struct {
-	ObjectMeta `json:",inline"`
-
-	Settings kubermaticv1.SettingSpec `json:"globalSettings"`
-}
+type GlobalSettings kubermaticv1.SettingSpec
 
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup

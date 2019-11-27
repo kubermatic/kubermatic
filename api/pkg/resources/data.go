@@ -224,17 +224,17 @@ func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
 
 // GetRootCA returns the root CA of the cluster
 func (d *TemplateData) GetRootCA() (*triple.KeyPair, error) {
-	return GetClusterRootCA(d.ctx, d.cluster, d.client)
+	return GetClusterRootCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
 
 // GetFrontProxyCA returns the root CA for the front proxy
 func (d *TemplateData) GetFrontProxyCA() (*triple.KeyPair, error) {
-	return GetClusterFrontProxyCA(d.ctx, d.cluster, d.client)
+	return GetClusterFrontProxyCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
 
 // GetOpenVPNCA returns the root ca for the OpenVPN
 func (d *TemplateData) GetOpenVPNCA() (*ECDSAKeyPair, error) {
-	return GetOpenVPNCA(d.ctx, d.cluster, d.client)
+	return GetOpenVPNCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
 
 // GetPodTemplateLabels returns a set of labels for a Pod including the revisions of depending secrets and configmaps.
@@ -333,6 +333,9 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
 		return "aws"
 	}
 	if cluster.Spec.Cloud.Openstack != nil {
+		if flag := cluster.Spec.Features[FeatureNameExternalCloudProvider]; flag {
+			return "external"
+		}
 		return "openstack"
 	}
 	if cluster.Spec.Cloud.VSphere != nil {

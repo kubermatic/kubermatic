@@ -12,9 +12,9 @@ import (
 
 	addonutil "github.com/kubermatic/kubermatic/api/pkg/addon"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
+	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/backup"
+	kubernetescontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/monitoring"
 	containerlinux "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/container-linux"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/docker"
@@ -163,14 +163,14 @@ func getImagesForVersion(log *zap.Logger, version *kubermaticversion.Version, ad
 }
 
 func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
-	statefulsetCreators := cluster.GetStatefulSetCreators(templateData, false)
+	statefulsetCreators := kubernetescontroller.GetStatefulSetCreators(templateData, false)
 	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators(templateData)...)
 
-	deploymentCreators := cluster.GetDeploymentCreators(templateData, false)
+	deploymentCreators := kubernetescontroller.GetDeploymentCreators(templateData, false)
 	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(templateData)...)
 	deploymentCreators = append(deploymentCreators, containerlinux.GetDeploymentCreators("")...)
 
-	cronjobCreators := cluster.GetCronJobCreators(templateData)
+	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
 
 	daemonSetCreators := containerlinux.GetDaemonSetCreators("")
 
@@ -424,9 +424,10 @@ func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kuberm
 
 func getImagesFromAddons(log *zap.Logger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
 	addonData := &addonutil.TemplateData{
-		Cluster:   cluster,
-		Addon:     &kubermaticv1.Addon{},
-		Variables: map[string]interface{}{},
+		Cluster:           cluster,
+		MajorMinorVersion: cluster.Spec.Version.MajorMinor(),
+		Addon:             &kubermaticv1.Addon{},
+		Variables:         map[string]interface{}{},
 	}
 	infos, err := ioutil.ReadDir(addonsPath)
 	if err != nil {

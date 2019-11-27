@@ -1,6 +1,7 @@
 package resources
 
 import (
+	nodelabelerapi "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -12,10 +13,6 @@ import (
 
 const (
 	DeploymentName = "container-linux-update-operator"
-
-	// Used as NodeSelector on the Agent & Operator. Ensures that we only run those components on ContainerLinux nodes
-	NodeSelectorLabelKey   = "kubernetes.io/uses-container-linux"
-	NodeSelectorLabelValue = "true"
 )
 
 var (
@@ -45,7 +42,7 @@ func DeploymentCreator(getRegistry GetImageRegistry) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.ServiceAccountName = ServiceAccountName
 
 			// The operator should only run on ContainerLinux nodes
-			dep.Spec.Template.Spec.NodeSelector = map[string]string{NodeSelectorLabelKey: NodeSelectorLabelValue}
+			dep.Spec.Template.Spec.NodeSelector = map[string]string{nodelabelerapi.DistributionLabelKey: nodelabelerapi.ContainerLinuxLabelValue}
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{

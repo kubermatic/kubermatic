@@ -54,35 +54,6 @@ func (a *Client) Addon(params *AddonParams, authInfo runtime.ClientAuthInfoWrite
 }
 
 /*
-Admin gets a kubermatic settings
-*/
-func (a *Client) Admin(params *AdminParams, authInfo runtime.ClientAuthInfoWriter) (*AdminOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewAdminParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "admin",
-		Method:             "GET",
-		PathPattern:        "/api/v1/admin/settings",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &AdminReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*AdminOK), nil
-
-}
-
-/*
 CreateOIDCKubeconfig Starts OIDC flow and generates kubeconfig, the generated config
 contains OIDC provider authentication info
 */
@@ -109,6 +80,64 @@ func (a *Client) CreateOIDCKubeconfig(params *CreateOIDCKubeconfigParams, authIn
 		return nil, err
 	}
 	return result.(*CreateOIDCKubeconfigOK), nil
+
+}
+
+/*
+GetAddonConfig returns specified addon config
+*/
+func (a *Client) GetAddonConfig(params *GetAddonConfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetAddonConfigOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetAddonConfigParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getAddonConfig",
+		Method:             "GET",
+		PathPattern:        "/api/v1/addonconfigs/{addon_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAddonConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetAddonConfigOK), nil
+
+}
+
+/*
+ListAddonConfigs returns all available addon configs
+*/
+func (a *Client) ListAddonConfigs(params *ListAddonConfigsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAddonConfigsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAddonConfigsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAddonConfigs",
+		Method:             "GET",
+		PathPattern:        "/api/v1/addonconfigs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAddonConfigsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListAddonConfigsOK), nil
 
 }
 

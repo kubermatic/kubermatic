@@ -51,6 +51,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&SeedList{},
 		&KubermaticSetting{},
 		&KubermaticSettingList{},
+		&AddonConfig{},
+		&AddonConfigList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)

@@ -67,8 +67,6 @@ type ListClusterRoleBindingParams struct {
 	Dc string
 	/*ProjectID*/
 	ProjectID string
-	/*RoleID*/
-	RoleID string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -141,17 +139,6 @@ func (o *ListClusterRoleBindingParams) SetProjectID(projectID string) {
 	o.ProjectID = projectID
 }
 
-// WithRoleID adds the roleID to the list cluster role binding params
-func (o *ListClusterRoleBindingParams) WithRoleID(roleID string) *ListClusterRoleBindingParams {
-	o.SetRoleID(roleID)
-	return o
-}
-
-// SetRoleID adds the roleId to the list cluster role binding params
-func (o *ListClusterRoleBindingParams) SetRoleID(roleID string) {
-	o.RoleID = roleID
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *ListClusterRoleBindingParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -172,11 +159,6 @@ func (o *ListClusterRoleBindingParams) WriteToRequest(r runtime.ClientRequest, r
 
 	// path param project_id
 	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
-		return err
-	}
-
-	// path param role_id
-	if err := r.SetPathParam("role_id", o.RoleID); err != nil {
 		return err
 	}
 

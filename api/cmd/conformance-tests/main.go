@@ -58,7 +58,7 @@ type Opts struct {
 	reportsRoot                  string
 	seedClusterClient            ctrlruntimeclient.Client
 	seedGeneratedClient          kubernetes.Interface
-	clusterClientProvider        clusterclient.UserClusterConnectionProvider
+	clusterClientProvider        *clusterclient.Provider
 	repoRoot                     string
 	seed                         *kubermaticv1.Seed
 	clusterParallelCount         int

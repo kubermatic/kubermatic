@@ -52,9 +52,9 @@ spec:
         - name: addons
           mountPath: /opt/addons
       containers:
-      - name: controller-manager
+      - name: seed-controller-manager
         command:
-        - kubermatic-controller-manager
+        - seed-controller-manager
         args:
         - -external-url={{ .Values.kubermatic.domain }}
         - -datacenter-name={{ .Values.kubermatic.controller.datacenterName }}
@@ -123,6 +123,7 @@ spec:
         {{- else }}
         - -apiserver-reconciling-disabled-by-default=false
         {{- end }}
+        - -pprof-listen-address={{ .Values.kubermatic.controller.pprofEndpoint }}
         image: '{{ .Values.kubermatic.controller.image.repository }}:{{ .Values.kubermatic.controller.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.image.pullPolicy }}
         env:

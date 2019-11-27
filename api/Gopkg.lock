@@ -744,6 +744,21 @@
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:4697f6e9ad78042e5457d82c857d9537f5e56e51743942eac7e16e20b1072db4"
+  name = "github.com/jetstack/cert-manager"
+  packages = [
+    "pkg/apis/acme",
+    "pkg/apis/acme/v1alpha2",
+    "pkg/apis/certmanager",
+    "pkg/apis/certmanager/v1alpha2",
+    "pkg/apis/meta",
+    "pkg/apis/meta/v1",
+  ]
+  pruneopts = "NUT"
+  revision = "b030b7eb4865adf031b0ad92c6b44576dec14d4e"
+  version = "v0.11.0"
+
+[[projects]]
   digest = "1:1f2aebae7e7c856562355ec0198d8ca2fa222fb05e5b1b66632a1fce39631885"
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
@@ -1197,7 +1212,7 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:85674ac609b704fd4e9f463553b6ffc3a3527a993ae0ba550eb56beaabdfe094"
+  digest = "1:da2b9a41b46b14a9d9d093413cf922dd1352743364e8ede79ba60c9b8e21ca39"
   name = "go.uber.org/zap"
   packages = [
     ".",
@@ -1205,7 +1220,9 @@
     "internal/bufferpool",
     "internal/color",
     "internal/exit",
+    "internal/ztest",
     "zapcore",
+    "zaptest",
   ]
   pruneopts = "NUT"
   revision = "ff33455a0e382e8a81d14dd7c922020b6b5e7982"
@@ -1915,7 +1932,7 @@
   revision = "c2654d5206da6b7b6ace12841e8f359bb89b443c"
 
 [[projects]]
-  digest = "1:508aaf04208c0a48f224d05cec32f149863ef6ba238281fbe0b220819d9efb0d"
+  digest = "1:8d85a957645bb7499bc7005832442f54ce6b11e79d723327774b7f596061063d"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/cache",
@@ -1925,6 +1942,7 @@
     "pkg/client/config",
     "pkg/client/fake",
     "pkg/controller",
+    "pkg/controller/controllerutil",
     "pkg/event",
     "pkg/handler",
     "pkg/internal/controller",
@@ -2037,6 +2055,7 @@
     "github.com/heptiolabs/healthcheck",
     "github.com/hetznercloud/hcloud-go/hcloud",
     "github.com/iancoleman/strcase",
+    "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2",
     "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1",
     "github.com/kubermatic/machine-controller/pkg/apis/plugin",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types",
@@ -2076,6 +2095,7 @@
     "github.com/vmware/govmomi/simulator",
     "go.uber.org/zap",
     "go.uber.org/zap/zapcore",
+    "go.uber.org/zap/zaptest",
     "golang.org/x/crypto/bcrypt",
     "golang.org/x/crypto/ssh",
     "golang.org/x/oauth2",
@@ -2085,6 +2105,7 @@
     "google.golang.org/grpc",
     "gopkg.in/square/go-jose.v2",
     "gopkg.in/square/go-jose.v2/jwt",
+    "gopkg.in/yaml.v2",
     "k8s.io/api/admission/v1beta1",
     "k8s.io/api/admissionregistration/v1beta1",
     "k8s.io/api/apps/v1",
@@ -2169,6 +2190,7 @@
     "sigs.k8s.io/controller-runtime/pkg/client/config",
     "sigs.k8s.io/controller-runtime/pkg/client/fake",
     "sigs.k8s.io/controller-runtime/pkg/controller",
+    "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil",
     "sigs.k8s.io/controller-runtime/pkg/event",
     "sigs.k8s.io/controller-runtime/pkg/handler",
     "sigs.k8s.io/controller-runtime/pkg/log",

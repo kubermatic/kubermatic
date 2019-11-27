@@ -16,6 +16,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	oidc "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils"
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/admin"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/credentials"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/gcp"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
@@ -67,6 +68,26 @@ func GetMasterToken() (string, error) {
 	login, password := oidc.GetOIDCClient()
 
 	return oidc.GetOIDCAuthToken(hClient, requestToken, u, issuerURLPrefix, login, password)
+}
+
+func GetAdminMasterToken() (string, error) {
+	var hClient = &http.Client{
+		Timeout: time.Second * 10,
+	}
+
+	u, err := getIssuerURL()
+	if err != nil {
+		return "", err
+	}
+
+	issuerURLPrefix := getIssuerURLPrefix()
+
+	requestToken, err := oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, "http://localhost:8000")
+	if err != nil {
+		return "", err
+	}
+
+	return oidc.GetOIDCAuthToken(hClient, requestToken, u, issuerURLPrefix, "roxy2@loodse.com", "password")
 }
 
 func getHost() string {
@@ -777,6 +798,71 @@ func RunOIDCProxy(errChan chan error, cancel <-chan struct{}) error {
 			errChan <- fmt.Errorf("failed to run oidc proxy. Output:\n%s\nError: %v", out.String(), err)
 		}
 	}()
+
+	return nil
+}
+
+func (r *APIRunner) GetGlobalSettings() (*apiv1.GlobalSettings, error) {
+	params := &admin.GetKubermaticSettingsParams{}
+	params.WithTimeout(timeout)
+	responseSettings, err := r.client.Admin.GetKubermaticSettings(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertGlobalSettings(responseSettings.Payload), nil
+}
+
+func (r *APIRunner) UpdateGlobalSettings(s string) (*apiv1.GlobalSettings, error) {
+	params := &admin.PatchKubermaticSettingsParams{
+		Patch: []uint8(s),
+	}
+	params.WithTimeout(timeout)
+	responseSettings, err := r.client.Admin.PatchKubermaticSettings(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertGlobalSettings(responseSettings.Payload), nil
+}
+
+func convertGlobalSettings(gSettings *models.GlobalSettings) *apiv1.GlobalSettings {
+	var customLinks kubermaticv1.CustomLinks
+	for _, customLink := range gSettings.CustomLinks {
+		customLinks = append(customLinks, kubermaticv1.CustomLink{
+			Label:    customLink.Label,
+			URL:      customLink.URL,
+			Icon:     customLink.Icon,
+			Location: customLink.Location,
+		})
+	}
+
+	return &apiv1.GlobalSettings{
+		CustomLinks: customLinks,
+		CleanupOptions: kubermaticv1.CleanupOptions{
+			Enabled:  gSettings.CleanupOptions.Enabled,
+			Enforced: gSettings.CleanupOptions.Enforced,
+		},
+		DefaultNodeCount:      gSettings.DefaultNodeCount,
+		ClusterTypeOptions:    gSettings.ClusterTypeOptions,
+		DisplayDemoInfo:       gSettings.DisplayDemoInfo,
+		DisplayAPIDocs:        gSettings.DisplayAPIDocs,
+		DisplayTermsOfService: gSettings.DisplayTermsOfService,
+	}
+}
+
+func (r *APIRunner) SetAdmin(email string, isAdmin bool) error {
+	params := &admin.SetAdminParams{
+		Body: &models.Admin{
+			Email:   email,
+			IsAdmin: isAdmin,
+		},
+	}
+	params.WithTimeout(timeout)
+	_, err := r.client.Admin.SetAdmin(params, r.bearerToken)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

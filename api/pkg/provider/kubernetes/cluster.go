@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/cloud"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -34,6 +34,7 @@ type UserClusterConnectionProvider interface {
 	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
 	GetViewerKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
 	RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error
+	RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error
 }
 
 // extractGroupPrefixFunc is a function that knows how to extract a prefix (owners, editors) from "projectID-owners" group,
@@ -113,6 +114,16 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 			NamespaceName:          NamespaceName(name),
 			CloudMigrationRevision: cloud.CurrentMigrationRevision,
 			KubermaticVersion:      resources.KUBERMATICCOMMIT,
+			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
+				Apiserver:                    kubermaticv1.HealthStatusProvisioning,
+				Scheduler:                    kubermaticv1.HealthStatusProvisioning,
+				Controller:                   kubermaticv1.HealthStatusProvisioning,
+				MachineController:            kubermaticv1.HealthStatusProvisioning,
+				Etcd:                         kubermaticv1.HealthStatusProvisioning,
+				OpenVPN:                      kubermaticv1.HealthStatusProvisioning,
+				CloudProviderInfrastructure:  kubermaticv1.HealthStatusProvisioning,
+				UserClusterControllerManager: kubermaticv1.HealthStatusProvisioning,
+			},
 		},
 		Address: kubermaticv1.ClusterAddress{},
 	}
@@ -254,6 +265,11 @@ func (p *ClusterProvider) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error 
 		return fmt.Errorf("not implemented")
 	}
 	return p.userClusterConnProvider.RevokeViewerKubeconfig(c)
+}
+
+// RevokeAdminKubeconfig revokes the viewer token and kubeconfig
+func (p *ClusterProvider) RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error {
+	return p.userClusterConnProvider.RevokeAdminKubeconfig(c)
 }
 
 // GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster

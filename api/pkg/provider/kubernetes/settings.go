@@ -27,10 +27,7 @@ func NewSettingsProvider(client kubermaticclientset.Interface, settingsLister ku
 	}
 }
 
-func (s *SettingsProvider) GetGlobalSettings(userInfo *provider.UserInfo) (*kubermaticv1.KubermaticSetting, error) {
-	if !userInfo.IsAdmin {
-		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
-	}
+func (s *SettingsProvider) GetGlobalSettings() (*kubermaticv1.KubermaticSetting, error) {
 	settings, err := s.settingsLister.Get(kubermaticv1.GlobalSettingsName)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
