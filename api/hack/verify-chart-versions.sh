@@ -18,7 +18,7 @@ exitCode=0
   echo "Verifying $name chart..."
 
   # if this chart was touched in this PR
-  if ! git diff --exit-code --no-patch "$PULL_BASE_SHA...$PULL_PULL_SHA" "$(dirname "$chartYAML")"; then
+  if ! git diff --exit-code --no-patch "$PULL_BASE_SHA..." "$(dirname "$chartYAML")"; then
     oldVersion=""
 
     # as we scan for charts by looking through the current files, we can always
