@@ -49,7 +49,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 			}
 
 			cm.Labels = resources.BaseAppLabel(name, nil)
-			cm.Data["config"] = cloudConfig
+			cm.Data[resources.CloudConfigConfigMapKey] = cloudConfig
 			cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
 
 			return cm, nil

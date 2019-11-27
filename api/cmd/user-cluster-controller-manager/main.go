@@ -6,7 +6,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -58,7 +57,6 @@ type controllerRunOptions struct {
 	overwriteRegistry             string
 	cloudProviderName             string
 	cloudCredentialSecretTemplate string
-	cloudConfig                   string
 	nodelabels                    string
 	seedKubeconfig                string
 	openshiftConsoleCallbackURI   string
@@ -86,7 +84,6 @@ func main() {
 	flag.StringVar(&runOp.nodelabels, "node-labels", "", "A json-encoded map of node labels. If set, those labels will be enforced on all nodes.")
 	flag.StringVar(&runOp.seedKubeconfig, "seed-kubeconfig", "", "Path to the seed kubeconfig. In-Cluster config will be used if unset")
 	flag.StringVar(&runOp.openshiftConsoleCallbackURI, "openshift-console-callback-uri", "", "The callback uri for the openshift console")
-	flag.StringVar(&runOp.cloudConfig, "cloud-config", "", "Path to cloud config")
 
 	flag.Parse()
 
@@ -110,14 +107,6 @@ func main() {
 	}
 	if runOp.openvpnServerPort == 0 {
 		log.Fatal("-openvpn-server-port must be set")
-	}
-
-	var cloudConfig []byte
-	if runOp.cloudConfig != "" {
-		cloudConfig, err = ioutil.ReadFile(runOp.cloudConfig)
-		if err != nil {
-			log.Fatalf("Failed to read cloud-config: %v", err)
-		}
 	}
 
 	var cloudCredentialSecretTemplate *corev1.Secret
@@ -208,7 +197,6 @@ func main() {
 		healthHandler.AddReadinessCheck,
 		cloudCredentialSecretTemplate,
 		runOp.openshiftConsoleCallbackURI,
-		cloudConfig,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))

@@ -36,6 +36,15 @@ func RoleCreator() (string, reconciling.RoleCreator) {
 			},
 			{
 				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+				},
+			},
+			{
+				APIGroups: []string{""},
 				Resources: []string{"secrets"},
 				ResourceNames: []string{
 					resources.AdminKubeconfigSecretName,

@@ -101,7 +101,6 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				"-health-listen-address", "0.0.0.0:8086",
 				"-namespace", "$(NAMESPACE)",
 				"-cluster-url", data.Cluster().Address.URL,
-				"-cloud-config", "/etc/kubernetes/cloud/config",
 				"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
 				"-overwrite-registry", data.ImageRegistry(""),
 				fmt.Sprintf("-openshift=%t", openshift),
@@ -166,11 +165,6 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 							MountPath: "/etc/kubernetes/kubeconfig",
 							ReadOnly:  true,
 						},
-						{
-							Name:      resources.CloudConfigConfigMapName,
-							MountPath: "/etc/kubernetes/cloud",
-							ReadOnly:  true,
-						},
 					},
 				},
 			}
@@ -194,16 +188,6 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
-				},
-			},
-		},
-		{
-			Name: resources.CloudConfigConfigMapName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: resources.CloudConfigConfigMapName,
-					},
 				},
 			},
 		},
