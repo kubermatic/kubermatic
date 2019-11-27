@@ -3,9 +3,9 @@ package master
 import (
 	"fmt"
 
+	"github.com/docker/distribution/reference"
 	"go.uber.org/zap"
 
-	"github.com/docker/distribution/reference"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
