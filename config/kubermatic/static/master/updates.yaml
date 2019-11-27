@@ -74,6 +74,16 @@ updates:
   to: 1.17.*
   automatic: false
 
+# ======= 1.17 =======
+# Allow to change to any patch version
+- from: 1.17.*
+  to: 1.17.*
+  automatic: false
+# Allow to next minor release
+- from: 1.16.*
+  to: 1.18.*
+  automatic: false
+
 # ======= Openshift 4.1 =======
 # Allow to change to any patch version
 - from: 4.1.*
