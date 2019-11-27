@@ -1,3 +1,10 @@
+### [v2.12.3]()
+
+
+- Fixed extended cluster options not being properly applied [#1812](https://github.com/kubermatic/dashboard-v2/issues/1812) ([kgroschoff](https://github.com/kgroschoff))
+- A panic that could occur on clusters that lack both credentials and a credentialsSecret was fixed. [#4742](https://github.com/kubermatic/kubermatic/issues/4742) ([alvaroaleman](https://github.com/alvaroaleman))
+
+
 ### [v2.12.2]()
 
 
