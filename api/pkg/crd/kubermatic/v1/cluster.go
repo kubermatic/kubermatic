@@ -48,10 +48,9 @@ type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec            ClusterSpec       `json:"spec"`
-	Address         ClusterAddress    `json:"address,omitempty"`
-	Status          ClusterStatus     `json:"status,omitempty"`
-	InheritedLabels map[string]string `json:"inheritedLabels"`
+	Spec    ClusterSpec    `json:"spec"`
+	Address ClusterAddress `json:"address,omitempty"`
+	Status  ClusterStatus  `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -201,6 +200,9 @@ type ClusterStatus struct {
 	// CloudMigrationRevision describes the latest version of the migration that has been done
 	// It is used to avoid redundant and potentially costly migrations
 	CloudMigrationRevision int `json:"cloudMigrationRevision"`
+
+	// InheritedLabels are labels the cluster inherited from the project. They are read-only for users.
+	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
 }
 
 // HasConditionValue returns true if the cluster status has the given condition with the given status.

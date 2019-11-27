@@ -127,7 +127,7 @@ func TestReconciliation(t *testing.T) {
 					t.Errorf("Expected labels on cluster %q do not match actual labels, diff: %v", cluster.Name, diff)
 				}
 
-				if diff := deep.Equal(cluster.InheritedLabels, tc.expectedInheritedLabels[cluster.Name]); diff != nil {
+				if diff := deep.Equal(cluster.Status.InheritedLabels, tc.expectedInheritedLabels[cluster.Name]); diff != nil {
 					t.Errorf("Expected inherited labels on cluster %q do not match actual inherited labels, diff: %v", cluster.Name, diff)
 				}
 			}
