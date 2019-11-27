@@ -43,10 +43,15 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get userSSHKeys: %v", err)
 	}
+	cloudConfig, err := r.cloudConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get cloudConfig: %v", err)
+	}
 	data := reconcileData{
 		caCert:        caCert,
 		openVPNCACert: openVPNCACert,
 		userSSHKeys:   userSSHKeys,
+		cloudConfig:   cloudConfig,
 	}
 
 	// Must be first because of openshift
@@ -408,16 +413,13 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	creators := []reconciling.NamedSecretCreatorGetter{
 		openvpn.ClientCertificate(data.openVPNCACert),
 		usersshkeys.SecretCreator(data.userSSHKeys),
+		cloudcontroller.CloudConfig(data.cloudConfig),
 	}
 	if r.openshift {
 		creators = append(creators, openshift.OAuthBootstrapPassword)
 		if r.cloudCredentialSecretTemplate != nil {
 			creators = append(creators, openshift.CloudCredentialSecretCreator(*r.cloudCredentialSecretTemplate))
 		}
-	}
-
-	if len(r.cloudConfig) > 0 {
-		creators = append(creators, cloudcontroller.CloudConfig(r.cloudConfig))
 	}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -532,4 +534,5 @@ type reconcileData struct {
 	caCert        *triple.KeyPair
 	openVPNCACert *resources.ECDSAKeyPair
 	userSSHKeys   map[string][]byte
+	cloudConfig   []byte
 }

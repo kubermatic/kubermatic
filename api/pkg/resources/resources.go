@@ -182,8 +182,10 @@ const (
 	// the Kubernetes Dashboard
 	KubernetesDashboardCsrfTokenSecretName = "kubernetes-dashboard-csrf"
 
-	//CloudConfigConfigMapName is the name for the configmap containing the cloud-config
+	// CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
+	// CloudConfigConfigMapKey is the key under which the cloud-config in the cloud-config configmap can be found
+	CloudConfigConfigMapKey = "config"
 	//OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
 	//OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster
