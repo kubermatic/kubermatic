@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/go-logr/zapr"
+
 	"go.uber.org/zap"
 
 	usersshkeys "github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeysagent"
@@ -105,18 +106,20 @@ func availableUsersPaths() ([]string, error) {
 
 func createDirIfNotExist(path string, uid, gid int) error {
 	_, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			if err := os.Mkdir(path, 0600); err != nil {
-				return fmt.Errorf("failed creating .ssh dir in %s: %v", path, err)
-			}
+	if err == nil {
+		return nil
+	}
 
-			if err := os.Chown(path, uid, gid); err != nil {
-				return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", path, err)
-			}
-		}
-
+	if !os.IsNotExist(err) {
 		return fmt.Errorf("failed describing file info: %v", err)
+	}
+
+	if err := os.Mkdir(path, 0700); err != nil {
+		return fmt.Errorf("failed creating .ssh dir in %s: %v", path, err)
+	}
+
+	if err := os.Chown(path, uid, gid); err != nil {
+		return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", path, err)
 	}
 
 	return nil
@@ -124,22 +127,24 @@ func createDirIfNotExist(path string, uid, gid int) error {
 
 func createFileIfNotExist(path string, uid, gid int) error {
 	_, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			if _, err := os.Create(path); err != nil {
-				return fmt.Errorf("failed creating authorized_keys file in %s: %v", path, err)
-			}
+	if err == nil {
+		return nil
+	}
 
-			if err := os.Chmod(path, os.FileMode(0600)); err != nil {
-				return fmt.Errorf("failed changing file mode for authorized_keys file in %s: %v", path, err)
-			}
-
-			if err := os.Chown(path, uid, gid); err != nil {
-				return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", path, err)
-			}
-		}
-
+	if !os.IsNotExist(err) {
 		return fmt.Errorf("failed describing file info: %v", err)
+	}
+
+	if _, err := os.Create(path); err != nil {
+		return fmt.Errorf("failed creating authorized_keys file in %s: %v", path, err)
+	}
+
+	if err := os.Chmod(path, os.FileMode(0600)); err != nil {
+		return fmt.Errorf("failed changing file mode for authorized_keys file in %s: %v", path, err)
+	}
+
+	if err := os.Chown(path, uid, gid); err != nil {
+		return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", path, err)
 	}
 
 	return nil

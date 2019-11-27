@@ -89,8 +89,7 @@ func Add(
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	log := r.log.With("request", request)
-	log.Debug("Processing")
+	r.log.Debug("Processing")
 
 	secret, err := r.fetchUserSSHKeySecret(ctx, request.NamespacedName.Namespace)
 	if err != nil || secret == nil {
@@ -98,7 +97,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	if err := r.updateAuthorizedKeys(secret.Data); err != nil {
-		log.Errorw("Failed reconciling user ssh key secret", zap.Error(err))
+		r.log.Errorw("Failed reconciling user ssh key secret", zap.Error(err))
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile user ssh keys: %v", err)
 	}
 
@@ -169,7 +168,7 @@ func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 			if err := ioutil.WriteFile(path, expectedUserSSHKeys.Bytes(), 0600); err != nil {
 				return fmt.Errorf("failed writing a new authorzied_keys file in path %s: %v", path, err)
 			}
-
+			r.log.Infow("File authorized_keys has been created successfully", "file", path)
 			return nil
 		}
 
@@ -187,6 +186,7 @@ func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 				return fmt.Errorf("failed to overwrite authorized_keys file in path %s: %v", path, err)
 			}
 		}
+		r.log.Infow("File authorized_keys has been updated successfully", "file", path)
 	}
 
 	return nil
