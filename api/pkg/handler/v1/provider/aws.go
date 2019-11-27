@@ -448,7 +448,7 @@ func listAWSVPCS(accessKeyID, secretAccessKey string, datacenter *kubermaticv1.D
 
 	vpcsResults, err := awsprovider.GetVPCS(accessKeyID, secretAccessKey, datacenter.Spec.AWS.Region)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get vpc's: %v", err)
+		return nil, err
 	}
 
 	vpcs := apiv1.AWSVPCList{}
