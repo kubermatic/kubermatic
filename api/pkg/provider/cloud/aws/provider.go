@@ -14,6 +14,7 @@ import (
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	httperror "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	"k8s.io/klog"
 )
@@ -29,6 +30,8 @@ const (
 	tagCleanupFinalizer              = "kubermatic.io/cleanup-aws-tags"
 
 	tagNameKubernetesClusterPrefix = "kubernetes.io/cluster/"
+
+	authFailure = "AuthFailure"
 )
 
 type AmazonEC2 struct {
@@ -680,6 +683,10 @@ func GetVPCS(accessKeyID, secretAccessKey, region string) ([]*ec2.Vpc, error) {
 	vpcOut, err := client.EC2.DescribeVpcs(&ec2.DescribeVpcsInput{})
 
 	if err != nil {
+		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == authFailure {
+			return nil, httperror.New(401, fmt.Sprintf("failed to list vpc's: %s", awsErr.Message()))
+		}
+
 		return nil, fmt.Errorf("failed to list vpc's: %v", err)
 	}
 
