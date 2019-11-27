@@ -329,13 +329,16 @@ func createKubermaticRouter(netClient *gophercloud.ServiceClient, clusterName, e
 }
 
 func attachSubnetToRouter(netClient *gophercloud.ServiceClient, subnetID, routerID string) (*osrouters.InterfaceInfo, error) {
-	res := osrouters.AddInterface(netClient, routerID, osrouters.AddInterfaceOpts{
-		SubnetID: subnetID,
-	})
-	if res.Err != nil {
-		return nil, res.Err
-	}
-	return res.Extract()
+	interf, err := func() (*osrouters.InterfaceInfo, error) {
+		res := osrouters.AddInterface(netClient, routerID, osrouters.AddInterfaceOpts{
+			SubnetID: subnetID,
+		})
+		if res.Err != nil {
+			return nil, res.Err
+		}
+		return res.Extract()
+	}()
+	return interf, ignoreRouterAlreadyHasPortInSubnetError(err, subnetID)
 }
 
 func detachSubnetFromRouter(netClient *gophercloud.ServiceClient, subnetID, routerID string) (*osrouters.InterfaceInfo, error) {
