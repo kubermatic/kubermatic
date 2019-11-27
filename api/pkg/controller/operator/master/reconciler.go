@@ -9,11 +9,16 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/master/resources/kubermatic"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -71,6 +76,19 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Kubermatic configuration")
 
+	// config was deleted, let's clean up
+	if config.DeletionTimestamp != nil {
+		return r.cleanupDeletedConfiguration(config, logger)
+	}
+
+	// ensure we always have a cleanup finalizer
+	if err := common.PatchKubermaticConfiguration(r, config, func(cfg *operatorv1alpha1.KubermaticConfiguration) error {
+		kubernetes.AddFinalizer(cfg, common.CleanupFinalizer)
+		return nil
+	}); err != nil {
+		return err
+	}
+
 	if err := r.reconcileNamespaces(config, logger); err != nil {
 		return err
 	}
@@ -113,6 +131,27 @@ func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration,
 
 	if err := r.reconcileAdmissionWebhooks(config, logger); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (r *Reconciler) cleanupDeletedConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	if sets.NewString(config.Finalizers...).Has(common.CleanupFinalizer) {
+		logger.Debug("KubermaticConfiguration was deleted, cleaning up cluster-wide resources")
+
+		if err := r.deleteClusterResource(&rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(config)); err != nil {
+			return fmt.Errorf("failed to clean up ClusterRoleBinding: %v", err)
+		}
+
+		if err := r.deleteClusterResource(&admissionregistrationv1beta1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(config)); err != nil {
+			return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %v", err)
+		}
+
+		return common.PatchKubermaticConfiguration(r, config, func(cfg *operatorv1alpha1.KubermaticConfiguration) error {
+			kubernetes.RemoveFinalizer(cfg, common.CleanupFinalizer)
+			return nil
+		})
 	}
 
 	return nil
@@ -283,6 +322,24 @@ func (r *Reconciler) reconcileAdmissionWebhooks(config *operatorv1alpha1.Kuberma
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(r.ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile AdmissionWebhooks: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) deleteClusterResource(obj runtime.Object, name string) error {
+	key := types.NamespacedName{Name: name}
+
+	if err := r.Get(r.ctx, key, obj); err != nil {
+		if !kerrors.IsNotFound(err) {
+			return fmt.Errorf("failed to probe for %s: %v", key, err)
+		}
+
+		return nil
+	}
+
+	if err := r.Delete(r.ctx, obj); err != nil {
+		return fmt.Errorf("failed to delete %s: %v", key, err)
 	}
 
 	return nil

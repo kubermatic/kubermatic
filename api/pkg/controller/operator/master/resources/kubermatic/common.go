@@ -27,7 +27,7 @@ const (
 	certificateSecretName = "kubermatic-tls"
 )
 
-func clusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
+func ClusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
 	return fmt.Sprintf("%s:%s-master:cluster-admin", cfg.Namespace, cfg.Name)
 }
 
@@ -64,7 +64,7 @@ func ServiceAccountCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconc
 }
 
 func ClusterRoleBindingCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingCreatorGetter {
-	name := clusterRoleBindingName(cfg)
+	name := ClusterRoleBindingName(cfg)
 
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {

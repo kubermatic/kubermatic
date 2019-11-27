@@ -148,3 +148,19 @@ func createSecretData(s *corev1.Secret, data map[string]string) *corev1.Secret {
 
 	return s
 }
+
+type patchFunction func(*operatorv1alpha1.KubermaticConfiguration) error
+
+func PatchKubermaticConfiguration(client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration, patch patchFunction) error {
+	oldConfig := config.DeepCopy()
+
+	if err := patch(config); err != nil {
+		return err
+	}
+
+	if err := client.Patch(context.Background(), config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
+		return fmt.Errorf("failed to patch KubermaticConfiguration: %v", err)
+	}
+
+	return nil
+}

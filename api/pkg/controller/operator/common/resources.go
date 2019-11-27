@@ -40,6 +40,8 @@ const (
 	IngressName                           = "kubermatic"
 	MasterControllerManagerDeploymentName = "kubermatic-master-controller-manager"
 	SeedControllerManagerDeploymentName   = "kubermatic-seed-controller-manager"
+
+	CleanupFinalizer = "operator.kubermatic.io/cleanup"
 )
 
 func NamespaceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
@@ -129,13 +131,13 @@ func SeedWebhookServingCertSecretCreator(cfg *operatorv1alpha1.KubermaticConfigu
 	return servingcerthelper.ServingCertSecretCreator(caGetter, SeedWebhookServingCertSecretName, seedWebhookCommonName, altNames, nil)
 }
 
-func seedAdmissionWebhookName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
+func SeedAdmissionWebhookName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
 	return fmt.Sprintf("kubermatic-seeds-%s", cfg.Namespace)
 }
 
 func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
-		return seedAdmissionWebhookName(cfg), func(hook *admissionregistrationv1beta1.ValidatingWebhookConfiguration) (*admissionregistrationv1beta1.ValidatingWebhookConfiguration, error) {
+		return SeedAdmissionWebhookName(cfg), func(hook *admissionregistrationv1beta1.ValidatingWebhookConfiguration) (*admissionregistrationv1beta1.ValidatingWebhookConfiguration, error) {
 			policy := admissionregistrationv1beta1.Fail
 			sideEffects := admissionregistrationv1beta1.SideEffectClassUnknown
 			scope := admissionregistrationv1beta1.AllScopes
