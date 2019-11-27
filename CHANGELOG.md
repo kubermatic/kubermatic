@@ -48,6 +48,7 @@ Supported Kubernetes versions:
 - ACTION REQUIRED: Kubermatic now doesn&#39;t accept unknown keys in its config files anymore and will crash if an unknown key is present
 - ACTION REQUIRED: BYO datacenters now need to be specific in the `datacenters.yaml` with a value of `{}`, e.G `bringyourown: {}` [#3794](https://github.com/kubermatic/kubermatic/issues/3794) ([alvaroaleman](https://github.com/alvaroaleman))
 - ACTION REQUIRED: Velero does not backup Prometheus, Elasticsearch and Minio by default anymore. [#4482](https://github.com/kubermatic/kubermatic/issues/4482) ([xrstf](https://github.com/xrstf))
+- ACTION REQUIRED: On AWS, the nodeport-proxy will be recreated as NLB. DNS entries must be updated to point to the new LB. [#3840](https://github.com/kubermatic/kubermatic/pull/3840) ([mrIncompetent](https://github.com/mrIncompetent))
 - The deprecated nodePortPoxy key for Helm values has been removed. [#3830](https://github.com/kubermatic/kubermatic/issues/3830) ([xrstf](https://github.com/xrstf))
 - Support setting oidc authentication settings on cluster [#3751](https://github.com/kubermatic/kubermatic/issues/3751) ([bashofmann](https://github.com/bashofmann))
 - The worker-count of controller-manager and master-controller are now configurable [#3918](https://github.com/kubermatic/kubermatic/issues/3918) ([bashofmann](https://github.com/bashofmann))
