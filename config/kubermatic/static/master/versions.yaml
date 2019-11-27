@@ -1,14 +1,14 @@
 versions:
 # Kubernetes 1.14
 - version: "v1.14.8"
-  default: true
+  default: false
 - version: "v1.14.9"
   default: false
 # Kubernetes 1.15
 - version: "v1.15.5"
   default: false
 - version: "v1.15.6"
-  default: false
+  default: true
 # Kubernetes 1.16
 - version: "v1.16.2"
   default: false
