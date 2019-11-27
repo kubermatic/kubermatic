@@ -23,7 +23,7 @@ func apiPodLabels() map[string]string {
 	}
 }
 
-func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerName string) reconciling.NamedDeploymentCreatorGetter {
+func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerName string, versions common.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return apiDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			probe := corev1.Probe{
@@ -148,7 +148,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "api",
-					Image:   cfg.Spec.API.Image,
+					Image:   cfg.Spec.API.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"kubermatic-api"},
 					Args:    args,
 					Ports: []corev1.ContainerPort{

@@ -20,7 +20,7 @@ func uiPodLabels() map[string]string {
 	}
 }
 
-func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
+func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, versions common.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return uiDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(2)
@@ -43,7 +43,7 @@ func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcil
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  "webserver",
-					Image: cfg.Spec.UI.Image,
+					Image: cfg.Spec.UI.DockerRepository + ":" + versions.UI,
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "http",
