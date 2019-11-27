@@ -12,13 +12,11 @@ import (
 )
 
 const (
-	serviceAccountName                  = "kubermatic-seed"
-	backupContainersConfigMapName       = "backup-containers"
-	storeContainerKey                   = "store-container.yaml"
-	cleanupContainerKey                 = "cleanup-container.yaml"
-	seedControllerManagerDeploymentName = "kubermatic-seed-controller-manager"
-	openIDAuthFeatureFlag               = "OpenIDAuthPlugin"
-	nameLabel                           = "app.kubernetes.io/name"
+	serviceAccountName            = "kubermatic-seed"
+	backupContainersConfigMapName = "backup-containers"
+	storeContainerKey             = "store-container.yaml"
+	cleanupContainerKey           = "cleanup-container.yaml"
+	openIDAuthFeatureFlag         = "OpenIDAuthPlugin"
 )
 
 func clusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {

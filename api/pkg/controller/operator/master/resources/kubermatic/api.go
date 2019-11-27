@@ -19,7 +19,7 @@ import (
 
 func apiPodLabels() map[string]string {
 	return map[string]string{
-		nameLabel: "kubermatic-api",
+		common.NameLabel: apiDeploymentName,
 	}
 }
 

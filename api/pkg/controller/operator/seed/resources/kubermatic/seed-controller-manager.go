@@ -21,13 +21,13 @@ import (
 
 func seedControllerManagerPodLabels() map[string]string {
 	return map[string]string{
-		nameLabel: "kubermatic-seed-controller-manager",
+		common.NameLabel: common.SeedControllerManagerDeploymentName,
 	}
 }
 
 func SeedControllerManagerDeploymentCreator(workerName string, versions common.Versions, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return seedControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+		return common.SeedControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(2)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: seedControllerManagerPodLabels(),
