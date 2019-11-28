@@ -26,7 +26,7 @@ type controllerRunOptions struct {
 
 func main() {
 	runOp := controllerRunOptions{}
-	flag.BoolVar(&runOp.log.Debug, "log-debug", true, "Enables debug logging")
+	flag.BoolVar(&runOp.log.Debug, "log-debug", false, "Enables debug logging")
 	flag.StringVar(&runOp.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 
 	flag.Parse()

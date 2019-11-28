@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	operatorName = "usersshkeys-operator"
+	operatorName = "usersshkeys-controller"
 )
 
 type Reconciler struct {
@@ -131,8 +131,7 @@ func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) er
 	}()
 
 	for _, path := range paths {
-		err = watcher.Add(path)
-		if err != nil {
+		if err := watcher.Add(path); err != nil {
 			return fmt.Errorf("failed adding a new path to the files watcher: %v", err)
 		}
 	}
@@ -161,32 +160,21 @@ func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 	}
 
 	for _, path := range r.authorizedKeysPath {
-		if _, err := os.Stat(path); err != nil {
-			if !os.IsNotExist(err) {
-				return fmt.Errorf("faild describing the authorized_keys file in path %s: %v", path, err)
-			}
-			if err := ioutil.WriteFile(path, expectedUserSSHKeys.Bytes(), 0600); err != nil {
-				return fmt.Errorf("failed writing a new authorzied_keys file in path %s: %v", path, err)
-			}
-			r.log.Infow("File authorized_keys has been created successfully", "file", path)
-			return nil
-		}
-
 		if err := updateOwnAndPermissions(path); err != nil {
 			return fmt.Errorf("failed updating permissions %s: %v", path, err)
 		}
 
 		actualUserSSHKeys, err := ioutil.ReadFile(path)
 		if err != nil {
-			return fmt.Errorf("failed reading authorized key file in path %s: %v", path, err)
+			return fmt.Errorf("failed reading file in path %s: %v", path, err)
 		}
 
 		if !bytes.Equal(actualUserSSHKeys, expectedUserSSHKeys.Bytes()) {
 			if err := ioutil.WriteFile(path, expectedUserSSHKeys.Bytes(), 0600); err != nil {
-				return fmt.Errorf("failed to overwrite authorized_keys file in path %s: %v", path, err)
+				return fmt.Errorf("failed to overwrite file in path %s: %v", path, err)
 			}
+			r.log.Infow("File has been updated successfully", "file", path)
 		}
-		r.log.Infow("File authorized_keys has been updated successfully", "file", path)
 	}
 
 	return nil
@@ -224,12 +212,12 @@ func createBuffer(data map[string][]byte) (*bytes.Buffer, error) {
 }
 
 func updateOwnAndPermissions(path string) error {
-	if err := os.Chmod(path, os.FileMode(0600)); err != nil {
+	sshPath := strings.TrimSuffix(path, "/authorized_keys")
+	if err := os.Chmod(sshPath, os.FileMode(0700)); err != nil {
 		return fmt.Errorf("failed to change permission on file: %v", err)
 	}
 
-	sshPath := strings.TrimSuffix(path, "/authorized_keys")
-	if err := os.Chmod(sshPath, os.FileMode(0600)); err != nil {
+	if err := os.Chmod(path, os.FileMode(0600)); err != nil {
 		return fmt.Errorf("failed to change permission on file: %v", err)
 	}
 
