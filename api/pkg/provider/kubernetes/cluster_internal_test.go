@@ -1,4 +1,4 @@
-package client
+package kubernetes
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	openshiftuserclusterresources "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -73,11 +74,9 @@ func TestRevokeAdminKubeconfig(t *testing.T) {
 			t.Parallel()
 			seedClient := fakectrlruntimeclient.NewFakeClient(tc.cluster)
 			userClusterClient := fakectrlruntimeclient.NewFakeClient(tc.userClusterObjects...)
-			p := &Provider{
-				seedClient: seedClient,
-				overrideGetClientFunc: func(_ *kubermaticv1.Cluster, _ ...ConfigOption) (ctrlruntimeclient.Client, error) {
-					return userClusterClient, nil
-				},
+			p := &ClusterProvider{
+				client:                  seedClient,
+				userClusterConnProvider: &fakeUserClusterConnectionProvider{client: userClusterClient},
 			}
 
 			if err := p.RevokeAdminKubeconfig(tc.cluster); err != nil {
@@ -88,4 +87,12 @@ func TestRevokeAdminKubeconfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+type fakeUserClusterConnectionProvider struct {
+	client ctrlruntimeclient.Client
+}
+
+func (f *fakeUserClusterConnectionProvider) GetClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
+	return f.client, nil
 }

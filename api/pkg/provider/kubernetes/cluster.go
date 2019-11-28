@@ -11,10 +11,13 @@ import (
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/cloud"
+	openshiftuserclusterresources "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -31,10 +34,6 @@ import (
 // UserClusterConnectionProvider offers functions to interact with an user cluster
 type UserClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
-	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
-	GetViewerKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
-	RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error
-	RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error
 }
 
 // extractGroupPrefixFunc is a function that knows how to extract a prefix (owners, editors) from "projectID-owners" group,
@@ -236,12 +235,16 @@ func (p *ClusterProvider) Update(project *kubermaticv1.Project, userInfo *provid
 
 // GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
 func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
-	b, err := p.userClusterConnProvider.GetAdminKubeconfig(c)
-	if err != nil {
+	secret := &corev1.Secret{}
+	name := types.NamespacedName{
+		Namespace: c.Status.NamespaceName,
+		Name:      resources.AdminKubeconfigSecretName,
+	}
+	if err := p.GetSeedClusterAdminRuntimeClient().Get(context.Background(), name, secret); err != nil {
 		return nil, err
 	}
 
-	return clientcmd.Load(b)
+	return clientcmd.Load(secret.Data[resources.KubeconfigSecretKey])
 }
 
 // GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster
@@ -250,26 +253,64 @@ func (p *ClusterProvider) GetViewerKubeconfigForCustomerCluster(c *kubermaticv1.
 	if ok && isOpenShift == "true" {
 		return nil, fmt.Errorf("not implemented")
 	}
-	b, err := p.userClusterConnProvider.GetViewerKubeconfig(c)
-	if err != nil {
+	s := &corev1.Secret{}
+
+	if err := p.GetSeedClusterAdminRuntimeClient().Get(context.Background(), types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.ViewerKubeconfigSecretName}, s); err != nil {
 		return nil, err
 	}
 
-	return clientcmd.Load(b)
+	d := s.Data[resources.KubeconfigSecretKey]
+	if len(d) == 0 {
+		return nil, fmt.Errorf("no kubeconfig found")
+	}
+
+	return clientcmd.Load(d)
 }
 
 // RevokeViewerKubeconfig revokes the viewer token and kubeconfig
 func (p *ClusterProvider) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error {
-	isOpenShift, ok := c.Annotations["kubermatic.io/openshift"]
-	if ok && isOpenShift == "true" {
-		return fmt.Errorf("not implemented")
+	if c.IsOpenshift() {
+		return errors.New("not implemented")
 	}
-	return p.userClusterConnProvider.RevokeViewerKubeconfig(c)
+	s := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.ViewerTokenSecretName,
+			Namespace: c.Status.NamespaceName,
+		},
+	}
+
+	if err := p.GetSeedClusterAdminRuntimeClient().Delete(context.Background(), s); err != nil {
+		return err
+	}
+	return nil
 }
 
 // RevokeAdminKubeconfig revokes the viewer token and kubeconfig
 func (p *ClusterProvider) RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error {
-	return p.userClusterConnProvider.RevokeAdminKubeconfig(c)
+	ctx := context.Background()
+	if !c.IsOpenshift() {
+		oldCluster := c.DeepCopy()
+		c.Address.AdminToken = kuberneteshelper.GenerateToken()
+		if err := p.GetSeedClusterAdminRuntimeClient().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("failed to patch cluster with new token: %v", err)
+		}
+		return nil
+	}
+
+	userClusterClient, err := p.GetAdminClientForCustomerCluster(c)
+	if err != nil {
+		return fmt.Errorf("failed to get usercluster client: %v", err)
+	}
+	serviceAccount := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: metav1.NamespaceSystem,
+			Name:      openshiftuserclusterresources.TokenOwnerServiceAccountName,
+		},
+	}
+	if err := userClusterClient.Delete(ctx, serviceAccount); err != nil {
+		return fmt.Errorf("failed to remove the token owner: %v", err)
+	}
+	return nil
 }
 
 // GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
