@@ -344,7 +344,7 @@ func (r *Reconciler) reconcileMasterGrafanaProvisioning(seeds map[string]*kuberm
 func (r *Reconciler) deleteResource(client ctrlruntimeclient.Client, name string, namespace string, obj runtime.Object) error {
 	key := types.NamespacedName{Name: name, Namespace: namespace}
 
-	if err := client.Get(context.Background(), key, obj); err != nil {
+	if err := client.Get(r.ctx, key, obj); err != nil {
 		if !kerrors.IsNotFound(err) {
 			return fmt.Errorf("failed to probe for %s: %v", key, err)
 		}
@@ -352,7 +352,7 @@ func (r *Reconciler) deleteResource(client ctrlruntimeclient.Client, name string
 		return nil
 	}
 
-	if err := client.Delete(context.Background(), obj); err != nil {
+	if err := client.Delete(r.ctx, obj); err != nil {
 		return fmt.Errorf("failed to delete %s: %v", key, err)
 	}
 
