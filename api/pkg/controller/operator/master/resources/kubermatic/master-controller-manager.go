@@ -62,7 +62,7 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 				"-dynamic-datacenters=true",
 				"-worker-count=20",
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
-				fmt.Sprintf("-pprof-listen-address=%s", cfg.Spec.MasterController.PProfEndpoint),
+				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.MasterController.PProfEndpoint),
 				fmt.Sprintf("-seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertSecretKey),
 				fmt.Sprintf("-seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertKeySecretKey),
 			}

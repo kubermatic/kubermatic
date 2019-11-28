@@ -54,21 +54,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	logger := r.log.With("config", identifier)
 
-	defaulted, err := DefaultConfiguration(config, logger)
+	// create a copy of the configuration with default values applied
+	defaulted, err := common.DefaultConfiguration(config, logger)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to apply defaults: %v", err)
 	}
 
-	if defaulted {
-		if err := r.Client.Update(r.ctx, config); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to patch the defaulted configuration: %v", err)
-		}
-
-		logger.Info("Applied default values to configuration")
-		return reconcile.Result{}, err
-	}
-
-	err = r.reconcile(config, logger)
+	err = r.reconcile(defaulted, logger)
 	if err != nil {
 		r.recorder.Event(config, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
@@ -140,14 +132,8 @@ func (r *Reconciler) reconcileSecrets(config *operatorv1alpha1.KubermaticConfigu
 		common.DexCASecretCreator(config),
 		common.SeedWebhookServingCASecretCreator(config),
 		common.SeedWebhookServingCertSecretCreator(config, r.Client),
-	}
-
-	if len(config.Spec.MasterFiles) > 0 {
-		creators = append(creators, common.MasterFilesSecretCreator(config))
-	}
-
-	if config.Spec.UI.Presets != "" {
-		creators = append(creators, kubermatic.PresetsSecretCreator(config))
+		common.MasterFilesSecretCreator(config),
+		kubermatic.PresetsSecretCreator(config),
 	}
 
 	if err := reconciling.ReconcileSecrets(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {

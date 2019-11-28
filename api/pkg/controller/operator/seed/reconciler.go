@@ -102,6 +102,12 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 
 	config := configList.Items[0]
 
+	// create a copy of the configuration with default values applied
+	defaulted, err := common.DefaultConfiguration(&config, log)
+	if err != nil {
+		return fmt.Errorf("failed to apply defaults to KubermaticConfiguration: %v", err)
+	}
+
 	// As the Seed CR is the owner for all resources managed by this controller,
 	// we wait for the seed-sync controller to do its job and mirror the Seed CR
 	// into the seed cluster.
@@ -125,7 +131,7 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 	}
 
 	// make sure to use the seedCopy so the owner ref has the correct UID
-	if err := r.reconcileResources(&config, seedCopy, seedClient, log); err != nil {
+	if err := r.reconcileResources(defaulted, seedCopy, seedClient, log); err != nil {
 		r.masterRecorder.Event(&config, corev1.EventTypeWarning, "SeedReconcilingError", fmt.Sprintf("%s: %v", seedName, err))
 		r.masterRecorder.Event(seed, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		seedRecorder.Event(seedCopy, corev1.EventTypeWarning, "ReconcilingError", err.Error())

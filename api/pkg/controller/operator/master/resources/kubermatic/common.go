@@ -26,6 +26,7 @@ const (
 	uiServiceName                         = "kubermatic-ui"
 	certificateName                       = "kubermatic"
 	certificateSecretName                 = "kubermatic-tls"
+	oidcKubeCfgEndpointFeatureFlag        = "OIDCKubeCfgEndpoint"
 )
 
 func clusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
@@ -144,16 +145,8 @@ func CertificateCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcili
 				return nil, errors.New("no certificateIssuer configured in KubermaticConfiguration")
 			}
 
-			// cert-manager's default is Issuer, but since we do not create an Issuer,
-			// it does not make sense to force to change the configuration for the
-			// default case
-			kind := cfg.Spec.CertificateIssuer.Kind
-			if kind == "" {
-				kind = certmanagerv1alpha2.ClusterIssuerKind
-			}
-
 			c.Spec.IssuerRef.Name = name
-			c.Spec.IssuerRef.Kind = kind
+			c.Spec.IssuerRef.Kind = cfg.Spec.CertificateIssuer.Kind
 
 			if group := cfg.Spec.CertificateIssuer.APIGroup; group != nil {
 				c.Spec.IssuerRef.Group = *group

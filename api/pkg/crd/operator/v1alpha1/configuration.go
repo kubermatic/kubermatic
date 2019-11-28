@@ -29,8 +29,6 @@ type KubermaticConfiguration struct {
 
 // KubermaticConfigurationSpec is the spec for a Kubermatic installation.
 type KubermaticConfigurationSpec struct {
-	// Namespace into which to install Kubermatic
-	Namespace string `json:"namespace,omitempty"`
 	// Domain is the base domain where the dashboard shall be available.
 	Domain string `json:"domain"`
 	// ImagePullSecret is used to authenticate against Docker registries.
@@ -83,7 +81,7 @@ type KubermaticAPIConfiguration struct {
 	AccessibleAddons []string `json:"accessibleAddons,omitempty"`
 	// PProfEndpoint controls the port the API should listen on to provide pprof
 	// data. This port is never exposed from the container and only available via port-forwardings.
-	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
+	PProfEndpoint *string `json:"pprofEndpoint,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
 }
@@ -108,7 +106,7 @@ type KubermaticSeedControllerConfiguration struct {
 	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
 	// PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
 	// data. This port is never exposed from the container and only available via port-forwardings.
-	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
+	PProfEndpoint *string `json:"pprofEndpoint,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
 }
@@ -181,7 +179,7 @@ type KubermaticMasterControllerConfiguration struct {
 	ProjectsMigrator KubermaticProjectsMigratorConfiguration `json:"projectsMigrator,omitempty"`
 	// PProfEndpoint controls the port the master-controller-manager should listen on to provide pprof
 	// data. This port is never exposed from the container and only available via port-forwardings.
-	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
+	PProfEndpoint *string `json:"pprofEndpoint,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
 }

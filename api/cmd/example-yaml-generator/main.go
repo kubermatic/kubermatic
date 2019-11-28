@@ -12,13 +12,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/master"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
-	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -157,26 +155,20 @@ func createExampleKubermaticConfiguration() *operatorv1alpha1.KubermaticConfigur
 			Namespace: "kubermatic",
 		},
 		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-			Domain: "example.com",
+			Domain:       "example.com",
+			FeatureGates: sets.NewString(),
 			API: operatorv1alpha1.KubermaticAPIConfiguration{
 				AccessibleAddons: []string{},
-			},
-			CertificateIssuer: corev1.TypedLocalObjectReference{
-				Kind: certmanagerv1alpha2.ClusterIssuerKind,
-			},
-			FeatureGates: sets.NewString(),
-			MasterFiles: map[string]string{
-				"versions.yaml": "<< versions.yaml >>",
-				"updates.yaml":  "<< updates.yaml >>",
 			},
 		},
 	}
 
-	if _, err := master.DefaultConfiguration(cfg, zap.NewNop().Sugar()); err != nil {
+	defaulted, err := common.DefaultConfiguration(cfg, zap.NewNop().Sugar())
+	if err != nil {
 		log.Fatalf("Failed to default KubermaticConfiguration: %v", err)
 	}
 
-	return cfg
+	return defaulted
 }
 
 // validateAllFieldsAreDefined recursively checks that all fields relevant
