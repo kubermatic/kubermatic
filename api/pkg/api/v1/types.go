@@ -1332,4 +1332,6 @@ const (
 	InClusterImageRegistryConfigCleanupFinalizer = "kubermatic.io/cleanup-image-registry-configs"
 	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup
 	CredentialsSecretsCleanupFinalizer = "kubermatic.io/cleanup-credentials-secrets"
+	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup
+	UserClusterRoleCleanupFinalizer = "kubermatic.io/user-cluster-role"
 )
