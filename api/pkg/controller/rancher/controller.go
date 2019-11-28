@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -17,13 +16,10 @@ import (
 
 	"go.uber.org/zap"
 
+	rancherclient "github.com/kubermatic/kubermatic/api/pkg/controller/rancher/client"
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
-
-	"github.com/rancher/norman/clientbase"
-	normantypes "github.com/rancher/norman/types"
-	rancherv3 "github.com/rancher/types/client/management/v3"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,6 +35,7 @@ import (
 
 const (
 	ControllerName     = "kubernatic_rancher_controller"
+	RancherUsername    = "admin"
 	RancherAdminSecret = "rancher-admin-secret"
 )
 
@@ -54,6 +51,10 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 	KubeconfigProvider KubeconfigProvider
 }
+
+var (
+	rancherClient *rancherclient.Client
+)
 
 func Add(
 	mgr manager.Manager,
@@ -127,11 +128,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, stat
 	if statefulSet.Status.ReadyReplicas == 0 {
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
-
 	if statefulSet.Annotations == nil {
 		statefulSet.Annotations = make(map[string]string)
 	}
-
 	// initialize rancher statefulSet
 	if statefulSet.Annotations["kubermatic.io/rancher-server-initialized"] != "true" {
 		if err := r.initRancherServer(ctx, log, statefulSet); err != nil {
@@ -139,11 +138,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, stat
 			return &reconcile.Result{}, err
 		}
 	}
-
 	// Setup the user cluster
 	rancherRegToken, err := r.rancherClusterWithRegistrationToken(ctx, cluster.Status.NamespaceName, cluster.Spec.HumanReadableName)
 	if err != nil {
-		log.Errorw("failed to create rancher cluster", zap.Error(err))
+		log.Errorw("failed to create rancher cluster:", zap.Error(err))
 		return nil, err
 	}
 	if rancherRegToken != nil {
@@ -160,30 +158,26 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, stat
 }
 
 func (r *Reconciler) initRancherServer(ctx context.Context, log *zap.SugaredLogger, statefulSet *appsv1.StatefulSet) error {
-	// first, try the default credentials
-	token, err := r.rancherLogin(ctx, statefulSet.Namespace, false)
-	if err != nil || token == "" {
-		log.Errorw("can't find default token:", zap.Error(err))
-		// retry with the initSecret, this happens if we previously failed before changing the admin password
-		token, err = r.rancherLogin(ctx, statefulSet.Namespace, true)
-		if err != nil {
-			return fmt.Errorf("can't login to rancher server: %v", err)
-		}
-	}
-	address, err := r.getRancherServerURL(ctx, statefulSet.Namespace)
-	if err != nil {
-		return fmt.Errorf("can't get rancher service URL: %v", err)
-	}
-	rancherClient, err := getRancherClient(token, address)
+	client, err := r.getRancherClient(ctx, statefulSet.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get rancher client: %v", err)
 	}
+	users, err := client.ListUsers(map[string]string{"username": RancherUsername})
+	if err != nil {
+		return fmt.Errorf("failed to get user list: %v", err)
+	}
 	initSecret, err := r.getRancherInitSecret(ctx, statefulSet.Namespace)
 	if err != nil {
-		return fmt.Errorf("failed to get rancher secret: %v", err)
+		return fmt.Errorf("failed to get rancher admin secret [%s] : %v", RancherAdminSecret, err)
 	}
-	if err = updateRancherAdminPassword(rancherClient, string(initSecret.Data["password"])); err != nil {
-		return fmt.Errorf("failed to update rancher admin user password: %v", err)
+	for _, user := range users.Data {
+		if user.Username == RancherUsername {
+			err = client.SetUserPassword(&user, &rancherclient.SetPasswordInput{NewPassword: string(initSecret.Data["password"])})
+			if err != nil {
+				return fmt.Errorf("failed to set rancher user password: %v", err)
+			}
+			break
+		}
 	}
 	// at this point, the rancher statefulSet is initialized and ready to use
 	statefulSet.Annotations["kubermatic.io/rancher-server-initialized"] = "true"
@@ -192,150 +186,71 @@ func (r *Reconciler) initRancherServer(ctx context.Context, log *zap.SugaredLogg
 	}
 	log.Infow("rancher server statefulSet initialized successfully")
 	return nil
-
 }
 
-func (r *Reconciler) applyRancherRegstrationCommand(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, regToken *rancherv3.ClusterRegistrationToken) error {
-	client := getHTTPClient()
-	resp, err := client.Get(regToken.ManifestURL)
-	if err != nil {
-		return fmt.Errorf("failed to get HTTP client: %v", err)
-	}
-	defer resp.Body.Close()
-	manifest, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read http response: %v", err)
-	}
-	kubeconfigFilename, kubeconfigDone, err := r.writeAdminKubeconfig(log, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to write the admin kubeconfig to the local filesystem: %v", err)
-	}
-	defer kubeconfigDone()
-	cmd := getApplyCommand(ctx, kubeconfigFilename)
-	buffer := bytes.Buffer{}
-
-	buffer.Write(manifest)
-	cmd.Stdin = &buffer
-
-	_, err = cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("failed to run rancher kubectl apply command: %v", err)
-	}
-	return nil
-}
-
-func (r *Reconciler) rancherClusterWithRegistrationToken(ctx context.Context, clusterNamespace, clusterName string) (*rancherv3.ClusterRegistrationToken, error) {
-	token, err := r.rancherLogin(ctx, clusterNamespace, true)
-	if err != nil {
-		return nil, fmt.Errorf("failed to login to rancher server: %v", err)
-	}
-
-	address, err := r.getRancherServerURL(ctx, clusterNamespace)
-	if err != nil {
-		return nil, fmt.Errorf("can't get rancher service URL: %v", err)
-	}
-	client, err := getRancherClient(token, address)
+func (r *Reconciler) rancherClusterWithRegistrationToken(ctx context.Context, clusterNamespace, clusterName string) (*rancherclient.ClusterRegistrationToken, error) {
+	client, err := r.getRancherClient(ctx, clusterNamespace)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rancher client: %v", err)
 	}
-
-	rancherCluster := &rancherv3.Cluster{Name: clusterName}
-	var created bool
-	rancherClusterList, err := client.Cluster.List(&normantypes.ListOpts{})
+	clusterList, err := client.ListClusters(map[string]string{"name": clusterName})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list rancher clusters: %v", err)
 	}
-	for _, cluster := range rancherClusterList.Data {
-		if rancherCluster.Name == cluster.Name {
-			rancherCluster = &cluster
-			created = true
-			break
-		}
-	}
-	if !created {
-		rancherCluster, err = client.Cluster.Create(rancherCluster)
+	rancherCluster := &rancherclient.Cluster{Name: clusterName}
+	if len(clusterList.Data) != 0 {
+		rancherCluster = &clusterList.Data[0]
+	} else {
+		rancherCluster, err = client.CreateImportedCluster(rancherCluster)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create rancher cluster: %v", err)
+			return nil, fmt.Errorf("failed to create rancher imported cluster: %v", err)
 		}
 	}
 	if !isRancherClusterProvisioned(rancherCluster) {
-		return client.ClusterRegistrationToken.Create(&rancherv3.ClusterRegistrationToken{
-			ClusterID: rancherCluster.ID,
-		})
+		token := &rancherclient.ClusterRegistrationToken{ClusterID: rancherCluster.ID}
+		token, err = client.CreateClusterRegistrationToken(token)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create rancher cluster registration token: %v", err)
+		}
+		return token, nil
 	}
+
 	return nil, nil
 }
 
-func updateRancherAdminPassword(client *rancherv3.Client, password string) error {
-	users, err := client.User.List(&normantypes.ListOpts{})
-	if err != nil {
-		return fmt.Errorf("failed to list users on rancher server: %v", err)
+func (r *Reconciler) getRancherClient(ctx context.Context, namespace string) (*rancherclient.Client, error) {
+	if rancherClient != nil {
+		return rancherClient, nil
 	}
-	for _, user := range users.Data {
-		if user.Username == "admin" {
-			_, err = client.User.ActionSetpassword(&user, &rancherv3.SetPasswordInput{NewPassword: password})
-			if err != nil {
-				return fmt.Errorf("failed to set rancher user password: %v", err)
-			}
-			break
-		}
-	}
-	return nil
-}
-
-func (r *Reconciler) rancherLogin(ctx context.Context, namespace string, useSecret bool) (string, error) {
 	address, err := r.getRancherServerURL(ctx, namespace)
 	if err != nil {
-		return "", fmt.Errorf("can't get rancher service URL: %v", err)
+		return nil, fmt.Errorf("can't get rancher service URL: %v", err)
 	}
-	url := fmt.Sprintf("%s/v3-public/localProviders/local?action=login", address)
-	// rancher default password
-	password := "admin"
-
-	if useSecret { // we don't use the default credentials, we use the initSecret
-		initSecret, err := r.getRancherInitSecret(ctx, namespace)
+	initSecret, err := r.getRancherInitSecret(ctx, namespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get rancher secret: %v", err)
+	}
+	opts := rancherclient.ClientOptions{
+		Endpoint:  address,
+		AccessKey: RancherUsername,
+		SecretKey: string(initSecret.Data["password"]),
+		Insecure:  true,
+	}
+	rancherClient, err = rancherclient.New(opts)
+	if err != nil {
+		r.log.Debugw("faild to login updated credentials:", zap.Error(err))
+		// fall back to the default password
+		opts.SecretKey = "admin"
+		rancherClient, err = rancherclient.New(opts)
 		if err != nil {
-			return "", fmt.Errorf("failed to get rancher secret: %v", err)
+			return nil, fmt.Errorf("failed to loging to rancher server: %v", err)
 		}
-		password = string(initSecret.Data["password"])
 	}
-
-	msg := map[string]interface{}{
-		"description":  "",
-		"username":     "admin",
-		"password":     password,
-		"responseType": "json",
-		"ttl":          0,
-	}
-
-	msgBytes, err := json.Marshal(msg)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal object: %v", err)
-	}
-
-	client := getHTTPClient()
-	resp, err := client.Post(url, "application/json", bytes.NewBuffer(msgBytes))
-	if err != nil {
-		return "", fmt.Errorf("http post request failed: %v", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("login failed with status: %v", resp.StatusCode)
-	}
-	var data map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return "", fmt.Errorf("failed to decode server response: %v", err)
-	}
-	token, ok := data["token"].(string)
-	if !ok {
-		return "", fmt.Errorf("can't find rancher token")
-	}
-	return token, nil
+	return rancherClient, nil
 }
 
 func (r *Reconciler) getRancherServerURL(ctx context.Context, namespace string) (string, error) {
 	service := &corev1.Service{}
-
 	if err := r.Get(ctx, types.NamespacedName{Name: resources.RancherServerServiceName, Namespace: namespace}, service); err != nil {
 		return "", err
 	}
@@ -373,21 +288,37 @@ func (r *Reconciler) getRancherInitSecret(ctx context.Context, namespace string)
 		"password": []byte(randString()),
 		"user":     []byte("admin"),
 	}
-	return secret, r.Create(ctx, secret)
+	err = r.Create(ctx, secret)
+	return secret, err
 }
 
-func randString() string {
-	rand.Seed(time.Now().UnixNano())
-	charset := "abcdefghijklmnopqrstuvwxyz" +
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-		"0123456789" +
-		"!@#$%^&*()"
-
-	b := make([]byte, 10)
-	for i := 0; i < 10; i++ {
-		b[i] = charset[rand.Intn(len(charset))]
+func (r *Reconciler) applyRancherRegstrationCommand(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, regToken *rancherclient.ClusterRegistrationToken) error {
+	client := getHTTPClient(true)
+	resp, err := client.Get(regToken.ManifestURL)
+	if err != nil {
+		return fmt.Errorf("failed to get HTTP client: %v", err)
 	}
-	return string(b)
+	defer resp.Body.Close()
+	manifest, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read http response: %v", err)
+	}
+	kubeconfigFilename, kubeconfigDone, err := r.writeAdminKubeconfig(log, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to write the admin kubeconfig to the local filesystem: %v", err)
+	}
+	defer kubeconfigDone()
+	cmd := getApplyCommand(ctx, kubeconfigFilename)
+	buffer := bytes.Buffer{}
+
+	buffer.Write(manifest)
+	cmd.Stdin = &buffer
+
+	_, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to run rancher kubectl apply command: %v", err)
+	}
+	return nil
 }
 
 func (r *Reconciler) writeAdminKubeconfig(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
@@ -417,36 +348,17 @@ func getApplyCommand(ctx context.Context, kubeconfigFilename string) *exec.Cmd {
 	return exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFilename, "apply", "-f", "-")
 }
 
-func getHTTPClient() http.Client {
+func getHTTPClient(insecure bool) http.Client {
 	tr := http.DefaultTransport
-	tr.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	if insecure {
+		tr.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
 	return http.Client{
 		Transport: tr,
 	}
 }
 
-func getRancherClient(token, address string) (*rancherv3.Client, error) {
-	if !strings.HasSuffix(address, "/v3") {
-		address = fmt.Sprintf("%s/v3", address)
-	}
-	auth := strings.Split(token, ":")
-	if len(auth) != 2 {
-		return nil, fmt.Errorf("invalid auth token")
-	}
-	options := &clientbase.ClientOpts{
-		URL:       address,
-		AccessKey: auth[0],
-		SecretKey: auth[1],
-	}
-
-	rancherClient, err := rancherv3.NewClient(options)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create rancher client: %v", err)
-	}
-	return rancherClient, nil
-}
-
-func isRancherClusterProvisioned(cluster *rancherv3.Cluster) bool {
+func isRancherClusterProvisioned(cluster *rancherclient.Cluster) bool {
 	if cluster == nil || cluster.Conditions == nil {
 		return false
 	}
@@ -456,4 +368,18 @@ func isRancherClusterProvisioned(cluster *rancherv3.Cluster) bool {
 		}
 	}
 	return false
+}
+
+func randString() string {
+	rand.Seed(time.Now().UnixNano())
+	charset := "abcdefghijklmnopqrstuvwxyz" +
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+		"0123456789" +
+		"!@#$%^&*()"
+
+	b := make([]byte, 10)
+	for i := 0; i < 10; i++ {
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(b)
 }
