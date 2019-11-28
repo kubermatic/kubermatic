@@ -80,9 +80,9 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 			}
 
 			if cfg.Spec.API.DebugLog {
-				args = append(args, "-v4", "-log-debug=true")
+				args = append(args, "-v=4", "-log-debug=true")
 			} else {
-				args = append(args, "-v2")
+				args = append(args, "-v=2")
 			}
 
 			if cfg.Spec.FeatureGates.Has(features.OIDCKubeCfgEndpoint) {

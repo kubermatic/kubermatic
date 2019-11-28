@@ -89,6 +89,12 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 				args = append(args, "-v2")
 			}
 
+			if cfg.Spec.SeedController.DebugLog {
+				args = append(args, "-v=4", "-log-debug=true")
+			} else {
+				args = append(args, "-v=2")
+			}
+
 			sharedAddonVolume := "addons"
 			volumes := []corev1.Volume{
 				{
