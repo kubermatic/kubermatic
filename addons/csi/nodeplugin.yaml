@@ -25,6 +25,9 @@ spec:
       hostNetwork: true
       nodeSelector:
         x-kubernetes.io/distribution: ubuntu
+      tolerations:
+      - key: "node.cloudprovider.kubernetes.io/uninitialized"
+        operator: "Exists"
       containers:
         - name: node-driver-registrar
           image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
@@ -138,6 +141,9 @@ spec:
       hostNetwork: true
       nodeSelector:
         x-kubernetes.io/distribution: centos
+      tolerations:
+      - key: "node.cloudprovider.kubernetes.io/uninitialized"
+        operator: "Exists"
       containers:
         - name: node-driver-registrar
           image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
@@ -251,6 +257,9 @@ spec:
       hostNetwork: true
       nodeSelector:
         x-kubernetes.io/distribution: container-linux
+      tolerations:
+      - key: "node.cloudprovider.kubernetes.io/uninitialized"
+        operator: "Exists"
       containers:
         - name: node-driver-registrar
           image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
