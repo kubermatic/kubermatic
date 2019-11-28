@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"reflect"
 	"strings"
 	"time"
 
@@ -32,8 +33,10 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -127,7 +130,17 @@ func Add(
 		return requests
 	})}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, enqueueClusterAddons); err != nil {
+	// Only react cluster update events when our condition changed
+	clusterPredicate := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			old := e.ObjectOld.(*kubermaticv1.Cluster)
+			new := e.ObjectNew.(*kubermaticv1.Cluster)
+			_, oldCondition := kubermaticv1helper.GetClusterCondition(old, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess)
+			_, newCondition := kubermaticv1helper.GetClusterCondition(new, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess)
+			return !reflect.DeepEqual(oldCondition, newCondition)
+		},
+	}
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, enqueueClusterAddons, clusterPredicate); err != nil {
 		return err
 	}
 
