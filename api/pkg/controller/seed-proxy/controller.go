@@ -24,10 +24,6 @@ const (
 	// ControllerName is the name of this very controller.
 	ControllerName = "seed-proxy-controller"
 
-	// MasterTargetNamespace is the namespace inside the
-	// master where the components will be created in.
-	MasterTargetNamespace = "kubermatic"
-
 	// MasterDeploymentName is the name used for deployments'
 	// NameLabel value.
 	MasterDeploymentName = "seed-proxy"
@@ -48,21 +44,9 @@ const (
 	// inside the seed cluster.
 	SeedServiceAccountName = "seed-proxy"
 
-	// SeedServiceAccountNamespace is the namespace inside the seed
-	// cluster where the service account will be created.
-	SeedServiceAccountNamespace = metav1.NamespaceSystem
-
 	// SeedMonitoringNamespace is the namespace inside the seed
 	// cluster where Prometheus, Grafana etc. are installed.
 	SeedMonitoringNamespace = "monitoring"
-
-	// SeedMonitoringRoleName is the name inside the seed monitoring
-	// namespace used for the new role used for proxying to Prometheus/Grafana/...
-	SeedMonitoringRoleName = "seed-proxy"
-
-	// SeedMonitoringRoleBindingName is the name inside the seed
-	// monitoring namespace used for the new role binding.
-	SeedMonitoringRoleBindingName = "seed-proxy"
 
 	// SeedPrometheusService is the service exposed by Prometheus.
 	SeedPrometheusService = "prometheus:web"
