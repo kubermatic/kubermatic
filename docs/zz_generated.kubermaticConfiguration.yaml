@@ -6,8 +6,15 @@ metadata:
 spec:
   # API configures the frontend REST API used by the dashboard.
   api:
-    # Image is the Docker image containing the Kubermatic REST API.
-    image: 'quay.io/kubermatic/api:'
+    # AccessibleAddons is a list of addons that should be enabled in the API.
+    accessibleAddons: []
+    # DebugLog enables more verbose logging.
+    debugLog: false
+    # DockerRepository is the repository containing the Kubermatic REST API image.
+    dockerRepository: quay.io/kubermatic/api
+    # PProfEndpoint controls the port the API should listen on to provide pprof
+    # data. This port is never exposed from the container and only available via port-forwardings.
+    pprofEndpoint: ""
   # Auth defines keys and URLs for Dex.
   auth:
     cABundle: ""
@@ -29,7 +36,7 @@ spec:
     # For any other third-party types, APIGroup is required.
     apiGroup: null
     # Kind is the type of resource being referenced
-    kind: ""
+    kind: ClusterIssuer
     # Name is the name of resource being referenced
     name: ""
   # Domain is the base domain where the dashboard shall be available.
@@ -39,13 +46,18 @@ spec:
   # if this is set to LoadBalancerStrategy.
   exposeStrategy: NodePort
   # FeatureGates are used to optionally enable certain features.
-  featureGates: null
+  featureGates: {}
   # ImagePullSecret is used to authenticate against Docker registries.
   imagePullSecret: ""
-  # MasterController configures the controller-manager.
+  # MasterController configures the master-controller-manager.
   masterController:
-    # Image is the Docker image containing the Kubermatic master controller-manager.
-    image: 'quay.io/kubermatic/api:'
+    # DebugLog enables more verbose logging.
+    debugLog: false
+    # DockerRepository is the repository containing the Kubermatic master-controller-manager image.
+    dockerRepository: quay.io/kubermatic/api
+    # PProfEndpoint controls the port the master-controller-manager should listen on to provide pprof
+    # data. This port is never exposed from the container and only available via port-forwardings.
+    pprofEndpoint: ""
     # ProjectsMigrator configures the migrator for user projects.
     projectsMigrator:
       # DryRun makes the migrator only log the actions it would take.
@@ -54,30 +66,54 @@ spec:
   masterFiles: null
   # Namespace into which to install Kubermatic
   namespace: ""
-  # SeedController configures the controller-manager.
+  # SeedController configures the seed-controller-manager.
   seedController:
+    # BackupCleanupContainer is the container used for removing expired backups from the storage location.
+    backupCleanupContainer: ""
+    # BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
+    backupStoreContainer: ""
+    # DebugLog enables more verbose logging.
+    debugLog: false
+    # DockerRepository is the repository containing the Kubermatic seed-controller-manager image.
+    dockerRepository: quay.io/kubermatic/api
+    # PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
+    # data. This port is never exposed from the container and only available via port-forwardings.
+    pprofEndpoint: ""
+  # UI configures the dashboard.
+  ui:
+    # Config sets flags for various dashboard features.
+    config: ""
+    # DockerRepository is the repository containing the Kubermatic dashboard image.
+    dockerRepository: quay.io/kubermatic/ui-v2
+    # Presets is a YAML string containing pre-defined credentials for cloud providers.
+    presets: ""
+  # UserCluster configures various aspects of the user-created clusters.
+  userCluster:
     # Addons controls the optional additions installed into each user cluster.
     addons:
       # Kubernetes controls the addons for Kubernetes-based clusters.
       kubernetes:
         # Default is the list of addons to be installed by default into each cluster.
         default: null
-        # Image is the Docker image containing the possible addon manifests.
-        image: 'quay.io/kubermatic/addons:'
+        # DockerRepository is the repository containing the Docker image containing
+        # the possible addon manifests.
+        dockerRepository: quay.io/kubermatic/addons
       # Openshift controls the addons for Openshift-based clusters.
       openshift:
         # Default is the list of addons to be installed by default into each cluster.
         default: null
-        # Image is the Docker image containing the possible addon manifests.
-        image: quay.io/kubermatic/openshift-addons:v0.9
-    # BackupCleanupContainer is the container used for removing expired backups from the storage location.
-    backupCleanupContainer: ""
-    # BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
-    backupStoreContainer: ""
-    # Image is the Docker image containing the Kubermatic controller-manager.
-    image: 'quay.io/kubermatic/api:'
-    # KubermaticImage can be used to overwrite the Docker image that is deployed inside user clusters.
-    kubermaticImage: ""
+        # DockerRepository is the repository containing the Docker image containing
+        # the possible addon manifests.
+        dockerRepository: quay.io/kubermatic/openshift-addons
+    # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
+    # the Kubernetes API server.
+    disableApiserverEndpointReconciling: false
+    # DNATControllerDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
+    dnatControllerDockerRepository: quay.io/kubermatic/kubeletdnat-controller
+    # EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
+    etcdVolumeSize: ""
+    # KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
+    kubermaticDockerRepository: quay.io/kubermatic/api
     # Monitoring can be used to fine-tune to in-cluster Prometheus.
     monitoring:
       # CustomRules can be used to inject custom recording and alerting rules. This field
@@ -99,13 +135,6 @@ spec:
     # range of the seed cluster.
     nodePortRange: ""
     # OverwriteRegistry specifies a custom Docker registry which will be used for all images
-    # (user cluster control plane + addons)
+    # used inside user clusters (user cluster control plane + addons). This also applies to
+    # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
     overwriteRegistry: ""
-  # UI configures the dashboard.
-  ui:
-    # Config sets flags for various dashboard features.
-    config: ""
-    # Image is the Docker image containing the Kubermatic dashboard.
-    image: quay.io/kubermatic/ui-v2:v1.3.0
-    # Presets is a YAML string containing pre-defined credentials for cloud providers.
-    presets: ""
