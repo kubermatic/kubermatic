@@ -25,11 +25,20 @@ directed at that DNS name will end up at an Ingress Controller running for the g
 
 The proposed implementation looks like this:
 
-* The human Kubermatic operator must delegate a DNS zone per Kubermatic seed and configure that zone in the seed
-* Kubermatic runs a DNS resolver that will create an A record per ready user cluster node with a name of
-	`*.<<clusterid>>.<<DNS_ZONE>>` that points to the nodes external address
+* The human Kubermatic operator must provide a DNS domain per seed under which kubermatic will set up a wildcard domain per cluster
+* [External DNS](https://github.com/kubernetes-sigs/external-dns/) must be set up in the seed and configured
+	with the customers provider of choice
+* Kubermatic runs a controller that manages a [`DNSEndpoint`](https://github.com/kubernetes-sigs/external-dns/blob/f763d2a4139746abd775c61642cb9e776b387ba6/docs/contributing/crd-source.md) custom resource and
+    * Sets its `DNSName` to `*.<<clusterid>>.<<DNS_ZONE>>`
+    * Synchronizes the `target` property of it with the ready nodes in the cluster
 
 ## Alternatives considered
+
+### Operating an authoritative DNS server per seed
+
+This would work but is a component we ourselves must make highly available and make sure its reachable. By using
+`External DNS`, this can still be done by using the `CoreDNS` provider, but its also possible to choose from a
+wide variety of DNS-As-A-Service providers.
 
 ### Using a service of type LoadBalancer
 
