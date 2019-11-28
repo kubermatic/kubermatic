@@ -27,6 +27,7 @@ import (
 	rbacusercluster "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/rbac"
 	usercluster "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources"
 	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
+	rolecloner "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/role-cloner"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/pprof"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -259,6 +260,11 @@ func main() {
 		log.Fatalw("Failed to register clusterrolelabeler controller", zap.Error(err))
 	}
 	log.Info("Registered clusterrolelabeler controller")
+
+	if err := rolecloner.Add(ctx, log, mgr); err != nil {
+		log.Fatalw("Failed to register rolecloner controller", zap.Error(err))
+	}
+	log.Info("Registered rolecloner controller")
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
