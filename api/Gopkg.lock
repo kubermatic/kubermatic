@@ -643,14 +643,6 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:d5344bb08f1d8dc55f9a513ac4f971a9c8baeb73690b7cde56f4fe8a9143ef62"
-  name = "github.com/gorilla/websocket"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "c3e18be99d19e6b3e8f1559eea2c161a665c4b6b"
-  version = "v1.4.1"
-
-[[projects]]
   digest = "1:3107a6ef51bb9f3bc7cf235af0d92303b39afaa841f02dfc87f1d0a5d05a3fca"
   name = "github.com/grpc-ecosystem/grpc-gateway"
   packages = [
@@ -1091,38 +1083,6 @@
   pruneopts = "NUT"
   revision = "499c85531f756d1129edd26485a5f73871eeb308"
   version = "v0.0.5"
-
-[[projects]]
-  branch = "master"
-  digest = "1:15442384eb4170879a1a9abffcc9d87c92ff905925c90400a42355d22a61b6f2"
-  name = "github.com/rancher/norman"
-  packages = [
-    "clientbase",
-    "httperror",
-    "types",
-    "types/convert",
-    "types/definition",
-    "types/slice",
-    "types/values",
-  ]
-  pruneopts = "NUT"
-  revision = "1fcac7eb4fea474c402abfe979e9b3f0ca7061e6"
-
-[[projects]]
-  branch = "master"
-  digest = "1:77182a738a41d99f7368429863118d9d99d8c12c1c62617717f65535025f4817"
-  name = "github.com/rancher/types"
-  packages = ["client/management/v3"]
-  pruneopts = "NUT"
-  revision = "5469d35f95110f90f3816d00d10030ef0e83f804"
-
-[[projects]]
-  digest = "1:c9c87130fa72d67beacaa32d122cf59d9c7fcf4cb375d2c38e44cb7605a7afca"
-  name = "github.com/rancher/wrangler"
-  packages = ["pkg/name"]
-  pruneopts = "NUT"
-  revision = "4a14db5d5daf08a7421c90f9e2015885f376e2c0"
-  version = "v0.2.0"
 
 [[projects]]
   digest = "1:53c3320ee307f01fd24a88e396a8d2239cd8346d1a085320209319f2d33f59cc"
@@ -2214,9 +2174,6 @@
     "github.com/prometheus/client_golang/api",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",
-    "github.com/rancher/norman/clientbase",
-    "github.com/rancher/norman/types",
-    "github.com/rancher/types/client/management/v3",
     "github.com/robfig/cron",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
