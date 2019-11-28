@@ -11,8 +11,11 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
@@ -159,6 +162,10 @@ func (r *Reconciler) reconcileSeedServiceAccounts(seed *kubermaticv1.Seed, clien
 		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", seed.Namespace, err)
 	}
 
+	if err := r.deleteResource(client, SeedServiceAccountName, metav1.NamespaceSystem, &corev1.ServiceAccount{}); err != nil {
+		return fmt.Errorf("failed to cleanup ServiceAccount: %v", err)
+	}
+
 	return nil
 }
 
@@ -171,6 +178,10 @@ func (r *Reconciler) reconcileSeedRoles(seed *kubermaticv1.Seed, client ctrlrunt
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", SeedMonitoringNamespace, err)
 	}
 
+	if err := r.deleteResource(client, "seed-proxy", SeedMonitoringNamespace, &rbacv1.Role{}); err != nil {
+		return fmt.Errorf("failed to cleanup Role: %v", err)
+	}
+
 	return nil
 }
 
@@ -181,6 +192,10 @@ func (r *Reconciler) reconcileSeedRoleBindings(seed *kubermaticv1.Seed, client c
 
 	if err := reconciling.ReconcileRoleBindings(r.ctx, creators, SeedMonitoringNamespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in the namespace %s: %v", SeedMonitoringNamespace, err)
+	}
+
+	if err := r.deleteResource(client, "seed-proxy", SeedMonitoringNamespace, &rbacv1.RoleBinding{}); err != nil {
+		return fmt.Errorf("failed to cleanup RoleBinding: %v", err)
 	}
 
 	return nil
@@ -321,6 +336,24 @@ func (r *Reconciler) reconcileMasterGrafanaProvisioning(seeds map[string]*kuberm
 
 	if err := reconciling.ReconcileConfigMaps(r.ctx, creators, MasterGrafanaNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in the namespace %s: %v", MasterGrafanaNamespace, err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) deleteResource(client ctrlruntimeclient.Client, name string, namespace string, obj runtime.Object) error {
+	key := types.NamespacedName{Name: name, Namespace: namespace}
+
+	if err := client.Get(context.Background(), key, obj); err != nil {
+		if !kerrors.IsNotFound(err) {
+			return fmt.Errorf("failed to probe for %s: %v", key, err)
+		}
+
+		return nil
+	}
+
+	if err := client.Delete(context.Background(), obj); err != nil {
+		return fmt.Errorf("failed to delete %s: %v", key, err)
 	}
 
 	return nil
