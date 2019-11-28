@@ -89,29 +89,38 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *reconciler) reconcile(log *zap.SugaredLogger, role *rbacv1.Role) error {
 	oldRole := role.DeepCopy()
 
+	namespaces := []string{}
 	namespaceList := &corev1.NamespaceList{}
 	if err := r.client.List(r.ctx, namespaceList); err != nil {
 		return fmt.Errorf("failed to get namespaces: %v", err)
 	}
 
+	for _, n := range namespaceList.Items {
+		// This NS is the authoritative source of roles we configure
+		if n.Name == v1.NamespaceSystem {
+			continue
+		}
+		namespaces = append(namespaces, n.Name)
+	}
+
 	if oldRole.DeletionTimestamp != nil {
-		if kuberneteshelper.HasFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer) {
-			for _, namespace := range namespaceList.Items {
-				if oldRole.Namespace != namespace.Name {
-					if err := r.client.Delete(r.ctx, &rbacv1.Role{
-						ObjectMeta: v1.ObjectMeta{
-							Name:      oldRole.Name,
-							Namespace: namespace.Name,
-						},
-					}); err != nil {
-						if kerrors.IsNotFound(err) {
-							continue
-						}
-						return fmt.Errorf("failed to delete role: %v", err)
-					}
+		if !kuberneteshelper.HasFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer) {
+			return nil
+		}
+		for _, namespace := range namespaces {
+			if err := r.client.Delete(r.ctx, &rbacv1.Role{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      oldRole.Name,
+					Namespace: namespace,
+				},
+			}); err != nil {
+				if kerrors.IsNotFound(err) {
+					continue
 				}
+				return fmt.Errorf("failed to delete role: %v", err)
 			}
 		}
+
 		kuberneteshelper.RemoveFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer)
 		if err := r.client.Update(r.ctx, oldRole); err != nil {
 			return fmt.Errorf("failed to update role: %v", err)
@@ -127,43 +136,42 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, role *rbacv1.Role) error 
 	}
 
 	for _, namespace := range namespaceList.Items {
-		if oldRole.Namespace != namespace.Name {
-			wasCreated := false
-			role := &rbacv1.Role{}
-			if err := r.client.Get(r.ctx, ctrlruntimeclient.ObjectKey{
-				Namespace: namespace.Name,
-				Name:      oldRole.Name,
-			}, role); err != nil {
-				if kerrors.IsNotFound(err) {
-					log.Debug("role not found, creating")
-					newRole := &rbacv1.Role{
-						ObjectMeta: v1.ObjectMeta{
-							Name:      oldRole.Name,
-							Namespace: namespace.Name,
-							Labels:    oldRole.Labels,
-						},
-						Rules: oldRole.Rules,
-					}
-					if err := r.client.Create(r.ctx, newRole); err != nil {
-						return fmt.Errorf("failed to create role: %v", err)
-					}
-					wasCreated = true
-				} else {
-					return fmt.Errorf("failed to get role: %v", err)
+		wasCreated := false
+		role := &rbacv1.Role{}
+		if err := r.client.Get(r.ctx, ctrlruntimeclient.ObjectKey{
+			Namespace: namespace.Name,
+			Name:      oldRole.Name,
+		}, role); err != nil {
+			if kerrors.IsNotFound(err) {
+				log.Debug("role not found, creating")
+				newRole := &rbacv1.Role{
+					ObjectMeta: v1.ObjectMeta{
+						Name:      oldRole.Name,
+						Namespace: namespace.Name,
+						Labels:    oldRole.Labels,
+					},
+					Rules: oldRole.Rules,
 				}
+				if err := r.client.Create(r.ctx, newRole); err != nil {
+					return fmt.Errorf("failed to create role: %v", err)
+				}
+				wasCreated = true
+			} else {
+				return fmt.Errorf("failed to get role: %v", err)
 			}
+		}
 
-			// update only existing roles, not already created
-			if !wasCreated {
-				if !reflect.DeepEqual(role.Rules, oldRole.Rules) {
-					log.Debug("role ", oldRole.Name, " was changed, updating in namespace ", namespace.Name)
-					role.Rules = oldRole.Rules
-					if err := r.client.Update(r.ctx, role); err != nil {
-						return fmt.Errorf("failed to update role: %v", err)
-					}
+		// update only existing roles, not already created
+		if !wasCreated {
+			if !reflect.DeepEqual(role.Rules, oldRole.Rules) {
+				log.Debug("role ", oldRole.Name, " was changed, updating in namespace ", namespace.Name)
+				role.Rules = oldRole.Rules
+				if err := r.client.Update(r.ctx, role); err != nil {
+					return fmt.Errorf("failed to update role: %v", err)
 				}
 			}
 		}
+
 	}
 
 	return nil
@@ -173,7 +181,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, role *rbacv1.Role) error 
 func enqueueTemplateRoles(client ctrlruntimeclient.Client) *handler.EnqueueRequestsFromMapFunc {
 	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		roleList := &rbacv1.RoleList{}
-		if err := client.List(context.Background(), roleList, ctrlruntimeclient.MatchingLabels{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace("kube-system")); err != nil {
+		if err := client.List(context.Background(), roleList, ctrlruntimeclient.MatchingLabels{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(v1.NamespaceSystem)); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Roles: %v", err))
 			return []reconcile.Request{}
 		}
