@@ -29,8 +29,6 @@ type KubermaticConfiguration struct {
 
 // KubermaticConfigurationSpec is the spec for a Kubermatic installation.
 type KubermaticConfigurationSpec struct {
-	// Namespace into which to install Kubermatic
-	Namespace string `json:"namespace,omitempty"`
 	// Domain is the base domain where the dashboard shall be available.
 	Domain string `json:"domain"`
 	// ImagePullSecret is used to authenticate against Docker registries.
@@ -52,12 +50,13 @@ type KubermaticConfigurationSpec struct {
 	// MasterFiles is a map of additional files to mount into each master component.
 	MasterFiles map[string]string `json:"masterFiles,omitempty"`
 	// ExposeStrategy is the strategy to expose the cluster with.
-	// Note: The `seed_dns_overwrite` setting of the `datacenters.yaml` doesn't have any effect if this is set to LoadBalancerStrategy.
+	// Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
+	// if this is set to LoadBalancerStrategy.
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
 	// CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)
 	// that will be used to acquire the certificate for the configured domain.
 	// To use a namespaced Issuer, set the Kind to "Issuer" and manually create the
-	// match Issuer in Kubermatic's namespace.
+	// matching Issuer in Kubermatic's namespace.
 	CertificateIssuer corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
 }
 
@@ -82,7 +81,7 @@ type KubermaticAPIConfiguration struct {
 	AccessibleAddons []string `json:"accessibleAddons,omitempty"`
 	// PProfEndpoint controls the port the API should listen on to provide pprof
 	// data. This port is never exposed from the container and only available via port-forwardings.
-	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
+	PProfEndpoint *string `json:"pprofEndpoint,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
 }
@@ -107,7 +106,7 @@ type KubermaticSeedControllerConfiguration struct {
 	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
 	// PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
 	// data. This port is never exposed from the container and only available via port-forwardings.
-	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
+	PProfEndpoint *string `json:"pprofEndpoint,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
 }
@@ -180,7 +179,7 @@ type KubermaticMasterControllerConfiguration struct {
 	ProjectsMigrator KubermaticProjectsMigratorConfiguration `json:"projectsMigrator,omitempty"`
 	// PProfEndpoint controls the port the master-controller-manager should listen on to provide pprof
 	// data. This port is never exposed from the container and only available via port-forwardings.
-	PProfEndpoint string `json:"pprofEndpoint,omitempty"`
+	PProfEndpoint *string `json:"pprofEndpoint,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
 }

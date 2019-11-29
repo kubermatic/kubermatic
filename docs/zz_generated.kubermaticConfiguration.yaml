@@ -1,0 +1,328 @@
+apiVersion: operator.kubermatic.io/v1alpha1
+kind: KubermaticConfiguration
+metadata:
+  name: <<mykubermatic>>
+  namespace: kubermatic
+spec:
+  # API configures the frontend REST API used by the dashboard.
+  api:
+    # AccessibleAddons is a list of addons that should be enabled in the API.
+    accessibleAddons: []
+    # DebugLog enables more verbose logging.
+    debugLog: false
+    # DockerRepository is the repository containing the Kubermatic REST API image.
+    dockerRepository: quay.io/kubermatic/api
+    # PProfEndpoint controls the port the API should listen on to provide pprof
+    # data. This port is never exposed from the container and only available via port-forwardings.
+    pprofEndpoint: :6600
+  # Auth defines keys and URLs for Dex.
+  auth:
+    cABundle: ""
+    clientID: kubermatic
+    issuerClientID: kubermaticIssuer
+    issuerClientSecret: ""
+    issuerCookieKey: ""
+    issuerRedirectURL: https://example.com/api/v1/kubeconfig
+    serviceAccountKey: ""
+    skipTokenIssuerTLSVerify: false
+    tokenIssuer: https://example.com/dex
+  # CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)
+  # that will be used to acquire the certificate for the configured domain.
+  # To use a namespaced Issuer, set the Kind to "Issuer" and manually create the
+  # matching Issuer in Kubermatic's namespace.
+  certificateIssuer:
+    # APIGroup is the group for the resource being referenced.
+    # If APIGroup is not specified, the specified Kind must be in the core API group.
+    # For any other third-party types, APIGroup is required.
+    apiGroup: null
+    # Kind is the type of resource being referenced
+    kind: ClusterIssuer
+    # Name is the name of resource being referenced
+    name: ""
+  # Domain is the base domain where the dashboard shall be available.
+  domain: example.com
+  # ExposeStrategy is the strategy to expose the cluster with.
+  # Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
+  # if this is set to LoadBalancerStrategy.
+  exposeStrategy: NodePort
+  # FeatureGates are used to optionally enable certain features.
+  featureGates: {}
+  # ImagePullSecret is used to authenticate against Docker registries.
+  imagePullSecret: ""
+  # MasterController configures the master-controller-manager.
+  masterController:
+    # DebugLog enables more verbose logging.
+    debugLog: false
+    # DockerRepository is the repository containing the Kubermatic master-controller-manager image.
+    dockerRepository: quay.io/kubermatic/api
+    # PProfEndpoint controls the port the master-controller-manager should listen on to provide pprof
+    # data. This port is never exposed from the container and only available via port-forwardings.
+    pprofEndpoint: :6600
+    # ProjectsMigrator configures the migrator for user projects.
+    projectsMigrator:
+      # DryRun makes the migrator only log the actions it would take.
+      dryRun: false
+  # MasterFiles is a map of additional files to mount into each master component.
+  masterFiles:
+    updates.yaml: |-
+      ### Updates file
+      #
+      # Contains a list of allowed updated
+      #
+      # Each update may optionally contain 'automatic: true' in which case the
+      # controlplane of all clusters whose version matches the 'from' directive
+      # will get updated to the 'to' version. If 'automatic: true' is set, the
+      # 'to' version must be a version and not a version range.
+      #
+      # All 'to' versions must be configured in the 'versions.yaml'.
+      #
+      # Also, updates may contan 'automaticNodeUpdate: true', in which case
+      # Nodes will get updates as well. 'automaticNodeUpdate: true' sets
+      # 'automatic: true' as well if not yet the case, because Nodes may not have
+      # a newer version than the controlplane.
+      #
+      ####
+      updates:
+      # ======= 1.12 =======
+      # Allow to next minor release
+      - from: 1.12.*
+        to: 1.13.*
+        automatic: false
+
+      # ======= 1.13 =======
+      # CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514
+      - from: <= 1.13.9, >= 1.13.0
+        to: 1.13.10
+        automatic: true
+      # Allow to next minor release
+      - from: 1.13.*
+        to: 1.14.*
+        automatic: false
+
+      # ======= 1.14 =======
+      # Allow to change to any patch version
+      - from: 1.14.*
+        to: 1.14.*
+        automatic: false
+      # CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
+      - from: <= 1.14.7, >= 1.14.0
+        to: 1.14.8
+        automatic: true
+      # Allow to next minor release
+      - from: 1.14.*
+        to: 1.15.*
+        automatic: false
+
+      # ======= 1.15 =======
+      # Allow to change to any patch version
+      - from: 1.15.*
+        to: 1.15.*
+        automatic: false
+      # CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
+      - from: <= 1.15.4, >= 1.15.0
+        to: 1.15.5
+        automatic: true
+      # Allow to next minor release
+      - from: 1.15.*
+        to: 1.16.*
+        automatic: false
+
+      # ======= 1.16 =======
+      # Allow to change to any patch version
+      - from: 1.16.*
+        to: 1.16.*
+        automatic: false
+      # CVE-2019-11253
+      - from: <= 1.16.1, >= 1.16.0
+        to: 1.16.2
+        automatic: true
+      # Allow to next minor release
+      - from: 1.16.*
+        to: 1.17.*
+        automatic: false
+
+      # ======= 1.17 =======
+      # Allow to change to any patch version
+      - from: 1.17.*
+        to: 1.17.*
+        automatic: false
+      # Allow to next minor release
+      - from: 1.16.*
+        to: 1.18.*
+        automatic: false
+
+      # ======= Openshift 4.1 =======
+      # Allow to change to any patch version
+      - from: 4.1.*
+        to: 4.1.*
+        automatic: false
+        type: openshift
+      # Allow to next minor release
+      - from: 4.1.*
+        to: 2.2.*
+        automatic: false
+        type: openshift
+    versions.yaml: |-
+      versions:
+      # Kubernetes 1.14
+      - version: "v1.14.8"
+        default: false
+      - version: "v1.14.9"
+        default: false
+      # Kubernetes 1.15
+      - version: "v1.15.5"
+        default: false
+      - version: "v1.15.6"
+        default: true
+      # Kubernetes 1.16
+      - version: "v1.16.2"
+        default: false
+      - version: "v1.16.3"
+        default: false
+      # Kubernetes 1.17
+      - version: "v1.17.0-rc.1"
+        default: false
+      # OpenShift 4.1.9
+      - version: "v4.1.9"
+        default: false
+        type: "openshift"
+      # OpenShift 4.1.18
+      - version: "v4.1.18"
+        default: true
+        type: "openshift"
+  # SeedController configures the seed-controller-manager.
+  seedController:
+    # BackupCleanupContainer is the container used for removing expired backups from the storage location.
+    backupCleanupContainer: |-
+      name: cleanup-container
+      image: quay.io/kubermatic/s3-storer:v0.1.4
+      command:
+      - /bin/sh
+      - -c
+      - |
+        set -euo pipefail
+        s3-storeuploader delete-all --endpoint minio.minio.svc.cluster.local:9000 --bucket kubermatic-etcd-backups --prefix $CLUSTER
+      env:
+      - name: ACCESS_KEY_ID
+        valueFrom:
+        secretKeyRef:
+          name: s3-credentials
+          key: ACCESS_KEY_ID
+      - name: SECRET_ACCESS_KEY
+        valueFrom:
+        secretKeyRef:
+          name: s3-credentials
+          key: SECRET_ACCESS_KEY
+    # BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
+    backupStoreContainer: |-
+      name: store-container
+      image: quay.io/kubermatic/s3-storer:v0.1.4
+      command:
+      - /bin/sh
+      - -c
+      - |
+        set -euo pipefail
+        s3-storeuploader store --endpoint minio.minio.svc.cluster.local:9000 --bucket kubermatic-etcd-backups --create-bucket --prefix $CLUSTER --file /backup/snapshot.db
+        s3-storeuploader delete-old-revisions --endpoint minio.minio.svc.cluster.local:9000 --bucket kubermatic-etcd-backups --prefix $CLUSTER --file /backup/snapshot.db --max-revisions 20
+      env:
+      - name: ACCESS_KEY_ID
+        valueFrom:
+        secretKeyRef:
+          name: s3-credentials
+          key: ACCESS_KEY_ID
+      - name: SECRET_ACCESS_KEY
+        valueFrom:
+        secretKeyRef:
+          name: s3-credentials
+          key: SECRET_ACCESS_KEY
+      volumeMounts:
+      - name: etcd-backup
+        mountPath: /backup
+    # DebugLog enables more verbose logging.
+    debugLog: false
+    # DockerRepository is the repository containing the Kubermatic seed-controller-manager image.
+    dockerRepository: quay.io/kubermatic/api
+    # PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
+    # data. This port is never exposed from the container and only available via port-forwardings.
+    pprofEndpoint: :6600
+  # UI configures the dashboard.
+  ui:
+    # Config sets flags for various dashboard features.
+    config: |-
+      {
+        "share_kubeconfig": false
+      }
+    # DockerRepository is the repository containing the Kubermatic dashboard image.
+    dockerRepository: quay.io/kubermatic/ui-v2
+    # Presets is a YAML string containing pre-defined credentials for cloud providers.
+    presets: |-
+      presets:
+        items: []
+  # UserCluster configures various aspects of the user-created clusters.
+  userCluster:
+    # Addons controls the optional additions installed into each user cluster.
+    addons:
+      # Kubernetes controls the addons for Kubernetes-based clusters.
+      kubernetes:
+        # Default is the list of addons to be installed by default into each cluster.
+        default:
+          - canal
+          - csi
+          - dns
+          - kube-proxy
+          - openvpn
+          - rbac
+          - kubelet-configmap
+          - default-storage-class
+          - node-exporter
+          - nodelocal-dns-cache
+          - pod-security-policy
+        # DockerRepository is the repository containing the Docker image containing
+        # the possible addon manifests.
+        dockerRepository: quay.io/kubermatic/addons
+      # Openshift controls the addons for Openshift-based clusters.
+      openshift:
+        # Default is the list of addons to be installed by default into each cluster.
+        default:
+          - crd
+          - openvpn
+          - rbac
+          - network
+          - default-storage-class
+          - registry
+        # DockerRepository is the repository containing the Docker image containing
+        # the possible addon manifests.
+        dockerRepository: quay.io/kubermatic/openshift-addons
+    # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
+    # the Kubernetes API server.
+    disableApiserverEndpointReconciling: false
+    # DNATControllerDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
+    dnatControllerDockerRepository: quay.io/kubermatic/kubeletdnat-controller
+    # EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
+    etcdVolumeSize: 5Gi
+    # KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
+    kubermaticDockerRepository: quay.io/kubermatic/api
+    # Monitoring can be used to fine-tune to in-cluster Prometheus.
+    monitoring:
+      # CustomRules can be used to inject custom recording and alerting rules. This field
+      # must be a YAML-formatted string with a `group` element at its root, as documented
+      # on https://prometheus.io/docs/prometheus/2.14/configuration/alerting_rules/.
+      customRules: ""
+      # CustomScrapingConfigs can be used to inject custom scraping rules. This must be a
+      # YAML-formatted string containing an array of scrape configurations as documented
+      # on https://prometheus.io/docs/prometheus/2.14/configuration/configuration/#scrape_config.
+      customScrapingConfigs: ""
+      # DisableDefaultRules disables the recording and alerting rules.
+      disableDefaultRules: false
+      # DisableDefaultScrapingConfigs disables the default scraping targets.
+      disableDefaultScrapingConfigs: false
+      # ScrapeAnnotationPrefix (if set) is used to make the in-cluster Prometheus scrape pods
+      # inside the user clusters.
+      scrapeAnnotationPrefix: ""
+    # NodePortRange is the port range for customer clusters - this must match the NodePort
+    # range of the seed cluster.
+    nodePortRange: 30000-32767
+    # OverwriteRegistry specifies a custom Docker registry which will be used for all images
+    # used inside user clusters (user cluster control plane + addons). This also applies to
+    # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
+    overwriteRegistry: ""
