@@ -71,6 +71,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Kubermatic configuration")
 
+	if err := r.reconcileNamespaces(config, logger); err != nil {
+		return err
+	}
+
 	if err := r.reconcileServiceAccounts(config, logger); err != nil {
 		return err
 	}
@@ -105,6 +109,24 @@ func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration,
 
 	if err := r.reconcileCertificates(config, logger); err != nil {
 		return err
+	}
+
+	if err := r.reconcileAdmissionWebhooks(config, logger); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileNamespaces(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	logger.Debug("Reconciling Namespaces")
+
+	creators := []reconciling.NamedNamespaceCreatorGetter{
+		common.NamespaceCreator(config),
+	}
+
+	if err := reconciling.ReconcileNamespaces(r.ctx, creators, "", r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Namespaces: %v", err)
 	}
 
 	return nil
@@ -214,6 +236,7 @@ func (r *Reconciler) reconcileServices(config *operatorv1alpha1.KubermaticConfig
 	creators := []reconciling.NamedServiceCreatorGetter{
 		kubermatic.APIServiceCreator(config),
 		kubermatic.UIServiceCreator(config),
+		common.SeedAdmissionServiceCreator(config, r.Client),
 	}
 
 	if err := reconciling.ReconcileServices(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
@@ -246,6 +269,20 @@ func (r *Reconciler) reconcileCertificates(config *operatorv1alpha1.KubermaticCo
 
 	if err := reconciling.ReconcileCertificates(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Certificates: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileAdmissionWebhooks(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	logger.Debug("Reconciling AdmissionWebhooks")
+
+	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
+		common.SeedAdmissionWebhookCreator(config, r.Client),
+	}
+
+	if err := reconciling.ReconcileValidatingWebhookConfigurations(r.ctx, creators, "", r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile AdmissionWebhooks: %v", err)
 	}
 
 	return nil

@@ -19,13 +19,13 @@ import (
 
 func masterControllerManagerPodLabels() map[string]string {
 	return map[string]string{
-		nameLabel: "kubermatic-master-controller-manager",
+		common.NameLabel: common.MasterControllerManagerDeploymentName,
 	}
 }
 
 func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerName string, versions common.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return masterControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+		return common.MasterControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(2)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: masterControllerManagerPodLabels(),
