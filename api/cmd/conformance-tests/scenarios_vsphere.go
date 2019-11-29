@@ -8,7 +8,16 @@ import (
 )
 
 // Returns a matrix of (version x operating system)
-func getVSphereScenarios(versions []*semver.Semver) []testScenario {
+func getVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []testScenario {
+	var customFolder bool
+
+	for _, opt := range scenarioOptions {
+		switch opt {
+		case "custom-folder":
+			customFolder = true
+		}
+	}
+
 	var scenarios []testScenario
 	for _, v := range versions {
 		// Ubuntu
@@ -17,6 +26,7 @@ func getVSphereScenarios(versions []*semver.Semver) []testScenario {
 			nodeOsSpec: apimodels.OperatingSystemSpec{
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
+			customFolder: customFolder,
 		})
 		// CoreOS
 		scenarios = append(scenarios, &vSphereScenario{
@@ -27,6 +37,7 @@ func getVSphereScenarios(versions []*semver.Semver) []testScenario {
 					DisableAutoUpdate: true,
 				},
 			},
+			customFolder: customFolder,
 		})
 		// CentOS
 		scenarios = append(scenarios, &vSphereScenario{
@@ -34,6 +45,7 @@ func getVSphereScenarios(versions []*semver.Semver) []testScenario {
 			nodeOsSpec: apimodels.OperatingSystemSpec{
 				Centos: &apimodels.CentOSSpec{},
 			},
+			customFolder: customFolder,
 		})
 	}
 
@@ -41,8 +53,9 @@ func getVSphereScenarios(versions []*semver.Semver) []testScenario {
 }
 
 type vSphereScenario struct {
-	version    *semver.Semver
-	nodeOsSpec apimodels.OperatingSystemSpec
+	version      *semver.Semver
+	nodeOsSpec   apimodels.OperatingSystemSpec
+	customFolder bool
 }
 
 func (s *vSphereScenario) Name() string {
@@ -50,7 +63,7 @@ func (s *vSphereScenario) Name() string {
 }
 
 func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
-	return &apimodels.CreateClusterSpec{
+	spec := &apimodels.CreateClusterSpec{
 		Cluster: &apimodels.Cluster{
 			Type: "kubernetes",
 			Spec: &apimodels.ClusterSpec{
@@ -65,6 +78,12 @@ func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 			},
 		},
 	}
+
+	if s.customFolder {
+		spec.Cluster.Spec.Cloud.Vsphere.Folder = "/dc-1/vm/e2e-tests/custom_folder_test"
+	}
+
+	return spec
 }
 
 func (s *vSphereScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
