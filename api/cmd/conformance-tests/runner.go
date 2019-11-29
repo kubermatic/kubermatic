@@ -414,11 +414,11 @@ func (r *testRunner) executeTests(
 	var timeoutLeft time.Duration
 	if cluster.Annotations["kubermatic.io/openshift"] == "true" {
 		// Openshift installs a lot more during node provisioning, hence this may take longer
-		overallTimeout = overallTimeout + 5*time.Minute
+		overallTimeout += 5 * time.Minute
 	}
-	// The initalization of the external CCM is super slow
+	// The initialization of the external CCM is super slow
 	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-		overallTimeout = overallTimeout + 5*time.Minute
+		overallTimeout += 5 * time.Minute
 	}
 
 	if err := junitReporterWrapper(
