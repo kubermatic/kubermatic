@@ -7,6 +7,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/api/pkg/features"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -171,7 +172,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 				})
 			}
 
-			if cfg.Spec.FeatureGates.Has(openIDAuthFeatureFlag) {
+			if cfg.Spec.FeatureGates.Has(features.OpenIDAuthPlugin) {
 				args = append(args,
 					"-oidc-ca-file=/opt/dex-ca/caBundle.pem",
 					fmt.Sprintf("-oidc-issuer-url=%s", cfg.Spec.Auth.TokenIssuer),

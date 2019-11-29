@@ -6,6 +6,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/api/pkg/features"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -84,7 +85,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				args = append(args, "-v2")
 			}
 
-			if cfg.Spec.FeatureGates.Has(oidcKubeCfgEndpointFeatureFlag) {
+			if cfg.Spec.FeatureGates.Has(features.OIDCKubeCfgEndpoint) {
 				args = append(
 					args,
 					fmt.Sprintf("-oidc-issuer-redirect-uri=%s", cfg.Spec.Auth.IssuerRedirectURL),

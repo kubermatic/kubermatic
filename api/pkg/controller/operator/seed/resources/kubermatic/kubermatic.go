@@ -16,7 +16,6 @@ const (
 	backupContainersConfigMapName = "backup-containers"
 	storeContainerKey             = "store-container.yaml"
 	cleanupContainerKey           = "cleanup-container.yaml"
-	openIDAuthFeatureFlag         = "OpenIDAuthPlugin"
 )
 
 func clusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
