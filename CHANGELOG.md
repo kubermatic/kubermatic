@@ -1,3 +1,14 @@
+### [v2.12.4]()
+
+
+- Fixed an issue with adding new node deployments on Openstack [#1836](https://github.com/kubermatic/dashboard-v2/issues/1836) ([floreks](https://github.com/floreks))
+- Added migration for cluster user labels [#4744](https://github.com/kubermatic/kubermatic/issues/4744) ([zreigz](https://github.com/zreigz))
+- Added Kubernetes `v1.14.9`, `v1.15.6` and `v1.16.3` [#4752](https://github.com/kubermatic/kubermatic/issues/4752) ([kdomanski](https://github.com/kdomanski))
+- Openstack: A bug that caused cluster reconciliation to fail if the controller crashed at the wrong time was fixed [#4754](https://github.com/kubermatic/kubermatic/issues/4754) ([alvaroaleman](https://github.com/alvaroaleman))
+
+
+
+
 ### [v2.12.3]()
 
 
