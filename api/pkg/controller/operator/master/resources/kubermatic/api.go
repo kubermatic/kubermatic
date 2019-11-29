@@ -74,7 +74,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				fmt.Sprintf("-service-account-signing-key=%s", cfg.Spec.Auth.ServiceAccountKey),
 				fmt.Sprintf("-expose-strategy=%s", cfg.Spec.ExposeStrategy),
 				fmt.Sprintf("-feature-gates=%s", featureGates(cfg)),
-				fmt.Sprintf("-pprof-listen-address=%s", cfg.Spec.API.PProfEndpoint),
+				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.API.PProfEndpoint),
 				fmt.Sprintf("-accessible-addons=%s", strings.Join(cfg.Spec.API.AccessibleAddons, ",")),
 			}
 
@@ -84,7 +84,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				args = append(args, "-v2")
 			}
 
-			if cfg.Spec.FeatureGates.Has("OIDCKubeCfgEndpoint") {
+			if cfg.Spec.FeatureGates.Has(oidcKubeCfgEndpointFeatureFlag) {
 				args = append(
 					args,
 					fmt.Sprintf("-oidc-issuer-redirect-uri=%s", cfg.Spec.Auth.IssuerRedirectURL),

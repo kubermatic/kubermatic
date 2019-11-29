@@ -10,11 +10,16 @@ import (
 	"reflect"
 	"strings"
 
+	"go.uber.org/zap"
+
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/test-infra/pkg/genyaml"
 	"k8s.io/utils/pointer"
 )
@@ -36,19 +41,24 @@ func main() {
 	}
 
 	// find all .go files in kubermatic/v1
-	files, err := filepath.Glob(filepath.Join(root, "pkg/crd/kubermatic/v1/*.go"))
+	kubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/crd/kubermatic/v1/*.go"))
 	if err != nil {
 		log.Fatalf("Failed to find go files: %v", err)
 	}
 
-	files = append(
-		files,
-		filepath.Join(root, "vendor/k8s.io/api/core/v1/types.go"),
-	)
+	// find all .go files in operator/v1alpha1
+	operatorFiles, err := filepath.Glob(filepath.Join(root, "pkg/crd/operator/v1alpha1/*.go"))
+	if err != nil {
+		log.Fatalf("Failed to find go files: %v", err)
+	}
+
+	files := append(kubermaticFiles, operatorFiles...)
+	files = append(files, filepath.Join(root, "vendor/k8s.io/api/core/v1/types.go"))
 
 	cm := genyaml.NewCommentMap(files...)
 	examples := map[string]runtime.Object{
-		"seed": createExampleSeed(),
+		"seed":                    createExampleSeed(),
+		"kubermaticConfiguration": createExampleKubermaticConfiguration(),
 	}
 
 	for name, data := range examples {
@@ -132,6 +142,33 @@ func createExampleSeed() *kubermaticv1.Seed {
 	}
 
 	return seed
+}
+
+func createExampleKubermaticConfiguration() *operatorv1alpha1.KubermaticConfiguration {
+	cfg := &operatorv1alpha1.KubermaticConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: operatorv1alpha1.SchemeGroupVersion.String(),
+			Kind:       "KubermaticConfiguration",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "<<mykubermatic>>",
+			Namespace: "kubermatic",
+		},
+		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
+			Domain:       "example.com",
+			FeatureGates: sets.NewString(),
+			API: operatorv1alpha1.KubermaticAPIConfiguration{
+				AccessibleAddons: []string{},
+			},
+		},
+	}
+
+	defaulted, err := common.DefaultConfiguration(cfg, zap.NewNop().Sugar())
+	if err != nil {
+		log.Fatalf("Failed to default KubermaticConfiguration: %v", err)
+	}
+
+	return defaulted
 }
 
 // validateAllFieldsAreDefined recursively checks that all fields relevant

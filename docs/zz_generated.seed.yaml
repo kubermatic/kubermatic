@@ -117,10 +117,12 @@ spec:
           # facilities see https://support.packet.com/kb/articles/data-centers
           facilities: []
         # Optional: When defined, only users with an e-mail address on the
-        # given domain can make use of this datacenter. You can define exactly
-        # one domain, e.g. "example.com", which must match the email domain
+        # given domains can make use of this datacenter. You can define multiple
+        # domains, e.g. "example.com", one of which must match the email domain
         # exactly (i.e. "example.com" will not match "user@test.example.com").
+        # RequiredEmailDomain is deprecated. Automatically migrated to the RequiredEmailDomains field.
         requiredEmailDomain: ""
+        requiredEmailDomains: null
         vsphere:
           # If set to true, disables the TLS certificate check against the endpoint.
           allow_insecure: false

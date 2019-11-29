@@ -37,6 +37,7 @@ issues:
   # gocyclo
   - cyclomatic complexity [0-9]+ of func `main` is high
   - cyclomatic complexity [0-9]+ of func `TestDatacenterMetasToSeedDatacenterSpecs` is high
+  - cyclomatic complexity [0-9]+ of func `DefaultConfiguration` is high
   - cyclomatic complexity [0-9]+ of func `\(\*Azure\)\.CleanUpCloudProvider` is high
   - cyclomatic complexity [0-9]+ of func `\(\*Reconciler\)\.reconcile` is high
   # goconst

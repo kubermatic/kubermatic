@@ -76,7 +76,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 				fmt.Sprintf("-scheduler-default-replicas=%d", 1),
 				fmt.Sprintf("-max-parallel-reconcile=%d", 10),
 				fmt.Sprintf("-apiserver-reconciling-disabled-by-default=%v", cfg.Spec.UserCluster.DisableAPIServerEndpointReconciling),
-				fmt.Sprintf("-pprof-listen-address=%s", cfg.Spec.SeedController.PProfEndpoint),
+				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.SeedController.PProfEndpoint),
 				fmt.Sprintf("-in-cluster-prometheus-disable-default-rules=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultRules),
 				fmt.Sprintf("-in-cluster-prometheus-disable-default-scraping-configs=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultScrapingConfigs),
 				fmt.Sprintf("-monitoring-scrape-annotation-prefix=%s", cfg.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix),
