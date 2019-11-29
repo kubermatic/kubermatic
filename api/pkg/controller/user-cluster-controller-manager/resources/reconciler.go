@@ -112,9 +112,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err := r.reconcileSecrets(ctx, data); err != nil {
 		return err
 	}
-	if err := r.reconcileDaemonSet(ctx); err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -141,7 +138,6 @@ func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) 
 func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		userauth.ServiceAccountCreator(),
-		usersshkeys.ServiceAccountCreator(),
 	}
 
 	if r.openshift {
@@ -170,7 +166,6 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 	creators := []reconciling.NamedRoleCreatorGetter{
 		machinecontroller.KubeSystemRoleCreator(),
 		clusterautoscaler.KubeSystemRoleCreator(),
-		usersshkeys.RoleCreator(),
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -237,7 +232,6 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 		scheduler.RoleBindingAuthDelegator(),
 		controllermanager.RoleBindingAuthDelegator(),
 		clusterautoscaler.KubeSystemRoleBindingCreator(),
-		usersshkeys.RoleBindingCreator(),
 	}
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in kube-system Namespace: %v", err)
@@ -449,18 +443,6 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		if err := reconciling.ReconcileSecrets(ctx, creators, openshiftresources.RegistryNamespaceName, r.Client); err != nil {
 			return fmt.Errorf("failed to create secrets in %q namespace: %v", openshiftresources.RegistryNamespaceName, err)
 		}
-	}
-
-	return nil
-}
-
-func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
-	dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
-		usersshkeys.DaemonSetCreator(),
-	}
-
-	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the DaemonSet: %v", err)
 	}
 
 	return nil
