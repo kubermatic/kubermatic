@@ -9,10 +9,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const (
-	nameLabel = "app.kubernetes.io/name"
-)
-
 func featureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string {
 	features := make([]string, 0)
 	for _, feature := range cfg.Spec.FeatureGates.List() {

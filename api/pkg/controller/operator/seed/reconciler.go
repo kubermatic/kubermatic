@@ -142,6 +142,10 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 }
 
 func (r *Reconciler) reconcileResources(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	if err := r.reconcileNamespaces(cfg, seed, client, log); err != nil {
+		return err
+	}
+
 	if err := r.reconcileServiceAccounts(cfg, seed, client, log); err != nil {
 		return err
 	}
@@ -160,6 +164,28 @@ func (r *Reconciler) reconcileResources(cfg *operatorv1alpha1.KubermaticConfigur
 
 	if err := r.reconcileDeployments(cfg, seed, client, log); err != nil {
 		return err
+	}
+
+	if err := r.reconcileServices(cfg, seed, client, log); err != nil {
+		return err
+	}
+
+	if err := r.reconcileAdmissionWebhooks(cfg, seed, client, log); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileNamespaces(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling Namespaces")
+
+	creators := []reconciling.NamedNamespaceCreatorGetter{
+		common.NamespaceCreator(cfg),
+	}
+
+	if err := reconciling.ReconcileNamespaces(r.ctx, creators, "", client); err != nil {
+		return fmt.Errorf("failed to reconcile Namespaces: %v", err)
 	}
 
 	return nil
@@ -250,6 +276,34 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 
 	if err := reconciling.ReconcileDeployments(r.ctx, creators, r.namespace, client, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileServices(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling Services")
+
+	creators := []reconciling.NamedServiceCreatorGetter{
+		common.SeedAdmissionServiceCreator(cfg, client),
+	}
+
+	if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(cfg, r.scheme)); err != nil {
+		return fmt.Errorf("failed to reconcile Services: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileAdmissionWebhooks(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling AdmissionWebhooks")
+
+	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
+		common.SeedAdmissionWebhookCreator(cfg, client),
+	}
+
+	if err := reconciling.ReconcileValidatingWebhookConfigurations(r.ctx, creators, "", client); err != nil {
+		return fmt.Errorf("failed to reconcile AdmissionWebhooks: %v", err)
 	}
 
 	return nil

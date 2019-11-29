@@ -15,18 +15,16 @@ import (
 )
 
 const (
-	presetsSecretName                     = "presets"
-	serviceAccountName                    = "kubermatic-master"
-	uiConfigConfigMapName                 = "ui-config"
-	ingressName                           = "kubermatic"
-	apiDeploymentName                     = "kubermatic-api"
-	uiDeploymentName                      = "kubermatic-ui"
-	masterControllerManagerDeploymentName = "kubermatic-master-controller-manager"
-	apiServiceName                        = "kubermatic-api"
-	uiServiceName                         = "kubermatic-ui"
-	certificateName                       = "kubermatic"
-	certificateSecretName                 = "kubermatic-tls"
-	oidcKubeCfgEndpointFeatureFlag        = "OIDCKubeCfgEndpoint"
+	presetsSecretName     = "presets"
+	serviceAccountName    = "kubermatic-master"
+	uiConfigConfigMapName = "ui-config"
+	ingressName           = "kubermatic"
+	apiDeploymentName     = "kubermatic-api"
+	uiDeploymentName      = "kubermatic-ui"
+	apiServiceName        = "kubermatic-api"
+	uiServiceName         = "kubermatic-ui"
+	certificateName       = "kubermatic"
+	certificateSecretName = "kubermatic-tls"
 )
 
 func clusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {

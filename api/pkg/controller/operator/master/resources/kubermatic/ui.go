@@ -16,7 +16,7 @@ import (
 
 func uiPodLabels() map[string]string {
 	return map[string]string{
-		nameLabel: "kubermatic-ui",
+		common.NameLabel: uiDeploymentName,
 	}
 }
 

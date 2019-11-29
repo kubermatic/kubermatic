@@ -32,12 +32,6 @@ import (
 const (
 	// ControllerName is the name of this very controller.
 	ControllerName = "kubermatic-seed-operator"
-
-	// NameLabel is the label containing the application's name.
-	NameLabel = "app.kubernetes.io/name"
-
-	// VersionLabel is the label containing the application's version.
-	VersionLabel = "app.kubernetes.io/version"
 )
 
 func Add(

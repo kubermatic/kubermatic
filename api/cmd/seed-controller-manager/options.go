@@ -152,9 +152,9 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 
 func (o controllerRunOptions) validate() error {
 
-	if o.featureGates.Enabled(OpenIDAuthPlugin) {
+	if o.featureGates.Enabled(features.OpenIDAuthPlugin) {
 		if len(o.oidcIssuerURL) == 0 {
-			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-url\" flag was not specified", OpenIDAuthPlugin)
+			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-url\" flag was not specified", features.OpenIDAuthPlugin)
 		}
 
 		if _, err := url.Parse(o.oidcIssuerURL); err != nil {
@@ -162,11 +162,11 @@ func (o controllerRunOptions) validate() error {
 		}
 
 		if len(o.oidcIssuerClientID) == 0 {
-			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-id\" flag was not specified", OpenIDAuthPlugin)
+			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-id\" flag was not specified", features.OpenIDAuthPlugin)
 		}
 
 		if len(o.oidcIssuerClientSecret) == 0 {
-			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-secret\" flag was not specified", OpenIDAuthPlugin)
+			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-secret\" flag was not specified", features.OpenIDAuthPlugin)
 		}
 	}
 

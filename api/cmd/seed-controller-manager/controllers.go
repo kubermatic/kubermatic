@@ -19,6 +19,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/update"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/features"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
@@ -120,8 +121,8 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.dnatControllerImage,
 		openshiftcontroller.Features{
-			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
-			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
+			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),
+			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
 		},
 		ctrlCtx.runOptions.concurrentClusterUpdate); err != nil {
 		return fmt.Errorf("failed to add openshift controller to mgr: %v", err)
@@ -156,9 +157,9 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.dnatControllerImage,
 		kubernetescontroller.Features{
-			VPA:                          ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
-			EtcdDataCorruptionChecks:     ctrlCtx.runOptions.featureGates.Enabled(EtcdDataCorruptionChecks),
-			KubernetesOIDCAuthentication: ctrlCtx.runOptions.featureGates.Enabled(OpenIDAuthPlugin),
+			VPA:                          ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
+			EtcdDataCorruptionChecks:     ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),
+			KubernetesOIDCAuthentication: ctrlCtx.runOptions.featureGates.Enabled(features.OpenIDAuthPlugin),
 		},
 	)
 }
@@ -215,7 +216,7 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 
 		ctrlCtx.runOptions.concurrentClusterUpdate,
 		monitoring.Features{
-			VPA: ctrlCtx.runOptions.featureGates.Enabled(VerticalPodAutoscaler),
+			VPA: ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
 		},
 	)
 }
