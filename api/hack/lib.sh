@@ -94,6 +94,21 @@ get_latest_dashboard_hash() {
   echo "$HASH"
 }
 
+get_latest_dashboard_tag() {
+  local branch="$1"
+  local repository="git@github.com:kubermatic/dashboard-v2.git"
+  local tmpdir=local_dashboard
+
+  ensure_github_host_pubkey
+  git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
+  retry 5 git clone "$repository" -b "$branch" "$tmpdir"
+
+  # get the latest tag in this branch
+  (cd "$tmpdir" && git describe --tags --abbrev=0)
+
+  rm -rf "$tmpdir"
+}
+
 format_dashboard() {
   local filename="$1"
   local tmpfile="$filename.tmp"

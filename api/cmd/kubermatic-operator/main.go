@@ -16,7 +16,6 @@ import (
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/pprof"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
@@ -69,7 +68,7 @@ func main() {
 		log.Fatal("-namespace is a mandatory flag")
 	}
 
-	log.Infow("Moin, moin, I'm the Kubermatic Operator and these are the versions I work with.", "kubermatic", resources.KUBERMATICCOMMIT, "ui", common.UIVERSION)
+	log.Infow("Moin, moin, I'm the Kubermatic Operator and these are the versions I work with.", "kubermatic", common.KUBERMATICDOCKERTAG, "ui", common.UIDOCKERTAG)
 
 	config, err := clientcmd.BuildConfigFromFlags("", opt.kubeconfig)
 	if err != nil {

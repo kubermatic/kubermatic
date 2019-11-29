@@ -1,13 +1,14 @@
 package common
 
-import (
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-)
-
-// UIVERSION is a magic variable containing the tag / git commit hash
-// of the dashboard-v2 Docker repository to deploy. It gets fed by the
+// UIDOCKERTAG is a magic variable containing the tag / git commit hash
+// of the dashboard-v2 Docker image to deploy. It gets fed by the
 // Makefile as an ldflag.
-var UIVERSION string
+var UIDOCKERTAG string
+
+// KUBERMATICDOCKERTAG is a magic variable containing the tag / git commit hash
+// of the kubermatic Docker image to deploy. It gets fed by the
+// Makefile as an ldflag.
+var KUBERMATICDOCKERTAG string
 
 type Versions struct {
 	Kubermatic string
@@ -16,7 +17,7 @@ type Versions struct {
 
 func NewDefaultVersions() Versions {
 	return Versions{
-		Kubermatic: resources.KUBERMATICCOMMIT,
-		UI:         UIVERSION,
+		Kubermatic: KUBERMATICDOCKERTAG,
+		UI:         UIDOCKERTAG,
 	}
 }

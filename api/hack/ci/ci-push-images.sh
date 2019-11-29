@@ -6,8 +6,9 @@ cd "$(git rev-parse --show-toplevel)"
 . ./api/hack/lib.sh
 
 GIT_HEAD_HASH="$(git rev-parse HEAD)"
+GIT_HEAD_TAG="$(git tag -l --points-at HEAD)"
 # FIXME: use `latest` only on the master branch
-TAGS="$GIT_HEAD_HASH $(git tag -l --points-at HEAD) latest"
+TAGS="$GIT_HEAD_HASH $GIT_HEAD_TAG latest"
 
 apt install time -y
 
@@ -16,10 +17,17 @@ docker ps > /dev/null 2>&1 || start-docker.sh
 retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
 echodate "Successfully logged into Quay"
 
-# inject current dashboard version into Kubermatic Operator;
-# PULL_BASE_REF is the name of the current branch in case of a post-submit
-# or the name of the base branch in case of a PR.
-DASHBOARDCOMMIT="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
+# prepare special variables that will be injected into the Kubermatic Operator;
+# use the latest tagged version of the dashboard when we ourselves are a tagged
+# release
+KUBERMATICDOCKERTAG="${GIT_HEAD_TAG:-$GIT_HEAD_HASH}"
+UIDOCKERTAG=""
+
+if [ -z "$GIT_HEAD_TAG" ]; then
+  UIDOCKERTAG="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
+else
+  UIDOCKERTAG="$(get_latest_dashboard_tag "${PULL_BASE_REF}")"
+fi
 
 TEST_NAME="Build binaries"
 echodate "Building binaries"
