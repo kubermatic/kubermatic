@@ -20,6 +20,7 @@ export NAMESPACE="prow-kubermatic-${BUILD_ID}"
 echodate "Testing versions: ${VERSIONS}"
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
+export SCENARIO_OPTIONS=${SCENARIO_OPTIONS:-}
 export ONLY_TEST_CREATION=${ONLY_TEST_CREATION:-false}
 export PULL_BASE_REF=${PULL_BASE_REF:-$(git rev-parse --abbrev-ref HEAD)}
 export PULL_BASE_SHA=${PULL_BASE_SHA:-$GIT_HEAD_HASH}
@@ -427,6 +428,11 @@ fi
 
 echodate "Starting conformance tests"
 export KUBERMATIC_APISERVER_ADDRESS="kubermatic-api.prow-kubermatic-${BUILD_ID}.svc.cluster.local.:80"
+
+if [[ -n "$SCENARIO_OPTIONS" ]]; then
+  EXTRA_ARGS+=" -scenario-options=${SCENARIO_OPTIONS}"
+fi
+
 
 # Gather the total time it takes between starting this sscript and staring the conformance tester
 setup_elasped_time=$((${SECONDS:-} - $setup_start_time))
