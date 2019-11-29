@@ -29,8 +29,9 @@ import (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	ctx context.Context
-	log *zap.SugaredLogger
+	ctx       context.Context
+	log       *zap.SugaredLogger
+	namespace string
 
 	seedsGetter          provider.SeedsGetter
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
@@ -101,6 +102,7 @@ func (r *Reconciler) reconcile(seedName string, log *zap.SugaredLogger) error {
 func (r *Reconciler) garbageCollect(seeds map[string]*kubermaticv1.Seed, log *zap.SugaredLogger) error {
 	list := &corev1.SecretList{}
 	options := &ctrlruntimeclient.ListOptions{
+		Namespace: r.namespace,
 		LabelSelector: labels.SelectorFromSet(labels.Set{
 			ManagedByLabel: ControllerName,
 		}),

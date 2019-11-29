@@ -58,7 +58,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := seedsync.Add(ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create seedsync controller: %v", err)
 	}
-	if err := seedproxy.Add(ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter); err != nil {
+	if err := seedproxy.Add(ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create seedproxy controller: %v", err)
 	}
 	return nil
