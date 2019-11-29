@@ -122,7 +122,7 @@ func (r *Reconciler) reconcileNamespaces(config *operatorv1alpha1.KubermaticConf
 	logger.Debug("Reconciling Namespaces")
 
 	creators := []reconciling.NamedNamespaceCreatorGetter{
-		common.LabelledNamespaceCreator(config),
+		common.NamespaceCreator(config),
 	}
 
 	if err := reconciling.ReconcileNamespaces(r.ctx, creators, "", r.Client); err != nil {

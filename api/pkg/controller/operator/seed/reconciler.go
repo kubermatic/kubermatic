@@ -181,7 +181,7 @@ func (r *Reconciler) reconcileNamespaces(cfg *operatorv1alpha1.KubermaticConfigu
 	log.Debug("reconciling Namespaces")
 
 	creators := []reconciling.NamedNamespaceCreatorGetter{
-		common.LabelledNamespaceCreator(cfg),
+		common.NamespaceCreator(cfg),
 	}
 
 	if err := reconciling.ReconcileNamespaces(r.ctx, creators, "", client); err != nil {

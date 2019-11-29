@@ -15,6 +15,7 @@ import (
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -44,7 +45,7 @@ const (
 	OpenIDAuthFeatureFlag = "OpenIDAuthPlugin"
 )
 
-func LabelledNamespaceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
+func NamespaceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
 	return func() (string, reconciling.NamespaceCreator) {
 		return cfg.Namespace, func(n *corev1.Namespace) (*corev1.Namespace, error) {
 			if n.Labels == nil {
@@ -192,7 +193,7 @@ func SeedAdmissionServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration, 
 		return seedWebhookServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
 
-			if len(s.Spec.Ports) < 1 {
+			if len(s.Spec.Ports) != 1 {
 				s.Spec.Ports = make([]corev1.ServicePort, 1)
 			}
 
@@ -224,6 +225,10 @@ func determineWebhookServiceSelector(cfg *operatorv1alpha1.KubermaticConfigurati
 	}
 
 	err := client.Get(context.Background(), key, &deployment)
+	if err != nil && !kerrors.IsNotFound(err) {
+		return nil, fmt.Errorf("failed to probe for %s: %v", key, err)
+	}
+
 	if err == nil {
 		return map[string]string{
 			NameLabel: MasterControllerManagerDeploymentName,
@@ -236,6 +241,10 @@ func determineWebhookServiceSelector(cfg *operatorv1alpha1.KubermaticConfigurati
 	}
 
 	err = client.Get(context.Background(), key, &deployment)
+	if err != nil && !kerrors.IsNotFound(err) {
+		return nil, fmt.Errorf("failed to probe for %s: %v", key, err)
+	}
+
 	if err == nil {
 		return map[string]string{
 			NameLabel: SeedControllerManagerDeploymentName,
