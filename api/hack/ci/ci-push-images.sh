@@ -21,12 +21,16 @@ echodate "Successfully logged into Quay"
 # use the latest tagged version of the dashboard when we ourselves are a tagged
 # release
 KUBERMATICDOCKERTAG="${GIT_HEAD_TAG:-$GIT_HEAD_HASH}"
-UIDOCKERTAG=""
+UIDOCKERTAG="$KUBERMATICDOCKERTAG"
 
-if [ -z "$GIT_HEAD_TAG" ]; then
+if [ -z "$GIT_HEAD_HASH" ]; then
   UIDOCKERTAG="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
 else
-  UIDOCKERTAG="$(get_latest_dashboard_tag "${PULL_BASE_REF}")"
+  if [ -z "$(check_dashboard_tag "$GIT_HEAD_HASH")" ]; then
+    echo "Kubermatic was tagged as $GIT_HEAD_HASH, but this tag does not exist for the dashboard."
+    echo "Please release a new version for the dashboard and re-run this job."
+    exit 1
+  fi
 fi
 
 TEST_NAME="Build binaries"
