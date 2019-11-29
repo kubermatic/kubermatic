@@ -7,18 +7,18 @@ import (
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server"
+	controllermanager "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
+	dnatcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
+	kubestatemetrics "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
+	kubernetesdashboard "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
+	machinecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
+	metricsserver "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/prometheus"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/scheduler"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
+	systembasicuser "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
+	userauth "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
@@ -117,21 +117,23 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 }
 
 func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) error {
-	creators := []reconciling.NamedAPIServiceCreatorGetter{}
 	caCert := triple.EncodeCertPEM(data.caCert.Cert)
+	creators := []reconciling.NamedAPIServiceCreatorGetter{
+		metricsserver.APIServiceCreator(caCert),
+	}
+
 	if r.openshift {
 		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion(r.version, caCert)
 		if err != nil {
 			return fmt.Errorf("failed to get openshift apiservice creators: %v", err)
 		}
 		creators = append(creators, openshiftAPIServiceCreators...)
-	} else {
-		creators = append(creators, metricsserver.APIServiceCreator(caCert))
 	}
 
 	if err := reconciling.ReconcileAPIServices(ctx, creators, metav1.NamespaceNone, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile APIServices: %v", err)
 	}
+
 	return nil
 }
 
