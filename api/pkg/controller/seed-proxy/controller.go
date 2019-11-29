@@ -81,6 +81,7 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	log *zap.SugaredLogger,
+	namespace string,
 	seedsGetter provider.SeedsGetter,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 ) error {
@@ -90,6 +91,7 @@ func Add(
 		Client:               mgr.GetClient(),
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		log:                  log,
+		namespace:            namespace,
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,
 		seedClientGetter:     provider.SeedClientGetterFactory(seedKubeconfigGetter),
