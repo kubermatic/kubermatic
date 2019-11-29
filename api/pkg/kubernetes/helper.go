@@ -18,6 +18,10 @@ func HasFinalizer(o metav1.Object, names ...string) bool {
 	return sets.NewString(o.GetFinalizers()...).HasAll(names...)
 }
 
+func HasAnyFinalizer(o metav1.Object, names ...string) bool {
+	return sets.NewString(o.GetFinalizers()...).HasAny(names...)
+}
+
 // HasOnlyFinalizer tells if an object has only the given finalizer
 func HasOnlyFinalizer(o metav1.Object, name string) bool {
 	set := sets.NewString(o.GetFinalizers()...)
