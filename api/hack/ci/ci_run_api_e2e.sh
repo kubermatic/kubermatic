@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SDIR=$(dirname $0)
-CONTROLLER_IMAGE="quay.io/kubermatic/cluster-exposer:v1.0.0"
+CONTROLLER_IMAGE="quay.io/kubermatic/cluster-exposer:v2.0.0"
 
 function cleanup {
     cat ${SDIR}/../../pkg/test/e2e/api/utils/oidc-proxy-client/_build/oidc-proxy-client-errors
@@ -64,6 +64,5 @@ make run > /dev/null 2> ./_build/oidc-proxy-client-errors &
 # Step 4: run e2e tests
 echo "running the API E2E tests"
 more /etc/hosts
-# disabled because port forwarder problem with two kubernetes API instances for user cluster
-#go test -tags=create -timeout 20m ${SDIR}/../../pkg/test/e2e/api -v
+go test -tags=create -timeout 20m ${SDIR}/../../pkg/test/e2e/api -v
 go test -tags=e2e ${SDIR}/../../pkg/test/e2e/api -v
