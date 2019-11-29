@@ -180,7 +180,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// Wait until the UCCM is ready - otherwise we deploy with missing RBAC resources
-	if kubermaticv1.HealthStatusDown == cluster.Status.ExtendedHealth.UserClusterControllerManager {
+	if cluster.Status.ExtendedHealth.UserClusterControllerManager != kubermaticv1.HealthStatusUp {
 		log.Debug("Skipping cluster reconciling because the UserClusterControllerManager is not ready yet")
 		return reconcile.Result{RequeueAfter: healthCheckPeriod}, nil
 	}
