@@ -18,7 +18,7 @@ const (
 	cleanupContainerKey           = "cleanup-container.yaml"
 )
 
-func clusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
+func ClusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
 	return fmt.Sprintf("%s:%s-seed:cluster-admin", cfg.Namespace, cfg.Name)
 }
 
@@ -31,7 +31,7 @@ func ServiceAccountCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *
 }
 
 func ClusterRoleBindingCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedClusterRoleBindingCreatorGetter {
-	name := clusterRoleBindingName(cfg)
+	name := ClusterRoleBindingName(cfg)
 
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {

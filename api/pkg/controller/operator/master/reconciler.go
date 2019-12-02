@@ -17,7 +17,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
@@ -140,11 +139,11 @@ func (r *Reconciler) cleanupDeletedConfiguration(config *operatorv1alpha1.Kuberm
 	if sets.NewString(config.Finalizers...).Has(common.CleanupFinalizer) {
 		logger.Debug("KubermaticConfiguration was deleted, cleaning up cluster-wide resources")
 
-		if err := r.deleteClusterResource(&rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(config)); err != nil {
+		if err := common.CleanupClusterResource(r, &rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(config)); err != nil {
 			return fmt.Errorf("failed to clean up ClusterRoleBinding: %v", err)
 		}
 
-		if err := r.deleteClusterResource(&admissionregistrationv1beta1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(config)); err != nil {
+		if err := common.CleanupClusterResource(r, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(config)); err != nil {
 			return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %v", err)
 		}
 
@@ -322,24 +321,6 @@ func (r *Reconciler) reconcileAdmissionWebhooks(config *operatorv1alpha1.Kuberma
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(r.ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile AdmissionWebhooks: %v", err)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) deleteClusterResource(obj runtime.Object, name string) error {
-	key := types.NamespacedName{Name: name}
-
-	if err := r.Get(r.ctx, key, obj); err != nil {
-		if !kerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to probe for %s: %v", key, err)
-		}
-
-		return nil
-	}
-
-	if err := r.Delete(r.ctx, obj); err != nil {
-		return fmt.Errorf("failed to delete %s: %v", key, err)
 	}
 
 	return nil

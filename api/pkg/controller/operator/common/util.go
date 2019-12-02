@@ -13,10 +13,12 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -149,9 +151,9 @@ func createSecretData(s *corev1.Secret, data map[string]string) *corev1.Secret {
 	return s
 }
 
-type patchFunction func(*operatorv1alpha1.KubermaticConfiguration) error
+type patchConfigFunction func(*operatorv1alpha1.KubermaticConfiguration) error
 
-func PatchKubermaticConfiguration(client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration, patch patchFunction) error {
+func PatchKubermaticConfiguration(client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration, patch patchConfigFunction) error {
 	oldConfig := config.DeepCopy()
 
 	if err := patch(config); err != nil {
@@ -160,6 +162,41 @@ func PatchKubermaticConfiguration(client ctrlruntimeclient.Client, config *opera
 
 	if err := client.Patch(context.Background(), config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
 		return fmt.Errorf("failed to patch KubermaticConfiguration: %v", err)
+	}
+
+	return nil
+}
+
+type patchSeedFunction func(*kubermaticv1.Seed) error
+
+func PatchSeed(client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, patch patchSeedFunction) error {
+	oldSeed := seed.DeepCopy()
+
+	if err := patch(seed); err != nil {
+		return err
+	}
+
+	if err := client.Patch(context.Background(), seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
+		return fmt.Errorf("failed to patch Seed: %v", err)
+	}
+
+	return nil
+}
+
+func CleanupClusterResource(client ctrlruntimeclient.Client, obj runtime.Object, name string) error {
+	key := types.NamespacedName{Name: name}
+	ctx := context.Background()
+
+	if err := client.Get(ctx, key, obj); err != nil {
+		if !kerrors.IsNotFound(err) {
+			return fmt.Errorf("failed to probe for %s: %v", key, err)
+		}
+
+		return nil
+	}
+
+	if err := client.Delete(ctx, obj); err != nil {
+		return fmt.Errorf("failed to delete %s: %v", key, err)
 	}
 
 	return nil
