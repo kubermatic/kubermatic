@@ -350,11 +350,6 @@ const (
 	IPVSProxyMode = "ipvs"
 	// IPTablesProxyMode defines the iptables kube-proxy mode.
 	IPTablesProxyMode = "iptables"
-
-	// Feature flags, maybe move inside own const block.
-
-	// FeatureNameExternalCloudProvider enables external cloud provider support.
-	FeatureNameExternalCloudProvider = "externalCloudProvider"
 )
 
 const (

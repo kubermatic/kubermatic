@@ -38,10 +38,6 @@ type reconciler struct {
 
 func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, labels map[string]string) error {
 	log = log.Named(controllerName)
-	if len(labels) == 0 {
-		log.Info("Not starting controller as there are no labels configured on the cluster")
-		return nil
-	}
 
 	r := &reconciler{
 		ctx:      ctx,
