@@ -2,12 +2,16 @@ package reconciling
 
 import (
 	"encoding/json"
+	"fmt"
+
 	"github.com/go-test/deep"
+	"go.uber.org/zap"
+
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/klog"
 )
 
 func init() {
@@ -37,19 +41,19 @@ func DeepEqual(a, b metav1.Object) bool {
 		diff = deep.Equal(b, a)
 	}
 
-	klog.V(4).Infof("Object %T %s/%s differs from the generated one: %v", a, a.GetNamespace(), a.GetName(), diff)
+	kubermaticlog.Logger.Debugw("Object differs from generated one", "type", fmt.Sprintf("%T", a), "namespace", a.GetNamespace(), "name", a.GetName(), "diff", diff)
 	return false
 }
 
 func jsonEqual(a, b interface{}) bool {
 	aJSON, err := json.Marshal(a)
 	if err != nil {
-		klog.Errorf("failed to marshal aJSON: %v", err)
+		kubermaticlog.Logger.Errorw("Failed to marshal aJSON", zap.Error(err))
 		return false
 	}
 	bJSON, err := json.Marshal(b)
 	if err != nil {
-		klog.Errorf("failed to marshal bJSON: %v", err)
+		kubermaticlog.Logger.Errorw("Failed to marshal bJSON", zap.Error(err))
 		return false
 	}
 	return string(aJSON) == string(bJSON)
