@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -30,7 +31,7 @@ const (
 )
 
 func TestGetExternalIPv4(t *testing.T) {
-	ip, err := getExternalIPv4(testDomain)
+	ip, err := getExternalIPv4(kubermaticlog.Logger, testDomain)
 	if err != nil {
 		t.Fatalf("failed to get the external IPv4 address for %s: %v", testDomain, err)
 	}
@@ -178,7 +179,7 @@ func TestSyncClusterAddress(t *testing.T) {
 				},
 			}
 
-			modifiers, err := SyncClusterAddress(context.Background(),
+			modifiers, err := SyncClusterAddress(context.Background(), kubermaticlog.Logger,
 				cluster, client, fakeExternalURL, seed)
 			if err != nil {
 				if tc.errExpected {
