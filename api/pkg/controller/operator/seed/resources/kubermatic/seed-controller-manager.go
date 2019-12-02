@@ -68,7 +68,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 				fmt.Sprintf("-nodeport-range=%s", cfg.Spec.UserCluster.NodePortRange),
 				fmt.Sprintf("-worker-name=%s", workerName),
 				fmt.Sprintf("-kubermatic-image=%s", cfg.Spec.UserCluster.KubermaticDockerRepository),
-				fmt.Sprintf("-dnatcontoller-image=%s", cfg.Spec.UserCluster.DNATControllerDockerRepository),
+				fmt.Sprintf("-dnatcontroller-image=%s", cfg.Spec.UserCluster.DNATControllerDockerRepository),
 				fmt.Sprintf("-kubernetes-addons-list=%s", strings.Join(cfg.Spec.UserCluster.Addons.Kubernetes.Default, ",")),
 				fmt.Sprintf("-openshift-addons-list=%s", strings.Join(cfg.Spec.UserCluster.Addons.Openshift.Default, ",")),
 				fmt.Sprintf("-overwrite-registry=%s", cfg.Spec.UserCluster.OverwriteRegistry),
