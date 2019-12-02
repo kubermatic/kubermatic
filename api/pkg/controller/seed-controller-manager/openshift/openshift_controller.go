@@ -666,7 +666,7 @@ func (r *Reconciler) ensureNamespace(ctx context.Context, c *kubermaticv1.Cluste
 }
 
 func (r *Reconciler) address(ctx context.Context, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) error {
-	modifiers, err := address.SyncClusterAddress(ctx, cluster, r.Client, r.externalURL, seed)
+	modifiers, err := address.SyncClusterAddress(ctx, r.log.With("cluster", cluster.Name), cluster, r.Client, r.externalURL, seed)
 	if err != nil {
 		return err
 	}
