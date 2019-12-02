@@ -198,6 +198,7 @@ func main() {
 		seedValidationWebhookServer, err := runOpts.seedvalidationHook.Server(
 			ctx,
 			log,
+			ctrlCtx.namespace,
 			runOpts.workerName,
 			ctrlCtx.seedsGetter,
 			provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter),
