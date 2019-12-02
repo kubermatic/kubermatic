@@ -59,6 +59,8 @@ func isSeed(ref metav1.OwnerReference) bool {
 	return ref.APIVersion == kubermaticv1.SchemeGroupVersion.String() && ref.Kind == "Seed"
 }
 
+// StringifyFeatureGates takes a set of enabled features and returns a comma-separated
+// key=value list like "featureA=true,featureB=true,...".
 func StringifyFeatureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string {
 	features := make([]string, 0)
 	for _, feature := range cfg.Spec.FeatureGates.List() {
@@ -153,6 +155,8 @@ func createSecretData(s *corev1.Secret, data map[string]string) *corev1.Secret {
 
 type patchConfigFunction func(*operatorv1alpha1.KubermaticConfiguration) error
 
+// PatchKubermaticConfiguration applies the given patch function to the
+// KubermaticConfiguration and performs a PATCH operation afterwards to update the resource.
 func PatchKubermaticConfiguration(client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration, patch patchConfigFunction) error {
 	oldConfig := config.DeepCopy()
 
@@ -169,6 +173,8 @@ func PatchKubermaticConfiguration(client ctrlruntimeclient.Client, config *opera
 
 type patchSeedFunction func(*kubermaticv1.Seed) error
 
+// PatchSeed applies the given patch function to the Seed and performs
+// a PATCH operation afterwards to update the resource.
 func PatchSeed(client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, patch patchSeedFunction) error {
 	oldSeed := seed.DeepCopy()
 
@@ -183,6 +189,9 @@ func PatchSeed(client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, patch p
 	return nil
 }
 
+// CleanupClusterResource attempts to find a cluster-wide resource and
+// deletes it if it was found. If no resource with the given name exists,
+// nil is returned.
 func CleanupClusterResource(client ctrlruntimeclient.Client, obj runtime.Object, name string) error {
 	key := types.NamespacedName{Name: name}
 	ctx := context.Background()
