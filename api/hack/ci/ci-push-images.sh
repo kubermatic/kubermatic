@@ -23,7 +23,7 @@ echodate "Successfully logged into Quay"
 KUBERMATICDOCKERTAG="${GIT_HEAD_TAG:-$GIT_HEAD_HASH}"
 UIDOCKERTAG="$KUBERMATICDOCKERTAG"
 
-if [ -z "$GIT_HEAD_HASH" ]; then
+if [ -z "$GIT_HEAD_TAG" ]; then
   UIDOCKERTAG="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
 else
   if [ -z "$(check_dashboard_tag "$GIT_HEAD_HASH")" ]; then
