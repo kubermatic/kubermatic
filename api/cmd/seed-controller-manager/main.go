@@ -131,6 +131,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		seedValidationWebhookServer, err := options.seedValidationHook.Server(
 			rootCtx,
 			log,
+			options.namespace,
 			options.workerName,
 			// We only have a SeedGetter and not a SeedsGetter, so construct a little
 			// wrapper
