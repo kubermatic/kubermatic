@@ -252,7 +252,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 				{
 					Name:    "controller-manager",
 					Image:   cfg.Spec.SeedController.DockerRepository + ":" + versions.Kubermatic,
-					Command: []string{"kubermatic-controller-manager"},
+					Command: []string{"seed-controller-manager"},
 					Args:    args,
 					Ports: []corev1.ContainerPort{
 						{
