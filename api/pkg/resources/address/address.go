@@ -5,17 +5,19 @@ import (
 	"fmt"
 	"net"
 
+	"go.uber.org/zap"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func SyncClusterAddress(ctx context.Context,
+	log *zap.SugaredLogger,
 	cluster *kubermaticv1.Cluster,
 	client ctrlruntimeclient.Client,
 	externalURL string,
@@ -56,7 +58,7 @@ func SyncClusterAddress(ctx context.Context,
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.ExternalName = externalName
 		})
-		klog.V(2).Infof("Set external name for cluster %s to %q", cluster.Name, externalName)
+		log.Debugw("Set external name for cluster", "externalName", externalName)
 	}
 
 	// Internal name
@@ -65,7 +67,7 @@ func SyncClusterAddress(ctx context.Context,
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.InternalName = internalName
 		})
-		klog.V(2).Infof("Set internal name for cluster %s to '%s'", cluster.Name, internalName)
+		log.Debugw("Set internal name for cluster", "internalName", internalName)
 	}
 
 	// IP
@@ -75,7 +77,7 @@ func SyncClusterAddress(ctx context.Context,
 	} else {
 		var err error
 		// Always lookup IP address, in case it changes (IP's on AWS LB's change)
-		ip, err = getExternalIPv4(externalName)
+		ip, err = getExternalIPv4(log, externalName)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +86,7 @@ func SyncClusterAddress(ctx context.Context,
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.IP = ip
 		})
-		klog.V(2).Infof("Set IP for cluster %s to '%s'", cluster.Name, ip)
+		log.Debugw("Set IP for cluster", "ip", ip)
 	}
 
 	service := &corev1.Service{}
@@ -102,7 +104,7 @@ func SyncClusterAddress(ctx context.Context,
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.Port = port
 		})
-		klog.V(2).Infof("Set port for cluster %s to %d", cluster.Name, port)
+		log.Debugw("Set port for cluster", "port", port)
 	}
 
 	// URL
@@ -111,10 +113,10 @@ func SyncClusterAddress(ctx context.Context,
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.URL = url
 		})
-		klog.V(2).Infof("Set URL for cluster %s to '%s'", cluster.Name, url)
+		log.Debugw("Set URL for cluster", "url", url)
 	}
 
-	if _, ok := cluster.Annotations["kubermatic.io/openshift"]; ok {
+	if cluster.IsOpenshift() {
 		openshiftConsoleCallBackURL := fmt.Sprintf("https://%s/api/v1/projects/%s/dc/%s/clusters/%s/openshift/console/proxy/auth/callback",
 			externalURL, cluster.Labels[kubermaticv1.ProjectIDLabelKey], seed.Name, cluster.Name)
 		if cluster.Address.OpenshiftConsoleCallBack != openshiftConsoleCallBackURL {
@@ -127,7 +129,7 @@ func SyncClusterAddress(ctx context.Context,
 	return modifiers, nil
 }
 
-func getExternalIPv4(hostname string) (string, error) {
+func getExternalIPv4(log *zap.SugaredLogger, hostname string) (string, error) {
 	resolvedIPs, err := net.LookupIP(hostname)
 	if err != nil {
 		return "", fmt.Errorf("failed to lookup ip for %s: %v", hostname, err)
@@ -145,7 +147,7 @@ func getExternalIPv4(hostname string) (string, error) {
 
 	//Just one ipv4
 	if len(ips) > 1 {
-		klog.V(4).Infof("lookup of %s returned multiple ipv4 addresses (%v). Picking the first one after sorting: %s", hostname, ips, ips[0])
+		log.Debugw("Lookup returned multiple ipv4 addresses. Picking the first one after sorting", "hostname", hostname, "foundAddresses", ips, "pickedAddress", ips[0])
 	}
 	return ips[0], nil
 }

@@ -46,7 +46,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	}
 
 	// Set the hostname & url
-	if err := r.syncAddress(ctx, cluster, seed); err != nil {
+	if err := r.syncAddress(ctx, r.log.With("cluster", cluster.Name), cluster, seed); err != nil {
 		return fmt.Errorf("failed to sync address: %v", err)
 	}
 
