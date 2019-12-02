@@ -191,7 +191,7 @@ func (o controllerRunOptions) validate() error {
 	}
 
 	if o.monitoringScrapeAnnotationPrefix == "" {
-		return fmt.Errorf("moniotring-scrape-annotation-prefix is undefined")
+		return fmt.Errorf("monitoring-scrape-annotation-prefix is undefined")
 	}
 
 	if o.apiServerDefaultReplicas < 1 {

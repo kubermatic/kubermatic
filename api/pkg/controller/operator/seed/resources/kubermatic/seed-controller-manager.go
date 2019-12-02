@@ -80,13 +80,10 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.SeedController.PProfEndpoint),
 				fmt.Sprintf("-in-cluster-prometheus-disable-default-rules=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultRules),
 				fmt.Sprintf("-in-cluster-prometheus-disable-default-scraping-configs=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultScrapingConfigs),
-				fmt.Sprintf("-monitoring-scrape-annotation-prefix=%s", cfg.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix),
 			}
 
-			if cfg.Spec.SeedController.DebugLog {
-				args = append(args, "-v4", "-log-debug=true")
-			} else {
-				args = append(args, "-v2")
+			if cfg.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix != "" {
+				args = append(args, fmt.Sprintf("-monitoring-scrape-annotation-prefix=%s", cfg.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix))
 			}
 
 			if cfg.Spec.SeedController.DebugLog {
