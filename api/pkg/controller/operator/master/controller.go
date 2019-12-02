@@ -86,8 +86,9 @@ func Add(
 			return nil
 		}
 
+		// when handling namespaces, it's okay to not find a KubermaticConfiguration
+		// and simply skip reconciling
 		if len(configs.Items) == 0 {
-			log.Warnw("could not find KubermaticConfiguration this object belongs to", "object", a)
 			return nil
 		}
 
