@@ -166,6 +166,10 @@ func (r *Reconciler) reconcileResources(cfg *operatorv1alpha1.KubermaticConfigur
 		return err
 	}
 
+	if err := r.reconcilePodDisruptionBudgets(cfg, seed, client, log); err != nil {
+		return err
+	}
+
 	if err := r.reconcileServices(cfg, seed, client, log); err != nil {
 		return err
 	}
@@ -276,6 +280,20 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 
 	if err := reconciling.ReconcileDeployments(r.ctx, creators, r.namespace, client, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcilePodDisruptionBudgets(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling PodDisruptionBudgets")
+
+	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
+		kubermatic.SeedControllerManagerPDBCreator(cfg),
+	}
+
+	if err := reconciling.ReconcilePodDisruptionBudgets(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
 	}
 
 	return nil
