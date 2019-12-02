@@ -38,6 +38,16 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 		return err
 	}
 
+	// If cleanup didn't finish we have to go back, because if there are controllers running
+	// inside the cluster and we delete the nodes, we get stuck.
+	if kuberneteshelper.HasAnyFinalizer(cluster,
+		kubermaticapiv1.InClusterLBCleanupFinalizer,
+		kubermaticapiv1.InClusterPVCleanupFinalizer,
+		kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer,
+		kubermaticapiv1.InClusterImageRegistryConfigCleanupFinalizer) {
+		return nil
+	}
+
 	if err := d.cleanupNodes(ctx, cluster); err != nil {
 		return err
 	}

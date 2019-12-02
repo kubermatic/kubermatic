@@ -3,11 +3,13 @@ package cloudcontroller
 import (
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -80,7 +82,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 				},
 			}
 
-			version, err := getOSVersion(data)
+			version, err := getOSVersion(data.Cluster().Spec.Version)
 			if err != nil {
 				return nil, err
 			}
@@ -144,21 +146,29 @@ func getOSFlags(data *resources.TemplateData) []string {
 	return flags
 }
 
-func getOSVersion(data *resources.TemplateData) (string, error) {
-	switch x := data.Cluster().Spec.Version.MajorMinor(); x {
-	case "1.16":
+func getOSVersion(version semver.Semver) (string, error) {
+	switch version.Minor() {
+	case 16:
 		return "1.16.0", nil
 	default:
-		return "", fmt.Errorf("kubernetes version %s not supported", x)
+		return "", fmt.Errorf("kubernetes version %s not supported", version.String())
 	}
+}
+
+// ExternalCloudControllerFeatureSupported checks if the
+func ExternalCloudControllerFeatureSupported(cluster *kubermaticv1.Cluster) bool {
+	if cluster.Spec.Cloud.Openstack == nil {
+		return false
+	}
+	return OpenStackCloudControllerSupported(cluster.Spec.Version)
 }
 
 // OpenStackCloudControllerSupported checks if this version of Kubernetes is supported
 // by our implementation of the external cloud controller.
 // This is not called for now, but it's here so we can use it later to automagically
 // enable external cloud controller support for supported versions.
-func OpenStackCloudControllerSupported(data *resources.TemplateData) bool {
-	if _, err := getOSVersion(data); err != nil {
+func OpenStackCloudControllerSupported(version semver.Semver) bool {
+	if _, err := getOSVersion(version); err != nil {
 		return false
 	}
 	return true
