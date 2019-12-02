@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -19,19 +20,23 @@ import (
 )
 
 func TestReconcileUserSSHKeys(t *testing.T) {
-	sshPath := fmt.Sprintf("%v%v", os.TempDir(), ".ssh")
+	tmpDir, err := ioutil.TempDir("", "sshkeys")
+	if err != nil {
+		t.Fatalf("error while creating test base dir: %v", err)
+	}
+	sshPath := filepath.Join(tmpDir, ".ssh")
 	if err := os.Mkdir(sshPath, 0700); err != nil {
 		t.Fatalf("error while creating .ssh dir: %v", err)
 	}
 
 	defer func() {
-		if err := cleanupFiles([]string{sshPath}); err != nil {
+		if err := cleanupFiles([]string{tmpDir}); err != nil {
 			t.Fatalf("failed to cleanup test files: %v", err)
 		}
 	}()
 
-	authorizedKeysPath := fmt.Sprintf("%v/%v", sshPath, "authorized_keys")
-	_, err := os.Create(authorizedKeysPath)
+	authorizedKeysPath := filepath.Join(sshPath, "authorized_keys")
+	_, err = os.Create(authorizedKeysPath)
 	if err != nil {
 		t.Fatalf("error while creating authorized_keys file: %v", err)
 	}
