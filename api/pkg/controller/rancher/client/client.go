@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func New(opts ClientOptions) (*Client, error) {
+func New(opts Options) (*Client, error) {
 	if len(opts.Endpoint) == 0 {
 		return nil, fmt.Errorf("rancher server endpoint can't be empty")
 	}
@@ -73,7 +73,7 @@ func (c *Client) do(urlStr, data string, into interface{}) error {
 		return fmt.Errorf("empty URL")
 	}
 	var err error
-	req := &http.Request{}
+	var req *http.Request
 	if data != "" {
 		req, err = http.NewRequest(http.MethodPost, urlStr, strings.NewReader(data))
 	} else {

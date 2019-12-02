@@ -188,7 +188,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 }
 
 // GetServiceCreators returns all service creators that are currently in use
-func GetServiceCreators(data *resources.TemplateData, rancherServerIntegration bool) []reconciling.NamedServiceCreatorGetter {
+func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
 	creators := []reconciling.NamedServiceCreatorGetter{
 		apiserver.InternalServiceCreator(),
 		apiserver.ExternalServiceCreator(data.Cluster().Spec.ExposeStrategy),
@@ -202,14 +202,14 @@ func GetServiceCreators(data *resources.TemplateData, rancherServerIntegration b
 	if data.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
 		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceCreator())
 	}
-	if rancherServerIntegration {
+	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; flag {
 		creators = append(creators, rancherserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy))
 	}
 	return creators
 }
 
 func (r *Reconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetServiceCreators(data, r.features.RancherServerIntegration)
+	creators := GetServiceCreators(data)
 	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
 
@@ -360,12 +360,12 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Clust
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use
-func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks, ancherServerIntegration bool) []reconciling.NamedStatefulSetCreatorGetter {
+func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool) []reconciling.NamedStatefulSetCreatorGetter {
 	creators := []reconciling.NamedStatefulSetCreatorGetter{
 		etcd.StatefulSetCreator(data, enableDataCorruptionChecks),
 	}
-	if ancherServerIntegration {
-		creators = append(creators, rancherserver.StatefulSetCreator(data, ancherServerIntegration))
+	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; flag {
+		creators = append(creators, rancherserver.StatefulSetCreator(data))
 	}
 	return creators
 }
@@ -428,7 +428,7 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, c *kuberm
 }
 
 func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetStatefulSetCreators(data, r.features.EtcdDataCorruptionChecks, r.features.RancherServerIntegration)
+	creators := GetStatefulSetCreators(data, r.features.EtcdDataCorruptionChecks)
 
 	return reconciling.ReconcileStatefulSets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }

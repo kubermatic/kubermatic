@@ -19,6 +19,7 @@ import (
 	rancherclient "github.com/kubermatic/kubermatic/api/pkg/controller/rancher/client"
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -37,6 +38,9 @@ const (
 	ControllerName     = "kubernatic_rancher_controller"
 	RancherUsername    = "admin"
 	RancherAdminSecret = "rancher-admin-secret"
+	// keep the linter happy
+	// trueStr                   = "true"
+	rancherRandPasswordLength = 16
 )
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig
@@ -99,18 +103,15 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		}
 		return reconcile.Result{}, fmt.Errorf("failed to get rancher statefulset: %v", err)
 	}
-	// all done.
-	if statefulSet.Annotations["kubermatic.io/rancher-server-cluster-imported"] == "true" {
-		return reconcile.Result{}, nil
-	}
 
 	result, err := r.reconcile(ctx, log, statefulSet)
 	if result == nil {
 		result = &reconcile.Result{}
 	}
 	if err != nil {
-		log.Errorf("failed to reconcile %s: %v", ControllerName, zap.Error(err))
-		return *result, fmt.Errorf("failed to reconcile %s: %v", ControllerName, err)
+		clusterName := strings.ReplaceAll(statefulSet.Namespace, "cluster-", "")
+		log.Errorf("failed to reconcile %s: %v", clusterName, zap.Error(err))
+		return *result, fmt.Errorf("failed to reconcile %s: %v", clusterName, err)
 	}
 	return *result, nil
 }
@@ -124,6 +125,15 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, stat
 		log.Debugw("can't find cluster", zap.Error(err))
 		return nil, nil
 	}
+	// rancher integration is disabled
+	if flag := cluster.Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; !flag {
+		return nil, nil
+	}
+	// cluster is already imported
+	if cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionRancherInitialized, corev1.ConditionTrue) &&
+		cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionRancherClusterImported, corev1.ConditionTrue) {
+		return nil, nil
+	}
 	// wait for statefulSet to be ready
 	if statefulSet.Status.ReadyReplicas == 0 {
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
@@ -132,11 +142,17 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, stat
 		statefulSet.Annotations = make(map[string]string)
 	}
 	// initialize rancher statefulSet
-	if statefulSet.Annotations["kubermatic.io/rancher-server-initialized"] != "true" {
+	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionRancherInitialized, corev1.ConditionTrue) {
 		if err := r.initRancherServer(ctx, log, statefulSet); err != nil {
 			log.Errorw("failed to initialize Rancher Server", zap.Error(err))
 			return &reconcile.Result{}, err
 		}
+		kubermaticv1helper.SetClusterCondition(cluster, kubermaticv1.ClusterConditionRancherInitialized, corev1.ConditionTrue, "", "Rancher server initialized successfully")
+		if err := r.Update(ctx, cluster); err != nil {
+			return &reconcile.Result{}, err
+		}
+		log.Infow("rancher server statefulSet initialized successfully")
+
 	}
 	// Setup the user cluster
 	rancherRegToken, err := r.rancherClusterWithRegistrationToken(ctx, cluster.Status.NamespaceName, cluster.Spec.HumanReadableName)
@@ -149,8 +165,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, stat
 			log.Errorw("failed to apply rancher regstration command", zap.Error(err))
 			return nil, err
 		}
-		statefulSet.Annotations["kubermatic.io/rancher-server-cluster-imported"] = "true"
-		if err := r.Update(ctx, statefulSet); err != nil {
+		kubermaticv1helper.SetClusterCondition(cluster, kubermaticv1.ClusterConditionRancherClusterImported, corev1.ConditionTrue, "", "Rancher cluster imported successfully")
+		if err := r.Update(ctx, cluster); err != nil {
 			return nil, err
 		}
 	}
@@ -179,12 +195,6 @@ func (r *Reconciler) initRancherServer(ctx context.Context, log *zap.SugaredLogg
 			break
 		}
 	}
-	// at this point, the rancher statefulSet is initialized and ready to use
-	statefulSet.Annotations["kubermatic.io/rancher-server-initialized"] = "true"
-	if err := r.Update(ctx, statefulSet); err != nil {
-		return fmt.Errorf("failed to update rancher statefulset: %v", err)
-	}
-	log.Infow("rancher server statefulSet initialized successfully")
 	return nil
 }
 
@@ -230,7 +240,7 @@ func (r *Reconciler) getRancherClient(ctx context.Context, namespace string) (*r
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rancher secret: %v", err)
 	}
-	opts := rancherclient.ClientOptions{
+	opts := rancherclient.Options{
 		Endpoint:  address,
 		AccessKey: RancherUsername,
 		SecretKey: string(initSecret.Data["password"]),
@@ -377,8 +387,8 @@ func randString() string {
 		"0123456789" +
 		"!@#$%^&*()"
 
-	b := make([]byte, 10)
-	for i := 0; i < 10; i++ {
+	b := make([]byte, rancherRandPasswordLength)
+	for i := 0; i < rancherRandPasswordLength; i++ {
 		b[i] = charset[rand.Intn(len(charset))]
 	}
 	return string(b)

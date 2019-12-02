@@ -163,7 +163,7 @@ func getImagesForVersion(log *zap.Logger, version *kubermaticversion.Version, ad
 }
 
 func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
-	statefulsetCreators := kubernetescontroller.GetStatefulSetCreators(templateData, false, true)
+	statefulsetCreators := kubernetescontroller.GetStatefulSetCreators(templateData, false)
 	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators(templateData)...)
 
 	deploymentCreators := kubernetescontroller.GetDeploymentCreators(templateData, false)

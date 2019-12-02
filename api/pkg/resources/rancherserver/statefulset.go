@@ -31,11 +31,8 @@ var (
 	}
 )
 
-// StatefulSetCreator returns the function to reconcile the etcd StatefulSet
-func StatefulSetCreator(data *resources.TemplateData, enabled bool) reconciling.NamedStatefulSetCreatorGetter {
-	if !enabled {
-		return nil
-	}
+// StatefulSetCreator returns the function to reconcile the StatefulSet
+func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.RancherStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			set.Name = resources.RancherStatefulSetName

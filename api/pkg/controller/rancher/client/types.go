@@ -5,11 +5,11 @@ import "net/http"
 type Filters map[string]string
 
 type Client struct {
-	options ClientOptions
+	options Options
 	client  *http.Client
 }
 
-type ClientOptions struct {
+type Options struct {
 	Endpoint  string
 	Token     string
 	AccessKey string
@@ -142,7 +142,7 @@ type ClusterRegistrationToken struct {
 	Labels               map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
 	ManifestURL          string            `json:"manifestUrl,omitempty" yaml:"manifestUrl,omitempty"`
 	Name                 string            `json:"name,omitempty" yaml:"name,omitempty"`
-	NamespaceId          string            `json:"namespaceId,omitempty" yaml:"namespaceId,omitempty"`
+	NamespaceID          string            `json:"namespaceId,omitempty" yaml:"namespaceId,omitempty"`
 	NodeCommand          string            `json:"nodeCommand,omitempty" yaml:"nodeCommand,omitempty"`
 	Removed              string            `json:"removed,omitempty" yaml:"removed,omitempty"`
 	State                string            `json:"state,omitempty" yaml:"state,omitempty"`

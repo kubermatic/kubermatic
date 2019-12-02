@@ -25,10 +25,6 @@ const (
 	// --experimental-initial-corrupt-check=true +
 	// --experimental-corrupt-check-time=10m
 	EtcdDataCorruptionChecks = "EtcdDataCorruptionChecks"
-
-	// RancherServerIntegration if enabled, will deploy a Rancher Server Managegment
-	// plane on the seed cluster for each user cluster and import the user cluster into it.
-	RancherServerIntegration = "RancherServerIntegration"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

@@ -162,7 +162,6 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 			VPA:                          ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
 			EtcdDataCorruptionChecks:     ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),
 			KubernetesOIDCAuthentication: ctrlCtx.runOptions.featureGates.Enabled(features.OpenIDAuthPlugin),
-			RancherServerIntegration:     ctrlCtx.runOptions.featureGates.Enabled(features.RancherServerIntegration),
 		},
 	)
 }
@@ -311,9 +310,6 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 }
 
 func createrancherController(ctrlCtx *controllerContext) error {
-	if !ctrlCtx.runOptions.featureGates.Enabled(features.RancherServerIntegration) {
-		return nil
-	}
 	return rancher.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
