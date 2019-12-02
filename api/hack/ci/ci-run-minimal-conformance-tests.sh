@@ -183,6 +183,13 @@ EOF
       make build
       time retry 5 buildah build-using-dockerfile --squash -t "registry.registry.svc.cluster.local:5000/kubermatic/kubeletdnat-controller:$current_git_hash ."
     )
+    (
+      echodate "Building user-ssh-keys-agent image"
+      TEST_NAME="Build user-ssh-keys-agent Docker image"
+      cd api/cmd/user-ssh-keys-agent
+      make build
+      time retry 5 buildah build-using-dockerfile --squash -t "quay.io/kubermatic/user-ssh-keys-agent:$current_git_hash ."
+    )
     echodate "Pushing docker image"
     TEST_NAME="Push Kubermatic Docker image"
     time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/api:$current_git_hash"
@@ -195,6 +202,10 @@ EOF
     TEST_NAME="Push dnatcontroller Docker image"
     echodate "Pushing dnatcontroller image"
     time retry 5 buildah push "registry.registry.svc.cluster.local:5000/kubermatic/kubeletdnat-controller:$current_git_hash"
+    TEST_NAME="Push user-ssh-keys-agent Docker image"
+    echodate "Pushing user-ssh-keys-agent image"
+    retry 5 buildah login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
+    time retry 5 buildah push "quay.io/kubermatic/user-ssh-keys-agent:$current_git_hash"
     echodate "Finished building and pushing docker images"
   else
     echodate "Omitting building of binaries and docker image, as tag $current_git_hash already exists in local registry"
