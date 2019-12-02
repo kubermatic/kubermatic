@@ -11,9 +11,11 @@ import (
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -105,12 +107,14 @@ func Add(
 	typesToWatch := []runtime.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
+		&corev1.Namespace{},
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
 		&extensionsv1beta1.Ingress{},
-		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&policyv1beta1.PodDisruptionBudget{},
+		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
 		&certmanagerv1alpha2.Certificate{},
 	}
 

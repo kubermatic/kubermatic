@@ -13,6 +13,7 @@ import (
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -115,11 +116,12 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	typesToWatch := []runtime.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
+		&corev1.Namespace{},
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
-		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
 		&kubermaticv1.Seed{},
 	}
 
