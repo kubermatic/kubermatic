@@ -107,7 +107,6 @@ func Add(
 	typesToWatch := []runtime.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
-		&corev1.Namespace{},
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
@@ -122,6 +121,13 @@ func Add(
 		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
+	}
+
+	// namespaces are not managed by the operator and so can use neither namespacePredicate
+	// nor ManagedByPredicate, but still need to get their labels reconciled
+	ns := &corev1.Namespace{}
+	if err := c.Watch(&source.Kind{Type: ns}, childEventHandler, predicateutil.ByName(namespace)); err != nil {
+		return fmt.Errorf("failed to create watcher for %T: %v", ns, err)
 	}
 
 	return nil
