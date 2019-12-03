@@ -6,14 +6,13 @@ import (
 
 	"go.uber.org/zap"
 
-	projectlabelsynchronizer "github.com/kubermatic/kubermatic/api/pkg/controller/project-label-synchronizer"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/project-label-synchronizer"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-lifecycle"
 	seedproxy "github.com/kubermatic/kubermatic/api/pkg/controller/seed-proxy"
 	seedsync "github.com/kubermatic/kubermatic/api/pkg/controller/seed-sync"
 	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
 	userprojectbinding "github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeysclustersynchronizer"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeyssynchronizer"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -25,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -38,7 +36,6 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.labelSelectorFunc)
 	projectLabelSynchronizerFactory := projectLabelSynchronizerFactoryCreator(ctrlCtx)
 	userSSHKeysSynchronizerFactory := userSSHKeysSynchronizerFactoryCreator(ctrlCtx)
-	userSSHKeysClusterSynchronizerFactory := userSSHKeysClusterSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		kubermaticlog.Logger,
@@ -48,8 +45,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.seedKubeconfigGetter,
 		rbacControllerFactory,
 		projectLabelSynchronizerFactory,
-		userSSHKeysSynchronizerFactory,
-		userSSHKeysClusterSynchronizerFactory); err != nil {
+		userSSHKeysSynchronizerFactory); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %v", err)
 	}
@@ -165,7 +161,7 @@ func rbacClusterProvider(cfg *rest.Config, name string, master bool, labelSelect
 
 func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
 	factory := func(mgr manager.Manager) error {
-		seedManagerMap, err := createSeedManagers(ctrlCtx, mgr)
+		seedManagerMap, err := createSeedManagers("project-label-synchronizer-factory", ctrlCtx, mgr)
 		if err != nil {
 			return fmt.Errorf("failed build seeds managers: %v", err)
 		}
@@ -185,7 +181,7 @@ func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcont
 
 func userSSHKeysSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
 	factory := func(mgr manager.Manager) error {
-		seedManagerMap, err := createSeedManagers(ctrlCtx, mgr)
+		seedManagerMap, err := createSeedManagers("usersshkeys-synchronizer-factory", ctrlCtx, mgr)
 		if err != nil {
 			return fmt.Errorf("failed build seeds managers: %v", err)
 		}
@@ -204,29 +200,8 @@ func userSSHKeysSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontr
 	}
 }
 
-func userSSHKeysClusterSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
-	factory := func(mgr manager.Manager) error {
-		seedManagerMap, err := createSeedManagers(ctrlCtx, mgr)
-		if err != nil {
-			return fmt.Errorf("failed build seeds managers: %v", err)
-		}
-
-		return usersshkeysclustersynchronizer.Add(
-			ctrlCtx.ctx,
-			mgr,
-			seedManagerMap,
-			ctrlCtx.log,
-			ctrlCtx.workerName,
-			ctrlCtx.workerCount,
-		)
-	}
-	return func(mgr manager.Manager) (string, error) {
-		return usersshkeysclustersynchronizer.ControllerName, factory(mgr)
-	}
-}
-
-func createSeedManagers(ctrlCtx *controllerContext, mgr manager.Manager) (map[string]manager.Manager, error) {
-	log := ctrlCtx.log.Named("usersshkeys-cluster-synchronizer-factory")
+func createSeedManagers(name string, ctrlCtx *controllerContext, mgr manager.Manager) (map[string]manager.Manager, error) {
+	log := ctrlCtx.log.Named(name)
 	seeds, err := ctrlCtx.seedsGetter()
 	if err != nil {
 		log.Errorw("Failed to get seeds", zap.Error(err))

@@ -1,4 +1,4 @@
-package usersshkeysclustersynchronizer
+package usersshkeyssynchronizer
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 		expectedUserSSHKey kubermaticv1.UserSSHKey
 	}{
 		{
-			name: "Test UserSSHKey on cluster deletion",
+			name: "Test cleanup cluster ids in UserSSHKey on cluster deletion",
 			reconciler: &Reconciler{
 				ctx: context.Background(),
 				log: kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
