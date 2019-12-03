@@ -20,8 +20,8 @@ echodate "Successfully logged into Quay"
 # prepare special variables that will be injected into the Kubermatic Operator;
 # use the latest tagged version of the dashboard when we ourselves are a tagged
 # release
-KUBERMATICDOCKERTAG="${GIT_HEAD_TAG:-$GIT_HEAD_HASH}"
-UIDOCKERTAG="$KUBERMATICDOCKERTAG"
+export KUBERMATICDOCKERTAG="${GIT_HEAD_TAG:-$GIT_HEAD_HASH}"
+export UIDOCKERTAG="$KUBERMATICDOCKERTAG"
 
 if [ -z "$GIT_HEAD_TAG" ]; then
   UIDOCKERTAG="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
