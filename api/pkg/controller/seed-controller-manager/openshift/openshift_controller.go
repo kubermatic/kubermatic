@@ -52,7 +52,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const ControllerName = "kubermatic_openshift_controller"
+const ControllerName = "openshift_controller"
 
 // Check if the Reconciler fullfills the interface
 // at compile time
@@ -235,116 +235,25 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, fmt.Errorf("failed to ensure Namespace: %v", err)
 	}
 
-	seed, err := r.seedGetter()
-	if err != nil {
-		return nil, err
-	}
-
-	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
-	if !found {
-		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
-	}
-
-	supportsFailureDomainZoneAntiAffinity, err := controllerutil.SupportsFailureDomainZoneAntiAffinity(ctx, r.Client)
-	if err != nil {
-		return nil, err
-	}
-
-	osData := &openshiftData{
-		cluster:                               cluster,
-		client:                                r.Client,
-		dc:                                    &datacenter,
-		overwriteRegistry:                     r.overwriteRegistry,
-		nodeAccessNetwork:                     r.nodeAccessNetwork,
-		oidc:                                  r.oidc,
-		etcdDiskSize:                          r.etcdDiskSize,
-		kubermaticImage:                       r.kubermaticImage,
-		dnatControllerImage:                   r.dnatControllerImage,
-		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
-		userClusterClient: func() (client.Client, error) {
-			return r.userClusterConnProvider.GetClient(cluster)
-		},
-		externalURL: r.externalURL,
-		seed:        seed.DeepCopy(),
-	}
-
 	if err := r.networkDefaults(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to setup cluster networking defaults: %v", err)
 	}
 
-	if err := r.services(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile Services: %v", err)
+	if err := r.reconcileResources(ctx, cluster); err != nil {
+		return nil, fmt.Errorf("failed to reconcile resources: %v", err)
 	}
 
-	if err := r.address(ctx, cluster, seed); err != nil {
-		return nil, fmt.Errorf("failed to reconcile the cluster address: %v", err)
-	}
-
-	if err := r.secrets(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile Secrets: %v", err)
-	}
-
-	if err := r.ensureServiceAccounts(ctx, cluster); err != nil {
-		return nil, err
-	}
-
-	if err := r.ensureRoles(ctx, cluster); err != nil {
-		return nil, err
-	}
-
-	if err := r.ensureRoleBindings(ctx, cluster); err != nil {
-		return nil, err
-	}
-
-	if err := r.statefulSets(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile StatefulSets: %v", err)
-	}
-
-	// Wait until the cloud provider infra is ready before attempting
-	// to render the cloud-config
-	// TODO: Model resource deployment as a DAG so we don't need hacks
-	// like this combined with tribal knowledge and "someone is noticing this
-	// isn't working correctly"
-	// https://github.com/kubermatic/kubermatic/issues/2948
-	if kubermaticv1.HealthStatusUp != cluster.Status.ExtendedHealth.CloudProviderInfrastructure {
-		return &reconcile.Result{RequeueAfter: 1 * time.Second}, nil
-	}
-
-	if err := r.configMaps(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
-	}
-
-	if err := r.deployments(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile Deployments: %v", err)
-	}
-
-	if osData.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
-		if err := nodeportproxy.EnsureResources(ctx, r.Client, osData); err != nil {
-			return nil, fmt.Errorf("failed to ensure NodePortProxy resources: %v", err)
-		}
-	}
-
-	if err := r.cronJobs(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile CronJobs: %v", err)
-	}
-
-	if err := r.podDisruptionBudgets(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
-	}
-
-	if err := r.verticalPodAutoscalers(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile VerticalPodAutoscalers: %v", err)
-	}
-
-	if err := r.syncHeath(ctx, osData); err != nil {
+	if err := r.syncHeath(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to sync health: %v", err)
 	}
 
-	if kubermaticv1.HealthStatusDown == osData.Cluster().Status.ExtendedHealth.Apiserver {
-		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	if kubermaticv1.HealthStatusDown == cluster.Status.ExtendedHealth.Apiserver {
+		// We have to wait for the APIServer to not be completely down. Changes for it
+		// will trigger us, so we can just return here.
+		return nil, nil
 	}
 
-	reachable, err := r.clusterIsReachable(ctx, osData.Cluster())
+	reachable, err := r.clusterIsReachable(ctx, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if cluster is reachable: %v", err)
 	}
@@ -385,8 +294,7 @@ func (r *Reconciler) clusterIsReachable(ctx context.Context, c *kubermaticv1.Clu
 	return true, nil
 }
 
-func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error {
-	cluster := osData.Cluster()
+func (r *Reconciler) syncHeath(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	currentHealth := cluster.Status.ExtendedHealth.DeepCopy()
 	type depInfo struct {
 		healthStatus *kubermaticv1.HealthStatus
