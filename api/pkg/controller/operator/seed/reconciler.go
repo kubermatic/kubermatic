@@ -162,7 +162,7 @@ func (r *Reconciler) cleanupDeletedSeed(cfg *operatorv1alpha1.KubermaticConfigur
 			return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %v", err)
 		}
 
-		return common.PatchSeed(r, seed, func(seed *kubermaticv1.Seed) error {
+		return common.PatchSeed(client, seed, func(seed *kubermaticv1.Seed) error {
 			kubernetes.RemoveFinalizer(seed, common.CleanupFinalizer)
 			return nil
 		})
