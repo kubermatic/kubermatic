@@ -110,6 +110,10 @@ const (
 	// only supported on a limited set of providers for a specific set of Kube versions. It must
 	// not be set if its not supported.
 	ClusterFeatureExternalCloudProvider = "externalCloudProvider"
+
+	// ClusterFeatureRancherIntegration enables the rancher server integration feature.
+	// It will deploy a Rancher Server Managegment plane on the seed cluster and import the user cluster into it.
+	ClusterFeatureRancherIntegration = "rancherIntegration"
 )
 
 // ClusterConditionType is used to indicate the type of a cluster condition. For all condition
@@ -133,6 +137,9 @@ const (
 	ClusterConditionMonitoringControllerReconcilingSuccess     ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
 	ClusterConditionOpenshiftControllerReconcilingSuccess      ClusterConditionType = "OpenshiftControllerReconciledSuccessfully"
 	ClusterConditionClusterInitialized                         ClusterConditionType = "ClusterInitialized"
+
+	ClusterConditionRancherInitialized     ClusterConditionType = "RancherInitializedSuccessfully"
+	ClusterConditionRancherClusterImported ClusterConditionType = "RancherClusterImportedSuccessfully"
 
 	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
 	ReasonClusterUpdateInProgress = "ClusterUpdateInProgress"
