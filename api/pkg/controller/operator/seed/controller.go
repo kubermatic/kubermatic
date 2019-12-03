@@ -13,8 +13,10 @@ import (
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -100,7 +102,7 @@ func Add(
 		reconciler.seedClients[key] = manager.GetClient()
 		reconciler.seedRecorders[key] = manager.GetEventRecorderFor(ControllerName)
 
-		if err := createSeedWatches(c, key, manager, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
+		if err := createSeedWatches(c, key, manager, namespace, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to setup watches for seed %s: %v", key, err)
 		}
 	}
@@ -108,9 +110,23 @@ func Add(
 	return nil
 }
 
-func createSeedWatches(controller controller.Controller, seedName string, seedManager manager.Manager, predicates ...predicate.Predicate) error {
+func createSeedWatches(controller controller.Controller, seedName string, seedManager manager.Manager, namespace string, predicates ...predicate.Predicate) error {
 	cache := seedManager.GetCache()
 	eventHandler := util.EnqueueConst(seedName)
+
+	watch := func(t runtime.Object, preds ...predicate.Predicate) error {
+		seedTypeWatch := &source.Kind{Type: t}
+
+		if err := seedTypeWatch.InjectCache(cache); err != nil {
+			return fmt.Errorf("failed to inject cache into watch for %T: %v", t, err)
+		}
+
+		if err := controller.Watch(seedTypeWatch, eventHandler, preds...); err != nil {
+			return fmt.Errorf("failed to watch %T: %v", t, err)
+		}
+
+		return nil
+	}
 
 	typesToWatch := []runtime.Object{
 		&appsv1.Deployment{},
@@ -118,22 +134,21 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
-		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&policyv1beta1.PodDisruptionBudget{},
+		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
 		&kubermaticv1.Seed{},
 	}
 
 	for _, t := range typesToWatch {
-		seedTypeWatch := &source.Kind{Type: t}
-		if err := seedTypeWatch.InjectCache(cache); err != nil {
-			return fmt.Errorf("failed to inject cache into watch for %T: %v", t, err)
-		}
-		if err := controller.Watch(seedTypeWatch, eventHandler, predicates...); err != nil {
-			return fmt.Errorf("failed to watch %T: %v", t, err)
+		if err := watch(t, predicates...); err != nil {
+			return err
 		}
 	}
 
-	return nil
+	// namespaces are not managed by the operator and so can use neither namespacePredicate
+	// nor ManagedByPredicate, but still need to get their labels reconciled
+	return watch(&corev1.Namespace{}, predicateutil.ByName(namespace))
 }
 
 // newEventHandler takes a obj->request mapper function and wraps it into an
