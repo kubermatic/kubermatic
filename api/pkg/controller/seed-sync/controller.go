@@ -22,6 +22,10 @@ const (
 	// ManagedByLabel is the label used to identify the resources
 	// created by this controller.
 	ManagedByLabel = "app.kubernetes.io/managed-by"
+
+	// CleanupFinalizer is put on Seed CRs to facilitate proper
+	// cleanup when a Seed is deleted.
+	CleanupFinalizer = "kubermatic.io/cleanup-seed-sync"
 )
 
 // Add creates a new Seed-Sync controller and sets up Watches
