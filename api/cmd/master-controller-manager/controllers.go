@@ -13,6 +13,7 @@ import (
 	seedsync "github.com/kubermatic/kubermatic/api/pkg/controller/seed-sync"
 	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/controller/service-account"
 	userprojectbinding "github.com/kubermatic/kubermatic/api/pkg/controller/user-project-binding"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeysclustersynchronizer"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeyssynchronizer"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -36,6 +37,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.labelSelectorFunc)
 	projectLabelSynchronizerFactory := projectLabelSynchronizerFactoryCreator(ctrlCtx)
 	userSSHKeysSynchronizerFactory := userSSHKeysSynchronizerFactoryCreator(ctrlCtx)
+	userSSHKeysClusterSynchronizerFactory := userSSHKeysClusterSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		kubermaticlog.Logger,
@@ -45,7 +47,8 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.seedKubeconfigGetter,
 		rbacControllerFactory,
 		projectLabelSynchronizerFactory,
-		userSSHKeysSynchronizerFactory); err != nil {
+		userSSHKeysSynchronizerFactory,
+		userSSHKeysClusterSynchronizerFactory); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %v", err)
 	}
@@ -247,5 +250,52 @@ func userSSHKeysSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontr
 	}
 	return func(mgr manager.Manager) (string, error) {
 		return usersshkeyssynchronizer.ControllerName, factory(mgr)
+	}
+}
+
+// TODO(MQ): Try to extract common functionality from userSSHKeysClusterSynchronizerFactoryCreator and userSSHKeysSynchronizerFactoryCreator.
+func userSSHKeysClusterSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	log := ctrlCtx.log.Named("usersshkeys-cluster-synchronizer-factory")
+	factory := func(mgr manager.Manager) error {
+		seeds, err := ctrlCtx.seedsGetter()
+		if err != nil {
+			log.Errorw("Failed to get seeds", zap.Error(err))
+			return fmt.Errorf("failed to get seeds: %v", err)
+		}
+
+		seedManagerMap := map[string]manager.Manager{}
+		for seedName, seed := range seeds {
+			log := ctrlCtx.log.With("seed", seed.Name)
+			kubeconfig, err := ctrlCtx.seedKubeconfigGetter(seed)
+			if err != nil {
+				log.Errorw("Failed to get kubeconfig for seed", zap.Error(err))
+				// Don't let one defunct seed break everything. We have a metric for this
+				// in the rbac controller factory, so just log it here
+				continue
+			}
+			seedMgr, err := manager.New(kubeconfig, manager.Options{
+				MetricsBindAddress: "0",
+			})
+			if err != nil {
+				log.Errorw("Failed to construct mgr for seed", zap.Error(err))
+				continue
+			}
+			seedManagerMap[seedName] = seedMgr
+			if err := mgr.Add(seedMgr); err != nil {
+				return fmt.Errorf("failed to add controller manager for seed %q to mgr: %v", seedName, err)
+			}
+		}
+
+		return usersshkeysclustersynchronizer.Add(
+			ctrlCtx.ctx,
+			mgr,
+			seedManagerMap,
+			ctrlCtx.log,
+			ctrlCtx.workerName,
+			ctrlCtx.workerCount,
+		)
+	}
+	return func(mgr manager.Manager) (string, error) {
+		return usersshkeysclustersynchronizer.ControllerName, factory(mgr)
 	}
 }
