@@ -158,6 +158,10 @@ type ClusterProvider interface {
 	//
 	// Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
 	GetClientForCustomerCluster(*UserInfo, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
+
+	// GetTokenForCustomerCluster returns a token for the given cluster with permissions granted to group that
+	// user belongs to.
+	GetTokenForCustomerCluster(userInfo *UserInfo, cluster *kubermaticv1.Cluster) (string, error)
 }
 
 // PrivilegedClusterProvider declares the set of methods for interacting with the seed clusters

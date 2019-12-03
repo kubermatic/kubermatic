@@ -2,7 +2,6 @@ package kubernetesdashboard
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -12,7 +11,6 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	transporthttp "github.com/go-kit/kit/transport/http"
 	"go.uber.org/zap"
-	"k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
@@ -69,20 +67,10 @@ func ProxyEndpoint(
 				common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusInternalServerError, "couldn't get userInfo"))
 				return nil, nil
 			}
-			adminClientCfg, err := clusterProvider.GetAdminKubeconfigForCustomerCluster(userCluster)
-			if err != nil {
-				common.WriteHTTPError(log, w, err)
-				return nil, nil
-			}
 
-			if !strings.HasPrefix(userInfo.Group, "editors") && !strings.HasPrefix(userInfo.Group, "owners") {
-				common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, fmt.Sprintf("user %q does not belong to the owners|editors group", userInfo.Email)))
-				return nil, nil
-			}
-
-			token, err := extractBearerToken(adminClientCfg)
+			token, err := clusterProvider.GetTokenForCustomerCluster(userInfo, userCluster)
 			if err != nil {
-				common.WriteHTTPError(log, w, err)
+				common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, fmt.Sprintf("error getting token for user %q: %v", userInfo.Email, err)))
 				return nil, nil
 			}
 
@@ -176,14 +164,4 @@ func newDashboardProxyDirector(proxyURL *url.URL, token string, request *http.Re
 		token:           token,
 		originalRequest: request,
 	}
-}
-
-func extractBearerToken(kubeconfig *api.Config) (string, error) {
-	for _, info := range kubeconfig.AuthInfos {
-		if len(info.Token) > 0 {
-			return info.Token, nil
-		}
-	}
-
-	return "", errors.New("could not find bearer token in kubeconfig file")
 }
