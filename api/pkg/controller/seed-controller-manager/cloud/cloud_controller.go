@@ -122,7 +122,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !found {
-		return nil, fmt.Errorf("couldn't find datacentrer %q for cluster %q", cluster.Spec.Cloud.DatacenterName, cluster.Name)
+		return nil, fmt.Errorf("couldn't find datacenter %q for cluster %q", cluster.Spec.Cloud.DatacenterName, cluster.Name)
 	}
 	prov, err := cloud.Provider(datacenter.DeepCopy(), r.getGlobalSecretKeySelectorValue)
 	if err != nil {

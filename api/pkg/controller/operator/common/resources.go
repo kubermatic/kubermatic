@@ -33,7 +33,6 @@ const (
 	DockercfgSecretName                   = "dockercfg"
 	DexCASecretName                       = "dex-ca"
 	MasterFilesSecretName                 = "extra-files"
-	SeedAdmissionWebhookName              = "kubermatic.io-seeds"
 	SeedWebhookServingCASecretName        = "seed-webhook-ca"
 	SeedWebhookServingCertSecretName      = "seed-webhook-cert"
 	seedWebhookCommonName                 = "seed-webhook"

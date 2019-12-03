@@ -94,6 +94,16 @@ get_latest_dashboard_hash() {
   echo "$HASH"
 }
 
+check_dashboard_tag() {
+  local TAG="$1"
+
+  ensure_github_host_pubkey
+  git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
+  local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
+
+  retry 5 git ls-remote "$DASHBOARD_URL" "refs/tags/$TAG"
+}
+
 format_dashboard() {
   local filename="$1"
   local tmpfile="$filename.tmp"

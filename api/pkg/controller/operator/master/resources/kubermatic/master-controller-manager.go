@@ -68,9 +68,9 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 			}
 
 			if cfg.Spec.MasterController.DebugLog {
-				args = append(args, "-v4", "-log-debug=true")
+				args = append(args, "-v=4", "-log-debug=true")
 			} else {
-				args = append(args, "-v2")
+				args = append(args, "-v=2")
 			}
 
 			if workerName != "" {

@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	masterctrl "github.com/kubermatic/kubermatic/api/pkg/controller/operator/master"
 	seedctrl "github.com/kubermatic/kubermatic/api/pkg/controller/operator/seed"
 	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-lifecycle"
@@ -66,6 +67,8 @@ func main() {
 	if len(opt.namespace) == 0 {
 		log.Fatal("-namespace is a mandatory flag")
 	}
+
+	log.Infow("Moin, moin, I'm the Kubermatic Operator and these are the versions I work with.", "kubermatic", common.KUBERMATICDOCKERTAG, "ui", common.UIDOCKERTAG)
 
 	config, err := clientcmd.BuildConfigFromFlags("", opt.kubeconfig)
 	if err != nil {

@@ -11,9 +11,11 @@ import (
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -84,8 +86,9 @@ func Add(
 			return nil
 		}
 
+		// when handling namespaces, it's okay to not find a KubermaticConfiguration
+		// and simply skip reconciling
 		if len(configs.Items) == 0 {
-			log.Warnw("could not find KubermaticConfiguration this object belongs to", "object", a)
 			return nil
 		}
 
@@ -109,8 +112,9 @@ func Add(
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
 		&extensionsv1beta1.Ingress{},
-		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
+		&policyv1beta1.PodDisruptionBudget{},
+		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
 		&certmanagerv1alpha2.Certificate{},
 	}
 
@@ -118,6 +122,13 @@ func Add(
 		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
+	}
+
+	// namespaces are not managed by the operator and so can use neither namespacePredicate
+	// nor ManagedByPredicate, but still need to get their labels reconciled
+	ns := &corev1.Namespace{}
+	if err := c.Watch(&source.Kind{Type: ns}, childEventHandler, predicateutil.ByName(namespace)); err != nil {
+		return fmt.Errorf("failed to create watcher for %T: %v", ns, err)
 	}
 
 	return nil
