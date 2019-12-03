@@ -328,6 +328,28 @@ func (p *ClusterProvider) GetClientForCustomerCluster(userInfo *provider.UserInf
 	return p.userClusterConnProvider.GetClient(c, p.withImpersonation(userInfo))
 }
 
+func (p *ClusterProvider) GetTokenForCustomerCluster(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (string, error) {
+	parts := strings.Split(userInfo.Group, "-")
+	switch parts[0] {
+	case "editors":
+		return cluster.Address.AdminToken, nil
+	case "owners":
+		return cluster.Address.AdminToken, nil
+	case "viewers":
+		s := &corev1.Secret{}
+		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ViewerTokenSecretName}
+
+		if err := p.GetSeedClusterAdminRuntimeClient().Get(context.Background(), name, s); err != nil {
+			return "", err
+		}
+
+		fmt.Printf("Viewer token: %s\n", s.Data[resources.ViewerTokenSecretKey])
+		return string(s.Data[resources.ViewerTokenSecretKey]), nil
+	default:
+		return "", fmt.Errorf("user group %s not supported", userInfo.Group)
+	}
+}
+
 // GetSeedClusterAdminRuntimeClient returns a runtime client to interact with the seed cluster resources.
 //
 // Note that this client has admin privileges in the seed cluster.
