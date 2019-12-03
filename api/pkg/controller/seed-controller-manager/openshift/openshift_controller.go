@@ -52,7 +52,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const ControllerName = "kubermatic_openshift_controller"
+const ControllerName = "openshift_controller"
 
 // Check if the Reconciler fullfills the interface
 // at compile time
@@ -272,68 +272,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, fmt.Errorf("failed to setup cluster networking defaults: %v", err)
 	}
 
-	if err := r.services(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile Services: %v", err)
-	}
-
-	if err := r.address(ctx, cluster, seed); err != nil {
-		return nil, fmt.Errorf("failed to reconcile the cluster address: %v", err)
-	}
-
-	if err := r.secrets(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile Secrets: %v", err)
-	}
-
-	if err := r.ensureServiceAccounts(ctx, cluster); err != nil {
-		return nil, err
-	}
-
-	if err := r.ensureRoles(ctx, cluster); err != nil {
-		return nil, err
-	}
-
-	if err := r.ensureRoleBindings(ctx, cluster); err != nil {
-		return nil, err
-	}
-
-	if err := r.statefulSets(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile StatefulSets: %v", err)
-	}
-
-	// Wait until the cloud provider infra is ready before attempting
-	// to render the cloud-config
-	// TODO: Model resource deployment as a DAG so we don't need hacks
-	// like this combined with tribal knowledge and "someone is noticing this
-	// isn't working correctly"
-	// https://github.com/kubermatic/kubermatic/issues/2948
-	if kubermaticv1.HealthStatusUp != cluster.Status.ExtendedHealth.CloudProviderInfrastructure {
-		return &reconcile.Result{RequeueAfter: 1 * time.Second}, nil
-	}
-
-	if err := r.configMaps(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
-	}
-
-	if err := r.deployments(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile Deployments: %v", err)
-	}
-
-	if osData.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
-		if err := nodeportproxy.EnsureResources(ctx, r.Client, osData); err != nil {
-			return nil, fmt.Errorf("failed to ensure NodePortProxy resources: %v", err)
-		}
-	}
-
-	if err := r.cronJobs(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile CronJobs: %v", err)
-	}
-
-	if err := r.podDisruptionBudgets(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
-	}
-
-	if err := r.verticalPodAutoscalers(ctx, osData); err != nil {
-		return nil, fmt.Errorf("failed to reconcile VerticalPodAutoscalers: %v", err)
+	if err := r.reconcileResources(ctx, osData); err != nil {
+		return nil, fmt.Errorf("failed to reconcile resources: %v", err)
 	}
 
 	if err := r.syncHeath(ctx, osData); err != nil {
