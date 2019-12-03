@@ -22,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	certutil "k8s.io/client-go/util/cert"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // openshiftData implements the openshiftData interface which is
@@ -38,7 +37,6 @@ type openshiftData struct {
 	kubermaticImage                       string
 	dnatControllerImage                   string
 	supportsFailureDomainZoneAntiAffinity bool
-	userClusterClient                     func() (ctrlruntimeclient.Client, error)
 	externalURL                           string
 	seed                                  *kubermaticv1.Seed
 }
