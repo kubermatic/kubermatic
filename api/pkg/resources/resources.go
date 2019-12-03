@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"time"
 
@@ -730,24 +731,12 @@ func getClusterCAFromLister(ctx context.Context, namespace, name string, client 
 
 // GetDexCAFromFile returns the Dex CA from the lister
 func GetDexCAFromFile(caBundleFilePath string) ([]*x509.Certificate, error) {
-
-	f, err := os.Open(caBundleFilePath)
+	rawData, err := ioutil.ReadFile(caBundleFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("got an invalid CA bundle file %v", err)
-	}
-	defer func() {
-		err := f.Close()
-		if err != nil {
-			klog.Fatal(err)
-		}
-	}()
-
-	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read CA bundle file %q: %v", caBundleFilePath, err)
 	}
 
-	dexCACerts, err := certutil.ParseCertsPEM(bytes)
+	dexCACerts, err := certutil.ParseCertsPEM(rawData)
 	if err != nil {
 		return nil, fmt.Errorf("got an invalid cert: %v", err)
 	}
