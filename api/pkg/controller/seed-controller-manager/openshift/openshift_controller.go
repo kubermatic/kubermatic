@@ -235,56 +235,25 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, fmt.Errorf("failed to ensure Namespace: %v", err)
 	}
 
-	seed, err := r.seedGetter()
-	if err != nil {
-		return nil, err
-	}
-
-	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
-	if !found {
-		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
-	}
-
-	supportsFailureDomainZoneAntiAffinity, err := controllerutil.SupportsFailureDomainZoneAntiAffinity(ctx, r.Client)
-	if err != nil {
-		return nil, err
-	}
-
-	osData := &openshiftData{
-		cluster:                               cluster,
-		client:                                r.Client,
-		dc:                                    &datacenter,
-		overwriteRegistry:                     r.overwriteRegistry,
-		nodeAccessNetwork:                     r.nodeAccessNetwork,
-		oidc:                                  r.oidc,
-		etcdDiskSize:                          r.etcdDiskSize,
-		kubermaticImage:                       r.kubermaticImage,
-		dnatControllerImage:                   r.dnatControllerImage,
-		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
-		userClusterClient: func() (client.Client, error) {
-			return r.userClusterConnProvider.GetClient(cluster)
-		},
-		externalURL: r.externalURL,
-		seed:        seed.DeepCopy(),
-	}
-
 	if err := r.networkDefaults(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to setup cluster networking defaults: %v", err)
 	}
 
-	if err := r.reconcileResources(ctx, osData); err != nil {
+	if err := r.reconcileResources(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to reconcile resources: %v", err)
 	}
 
-	if err := r.syncHeath(ctx, osData); err != nil {
+	if err := r.syncHeath(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to sync health: %v", err)
 	}
 
-	if kubermaticv1.HealthStatusDown == osData.Cluster().Status.ExtendedHealth.Apiserver {
-		return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	if kubermaticv1.HealthStatusDown == cluster.Status.ExtendedHealth.Apiserver {
+		// We have to wait for the APIServer to not be completely down. Changes for it
+		// will trigger us, so we can just return here.
+		return nil, nil
 	}
 
-	reachable, err := r.clusterIsReachable(ctx, osData.Cluster())
+	reachable, err := r.clusterIsReachable(ctx, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if cluster is reachable: %v", err)
 	}
@@ -325,8 +294,7 @@ func (r *Reconciler) clusterIsReachable(ctx context.Context, c *kubermaticv1.Clu
 	return true, nil
 }
 
-func (r *Reconciler) syncHeath(ctx context.Context, osData *openshiftData) error {
-	cluster := osData.Cluster()
+func (r *Reconciler) syncHeath(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	currentHealth := cluster.Status.ExtendedHealth.DeepCopy()
 	type depInfo struct {
 		healthStatus *kubermaticv1.HealthStatus

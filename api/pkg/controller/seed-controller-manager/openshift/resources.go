@@ -4,13 +4,51 @@ import (
 	"context"
 	"fmt"
 
+	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (r *Reconciler) reconcileResources(ctx context.Context, osData *openshiftData) error {
+func (r *Reconciler) getOSData(ctx context.Context, cluster *kubermaticv1.Cluster) (*openshiftData, error) {
+	seed, err := r.seedGetter()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get seed: %v", err)
+	}
+
+	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
+	if !found {
+		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
+	}
+
+	supportsFailureDomainZoneAntiAffinity, err := controllerutil.SupportsFailureDomainZoneAntiAffinity(ctx, r.Client)
+	if err != nil {
+		return nil, err
+	}
+
+	return &openshiftData{
+		cluster:                               cluster,
+		client:                                r.Client,
+		dc:                                    &datacenter,
+		overwriteRegistry:                     r.overwriteRegistry,
+		nodeAccessNetwork:                     r.nodeAccessNetwork,
+		oidc:                                  r.oidc,
+		etcdDiskSize:                          r.etcdDiskSize,
+		kubermaticImage:                       r.kubermaticImage,
+		dnatControllerImage:                   r.dnatControllerImage,
+		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
+		externalURL:                           r.externalURL,
+		seed:                                  seed.DeepCopy(),
+	}, nil
+}
+
+func (r *Reconciler) reconcileResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	osData, err := r.getOSData(ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get osData: %v", err)
+	}
+
 	if err := r.services(ctx, osData); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %v", err)
 	}

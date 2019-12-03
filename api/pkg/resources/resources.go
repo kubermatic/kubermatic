@@ -1,16 +1,13 @@
 package resources
 
 import (
-	"bufio"
 	"context"
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
-	"os"
 	"time"
 
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
