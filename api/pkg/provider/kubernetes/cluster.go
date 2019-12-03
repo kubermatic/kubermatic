@@ -343,7 +343,6 @@ func (p *ClusterProvider) GetTokenForCustomerCluster(userInfo *provider.UserInfo
 			return "", err
 		}
 
-		fmt.Printf("Viewer token: %s\n", s.Data[resources.ViewerTokenSecretKey])
 		return string(s.Data[resources.ViewerTokenSecretKey]), nil
 	default:
 		return "", fmt.Errorf("user group %s not supported", userInfo.Group)
