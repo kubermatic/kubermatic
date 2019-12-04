@@ -210,26 +210,6 @@ presubmits:
       imagePullSecrets:
       - name: quay
 
-  - name: pull-kubermatic-validate-prow-yaml
-    always_run: true
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    extra_refs:
-    - org: kubermatic
-      repo: infra
-      base_ref: master
-      clone_uri: git@github.com:kubermatic/infra.git
-    spec:
-     containers:
-     - image: gcr.io/k8s-prow/checkconfig:v20191204-d7993c80e
-       command:
-       - /app/prow/cmd/checkconfig/app.binary
-       args:
-       - --plugin-config=/home/prow/go/src/github.com/kubermatic/infra/prow/plugins.yaml
-       - --config-path=/home/prow/go/src/github.com/kubermatic/infra/prow/config.yaml
-       - --job-config-path=/home/prow/go/src/github.com/kubermatic/infra/prow/jobs
-       - --prow-yaml-repo-name=$(REPO_OWNER)/$(REPO_NAME)
-
   #########################################################
   # e2e tests for Kubernetes 1.14
   #########################################################
@@ -835,68 +815,6 @@ presubmits:
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.14.8"
-        command:
-        - "./api/hack/run-kubermatic-upgrade-test.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 2.5Gi
-            cpu: 500m
-          limits:
-            memory: 4Gi
-            cpu: 2
-
-  - name: pull-kubermatic-e2e-upgrade-2.11-2.12
-    decorate: true
-    always_run: false
-    optional: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-aws: "true"
-      preset-vault: "true"
-      preset-docker-push: "true"
-      preset-repo-ssh: "true"
-    spec:
-      containers:
-      - image: docker.io/kubermatic/kubernetes-test-binaries:v0.10.8
-        env:
-        - name: VERSIONS_TO_TEST
-          value: "v1.15.5"
-        - name: UPGRADE_TEST_BASE_HASH
-          value: release/v2.11
-        command:
-        - "./api/hack/run-kubermatic-upgrade-test.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 2.5Gi
-            cpu: 500m
-          limits:
-            memory: 4Gi
-            cpu: 2
-
-  - name: pull-kubermatic-e2e-upgrade-weekly
-    decorate: true
-    always_run: true
-    optional: false
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-aws: "true"
-      preset-vault: "true"
-      preset-docker-push: "true"
-      preset-repo-ssh: "true"
-    spec:
-      containers:
-      - image: docker.io/kubermatic/kubernetes-test-binaries:v0.10.8
-        env:
-        - name: VERSIONS_TO_TEST
-          value: "v1.15.5"
-        - name: UPGRADE_TEST_BASE_HASH
-          value: weekly
         command:
         - "./api/hack/run-kubermatic-upgrade-test.sh"
         # docker-in-docker needs privileged mode
