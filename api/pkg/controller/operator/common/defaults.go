@@ -11,6 +11,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/pointer"
 )
 
@@ -43,6 +45,50 @@ var (
 		"network",
 		"default-storage-class",
 		"registry",
+	}
+
+	defaultUIResources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("250m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		},
+	}
+
+	defaultAPIResources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("250m"),
+			corev1.ResourceMemory: resource.MustParse("1Gi"),
+		},
+	}
+
+	defaultMasterControllerMgrResources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+		},
+	}
+
+	defaultSeedControllerMgrResources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("200m"),
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("1Gi"),
+		},
 	}
 )
 
@@ -189,6 +235,22 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		return copy, err
 	}
 
+	if err := defaultResources(&copy.Spec.UI.Resources, defaultUIResources, "ui.resources", logger); err != nil {
+		return copy, err
+	}
+
+	if err := defaultResources(&copy.Spec.API.Resources, defaultAPIResources, "api.resources", logger); err != nil {
+		return copy, err
+	}
+
+	if err := defaultResources(&copy.Spec.SeedController.Resources, defaultSeedControllerMgrResources, "seedController.resources", logger); err != nil {
+		return copy, err
+	}
+
+	if err := defaultResources(&copy.Spec.MasterController.Resources, defaultMasterControllerMgrResources, "masterController.resources", logger); err != nil {
+		return copy, err
+	}
+
 	return copy, nil
 }
 
@@ -207,6 +269,38 @@ func defaultDockerRepo(repo *string, defaultRepo string, key string, logger *zap
 
 	if _, ok := ref.(reference.Tagged); ok {
 		return fmt.Errorf("it is not allowed to specify an image tag for the %s repository", key)
+	}
+
+	return nil
+}
+
+func defaultResources(settings *corev1.ResourceRequirements, defaults corev1.ResourceRequirements, key string, logger *zap.SugaredLogger) error {
+	// this should never happen as the resources are not pointers in a KubermaticConfiguration
+	if settings == nil {
+		return nil
+	}
+
+	if err := defaultResourceList(&settings.Requests, defaults.Requests, key+".requests", logger); err != nil {
+		return fmt.Errorf("failed to default requests: %v", err)
+	}
+
+	if err := defaultResourceList(&settings.Limits, defaults.Limits, key+".limits", logger); err != nil {
+		return fmt.Errorf("failed to default limits: %v", err)
+	}
+
+	return nil
+}
+
+func defaultResourceList(list *corev1.ResourceList, defaults corev1.ResourceList, key string, logger *zap.SugaredLogger) error {
+	if list == nil || *list == nil {
+		*list = defaults
+		logger.Debugw("Defaulting resource constraints", "field", key, "memory", defaults.Memory(), "cpu", defaults.Cpu())
+		return nil
+	}
+
+	for _, name := range []corev1.ResourceName{corev1.ResourceMemory, corev1.ResourceCPU} {
+		(*list)[name] = defaults[name]
+		logger.Debugw("Defaulting resource constraint", "field", key+"."+name.String(), "value", (*list)[name])
 	}
 
 	return nil

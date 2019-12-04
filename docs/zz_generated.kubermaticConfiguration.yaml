@@ -15,6 +15,20 @@ spec:
     # PProfEndpoint controls the port the API should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
+    # Resources describes the requested and maximum allowed CPU/memory usage.
+    resources:
+      # Limits describes the maximum amount of compute resources allowed.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+      limits:
+        cpu: 250m
+        memory: 1Gi
+      # Requests describes the minimum amount of compute resources required.
+      # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+      # otherwise to an implementation-defined value.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+      requests:
+        cpu: 100m
+        memory: 512Mi
   # Auth defines keys and URLs for Dex.
   auth:
     cABundle: ""
@@ -62,6 +76,20 @@ spec:
     projectsMigrator:
       # DryRun makes the migrator only log the actions it would take.
       dryRun: false
+    # Resources describes the requested and maximum allowed CPU/memory usage.
+    resources:
+      # Limits describes the maximum amount of compute resources allowed.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+      limits:
+        cpu: 100m
+        memory: 256Mi
+      # Requests describes the minimum amount of compute resources required.
+      # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+      # otherwise to an implementation-defined value.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+      requests:
+        cpu: 50m
+        memory: 128Mi
   # MasterFiles is a map of additional files to mount into each master component.
   masterFiles:
     updates.yaml: |-
@@ -245,6 +273,20 @@ spec:
     # PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
+    # Resources describes the requested and maximum allowed CPU/memory usage.
+    resources:
+      # Limits describes the maximum amount of compute resources allowed.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      # Requests describes the minimum amount of compute resources required.
+      # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+      # otherwise to an implementation-defined value.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+      requests:
+        cpu: 200m
+        memory: 512Mi
   # UI configures the dashboard.
   ui:
     # Config sets flags for various dashboard features.
@@ -258,6 +300,20 @@ spec:
     presets: |-
       presets:
         items: []
+    # Resources describes the requested and maximum allowed CPU/memory usage.
+    resources:
+      # Limits describes the maximum amount of compute resources allowed.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+      limits:
+        cpu: 250m
+        memory: 128Mi
+      # Requests describes the minimum amount of compute resources required.
+      # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+      # otherwise to an implementation-defined value.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+      requests:
+        cpu: 100m
+        memory: 64Mi
   # UserCluster configures various aspects of the user-created clusters.
   userCluster:
     # Addons controls the optional additions installed into each user cluster.
