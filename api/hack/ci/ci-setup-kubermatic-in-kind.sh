@@ -128,19 +128,48 @@ iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -
 # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
 echodate "Successfully set up iptables rules for nodeports"
 
+INITIAL_MANIFESTS="$(mktemp)"
+cat <<EOF >$INITIAL_MANIFESTS
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tiller
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tiller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: tiller
+    namespace: kube-system
+---
+EOF
+TEST_NAME="Create Helm bindings"
+retry 5 kubectl apply -f $INITIAL_MANIFESTS
+
+echodate "Deploying tiller"
+TEST_NAME="Deploy Tiller"
+helm init --wait --service-account=tiller
+
 TEST_NAME="Deploying dex"
 echodate "Deploying dex"
 rm config/oauth/templates/ingress.yaml
 cp $(dirname $0)/testdata/oauth_configmap.yaml config/oauth/templates/configmap.yaml
-
-TEST_NAME="Deploying kubermatic CRDs"
-retry 5 kubectl apply -f config/kubermatic/crd
 
 helm install --wait --timeout 180 \
   --set-string=dex.ingress.host=http://dex.oauth:5556 \
   --values ./api/hack/ci/testdata/oauth_values.yaml \
   --namespace oauth \
   --name kubermatic-oauth-e2e ./config/oauth
+
+TEST_NAME="Deploying kubermatic CRDs"
+retry 5 kubectl apply -f config/kubermatic/crd
 
 # Build kubermatic binaries and push the image
 echodate "Building containers with tag $KUBERMATIC_VERSION"
@@ -190,57 +219,7 @@ time retry 1 make -C api build
   time retry 5 docker build -t "${IMAGE_NAME}" .
   time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
 )
-
 echodate "Successfully built and loaded all images"
-
-INITIAL_MANIFESTS="$(mktemp)"
-cat <<EOF >$INITIAL_MANIFESTS
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: kubermatic
-spec: {}
-status: {}
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: tiller
-  namespace: kube-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: prow-tiller
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-  - kind: ServiceAccount
-    name: tiller
-    namespace: kube-system
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: prow-kubermatic
-subjects:
-- kind: ServiceAccount
-  name: kubermatic
-  namespace: kubermatic
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
----
-EOF
-TEST_NAME="Create Kubermatic bindings"
-retry 5 kubectl apply -f $INITIAL_MANIFESTS
-
-echodate "Deploying tiller"
-TEST_NAME="Deploy Tiller"
-helm init --wait --service-account=tiller
 
 # Defaults to a hardcoded version so we do not test by default if the latest dashboard version
 # got successfully built.
