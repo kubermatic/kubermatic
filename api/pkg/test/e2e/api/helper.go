@@ -898,3 +898,24 @@ func (r *APIRunner) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.Ro
 
 	return roleNames, nil
 }
+
+// GetClusterMasterKubeconfig
+func (r *APIRunner) GetClusterMasterKubeconfig(projectID, dc, clusterID string) (*models.Kubeconfig, error) {
+	params := &project.GetClusterKubeconfigParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
+	params.WithTimeout(timeout)
+
+	var err error
+	var response *project.GetClusterKubeconfigOK
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		response, err = r.client.Project.GetClusterKubeconfig(params, r.bearerToken)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return response.Payload, nil
+}

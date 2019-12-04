@@ -160,3 +160,72 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 		})
 	}
 }
+
+func TestGetClusterKubeconfig(t *testing.T) {
+	tests := []struct {
+		name       string
+		dc         string
+		location   string
+		version    string
+		credential string
+		replicas   int32
+	}{
+		{
+			name:       "delete cluster before is up",
+			dc:         "prow-build-cluster",
+			location:   "do-fra1",
+			version:    "v1.14.2",
+			credential: "loodse",
+			replicas:   1,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			masterToken, err := GetMasterToken()
+			if err != nil {
+				t.Fatalf("can not get master token %v", err)
+			}
+
+			apiRunner := CreateAPIRunner(masterToken, t)
+			project, err := apiRunner.CreateProject(rand.String(10))
+			if err != nil {
+				t.Fatalf("can not create project %v", err)
+			}
+			teardown := cleanUpProject(project.ID, getDOMaxAttempts)
+			defer teardown(t)
+
+			cluster, err := apiRunner.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
+			if err != nil {
+				t.Fatalf("can not create cluster due to error: %v", GetErrorResponse(err))
+			}
+
+			var clusterReady bool
+			for attempt := 1; attempt <= getDOMaxAttempts; attempt++ {
+				healthStatus, err := apiRunner.GetClusterHealthStatus(project.ID, tc.dc, cluster.ID)
+				if err != nil {
+					t.Fatalf("can not get health status %v", GetErrorResponse(err))
+				}
+
+				if IsHealthyCluster(healthStatus) {
+					clusterReady = true
+					break
+				}
+				time.Sleep(30 * time.Second)
+			}
+
+			if !clusterReady {
+				t.Fatalf("cluster not ready after %d attempts", getDOMaxAttempts)
+			}
+
+			kubeconfig, err := apiRunner.GetClusterMasterKubeconfig(project.ID, tc.dc, cluster.ID)
+			if err != nil {
+				t.Fatalf("can not get kubeconfig %v", GetErrorResponse(err))
+			}
+
+			t.Log(kubeconfig)
+
+			cleanUpCluster(t, apiRunner, project.ID, tc.dc, cluster.ID)
+
+		})
+	}
+}
