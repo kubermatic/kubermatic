@@ -1,6 +1,7 @@
 package seedsync
 
 import (
+	"context"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -30,6 +31,7 @@ const (
 
 // Add creates a new Seed-Sync controller and sets up Watches
 func Add(
+	ctx context.Context,
 	mgr manager.Manager,
 	numWorkers int,
 	log *zap.SugaredLogger,
@@ -38,6 +40,7 @@ func Add(
 ) error {
 	reconciler := &Reconciler{
 		Client:           mgr.GetClient(),
+		ctx:              ctx,
 		recorder:         mgr.GetEventRecorderFor(ControllerName),
 		log:              log.Named(ControllerName),
 		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
