@@ -766,6 +766,7 @@ presubmits:
     labels:
       preset-aws: "true"
       preset-docker-pull: "true"
+      preset-vault: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
     spec:
