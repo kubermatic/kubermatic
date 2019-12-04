@@ -87,7 +87,6 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *reconciler) reconcile(log *zap.SugaredLogger, role *rbacv1.Role) error {
-	oldRole := role.DeepCopy()
 
 	namespaces := []string{}
 	namespaceList := &corev1.NamespaceList{}
@@ -100,9 +99,18 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, role *rbacv1.Role) error 
 		if n.Name == v1.NamespaceSystem {
 			continue
 		}
+		// No point in trying to create something in a deleted namespace
+		if n.DeletionTimestamp != nil {
+			log.Debugf("Skipping namespace %s", n.Name)
+			continue
+		}
 		namespaces = append(namespaces, n.Name)
 	}
 
+	return r.reconcileRoles(log, role, namespaces)
+}
+
+func (r *reconciler) reconcileRoles(log *zap.SugaredLogger, oldRole *rbacv1.Role, namespaces []string) error {
 	if oldRole.DeletionTimestamp != nil {
 		if !kuberneteshelper.HasFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer) {
 			return nil
@@ -135,11 +143,12 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, role *rbacv1.Role) error 
 		}
 	}
 
-	for _, namespace := range namespaceList.Items {
+	for _, namespace := range namespaces {
+		log := log.With("namespace", namespace)
 		wasCreated := false
 		role := &rbacv1.Role{}
 		if err := r.client.Get(r.ctx, ctrlruntimeclient.ObjectKey{
-			Namespace: namespace.Name,
+			Namespace: namespace,
 			Name:      oldRole.Name,
 		}, role); err != nil {
 			if kerrors.IsNotFound(err) {
@@ -147,7 +156,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, role *rbacv1.Role) error 
 				newRole := &rbacv1.Role{
 					ObjectMeta: v1.ObjectMeta{
 						Name:      oldRole.Name,
-						Namespace: namespace.Name,
+						Namespace: namespace,
 						Labels:    oldRole.Labels,
 					},
 					Rules: oldRole.Rules,
@@ -164,7 +173,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, role *rbacv1.Role) error 
 		// update only existing roles, not already created
 		if !wasCreated {
 			if !reflect.DeepEqual(role.Rules, oldRole.Rules) {
-				log.Debug("role ", oldRole.Name, " was changed, updating in namespace ", namespace.Name)
+				log.Debug("Role was changed, updating")
 				role.Rules = oldRole.Rules
 				if err := r.client.Update(r.ctx, role); err != nil {
 					return fmt.Errorf("failed to update role: %v", err)
