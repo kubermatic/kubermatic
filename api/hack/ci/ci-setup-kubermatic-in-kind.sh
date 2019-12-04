@@ -84,7 +84,7 @@ export KUBECONFIG="$(kind get kubeconfig-path --name=${SEED_NAME})"
 DOCKER_CONFIG=/ docker run \
   --name controller \
   --detach \
-  -v /root/.kube/config:/inner \
+  -v ${KUBECONFIG}:/inner \
   -v /etc/kubeconfig/kubeconfig:/outer \
   --network host \
   --privileged \
@@ -105,12 +105,8 @@ echodate "Successfully set up iptables rules for nodeports"
 
 TEST_NAME="Deploying dex"
 echodate "Deploying dex"
-mkdir -p ${SCRIPT_PATH}/helm
-cp -r ${KUBERMATIC_PATH}/config/oauth ${DEX_PATH}
-rm ${DEX_PATH}/templates/ingress.yaml
-cp ${SCRIPT_PATH}/testdata/oauth_values.yaml ${DEX_PATH}/values.yaml
-cp ${SCRIPT_PATH}/testdata/oauth_configmap.yaml ${DEX_PATH}/templates/configmap.yaml
-rm ${KUBERMATIC_HELM_PATH}/templates/ingress.yaml
+rm config/oauth/templates/ingress.yaml
+cp $(dirname $0)/testdata/oauth_configmap.yaml config/oauth/templates/configmap.yaml
 
 TEST_NAME="Deploying kubermatic CRDs"
 retry 5 kubectl apply -f config/kubermatic/crd
@@ -120,7 +116,6 @@ helm install --wait --timeout 180 \
   --values ./api/hack/ci/testdata/oauth_values.yaml \
   --namespace oauth \
   --name kubermatic-oauth-e2e ./config/oauth
-
 
 # Build kubermatic binaries and push the image
 echodate "Building containers with tag $KUBERMATIC_VERSION"
