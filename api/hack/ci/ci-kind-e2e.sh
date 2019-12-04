@@ -12,7 +12,7 @@ function cleanup {
 	pkill -P $$
 
   # Clean up clusters
-  kubectl delete cluster --all
+  kubectl delete cluster --all --ignore-not-found=true
 }
 trap cleanup EXIT
 

@@ -39,8 +39,15 @@ echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json
 
 # Start docker daemon
 echodate "Starting docker"
-dockerd > /dev/null 2> /dev/null &
+dockerd > /tmp/docker.log 2>&1 &
 echodate "Started docker"
+
+function docker_logs {
+  echodate "Printing docker logs"
+  cat /tmp/docker.log
+  echodate "Done printing docker logs"
+}
+trap docker_logs EXIT
 
 # Wait for it to start
 echodate "Waiting for docker"
@@ -93,7 +100,7 @@ echodate "Set dex.oauth alias in /etc/hosts"
 TEST_NAME="Create kind cluster"
 echodate "Creating the kind cluster"
 export KUBECONFIG=~/.kube/config
-kind create cluster --name ${SEED_NAME}
+kind create cluster --name ${SEED_NAME} --loglevel debug
 cp ~/.kube/kind-config-${SEED_NAME} ~/.kube/config
 
 DOCKER_CONFIG=/ docker run \
