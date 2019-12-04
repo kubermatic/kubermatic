@@ -43,9 +43,13 @@ dockerd > /tmp/docker.log 2>&1 &
 echodate "Started docker"
 
 function docker_logs {
-  echodate "Printing docker logs"
-  cat /tmp/docker.log
-  echodate "Done printing docker logs"
+  originalRC=$?
+  if [[ $originalRC -ne 0 ]]; then
+    echodate "Printing docker logs"
+    cat /tmp/docker.log
+    echodate "Done printing docker logs"
+  fi
+  return $originalRC
 }
 trap docker_logs EXIT
 
@@ -100,8 +104,7 @@ echodate "Set dex.oauth alias in /etc/hosts"
 TEST_NAME="Create kind cluster"
 echodate "Creating the kind cluster"
 export KUBECONFIG=~/.kube/config
-kind create cluster --name ${SEED_NAME} --image=kindest/node:v1.15.6 --loglevel debug
-cp ~/.kube/kind-config-${SEED_NAME} ~/.kube/config
+kind create cluster --name ${SEED_NAME} --image=kindest/node:v1.15.6
 
 DOCKER_CONFIG=/ docker run \
   --name controller \
