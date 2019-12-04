@@ -30,41 +30,10 @@ KUBERMATIC_HELM_PATH=${KUBERMATIC_PATH}/config/kubermatic
 KUBERMATIC_IMAGE="quay.io/kubermatic"
 KUBERMATIC_IMAGE_TAG=${GIT_HEAD_HASH}
 
-# TODO alvaroaleman: Put that into the docker image
-iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 
-# TODO: This should be done during image build time
-# Not doing this results in a "ERROR: http://dl-cdn.alpinelinux.org/alpine/v3.9/community: Bad file descriptor"
-rm -rf /var/cache/apk
-mkdir /var/cache/apk
-apk add bash-completion
-echo 'source /usr/share/bash-completion/bash_completion' >> ~/.bashrc
-cat <<EOF >>~/.bashrc
-cn ()
-{
-    kubectl config set-context \$(kubectl config current-context) --namespace=\$1
-}
-kubeconfig ()
-{
-    TMP_KUBECONFIG=\$(mktemp);
-    kubectl get secret admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' | base64 -d > \$TMP_KUBECONFIG;
-    export KUBECONFIG=\$TMP_KUBECONFIG;
-    cn kube-system
-}
 
-EOF
-echo 'alias k=kubectl' >> ~/.bashrc
-echo 'source <(k completion bash )' >> ~/.bashrc
-echo 'source <(k completion bash | sed s/kubectl/k/g)' >> ~/.bashrc
-echo 'export KUBECONFIG=~/.kube/kind-config-prow-build-cluster' >> ~/.bashrc
-
-# The container runtime allows us to change the content but not to change the inode
-# which is what sed -i does, so write to a tempfile and write the tempfile back
-temp_hosts="$(mktemp)"
-sed 's/localhost/localhost dex.oauth/' /etc/hosts > $temp_hosts
 # I will regret this...
 echo '10.98.184.166 minio.gocache.svc.cluster.local.' >> $temp_hosts
-cat $temp_hosts >/etc/hosts
 
 KUBECONFIG_PATH=~/.kube/config
 
@@ -88,38 +57,7 @@ provider=${PROVIDER:-"aws"}
 # --set-string=kubermatic.auth.issuerClientSecret=$OIDC_ISSUER_CLIENT_SECRET"
 #fi
 
-function cleanup {
-  testRC=$?
-  echodate "Starting cleanup"
-  set +e
 
-  # Delete all clusters
-  kubectl delete cluster --all
-
-  # Upload the JUNIT files
-  mv /reports/* ${ARTIFACTS}/
-  echodate "Finished cleanup"
-
-}
-trap cleanup EXIT
-
-# Create kind cluster
-TEST_NAME="Create kind cluster"
-echodate "Creating the kind cluster"
-kind create cluster --name ${SEED_NAME}
-cp ~/.kube/kind-config-${SEED_NAME} ~/.kube/config
-export KUBECONFIG="$(kind get kubeconfig-path --name=${SEED_NAME})"
-
-echodate "Setting up iptables rules for to make nodeports available"
-iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.17.0.2
-# Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
-echodate "Successfully set up iptables rules for nodeports"
-
-# Prepare the kind cluster
-TEST_NAME="Preparing the kind cluster"
-echodate "Preparing the kind cluster"
-## Delete kind default storage class
-kubectl delete storageclass standard
 
 ## Create Kubermatic CRDs
 kubectl apply -f ${KUBERMATIC_CRD_PATH}

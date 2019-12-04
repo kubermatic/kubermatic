@@ -24,7 +24,7 @@ kubermatic:
   # The location from which to pull the Kubermatic docker image
   kubermaticImage: ""
   # The location from which to pull the Kubermatic dnatcontroller image
-  dnatcontrollerImage: ""
+  dnatcontrollerImage: "quay.io/kubermatic/kubeletdnat-controller"
   # The strategy to expose the cluster with, either "NodePort" which creates a NodePort with a "nodeport-proxy.k8s.io/expose": "true" annotation to expose all
   # clusters on one central Service of type LoadBalancer via the NodePort proxy or "LoadBalancer" to create a LoadBalancer service per cluster
   # **Note:** The `seed_dns_overwrite` setting of the `datacenters.yaml` doesn't have any effect if this is set to `LoadBalancer`
