@@ -153,42 +153,6 @@ func createSecretData(s *corev1.Secret, data map[string]string) *corev1.Secret {
 	return s
 }
 
-type patchConfigFunction func(*operatorv1alpha1.KubermaticConfiguration) error
-
-// PatchKubermaticConfiguration applies the given patch function to the
-// KubermaticConfiguration and performs a PATCH operation afterwards to update the resource.
-func PatchKubermaticConfiguration(client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration, patch patchConfigFunction) error {
-	oldConfig := config.DeepCopy()
-
-	if err := patch(config); err != nil {
-		return err
-	}
-
-	if err := client.Patch(context.Background(), config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
-		return fmt.Errorf("failed to patch KubermaticConfiguration: %v", err)
-	}
-
-	return nil
-}
-
-type patchSeedFunction func(*kubermaticv1.Seed) error
-
-// PatchSeed applies the given patch function to the Seed and performs
-// a PATCH operation afterwards to update the resource.
-func PatchSeed(client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, patch patchSeedFunction) error {
-	oldSeed := seed.DeepCopy()
-
-	if err := patch(seed); err != nil {
-		return err
-	}
-
-	if err := client.Patch(context.Background(), seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
-		return fmt.Errorf("failed to patch Seed: %v", err)
-	}
-
-	return nil
-}
-
 // CleanupClusterResource attempts to find a cluster-wide resource and
 // deletes it if it was found. If no resource with the given name exists,
 // nil is returned.

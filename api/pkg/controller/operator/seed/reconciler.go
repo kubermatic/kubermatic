@@ -162,21 +162,19 @@ func (r *Reconciler) cleanupDeletedSeed(cfg *operatorv1alpha1.KubermaticConfigur
 			return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %v", err)
 		}
 
-		return common.PatchSeed(client, seed, func(seed *kubermaticv1.Seed) error {
-			kubernetes.RemoveFinalizer(seed, common.CleanupFinalizer)
-			return nil
-		})
+		oldSeed := seed.DeepCopy()
+		kubernetes.RemoveFinalizer(seed, common.CleanupFinalizer)
+
+		return client.Patch(r.ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed))
 	}
 
 	return nil
 }
 
 func (r *Reconciler) reconcileResources(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	// ensure we always have a cleanup finalizer
-	if err := common.PatchSeed(client, seed, func(seed *kubermaticv1.Seed) error {
-		kubernetes.AddFinalizer(seed, common.CleanupFinalizer)
-		return nil
-	}); err != nil {
+	oldSeed := seed.DeepCopy()
+	kubernetes.AddFinalizer(seed, common.CleanupFinalizer)
+	if err := client.Patch(r.ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
 		return err
 	}
 

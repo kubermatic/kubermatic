@@ -7,7 +7,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -68,11 +67,10 @@ func (r *Reconciler) reconcile(seed *kubermaticv1.Seed, logger *zap.SugaredLogge
 
 	// ensure we always have a cleanup finalizer on the original
 	// Seed CR inside the master cluster
-	if err := common.PatchSeed(r.Client, seed, func(s *kubermaticv1.Seed) error {
-		kubernetes.AddFinalizer(s, CleanupFinalizer)
-		return nil
-	}); err != nil {
-		return err
+	oldSeed := seed.DeepCopy()
+	kubernetes.AddFinalizer(seed, CleanupFinalizer)
+	if err := r.Patch(r.ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
+		return fmt.Errorf("failed to add finalizer to Seed: %v", err)
 	}
 
 	seedCreators := []reconciling.NamedSeedCreatorGetter{
@@ -123,10 +121,10 @@ func (r *Reconciler) cleanupDeletedSeed(seedInMaster *kubermaticv1.Seed, seedCli
 			}
 		}
 
-		return common.PatchSeed(r.Client, seedInMaster, func(s *kubermaticv1.Seed) error {
-			kubernetes.RemoveFinalizer(s, CleanupFinalizer)
-			return nil
-		})
+		oldSeed := seedInMaster.DeepCopy()
+		kubernetes.RemoveFinalizer(seedInMaster, CleanupFinalizer)
+
+		return r.Patch(r.ctx, seedInMaster, ctrlruntimeclient.MergeFrom(oldSeed))
 	}
 
 	return nil

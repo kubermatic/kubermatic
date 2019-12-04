@@ -81,10 +81,9 @@ func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration,
 	}
 
 	// ensure we always have a cleanup finalizer
-	if err := common.PatchKubermaticConfiguration(r, config, func(cfg *operatorv1alpha1.KubermaticConfiguration) error {
-		kubernetes.AddFinalizer(cfg, common.CleanupFinalizer)
-		return nil
-	}); err != nil {
+	oldConfig := config.DeepCopy()
+	kubernetes.AddFinalizer(config, common.CleanupFinalizer)
+	if err := r.Patch(r.ctx, config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
 		return err
 	}
 
@@ -147,10 +146,10 @@ func (r *Reconciler) cleanupDeletedConfiguration(config *operatorv1alpha1.Kuberm
 			return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %v", err)
 		}
 
-		return common.PatchKubermaticConfiguration(r, config, func(cfg *operatorv1alpha1.KubermaticConfiguration) error {
-			kubernetes.RemoveFinalizer(cfg, common.CleanupFinalizer)
-			return nil
-		})
+		oldConfig := config.DeepCopy()
+		kubernetes.RemoveFinalizer(config, common.CleanupFinalizer)
+
+		return r.Patch(r.ctx, config, ctrlruntimeclient.MergeFrom(oldConfig))
 	}
 
 	return nil
