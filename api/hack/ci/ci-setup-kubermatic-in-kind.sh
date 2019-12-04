@@ -37,19 +37,28 @@ fi
 echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json
 
 # Start docker daemon
+echodate "Starting docker"
 dockerd > /dev/null 2> /dev/null &
+echodate "Started docker"
 
 # Wait for it to start
-retry 5 docker ps -q > /dev/null 2>&1
+echodate "Waiting for docker"
+retry 5 docker ps
+echodate "Docker became ready"
 
 # Load kind image
+echodate "Loading kindest image"
 docker load --input /kindest.tar
+echodate "Loaded kindest image"
 
 # Prevent mtu-related timeouts
+echodate "Setting iptables rule to clamp mss to path mtu"
 iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+echodate "Set iptables rule to clamp mss to path mtu"
 
 
 # Make debugging a bit better
+echodate "Setting aliases in .bashrc"
 cat <<EOF >>~/.bashrc
 cn ()
 {
@@ -67,12 +76,17 @@ source <(k completion bash )
 source <(k completion bash | sed s/kubectl/k/g)
 export KUBECONFIG=~/.kube/kind-config-prow-build-cluster
 EOF
+echodate "Set aliases in .bashrc"
 
 # The container runtime allows us to change the content but not to change the inode
 # which is what sed -i does, so write to a tempfile and write the tempfiles content back
+echodate "Setting dex.oauth alias in /etc/hosts"
 temp_hosts="$(mktemp)"
 sed 's/localhost/localhost dex.oauth/' /etc/hosts > $temp_hosts
+# I will regret this...
+echo '10.98.184.166 minio.gocache.svc.cluster.local.' >> $temp_hosts
 cat $temp_hosts >/etc/hosts
+echodate "Set dex.oauth alias in /etc/hosts"
 
 # Create kind cluster
 TEST_NAME="Create kind cluster"
