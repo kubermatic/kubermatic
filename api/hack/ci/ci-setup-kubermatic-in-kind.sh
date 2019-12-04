@@ -34,6 +34,18 @@ fi
 
 source ./api/hack/lib.sh
 
+TEST_NAME="Get Vault token"
+echodate "Getting secrets from Vault"
+export VAULT_ADDR=https://vault.loodse.com/
+export VAULT_TOKEN=$(vault write \
+  --format=json auth/approle/login \
+  role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID \
+  | jq .auth.client_token -r)
+export VALUES_FILE=/tmp/values.yaml
+TEST_NAME="Get Values file from Vault"
+retry 5 vault kv get -field=values.yaml \
+  dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
+
 # Set docker config
 echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json
 
