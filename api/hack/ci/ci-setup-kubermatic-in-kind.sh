@@ -39,6 +39,7 @@ echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json
 
 # Start docker daemon
 echodate "Starting docker"
+rm -f /var/lib/docker
 dockerd > /tmp/docker.log 2>&1 &
 echodate "Started docker"
 
