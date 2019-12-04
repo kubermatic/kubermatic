@@ -3,7 +3,7 @@ presubmits:
   # unit tests
   #########################################################
 
-  - name: pull-kubermatic-build
+  - name: pre-kubermatic-build
     run_if_changed: "^api/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -23,7 +23,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pull-kubermatic-test
+  - name: pre-kubermatic-test
     run_if_changed: "^api/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -41,7 +41,7 @@ presubmits:
             memory: 7Gi
             cpu: 2
 
-  - name: pull-kubermatic-verify
+  - name: pre-kubermatic-verify
     run_if_changed: "^api/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -62,7 +62,7 @@ presubmits:
             memory: 2.5Gi
             cpu: 1
 
-  - name: pull-kubermatic-verify-charts
+  - name: pre-kubermatic-verify-charts
     run_if_changed: "^config/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -79,7 +79,7 @@ presubmits:
             memory: 256Mi
             cpu: 250m
 
-  - name: pull-kubermatic-verify-grafana-dashboards
+  - name: pre-kubermatic-verify-grafana-dashboards
     run_if_changed: "^config/monitoring/grafana/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -96,7 +96,7 @@ presubmits:
             memory: 128Mi
             cpu: 250m
 
-  - name: pull-kubermatic-verify-yaml-examples
+  - name: pre-kubermatic-verify-yaml-examples
     run_if_changed: "^(api|docs)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -110,7 +110,7 @@ presubmits:
             memory: 128Mi
             cpu: 250m
 
-  - name: pull-kubermatic-lint
+  - name: pre-kubermatic-lint
     run_if_changed: "^api/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -130,7 +130,7 @@ presubmits:
           limits:
             memory: 17Gi
 
-  - name: pull-kubermatic-dependencies
+  - name: pre-kubermatic-dependencies
     run_if_changed: "^api/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -151,7 +151,7 @@ presubmits:
             memory: 256Mi
             cpu: 250m
 
-  - name: pull-kubermatic-shellcheck
+  - name: pre-kubermatic-shellcheck
     optional: true
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -168,7 +168,7 @@ presubmits:
             memory: 1Gi
             cpu: 0.5
 
-  - name: pull-kubermatic-license-validation
+  - name: pre-kubermatic-license-validation
     run_if_changed: "vendor"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -182,7 +182,7 @@ presubmits:
         - api
         - license-validation
 
-  - name: pull-kubermatic-prometheus-rules-validation
+  - name: pre-kubermatic-prometheus-rules-validation
     run_if_changed: "config/monitoring"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -198,7 +198,7 @@ presubmits:
       imagePullSecrets:
       - name: quay
 
-  - name: pull-kubermatic-user-cluster-prometheus-config-validation
+  - name: pre-kubermatic-user-cluster-prometheus-config-validation
     run_if_changed: "api/pkg/resources/prometheus"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -214,7 +214,7 @@ presubmits:
   # e2e tests for Kubernetes 1.14
   #########################################################
 
-  - name: pull-kubermatic-e2e-aws-coreos-1.14
+  - name: pre-kubermatic-e2e-aws-coreos-1.14
     run_if_changed: "(api/|config/kubermatic)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -242,7 +242,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-azure-coreos-1.14
+  - name: pre-kubermatic-e2e-azure-coreos-1.14
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -278,7 +278,7 @@ presubmits:
   # e2e tests for Kubernetes 1.15
   #########################################################
 
-  - name: pull-kubermatic-e2e-aws-coreos-1.15
+  - name: pre-kubermatic-e2e-aws-coreos-1.15
     decorate: true
     run_if_changed: "(api/|config/kubermatic)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -306,7 +306,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-gcp-coreos-1.15
+  - name: pre-kubermatic-e2e-gcp-coreos-1.15
     decorate: true
     always_run: false
     optional: true
@@ -337,7 +337,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-gcp-coreos-1.15-psp
+  - name: pre-kubermatic-e2e-gcp-coreos-1.15-psp
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -371,7 +371,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-azure-coreos-1.15
+  - name: pre-kubermatic-e2e-azure-coreos-1.15
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -403,7 +403,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-do-centos-1.15
+  - name: pre-kubermatic-e2e-do-centos-1.15
     decorate: true
     always_run: false
     optional: true
@@ -436,7 +436,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-packet-coreos-1.15
+  - name: pre-kubermatic-e2e-packet-coreos-1.15
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -466,7 +466,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-kubevirt-centos-1.15
+  - name: pre-kubermatic-e2e-kubevirt-centos-1.15
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -498,7 +498,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-hetzner-ubuntu-1.15
+  - name: pre-kubermatic-e2e-hetzner-ubuntu-1.15
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -533,7 +533,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-openstack-coreos-1.15
+  - name: pre-kubermatic-e2e-openstack-coreos-1.15
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -565,7 +565,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-vsphere-coreos-1.15
+  - name: pre-kubermatic-e2e-vsphere-coreos-1.15
     decorate: true
     run_if_changed: "api/pkg/provider/cloud/vsphere"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -595,7 +595,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-vsphere-coreos-1.15-customfolder
+  - name: pre-kubermatic-e2e-vsphere-coreos-1.15-customfolder
     decorate: true
     optional: true
     run_if_changed: "api/pkg/provider/cloud/vsphere"
@@ -632,7 +632,7 @@ presubmits:
   # e2e tests for Kubernetes 1.16
   #########################################################
 
-  - name: pull-kubermatic-e2e-aws-coreos-1.16
+  - name: pre-kubermatic-e2e-aws-coreos-1.16
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -659,7 +659,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-openstack-centos-1.16
+  - name: pre-kubermatic-e2e-openstack-centos-1.16
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -693,7 +693,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-openstack-ubuntu-1.16
+  - name: pre-kubermatic-e2e-openstack-ubuntu-1.16
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -727,7 +727,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-e2e-openstack-coreos-1.16
+  - name: pre-kubermatic-e2e-openstack-coreos-1.16
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -763,7 +763,7 @@ presubmits:
   # e2e tests for Openshift 4.1
   #########################################################
 
-  - name: pull-kubermatic-e2e-aws-openshift-4.1
+  - name: pre-kubermatic-e2e-aws-openshift-4.1
     decorate: true
     run_if_changed: "(api/|config/kubermatic)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -799,7 +799,7 @@ presubmits:
   # upgrade tests
   #########################################################
 
-  - name: pull-kubermatic-e2e-upgrade
+  - name: pre-kubermatic-e2e-upgrade
     decorate: true
     always_run: false
     optional: true
@@ -832,7 +832,7 @@ presubmits:
   # API e2e tests
   #########################################################
 
-  - name: pull-kubermatic-api-e2e
+  - name: pre-kubermatic-api-e2e
     run_if_changed: "^api/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -890,7 +890,7 @@ presubmits:
   # misc
   #########################################################
 
-  - name: pull-kubermatic-e2e-gcp-offline
+  - name: pre-kubermatic-e2e-gcp-offline
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -914,7 +914,7 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pull-kubermatic-canary-deployment-ci-kubermatic-io
+  - name: pre-kubermatic-canary-deployment-ci-kubermatic-io
     max_concurrency: 1
     decorate: true
     # * api/hack: Contains all the deployment scripting
@@ -947,7 +947,7 @@ presubmits:
             cpu: 1
             memory: 2Gi
 
-  - name: pull-kubermatic-test-integration
+  - name: pre-kubermatic-test-integration
     run_if_changed: "^api/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
