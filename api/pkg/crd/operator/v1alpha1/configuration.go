@@ -82,6 +82,8 @@ type KubermaticAPIConfiguration struct {
 	// PProfEndpoint controls the port the API should listen on to provide pprof
 	// data. This port is never exposed from the container and only available via port-forwardings.
 	PProfEndpoint *string `json:"pprofEndpoint,omitempty"`
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
 }
@@ -94,6 +96,8 @@ type KubermaticUIConfiguration struct {
 	Config string `json:"config,omitempty"`
 	// Presets is a YAML string containing pre-defined credentials for cloud providers.
 	Presets string `json:"presets,omitempty"`
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // KubermaticSeedControllerConfiguration configures the Kubermatic seed controller-manager.
@@ -107,6 +111,8 @@ type KubermaticSeedControllerConfiguration struct {
 	// PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
 	// data. This port is never exposed from the container and only available via port-forwardings.
 	PProfEndpoint *string `json:"pprofEndpoint,omitempty"`
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
 }
@@ -180,6 +186,8 @@ type KubermaticMasterControllerConfiguration struct {
 	// PProfEndpoint controls the port the master-controller-manager should listen on to provide pprof
 	// data. This port is never exposed from the container and only available via port-forwardings.
 	PProfEndpoint *string `json:"pprofEndpoint,omitempty"`
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
 }
