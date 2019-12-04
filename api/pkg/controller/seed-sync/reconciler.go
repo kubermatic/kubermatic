@@ -69,7 +69,7 @@ func (r *Reconciler) reconcile(seed *kubermaticv1.Seed, logger *zap.SugaredLogge
 	// ensure we always have a cleanup finalizer on the original
 	// Seed CR inside the master cluster
 	if err := common.PatchSeed(r.Client, seed, func(s *kubermaticv1.Seed) error {
-		kubernetes.AddFinalizer(s, common.CleanupFinalizer)
+		kubernetes.AddFinalizer(s, CleanupFinalizer)
 		return nil
 	}); err != nil {
 		return err
