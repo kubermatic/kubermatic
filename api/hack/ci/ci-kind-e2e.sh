@@ -6,10 +6,12 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 source ./api/hack/lib.sh
 
 function cleanup {
-	kubectl delete service -l "prow.k8s.io/id=$PROW_JOB_ID"
+  echodate "Sleeping for debugging purposes"
+  sleep 1h
+  kubectl delete service -l "prow.k8s.io/id=$PROW_JOB_ID"
 
-	# Kill all descendant processes
-	pkill -P $$
+  # Kill all descendant processes
+  pkill -P $$
 
   # Clean up clusters
   kubectl delete cluster --all --ignore-not-found=true
