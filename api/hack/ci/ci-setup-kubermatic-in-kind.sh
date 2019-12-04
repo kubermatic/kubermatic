@@ -20,7 +20,6 @@ set -euo pipefail
 
 # The kubemaric version to build
 export KUBERMATIC_VERSION=$(git rev-parse HEAD)
-CONTROLLER_IMAGE="quay.io/kubermatic/cluster-exposer:v1.0.0"
 export SEED_NAME=prow-build-cluster
 
 if [[ -z ${JOB_NAME} ]]; then
@@ -41,17 +40,14 @@ echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json
 dockerd > /dev/null 2> /dev/null &
 
 # Wait for it to start
-while (! docker stats --no-stream ); do
-  # Docker takes a few seconds to initialize
-  echo "Waiting for Docker..."
-  sleep 1
-done
+retry 5 docker ps -q > /dev/null 2>&1
 
 # Load kind image
 docker load --input /kindest.tar
 
 # Prevent mtu-related timeouts
 iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+
 
 # Make debugging a bit better
 cat <<EOF >>~/.bashrc
@@ -85,34 +81,27 @@ kind create cluster --name ${SEED_NAME}
 cp ~/.kube/kind-config-${SEED_NAME} ~/.kube/config
 export KUBECONFIG="$(kind get kubeconfig-path --name=${SEED_NAME})"
 
-function cleanup {
-  testRC=$?
-  echodate "Starting cleanup"
-  set +e
+DOCKER_CONFIG=/ docker run \
+  --name controller \
+  --detach \
+  -v /root/.kube/config:/inner \
+  -v /etc/kubeconfig/kubeconfig:/outer \
+  --network host \
+  --privileged \
+  quay.io/kubermatic/cluster-exposer:v1.1.0-dev-2 \
+  --kubeconfig-inner "/inner" \
+  --kubeconfig-outer "/outer" \
+  --namespace "default" \
+  --build-id "$PROW_JOB_ID"
 
-  # Delete all clusters
-  kubectl delete cluster --all
-
-  # Upload the JUNIT files
-  mv /reports/* ${ARTIFACTS}/
-  echodate "Finished cleanup"
-
-}
-trap cleanup EXIT
+TEST_NAME="Wait for service controller"
+echodate "Waiting for service controller to be running"
+retry 5 docker ps|grep controller
 
 echodate "Setting up iptables rules for to make nodeports available"
 iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.17.0.2
 # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
 echodate "Successfully set up iptables rules for nodeports"
-
-## TODO: Is this needed?
-TEST_NAME="Get Vault token"
-echodate "Getting secrets from Vault"
-export VAULT_ADDR=https://vault.loodse.com/
-export VAULT_TOKEN=$(vault write \
-  --format=json auth/approle/login \
-  role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID \
-  | jq .auth.client_token -r)
 
 TEST_NAME="Deploying dex"
 echodate "Deploying dex"
@@ -128,9 +117,9 @@ retry 5 kubectl apply -f config/kubermatic/crd
 
 helm install --wait --timeout 180 \
   --set-string=dex.ingress.host=http://dex.oauth:5556 \
-  --values ${DEX_PATH}/values.yaml \
-  --namespace ${DEX_NAMESPACE} \
-  --name kubermatic-oauth-e2e ${DEX_PATH}
+  --values ./api/hack/ci/testdata/oauth_values.yaml \
+  --namespace oauth \
+  --name kubermatic-oauth-e2e ./config/oauth
 
 
 # Build kubermatic binaries and push the image

@@ -4,6 +4,22 @@ set -euo pipefail
 
 ## CI run conformance tester
 
+### Defaults
+export VERSIONS=${VERSIONS_TO_TEST:-"v1.12.4"}
+export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
+export ONLY_TEST_CREATION=${ONLY_TEST_CREATION:-false}
+provider=${PROVIDER:-"aws"}
+
+if [[ -n ${OPENSHIFT:-} ]]; then
+  OPENSHIFT_ARG="-openshift=true"
+  export VERSIONS=${OPENSHIFT_VERSION}
+  OPENSHIFT_HELM_ARGS="--set-string=kubermatic.controller.featureGates=OpenIDAuthPlugin=true
+ --set-string=kubermatic.auth.caBundle=$(cat /etc/oidc-data/oidc-ca-file|base64 -w0)
+ --set-string=kubermatic.auth.tokenIssuer=$OIDC_ISSUER_URL
+ --set-string=kubermatic.auth.issuerClientID=$OIDC_ISSUER_CLIENT_ID
+ --set-string=kubermatic.auth.issuerClientSecret=$OIDC_ISSUER_CLIENT_SECRET"
+fi
+
 if [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
      -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"
@@ -33,11 +49,15 @@ elif [[ $provider == "kubevirt" ]]; then
   EXTRA_ARGS="-kubevirt-kubeconfig=${KUBEVIRT_E2E_TESTS_KUBECONFIG}"
 fi
 
+kubermatic_delete_cluster="true"
+if [ -n "${UPGRADE_TEST_BASE_HASH:-}" ]; then
+  kubermatic_delete_cluster="false"
+fi
+
 timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
   -debug \
   -worker-name=$BUILD_ID \
   -kubeconfig=$KUBECONFIG \
-  -datacenters=$DATACENTERS_FILE \
   -kubermatic-nodes=3 \
   -kubermatic-parallel-clusters=1 \
   -name-prefix=prow-e2e \
@@ -58,7 +78,7 @@ if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   exit 0
 fi
 
-which kind && echo "Upgrade tests are not supported yet with kind" && exit 1
+which kind && echodate "Upgrade tests are not supported yet with kind" && exit 1
 
 echodate "Checking out current version of Kubermatic"
 git checkout ${GIT_HEAD_HASH}
