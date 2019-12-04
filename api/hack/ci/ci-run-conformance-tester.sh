@@ -50,6 +50,9 @@ elif [[ $provider == "kubevirt" ]]; then
   EXTRA_ARGS="-kubevirt-kubeconfig=${KUBEVIRT_E2E_TESTS_KUBECONFIG}"
 fi
 
+# Needed when running in kind
+which kind && EXTRA_ARGS="$EXTRA_ARGS -create-oidc-token=true"
+
 kubermatic_delete_cluster="true"
 if [ -n "${UPGRADE_TEST_BASE_HASH:-}" ]; then
   kubermatic_delete_cluster="false"
