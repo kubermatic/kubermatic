@@ -52,7 +52,7 @@ trap docker_logs EXIT
 
 # Wait for it to start
 echodate "Waiting for docker"
-retry 5 docker ps
+retry 5 docker stats --no-stream
 echodate "Docker became ready"
 
 # Load kind image
