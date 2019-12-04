@@ -20,6 +20,8 @@ set -euo pipefail
 
 # The kubemaric version to build
 export KUBERMATIC_VERSION=$(git rev-parse HEAD)
+# Number of UI replicas, zero by default
+export KUBERMATIC_UI_REPLICAS="${KUBERMATIC_UI_REPLICAS:-0}"
 export SEED_NAME=prow-build-cluster
 
 if [[ -z ${JOB_NAME} ]]; then
@@ -251,6 +253,8 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set=kubermatic.checks.crd.disable=true \
   --set=kubermatic.datacenters='' \
   --set=kubermatic.dynamicDatacenters=true \
+  --set=kubermatic.ui.replicas="${KUBERMATIC_UI_REPLICAS}" \
+  --namespace=kubermatic \
   ${OPENSHIFT_HELM_ARGS:-} \
   --values ${VALUES_FILE} \
   kubermatic \
