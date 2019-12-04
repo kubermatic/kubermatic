@@ -31,8 +31,9 @@ const (
 )
 
 const (
-	WorkerNameLabelKey = "worker-name"
-	ProjectIDLabelKey  = "project-id"
+	WorkerNameLabelKey   = "worker-name"
+	ProjectIDLabelKey    = "project-id"
+	UpdatedByVPALabelKey = "updated-by-vpa"
 )
 
 // ProtectedClusterLabels is a set of labels that must not be set by users on clusters,
