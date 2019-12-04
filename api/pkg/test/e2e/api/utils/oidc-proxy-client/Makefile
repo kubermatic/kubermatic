@@ -8,7 +8,7 @@ BINARYNAME=oidc-proxy-client
 KUBERMATIC_OIDC_CLIENT_ID ?= kubermatic
 KUBERMATIC_OIDC_CLIENT_SECRET ?= ZXhhbXBsZS1hcHAtc2VjcmV0
 KUBERMATIC_OIDC_ISSUER ?= http://dex.oauth:5556
-KUBERMATIC_OIDC_REDIRECT_URI ?= http://dex.oauth:5556
+KUBERMATIC_OIDC_REDIRECT_URI ?= http://localhost:8000
 
 default: all
 
