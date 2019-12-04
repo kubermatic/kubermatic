@@ -21,7 +21,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -151,7 +150,7 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 }
 
 func (r *Reconciler) cleanupDeletedSeed(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	if sets.NewString(seed.Finalizers...).Has(common.CleanupFinalizer) {
+	if kubernetes.HasAnyFinalizer(seed, common.CleanupFinalizer) {
 		log.Debug("Seed was deleted, cleaning up cluster-wide resources")
 
 		if err := common.CleanupClusterResource(client, &rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(cfg)); err != nil {
@@ -165,7 +164,11 @@ func (r *Reconciler) cleanupDeletedSeed(cfg *operatorv1alpha1.KubermaticConfigur
 		oldSeed := seed.DeepCopy()
 		kubernetes.RemoveFinalizer(seed, common.CleanupFinalizer)
 
-		return client.Patch(r.ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed))
+		if err := client.Patch(r.ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
+			return fmt.Errorf("failed to remove finalizer from Seed: %v", err)
+		}
+
+		return nil
 	}
 
 	return nil
@@ -175,7 +178,7 @@ func (r *Reconciler) reconcileResources(cfg *operatorv1alpha1.KubermaticConfigur
 	oldSeed := seed.DeepCopy()
 	kubernetes.AddFinalizer(seed, common.CleanupFinalizer)
 	if err := client.Patch(r.ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
-		return err
+		return fmt.Errorf("failed to add finalizer to Seed: %v", err)
 	}
 
 	if err := r.reconcileNamespaces(cfg, seed, client, log); err != nil {

@@ -14,7 +14,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -85,7 +84,7 @@ func (r *Reconciler) reconcile(seed *kubermaticv1.Seed, logger *zap.SugaredLogge
 }
 
 func (r *Reconciler) cleanupDeletedSeed(seedInMaster *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
-	if sets.NewString(seedInMaster.Finalizers...).Has(CleanupFinalizer) {
+	if kubernetes.HasAnyFinalizer(seedInMaster, CleanupFinalizer) {
 		logger.Debug("Seed was deleted, removing copy in seed cluster")
 
 		key, err := ctrlruntimeclient.ObjectKeyFromObject(seedInMaster)
@@ -124,7 +123,11 @@ func (r *Reconciler) cleanupDeletedSeed(seedInMaster *kubermaticv1.Seed, seedCli
 		oldSeed := seedInMaster.DeepCopy()
 		kubernetes.RemoveFinalizer(seedInMaster, CleanupFinalizer)
 
-		return r.Patch(r.ctx, seedInMaster, ctrlruntimeclient.MergeFrom(oldSeed))
+		if err := r.Patch(r.ctx, seedInMaster, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
+			return fmt.Errorf("failed to remove finalizer from Seed in master cluster: %v", err)
+		}
+
+		return nil
 	}
 
 	return nil

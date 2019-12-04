@@ -17,7 +17,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -84,7 +83,7 @@ func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration,
 	oldConfig := config.DeepCopy()
 	kubernetes.AddFinalizer(config, common.CleanupFinalizer)
 	if err := r.Patch(r.ctx, config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
-		return err
+		return fmt.Errorf("failed to add finalizer: %v", err)
 	}
 
 	if err := r.reconcileNamespaces(config, logger); err != nil {
@@ -135,7 +134,7 @@ func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration,
 }
 
 func (r *Reconciler) cleanupDeletedConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
-	if sets.NewString(config.Finalizers...).Has(common.CleanupFinalizer) {
+	if kubernetes.HasAnyFinalizer(config, common.CleanupFinalizer) {
 		logger.Debug("KubermaticConfiguration was deleted, cleaning up cluster-wide resources")
 
 		if err := common.CleanupClusterResource(r, &rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(config)); err != nil {
@@ -149,7 +148,11 @@ func (r *Reconciler) cleanupDeletedConfiguration(config *operatorv1alpha1.Kuberm
 		oldConfig := config.DeepCopy()
 		kubernetes.RemoveFinalizer(config, common.CleanupFinalizer)
 
-		return r.Patch(r.ctx, config, ctrlruntimeclient.MergeFrom(oldConfig))
+		if err := r.Patch(r.ctx, config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
+			return fmt.Errorf("failed to remove finalizer: %v", err)
+		}
+
+		return nil
 	}
 
 	return nil
