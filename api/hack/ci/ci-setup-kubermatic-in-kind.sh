@@ -92,9 +92,9 @@ echodate "Set dex.oauth alias in /etc/hosts"
 # Create kind cluster
 TEST_NAME="Create kind cluster"
 echodate "Creating the kind cluster"
+export KUBECONFIG=~/.kube/config
 kind create cluster --name ${SEED_NAME}
 cp ~/.kube/kind-config-${SEED_NAME} ~/.kube/config
-export KUBECONFIG="$(kind get kubeconfig-path --name=${SEED_NAME})"
 
 DOCKER_CONFIG=/ docker run \
   --name controller \
