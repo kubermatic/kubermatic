@@ -765,7 +765,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
-      preset-docker-push: "true"
+      preset-docker-pull: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
     spec:
