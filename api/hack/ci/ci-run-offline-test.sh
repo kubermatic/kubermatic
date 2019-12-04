@@ -262,4 +262,3 @@ ssh ${SSH_OPTS} root@${PROXY_EXTERNAL_ADDR} << EOF
     -kubevirt-kubeconfig="${KUBEVIRT_E2E_TESTS_KUBECONFIG}" \
     -gcp-subnetwork="regions/europe-west3/subnetworks/offline-subnet";
 EOF
-
