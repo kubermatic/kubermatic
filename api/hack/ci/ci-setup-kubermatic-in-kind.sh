@@ -100,7 +100,6 @@ kubeconfig ()
 alias k=kubectl
 source <(k completion bash )
 source <(k completion bash | sed s/kubectl/k/g)
-export KUBECONFIG=~/.kube/kind-config-prow-build-cluster
 EOF
 echodate "Set aliases in .bashrc"
 
@@ -357,3 +356,11 @@ kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556  &
 # Expose kubermatic API to localhost
 kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 &
 echodate "Finished exposing components"
+
+echodate "Waiting for dex to be ready"
+retry 5 curl --fail http://127.0.0.1:5556/healthz
+echodate "Dex got ready"
+
+echodate "Waiting for api to be ready"
+retry 5 curl --fail http://127.0.0.1:8080/api/v1/healthz
+echodate "API got ready"
