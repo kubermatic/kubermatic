@@ -16,6 +16,8 @@ function cleanup {
 }
 trap cleanup EXIT
 
+export ONLY_TEST_CREATION=true
+
 echodate "Setting up kubermatic in kind"
 ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
 echodate "Done setting up kubermatic in kind"
