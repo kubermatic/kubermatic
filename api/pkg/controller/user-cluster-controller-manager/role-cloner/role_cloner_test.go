@@ -24,6 +24,8 @@ import (
 var nowTime metav1.Time
 
 func TestReconcile(t *testing.T) {
+	// Enable debug logging
+	kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
 	nowTime = metav1.Now()
 	testCases := []struct {
 		name             string
@@ -218,6 +220,68 @@ func TestReconcile(t *testing.T) {
 			requestName:      "view",
 			requestNamespace: "kube-system",
 		},
+		{
+			name: "do not clone into deleted namespace",
+			expectedRoles: []rbacv1.Role{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:       "view",
+						Namespace:  "kube-system",
+						Finalizers: []string{kubermaticapiv1.UserClusterRoleCleanupFinalizer},
+						Labels:     map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							Verbs:     []string{"*"},
+							APIGroups: []string{"*"},
+							Resources: []string{"*"},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "view",
+						Namespace: "default",
+						Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							Verbs:     []string{"*"},
+							APIGroups: []string{"*"},
+							Resources: []string{"*"},
+						},
+					},
+				},
+			},
+			objects: []runtime.Object{
+				&rbacv1.Role{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:       "view",
+						Namespace:  "kube-system",
+						Finalizers: []string{kubermaticapiv1.UserClusterRoleCleanupFinalizer},
+						Labels:     map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							Verbs:     []string{"*"},
+							APIGroups: []string{"*"},
+							Resources: []string{"*"},
+						},
+					},
+				},
+				&corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{Name: "default"},
+				},
+				&corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{Name: "kube-system"},
+				},
+				&corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{Name: "test", DeletionTimestamp: nowPtr()},
+				},
+			},
+			requestName:      "view",
+			requestNamespace: "kube-system",
+		},
 	}
 
 	for idx := range testCases {
@@ -278,4 +342,9 @@ func sortRoles(roles []rbacv1.Role) {
 		mi, mj := roles[i], roles[j]
 		return mi.Name < (mj.Name)
 	})
+}
+
+func nowPtr() *metav1.Time {
+	now := metav1.Now()
+	return &now
 }
