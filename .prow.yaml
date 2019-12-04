@@ -770,7 +770,7 @@ presubmits:
       preset-kubeconfig-ci: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev2
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.16.3"
