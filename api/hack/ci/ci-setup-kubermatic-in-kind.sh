@@ -32,6 +32,7 @@ if [[ -z ${PROW_JOB_ID} ]]; then
 	exit 1
 fi
 
+source ./api/hack/lib.sh
 
 # Set docker config
 echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json

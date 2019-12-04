@@ -3,6 +3,7 @@
 set -euo pipefail
 
 ## CI run conformance tester
+source ./api/hack/lib.sh
 
 ### Defaults
 export VERSIONS=${VERSIONS_TO_TEST:-"v1.12.4"}
