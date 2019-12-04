@@ -57,7 +57,7 @@ fi
 
 timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
   -debug \
-  -worker-name=$BUILD_ID \
+  -worker-name=${KUBERMATIC_WORKER_NAME:-$BUILD_ID} \
   -kubeconfig=$KUBECONFIG \
   -kubermatic-nodes=3 \
   -kubermatic-parallel-clusters=1 \
