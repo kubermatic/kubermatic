@@ -6,7 +6,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/project-label-synchronizer"
+	projectlabelsynchronizer "github.com/kubermatic/kubermatic/api/pkg/controller/project-label-synchronizer"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
 	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-lifecycle"
 	seedproxy "github.com/kubermatic/kubermatic/api/pkg/controller/seed-proxy"
@@ -172,7 +172,7 @@ func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcont
 			seedManagerMap,
 			ctrlCtx.log,
 			ctrlCtx.workerCount,
-			ctrlCtx.workerNameLabelSelector)
+			ctrlCtx.workerName)
 	}
 	return func(mgr manager.Manager) (string, error) {
 		return projectlabelsynchronizer.ControllerName, factory(mgr)

@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -149,4 +150,15 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 	clustersUpdatingInProgressCount := len(clusters.Items) - finishedUpdatingClustersCount
 
 	return clustersUpdatingInProgressCount >= limit, nil
+}
+
+// IsCacheNotStarted returns true if the given error is not nil and an instance of
+// cache.ErrCacheNotStarted.
+func IsCacheNotStarted(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	_, ok := err.(*cache.ErrCacheNotStarted)
+	return ok
 }

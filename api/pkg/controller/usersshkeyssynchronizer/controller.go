@@ -3,8 +3,7 @@ package usersshkeyssynchronizer
 import (
 	"context"
 	"fmt"
-
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -116,6 +116,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log.Debug("Processing")
 
 	err := r.reconcile(log, request)
+	if controllerutil.IsCacheNotStarted(err) {
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
 	if err != nil {
 		log.Errorw("Reconciliation failed", zap.Error(err))
 	}
@@ -130,12 +133,18 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 		return nil
 	}
 
+	// find all clusters in this seed
 	cluster := &kubermaticv1.Cluster{}
 	if err := seedClient.Get(r.ctx, types.NamespacedName{Name: request.Name}, cluster); err != nil {
+		if controllerutil.IsCacheNotStarted(err) {
+			return err
+		}
+
 		if kubeapierrors.IsNotFound(err) {
 			log.Debug("Could not find cluster")
 			return nil
 		}
+
 		return fmt.Errorf("failed to get cluster %s from seed %s: %v", cluster.Name, request.Namespace, err)
 	}
 
