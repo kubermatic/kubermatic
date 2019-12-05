@@ -3,6 +3,11 @@
 package e2e
 
 import (
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"regexp"
 	"testing"
 	"time"
 
@@ -24,7 +29,7 @@ func TestCreateDOCluster(t *testing.T) {
 			name:       "create cluster on DigitalOcean",
 			dc:         "prow-build-cluster",
 			location:   "do-fra1",
-			version:    "v1.14.2",
+			version:    "v1.15.6",
 			credential: "loodse",
 			replicas:   1,
 		},
@@ -46,7 +51,7 @@ func TestCreateDOCluster(t *testing.T) {
 
 			cluster, err := apiRunner.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
 			if err != nil {
-				t.Fatalf("can not create cluster due to error: %v", GetErrorResponse(err))
+				t.Fatalf("can not create cluster due to error: %v", err)
 			}
 
 			var clusterReady bool
@@ -120,7 +125,7 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 			name:       "delete cluster before is up",
 			dc:         "prow-build-cluster",
 			location:   "do-fra1",
-			version:    "v1.14.2",
+			version:    "v1.15.6",
 			credential: "loodse",
 			replicas:   1,
 		},
@@ -142,7 +147,7 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 
 			cluster, err := apiRunner.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
 			if err != nil {
-				t.Fatalf("can not create cluster due to error: %v", GetErrorResponse(err))
+				t.Fatalf("can not create cluster due to error: %v", err)
 			}
 
 			healthStatus, err := apiRunner.GetClusterHealthStatus(project.ID, tc.dc, cluster.ID)
@@ -163,20 +168,24 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 
 func TestGetClusterKubeconfig(t *testing.T) {
 	tests := []struct {
-		name       string
-		dc         string
-		location   string
-		version    string
-		credential string
-		replicas   int32
+		name         string
+		dc           string
+		location     string
+		version      string
+		credential   string
+		replicas     int32
+		path         string
+		expectedCode int
 	}{
 		{
-			name:       "delete cluster before is up",
-			dc:         "prow-build-cluster",
-			location:   "do-fra1",
-			version:    "v1.14.2",
-			credential: "loodse",
-			replicas:   1,
+			name:         "kubeconfig contains token",
+			dc:           "prow-build-cluster",
+			location:     "do-fra1",
+			version:      "v1.15.6",
+			credential:   "loodse",
+			replicas:     1,
+			path:         "/api/v1/projects/%s/dc/%s/clusters/%s/kubeconfig",
+			expectedCode: http.StatusOK,
 		},
 	}
 	for _, tc := range tests {
@@ -196,7 +205,7 @@ func TestGetClusterKubeconfig(t *testing.T) {
 
 			cluster, err := apiRunner.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
 			if err != nil {
-				t.Fatalf("can not create cluster due to error: %v", GetErrorResponse(err))
+				t.Fatalf("can not create cluster due to error: %v", err)
 			}
 
 			var clusterReady bool
@@ -217,15 +226,44 @@ func TestGetClusterKubeconfig(t *testing.T) {
 				t.Fatalf("cluster not ready after %d attempts", getDOMaxAttempts)
 			}
 
-			kubeconfig, err := apiRunner.GetClusterMasterKubeconfig(project.ID, tc.dc, cluster.ID)
+			var u url.URL
+			u.Host = getHost()
+			u.Scheme = getScheme()
+			u.Path = fmt.Sprintf(tc.path, project.ID, tc.dc, cluster.ID)
+
+			req, err := http.NewRequest("GET", u.String(), nil)
 			if err != nil {
-				t.Fatalf("can not get kubeconfig %v", GetErrorResponse(err))
+				t.Fatalf("can not make GET call due error: %v", err)
 			}
 
-			t.Log(kubeconfig)
+			req.Header.Set("Cache-Control", "no-cache")
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", masterToken))
+
+			client := &http.Client{Timeout: time.Second * 10}
+
+			resp, err := client.Do(req)
+			if err != nil {
+				t.Fatal("error reading response. ", err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tc.expectedCode {
+				t.Fatalf("expected code %d, got %d", tc.expectedCode, resp.StatusCode)
+			}
+
+			bodyBytes, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			kubeconfig := string(bodyBytes)
+			regex := regexp.MustCompile(`token: [a-z0-9]{6}\.[a-z0-9]{16}`)
+			matches := regex.FindAllString(kubeconfig, -1)
+			if len(matches) != 1 {
+				t.Fatalf("expected token in kubeconfig, got %s", kubeconfig)
+			}
 
 			cleanUpCluster(t, apiRunner, project.ID, tc.dc, cluster.ID)
-
 		})
 	}
 }
