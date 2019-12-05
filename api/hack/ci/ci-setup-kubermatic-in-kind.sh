@@ -177,6 +177,13 @@ echodate "Deploying dex"
 rm config/oauth/templates/ingress.yaml
 cp $(dirname $0)/testdata/oauth_configmap.yaml config/oauth/templates/configmap.yaml
 
+echodate "Creating kubermatic-fast storageclass"
+TEST_NAME="Create kubermatic-fast storageclass"
+retry 5 kubectl get storageclasses.storage.k8s.io standard -o json \
+  |jq 'del(.metadata)|.metadata.name = "kubermatic-fast"'\
+  |kubectl apply -f -
+echodate "Successfully created kubermatic-fast storageclass"
+
 helm install --wait --timeout 180 \
   --set-string=dex.ingress.host=http://dex.oauth:5556 \
   --values ./api/hack/ci/testdata/oauth_values.yaml \
