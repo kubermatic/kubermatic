@@ -673,6 +673,7 @@ func cleanUpProject(id string, attempts int) func(t *testing.T) {
 		if err := apiRunner.DeleteProject(id); err != nil {
 			t.Fatalf("can not delete project due error: %v", err)
 		}
+		t.Log("project deleting ...")
 		for attempt := 1; attempt <= attempts; attempt++ {
 			_, err := apiRunner.GetProject(id, 5)
 			if err != nil {
@@ -684,6 +685,7 @@ func cleanUpProject(id string, attempts int) func(t *testing.T) {
 		if err == nil {
 			t.Fatalf("can not delete the project")
 		}
+		t.Log("project deleted successfully")
 	}
 }
 
@@ -865,4 +867,34 @@ func (r *APIRunner) SetAdmin(email string, isAdmin bool) error {
 	}
 
 	return nil
+}
+
+// GetClusterRoles
+func (r *APIRunner) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.RoleName, error) {
+	params := &project.ListRoleNamesParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
+	params.WithTimeout(timeout)
+
+	var err error
+	var response *project.ListRoleNamesOK
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		response, err = r.client.Project.ListRoleNames(params, r.bearerToken)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	roleNames := []apiv1.RoleName{}
+
+	for _, roleName := range response.Payload {
+		roleNames = append(roleNames, apiv1.RoleName{
+			Name:      roleName.Name,
+			Namespace: roleName.Namespace,
+		})
+	}
+
+	return roleNames, nil
 }

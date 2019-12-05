@@ -25,7 +25,7 @@ func TestCreateDOCluster(t *testing.T) {
 			dc:         "prow-build-cluster",
 			location:   "do-fra1",
 			version:    "v1.14.2",
-			credential: "digitalocean",
+			credential: "loodse",
 			replicas:   1,
 		},
 	}
@@ -39,7 +39,7 @@ func TestCreateDOCluster(t *testing.T) {
 			apiRunner := CreateAPIRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project %v", GetErrorResponse(err))
+				t.Fatalf("can not create project %v", err)
 			}
 			teardown := cleanUpProject(project.ID, getDOMaxAttempts)
 			defer teardown(t)
@@ -64,10 +64,7 @@ func TestCreateDOCluster(t *testing.T) {
 			}
 
 			if !clusterReady {
-				if err := apiRunner.PrintClusterEvents(project.ID, tc.dc, cluster.ID); err != nil {
-					t.Errorf("failed to print cluster events: %v", err)
-				}
-				t.Fatalf("cluster is not ready after %d attempts", getDOMaxAttempts)
+				t.Fatalf("cluster not ready after %d attempts", getDOMaxAttempts)
 			}
 
 			var ndReady bool
@@ -124,7 +121,7 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 			dc:         "prow-build-cluster",
 			location:   "do-fra1",
 			version:    "v1.14.2",
-			credential: "digitalocean",
+			credential: "loodse",
 			replicas:   1,
 		},
 	}
