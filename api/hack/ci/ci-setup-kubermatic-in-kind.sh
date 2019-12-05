@@ -246,13 +246,21 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set-string=kubermatic.controller.image.tag="$KUBERMATIC_VERSION" \
   --set-string=kubermatic.controller.addons.openshift.image.tag="$KUBERMATIC_VERSION" \
   --set-string=kubermatic.api.image.tag="$KUBERMATIC_VERSION" \
+  --set=kubermatic.controller.datacenterName=${SEED_NAME} \
+  --set=kubermatic.api.replicas=1 \
   --set-string=kubermatic.masterController.image.tag="$KUBERMATIC_VERSION" \
   --set-string=kubermatic.ui.image.tag=${LATEST_DASHBOARD} \
+  --set=kubermatic.ui.replicas="${KUBERMATIC_UI_REPLICAS}" \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
   --set=kubermatic.datacenters='' \
   --set=kubermatic.dynamicDatacenters=true \
-  --set=kubermatic.ui.replicas="${KUBERMATIC_UI_REPLICAS}" \
+  --set=kubermatic.kubeconfig="$(cat $KUBECONFIG|base64 -w0)" \
+  --set=kubermatic.auth.tokenIssuer=http://dex.oauth:5556 \
+  --set=kubermatic.auth.clientID=kubermatic \
+  --set=kubermatic.auth.serviceAccountKey=$SERVICE_ACCOUNT_KEY \
+  --set=kubermatic.apiserverDefaultReplicas=1 \
+  --set=kubermatic.deployVPA=false \
   --namespace=kubermatic \
   ${OPENSHIFT_HELM_ARGS:-} \
   --values ${VALUES_FILE} \
