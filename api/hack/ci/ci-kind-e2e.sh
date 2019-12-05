@@ -10,5 +10,4 @@ source ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
 echodate "Done setting up kubermatic in kind"
 
 echodate "Running conformance tests"
-export ONLY_TEST_CREATION=true
 ./api/hack/ci/ci-run-conformance-tester.sh
