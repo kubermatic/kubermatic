@@ -36,6 +36,7 @@ var (
 		"node-exporter",
 		"nodelocal-dns-cache",
 		"pod-security-policy",
+		"logrotate",
 	}
 
 	openshiftDefaultAddons = []string{
@@ -45,6 +46,7 @@ var (
 		"network",
 		"default-storage-class",
 		"registry",
+		"logrotate",
 	}
 
 	defaultUIResources = corev1.ResourceRequirements{
