@@ -6,23 +6,16 @@ set -euo pipefail
 ## CI Setup Kubermatic in kind                              #
 ## A simple script to get a Kubermatic setup using kind     #
 #############################################################
-## Caller _must_ add the following block:
-# function cleanup {
-# 	kubectl delete service -l "prow.k8s.io/id=$PROW_JOB_ID"
 #
-# 	# Kill all descendant processes
-# 	pkill -P $$
-#
-#   # Clean up clusters
-#   kubectl delete cluster --all
-# }
-# trap cleanup EXIT
+# This script should be sourced, not called, so callers get the variables it sets
 
 # The kubemaric version to build
 export KUBERMATIC_VERSION=$(git rev-parse HEAD)
 # Number of UI replicas, zero by default
 export KUBERMATIC_UI_REPLICAS="${KUBERMATIC_UI_REPLICAS:-0}"
 export SEED_NAME=prow-build-cluster
+export KUBERMATIC_APISERVER_ADDRESS="localhost:8080"
+export KUBERMATIC_NO_WORKER_NAME=true
 
 if [[ -z ${JOB_NAME} ]]; then
 	echo "This script should only be running in a CI environment."
@@ -381,3 +374,21 @@ echodate "Dex got ready"
 echodate "Waiting for api to be ready"
 retry 5 curl --fail http://127.0.0.1:8080/api/v1/healthz
 echodate "API got ready"
+
+function cleanup_kubermatic_clusters_in_kind {
+  originalRC=$?
+
+  # Tolerate errors and just continue
+  set +e
+  kubectl delete service -l "prow.k8s.io/id=$PROW_JOB_ID"
+
+  # Kill all descendant processes
+  pkill -P $$
+
+  # Clean up clusters
+  kubectl delete cluster --all --ignore-not-found=true
+  set -e
+
+  return $originalRC
+}
+trap cleanup_kubermatic_clusters_in_kind EXIT
