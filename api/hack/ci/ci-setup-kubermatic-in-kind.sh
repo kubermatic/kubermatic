@@ -1,7 +1,3 @@
-#!/usr/bin/env bash
-
-set -euo pipefail
-
 #############################################################
 ## CI Setup Kubermatic in kind                              #
 ## A simple script to get a Kubermatic setup using kind     #
@@ -27,6 +23,7 @@ if [[ -z ${PROW_JOB_ID} ]]; then
 	exit 1
 fi
 
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 source ./api/hack/lib.sh
 
 TEST_NAME="Get Vault token"
