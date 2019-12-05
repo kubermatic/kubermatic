@@ -10,6 +10,10 @@ export VERSIONS=${VERSIONS_TO_TEST:-"v1.12.4"}
 export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
 export ONLY_TEST_CREATION=${ONLY_TEST_CREATION:-false}
 provider=${PROVIDER:-"aws"}
+export WORKER_NAME=${BUILD_ID}
+if [[ "$KUBERMATIC_NO_WORKER_NAME" = "true" ]]; then
+  WORKER_NAME=""
+fi
 
 if [[ -n ${OPENSHIFT:-} ]]; then
   OPENSHIFT_ARG="-openshift=true"
@@ -60,7 +64,7 @@ fi
 
 timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
   -debug \
-  -worker-name=${KUBERMATIC_WORKER_NAME:-$BUILD_ID} \
+  -worker-name=${WORKER_NAME} \
   -kubeconfig=$KUBECONFIG \
   -kubermatic-nodes=3 \
   -kubermatic-parallel-clusters=1 \

@@ -26,6 +26,6 @@ echodate "Done setting up kubermatic in kind"
 
 echodate "Running conformance tests"
 export KUBERMATIC_APISERVER_ADDRESS="localhost:8080"
-export KUBERMATIC_WORKER_NAME=
+export KUBERMATIC_NO_WORKER_NAME=true
 export ONLY_TEST_CREATION=true
 ./api/hack/ci/ci-run-conformance-tester.sh
