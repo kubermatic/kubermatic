@@ -359,7 +359,8 @@ func main() {
 
 	namespaceName := os.Getenv("NAMESPACE")
 	if namespaceName == "" {
-		log.Fatal("Environment variable `NAMESPACE` must be set and contain the namespace for our seed")
+		log.Warn("Environment variable `NAMESPACE` was unset, defaulting to `kubermatic`")
+		namespaceName = "kubermatic"
 	}
 	seedGetter, err := provider.SeedGetterFactory(context.Background(), seedClusterClient, seedName, "", namespaceName, true)
 	if err != nil {
