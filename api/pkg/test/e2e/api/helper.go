@@ -441,7 +441,7 @@ func (r *APIRunner) CreateDOCluster(projectID, dc, name, credential, version, lo
 	}
 
 	params := &project.CreateClusterParams{ProjectID: projectID, Dc: dc, Body: clusterSpec}
-	params.WithTimeout(timeout)
+	params.WithTimeout(timeout * 2)
 	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
 	if err != nil {
 		return nil, err
