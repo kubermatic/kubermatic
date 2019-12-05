@@ -344,7 +344,9 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
 	if cluster.Spec.Cloud.Azure != nil {
 		return "azure"
 	}
-
+	if cluster.Spec.Cloud.GCP != nil {
+		return "gce"
+	}
 	return ""
 }
 
