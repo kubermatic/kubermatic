@@ -13,10 +13,12 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -57,6 +59,8 @@ func isSeed(ref metav1.OwnerReference) bool {
 	return ref.APIVersion == kubermaticv1.SchemeGroupVersion.String() && ref.Kind == "Seed"
 }
 
+// StringifyFeatureGates takes a set of enabled features and returns a comma-separated
+// key=value list like "featureA=true,featureB=true,...".
 func StringifyFeatureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string {
 	features := make([]string, 0)
 	for _, feature := range cfg.Spec.FeatureGates.List() {
@@ -147,4 +151,26 @@ func createSecretData(s *corev1.Secret, data map[string]string) *corev1.Secret {
 	}
 
 	return s
+}
+
+// CleanupClusterResource attempts to find a cluster-wide resource and
+// deletes it if it was found. If no resource with the given name exists,
+// nil is returned.
+func CleanupClusterResource(client ctrlruntimeclient.Client, obj runtime.Object, name string) error {
+	key := types.NamespacedName{Name: name}
+	ctx := context.Background()
+
+	if err := client.Get(ctx, key, obj); err != nil {
+		if !kerrors.IsNotFound(err) {
+			return fmt.Errorf("failed to probe for %s: %v", key, err)
+		}
+
+		return nil
+	}
+
+	if err := client.Delete(ctx, obj); err != nil {
+		return fmt.Errorf("failed to delete %s: %v", key, err)
+	}
+
+	return nil
 }

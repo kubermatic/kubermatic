@@ -1,6 +1,7 @@
 package seedproxy
 
 import (
+	"context"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -78,6 +79,7 @@ const (
 // pods to allow access to monitoring applications inside the seed
 // clusters, like Prometheus and Grafana.
 func Add(
+	ctx context.Context,
 	mgr manager.Manager,
 	numWorkers int,
 	log *zap.SugaredLogger,
@@ -89,6 +91,7 @@ func Add(
 
 	reconciler := &Reconciler{
 		Client:               mgr.GetClient(),
+		ctx:                  ctx,
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		log:                  log,
 		namespace:            namespace,
