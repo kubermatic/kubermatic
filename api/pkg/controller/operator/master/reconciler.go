@@ -9,9 +9,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/master/resources/kubermatic"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/cache"
@@ -71,6 +74,18 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Kubermatic configuration")
 
+	// config was deleted, let's clean up
+	if config.DeletionTimestamp != nil {
+		return r.cleanupDeletedConfiguration(config, logger)
+	}
+
+	// ensure we always have a cleanup finalizer
+	oldConfig := config.DeepCopy()
+	kubernetes.AddFinalizer(config, common.CleanupFinalizer)
+	if err := r.Patch(r.ctx, config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
+		return fmt.Errorf("failed to add finalizer: %v", err)
+	}
+
 	if err := r.reconcileNamespaces(config, logger); err != nil {
 		return err
 	}
@@ -113,6 +128,31 @@ func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration,
 
 	if err := r.reconcileAdmissionWebhooks(config, logger); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (r *Reconciler) cleanupDeletedConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	if kubernetes.HasAnyFinalizer(config, common.CleanupFinalizer) {
+		logger.Debug("KubermaticConfiguration was deleted, cleaning up cluster-wide resources")
+
+		if err := common.CleanupClusterResource(r, &rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(config)); err != nil {
+			return fmt.Errorf("failed to clean up ClusterRoleBinding: %v", err)
+		}
+
+		if err := common.CleanupClusterResource(r, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(config)); err != nil {
+			return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %v", err)
+		}
+
+		oldConfig := config.DeepCopy()
+		kubernetes.RemoveFinalizer(config, common.CleanupFinalizer)
+
+		if err := r.Patch(r.ctx, config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
+			return fmt.Errorf("failed to remove finalizer: %v", err)
+		}
+
+		return nil
 	}
 
 	return nil

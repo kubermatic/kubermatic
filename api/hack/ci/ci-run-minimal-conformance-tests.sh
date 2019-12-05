@@ -88,13 +88,13 @@ function cleanup {
     -o go-template='{{range .items}}{{.metadata.name}}{{end}}' \
       |xargs -I ^ kubectl label cluster ^ worker-name-
 
+  # Remove the custom seed so the master-controller-manager can clean it up
+  # and we don't end up with a stuck Seed CR.
+  kubectl delete -n $NAMESPACE seeds $SEED_NAME
+
   # Delete the Helm Deployment of Kubermatic
   helm delete --purge kubermatic-$BUILD_ID  \
     --tiller-namespace=$NAMESPACE
-
-  # Delete our custom seed so that a stuck webhook will not cause the
-  # namespace to be stuck in Terminating state.
-  kubectl delete -n $NAMESPACE seeds $SEED_NAME
 
   # Delete the Helm installation
   kubectl delete clusterrolebinding -l prowjob=$BUILD_ID

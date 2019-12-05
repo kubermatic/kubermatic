@@ -11,10 +11,13 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/seed/resources/kubermatic"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -130,6 +133,11 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 		return fmt.Errorf("failed to get Seed in seed cluster: %v", err)
 	}
 
+	// Seed CR inside the seed cluster was deleted
+	if seedCopy.DeletionTimestamp != nil {
+		return r.cleanupDeletedSeed(defaulted, seedCopy, seedClient, log)
+	}
+
 	// make sure to use the seedCopy so the owner ref has the correct UID
 	if err := r.reconcileResources(defaulted, seedCopy, seedClient, log); err != nil {
 		r.masterRecorder.Event(&config, corev1.EventTypeWarning, "SeedReconcilingError", fmt.Sprintf("%s: %v", seedName, err))
@@ -141,7 +149,38 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 	return nil
 }
 
+func (r *Reconciler) cleanupDeletedSeed(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	if kubernetes.HasAnyFinalizer(seed, common.CleanupFinalizer) {
+		log.Debug("Seed was deleted, cleaning up cluster-wide resources")
+
+		if err := common.CleanupClusterResource(client, &rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(cfg)); err != nil {
+			return fmt.Errorf("failed to clean up ClusterRoleBinding: %v", err)
+		}
+
+		if err := common.CleanupClusterResource(client, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(cfg)); err != nil {
+			return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %v", err)
+		}
+
+		oldSeed := seed.DeepCopy()
+		kubernetes.RemoveFinalizer(seed, common.CleanupFinalizer)
+
+		if err := client.Patch(r.ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
+			return fmt.Errorf("failed to remove finalizer from Seed: %v", err)
+		}
+
+		return nil
+	}
+
+	return nil
+}
+
 func (r *Reconciler) reconcileResources(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	oldSeed := seed.DeepCopy()
+	kubernetes.AddFinalizer(seed, common.CleanupFinalizer)
+	if err := client.Patch(r.ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
+		return fmt.Errorf("failed to add finalizer to Seed: %v", err)
+	}
+
 	if err := r.reconcileNamespaces(cfg, seed, client, log); err != nil {
 		return err
 	}
