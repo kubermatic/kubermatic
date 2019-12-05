@@ -333,6 +333,7 @@ spec:
           - node-exporter
           - nodelocal-dns-cache
           - pod-security-policy
+          - logrotate
         # DockerRepository is the repository containing the Docker image containing
         # the possible addon manifests.
         dockerRepository: quay.io/kubermatic/addons
@@ -346,6 +347,7 @@ spec:
           - network
           - default-storage-class
           - registry
+          - logrotate
         # DockerRepository is the repository containing the Docker image containing
         # the possible addon manifests.
         dockerRepository: quay.io/kubermatic/openshift-addons
