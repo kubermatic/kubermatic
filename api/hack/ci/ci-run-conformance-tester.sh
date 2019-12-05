@@ -11,7 +11,7 @@ export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos}
 export ONLY_TEST_CREATION=${ONLY_TEST_CREATION:-false}
 provider=${PROVIDER:-"aws"}
 export WORKER_NAME=${BUILD_ID}
-if [[ "$KUBERMATIC_NO_WORKER_NAME" = "true" ]]; then
+if [[ "${KUBERMATIC_NO_WORKER_NAME:-}" = "true" ]]; then
   WORKER_NAME=""
 fi
 
