@@ -279,7 +279,7 @@ metadata:
   name: ${SEED_NAME}-kubeconfig
   namespace: kubermatic
 data:
-  kubeconfig: "$(cat $KUBECONFIG|base64 -w0)"
+  kubeconfig: "$(cat $KUBECONFIG|sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./'|base64 -w0)"
 ---
 kind: Seed
 apiVersion: kubermatic.k8s.io/v1
