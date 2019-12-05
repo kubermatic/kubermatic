@@ -86,6 +86,8 @@ echodate "Set iptables rule to clamp mss to path mtu"
 # Make debugging a bit better
 echodate "Setting aliases in .bashrc"
 cat <<EOF >>~/.bashrc
+# Gets set to the CI clusters kubeconfig from a preset
+unset KUBECONFIG
 cn ()
 {
     kubectl config set-context \$(kubectl config current-context) --namespace=\$1
@@ -255,7 +257,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set=kubermatic.checks.crd.disable=true \
   --set=kubermatic.datacenters='' \
   --set=kubermatic.dynamicDatacenters=true \
-  --set=kubermatic.kubeconfig="$(cat $KUBECONFIG|base64 -w0)" \
+  --set=kubermatic.kubeconfig="$(cat $KUBECONFIG|sed 's/127.0.0.1/kubernetes.default.svc.cluster.local./'|base64 -w0)" \
   --set=kubermatic.auth.tokenIssuer=http://dex.oauth:5556 \
   --set=kubermatic.auth.clientID=kubermatic \
   --set=kubermatic.auth.serviceAccountKey=$SERVICE_ACCOUNT_KEY \
