@@ -203,6 +203,7 @@ func (r *Reconciler) reconcile() error {
 	for _, factory := range r.controllerFactories {
 		controllerName, err := factory(ctrlCtx, mgr, seedManagers)
 		if err != nil {
+			cancelCtrlCtx()
 			return fmt.Errorf("failed to construct controller %s: %v", controllerName, err)
 		}
 	}
