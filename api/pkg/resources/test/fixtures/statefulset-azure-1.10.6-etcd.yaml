@@ -79,7 +79,7 @@ spec:
               fieldPath: status.podIP
         - name: ETCDCTL_API
           value: "3"
-        image: gcr.io/etcd-development/etcd:v3.3.12
+        image: gcr.io/etcd-development/etcd:v3.3.15
         name: etcd
         ports:
         - containerPort: 2379
@@ -157,7 +157,6 @@ spec:
     spec:
       accessModes:
       - ReadWriteOnce
-      dataSource: null
       resources:
         requests:
           storage: 5Gi

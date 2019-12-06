@@ -5,17 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
+	"net/url"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
+	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
+	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
+	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
+	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -49,7 +49,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 			}
 
 			cm.Labels = resources.BaseAppLabel(name, nil)
-			cm.Data["config"] = cloudConfig
+			cm.Data[resources.CloudConfigConfigMapKey] = cloudConfig
 			cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
 
 			return cm, nil
@@ -58,9 +58,15 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 }
 
 // CloudConfig returns the cloud-config for the supplied data
-func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, credentials resources.Credentials) (cloudConfig string, err error) {
+func CloudConfig(
+	cluster *kubermaticv1.Cluster,
+	dc *kubermaticv1.Datacenter,
+	credentials resources.Credentials,
+) (cloudConfig string, err error) {
 	cloud := cluster.Spec.Cloud
-	if cloud.AWS != nil {
+
+	switch {
+	case cloud.AWS != nil:
 		awsCloudConfig := &aws.CloudConfig{
 			// Dummy AZ, so that K8S can extract the region from it.
 			// https://github.com/kubernetes/kubernetes/blob/v1.15.0/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go#L1199
@@ -79,14 +85,15 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		if err != nil {
 			return cloudConfig, err
 		}
-	} else if cloud.Azure != nil {
+
+	case cloud.Azure != nil:
 		vnetResourceGroup := cloud.Azure.ResourceGroup
 		azureCloudConfig := &azure.CloudConfig{
 			Cloud:                      "AZUREPUBLICCLOUD",
-			TenantID:                   cloud.Azure.TenantID,
-			SubscriptionID:             cloud.Azure.SubscriptionID,
-			AADClientID:                cloud.Azure.ClientID,
-			AADClientSecret:            cloud.Azure.ClientSecret,
+			TenantID:                   credentials.Azure.TenantID,
+			SubscriptionID:             credentials.Azure.SubscriptionID,
+			AADClientID:                credentials.Azure.ClientID,
+			AADClientSecret:            credentials.Azure.ClientSecret,
 			ResourceGroup:              cloud.Azure.ResourceGroup,
 			Location:                   dc.Spec.Azure.Location,
 			VNetName:                   cloud.Azure.VNetName,
@@ -101,17 +108,18 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		if err != nil {
 			return cloudConfig, err
 		}
-	} else if cloud.Openstack != nil {
+
+	case cloud.Openstack != nil:
 		manageSecurityGroups := dc.Spec.Openstack.ManageSecurityGroups
 		trustDevicePath := dc.Spec.Openstack.TrustDevicePath
 		openstackCloudConfig := &openstack.CloudConfig{
 			Global: openstack.GlobalOpts{
 				AuthURL:    dc.Spec.Openstack.AuthURL,
-				Username:   cloud.Openstack.Username,
-				Password:   cloud.Openstack.Password,
-				DomainName: cloud.Openstack.Domain,
-				TenantName: cloud.Openstack.Tenant,
-				TenantID:   cloud.Openstack.TenantID,
+				Username:   credentials.Openstack.Username,
+				Password:   credentials.Openstack.Password,
+				DomainName: credentials.Openstack.Domain,
+				TenantName: credentials.Openstack.Tenant,
+				TenantID:   credentials.Openstack.TenantID,
 				Region:     dc.Spec.Openstack.Region,
 			},
 			BlockStorage: openstack.BlockStorageOpts{
@@ -128,40 +136,19 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 		if err != nil {
 			return cloudConfig, err
 		}
-	} else if cloud.VSphere != nil {
-		vsphereCloudConfig := &vsphere.CloudConfig{
-			Global: vsphere.GlobalOpts{
-				User:             cloud.VSphere.Username,
-				Password:         cloud.VSphere.Password,
-				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
-				VCenterPort:      "443",
-				InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
-				Datacenter:       dc.Spec.VSphere.Datacenter,
-				DefaultDatastore: dc.Spec.VSphere.Datastore,
-				WorkingDir:       cluster.Name,
-			},
-			Workspace: vsphere.WorkspaceOpts{
-				// This is redudant with what the Vsphere cloud provider itself does:
-				// https://github.com/kubernetes/kubernetes/blob/9d80e7522ab7fc977e40dd6f3b5b16d8ebfdc435/pkg/cloudprovider/providers/vsphere/vsphere.go#L346
-				// We do it here because the fields in the "Global" object
-				// are marked as deprecated even thought the code checks
-				// if they are set and will make the controller-manager crash
-				// if they are not - But maybe that will change at some point
-				VCenterIP:        strings.Replace(dc.Spec.VSphere.Endpoint, "https://", "", -1),
-				Datacenter:       dc.Spec.VSphere.Datacenter,
-				Folder:           cluster.Name,
-				DefaultDatastore: dc.Spec.VSphere.Datastore,
-			},
-			Disk: vsphere.DiskOpts{
-				SCSIControllerType: "pvscsi",
-			},
+
+	case cloud.VSphere != nil:
+		vsphereCloudConfig, err := getVsphereCloudConfig(cluster, dc, credentials)
+		if err != nil {
+			return cloudConfig, err
 		}
 		cloudConfig, err = vsphere.CloudConfigToString(vsphereCloudConfig)
 		if err != nil {
 			return cloudConfig, err
 		}
-	} else if cloud.GCP != nil {
-		b, err := base64.StdEncoding.DecodeString(cloud.GCP.ServiceAccount)
+
+	case cloud.GCP != nil:
+		b, err := base64.StdEncoding.DecodeString(credentials.GCP.ServiceAccount)
 		if err != nil {
 			return "", fmt.Errorf("error decoding service account: %v", err)
 		}
@@ -202,7 +189,50 @@ func CloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cre
 			return cloudConfig, err
 		}
 	}
+
 	return cloudConfig, err
+}
+
+func getVsphereCloudConfig(
+	cluster *kubermaticv1.Cluster,
+	dc *kubermaticv1.Datacenter,
+	credentials resources.Credentials,
+) (*vsphere.CloudConfig, error) {
+	vspherURL, err := url.Parse(dc.Spec.VSphere.Endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse vsphere endpoint: %v", err)
+	}
+	port := "443"
+	if urlPort := vspherURL.Port(); urlPort != "" {
+		port = urlPort
+	}
+	return &vsphere.CloudConfig{
+		Global: vsphere.GlobalOpts{
+			User:             credentials.VSphere.Username,
+			Password:         credentials.VSphere.Password,
+			VCenterIP:        vspherURL.Hostname(),
+			VCenterPort:      port,
+			InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
+			Datacenter:       dc.Spec.VSphere.Datacenter,
+			DefaultDatastore: dc.Spec.VSphere.Datastore,
+			WorkingDir:       cluster.Name,
+		},
+		Workspace: vsphere.WorkspaceOpts{
+			// This is redudant with what the Vsphere cloud provider itself does:
+			// https://github.com/kubernetes/kubernetes/blob/9d80e7522ab7fc977e40dd6f3b5b16d8ebfdc435/pkg/cloudprovider/providers/vsphere/vsphere.go#L346
+			// We do it here because the fields in the "Global" object
+			// are marked as deprecated even thought the code checks
+			// if they are set and will make the controller-manager crash
+			// if they are not - But maybe that will change at some point
+			VCenterIP:        vspherURL.Hostname(),
+			Datacenter:       dc.Spec.VSphere.Datacenter,
+			Folder:           cluster.Name,
+			DefaultDatastore: dc.Spec.VSphere.Datastore,
+		},
+		Disk: vsphere.DiskOpts{
+			SCSIControllerType: "pvscsi",
+		},
+	}, nil
 }
 
 const (

@@ -2,10 +2,11 @@ package provider
 
 import (
 	"fmt"
-
-	corev1 "k8s.io/api/core/v1"
+	"net/http"
+	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
 // We can not convert a single DatacenterMeta as the SeedDatacenter contains its NodeDatacenter
@@ -17,7 +18,7 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 
 	for dcName, datacenterSpec := range dm {
 		if datacenterSpec.IsSeed && datacenterSpec.Seed != "" {
-			return nil, fmt.Errorf("datacenter %q is configured as seed but has a seed configured(%q) which is only allowed for datacenters that are not a seed", dcName, datacenterSpec.Seed)
+			return nil, fmt.Errorf("datacenter %q is configured as seed but has a seed configured (%q) which is only allowed for datacenters that are not a seed", dcName, datacenterSpec.Seed)
 		}
 		if !datacenterSpec.IsSeed && datacenterSpec.Seed == "" {
 			return nil, fmt.Errorf("datacenter %q is not configured as seed but does not have a corresponding seed configured. Configuring a seed datacenter is required for all node datacenters", dcName)
@@ -37,16 +38,15 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 			seeds[dcName].Name = dcName
 			seeds[dcName].Spec.Country = datacenterSpec.Country
 			seeds[dcName].Spec.Location = datacenterSpec.Location
-			// TODO: What to do about the kubeconfig?
-			seeds[dcName].Spec.Kubeconfig = corev1.ObjectReference{}
 			seeds[dcName].Spec.SeedDNSOverwrite = datacenterSpec.SeedDNSOverwrite
 
+			// Kubeconfig object ref is injected during the automated migration.
 		} else {
 			if _, exists := dm[datacenterSpec.Seed]; !exists {
-				return nil, fmt.Errorf("seedDatacenter %q used by nodeDatacenter %q does not exist", datacenterSpec.Seed, dcName)
+				return nil, fmt.Errorf("seedDatacenter %q used by node datacenter %q does not exist", datacenterSpec.Seed, dcName)
 			}
 			if !dm[datacenterSpec.Seed].IsSeed {
-				return nil, fmt.Errorf("datacenter %q referenced by nodeDatacenter %q as its seed is not configured to be a seed",
+				return nil, fmt.Errorf("datacenter %q referenced by node datacenter %q as its seed is not configured to be a seed",
 					datacenterSpec.Seed, dcName)
 
 			}
@@ -78,21 +78,58 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 // once we support datacenters as CRDs.
 // TODO: Find a way to lift the current requirement of unique nodeDatacenter names. It is needed
 // only because we put the nodeDatacenter name on the cluster but not the seed
-func DatacenterFromSeedMap(seeds map[string]*kubermaticv1.Seed, datacenterName string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
+func DatacenterFromSeedMap(userInfo *UserInfo, seedsGetter SeedsGetter, datacenterName string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
 
 	var foundDatacenters []kubermaticv1.Datacenter
 	var foundSeeds []*kubermaticv1.Seed
+
+iterateOverSeeds:
 	for _, seed := range seeds {
 		datacenter, exists := seed.Spec.Datacenters[datacenterName]
 		if !exists {
 			continue
 		}
 
-		foundSeeds = append(foundSeeds, seed)
-		foundDatacenters = append(foundDatacenters, datacenter)
+		requiredEmailDomain := datacenter.Spec.RequiredEmailDomain
+		requiredEmailDomains := datacenter.Spec.RequiredEmailDomains
+
+		if requiredEmailDomain == "" && len(requiredEmailDomains) == 0 {
+			// find datacenter for "all" without RequiredEmailDomain(s) field
+			foundSeeds = append(foundSeeds, seed)
+			foundDatacenters = append(foundDatacenters, datacenter)
+			continue iterateOverSeeds
+		} else {
+			// find datacenter for specific email domain
+			split := strings.Split(userInfo.Email, "@")
+			if len(split) != 2 {
+				return nil, nil, fmt.Errorf("invalid email address")
+			}
+			userDomain := split[1]
+
+			if requiredEmailDomain != "" && strings.EqualFold(userDomain, requiredEmailDomain) {
+				foundSeeds = append(foundSeeds, seed)
+				foundDatacenters = append(foundDatacenters, datacenter)
+				continue iterateOverSeeds
+			}
+
+			for _, whitelistedDomain := range requiredEmailDomains {
+				if whitelistedDomain != "" && strings.EqualFold(userDomain, whitelistedDomain) {
+					foundSeeds = append(foundSeeds, seed)
+					foundDatacenters = append(foundDatacenters, datacenter)
+					continue iterateOverSeeds
+				}
+			}
+		}
 	}
 
-	if n := len(foundDatacenters); n != 1 {
+	if len(foundDatacenters) == 0 {
+		return nil, nil, errors.New(http.StatusNotFound, fmt.Sprintf("datacenter %q not found", datacenterName))
+	}
+	if n := len(foundDatacenters); n > 1 {
 		return nil, nil, fmt.Errorf("expected to find exactly one datacenter with name %q, got %d", datacenterName, n)
 	}
 

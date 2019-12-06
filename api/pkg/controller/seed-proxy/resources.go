@@ -18,22 +18,27 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/utils/pointer"
 )
 
-func secretName(contextName string) string {
-	return fmt.Sprintf("seed-proxy-%s", contextName)
+func secretName(seed *kubermaticv1.Seed) string {
+	return fmt.Sprintf("seed-proxy-%s", seed.Name)
 }
 
-func deploymentName(contextName string) string {
-	return fmt.Sprintf("seed-proxy-%s", contextName)
+func deploymentName(seed *kubermaticv1.Seed) string {
+	return fmt.Sprintf("seed-proxy-%s", seed.Name)
 }
 
-func serviceName(contextName string) string {
-	return fmt.Sprintf("seed-proxy-%s", contextName)
+func serviceName(seed *kubermaticv1.Seed) string {
+	return fmt.Sprintf("seed-proxy-%s", seed.Name)
 }
 
-func fullPrometheusService() string {
-	return fmt.Sprintf("%s:%s", SeedPrometheusServiceName, SeedPrometheusServicePort)
+func seedMonitoringRoleName(seed *kubermaticv1.Seed) string {
+	return fmt.Sprintf("seed-proxy-%s", seed.Namespace)
+}
+
+func seedMonitoringRoleBindingName(seed *kubermaticv1.Seed) string {
+	return fmt.Sprintf("seed-proxy-%s", seed.Namespace)
 }
 
 func defaultLabels(name string, instance string) map[string]string {
@@ -55,7 +60,7 @@ func ownerReferences(secret *corev1.Secret) []metav1.OwnerReference {
 	}
 }
 
-func seedServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func seedServiceAccountCreator(seed *kubermaticv1.Seed) reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return SeedServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			sa.Labels = defaultLabels(SeedServiceAccountName, "")
@@ -65,17 +70,22 @@ func seedServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	}
 }
 
-func seedPrometheusRoleCreator() reconciling.NamedRoleCreatorGetter {
+func seedMonitoringRoleCreator(seed *kubermaticv1.Seed) reconciling.NamedRoleCreatorGetter {
+	name := seedMonitoringRoleName(seed)
+
 	return func() (string, reconciling.RoleCreator) {
-		return SeedPrometheusRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Labels = defaultLabels(SeedPrometheusRoleName, "")
+		return name, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+			r.Labels = defaultLabels(name, "")
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
-					APIGroups:     []string{""},
-					Resources:     []string{"services/proxy"},
-					ResourceNames: []string{fullPrometheusService()},
-					Verbs:         []string{"get"},
+					APIGroups: []string{""},
+					Verbs:     []string{"get"},
+					Resources: []string{"services/proxy"},
+					ResourceNames: []string{
+						SeedPrometheusService,
+						SeedAlertmanagerService,
+					},
 				},
 			}
 
@@ -84,22 +94,24 @@ func seedPrometheusRoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
-func seedPrometheusRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func seedMonitoringRoleBindingCreator(seed *kubermaticv1.Seed) reconciling.NamedRoleBindingCreatorGetter {
+	name := seedMonitoringRoleBindingName(seed)
+
 	return func() (string, reconciling.RoleBindingCreator) {
-		return SeedPrometheusRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			rb.Labels = defaultLabels(SeedPrometheusRoleBindingName, "")
+		return name, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+			rb.Labels = defaultLabels(name, "")
 
 			rb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
 				Kind:     "Role",
-				Name:     SeedPrometheusRoleName,
+				Name:     seedMonitoringRoleName(seed),
 			}
 
 			rb.Subjects = []rbacv1.Subject{
 				{
 					Kind:      rbacv1.ServiceAccountKind,
 					Name:      SeedServiceAccountName,
-					Namespace: SeedServiceAccountNamespace,
+					Namespace: seed.Namespace,
 				},
 			}
 
@@ -108,13 +120,13 @@ func seedPrometheusRoleBindingCreator() reconciling.NamedRoleBindingCreatorGette
 	}
 }
 
-func masterSecretCreator(contextName string, kubeconfig *rest.Config, credentials *corev1.Secret) reconciling.NamedSecretCreatorGetter {
-	name := secretName(contextName)
+func masterSecretCreator(seed *kubermaticv1.Seed, kubeconfig *rest.Config, credentials *corev1.Secret) reconciling.NamedSecretCreatorGetter {
+	name := secretName(seed)
 	host := kubeconfig.Host
 
 	return func() (string, reconciling.SecretCreator) {
 		return name, func(s *corev1.Secret) (*corev1.Secret, error) {
-			s.Labels = defaultLabels("seed-proxy", contextName)
+			s.Labels = defaultLabels("seed-proxy", seed.Name)
 
 			if s.Data == nil {
 				s.Data = make(map[string][]byte)
@@ -159,15 +171,15 @@ func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret) 
 	return clientcmd.Write(*kubeconfig)
 }
 
-func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconciling.NamedDeploymentCreatorGetter {
-	name := deploymentName(contextName)
+func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret) reconciling.NamedDeploymentCreatorGetter {
+	name := deploymentName(seed)
 
 	return func() (string, reconciling.DeploymentCreator) {
 		return name, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			labels := func() map[string]string {
 				return map[string]string{
 					NameLabel:     MasterDeploymentName,
-					InstanceLabel: contextName,
+					InstanceLabel: seed.Name,
 				}
 			}
 
@@ -188,7 +200,7 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 			d.Labels = labels()
 			d.Labels[ManagedByLabel] = ControllerName
 
-			d.Spec.Replicas = i32ptr(1)
+			d.Spec.Replicas = pointer.Int32Ptr(1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: labels(),
 			}
@@ -200,13 +212,13 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "proxy",
-					Image:   "quay.io/kubermatic/util:1.1.2",
+					Image:   "quay.io/kubermatic/util:1.3.2",
 					Command: []string{"/bin/bash"},
 					Args:    []string{"-c", strings.TrimSpace(proxyScript)},
 					Env: []corev1.EnvVar{
 						{
 							Name:  "KUBERNETES_CONTEXT",
-							Value: contextName,
+							Value: seed.Name,
 						},
 						{
 							Name:  "KUBECONFIG",
@@ -261,15 +273,15 @@ func masterDeploymentCreator(contextName string, secret *corev1.Secret) reconcil
 	}
 }
 
-func masterServiceCreator(contextName string, secret *corev1.Secret) reconciling.NamedServiceCreatorGetter {
-	name := serviceName(contextName)
+func masterServiceCreator(seed *kubermaticv1.Seed, secret *corev1.Secret) reconciling.NamedServiceCreatorGetter {
+	name := serviceName(seed)
 
 	return func() (string, reconciling.ServiceCreator) {
 		return name, func(s *corev1.Service) (*corev1.Service, error) {
 			s.OwnerReferences = ownerReferences(secret)
 			s.Labels = map[string]string{
 				NameLabel:      MasterServiceName,
-				InstanceLabel:  contextName,
+				InstanceLabel:  seed.Name,
 				ManagedByLabel: ControllerName,
 			}
 
@@ -279,7 +291,6 @@ func masterServiceCreator(contextName string, secret *corev1.Secret) reconciling
 					Port: KubectlProxyPort,
 					TargetPort: intstr.IntOrString{
 						IntVal: KubectlProxyPort,
-						// StrVal: "http",
 					},
 					Protocol: corev1.ProtocolTCP,
 				},
@@ -287,7 +298,7 @@ func masterServiceCreator(contextName string, secret *corev1.Secret) reconciling
 
 			s.Spec.Selector = map[string]string{
 				NameLabel:     MasterServiceName,
-				InstanceLabel: contextName,
+				InstanceLabel: seed.Name,
 			}
 
 			return s, nil
@@ -309,10 +320,10 @@ func (r *Reconciler) masterGrafanaConfigmapCreator(seeds map[string]*kubermaticv
 			c.Labels = labels()
 			c.Labels[ManagedByLabel] = ControllerName
 
-			for seedName := range seeds {
+			for seedName, seed := range seeds {
 				filename := fmt.Sprintf("prometheus-%s.yaml", seedName)
 
-				config, err := buildGrafanaDatasource(seedName)
+				config, err := buildGrafanaDatasource(seed)
 				if err != nil {
 					return nil, fmt.Errorf("failed to build Grafana config for seed %s: %v", seedName, err)
 				}
@@ -325,14 +336,14 @@ func (r *Reconciler) masterGrafanaConfigmapCreator(seeds map[string]*kubermaticv
 	}
 }
 
-func buildGrafanaDatasource(seedName string) (string, error) {
+func buildGrafanaDatasource(seed *kubermaticv1.Seed) (string, error) {
 	data := map[string]interface{}{
-		"ContextName":             seedName,
-		"ServiceName":             serviceName(seedName),
-		"ServiceNamespace":        MasterTargetNamespace,
+		"ContextName":             seed.Name,
+		"ServiceName":             serviceName(seed),
+		"ServiceNamespace":        seed.Namespace,
 		"ProxyPort":               KubectlProxyPort,
-		"SeedPrometheusNamespace": SeedPrometheusNamespace,
-		"SeedPrometheusService":   fullPrometheusService(),
+		"SeedMonitoringNamespace": SeedMonitoringNamespace,
+		"SeedPrometheusService":   SeedPrometheusService,
 	}
 
 	var buffer bytes.Buffer
@@ -341,10 +352,6 @@ func buildGrafanaDatasource(seedName string) (string, error) {
 	err := tpl.Execute(&buffer, data)
 
 	return strings.TrimSpace(buffer.String()), err
-}
-
-func i32ptr(i int32) *int32 {
-	return &i
 }
 
 const proxyScript = `
@@ -367,6 +374,6 @@ datasources:
   org_id: 1
   type: prometheus
   access: proxy
-  url: http://{{ .ServiceName }}.{{ .ServiceNamespace }}.svc.cluster.local:{{ .ProxyPort }}/api/v1/namespaces/{{ .SeedPrometheusNamespace }}/services/{{ .SeedPrometheusService }}/proxy/
+  url: http://{{ .ServiceName }}.{{ .ServiceNamespace }}.svc.cluster.local:{{ .ProxyPort }}/api/v1/namespaces/{{ .SeedMonitoringNamespace }}/services/{{ .SeedPrometheusService }}/proxy/
   editable: false
 `

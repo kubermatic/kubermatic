@@ -42,6 +42,14 @@ spec:
           mountPath: /var/compact-data
         - name: thanos
           mountPath: /etc/thanos
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: http
         resources:
 {{ toYaml .Values.prometheus.containers.thanosCompact.resources | indent 10 }}
       volumes:

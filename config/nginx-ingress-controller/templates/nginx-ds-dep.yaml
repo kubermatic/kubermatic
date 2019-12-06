@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 {{ if .Values.nginx.asDaemonSet }}
 kind: DaemonSet
 {{ else }}
@@ -6,15 +6,23 @@ kind: Deployment
 {{ end }}
 metadata:
   name: nginx-ingress-controller
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/managed-by: helm
 spec:
-{{ if not .Values.nginx.asDaemonSet }}
+  {{- if not .Values.nginx.asDaemonSet }}
   replicas: {{ .Values.nginx.replicas }}
-{{ else }}
+  {{- else }}
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 35%
-{{ end }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: ingress-nginx
   template:
     metadata:
       labels:
@@ -23,20 +31,24 @@ spec:
         kubermatic/scrape: 'true'
         kubermatic/scrape_port: '10254'
     spec:
+      dnsPolicy: {{ .Values.nginx.dnsPolicy }}
       hostNetwork: {{ .Values.nginx.hostNetwork }}
-      serviceAccountName: nginx-ingress-serviceaccount
+      # wait up to five minutes for the drain of connections
+      terminationGracePeriodSeconds: 300
+      serviceAccountName: nginx-ingress-controller
       containers:
       - name: nginx-ingress-controller
         image: '{{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}'
         args:
         - /nginx-ingress-controller
         - --configmap=$(POD_NAMESPACE)/nginx-configuration
-        - --tcp-services-configmap=$(POD_NAMESPACE)/tcp-services
-        - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
-        - --default-ssl-certificate=default/kubermatic-tls-certificates
-        - --publish-service=$(POD_NAMESPACE)/ingress-nginx
+        - --ingress-class=nginx
         - --annotations-prefix=ingress.kubernetes.io
+        {{- range .Values.nginx.extraArgs }}
+        - {{ . | quote }}
+        {{- end }}
         securityContext:
+          allowPrivilegeEscalation: true
           capabilities:
             drop:
             - ALL
@@ -54,12 +66,12 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         ports:
-        - name: metrics
-          containerPort: 10254
         - name: http
           containerPort: 80
+          protocol: TCP
         - name: https
           containerPort: 443
+          protocol: TCP
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -79,6 +91,11 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 10
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /wait-shutdown
         resources:
 {{ toYaml .Values.nginx.resources | indent 10 }}
       tolerations:

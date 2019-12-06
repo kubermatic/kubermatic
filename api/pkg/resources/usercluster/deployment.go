@@ -1,6 +1,7 @@
 package usercluster
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -30,10 +31,7 @@ var (
 	}
 )
 
-const (
-	name              = "usercluster-controller"
-	openvpnCAMountDir = "/etc/kubernetes/pki/openvpn"
-)
+const name = "usercluster-controller"
 
 // userclusterControllerData is the subet of the deploymentData interface
 // that is actually required by the usercluster deployment
@@ -45,6 +43,8 @@ type userclusterControllerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetOpenVPNServerPort() (int32, error)
 	KubermaticAPIImage() string
+	GetKubernetesCloudProviderName() string
+	CloudCredentialSecretTemplate() ([]byte, error)
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
@@ -95,27 +95,45 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
+			args := append([]string{
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"-metrics-listen-address", "0.0.0.0:8085",
+				"-health-listen-address", "0.0.0.0:8086",
+				"-namespace", "$(NAMESPACE)",
+				"-cluster-url", data.Cluster().Address.URL,
+				"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
+				"-overwrite-registry", data.ImageRegistry(""),
+				fmt.Sprintf("-openshift=%t", openshift),
+				"-version", data.Cluster().Spec.Version.String(),
+				"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
+			}, getNetworkArgs(data)...)
+
+			if openshiftConsoleCallbackURI := data.Cluster().Address.OpenshiftConsoleCallBack; openshiftConsoleCallbackURI != "" {
+				args = append(args, "-openshift-console-callback-uri", openshiftConsoleCallbackURI)
+			}
+
+			labelArgsValue, err := getLabelsArgValue(data.Cluster())
+			if err != nil {
+				return nil, fmt.Errorf("faild to get label args value: %v", err)
+			}
+			if labelArgsValue != "" {
+				args = append(args, "-node-labels", labelArgsValue)
+			}
+
+			cloudCredentialSecretTemplate, err := data.CloudCredentialSecretTemplate()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get cloud-credential-secret-template: %v", err)
+			}
+			if cloudCredentialSecretTemplate != nil {
+				args = append(args, "-cloud-credential-secret-template", string(cloudCredentialSecretTemplate))
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
 					Image:   data.KubermaticAPIImage() + ":" + resources.KUBERMATICCOMMIT,
 					Command: []string{"/usr/local/bin/user-cluster-controller-manager"},
-					Args: append([]string{
-						"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-						"-metrics-listen-address", "0.0.0.0:8085",
-						"-health-listen-address", "0.0.0.0:8086",
-						"-namespace", "$(NAMESPACE)",
-						"-ca-cert", "/etc/kubernetes/pki/ca/ca.crt",
-						"-cluster-url", data.Cluster().Address.URL,
-						"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
-						"-overwrite-registry", data.ImageRegistry(""),
-						fmt.Sprintf("-openshift=%t", openshift),
-						"-version", data.Cluster().Spec.Version.String(),
-						fmt.Sprintf("-openvpn-ca-cert-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCACertKey),
-						fmt.Sprintf("-openvpn-ca-key-file=%s/%s", openvpnCAMountDir, resources.OpenVPNCAKeyKey),
-						"-logtostderr",
-						"-v", "2",
-					}, getNetworkArgs(data)...),
+					Args:    args,
 					Env: []corev1.EnvVar{
 						{
 							Name: "NAMESPACE",
@@ -147,19 +165,10 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 							MountPath: "/etc/kubernetes/kubeconfig",
 							ReadOnly:  true,
 						},
-						{
-							Name:      resources.CASecretName,
-							MountPath: "/etc/kubernetes/pki/ca",
-							ReadOnly:  true,
-						},
-						{
-							Name:      resources.OpenVPNCASecretName,
-							MountPath: openvpnCAMountDir,
-							ReadOnly:  true,
-						},
 					},
 				},
 			}
+			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
 			if err != nil {
@@ -182,28 +191,6 @@ func getVolumes() []corev1.Volume {
 				},
 			},
 		},
-		{
-			Name: resources.CASecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.CASecretName,
-					Items: []corev1.KeyToPath{
-						{
-							Path: resources.CACertSecretKey,
-							Key:  resources.CACertSecretKey,
-						},
-					},
-				},
-			},
-		},
-		{
-			Name: resources.OpenVPNCASecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNCASecretName,
-				},
-			},
-		},
 	}
 }
 
@@ -219,4 +206,24 @@ func getNetworkArgs(data userclusterControllerData) []string {
 	}
 
 	return networkFlags
+}
+
+func getLabelsArgValue(cluster *kubermaticv1.Cluster) (string, error) {
+	labelsToApply := map[string]string{}
+	for key, value := range cluster.Labels {
+		if kubermaticv1.ProtectedClusterLabels.Has(key) {
+			continue
+		}
+		labelsToApply[key] = value
+	}
+
+	if len(labelsToApply) == 0 {
+		return "", nil
+	}
+
+	bytes, err := json.Marshal(labelsToApply)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal labels: %v", err)
+	}
+	return string(bytes), nil
 }

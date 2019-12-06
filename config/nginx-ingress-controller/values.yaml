@@ -6,14 +6,16 @@ nginx:
     repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
     tag: 0.25.1
   config: {}
-#    load-balance: "least_conn"
+#   load-balance: "least_conn"
+  extraArgs:
+  - '--default-ssl-certificate=default/kubermatic-tls-certificates'
   resources:
     requests:
       cpu: 50m
       memory: 128Mi
     limits:
       cpu: 250m
-      memory: 256Mi
+      memory: 512Mi
   nodeSelector: {}
   affinity:
     nodeAffinity:
@@ -36,3 +38,8 @@ nginx:
   #   - { key: dedicated, operator: Equal, value: master, effect: NoSchedule }
   #   - { key: node-role.kubernetes.io/master, effect: NoSchedule }
   ignoreMasterTaint: false
+
+  # Optionally change this to ClusterFirstWithHostNet in case you have 'hostNetwork: true'.
+  # By default, while using host network, name resolution uses the host's DNS. If you wish nginx-controller
+  # to keep resolving names inside the k8s network, use ClusterFirstWithHostNet.
+  dnsPolicy: ClusterFirst

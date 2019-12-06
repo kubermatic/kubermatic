@@ -7,9 +7,13 @@ TAGS?=$(GITTAG)
 DOCKERTAGS=$(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
 KUBERMATICCOMMIT?=$(shell git log -1 --format=%H)
+KUBERMATICDOCKERTAG?=$(KUBERMATICCOMMIT)
+UIDOCKERTAG?=NA
 LDFLAGS += -extldflags '-static' \
   -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICCOMMIT=$(KUBERMATICCOMMIT) \
-  -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICGITTAG=$(GITTAG)
+  -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICGITTAG=$(GITTAG) \
+  -X github.com/kubermatic/kubermatic/api/pkg/controller/operator/common.KUBERMATICDOCKERTAG=$(KUBERMATICDOCKERTAG) \
+  -X github.com/kubermatic/kubermatic/api/pkg/controller/operator/common.UIDOCKERTAG=$(UIDOCKERTAG)
 HAS_DEP:= $(shell command -v dep 2> /dev/null)
 HAS_GIT:= $(shell command -v git 2> /dev/null)
 BUILD_DEST?=_build
@@ -19,9 +23,10 @@ default: all
 
 all: check vendor build test
 
+.PHONY: $(CMD)
 build: $(CMD)
 
-$(CMD):
+$(CMD): download-gocache
 	go build $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/$@
 
 install:
@@ -32,7 +37,12 @@ showenv:
 
 check: gofmt lint
 
-test:
+download-gocache:
+	@./hack/ci/ci-download-gocache.sh
+	@# Prevent this from getting executed multiple times
+	@touch download-gocache
+
+test: download-gocache
 	CGO_ENABLED=1 go test -tags=unit -race ./...
 	@# Make sure all e2e tests compile with their individual build tag
 	@# without actually running them by using `-run` with a non-existing test.
@@ -44,7 +54,7 @@ test:
 	go test -tags integration -run nope ./...
 
 test-integration : CGO_ENABLED = 1
-test-integration:
+test-integration: download-gocache
 	@# Run integration tests and only integration tests by:
 	@# * Finding all files that contain the build tag via grep
 	@# * Extracting the dirname as the `go test` command doesn't play well with individual files as args
@@ -60,7 +70,7 @@ clean:
 	rm -f $(TARGET)
 	@echo "Cleaned $(BUILD_DEST)"
 
-docker-build:
+docker-build: build
 	docker build $(DOCKER_BUILD_FLAG) .
 
 docker-push:
@@ -83,7 +93,10 @@ fix:
 	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 
 lint:
-	golangci-lint run -v
+	./hack/ci/ci-run-lint.sh
+
+shellcheck:
+	shellcheck $$(find . -name '*.sh')
 
 cover:
 	./hack/cover.sh --html
@@ -94,13 +107,16 @@ run-controller-manager:
 run-api-server:
 	./hack/run-api.sh
 
+run-operator:
+	./hack/run-operator.sh
+
 run-master-controller-manager:
 	./hack/run-master-controller-manager.sh
 
 verify: gofmt
-		./hack/verify-codegen.sh
-		./hack/verify-swagger.sh
-		./hack/verify-api-client.sh
+	./hack/verify-codegen.sh
+	./hack/verify-swagger.sh
+	./hack/verify-api-client.sh
 
 check-dependencies:
 	# We need mercurial for bitbucket.org/ww/goautoneg, otherwise dep hangs forever

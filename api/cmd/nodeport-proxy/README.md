@@ -7,6 +7,4 @@ The NodePort-Proxy watches services with the annotation `nodeport-proxy.k8s.io/e
 
 ## Release
 
-```bash
-TAG=v2.0.0 make docker
-```
+The nodeportproxy gets automatically built in CI.

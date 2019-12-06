@@ -16,6 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/gcp"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -109,32 +110,40 @@ func DecodeGCPTypesNoCredentialReq(c context.Context, r *http.Request) (interfac
 	return req, nil
 }
 
-func GCPDiskTypesEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint {
+func GCPDiskTypesEndpoint(credentialManager common.PresetsManager, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesReq)
 
 		zone := req.Zone
 		sa := req.ServiceAccount
-
-		if len(req.Credential) > 0 && credentialManager.GetPresets().GCP.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().GCP.Credentials {
-				if credential.Name == req.Credential {
-					sa = credential.ServiceAccount
-					break
-				}
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GCP; credentials != nil {
+				sa = credentials.ServiceAccount
 			}
 		}
-
 		return listGCPDiskTypes(ctx, sa, zone)
 	}
 }
 
-func GCPDiskTypesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func GCPDiskTypesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesNoCredentialReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -146,7 +155,17 @@ func GCPDiskTypesWithClusterCredentialsEndpoint(projectProvider provider.Project
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		sa := cluster.Spec.Cloud.GCP.ServiceAccount
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		sa, err := gcp.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+
 		return listGCPDiskTypes(ctx, sa, req.Zone)
 	}
 }
@@ -177,19 +196,24 @@ func listGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDis
 	return diskTypes, err
 }
 
-func GCPSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint {
+func GCPSizeEndpoint(credentialManager common.PresetsManager, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesReq)
 
 		zone := req.Zone
 		sa := req.ServiceAccount
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().GCP.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().GCP.Credentials {
-				if credential.Name == req.Credential {
-					sa = credential.ServiceAccount
-					break
-				}
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GCP; credentials != nil {
+				sa = credentials.ServiceAccount
 			}
 		}
 
@@ -197,12 +221,15 @@ func GCPSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint 
 	}
 }
 
-func GCPSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func GCPSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesNoCredentialReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -214,7 +241,16 @@ func GCPSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvi
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		sa := cluster.Spec.Cloud.GCP.ServiceAccount
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		sa, err := gcp.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
 		return listGCPSizes(ctx, sa, req.Zone)
 	}
 }
@@ -232,7 +268,7 @@ func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachine
 		for _, machineType := range page.Items {
 			// TODO: Make the check below more generic, working for all the providers. It is needed as the pods
 			//  with memory under 2 GB will be full with required pods like kube-proxy, CNI etc.
-			if machineType.MemoryMb > 2048 {
+			if machineType.MemoryMb >= 2048 {
 				mt := apiv1.GCPMachineSize{
 					Name:        machineType.Name,
 					Description: machineType.Description,
@@ -249,31 +285,38 @@ func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachine
 	return sizes, err
 }
 
-func GCPZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+func GCPZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPZoneReq)
-
 		sa := req.ServiceAccount
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().GCP.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().GCP.Credentials {
-				if credential.Name == req.Credential {
-					sa = credential.ServiceAccount
-					break
-				}
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GCP; credentials != nil {
+				sa = credentials.ServiceAccount
 			}
 		}
 
-		return listGCPZones(ctx, sa, req.DC, seedsGetter)
+		return listGCPZones(ctx, userInfo, sa, req.DC, seedsGetter)
 	}
 }
 
-func GCPZoneWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+func GCPZoneWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -285,13 +328,22 @@ func GCPZoneWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvi
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		sa := cluster.Spec.Cloud.GCP.ServiceAccount
-		return listGCPZones(ctx, sa, cluster.Spec.Cloud.DatacenterName, seedsGetter)
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		sa, err := gcp.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+		return listGCPZones(ctx, userInfo, sa, cluster.Spec.Cloud.DatacenterName, seedsGetter)
 	}
 }
 
-func listGCPZones(ctx context.Context, sa, datacenterName string, seedsGetter provider.SeedsGetter) (apiv1.GCPZoneList, error) {
-	datacenter, err := dc.GetDatacenter(seedsGetter, datacenterName)
+func listGCPZones(ctx context.Context, userInfo *provider.UserInfo, sa, datacenterName string, seedsGetter provider.SeedsGetter) (apiv1.GCPZoneList, error) {
+	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, datacenterName)
 	if err != nil {
 		return nil, errors.NewBadRequest("%v", err)
 	}

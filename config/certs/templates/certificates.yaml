@@ -1,6 +1,4 @@
-## Example Certificate that uses multiple challenge mechanisms to obtain
-## a SAN certificate for multiple domains from the letsencrypt-staging issuer.
-apiVersion: certmanager.k8s.io/v1alpha1
+apiVersion: cert-manager.io/v1alpha2
 kind: Certificate
 metadata:
   name: kubermatic-all

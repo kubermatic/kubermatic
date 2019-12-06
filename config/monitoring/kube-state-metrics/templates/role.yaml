@@ -12,4 +12,3 @@ rules:
   - deployments
   resourceNames: ["kube-state-metrics"]
   verbs: ["get", "update"]
-

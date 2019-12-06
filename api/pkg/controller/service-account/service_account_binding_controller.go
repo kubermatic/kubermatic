@@ -91,7 +91,7 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 	}
 
 	bindings := &kubermaticv1.UserProjectBindingList{}
-	if err := r.List(r.ctx, &client.ListOptions{LabelSelector: labelSelector}, bindings); err != nil {
+	if err := r.List(r.ctx, bindings, &client.ListOptions{LabelSelector: labelSelector}); err != nil {
 		return err
 	}
 
@@ -112,11 +112,10 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 				return err
 			}
 		}
-	} else {
-		if err := r.createBinding(sa, projectName); err != nil {
-			return err
-		}
+	} else if err := r.createBinding(sa, projectName); err != nil {
+		return err
 	}
+
 	// remove labelGroup from sa
 	if _, ok := sa.Labels[serviceaccount.ServiceAccountLabelGroup]; ok {
 		delete(sa.Labels, serviceaccount.ServiceAccountLabelGroup)

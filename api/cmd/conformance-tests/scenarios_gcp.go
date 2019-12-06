@@ -69,7 +69,7 @@ func (s *gcpScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	}
 }
 
-func (s *gcpScenario) NodeDeployments(num int, secrets secrets) []apimodels.NodeDeployment {
+func (s *gcpScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 
 	return []apimodels.NodeDeployment{
@@ -96,7 +96,7 @@ func (s *gcpScenario) NodeDeployments(num int, secrets secrets) []apimodels.Node
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func (s *gcpScenario) OS() apimodels.OperatingSystemSpec {

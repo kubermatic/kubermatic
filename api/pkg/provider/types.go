@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"k8s.io/apimachinery/pkg/runtime"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -36,6 +36,7 @@ const (
 	HetznerCloudProvider      = "hetzner"
 	VSphereCloudProvider      = "vsphere"
 	GCPCloudProvider          = "gcp"
+	KubevirtCloudProvider     = "kubevirt"
 
 	DefaultSSHPort     = 22
 	DefaultKubeletPort = 10250
@@ -70,6 +71,9 @@ type SecretKeySelectorValueFunc func(configVar *providerconfig.GlobalSecretKeySe
 
 func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimeclient.Client) SecretKeySelectorValueFunc {
 	return func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+		if configVar == nil {
+			return "", errors.New("configVar is nil")
+		}
 		if configVar.Name == "" {
 			return "", errors.New("configVar.Name is empty")
 		}
@@ -128,13 +132,22 @@ type ClusterProvider interface {
 	Get(userInfo *UserInfo, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
 
 	// Update updates a cluster
-	Update(userInfo *UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+	Update(project *kubermaticv1.Project, userInfo *UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
 
 	// Delete deletes the given cluster
 	Delete(userInfo *UserInfo, clusterName string) error
 
 	// GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
 	GetAdminKubeconfigForCustomerCluster(cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
+
+	// GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster
+	GetViewerKubeconfigForCustomerCluster(cluster *kubermaticv1.Cluster) (*clientcmdapi.Config, error)
+
+	// RevokeViewerKubeconfig revokes viewer token and kubeconfig
+	RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error
+
+	// RevokeAdminKubeconfig revokes the viewer token and kubeconfig
+	RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error
 
 	// GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
 	//
@@ -145,6 +158,10 @@ type ClusterProvider interface {
 	//
 	// Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
 	GetClientForCustomerCluster(*UserInfo, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
+
+	// GetTokenForCustomerCluster returns a token for the given cluster with permissions granted to group that
+	// user belongs to.
+	GetTokenForCustomerCluster(userInfo *UserInfo, cluster *kubermaticv1.Cluster) (string, error)
 }
 
 // PrivilegedClusterProvider declares the set of methods for interacting with the seed clusters
@@ -201,6 +218,7 @@ type SSHKeyProvider interface {
 type UserProvider interface {
 	UserByEmail(email string) (*kubermaticv1.User, error)
 	CreateUser(id, name, email string) (*kubermaticv1.User, error)
+	UpdateUser(user kubermaticv1.User) (*kubermaticv1.User, error)
 	UserByID(id string) (*kubermaticv1.User, error)
 }
 
@@ -215,7 +233,7 @@ type PrivilegedProjectProvider interface {
 type ProjectProvider interface {
 	// New creates a brand new project in the system with the given name
 	// Note that a user cannot own more than one project with the given name
-	New(user *kubermaticv1.User, name string) (*kubermaticv1.Project, error)
+	New(user *kubermaticv1.User, name string, labels map[string]string) (*kubermaticv1.Project, error)
 
 	// Delete deletes the given project as the given user
 	//
@@ -238,8 +256,9 @@ type ProjectProvider interface {
 
 // UserInfo represent authenticated user
 type UserInfo struct {
-	Email string
-	Group string
+	Email   string
+	Group   string
+	IsAdmin bool
 }
 
 // ProjectMemberListOptions allows to set filters that will be applied to filter the result.
@@ -313,6 +332,9 @@ func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	if spec.GCP != nil {
 		clouds = append(clouds, GCPCloudProvider)
 	}
+	if spec.Kubevirt != nil {
+		clouds = append(clouds, KubevirtCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
@@ -376,6 +398,9 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	}
 	if spec.Fake != nil {
 		clouds = append(clouds, FakeCloudProvider)
+	}
+	if spec.Kubevirt != nil {
+		clouds = append(clouds, KubevirtCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
@@ -459,4 +484,21 @@ type AddonProvider interface {
 
 	// Delete deletes the given addon
 	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string) error
+}
+
+type AddonConfigProvider interface {
+	Get(addonName string) (*kubermaticv1.AddonConfig, error)
+	List() (*kubermaticv1.AddonConfigList, error)
+}
+
+// SettingsProvider declares the set of methods for interacting global settings
+type SettingsProvider interface {
+	GetGlobalSettings() (*kubermaticv1.KubermaticSetting, error)
+	UpdateGlobalSettings(userInfo *UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error)
+}
+
+// AdminProvider declares the set of methods for interacting with admin
+type AdminProvider interface {
+	SetAdmin(userInfo *UserInfo, email string, isAdmin bool) (*kubermaticv1.User, error)
+	GetAdmins(userInfo *UserInfo) ([]kubermaticv1.User, error)
 }

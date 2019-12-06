@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"sort"
 	"strings"
 
 	"github.com/onsi/ginkgo/reporters"
@@ -44,7 +43,7 @@ func collectReports(name, reportsDir string) (*reporters.JUnitTestSuite, error) 
 			return nil, fmt.Errorf("failed to unmarshal report file '%s': %v", absName, err)
 		}
 
-		resultSuite = combineReports(name, resultSuite, suite)
+		appendReport(resultSuite, suite)
 	}
 
 	for _, f := range individualReportFiles {
@@ -56,19 +55,11 @@ func collectReports(name, reportsDir string) (*reporters.JUnitTestSuite, error) 
 	return resultSuite, nil
 }
 
-func combineReports(name string, a, b *reporters.JUnitTestSuite) *reporters.JUnitTestSuite {
-	resultSuite := &reporters.JUnitTestSuite{Name: name}
-
-	resultSuite.Tests = a.Tests + b.Tests
-	resultSuite.Errors += a.Errors + b.Errors
-	resultSuite.Failures += a.Failures + b.Failures
-	resultSuite.TestCases = append(a.TestCases, b.TestCases...)
-
-	sort.Slice(resultSuite.TestCases, func(i, j int) bool {
-		return resultSuite.TestCases[i].Name < resultSuite.TestCases[j].Name
-	})
-
-	return resultSuite
+func appendReport(report, toAppend *reporters.JUnitTestSuite) {
+	report.Tests += toAppend.Tests
+	report.Errors += toAppend.Errors
+	report.Failures += toAppend.Failures
+	report.TestCases = append(report.TestCases, toAppend.TestCases...)
 }
 
 func printDetailedReport(report *reporters.JUnitTestSuite) {

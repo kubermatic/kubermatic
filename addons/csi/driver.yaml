@@ -1,0 +1,12 @@
+{{ if (.Cluster.Spec.Features.externalCloudProvider) }}
+
+{{ if .Cluster.Spec.Cloud.Openstack }}
+apiVersion: storage.k8s.io/v1beta1
+kind: CSIDriver
+metadata:
+  name: cinder.csi.openstack.org
+spec:
+  attachRequired: true
+  podInfoOnMount: false
+{{ end }}
+{{ end }}

@@ -5,14 +5,15 @@ package v1
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
 	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )
 
 type KubermaticV1Interface interface {
 	RESTClient() rest.Interface
 	AddonsGetter
+	AddonConfigsGetter
 	ClustersGetter
+	KubermaticSettingsGetter
 	ProjectsGetter
 	UsersGetter
 	UserProjectBindingsGetter
@@ -28,8 +29,16 @@ func (c *KubermaticV1Client) Addons(namespace string) AddonInterface {
 	return newAddons(c, namespace)
 }
 
+func (c *KubermaticV1Client) AddonConfigs() AddonConfigInterface {
+	return newAddonConfigs(c)
+}
+
 func (c *KubermaticV1Client) Clusters() ClusterInterface {
 	return newClusters(c)
+}
+
+func (c *KubermaticV1Client) KubermaticSettings() KubermaticSettingInterface {
+	return newKubermaticSettings(c)
 }
 
 func (c *KubermaticV1Client) Projects() ProjectInterface {
@@ -80,7 +89,7 @@ func setConfigDefaults(config *rest.Config) error {
 	gv := v1.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
-	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
+	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()

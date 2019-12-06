@@ -14,9 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
-	"k8s.io/client-go/kubernetes/scheme"
 
-	controllerclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -54,11 +52,7 @@ func TestReconcileBinding(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 
-			scheme := scheme.Scheme
-			if err := kubermaticv1.AddToScheme(scheme); err != nil {
-				t.Fatal(err)
-			}
-			kubermaticFakeClient := fake.NewFakeClientWithScheme(scheme, test.existingKubermaticObjects...)
+			kubermaticFakeClient := fake.NewFakeClient(test.existingKubermaticObjects...)
 
 			// act
 			target := reconcileServiceAccountProjectBinding{ctx: context.TODO(), Client: kubermaticFakeClient}
@@ -70,7 +64,7 @@ func TestReconcileBinding(t *testing.T) {
 				t.Fatal(err)
 			}
 			bindings := &kubermaticv1.UserProjectBindingList{}
-			err = kubermaticFakeClient.List(context.TODO(), &controllerclient.ListOptions{}, bindings)
+			err = kubermaticFakeClient.List(context.TODO(), bindings)
 			if err != nil {
 				t.Fatal(err)
 			}

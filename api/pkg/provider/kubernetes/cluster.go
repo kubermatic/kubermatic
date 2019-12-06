@@ -10,10 +10,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/cloud"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/cloud"
+	openshiftuserclusterresources "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -30,7 +34,6 @@ import (
 // UserClusterConnectionProvider offers functions to interact with an user cluster
 type UserClusterConnectionProvider interface {
 	GetClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
-	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
 }
 
 // extractGroupPrefixFunc is a function that knows how to extract a prefix (owners, editors) from "projectID-owners" group,
@@ -40,6 +43,7 @@ type extractGroupPrefixFunc func(groupName string) string
 // NewClusterProvider returns a new cluster provider that respects RBAC policies
 // it uses createSeedImpersonatedClient to create a connection that uses user impersonation
 func NewClusterProvider(
+	cfg *restclient.Config,
 	createSeedImpersonatedClient kubermaticImpersonationClient,
 	userClusterConnProvider UserClusterConnectionProvider,
 	workerName string,
@@ -55,6 +59,7 @@ func NewClusterProvider(
 		client:                       client,
 		k8sClient:                    k8sClient,
 		oidcKubeConfEndpoint:         oidcKubeConfEndpoint,
+		seedKubeconfig:               cfg,
 	}
 }
 
@@ -73,6 +78,7 @@ type ClusterProvider struct {
 	extractGroupPrefix   extractGroupPrefixFunc
 	client               ctrlruntimeclient.Client
 	k8sClient            kubernetes.Interface
+	seedKubeconfig       *restclient.Config
 }
 
 // New creates a brand new cluster that is bound to the given project
@@ -87,13 +93,6 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 
 	cluster.Spec.HumanReadableName = strings.TrimSpace(cluster.Spec.HumanReadableName)
 
-	labels := map[string]string{
-		kubermaticv1.ProjectIDLabelKey: project.Name,
-	}
-	if len(p.workerName) > 0 {
-		labels[kubermaticv1.WorkerNameLabelKey] = p.workerName
-	}
-
 	var name string
 	if cluster.Name != "" {
 		name = cluster.Name
@@ -104,7 +103,8 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 	newCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: cluster.Annotations,
-			Labels:      labels,
+			Finalizers:  cluster.Finalizers,
+			Labels:      getClusterLabels(cluster.Labels, project.Name, p.workerName),
 			Name:        name,
 		},
 		Spec: cluster.Spec,
@@ -112,6 +112,17 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 			UserEmail:              userInfo.Email,
 			NamespaceName:          NamespaceName(name),
 			CloudMigrationRevision: cloud.CurrentMigrationRevision,
+			KubermaticVersion:      resources.KUBERMATICCOMMIT,
+			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
+				Apiserver:                    kubermaticv1.HealthStatusProvisioning,
+				Scheduler:                    kubermaticv1.HealthStatusProvisioning,
+				Controller:                   kubermaticv1.HealthStatusProvisioning,
+				MachineController:            kubermaticv1.HealthStatusProvisioning,
+				Etcd:                         kubermaticv1.HealthStatusProvisioning,
+				OpenVPN:                      kubermaticv1.HealthStatusProvisioning,
+				CloudProviderInfrastructure:  kubermaticv1.HealthStatusProvisioning,
+				UserClusterControllerManager: kubermaticv1.HealthStatusProvisioning,
+			},
 		},
 		Address: kubermaticv1.ClusterAddress{},
 	}
@@ -128,6 +139,22 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 	return newCluster, nil
 }
 
+func getClusterLabels(specifiedLabels map[string]string, projectName, workerName string) map[string]string {
+	resultLabels := map[string]string{}
+
+	if specifiedLabels != nil {
+		resultLabels = specifiedLabels
+	}
+
+	resultLabels[kubermaticv1.ProjectIDLabelKey] = projectName
+
+	if len(workerName) > 0 {
+		resultLabels[kubermaticv1.WorkerNameLabelKey] = workerName
+	}
+
+	return resultLabels
+}
+
 // List gets all clusters that belong to the given project
 // If you want to filter the result please take a look at ClusterListOptions
 //
@@ -142,7 +169,7 @@ func (p *ClusterProvider) List(project *kubermaticv1.Project, options *provider.
 	projectClusters := &kubermaticv1.ClusterList{}
 	selector := labels.SelectorFromSet(map[string]string{kubermaticv1.ProjectIDLabelKey: project.Name})
 	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
-	if err := p.client.List(context.Background(), listOpts, projectClusters); err != nil {
+	if err := p.client.List(context.Background(), projectClusters, listOpts); err != nil {
 		return nil, fmt.Errorf("failed to list clusters: %v", err)
 	}
 
@@ -176,6 +203,7 @@ func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, o
 			return nil, kerrors.NewServiceUnavailable("Cluster components are not ready yet")
 		}
 	}
+
 	return cluster, nil
 }
 
@@ -194,23 +222,95 @@ func (p *ClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string
 }
 
 // Update updates a cluster
-func (p *ClusterProvider) Update(userInfo *provider.UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func (p *ClusterProvider) Update(project *kubermaticv1.Project, userInfo *provider.UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
+	newCluster.Status.KubermaticVersion = resources.KUBERMATICCOMMIT
+	newCluster.Labels = getClusterLabels(newCluster.Labels, project.Name, "") // Do not update worker name.
 	return seedImpersonatedClient.Clusters().Update(newCluster)
 }
 
 // GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster
 func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
-	b, err := p.userClusterConnProvider.GetAdminKubeconfig(c)
-	if err != nil {
+	secret := &corev1.Secret{}
+	name := types.NamespacedName{
+		Namespace: c.Status.NamespaceName,
+		Name:      resources.AdminKubeconfigSecretName,
+	}
+	if err := p.GetSeedClusterAdminRuntimeClient().Get(context.Background(), name, secret); err != nil {
 		return nil, err
 	}
 
-	return clientcmd.Load(b)
+	return clientcmd.Load(secret.Data[resources.KubeconfigSecretKey])
+}
+
+// GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster
+func (p *ClusterProvider) GetViewerKubeconfigForCustomerCluster(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
+	isOpenShift, ok := c.Annotations["kubermatic.io/openshift"]
+	if ok && isOpenShift == "true" {
+		return nil, fmt.Errorf("not implemented")
+	}
+	s := &corev1.Secret{}
+
+	if err := p.GetSeedClusterAdminRuntimeClient().Get(context.Background(), types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.ViewerKubeconfigSecretName}, s); err != nil {
+		return nil, err
+	}
+
+	d := s.Data[resources.KubeconfigSecretKey]
+	if len(d) == 0 {
+		return nil, fmt.Errorf("no kubeconfig found")
+	}
+
+	return clientcmd.Load(d)
+}
+
+// RevokeViewerKubeconfig revokes the viewer token and kubeconfig
+func (p *ClusterProvider) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error {
+	if c.IsOpenshift() {
+		return errors.New("not implemented")
+	}
+	s := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.ViewerTokenSecretName,
+			Namespace: c.Status.NamespaceName,
+		},
+	}
+
+	if err := p.GetSeedClusterAdminRuntimeClient().Delete(context.Background(), s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// RevokeAdminKubeconfig revokes the viewer token and kubeconfig
+func (p *ClusterProvider) RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error {
+	ctx := context.Background()
+	if !c.IsOpenshift() {
+		oldCluster := c.DeepCopy()
+		c.Address.AdminToken = kuberneteshelper.GenerateToken()
+		if err := p.GetSeedClusterAdminRuntimeClient().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("failed to patch cluster with new token: %v", err)
+		}
+		return nil
+	}
+
+	userClusterClient, err := p.GetAdminClientForCustomerCluster(c)
+	if err != nil {
+		return fmt.Errorf("failed to get usercluster client: %v", err)
+	}
+	serviceAccount := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: metav1.NamespaceSystem,
+			Name:      openshiftuserclusterresources.TokenOwnerServiceAccountName,
+		},
+	}
+	if err := userClusterClient.Delete(ctx, serviceAccount); err != nil {
+		return fmt.Errorf("failed to remove the token owner: %v", err)
+	}
+	return nil
 }
 
 // GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
@@ -226,6 +326,27 @@ func (p *ClusterProvider) GetAdminClientForCustomerCluster(c *kubermaticv1.Clust
 // This implies that you have to make sure the user has the appropriate permissions inside the user cluster
 func (p *ClusterProvider) GetClientForCustomerCluster(userInfo *provider.UserInfo, c *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error) {
 	return p.userClusterConnProvider.GetClient(c, p.withImpersonation(userInfo))
+}
+
+func (p *ClusterProvider) GetTokenForCustomerCluster(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (string, error) {
+	parts := strings.Split(userInfo.Group, "-")
+	switch parts[0] {
+	case "editors":
+		return cluster.Address.AdminToken, nil
+	case "owners":
+		return cluster.Address.AdminToken, nil
+	case "viewers":
+		s := &corev1.Secret{}
+		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ViewerTokenSecretName}
+
+		if err := p.GetSeedClusterAdminRuntimeClient().Get(context.Background(), name, s); err != nil {
+			return "", err
+		}
+
+		return string(s.Data[resources.ViewerTokenSecretKey]), nil
+	default:
+		return "", fmt.Errorf("user group %s not supported", userInfo.Group)
+	}
 }
 
 // GetSeedClusterAdminRuntimeClient returns a runtime client to interact with the seed cluster resources.
@@ -269,4 +390,10 @@ func (p *ClusterProvider) GetUnsecured(project *kubermaticv1.Project, clusterNam
 	}
 
 	return nil, kerrors.NewNotFound(schema.GroupResource{}, clusterName)
+}
+
+// SeedAdminConfig return an admin kubeconfig for the seed. This function does not perform any kind
+// of access control. Try to not use it.
+func (p *ClusterProvider) SeedAdminConfig() *restclient.Config {
+	return p.seedKubeconfig
 }

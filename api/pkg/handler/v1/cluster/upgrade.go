@@ -14,24 +14,27 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"github.com/kubermatic/kubermatic/api/pkg/validation/nodeupdate"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
-func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
 		req, ok := request.(common.GetClusterReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
 		}
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -47,7 +50,7 @@ func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider pro
 		}
 
 		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
+		if err := client.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -81,14 +84,14 @@ func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider pro
 	}
 }
 
-func isRestrictedByKubeletVersions(controlPlaneVersion *version.MasterVersion, mds []clusterv1alpha1.MachineDeployment) (bool, error) {
+func isRestrictedByKubeletVersions(controlPlaneVersion *version.Version, mds []clusterv1alpha1.MachineDeployment) (bool, error) {
 	for _, md := range mds {
 		kubeletVersion, err := semver.NewVersion(md.Spec.Template.Spec.Versions.Kubelet)
 		if err != nil {
 			return false, err
 		}
 
-		if err = common.EnsureVersionCompatible(controlPlaneVersion.Version, kubeletVersion); err != nil {
+		if err = nodeupdate.EnsureVersionCompatible(controlPlaneVersion.Version, kubeletVersion); err != nil {
 			return true, nil
 		}
 	}
@@ -133,7 +136,7 @@ func GetNodeUpgrades(updateManager common.UpdateManager) endpoint.Endpoint {
 			return nil, fmt.Errorf("failed to parse control plane version: %v", err)
 		}
 
-		versions, err := updateManager.GetMasterVersions(req.Type)
+		versions, err := updateManager.GetVersions(req.Type)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}
@@ -147,13 +150,13 @@ func GetNodeUpgrades(updateManager common.UpdateManager) endpoint.Endpoint {
 	}
 }
 
-func filterIncompatibleVersions(possibleKubeletVersions []*version.MasterVersion, controlPlaneVersion *semver.Version) ([]*version.MasterVersion, error) {
-	var compatibleVersions []*version.MasterVersion
+func filterIncompatibleVersions(possibleKubeletVersions []*version.Version, controlPlaneVersion *semver.Version) ([]*version.Version, error) {
+	var compatibleVersions []*version.Version
 	for _, v := range possibleKubeletVersions {
-		if err := common.EnsureVersionCompatible(controlPlaneVersion, v.Version); err == nil {
+		if err := nodeupdate.EnsureVersionCompatible(controlPlaneVersion, v.Version); err == nil {
 			compatibleVersions = append(compatibleVersions, v)
 		} else {
-			_, ok := err.(common.ErrVersionSkew)
+			_, ok := err.(nodeupdate.ErrVersionSkew)
 			if !ok {
 				return nil, fmt.Errorf("failed to check compatibility between kubelet %q and control plane %q: %v", v.Version, controlPlaneVersion, err)
 			}
@@ -187,17 +190,19 @@ func DecodeUpgradeNodeDeploymentsReq(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
-func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
 		req, ok := request.(UpgradeNodeDeploymentsReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
 		}
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -212,7 +217,7 @@ func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider) en
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		if err = common.EnsureVersionCompatible(cluster.Spec.Version.Version, requestedKubeletVersion); err != nil {
+		if err = nodeupdate.EnsureVersionCompatible(cluster.Spec.Version.Version, requestedKubeletVersion); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
@@ -222,7 +227,7 @@ func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider) en
 		}
 
 		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-		if err := client.List(ctx, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}, machineDeployments); err != nil {
+		if err := client.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -249,7 +254,7 @@ func GetMasterVersionsEndpoint(updateManager common.UpdateManager) endpoint.Endp
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		versions, err := updateManager.GetMasterVersions(req.Type)
+		versions, err := updateManager.GetVersions(req.Type)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get master versions: %v", err)
 		}
@@ -284,7 +289,7 @@ func DecodeClusterTypeReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
-func convertVersionsToExternal(versions []*version.MasterVersion) []*apiv1.MasterVersion {
+func convertVersionsToExternal(versions []*version.Version) []*apiv1.MasterVersion {
 	sv := make([]*apiv1.MasterVersion, len(versions))
 	for v := range versions {
 		sv[v] = &apiv1.MasterVersion{

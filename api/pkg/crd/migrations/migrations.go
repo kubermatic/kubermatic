@@ -4,16 +4,18 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/golang/glog"
-
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog"
 )
 
 type cleanupContext struct {
@@ -31,14 +33,14 @@ func RunAll(config *rest.Config, workerName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create kubeClient: %v", err)
 	}
-	kubermatiClient, err := kubermaticclientset.NewForConfig(config)
+	kubermaticClient, err := kubermaticclientset.NewForConfig(config)
 	if err != nil {
 		return fmt.Errorf("failed to create Kubermatic client: %v", err)
 	}
 
 	ctx := &cleanupContext{
 		kubeClient:       kubeClient,
-		kubermaticClient: kubermatiClient,
+		kubermaticClient: kubermaticClient,
 	}
 
 	if err := cleanupClusters(workerName, ctx); err != nil {
@@ -88,14 +90,17 @@ func cleanupClusters(workerName string, ctx *cleanupContext) error {
 
 func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 	if cluster.Status.NamespaceName == "" {
-		glog.Infof("Skipping cleanup of cluster %q because its namespace is unset", cluster.Name)
+		klog.Infof("Skipping cleanup of cluster %q because its namespace is unset", cluster.Name)
 		return nil
 	}
 
-	glog.Infof("Cleaning up cluster %s", cluster.Name)
+	klog.Infof("Cleaning up cluster %s", cluster.Name)
 
 	tasks := []ClusterTask{
 		setExposeStrategyIfEmpty,
+		setProxyModeIfEmpty,
+		cleanupDashboardAddon,
+		migrateClusterUserLabel,
 	}
 
 	w := sync.WaitGroup{}
@@ -109,7 +114,7 @@ func cleanupCluster(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
 			err := t(cluster, ctx)
 
 			if err != nil {
-				glog.Error(err)
+				klog.Error(err)
 				errLock.Lock()
 				defer errLock.Unlock()
 				errs = append(errs, err)
@@ -136,7 +141,56 @@ func setExposeStrategyIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext
 		if err != nil {
 			return fmt.Errorf("failed to default exposeStrategy to NodePort for cluster %q: %v", cluster.Name, err)
 		}
-		cluster = updatedCluster
+		*cluster = *updatedCluster
 	}
+	return nil
+}
+
+// We started to offer a config option for setting the kube-proxy mode.
+// If there is none set, we default to iptables as that was initially the
+// one being used.
+func setProxyModeIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	if cluster.Spec.ClusterNetwork.ProxyMode == "" {
+		cluster.Spec.ClusterNetwork.ProxyMode = resources.IPTablesProxyMode
+		updatedCluster, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
+		if err != nil {
+			return fmt.Errorf("failed to default proxyMode to iptables for cluster %q: %v", cluster.Name, err)
+		}
+		*cluster = *updatedCluster
+	}
+	return nil
+}
+
+func cleanupDashboardAddon(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	if err := ctx.kubermaticClient.KubermaticV1().Addons(cluster.Status.NamespaceName).Delete("dashboard", &metav1.DeleteOptions{}); err != nil {
+		if !kerrors.IsNotFound(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+func migrateClusterUserLabel(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
+	// If there is not label - nothing to migrate
+	if cluster.Labels == nil {
+		return nil
+	}
+	newLabels := map[string]string{}
+	userLabelSet := sets.NewString("user", "user_RAW")
+	for key, value := range cluster.Labels {
+		if userLabelSet.Has(key) {
+			continue
+		}
+		newLabels[key] = value
+	}
+	if len(newLabels) != len(cluster.Labels) {
+		cluster.Labels = newLabels
+		updatedCluster, err := ctx.kubermaticClient.KubermaticV1().Clusters().Update(cluster)
+		if err != nil {
+			return err
+		}
+		*cluster = *updatedCluster
+	}
+
 	return nil
 }

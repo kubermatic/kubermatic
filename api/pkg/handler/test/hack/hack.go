@@ -11,21 +11,26 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // NewTestRouting is a hack that helps us avoid circular imports
 // for example handler package uses v1/dc and v1/dc needs handler for testing
 func NewTestRouting(
+	adminProvider provider.AdminProvider,
+	settingsProvider provider.SettingsProvider,
+	userInfoGetter provider.UserInfoGetter,
 	seedsGetter provider.SeedsGetter,
-	seedClientGetter provider.SeedClientGetter,
 	clusterProvidersGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
+	addonConfigProvider provider.AddonConfigProvider,
 	sshKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
@@ -37,8 +42,8 @@ func NewTestRouting(
 	tokenExtractors auth.TokenExtractor,
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider *kubernetes.ProjectMemberProvider,
-	versions []*version.MasterVersion,
-	updates []*version.MasterUpdate,
+	versions []*version.Version,
+	updates []*version.Update,
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
@@ -46,10 +51,11 @@ func NewTestRouting(
 
 	updateManager := version.New(versions, updates)
 	r := handler.NewRouting(
+		kubermaticlog.Logger,
 		seedsGetter,
-		seedClientGetter,
 		clusterProvidersGetter,
 		addonProviderGetter,
+		addonConfigProvider,
 		sshKeyProvider,
 		userProvider,
 		serviceAccountProvider,
@@ -68,6 +74,10 @@ func NewTestRouting(
 		eventRecorderProvider,
 		credentialManager,
 		corev1.ServiceTypeNodePort,
+		sets.String{},
+		userInfoGetter,
+		settingsProvider,
+		adminProvider,
 	)
 
 	mainRouter := mux.NewRouter()
@@ -79,6 +89,7 @@ func NewTestRouting(
 		*generateDefaultOicdCfg(),
 		mainRouter,
 	)
+	r.RegisterV1Admin(v1Router)
 	return mainRouter
 }
 

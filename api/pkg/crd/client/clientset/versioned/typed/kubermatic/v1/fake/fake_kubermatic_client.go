@@ -16,8 +16,16 @@ func (c *FakeKubermaticV1) Addons(namespace string) v1.AddonInterface {
 	return &FakeAddons{c, namespace}
 }
 
+func (c *FakeKubermaticV1) AddonConfigs() v1.AddonConfigInterface {
+	return &FakeAddonConfigs{c}
+}
+
 func (c *FakeKubermaticV1) Clusters() v1.ClusterInterface {
 	return &FakeClusters{c}
+}
+
+func (c *FakeKubermaticV1) KubermaticSettings() v1.KubermaticSettingInterface {
+	return &FakeKubermaticSettings{c}
 }
 
 func (c *FakeKubermaticV1) Projects() v1.ProjectInterface {

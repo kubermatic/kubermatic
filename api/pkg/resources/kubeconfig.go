@@ -8,13 +8,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
-	"github.com/golang/glog"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/klog"
 )
 
 type adminKubeconfigCreatorData interface {
@@ -23,7 +22,7 @@ type adminKubeconfigCreatorData interface {
 }
 
 // AdminKubeconfigCreator returns a function to create/update the secret with the admin kubeconfig
-func AdminKubeconfigCreator(data adminKubeconfigCreatorData, modifier ...func(*clientcmdapi.Config)) reconciling.NamedSecretCreatorGetter {
+func AdminKubeconfigCreator(data adminKubeconfigCreatorData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return AdminKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -35,15 +34,47 @@ func AdminKubeconfigCreator(data adminKubeconfigCreatorData, modifier ...func(*c
 				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 			}
 
-			config := getBaseKubeconfig(ca.Cert, data.Cluster().Address.URL, data.Cluster().Name)
+			config := GetBaseKubeconfig(ca.Cert, data.Cluster().Address.URL, data.Cluster().Name)
 			config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
 				KubeconfigDefaultContextKey: {
 					Token: data.Cluster().Address.AdminToken,
 				},
 			}
 
-			for _, m := range modifier {
-				m(config)
+			b, err := clientcmd.Write(*config)
+			if err != nil {
+				return nil, err
+			}
+
+			se.Data[KubeconfigSecretKey] = b
+
+			return se, nil
+		}
+	}
+}
+
+// ViewerKubeconfigCreator returns a function to create/update the secret with the viewer kubeconfig
+func ViewerKubeconfigCreator(data *TemplateData) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return ViewerKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+			if se.Data == nil {
+				se.Data = map[string][]byte{}
+			}
+
+			ca, err := data.GetRootCA()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
+			}
+
+			config := GetBaseKubeconfig(ca.Cert, data.Cluster().Address.URL, data.Cluster().Name)
+			token, err := data.GetViewerToken()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get token: %v", err)
+			}
+			config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
+				KubeconfigDefaultContextKey: {
+					Token: token,
+				},
 			}
 
 			b, err := clientcmd.Write(*config)
@@ -81,9 +112,9 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 			valid, err := IsValidKubeconfig(b, ca.Cert, apiserverURL, commonName, organizations, data.Cluster().Name)
 			if err != nil || !valid {
 				if err != nil {
-					glog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
+					klog.V(2).Infof("failed to validate existing kubeconfig from %s/%s %v. Regenerating it...", se.Namespace, se.Name, err)
 				} else {
-					glog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
+					klog.V(2).Infof("invalid/outdated kubeconfig found in %s/%s. Regenerating it...", se.Namespace, se.Name)
 				}
 
 				se.Data[KubeconfigSecretKey], err = BuildNewKubeconfigAsByte(ca, apiserverURL, commonName, organizations, data.Cluster().Name)
@@ -108,7 +139,7 @@ func BuildNewKubeconfigAsByte(ca *triple.KeyPair, server, commonName string, org
 }
 
 func buildNewKubeconfig(ca *triple.KeyPair, server, commonName string, organizations []string, clusterName string) (*clientcmdapi.Config, error) {
-	baseKubconfig := getBaseKubeconfig(ca.Cert, server, clusterName)
+	baseKubconfig := GetBaseKubeconfig(ca.Cert, server, clusterName)
 
 	kp, err := triple.NewClientKeyPair(ca, commonName, organizations)
 	if err != nil {
@@ -117,21 +148,21 @@ func buildNewKubeconfig(ca *triple.KeyPair, server, commonName string, organizat
 
 	baseKubconfig.AuthInfos = map[string]*clientcmdapi.AuthInfo{
 		KubeconfigDefaultContextKey: {
-			ClientCertificateData: certutil.EncodeCertPEM(kp.Cert),
-			ClientKeyData:         certutil.EncodePrivateKeyPEM(kp.Key),
+			ClientCertificateData: triple.EncodeCertPEM(kp.Cert),
+			ClientKeyData:         triple.EncodePrivateKeyPEM(kp.Key),
 		},
 	}
 
 	return baseKubconfig, nil
 }
 
-func getBaseKubeconfig(caCert *x509.Certificate, server, clusterName string) *clientcmdapi.Config {
+func GetBaseKubeconfig(caCert *x509.Certificate, server, clusterName string) *clientcmdapi.Config {
 	return &clientcmdapi.Config{
 		Clusters: map[string]*clientcmdapi.Cluster{
 			// We use the actual cluster name here. It is later used in encodeKubeconfig()
 			// to set the filename of the kubeconfig downloaded from API to `kubeconfig-clusterName`.
 			clusterName: {
-				CertificateAuthorityData: certutil.EncodeCertPEM(caCert),
+				CertificateAuthorityData: triple.EncodeCertPEM(caCert),
 				Server:                   server,
 			},
 		},
@@ -155,7 +186,7 @@ func IsValidKubeconfig(kubeconfigBytes []byte, caCert *x509.Certificate, server,
 		return false, err
 	}
 
-	baseKubeconfig := getBaseKubeconfig(caCert, server, clusterName)
+	baseKubeconfig := GetBaseKubeconfig(caCert, server, clusterName)
 
 	authInfo := existingKubeconfig.AuthInfos[KubeconfigDefaultContextKey]
 	if authInfo == nil {

@@ -8,14 +8,18 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 )
 
 var tokenValidator = regexp.MustCompile(`[bcdfghjklmnpqrstvwxz2456789]{6}\.[bcdfghjklmnpqrstvwxz2456789]{16}`)
 
-// HasFinalizer tells if a object has the given finalizer
-func HasFinalizer(o metav1.Object, name string) bool {
-	return sets.NewString(o.GetFinalizers()...).Has(name)
+// HasFinalizer tells if a object has all the given finalizers
+func HasFinalizer(o metav1.Object, names ...string) bool {
+	return sets.NewString(o.GetFinalizers()...).HasAll(names...)
+}
+
+func HasAnyFinalizer(o metav1.Object, names ...string) bool {
+	return sets.NewString(o.GetFinalizers()...).HasAny(names...)
 }
 
 // HasOnlyFinalizer tells if an object has only the given finalizer
@@ -32,9 +36,9 @@ func RemoveFinalizer(obj metav1.Object, toRemove string) {
 }
 
 // AddFinalizer will add the given finalizer to the object. It uses a StringSet to avoid duplicates
-func AddFinalizer(obj metav1.Object, finalizer string) {
+func AddFinalizer(obj metav1.Object, finalizers ...string) {
 	set := sets.NewString(obj.GetFinalizers()...)
-	set.Insert(finalizer)
+	set.Insert(finalizers...)
 	obj.SetFinalizers(set.List())
 }
 

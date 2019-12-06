@@ -16,16 +16,17 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	clustercontroller "github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
-	monitoringcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
+	kubernetescontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/kubernetes"
+	monitoringcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/monitoring"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/machine"
+	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -35,6 +36,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -83,7 +85,7 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 }
 
 func TestLoadFiles(t *testing.T) {
-	versions := []*version.MasterVersion{
+	versions := []*version.Version{
 		{
 			Version: semver.MustParse("1.10.0"),
 		},
@@ -201,6 +203,9 @@ func TestLoadFiles(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "de-test-01",
 						UID:  types.UID("1234567890"),
+						Labels: map[string]string{
+							"my-label": "my-value",
+						},
 					},
 					Spec: kubermaticv1.ClusterSpec{
 						ExposeStrategy: corev1.ServiceTypeLoadBalancer,
@@ -208,12 +213,13 @@ func TestLoadFiles(t *testing.T) {
 						Version:        *ksemver.NewSemverOrDie(ver.Version.String()),
 						ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 							Services: kubermaticv1.NetworkRanges{
-								CIDRBlocks: []string{"10.10.10.0/24"},
+								CIDRBlocks: []string{"10.240.16.0/20"},
 							},
 							Pods: kubermaticv1.NetworkRanges{
 								CIDRBlocks: []string{"172.25.0.0/16"},
 							},
 							DNSDomain: "cluster.local",
+							ProxyMode: resources.IPVSProxyMode,
 						},
 						MachineNetworks: []kubermaticv1.MachineNetworkingConfig{
 							{
@@ -237,7 +243,14 @@ func TestLoadFiles(t *testing.T) {
 					},
 				}
 
-				dynamicClient := ctrlruntimefakeclient.NewFakeClient(
+				dynamicClient := ctrlruntimefakeclient.NewFakeClientWithScheme(scheme.Scheme,
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            metricsserver.ServingCertSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
 					&corev1.Secret{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
@@ -392,6 +405,20 @@ func TestLoadFiles(t *testing.T) {
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.KubernetesDashboardKubeconfigSecretName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
+					&corev1.Secret{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.UserSSHKeys,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
 					&corev1.ConfigMap{
 						ObjectMeta: metav1.ObjectMeta{
 							ResourceVersion: "123456",
@@ -521,7 +548,14 @@ func TestLoadFiles(t *testing.T) {
 					dynamicClient,
 					cluster,
 					dc,
-					"testdc",
+					&kubermaticv1.Seed{
+						ObjectMeta: metav1.ObjectMeta{Name: "testdc"},
+						Spec: kubermaticv1.SeedSpec{
+							ProxySettings: &kubermaticv1.ProxySettings{
+								HTTPProxy: kubermaticv1.NewProxyValue("http://my-corp"),
+							},
+						},
+					},
 					"",
 					"",
 					"192.0.2.0/24",
@@ -536,10 +570,11 @@ func TestLoadFiles(t *testing.T) {
 					"kubermaticIssuer",
 					true,
 					"quay.io/kubermatic/api",
-					"quay.io/kubermatic/kubeletdnat-controller")
+					"quay.io/kubermatic/kubeletdnat-controller",
+					false)
 
 				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter
-				deploymentCreators = append(deploymentCreators, clustercontroller.GetDeploymentCreators(data, true)...)
+				deploymentCreators = append(deploymentCreators, kubernetescontroller.GetDeploymentCreators(data, true)...)
 				deploymentCreators = append(deploymentCreators, monitoringcontroller.GetDeploymentCreators(data)...)
 				for _, create := range deploymentCreators {
 					_, creator := create()
@@ -549,18 +584,13 @@ func TestLoadFiles(t *testing.T) {
 					}
 					fixturePath := fmt.Sprintf("deployment-%s-%s-%s", prov, ver.Version.String(), res.Name)
 
-					// Verify that every Deployment has the ImagePullSecret set
-					if len(res.Spec.Template.Spec.ImagePullSecrets) == 0 {
-						t.Errorf("Deployment %s is missing the ImagePullSecret on the PodTemplate", res.Name)
-					}
-
 					verifyContainerResources(fmt.Sprintf("Deployment/%s", res.Name), res.Spec.Template, t)
 
 					checkTestResult(t, fixturePath, res)
 				}
 
 				var namedConfigMapCreatorGetters []reconciling.NamedConfigMapCreatorGetter
-				namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, clustercontroller.GetConfigMapCreators(data)...)
+				namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, kubernetescontroller.GetConfigMapCreators(data)...)
 				namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, monitoringcontroller.GetConfigMapCreators(data)...)
 				for _, namedGetter := range namedConfigMapCreatorGetters {
 					name, create := namedGetter()
@@ -573,7 +603,7 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				serviceCreators := clustercontroller.GetServiceCreators(data)
+				serviceCreators := kubernetescontroller.GetServiceCreators(data)
 				for _, creatorGetter := range serviceCreators {
 					name, create := creatorGetter()
 					res, err := create(&corev1.Service{})
@@ -586,7 +616,7 @@ func TestLoadFiles(t *testing.T) {
 				}
 
 				var statefulSetCreators []reconciling.NamedStatefulSetCreatorGetter
-				statefulSetCreators = append(statefulSetCreators, clustercontroller.GetStatefulSetCreators(data, false)...)
+				statefulSetCreators = append(statefulSetCreators, kubernetescontroller.GetStatefulSetCreators(data, false)...)
 				statefulSetCreators = append(statefulSetCreators, monitoringcontroller.GetStatefulSetCreators(data)...)
 				for _, creatorGetter := range statefulSetCreators {
 					_, create := creatorGetter()
@@ -610,7 +640,7 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				for _, creatorGetter := range clustercontroller.GetPodDisruptionBudgetCreators(data) {
+				for _, creatorGetter := range kubernetescontroller.GetPodDisruptionBudgetCreators(data) {
 					name, create := creatorGetter()
 					res, err := create(&policyv1beta1.PodDisruptionBudget{})
 					if err != nil {
@@ -625,7 +655,7 @@ func TestLoadFiles(t *testing.T) {
 					checkTestResult(t, fixturePath, res)
 				}
 
-				for _, creatorGetter := range clustercontroller.GetCronJobCreators(data) {
+				for _, creatorGetter := range kubernetescontroller.GetCronJobCreators(data) {
 					_, create := creatorGetter()
 					res, err := create(&batchv1beta1.CronJob{})
 					if err != nil {
@@ -1143,7 +1173,7 @@ func TestExecute(t *testing.T) {
 
 			credentialsData := testhelper.CredentialsData{
 				KubermaticCluster: test.data.Cluster,
-				Client:            ctrlruntimefakeclient.NewFakeClient(),
+				Client:            ctrlruntimefakeclient.NewFakeClientWithScheme(scheme.Scheme),
 			}
 			machine, err := machine.Machine(test.data.Cluster, test.data.Node, test.data.Datacenter, test.data.Keys, credentialsData)
 			if err != nil {

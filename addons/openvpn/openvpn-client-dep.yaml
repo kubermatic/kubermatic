@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -73,6 +73,7 @@ spec:
           # access node list via kubectl and generate iptables rules
           # for DNAT from it.
           while sleep 5; do
+            echo 1 > /proc/sys/net/ipv4/ip_forward
             iptables -t nat -F host_dnat_inactive
             # query nodes and create DNAT rules in inactive chain
             kubectl get nodes -o json \
@@ -92,8 +93,9 @@ spec:
           echo "Terminating."
 
         securityContext:
-          capabilities:
-            add: ["NET_ADMIN"]
+          # Needed to be able to enable ip_forward, there is no capability that mounts
+          # /proc with RW
+          privileged: true
         resources:
           requests:
             cpu: 25m

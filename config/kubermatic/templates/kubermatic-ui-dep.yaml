@@ -1,14 +1,19 @@
 {{ if .Values.kubermatic.isMaster }}
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kubermatic-ui-v2
 spec:
   replicas: {{ .Values.kubermatic.ui.replicas }}
+  selector:
+    matchLabels:
+      role: kubermatic-ui
+      version: v1
   template:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/ui-config-configmap.yaml") . | sha256sum }}
+        fluentbit.io/parser: json_iso
       labels:
         role: kubermatic-ui
         version: v1
@@ -26,6 +31,9 @@ spec:
           readOnly: true
         resources:
 {{ toYaml .Values.kubermatic.ui.resources | indent 10 }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
       imagePullSecrets:
       - name: dockercfg
       volumes:

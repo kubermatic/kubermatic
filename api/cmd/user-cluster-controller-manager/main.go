@@ -2,123 +2,128 @@ package main
 
 import (
 	"context"
-	"crypto/ecdsa"
+	"encoding/json"
 	"errors"
 	"flag"
-	"io/ioutil"
+	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
+	"github.com/go-logr/zapr"
 	"github.com/heptiolabs/healthcheck"
 	"github.com/oklog/run"
+	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/container-linux"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/ipam"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/nodecsrapprover"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac-user-cluster"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/usercluster"
-	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/usercluster/resources/machine-controller"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	clusterrolelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
+	containerlinux "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/container-linux"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/ipam"
+	nodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/nodecsrapprover"
+	openshiftmasternodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-master-node-labeler"
+	openshiftseedsyncer "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-seed-syncer"
+	rbacusercluster "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/rbac"
+	usercluster "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources"
+	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
+	rolecloner "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/role-cloner"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/api/pkg/pprof"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
-	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
 type controllerRunOptions struct {
-	metricsListenAddr     string
-	healthListenAddr      string
-	openshift             bool
-	version               string
-	networks              networkFlags
-	namespace             string
-	caPath                string
-	clusterURL            string
-	openvpnServerPort     int
-	openvpnCACertFilePath string
-	openvpnCAKeyFilePath  string
-	overwriteRegistry     string
+	metricsListenAddr             string
+	healthListenAddr              string
+	openshift                     bool
+	version                       string
+	networks                      networkFlags
+	namespace                     string
+	clusterURL                    string
+	openvpnServerPort             int
+	overwriteRegistry             string
+	cloudProviderName             string
+	cloudCredentialSecretTemplate string
+	nodelabels                    string
+	seedKubeconfig                string
+	openshiftConsoleCallbackURI   string
+	log                           kubermaticlog.Options
 }
 
 func main() {
 	runOp := controllerRunOptions{}
+	klog.InitFlags(nil)
+	pprofOpts := &pprof.Opts{}
+	pprofOpts.AddFlags(flag.CommandLine)
 	flag.StringVar(&runOp.metricsListenAddr, "metrics-listen-address", "127.0.0.1:8085", "The address on which the internal HTTP /metrics server is running on")
 	flag.StringVar(&runOp.healthListenAddr, "health-listen-address", "127.0.0.1:8086", "The address on which the internal HTTP /ready & /live server is running on")
 	flag.BoolVar(&runOp.openshift, "openshift", false, "Whether the managed cluster is an openshift cluster")
 	flag.StringVar(&runOp.version, "version", "", "The version of the cluster")
 	flag.Var(&runOp.networks, "ipam-controller-network", "The networks from which the ipam controller should allocate IPs for machines (e.g.: .--ipam-controller-network=10.0.0.0/16,10.0.0.1,8.8.8.8 --ipam-controller-network=192.168.5.0/24,192.168.5.1,1.1.1.1,8.8.4.4)")
 	flag.StringVar(&runOp.namespace, "namespace", "", "Namespace in which the cluster is running in")
-	flag.StringVar(&runOp.caPath, "ca-cert", "ca.crt", "Path to the CA cert file")
 	flag.StringVar(&runOp.clusterURL, "cluster-url", "", "Cluster URL")
 	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
-	flag.StringVar(&runOp.openvpnCACertFilePath, "openvpn-ca-cert-file", "", "Path to the OpenVPN CA cert file")
-	flag.StringVar(&runOp.openvpnCAKeyFilePath, "openvpn-ca-key-file", "", "Path to the OpenVPN CA key file")
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
+	flag.BoolVar(&runOp.log.Debug, "log-debug", false, "Enables debug logging")
+	flag.StringVar(&runOp.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
+	flag.StringVar(&runOp.cloudProviderName, "cloud-provider-name", "", "Name of the cloudprovider")
+	flag.StringVar(&runOp.cloudCredentialSecretTemplate, "cloud-credential-secret-template", "", "A serialized Kubernetes secret whose Name and Data fields will be used to create a secret for the openshift cloud credentials operator.")
+	flag.StringVar(&runOp.nodelabels, "node-labels", "", "A json-encoded map of node labels. If set, those labels will be enforced on all nodes.")
+	flag.StringVar(&runOp.seedKubeconfig, "seed-kubeconfig", "", "Path to the seed kubeconfig. In-Cluster config will be used if unset")
+	flag.StringVar(&runOp.openshiftConsoleCallbackURI, "openshift-console-callback-uri", "", "The callback uri for the openshift console")
+
 	flag.Parse()
 
-	if runOp.namespace == "" {
-		glog.Fatal("-namespace must be set")
+	if err := runOp.log.Validate(); err != nil {
+		fmt.Printf("error occurred while validating zap logger options: %v\n", err)
+		os.Exit(1)
 	}
-	if runOp.caPath == "" {
-		glog.Fatal("-ca-cert must be set")
+
+	rawLog := kubermaticlog.New(runOp.log.Debug, kubermaticlog.Format(runOp.log.Format))
+	log := rawLog.Sugar()
+
+	if runOp.namespace == "" {
+		log.Fatal("-namespace must be set")
 	}
 	if runOp.clusterURL == "" {
-		glog.Fatal("-cluster-url must be set")
+		log.Fatal("-cluster-url must be set")
 	}
 	clusterURL, err := url.Parse(runOp.clusterURL)
 	if err != nil {
-		glog.Fatal(err)
+		log.Fatalw("Failed parsing clusterURL", zap.Error(err))
 	}
 	if runOp.openvpnServerPort == 0 {
-		glog.Fatal("-openvpn-server-port must be set")
+		log.Fatal("-openvpn-server-port must be set")
 	}
 
-	caBytes, err := ioutil.ReadFile(runOp.caPath)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	certs, err := certutil.ParseCertsPEM(caBytes)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	if len(certs) != 1 {
-		glog.Fatalf("did not find exactly one but %d certificates in the given CA", len(certs))
+	var cloudCredentialSecretTemplate *corev1.Secret
+	if runOp.cloudCredentialSecretTemplate != "" {
+		cloudCredentialSecretTemplate = &corev1.Secret{}
+		if err := json.Unmarshal([]byte(runOp.cloudCredentialSecretTemplate), cloudCredentialSecretTemplate); err != nil {
+			log.Fatalw("Failed to unmarshal value of --cloud-credential-secret-template flag into secret", zap.Error(err))
+		}
 	}
 
-	openVPNCACertBytes, err := ioutil.ReadFile(runOp.openvpnCACertFilePath)
-	if err != nil {
-		glog.Fatalf("failed to read openvpn-ca-cert-file: %v", err)
+	nodeLabels := map[string]string{}
+	if runOp.nodelabels != "" {
+		if err := json.Unmarshal([]byte(runOp.nodelabels), &nodeLabels); err != nil {
+			log.Fatalw("Failed to unmarshal value of --node-labels arg", zap.Error(err))
+		}
 	}
-	openVPNCACerts, err := certutil.ParseCertsPEM(openVPNCACertBytes)
-	if err != nil {
-		glog.Fatalf("failed to parse openVPN CA file: %v", err)
-	}
-	if certsLen := len(openVPNCACerts); certsLen != 1 {
-		glog.Fatalf("did not find exactly one but %v certificates in the openVPN CA file", certsLen)
-	}
-	openVPNCAKeyBytes, err := ioutil.ReadFile(runOp.openvpnCAKeyFilePath)
-	if err != nil {
-		glog.Fatalf("failed to read openvpn-ca-key-file: %v", err)
-	}
-	openVPNCAKey, err := certutil.ParsePrivateKeyPEM(openVPNCAKeyBytes)
-	if err != nil {
-		glog.Fatalf("failed to parse openVPN CA key file: %v", err)
-	}
-	openVPNECSDAKey, isECDSAKey := openVPNCAKey.(*ecdsa.PrivateKey)
-	if !isECDSAKey {
-		glog.Fatal("the openVPN private key is not an ECDSA key")
-	}
-	openVPNCACert := &resources.ECDSAKeyPair{Cert: openVPNCACerts[0], Key: openVPNECSDAKey}
 
 	var g run.Group
 
@@ -126,7 +131,7 @@ func main() {
 
 	cfg, err := config.GetConfig()
 	if err != nil {
-		glog.Fatal(err)
+		log.Fatalw("Failed getting user cluster controller config", zap.Error(err))
 	}
 	stopCh := signals.SetupSignalHandler()
 	ctx, ctxDone := context.WithCancel(context.Background())
@@ -134,8 +139,7 @@ func main() {
 
 	// Create Context
 	done := ctx.Done()
-
-	log.SetLogger(log.ZapLogger(false))
+	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
 	mgr, err := manager.New(cfg, manager.Options{
 		LeaderElection:          true,
@@ -144,34 +148,65 @@ func main() {
 		MetricsBindAddress:      runOp.metricsListenAddr,
 	})
 	if err != nil {
-		glog.Fatal(err)
+		log.Fatalw("Failed creating user cluster controller", zap.Error(err))
+	}
+	if err := mgr.Add(pprofOpts); err != nil {
+		log.Fatalw("Failed to add pprof handler", zap.Error(err))
 	}
 
-	glog.Info("registering components")
-	if err := apiextensionv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
-		glog.Fatal(err)
+	var seedConfig *rest.Config
+	if runOp.seedKubeconfig != "" {
+		seedConfig, err = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+			&clientcmd.ClientConfigLoadingRules{ExplicitPath: runOp.seedKubeconfig},
+			&clientcmd.ConfigOverrides{}).ClientConfig()
+	} else {
+		seedConfig, err = rest.InClusterConfig()
+	}
+	if err != nil {
+		log.Fatalw("Failed to get seed kubeconfig", zap.Error(err))
+	}
+	seedMgr, err := manager.New(seedConfig, manager.Options{
+		LeaderElection:     false,
+		MetricsBindAddress: "0",
+		Namespace:          runOp.namespace,
+	})
+	if err != nil {
+		log.Fatalw("Failed to construct seed mgr", zap.Error(err))
+	}
+	if err := mgr.Add(seedMgr); err != nil {
+		log.Fatalw("Failed to add seed mgr to main mgr", zap.Error(err))
+	}
+
+	log.Info("registering components")
+	if err := apiextensionsv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiextensionsv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
 	if err := apiregistrationv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
-		glog.Fatal(err)
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiregistrationv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	// Setup all Controllers
-	glog.Info("registering controllers")
+	log.Info("registering controllers")
 	if err := usercluster.Add(mgr,
+		seedMgr,
 		runOp.openshift,
 		runOp.version,
 		runOp.namespace,
-		certs[0],
+		runOp.cloudProviderName,
 		clusterURL,
 		runOp.openvpnServerPort,
 		healthHandler.AddReadinessCheck,
-		openVPNCACert); err != nil {
-		glog.Fatalf("failed to register user cluster controller: %v", err)
+		cloudCredentialSecretTemplate,
+		runOp.openshiftConsoleCallbackURI,
+		log,
+	); err != nil {
+		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
 	}
+	log.Info("Registered usercluster controller")
 
 	if len(runOp.networks) > 0 {
 		if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-			glog.Fatalf("failed to add clusterv1alpha1 scheme: %v", err)
+			log.Fatalw("Failed to add clusterv1alpha1 scheme", zap.Error(err))
 		}
 		// We need to add the machine CRDs once here, because otherwise the IPAM
 		// controller keeps the manager from starting as it can not establish a
@@ -182,29 +217,54 @@ func main() {
 		if err := reconciling.ReconcileCustomResourceDefinitions(context.Background(), creators, "", mgr.GetClient()); err != nil {
 			// The mgr.Client is uninitianlized here and hence always returns a 404, regardless of the object existing or not
 			if !strings.Contains(err.Error(), `customresourcedefinitions.apiextensions.k8s.io "machines.cluster.k8s.io" already exists`) {
-				glog.Fatalf("failed to initially create the Machine CR: %v", err)
+				log.Fatalw("Failed to initially create the Machine CR", zap.Error(err))
 			}
 		}
-		if err := ipam.Add(mgr, runOp.networks); err != nil {
-			glog.Fatalf("failed to add IPAM controller to mgr: %v", err)
+		if err := ipam.Add(mgr, runOp.networks, log); err != nil {
+			log.Fatalw("Failed to add IPAM controller to mgr", zap.Error(err))
 		}
-		glog.Infof("Added IPAM controller to mgr")
+		log.Infof("Added IPAM controller to mgr")
 	}
 
 	if err := rbacusercluster.Add(mgr, healthHandler.AddReadinessCheck); err != nil {
-		glog.Fatalf("failed to add user RBAC controller to mgr: %v", err)
+		log.Fatalw("Failed to add user RBAC controller to mgr", zap.Error(err))
 	}
+	log.Info("Registered user RBAC controller")
 
 	if runOp.openshift {
-		if err := nodecsrapprover.Add(mgr, 4, cfg); err != nil {
-			glog.Fatalf("failed to add nodecsrapprover controller: %v", err)
+		if err := nodecsrapprover.Add(mgr, 4, cfg, log); err != nil {
+			log.Fatalw("Failed to add nodecsrapprover controller", zap.Error(err))
 		}
-		glog.Infof("Registered nodecsrapprover controller")
+		if err := openshiftmasternodelabeler.Add(context.Background(), kubermaticlog.Logger, mgr); err != nil {
+			log.Fatalw("Failed to add openshiftmasternodelabeler controller", zap.Error(err))
+		}
+		log.Info("Registered nodecsrapprover controller")
+
+		if err := openshiftseedsyncer.Add(log, mgr, seedMgr, runOp.clusterURL, runOp.namespace); err != nil {
+			log.Fatalw("Failed to register the openshiftseedsyncer", zap.Error(err))
+		}
+		log.Info("Registered openshiftseedsyncer controller")
 	}
 
 	if err := containerlinux.Add(mgr, runOp.overwriteRegistry); err != nil {
-		glog.Fatalf("failed to register the ContainerLinux controller: %v", err)
+		log.Fatalw("Failed to register the ContainerLinux controller", zap.Error(err))
 	}
+	log.Info("Registered ContainerLinux controller")
+
+	if err := nodelabeler.Add(ctx, log, mgr, nodeLabels); err != nil {
+		log.Fatalw("Failed to register nodelabel controller", zap.Error(err))
+	}
+	log.Info("Registered nodelabel controller")
+
+	if err := clusterrolelabeler.Add(ctx, log, mgr); err != nil {
+		log.Fatalw("Failed to register clusterrolelabeler controller", zap.Error(err))
+	}
+	log.Info("Registered clusterrolelabeler controller")
+
+	if err := rolecloner.Add(ctx, log, mgr); err != nil {
+		log.Fatalw("Failed to register rolecloner controller", zap.Error(err))
+	}
+	log.Info("Registered rolecloner controller")
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
@@ -226,27 +286,25 @@ func main() {
 			// Start the Cmd
 			return mgr.Start(done)
 		}, func(err error) {
-			glog.Infof("stopping user cluster controller manager, err = %v", err)
+			log.Infow("stopping user cluster controller manager", zap.Error(err))
 		})
 	}
 
 	// This group starts the readiness & liveness http server
 	{
 		h := &http.Server{Addr: runOp.healthListenAddr, Handler: healthHandler}
-		g.Add(func() error {
-			return h.ListenAndServe()
-		}, func(err error) {
+		g.Add(h.ListenAndServe, func(err error) {
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 			defer cancel()
 
 			if err := h.Shutdown(shutdownCtx); err != nil {
-				glog.Errorf("Healthcheck handler terminated with an error: %v", err)
+				log.Errorw("Healthcheck handler terminated with an error", zap.Error(err))
 			}
 		})
 	}
 
 	if err := g.Run(); err != nil {
-		glog.Fatal(err)
+		log.Fatalw("Failed running user cluster controller", zap.Error(err))
 	}
 
 }

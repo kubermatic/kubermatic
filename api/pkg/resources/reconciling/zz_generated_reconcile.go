@@ -9,6 +9,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -43,6 +45,9 @@ func ReconcileNamespaces(ctx context.Context, namedGetters []NamedNamespaceCreat
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := NamespaceObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -77,6 +82,9 @@ func ReconcileServices(ctx context.Context, namedGetters []NamedServiceCreatorGe
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := ServiceObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -111,6 +119,9 @@ func ReconcileSecrets(ctx context.Context, namedGetters []NamedSecretCreatorGett
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := SecretObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -145,6 +156,9 @@ func ReconcileConfigMaps(ctx context.Context, namedGetters []NamedConfigMapCreat
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := ConfigMapObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -179,6 +193,9 @@ func ReconcileServiceAccounts(ctx context.Context, namedGetters []NamedServiceAc
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := ServiceAccountObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -214,6 +231,9 @@ func ReconcileStatefulSets(ctx context.Context, namedGetters []NamedStatefulSetC
 		name, create := get()
 		create = DefaultStatefulSet(create)
 		createObject := StatefulSetObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -249,6 +269,9 @@ func ReconcileDeployments(ctx context.Context, namedGetters []NamedDeploymentCre
 		name, create := get()
 		create = DefaultDeployment(create)
 		createObject := DeploymentObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -284,6 +307,9 @@ func ReconcileDaemonSets(ctx context.Context, namedGetters []NamedDaemonSetCreat
 		name, create := get()
 		create = DefaultDaemonSet(create)
 		createObject := DaemonSetObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -318,6 +344,9 @@ func ReconcilePodDisruptionBudgets(ctx context.Context, namedGetters []NamedPodD
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := PodDisruptionBudgetObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -352,6 +381,9 @@ func ReconcileVerticalPodAutoscalers(ctx context.Context, namedGetters []NamedVe
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := VerticalPodAutoscalerObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -386,6 +418,9 @@ func ReconcileClusterRoleBindings(ctx context.Context, namedGetters []NamedClust
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := ClusterRoleBindingObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -420,6 +455,9 @@ func ReconcileClusterRoles(ctx context.Context, namedGetters []NamedClusterRoleC
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := ClusterRoleObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -454,6 +492,9 @@ func ReconcileRoles(ctx context.Context, namedGetters []NamedRoleCreatorGetter, 
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := RoleObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -488,6 +529,9 @@ func ReconcileRoleBindings(ctx context.Context, namedGetters []NamedRoleBindingC
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := RoleBindingObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -522,6 +566,9 @@ func ReconcileCustomResourceDefinitions(ctx context.Context, namedGetters []Name
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := CustomResourceDefinitionObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -557,6 +604,9 @@ func ReconcileCronJobs(ctx context.Context, namedGetters []NamedCronJobCreatorGe
 		name, create := get()
 		create = DefaultCronJob(create)
 		createObject := CronJobObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -591,12 +641,52 @@ func ReconcileMutatingWebhookConfigurations(ctx context.Context, namedGetters []
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := MutatingWebhookConfigurationObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &admissionregistrationv1beta1.MutatingWebhookConfiguration{}, false); err != nil {
 			return fmt.Errorf("failed to ensure MutatingWebhookConfiguration %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// ValidatingWebhookConfigurationCreator defines an interface to create/update ValidatingWebhookConfigurations
+type ValidatingWebhookConfigurationCreator = func(existing *admissionregistrationv1beta1.ValidatingWebhookConfiguration) (*admissionregistrationv1beta1.ValidatingWebhookConfiguration, error)
+
+// NamedValidatingWebhookConfigurationCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedValidatingWebhookConfigurationCreatorGetter = func() (name string, create ValidatingWebhookConfigurationCreator)
+
+// ValidatingWebhookConfigurationObjectWrapper adds a wrapper so the ValidatingWebhookConfigurationCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func ValidatingWebhookConfigurationObjectWrapper(create ValidatingWebhookConfigurationCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*admissionregistrationv1beta1.ValidatingWebhookConfiguration))
+		}
+		return create(&admissionregistrationv1beta1.ValidatingWebhookConfiguration{})
+	}
+}
+
+// ReconcileValidatingWebhookConfigurations will create and update the ValidatingWebhookConfigurations coming from the passed ValidatingWebhookConfigurationCreator slice
+func ReconcileValidatingWebhookConfigurations(ctx context.Context, namedGetters []NamedValidatingWebhookConfigurationCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := ValidatingWebhookConfigurationObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ValidatingWebhookConfiguration %s/%s: %v", namespace, name, err)
 		}
 	}
 
@@ -625,6 +715,9 @@ func ReconcileAPIServices(ctx context.Context, namedGetters []NamedAPIServiceCre
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := APIServiceObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
@@ -659,12 +752,89 @@ func ReconcileIngresses(ctx context.Context, namedGetters []NamedIngressCreatorG
 	for _, get := range namedGetters {
 		name, create := get()
 		createObject := IngressObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &extensionsv1beta1.Ingress{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Ingress %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// SeedCreator defines an interface to create/update Seeds
+type SeedCreator = func(existing *kubermaticv1.Seed) (*kubermaticv1.Seed, error)
+
+// NamedSeedCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedSeedCreatorGetter = func() (name string, create SeedCreator)
+
+// SeedObjectWrapper adds a wrapper so the SeedCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func SeedObjectWrapper(create SeedCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.Seed))
+		}
+		return create(&kubermaticv1.Seed{})
+	}
+}
+
+// ReconcileSeeds will create and update the Seeds coming from the passed SeedCreator slice
+func ReconcileSeeds(ctx context.Context, namedGetters []NamedSeedCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := SeedObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.Seed{}, false); err != nil {
+			return fmt.Errorf("failed to ensure Seed %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// CertificateCreator defines an interface to create/update Certificates
+type CertificateCreator = func(existing *certmanagerv1alpha2.Certificate) (*certmanagerv1alpha2.Certificate, error)
+
+// NamedCertificateCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedCertificateCreatorGetter = func() (name string, create CertificateCreator)
+
+// CertificateObjectWrapper adds a wrapper so the CertificateCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func CertificateObjectWrapper(create CertificateCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*certmanagerv1alpha2.Certificate))
+		}
+		return create(&certmanagerv1alpha2.Certificate{})
+	}
+}
+
+// ReconcileCertificates will create and update the Certificates coming from the passed CertificateCreator slice
+func ReconcileCertificates(ctx context.Context, namedGetters []NamedCertificateCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := CertificateObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &certmanagerv1alpha2.Certificate{}, false); err != nil {
+			return fmt.Errorf("failed to ensure Certificate %s/%s: %v", namespace, name, err)
 		}
 	}
 

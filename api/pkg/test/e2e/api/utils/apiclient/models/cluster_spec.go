@@ -24,11 +24,17 @@ type ClusterSpec struct {
 	// If active the PodSecurityPolicy admission plugin is configured at the apiserver
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 
+	// audit logging
+	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
+
 	// cloud
 	Cloud *CloudSpec `json:"cloud,omitempty"`
 
 	// oidc
 	Oidc *OIDCSettings `json:"oidc,omitempty"`
+
+	// openshift
+	Openshift *Openshift `json:"openshift,omitempty"`
 
 	// version
 	Version Semver `json:"version,omitempty"`
@@ -42,11 +48,19 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateAuditLogging(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateCloud(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if err := m.validateOidc(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOpenshift(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -81,6 +95,24 @@ func (m *ClusterSpec) validateMachineNetworks(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *ClusterSpec) validateAuditLogging(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.AuditLogging) { // not required
+		return nil
+	}
+
+	if m.AuditLogging != nil {
+		if err := m.AuditLogging.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("auditLogging")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *ClusterSpec) validateCloud(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Cloud) { // not required
@@ -109,6 +141,24 @@ func (m *ClusterSpec) validateOidc(formats strfmt.Registry) error {
 		if err := m.Oidc.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("oidc")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) validateOpenshift(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Openshift) { // not required
+		return nil
+	}
+
+	if m.Openshift != nil {
+		if err := m.Openshift.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("openshift")
 			}
 			return err
 		}

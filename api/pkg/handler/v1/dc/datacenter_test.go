@@ -14,7 +14,7 @@ import (
 func TestDatacentersEndpoint(t *testing.T) {
 	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/dc", nil)
-	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
+	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName)
 
 	res := httptest.NewRecorder()
 	ep, err := test.CreateTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
@@ -34,7 +34,7 @@ func TestDatacentersEndpoint(t *testing.T) {
 func TestDatacenterEndpointNotFound(t *testing.T) {
 	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/dc/not-existent", nil)
-	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
+	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName)
 
 	res := httptest.NewRecorder()
 	ep, err := test.CreateTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
@@ -51,7 +51,7 @@ func TestDatacenterEndpointNotFound(t *testing.T) {
 func TestDatacenterEndpointPrivate(t *testing.T) {
 	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/dc/eu-central-1", nil)
-	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
+	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName)
 
 	res := httptest.NewRecorder()
 	ep, err := test.CreateTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
@@ -65,10 +65,53 @@ func TestDatacenterEndpointPrivate(t *testing.T) {
 	}
 }
 
+func TestDatacenterEndpointFilteredByEmail(t *testing.T) {
+	t.Parallel()
+	req := httptest.NewRequest("GET", "/api/v1/dc/restricted-fake-dc", nil)
+	apiUserForbidden := test.GetUser(test.UserEmail, test.UserID, test.UserName)
+	apiUserPermitted := test.GetUser(test.UserEmail2, test.UserID2, test.UserName2)
+
+	{
+		res := httptest.NewRecorder()
+		ep, err := test.CreateTestEndpoint(apiUserForbidden, []runtime.Object{},
+			[]runtime.Object{
+				test.APIUserToKubermaticUser(apiUserForbidden),
+				test.APIUserToKubermaticUser(apiUserPermitted),
+			}, nil, nil, hack.NewTestRouting)
+		if err != nil {
+			t.Fatalf("failed to create test endpoint due to %v", err)
+		}
+		ep.ServeHTTP(res, req)
+
+		if res.Code != http.StatusNotFound {
+			t.Fatalf("Expected route to return code 404, got %d: %s", res.Code, res.Body.String())
+		}
+	}
+
+	{
+		res := httptest.NewRecorder()
+		ep, err := test.CreateTestEndpoint(apiUserPermitted, []runtime.Object{},
+			[]runtime.Object{
+				test.APIUserToKubermaticUser(apiUserForbidden),
+				test.APIUserToKubermaticUser(apiUserPermitted),
+			}, nil, nil, hack.NewTestRouting)
+		if err != nil {
+			t.Fatalf("failed to create test endpoint due to %v", err)
+		}
+		ep.ServeHTTP(res, req)
+
+		if res.Code != http.StatusOK {
+			t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
+		}
+
+		test.CompareWithResult(t, res, `{"metadata":{"name":"restricted-fake-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","requiredEmailDomain":"example.com"}}`)
+	}
+}
+
 func TestDatacenterEndpointAdmin(t *testing.T) {
 	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/dc/private-do1", nil)
-	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, true)
+	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName)
 
 	res := httptest.NewRecorder()
 	ep, err := test.CreateTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)
@@ -88,7 +131,7 @@ func TestDatacenterEndpointAdmin(t *testing.T) {
 func TestDatacenterEndpointFound(t *testing.T) {
 	t.Parallel()
 	req := httptest.NewRequest("GET", "/api/v1/dc/regular-do1", nil)
-	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName, false)
+	apiUser := test.GetUser(test.UserEmail, test.UserID, test.UserName)
 
 	res := httptest.NewRecorder()
 	ep, err := test.CreateTestEndpoint(apiUser, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(apiUser)}, nil, nil, hack.NewTestRouting)

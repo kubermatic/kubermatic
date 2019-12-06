@@ -8,12 +8,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
 	"github.com/kubermatic/kubermatic/api/pkg/validation"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/json"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 // Machine returns a machine object for the given spec
@@ -90,6 +90,12 @@ func Machine(c *kubermaticv1.Cluster, node *apiv1.Node, dc *kubermaticv1.Datacen
 	case node.Spec.Cloud.Digitalocean != nil:
 		config.CloudProvider = providerconfig.CloudProviderDigitalocean
 		cloudExt, err = getDigitaloceanProviderSpec(c, node.Spec, dc)
+		if err != nil {
+			return nil, err
+		}
+	case node.Spec.Cloud.Kubevirt != nil:
+		config.CloudProvider = providerconfig.CloudProviderKubeVirt
+		cloudExt, err = getKubevirtProviderSpec(node.Spec)
 		if err != nil {
 			return nil, err
 		}

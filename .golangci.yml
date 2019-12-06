@@ -6,6 +6,7 @@ run:
     - cloud
     - create
     - e2e
+    - integration
 
 linters:
   enable:
@@ -23,28 +24,27 @@ linters:
     - gosimple
     - unused
     - errcheck
+    - deadcode
+    - bodyclose
+    - gocritic
+    - staticcheck
   disable-all: true
 
+# NOTE: Do not use commas in the exclude patterns, or else the regex will be
+# split and you will be sad: https://github.com/golangci/golangci-lint/issues/665
 issues:
   exclude:
+  # gocyclo
   - cyclomatic complexity [0-9]+ of func `main` is high
-  - cyclomatic complexity 37 of func `migrateToProject` is high
-  - cyclomatic complexity 33 of func `ValidateCloudSpec` is high
-  - cyclomatic complexity 38 of func `migrateToProject` is high
   - cyclomatic complexity [0-9]+ of func `TestDatacenterMetasToSeedDatacenterSpecs` is high
-  - cyclomatic complexity 32 of func `\(\*Deletion\)\.cleanupInClusterResources` is high
-  - 'CleanUpCloudProvider` is high'
-  - string `get` has 6 occurrences, make it a constant
-  - struct of size 536 bytes could be of size 520 bytes
-  - "`selector` can be `expvar.Var`"
-  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.RoleBindingDataProvider`"
-  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.DeploymentDataProvider`"
-  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.SecretDataProvider`"
-  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.ConfigMapDataProvider`"
-  - "`data` can be `github.com/kubermatic/kubermatic/api/pkg/resources.ClusterRoleBindingDataProvider`"
-  - "`updateManager` can be `github.com/kubermatic/kubermatic/api/pkg/handler.UpdateManager`"
-  - "`store` can be `github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/cache.KeyGetter`"
-  - 'func `\(\*ClusterProvider\)\.withImpersonation` is unused'
-  - "`osData` can be `github.com/kubermatic/kubermatic/api/pkg/resources.RoleBindingDataProvider`"
-  - "cyclomatic complexity 31 of func `main` is high"
-  - "`currentMigrationRevision` is unused"
+  - cyclomatic complexity [0-9]+ of func `DefaultConfiguration` is high
+  - cyclomatic complexity [0-9]+ of func `\(\*Azure\)\.CleanUpCloudProvider` is high
+  - cyclomatic complexity [0-9]+ of func `\(\*Reconciler\)\.reconcile` is high
+  # goconst
+  - string `(get|openshift-kube-scheduler|us-central1|quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:86255c4efe6bbc141a0f41444f863bbd5cd832ffca21d2b737a4f9c225ed00ad)` has [0-9]+ occurrences. make it a constant
+  # gocritic
+  - singleCaseSwitch # in most cases this is the beginning of a lookup table and should be kept an obvious table
+  # govet
+  - struct field Spec repeats json tag "spec"
+  # Generated code
+  - func clusterDnsOperatorImage should be clusterDNSOperatorImage

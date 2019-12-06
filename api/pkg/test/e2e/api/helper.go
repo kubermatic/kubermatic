@@ -1,11 +1,14 @@
 package e2e
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,6 +16,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	oidc "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils"
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/admin"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/credentials"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/gcp"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
@@ -20,12 +24,12 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/tokens"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/users"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	"github.com/Masterminds/semver"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 const (
@@ -64,6 +68,26 @@ func GetMasterToken() (string, error) {
 	login, password := oidc.GetOIDCClient()
 
 	return oidc.GetOIDCAuthToken(hClient, requestToken, u, issuerURLPrefix, login, password)
+}
+
+func GetAdminMasterToken() (string, error) {
+	var hClient = &http.Client{
+		Timeout: time.Second * 10,
+	}
+
+	u, err := getIssuerURL()
+	if err != nil {
+		return "", err
+	}
+
+	issuerURLPrefix := getIssuerURLPrefix()
+
+	requestToken, err := oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, "http://localhost:8000")
+	if err != nil {
+		return "", err
+	}
+
+	return oidc.GetOIDCAuthToken(hClient, requestToken, u, issuerURLPrefix, "roxy2@loodse.com", "password")
 }
 
 func getHost() string {
@@ -130,13 +154,13 @@ func (r *APIRunner) CreateProject(name string) (*apiv1.Project, error) {
 			return nil, err
 		}
 
-		if apiProject.Status == "Active" {
+		if apiProject.Status == kubermaticv1.ProjectActive {
 			break
 		}
 		time.Sleep(time.Second)
 	}
 
-	if apiProject.Status != "Active" {
+	if apiProject.Status != kubermaticv1.ProjectActive {
 		return nil, fmt.Errorf("project is not redy after %d attempts", maxAttempts)
 	}
 
@@ -218,12 +242,12 @@ func (r *APIRunner) CreateServiceAccount(name, group, projectID string) (*apiv1.
 			return nil, err
 		}
 
-		if apiServiceAccount.Status == "Active" {
+		if apiServiceAccount.Status == apiv1.ServiceAccountActive {
 			break
 		}
 		time.Sleep(time.Second)
 	}
-	if apiServiceAccount.Status != "Active" {
+	if apiServiceAccount.Status != apiv1.ServiceAccountActive {
 		return nil, fmt.Errorf("service account is not redy after %d attempts", maxAttempts)
 	}
 
@@ -417,7 +441,7 @@ func (r *APIRunner) CreateDOCluster(projectID, dc, name, credential, version, lo
 	}
 
 	params := &project.CreateClusterParams{ProjectID: projectID, Dc: dc, Body: clusterSpec}
-	params.WithTimeout(timeout)
+	params.WithTimeout(timeout * 2)
 	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
 	if err != nil {
 		return nil, err
@@ -449,6 +473,32 @@ func (r *APIRunner) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster,
 		return nil, err
 	}
 	return convertCluster(cluster.Payload)
+}
+
+// GetClusterEvents returns the cluster events
+func (r *APIRunner) GetClusterEvents(projectID, dc, clusterID string) ([]*models.Event, error) {
+	params := &project.GetClusterEventsParams{ProjectID: projectID, Dc: dc, ClusterID: clusterID}
+	params.WithTimeout(timeout)
+
+	events, err := r.client.Project.GetClusterEvents(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	return events.Payload, nil
+}
+
+// PrintClusterEvents prints all cluster events using its test.Logf
+func (r *APIRunner) PrintClusterEvents(projectID, dc, clusterID string) error {
+	events, err := r.GetClusterEvents(projectID, dc, clusterID)
+	if err != nil {
+		return fmt.Errorf("failed to get cluster events: %v", err)
+	}
+	encodedEvents, err := json.Marshal(events)
+	if err != nil {
+		return fmt.Errorf("failed to serialize events: %v", err)
+	}
+	r.test.Logf("Cluster events:\n%s", string(encodedEvents))
+	return nil
 }
 
 // GetClusterHealthStatus gets the cluster status
@@ -623,6 +673,7 @@ func cleanUpProject(id string, attempts int) func(t *testing.T) {
 		if err := apiRunner.DeleteProject(id); err != nil {
 			t.Fatalf("can not delete project due error: %v", err)
 		}
+		t.Log("project deleting ...")
 		for attempt := 1; attempt <= attempts; attempt++ {
 			_, err := apiRunner.GetProject(id, 5)
 			if err != nil {
@@ -634,6 +685,7 @@ func cleanUpProject(id string, attempts int) func(t *testing.T) {
 		if err == nil {
 			t.Fatalf("can not delete the project")
 		}
+		t.Log("project deleted successfully")
 	}
 }
 
@@ -668,6 +720,15 @@ func (r *APIRunner) DeleteUserFromProject(projectID, userID string) error {
 func (r *APIRunner) GetProjectUsers(projectID string) ([]apiv1.User, error) {
 	params := &users.GetUsersForProjectParams{ProjectID: projectID}
 	params.WithTimeout(timeout)
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		_, err := r.client.Users.GetUsersForProject(params, r.bearerToken)
+		if err != nil {
+			break
+		}
+		time.Sleep(2 * time.Second)
+	}
+
 	responseUsers, err := r.client.Users.GetUsersForProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err
@@ -711,4 +772,129 @@ func (r *APIRunner) AddProjectUser(projectID, email, name, group string) (*apiv1
 		},
 	}
 	return usr, nil
+}
+
+// RunOIDCProxy runs the OIDC proxy. It is non-blocking. It does
+// so by shelling out which is not pretty, but better than the previous
+// approach of forking in a script and having no way of making the test
+// fail of the OIDC failed
+func RunOIDCProxy(errChan chan error, cancel <-chan struct{}) error {
+	gopathRaw, err := exec.Command("go", "env", "GOPATH").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to get gopath: %v", err)
+	}
+	goPathSanitized := strings.Replace(string(gopathRaw), "\n", "", -1)
+	oidcProxyDir := fmt.Sprintf("%s/src/github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/oidc-proxy-client", goPathSanitized)
+
+	oidProxyCommand := exec.Command("make", "run")
+	oidProxyCommand.Dir = oidcProxyDir
+	var out bytes.Buffer
+	oidProxyCommand.Stdout = &out
+	oidProxyCommand.Stderr = &out
+	if err := oidProxyCommand.Start(); err != nil {
+		return fmt.Errorf("failed to run oidc proxy command: %v", err)
+	}
+
+	go func() {
+		if err := oidProxyCommand.Wait(); err != nil {
+			errChan <- fmt.Errorf("failed to run oidc proxy. Output:\n%s\nError: %v", out.String(), err)
+		}
+	}()
+
+	return nil
+}
+
+func (r *APIRunner) GetGlobalSettings() (*apiv1.GlobalSettings, error) {
+	params := &admin.GetKubermaticSettingsParams{}
+	params.WithTimeout(timeout)
+	responseSettings, err := r.client.Admin.GetKubermaticSettings(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertGlobalSettings(responseSettings.Payload), nil
+}
+
+func (r *APIRunner) UpdateGlobalSettings(s string) (*apiv1.GlobalSettings, error) {
+	params := &admin.PatchKubermaticSettingsParams{
+		Patch: []uint8(s),
+	}
+	params.WithTimeout(timeout)
+	responseSettings, err := r.client.Admin.PatchKubermaticSettings(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertGlobalSettings(responseSettings.Payload), nil
+}
+
+func convertGlobalSettings(gSettings *models.GlobalSettings) *apiv1.GlobalSettings {
+	var customLinks kubermaticv1.CustomLinks
+	for _, customLink := range gSettings.CustomLinks {
+		customLinks = append(customLinks, kubermaticv1.CustomLink{
+			Label:    customLink.Label,
+			URL:      customLink.URL,
+			Icon:     customLink.Icon,
+			Location: customLink.Location,
+		})
+	}
+
+	return &apiv1.GlobalSettings{
+		CustomLinks: customLinks,
+		CleanupOptions: kubermaticv1.CleanupOptions{
+			Enabled:  gSettings.CleanupOptions.Enabled,
+			Enforced: gSettings.CleanupOptions.Enforced,
+		},
+		DefaultNodeCount:      gSettings.DefaultNodeCount,
+		ClusterTypeOptions:    gSettings.ClusterTypeOptions,
+		DisplayDemoInfo:       gSettings.DisplayDemoInfo,
+		DisplayAPIDocs:        gSettings.DisplayAPIDocs,
+		DisplayTermsOfService: gSettings.DisplayTermsOfService,
+	}
+}
+
+func (r *APIRunner) SetAdmin(email string, isAdmin bool) error {
+	params := &admin.SetAdminParams{
+		Body: &models.Admin{
+			Email:   email,
+			IsAdmin: isAdmin,
+		},
+	}
+	params.WithTimeout(timeout)
+	_, err := r.client.Admin.SetAdmin(params, r.bearerToken)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetClusterRoles
+func (r *APIRunner) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.RoleName, error) {
+	params := &project.ListRoleNamesParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
+	params.WithTimeout(timeout)
+
+	var err error
+	var response *project.ListRoleNamesOK
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		response, err = r.client.Project.ListRoleNames(params, r.bearerToken)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	roleNames := []apiv1.RoleName{}
+
+	for _, roleName := range response.Payload {
+		roleNames = append(roleNames, apiv1.RoleName{
+			Name:      roleName.Name,
+			Namespace: roleName.Namespace,
+		})
+	}
+
+	return roleNames, nil
 }

@@ -40,6 +40,9 @@ type PublicCloudSpec struct {
 	// hetzner
 	Hetzner PublicHetznerCloudSpec `json:"hetzner,omitempty"`
 
+	// kubevirt
+	Kubevirt PublicKubevirtCloudSpec `json:"kubevirt,omitempty"`
+
 	// openstack
 	Openstack *PublicOpenstackCloudSpec `json:"openstack,omitempty"`
 

@@ -14,11 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-const (
-	// UserLabelKey defines the label key for the user -> cluster relation
-	UserLabelKey = "user"
-)
-
 // NewUserProvider returns a user provider
 func NewUserProvider(client kubermaticclientset.Interface, userLister kubermaticv1lister.UserLister, isServiceAccountFunc func(email string) bool) *UserProvider {
 	return &UserProvider{
@@ -89,14 +84,21 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add a user with the given email %s as the name is reserved, please try a different email address", email))
 	}
 
-	uniqueObjectName := fmt.Sprintf("%x", sha256.Sum256([]byte(email)))
-
-	user := kubermaticv1.User{}
-	user.Name = uniqueObjectName
-	user.Spec.Email = email
-	user.Spec.Name = name
-	user.Spec.ID = id
-	user.Spec.Projects = []kubermaticv1.ProjectGroup{}
+	user := kubermaticv1.User{
+		ObjectMeta: v1.ObjectMeta{
+			Name: fmt.Sprintf("%x", sha256.Sum256([]byte(email))),
+		},
+		Spec: kubermaticv1.UserSpec{
+			ID:    id,
+			Name:  name,
+			Email: email,
+		},
+	}
 
 	return p.client.KubermaticV1().Users().Create(&user)
+}
+
+// UpdateUser updates user.
+func (p *UserProvider) UpdateUser(user kubermaticv1.User) (*kubermaticv1.User, error) {
+	return p.client.KubermaticV1().Users().Update(&user)
 }

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	utilpointer "k8s.io/utils/pointer"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 )
 
@@ -51,7 +49,7 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 				},
 			},
 			verify: func(_ map[string]*kubermaticv1.Seed, err error) error {
-				expectedErr := `seedDatacenter "my-seed" used by nodeDatacenter "my-dc" does not exist`
+				expectedErr := `seedDatacenter "my-seed" used by node datacenter "my-dc" does not exist`
 				if err == nil || err.Error() != expectedErr {
 					return fmt.Errorf("Expected error to be %q, was %v", expectedErr, err)
 				}
@@ -66,7 +64,7 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 				"my-invalid-datacenter": {Seed: "my-valid-datacenter"},
 			},
 			verify: func(_ map[string]*kubermaticv1.Seed, err error) error {
-				expectedErr := `datacenter "my-valid-datacenter" referenced by nodeDatacenter "my-invalid-datacenter" as its seed is not configured to be a seed`
+				expectedErr := `datacenter "my-valid-datacenter" referenced by node datacenter "my-invalid-datacenter" as its seed is not configured to be a seed`
 				if err == nil || err.Error() != expectedErr {
 					return fmt.Errorf("expected error to be %q, was %v", expectedErr, err)
 				}
@@ -80,7 +78,7 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 					IsSeed:           true,
 					Location:         "Hamburg",
 					Country:          "Germany",
-					SeedDNSOverwrite: utilpointer.StringPtr("dns-overwrite"),
+					SeedDNSOverwrite: "dns-overwrite",
 				},
 			},
 			verify: func(seeds map[string]*kubermaticv1.Seed, err error) error {
@@ -99,8 +97,8 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 				if seeds["my-seed"].Spec.Country != "Germany" {
 					return fmt.Errorf("expected .Spec.Country to be 'Germany', was %q", seeds["my-seed"].Spec.Country)
 				}
-				if seeds["my-seed"].Spec.SeedDNSOverwrite == nil || *seeds["my-seed"].Spec.SeedDNSOverwrite != "dns-overwrite" {
-					return fmt.Errorf("Expected .Spec.SeedDNSOverwrite to be 'dns-overwrite', was %v", seeds["my-seed"].Spec.SeedDNSOverwrite)
+				if seeds["my-seed"].Spec.SeedDNSOverwrite != "dns-overwrite" {
+					return fmt.Errorf("Expected .Spec.SeedDNSOverwrite to be 'dns-overwrite', was %q", seeds["my-seed"].Spec.SeedDNSOverwrite)
 				}
 				return nil
 			},

@@ -25,6 +25,12 @@ type DatacenterSpec struct {
 	// provider
 	Provider string `json:"provider,omitempty"`
 
+	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
+	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
+
+	// required email domains
+	RequiredEmailDomains []string `json:"requiredEmailDomains"`
+
 	// seed
 	Seed string `json:"seed,omitempty"`
 
@@ -45,6 +51,9 @@ type DatacenterSpec struct {
 
 	// hetzner
 	Hetzner *HetznerDatacenterSpec `json:"hetzner,omitempty"`
+
+	// kubevirt
+	Kubevirt KubevirtDatacenterSpec `json:"kubevirt,omitempty"`
 
 	// openstack
 	Openstack *OpenstackDatacenterSpec `json:"openstack,omitempty"`

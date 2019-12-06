@@ -52,9 +52,11 @@ type serverRunOptions struct {
 
 func newServerRunOptions() (serverRunOptions, error) {
 	s := serverRunOptions{}
-	var rawFeatureGates string
-	var rawExposeStrategy string
-	var rawAccessibleAddons string
+	var (
+		rawFeatureGates     string
+		rawExposeStrategy   string
+		rawAccessibleAddons string
+	)
 
 	flag.StringVar(&s.listenAddress, "address", ":8080", "The address to listen on")
 	flag.StringVar(&s.kubeconfig, "kubeconfig", "", "Path to the kubeconfig.")
@@ -113,18 +115,18 @@ func (o serverRunOptions) validate() error {
 	// we only validate them when the OIDCKubeCfgEndpoint feature flag is set (Kubernetes specific).
 	// Otherwise we force users to set those flags without any result (for Kubernetes clusters)
 	// TODO: Enforce validation as soon as OpenShift support is testable
-	if o.featureGates.Enabled(OIDCKubeCfgEndpoint) {
+	if o.featureGates.Enabled(features.OIDCKubeCfgEndpoint) {
 		if len(o.oidcIssuerClientSecret) == 0 {
-			return fmt.Errorf("%s feature is enabled but \"oidc-client-secret\" flag was not specified", OIDCKubeCfgEndpoint)
+			return fmt.Errorf("%s feature is enabled but \"oidc-client-secret\" flag was not specified", features.OIDCKubeCfgEndpoint)
 		}
 		if len(o.oidcIssuerRedirectURI) == 0 {
-			return fmt.Errorf("%s feature is enabled but \"oidc-redirect-uri\" flag was not specified", OIDCKubeCfgEndpoint)
+			return fmt.Errorf("%s feature is enabled but \"oidc-redirect-uri\" flag was not specified", features.OIDCKubeCfgEndpoint)
 		}
 		if len(o.oidcIssuerCookieHashKey) == 0 {
-			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-cookie-hash-key\" flag was not specified", OIDCKubeCfgEndpoint)
+			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-cookie-hash-key\" flag was not specified", features.OIDCKubeCfgEndpoint)
 		}
 		if len(o.oidcIssuerClientID) == 0 {
-			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-id\" flag was not specified", OIDCKubeCfgEndpoint)
+			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-id\" flag was not specified", features.OIDCKubeCfgEndpoint)
 		}
 	}
 
@@ -148,6 +150,9 @@ type providers struct {
 	eventRecorderProvider                 provider.EventRecorderProvider
 	clusterProviderGetter                 provider.ClusterProviderGetter
 	seedsGetter                           provider.SeedsGetter
-	seedClientGetter                      provider.SeedClientGetter
 	addons                                provider.AddonProviderGetter
+	addonConfigProvider                   provider.AddonConfigProvider
+	userInfoGetter                        provider.UserInfoGetter
+	settingsProvider                      provider.SettingsProvider
+	adminProvider                         provider.AdminProvider
 }

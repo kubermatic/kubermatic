@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	ctrlruntimelzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 func init() {
@@ -97,6 +97,10 @@ func New(debug bool, format Format) *zap.Logger {
 	encCfg.TimeKey = "time"
 	encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
 
+	// production config encodes durations as a float of the seconds value, but we want a more
+	// readable, precise representation
+	encCfg.EncodeDuration = zapcore.StringDurationEncoder
+
 	var enc zapcore.Encoder
 	if format == FormatJSON {
 		enc = zapcore.NewJSONEncoder(encCfg)
@@ -109,7 +113,7 @@ func New(debug bool, format Format) *zap.Logger {
 		zap.ErrorOutput(sink),
 	}
 
-	coreLog := zapcore.NewCore(&ctrlruntimelog.KubeAwareEncoder{Encoder: enc}, sink, lvl)
+	coreLog := zapcore.NewCore(&ctrlruntimelzap.KubeAwareEncoder{Encoder: enc}, sink, lvl)
 	return zap.New(coreLog, opts...)
 }
 

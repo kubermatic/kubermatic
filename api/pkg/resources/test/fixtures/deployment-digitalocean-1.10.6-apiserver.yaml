@@ -109,9 +109,6 @@ spec:
         - /etc/kubernetes/kubeconfig/kubeconfig
         - -node-access-network
         - 192.0.2.0/24
-        - -v
-        - "4"
-        - -logtostderr
         - -master
         - https://127.0.0.1:30000
         command:
@@ -165,7 +162,7 @@ spec:
         - --service-account-key-file
         - /etc/kubernetes/service-account-key/sa.key
         - --service-cluster-ip-range
-        - 10.10.10.0/24
+        - 10.240.16.0/20
         - --service-node-port-range
         - 30000-32767
         - --allow-privileged
@@ -201,8 +198,6 @@ spec:
         - X-Remote-Group
         - --requestheader-username-headers
         - X-Remote-User
-        - --audit-policy-file
-        - /etc/kubernetes/audit/policy.yaml
         - --kubelet-preferred-address-types
         - ExternalIP,InternalIP
         - --feature-gates
@@ -213,11 +208,28 @@ spec:
         - kubermaticIssuer
         - --oidc-username-claim
         - email
+        - --oidc-groups-prefix
+        - 'oidc:'
+        - --oidc-groups-claim
+        - groups
         - --oidc-ca-file
         - /etc/kubernetes/dex/ca/caBundle.pem
         command:
         - /hyperkube
         - kube-apiserver
+        env:
+        - name: HTTP_PROXY
+          value: http://my-corp
+        - name: HTTPS_PROXY
+          value: http://my-corp
+        - name: http_proxy
+          value: http://my-corp
+        - name: https_proxy
+          value: http://my-corp
+        - name: NO_PROXY
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.
+        - name: no_proxy
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.
         image: gcr.io/google_containers/hyperkube-amd64:v1.10.6
         livenessProbe:
           failureThreshold: 8
@@ -285,29 +297,6 @@ spec:
         - mountPath: /etc/kubernetes/dex/ca
           name: dex-ca
           readOnly: true
-      - args:
-        - -i
-        - tail
-        - -p
-        - path=/var/log/kubernetes/audit/audit.log
-        - -p
-        - db=/var/log/kubernetes/audit/fluentbit.db
-        - -o
-        - stdout
-        command:
-        - /fluent-bit/bin/fluent-bit
-        image: docker.io/fluent/fluent-bit:1.2.2
-        name: audit-logs
-        resources:
-          limits:
-            cpu: 50m
-            memory: 60Mi
-          requests:
-            cpu: 5m
-            memory: 10Mi
-        volumeMounts:
-        - mountPath: /var/log/kubernetes/audit
-          name: audit-log
       dnsConfig:
         nameservers:
         - 192.0.2.14
@@ -330,7 +319,7 @@ spec:
           --dial-timeout=2s --endpoints='https://etcd-0.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-1.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-2.etcd.cluster-de-test-01.svc.cluster.local.:2379'
           put kubermatic/quorum-check something; do echo waiting for etcd; sleep 2;
           done;
-        image: gcr.io/etcd-development/etcd:v3.3.12
+        image: gcr.io/etcd-development/etcd:v3.3.15
         name: etcd-running
         resources: {}
         volumeMounts:

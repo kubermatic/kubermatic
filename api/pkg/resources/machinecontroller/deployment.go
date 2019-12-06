@@ -8,7 +8,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,7 +34,7 @@ var (
 const (
 	Name = "machine-controller"
 
-	tag = "v1.5.3"
+	tag = "v1.8.0"
 
 	nodeLocalDNSCacheAddress = "169.254.20.10"
 )
@@ -47,10 +47,32 @@ type machinecontrollerData interface {
 	ClusterIPByServiceName(string) (string, error)
 	DC() *kubermaticv1.Datacenter
 	NodeLocalDNSCacheEnabled() bool
+	Seed() *kubermaticv1.Seed
 }
 
 // DeploymentCreator returns the function to create and update the machine controller deployment
 func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
+	return func() (string, reconciling.DeploymentCreator) {
+		return resources.MachineControllerDeploymentName, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
+			_, creator := DeploymentCreatorWithoutInitWrapper(data)()
+			deployment, err := creator(in)
+			if err != nil {
+				return nil, err
+			}
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.NewString(Name), "Machine,cluster.k8s.io/v1alpha1")
+			if err != nil {
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+			}
+			deployment.Spec.Template.Spec = *wrappedPodSpec
+
+			return deployment, nil
+		}
+	}
+}
+
+// DeploymentCreator returns the function to create and update the machine controller deployment without the
+// wrapper that checks for apiserver availabiltiy. This allows to adjust the command.
+func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MachineControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MachineControllerDeploymentName
@@ -92,13 +114,18 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 				return nil, err
 			}
 
+			externalCloudProvider := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:      Name,
-					Image:     data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
-					Command:   []string{"/usr/local/bin/machine-controller"},
-					Args:      getFlags(clusterDNSIP, data.DC().Node),
-					Env:       envVars,
+					Name:    Name,
+					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + tag,
+					Command: []string{"/usr/local/bin/machine-controller"},
+					Args:    getFlags(clusterDNSIP, data.DC().Node, externalCloudProvider),
+					Env: append(envVars, corev1.EnvVar{
+						Name:  "KUBECONFIG",
+						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
+					}),
 					Resources: controllerResourceRequirements,
 					LivenessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
@@ -123,12 +150,6 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 					},
 				},
 			}
-
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(Name))
-			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
-			}
-			dep.Spec.Template.Spec = *wrappedPodSpec
 
 			return dep, nil
 		}
@@ -157,36 +178,46 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 	}
+	if data.Cluster().Spec.Cloud.Azure != nil {
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_ID", Value: credentials.Azure.ClientID})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_SECRET", Value: credentials.Azure.ClientSecret})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_TENANT_ID", Value: credentials.Azure.TenantID})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_SUBSCRIPTION_ID", Value: credentials.Azure.SubscriptionID})
+	}
 	if data.Cluster().Spec.Cloud.Openstack != nil {
 		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC().Spec.Openstack.AuthURL})
-		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", Value: data.Cluster().Spec.Cloud.Openstack.Username})
-		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", Value: data.Cluster().Spec.Cloud.Openstack.Password})
-		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", Value: data.Cluster().Spec.Cloud.Openstack.Domain})
-		vars = append(vars, corev1.EnvVar{Name: "OS_TENANT_NAME", Value: data.Cluster().Spec.Cloud.Openstack.Tenant})
-		vars = append(vars, corev1.EnvVar{Name: "OS_TENANT_ID", Value: data.Cluster().Spec.Cloud.Openstack.TenantID})
+		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", Value: credentials.Openstack.Username})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", Value: credentials.Openstack.Password})
+		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", Value: credentials.Openstack.Domain})
+		vars = append(vars, corev1.EnvVar{Name: "OS_TENANT_NAME", Value: credentials.Openstack.Tenant})
+		vars = append(vars, corev1.EnvVar{Name: "OS_TENANT_ID", Value: credentials.Openstack.TenantID})
 	}
 	if data.Cluster().Spec.Cloud.Hetzner != nil {
 		vars = append(vars, corev1.EnvVar{Name: "HZ_TOKEN", Value: credentials.Hetzner.Token})
 	}
 	if data.Cluster().Spec.Cloud.Digitalocean != nil {
-		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", Value: data.Cluster().Spec.Cloud.Digitalocean.Token})
+		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", Value: credentials.Digitalocean.Token})
 	}
 	if data.Cluster().Spec.Cloud.VSphere != nil {
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC().Spec.VSphere.Endpoint})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: data.Cluster().Spec.Cloud.VSphere.InfraManagementUser.Username})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: data.Cluster().Spec.Cloud.VSphere.InfraManagementUser.Password})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: credentials.VSphere.Username})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: credentials.VSphere.Password})
 	}
 	if data.Cluster().Spec.Cloud.Packet != nil {
 		vars = append(vars, corev1.EnvVar{Name: "PACKET_API_KEY", Value: credentials.Packet.APIKey})
 		vars = append(vars, corev1.EnvVar{Name: "PACKET_PROJECT_ID", Value: credentials.Packet.ProjectID})
 	}
 	if data.Cluster().Spec.Cloud.GCP != nil {
-		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", Value: data.Cluster().Spec.Cloud.GCP.ServiceAccount})
+		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", Value: credentials.GCP.ServiceAccount})
 	}
+	if data.Cluster().Spec.Cloud.Kubevirt != nil {
+		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", Value: credentials.Kubevirt.KubeConfig})
+	}
+	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
 	return vars, nil
 }
 
-func getFlags(clusterDNSIP string, nodeSettings kubermaticv1.NodeSettings) []string {
+func getFlags(clusterDNSIP string, nodeSettings kubermaticv1.NodeSettings, externalCloudProvider bool) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-logtostderr",
@@ -197,17 +228,21 @@ func getFlags(clusterDNSIP string, nodeSettings kubermaticv1.NodeSettings) []str
 	if len(nodeSettings.InsecureRegistries) > 0 {
 		flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
 	}
-	if nodeSettings.HTTPProxy != "" {
-		flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy)
+	if !nodeSettings.HTTPProxy.Empty() {
+		flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy.String())
 	}
-	if nodeSettings.NoProxy != "" {
-		flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy)
+	if !nodeSettings.NoProxy.Empty() {
+		flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy.String())
 	}
 	if nodeSettings.PauseImage != "" {
 		flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)
 	}
 	if nodeSettings.HyperkubeImage != "" {
 		flags = append(flags, "-node-hyperkube-image", nodeSettings.HyperkubeImage)
+	}
+
+	if externalCloudProvider {
+		flags = append(flags, "-external-cloud-provider=true")
 	}
 
 	return flags

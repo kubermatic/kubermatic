@@ -28,7 +28,7 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 		return resources.ClusterAutoscalerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			tag := getTag(data.Cluster())
 			if tag == "" {
-				return nil, fmt.Errorf("No matching autoscaler tag found for version %d", data.Cluster().Spec.Version.Minor())
+				return nil, fmt.Errorf("no matching autoscaler tag found for version %d", data.Cluster().Spec.Version.Minor())
 			}
 
 			dep.Name = resources.ClusterAutoscalerDeploymentName

@@ -3,16 +3,17 @@ package openshift
 import (
 	"flag"
 	"net"
+	"os"
 	"testing"
 
 	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/apis/plugin"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	clusterv1alpha1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 var update = flag.Bool("update", false, "Update test fixtures")
@@ -70,6 +71,9 @@ func TestUserdataGeneration(t *testing.T) {
 		},
 	}
 
+	if err := os.Setenv(DockerCFGEnvKey, `{"registry": {"user": "user", "pass": "pss"}}`); err != nil {
+		t.Fatalf("failed to set dockercfg: %v", err)
+	}
 	for _, test := range tests {
 		kubeconfig := &clientcmdapi.Config{
 			Clusters: map[string]*clientcmdapi.Cluster{

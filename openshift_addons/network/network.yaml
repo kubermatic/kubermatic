@@ -1,0 +1,11 @@
+apiVersion: config.openshift.io/v1
+kind: Network
+metadata:
+  name: cluster
+spec:
+  clusterNetwork:{{ range .Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks }}
+  - cidr: {{ . }}
+    hostPrefix: 23{{ end }}
+  networkType: OpenShiftSDN
+  serviceNetwork:{{ range .Cluster.Spec.ClusterNetwork.Services.CIDRBlocks }}
+  - {{ . }}{{ end }}

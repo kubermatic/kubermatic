@@ -34,7 +34,7 @@ const (
 	name    = "etcd"
 	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
 	// ImageTag defines the image tag to use for the etcd image
-	ImageTag = "v3.3.12"
+	ImageTag = "v3.3.15"
 )
 
 type etcdStatefulSetCreatorData interface {
@@ -44,6 +44,7 @@ type etcdStatefulSetCreatorData interface {
 	ImageRegistry(string) string
 	EtcdDiskSize() resource.Quantity
 	GetClusterRef() metav1.OwnerReference
+	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
 // StatefulSetCreator returns the function to reconcile the etcd StatefulSet
@@ -173,6 +174,11 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			}
 
 			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.EtcdStatefulSetName, data.Cluster().Name)
+			if data.SupportsFailureDomainZoneAntiAffinity() {
+				antiAffinities := set.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(resources.EtcdStatefulSetName, data.Cluster().Name))
+				set.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = antiAffinities
+			}
 
 			set.Spec.Template.Spec.Volumes = volumes
 

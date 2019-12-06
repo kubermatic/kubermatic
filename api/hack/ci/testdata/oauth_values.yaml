@@ -1,0 +1,81 @@
+dex:
+  image:
+    repository: "quay.io/dexidp/dex"
+    tag: "v2.16.0"
+  replicas: 2
+  ingress:
+    host: ""
+    path: ""
+  expiry:
+    signingKeys: "6h"
+    idTokens: "24h"
+#  connectors:
+#  - type: github
+#    id: github
+#    name: GitHub
+#    config:
+#      clientID: some-client-id
+#      clientSecret: some-client-secret
+#      redirectURI: https://dev.kubermatic.io/dex/callback
+#      orgs:
+#      - name: kubermatic
+#
+#  clients:
+#  - id: kubermatic
+#    name: Kubermatic
+#    secret: very-secret
+#    RedirectURIs:
+#    - http://localhost:8000
+#    - https://dev.kubermatic.io
+#    - http://localhost:8000/projects
+#    - https://dev.kubermatic.io/projects
+#
+#  staticPasswordLogins:
+#  - email: "admin@example.com"
+#    # bcrypt hash of the string "password"
+#    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+#    username: "admin"
+#    userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+  clients:
+  - id: kubermatic
+    name: Kubermatic
+    secret: ZXhhbXBsZS1hcHAtc2VjcmV0
+    RedirectURIs:
+    - http://localhost:8000
+    - https://dev.kubermatic.io
+    - http://localhost:8000/projects
+    - https://dev.kubermatic.io/projects
+  - id: kubermaticIssuer
+    name: KubermaticIssuer
+    secret: MTc2ODQ3MDg4MmRlMzRjNjBiZjVlNzk0
+    RedirectURIs:
+    - http://localhost:8080/api/v1/kubeconfig
+  connectors:
+  - type: github
+    id: github
+    name: GitHub
+    config:
+      clientID: 0233c724a6d3c31f27a4
+      clientSecret: 1026f76467f95d274dcab0cfb6d16df168481736
+      redirectURI: https://dev.kubermatic.io/dex/callback
+      orgs:
+      - name: kubermatic
+  resources:
+    requests:
+      cpu: 10m
+      memory: 128Mi
+    limits:
+      cpu: 50m
+      memory: 200Mi
+
+  nodeSelector: {}
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app: dex
+          topologyKey: kubernetes.io/hostname
+        weight: 10
+  tolerations: []

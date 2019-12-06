@@ -70,7 +70,7 @@ func (p *InformerProviderImpl) WaitForCachesToSync(stopCh <-chan struct{}) error
 		infKubeSyncStatus := informer.WaitForCacheSync(stopCh)
 		for informerType, informerSynced := range infKubeSyncStatus {
 			if !informerSynced {
-				return fmt.Errorf("Unable to sync caches for for informer %v", informerType)
+				return fmt.Errorf("unable to sync caches for for informer %v", informerType)
 			}
 		}
 	}

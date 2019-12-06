@@ -14,6 +14,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/azure"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -114,12 +116,17 @@ func isValidVM(sku compute.ResourceSku, location string) bool {
 	return true
 }
 
-func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeNoCredentialsReq)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -131,7 +138,7 @@ func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		dc, err := dc.GetDatacenter(seedsGetter, cluster.Spec.Cloud.DatacenterName)
+		dc, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
@@ -140,13 +147,22 @@ func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectPro
 			return nil, errors.NewNotFound("cloud spec (dc) for ", req.ClusterID)
 		}
 
-		azureSpec := cluster.Spec.Cloud.Azure
 		azureLocation := dc.Spec.Azure.Location
-		return azureSize(ctx, azureSpec.SubscriptionID, azureSpec.ClientID, azureSpec.ClientSecret, azureSpec.TenantID, azureLocation)
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		creds, err := azure.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+		return azureSize(ctx, creds.SubscriptionID, creds.ClientID, creds.ClientSecret, creds.TenantID, azureLocation)
 	}
 }
 
-func AzureSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint {
+func AzureSizeEndpoint(credentialManager common.PresetsManager, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeReq)
 
@@ -155,15 +171,21 @@ func AzureSizeEndpoint(credentialManager common.PresetsManager) endpoint.Endpoin
 		clientSecret := req.ClientSecret
 		tenantID := req.TenantID
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().Azure.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().Azure.Credentials {
-				if credential.Name == req.Credential {
-					subscriptionID = credential.SubscriptionID
-					clientID = credential.ClientID
-					clientSecret = credential.ClientSecret
-					tenantID = credential.TenantID
-					break
-				}
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.Azure; credentials != nil {
+				subscriptionID = credentials.SubscriptionID
+				clientID = credentials.ClientID
+				clientSecret = credentials.ClientSecret
+				tenantID = credentials.TenantID
 			}
 		}
 		return azureSize(ctx, subscriptionID, clientID, clientSecret, tenantID, req.Location)

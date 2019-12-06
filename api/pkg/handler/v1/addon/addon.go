@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"k8s.io/apimachinery/pkg/runtime"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -15,7 +14,10 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
+	"k8s.io/apimachinery/pkg/runtime"
 	k8sjson "k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // addonReq defines HTTP request for getAddon and deleteAddon
@@ -26,8 +28,8 @@ type addonReq struct {
 	AddonID string `json:"addon_id"`
 }
 
-// listReq defines HTTP request for listAddons endpoint
-// swagger:parameters listAddons
+// listReq defines HTTP request for listAddons and listInstallableAddons endpoints
+// swagger:parameters listAddons listInstallableAddons
 type listReq struct {
 	common.GetClusterReq
 }
@@ -46,6 +48,13 @@ type patchReq struct {
 	addonReq
 	// in: body
 	Body apiv1.Addon
+}
+
+// patchReq defines HTTP request for getAddonConfig endpoint
+// swagger:parameters getAddonConfig
+type getConfigReq struct {
+	// in: path
+	AddonID string `json:"addon_id"`
 }
 
 func DecodeGetAddon(c context.Context, r *http.Request) (interface{}, error) {
@@ -113,6 +122,19 @@ func DecodePatchAddon(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+func DecodeGetConfig(c context.Context, r *http.Request) (interface{}, error) {
+	var req getConfigReq
+
+	addonID, err := decodeAddonID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.AddonID = addonID
+
+	return req, nil
+}
+
 func decodeAddonID(c context.Context, r *http.Request) (string, error) {
 	addonID := mux.Vars(r)["addon_id"]
 	if addonID == "" {
@@ -122,12 +144,53 @@ func decodeAddonID(c context.Context, r *http.Request) (string, error) {
 	return addonID, nil
 }
 
-func GetAddonEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func ListAccessibleAddons(accessibleAddons sets.String) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		return accessibleAddons.UnsortedList(), nil
+	}
+}
+
+func ListInstallableAddonEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter, accessibleAddons sets.String) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
+		addons, err := addonProvider.List(userInfo, cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		installedAddons := sets.NewString()
+		for _, addon := range addons {
+			installedAddons.Insert(addon.Name)
+		}
+
+		return accessibleAddons.Difference(installedAddons).UnsortedList(), nil
+	}
+}
+
+func GetAddonEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addonReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -150,12 +213,15 @@ func GetAddonEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoin
 	}
 }
 
-func ListAddonEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func ListAddonEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -178,12 +244,15 @@ func ListAddonEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoi
 	}
 }
 
-func CreateAddonEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func CreateAddonEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -211,12 +280,15 @@ func CreateAddonEndpoint(projectProvider provider.ProjectProvider) endpoint.Endp
 	}
 }
 
-func PatchAddonEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func PatchAddonEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -249,12 +321,15 @@ func PatchAddonEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpo
 	}
 }
 
-func DeleteAddonEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func DeleteAddonEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addonReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -266,6 +341,30 @@ func DeleteAddonEndpoint(projectProvider provider.ProjectProvider) endpoint.Endp
 		addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
 
 		return nil, common.KubernetesErrorToHTTPError(addonProvider.Delete(userInfo, cluster, req.AddonID))
+	}
+}
+
+func ListAddonConfigsEndpoint(addonConfigProvider provider.AddonConfigProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		list, err := addonConfigProvider.List()
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalAddonConfigsToExternal(list)
+	}
+}
+
+func GetAddonConfigEndpoint(addonConfigProvider provider.AddonConfigProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getConfigReq)
+
+		addon, err := addonConfigProvider.Get(req.AddonID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalAddonConfigToExternal(addon)
 	}
 }
 
@@ -283,6 +382,9 @@ func convertInternalAddonToExternal(internalAddon *kubermaticapiv1.Addon) (*apiv
 				return nil
 			}(),
 		},
+		Spec: apiv1.AddonSpec{
+			IsDefault: internalAddon.Spec.IsDefault,
+		},
 	}
 	if len(internalAddon.Spec.Variables.Raw) > 0 {
 		if err := k8sjson.Unmarshal(internalAddon.Spec.Variables.Raw, &result.Spec.Variables); err != nil {
@@ -297,6 +399,38 @@ func convertInternalAddonsToExternal(internalAddons []*kubermaticapiv1.Addon) ([
 
 	for _, addon := range internalAddons {
 		converted, err := convertInternalAddonToExternal(addon)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, converted)
+	}
+
+	return result, nil
+}
+
+func convertInternalAddonConfigToExternal(internalAddonConfig *kubermaticapiv1.AddonConfig) (*apiv1.AddonConfig, error) {
+	return &apiv1.AddonConfig{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:                internalAddonConfig.Name,
+			Name:              internalAddonConfig.Name,
+			CreationTimestamp: apiv1.NewTime(internalAddonConfig.CreationTimestamp.Time),
+			DeletionTimestamp: func() *apiv1.Time {
+				if internalAddonConfig.DeletionTimestamp != nil {
+					deletionTimestamp := apiv1.NewTime(internalAddonConfig.DeletionTimestamp.Time)
+					return &deletionTimestamp
+				}
+				return nil
+			}(),
+		},
+		Spec: internalAddonConfig.Spec,
+	}, nil
+}
+
+func convertInternalAddonConfigsToExternal(internalAddonConfigs *kubermaticapiv1.AddonConfigList) ([]*apiv1.AddonConfig, error) {
+	result := []*apiv1.AddonConfig{}
+
+	for _, internalAddonConfig := range internalAddonConfigs.Items {
+		converted, err := convertInternalAddonConfigToExternal(&internalAddonConfig)
 		if err != nil {
 			return nil, err
 		}

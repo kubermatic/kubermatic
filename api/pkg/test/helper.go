@@ -10,7 +10,7 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,7 +20,7 @@ import (
 func CompareOutput(t *testing.T, name, output string, update bool, suffix string) {
 	filename := name + ".golden"
 	if suffix != "" {
-		filename = filename + suffix
+		filename += suffix
 	}
 	golden, err := filepath.Abs(filepath.Join("testdata", filename))
 	if err != nil {

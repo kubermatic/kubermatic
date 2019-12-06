@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlruntimemetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
@@ -62,4 +63,12 @@ func (m *MetricsServer) Start(stop <-chan struct{}) error {
 	}
 
 	return fmt.Errorf("metrics server stopped: %v", s.ListenAndServe())
+}
+
+// MetricsServer implements LeaderElectionRunnable to indicate that it does not require to run
+// within an elected leader
+var _ manager.LeaderElectionRunnable = &MetricsServer{}
+
+func (m *MetricsServer) NeedLeaderElection() bool {
+	return false
 }

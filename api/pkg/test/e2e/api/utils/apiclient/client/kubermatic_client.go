@@ -12,6 +12,7 @@ import (
 	strfmt "github.com/go-openapi/strfmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/addon"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/admin"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/aws"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/azure"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/credentials"
@@ -19,11 +20,13 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/digitalocean"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/gcp"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/hetzner"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/metric"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/operations"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/packet"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/serviceaccounts"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/settings"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/tokens"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/users"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/versions"
@@ -75,6 +78,8 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 
 	cli.Addon = addon.New(transport, formats)
 
+	cli.Admin = admin.New(transport, formats)
+
 	cli.Aws = aws.New(transport, formats)
 
 	cli.Azure = azure.New(transport, formats)
@@ -89,6 +94,8 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 
 	cli.Hetzner = hetzner.New(transport, formats)
 
+	cli.Metric = metric.New(transport, formats)
+
 	cli.Openstack = openstack.New(transport, formats)
 
 	cli.Operations = operations.New(transport, formats)
@@ -98,6 +105,8 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Project = project.New(transport, formats)
 
 	cli.Serviceaccounts = serviceaccounts.New(transport, formats)
+
+	cli.Settings = settings.New(transport, formats)
 
 	cli.Tokens = tokens.New(transport, formats)
 
@@ -153,6 +162,8 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 type Kubermatic struct {
 	Addon *addon.Client
 
+	Admin *admin.Client
+
 	Aws *aws.Client
 
 	Azure *azure.Client
@@ -167,6 +178,8 @@ type Kubermatic struct {
 
 	Hetzner *hetzner.Client
 
+	Metric *metric.Client
+
 	Openstack *openstack.Client
 
 	Operations *operations.Client
@@ -176,6 +189,8 @@ type Kubermatic struct {
 	Project *project.Client
 
 	Serviceaccounts *serviceaccounts.Client
+
+	Settings *settings.Client
 
 	Tokens *tokens.Client
 
@@ -194,6 +209,8 @@ func (c *Kubermatic) SetTransport(transport runtime.ClientTransport) {
 
 	c.Addon.SetTransport(transport)
 
+	c.Admin.SetTransport(transport)
+
 	c.Aws.SetTransport(transport)
 
 	c.Azure.SetTransport(transport)
@@ -208,6 +225,8 @@ func (c *Kubermatic) SetTransport(transport runtime.ClientTransport) {
 
 	c.Hetzner.SetTransport(transport)
 
+	c.Metric.SetTransport(transport)
+
 	c.Openstack.SetTransport(transport)
 
 	c.Operations.SetTransport(transport)
@@ -217,6 +236,8 @@ func (c *Kubermatic) SetTransport(transport runtime.ClientTransport) {
 	c.Project.SetTransport(transport)
 
 	c.Serviceaccounts.SetTransport(transport)
+
+	c.Settings.SetTransport(transport)
 
 	c.Tokens.SetTransport(transport)
 

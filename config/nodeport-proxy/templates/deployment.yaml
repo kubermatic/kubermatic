@@ -21,6 +21,18 @@ spec:
         kubermatic/scrape_port: "8002"
         kubermatic/metric_path: "/stats/prometheus"
     spec:
+      initContainers:
+      - name: copy-envoy-config
+        image: '{{ .Values.nodePortProxy.image.repository }}:{{ .Values.nodePortProxy.image.tag }}'
+        command:
+        - /bin/cp
+        args:
+        - /envoy.yaml
+        - /etc/envoy/envoy.yaml
+        volumeMounts:
+        - mountPath: /etc/envoy
+          name: envoy-config
+
       containers:
       - name: envoy-manager
         image: '{{ .Values.nodePortProxy.image.repository }}:{{ .Values.nodePortProxy.image.tag }}'
@@ -79,8 +91,7 @@ spec:
       serviceAccountName: nodeport-proxy
       volumes:
       - name: envoy-config
-        configMap:
-          name: nodeport-proxy
+        emptyDir: {}
       nodeSelector:
 {{ toYaml .Values.nodePortProxy.nodeSelector | indent 8 }}
       affinity:

@@ -66,7 +66,7 @@ func (s *digitaloceanScenario) Cluster(secrets secrets) *apimodels.CreateCluster
 	}
 }
 
-func (s *digitaloceanScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDeployment {
+func (s *digitaloceanScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 	size := "4gb"
 	return []apimodels.NodeDeployment{
@@ -86,7 +86,7 @@ func (s *digitaloceanScenario) NodeDeployments(num int, _ secrets) []apimodels.N
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func (s *digitaloceanScenario) OS() apimodels.OperatingSystemSpec {

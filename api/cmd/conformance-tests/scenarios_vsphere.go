@@ -67,7 +67,7 @@ func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 	}
 }
 
-func (s *vSphereScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDeployment {
+func (s *vSphereScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	osName := getOSNameFromSpec(s.nodeOsSpec)
 	replicas := int32(num)
 	return []apimodels.NodeDeployment{
@@ -79,7 +79,7 @@ func (s *vSphereScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDe
 						Vsphere: &apimodels.VSphereNodeSpec{
 							Template: fmt.Sprintf("machine-controller-e2e-%s", osName),
 							Cpus:     2,
-							Memory:   2048,
+							Memory:   4096,
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
@@ -89,7 +89,7 @@ func (s *vSphereScenario) NodeDeployments(num int, _ secrets) []apimodels.NodeDe
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func (s *vSphereScenario) OS() apimodels.OperatingSystemSpec {

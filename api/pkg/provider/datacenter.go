@@ -8,12 +8,12 @@ import (
 	"strings"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
-
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -24,9 +24,15 @@ import (
 )
 
 var (
-	// AllOperatingSystems defines all available operating systems
-	AllOperatingSystems = sets.NewString(string(providerconfig.OperatingSystemCoreos), string(providerconfig.OperatingSystemCentOS), string(providerconfig.OperatingSystemUbuntu))
+	allOperatingSystems = sets.NewString()
 )
+
+func init() {
+	// build a quicker, convenient lookup mechanism
+	for _, os := range providerconfig.AllOperatingSystems {
+		allOperatingSystems.Insert(string(os))
+	}
+}
 
 // SeedGetter is a function to retrieve a single seed
 type SeedGetter = func() (*kubermaticv1.Seed, error)
@@ -53,7 +59,7 @@ type DatacenterMeta struct {
 	Country          string                      `json:"country"`
 	Spec             kubermaticv1.DatacenterSpec `json:"spec"`
 	IsSeed           bool                        `json:"is_seed"`
-	SeedDNSOverwrite *string                     `json:"seed_dns_overwrite,omitempty"`
+	SeedDNSOverwrite string                      `json:"seed_dns_overwrite,omitempty"`
 	Node             kubermaticv1.NodeSettings   `json:"node,omitempty"`
 }
 
@@ -62,8 +68,8 @@ type datacentersMeta struct {
 	Datacenters map[string]DatacenterMeta `json:"datacenters"`
 }
 
-// loadDatacenters loads all Datacenters from the given path.
-func loadSeeds(path string) (map[string]*kubermaticv1.Seed, error) {
+// LoadSeeds loads all Datacenters from the given path.
+func LoadSeeds(path string) (map[string]*kubermaticv1.Seed, error) {
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read datacenter.yaml: %v", err)
@@ -74,27 +80,31 @@ func loadSeeds(path string) (map[string]*kubermaticv1.Seed, error) {
 		return nil, fmt.Errorf("failed to parse datacenters.yaml: %v", err)
 	}
 
-	if err := validateDatacenters(dcMetas.Datacenters); err != nil {
-		return nil, fmt.Errorf("failed to validate datacenters.yaml: %v", err)
-	}
-
-	dcs, err := DatacenterMetasToSeeds(dcMetas.Datacenters)
+	seeds, err := DatacenterMetasToSeeds(dcMetas.Datacenters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert datacenters.yaml: %v", err)
 	}
 
-	return dcs, nil
+	for seedName, seed := range seeds {
+		if err := ValidateSeed(seed); err != nil {
+			return nil, fmt.Errorf("failed to validate datacenters.yaml: seed %q is invalid: %v", seedName, err)
+		}
+	}
+
+	return seeds, nil
 }
 
+// LoadSeed loads an existing datacenters.yaml from disk and returns the given
+// datacenter as a seed or an error if the datacenter does not exist.
 func LoadSeed(path, datacenterName string) (*kubermaticv1.Seed, error) {
-	seeds, err := loadSeeds(path)
+	seeds, err := LoadSeeds(path)
 	if err != nil {
 		return nil, err
 	}
 
 	datacenter, exists := seeds[datacenterName]
 	if !exists {
-		return nil, fmt.Errorf("Datacenter %q is not in datacenters.yaml", datacenterName)
+		return nil, fmt.Errorf("datacenter %q is not in datacenters.yaml", datacenterName)
 	}
 
 	return datacenter, nil
@@ -102,16 +112,17 @@ func LoadSeed(path, datacenterName string) (*kubermaticv1.Seed, error) {
 
 func validateImageList(images kubermaticv1.ImageList) error {
 	for s := range images {
-		if !AllOperatingSystems.Has(string(s)) {
-			return fmt.Errorf("invalid operating system defined '%s'. Possible values: %s", s, strings.Join(AllOperatingSystems.List(), ","))
+		if !allOperatingSystems.Has(string(s)) {
+			return fmt.Errorf("invalid operating system defined '%s'. Possible values: %s", s, strings.Join(allOperatingSystems.List(), ","))
 		}
 	}
 
 	return nil
 }
 
-func validateDatacenters(datacenters map[string]DatacenterMeta) error {
-	for name, dc := range datacenters {
+// ValidateSeed takes a seed and returns an error if the seed's spec is invalid.
+func ValidateSeed(seed *kubermaticv1.Seed) error {
+	for name, dc := range seed.Spec.Datacenters {
 		if dc.Spec.VSphere != nil {
 			if err := validateImageList(dc.Spec.VSphere.Templates); err != nil {
 				return fmt.Errorf("invalid datacenter defined '%s': %v", name, err)
@@ -124,19 +135,15 @@ func validateDatacenters(datacenters map[string]DatacenterMeta) error {
 		}
 	}
 
-	for datacenterName, datacenter := range datacenters {
-		if !datacenter.IsSeed {
-			continue
+	// invalid DNS overwrites can happen when a seed was freshly converted from
+	// the datacenters.yaml and has not yet been validated
+	if seed.Spec.SeedDNSOverwrite != "" {
+		if errs := validation.IsDNS1123Subdomain(seed.Spec.SeedDNSOverwrite); errs != nil {
+			return fmt.Errorf("DNS overwrite %q is not a valid DNS name: %v", seed.Spec.SeedDNSOverwrite, errs)
 		}
-		if datacenter.SeedDNSOverwrite != nil && *datacenter.SeedDNSOverwrite != "" {
-			if errs := validation.IsDNS1123Subdomain(*datacenter.SeedDNSOverwrite); errs != nil {
-				return fmt.Errorf("SeedDNS overwrite %q of datacenter %q is not a valid DNS name: %v",
-					*datacenter.SeedDNSOverwrite, datacenterName, errs)
-			}
-			continue
-		}
-		if errs := validation.IsDNS1123Subdomain(datacenterName); errs != nil {
-			return fmt.Errorf("Datacentername %q is not a valid DNS name: %v", datacenterName, errs)
+	} else {
+		if errs := validation.IsDNS1123Subdomain(seed.Name); errs != nil {
+			return fmt.Errorf("seed name %q is not a valid DNS name: %v", seed.Name, errs)
 		}
 	}
 
@@ -145,14 +152,29 @@ func validateDatacenters(datacenters map[string]DatacenterMeta) error {
 
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName, dcFile, namespace string, dynamicDatacenters bool) (SeedGetter, error) {
-	if dcFile != "" && dynamicDatacenters {
-		return nil, errors.New("--datacenters must be empty when --dynamic-datacenters is enabled")
+	seedGetter, err := seedGetterFactory(ctx, client, seedName, dcFile, namespace, dynamicDatacenters)
+	if err != nil {
+		return nil, err
 	}
+	return func() (*kubermaticv1.Seed, error) {
+		seed, err := seedGetter()
+		if err != nil {
+			return nil, err
+		}
+		seed.SetDefaults()
+		return seed, nil
+	}, nil
+}
 
+func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName, dcFile, namespace string, dynamicDatacenters bool) (SeedGetter, error) {
 	if dynamicDatacenters {
 		return func() (*kubermaticv1.Seed, error) {
 			seed := &kubermaticv1.Seed{}
 			if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: seedName}, seed); err != nil {
+				// allow callers to handle this gracefully
+				if kerrors.IsNotFound(err) {
+					return nil, err
+				}
 				return nil, fmt.Errorf("failed to get seed %q: %v", seedName, err)
 			}
 			return seed, nil
@@ -162,7 +184,7 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 	if dcFile == "" {
 		return nil, errors.New("--datacenters is required")
 	}
-	// Make sure we fail early, an error here is nor recoverable
+	// Make sure we fail early, an error here is not recoverable
 	seed, err := LoadSeed(dcFile, seedName)
 	if err != nil {
 		return nil, err
@@ -173,30 +195,38 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 
 }
 
-func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace, workerName string, dynamicDatacenters bool) (SeedsGetter, error) {
-	if dcFile != "" && dynamicDatacenters {
-		return nil, errors.New("--datacenters must be empty when --dynamic-datacenters is enabled")
+func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace string, dynamicDatacenters bool) (SeedsGetter, error) {
+	seedsGetter, err := seedsGetterFactory(ctx, client, dcFile, namespace, dynamicDatacenters)
+	if err != nil {
+		return nil, err
 	}
-
-	if dynamicDatacenters {
-		labelSelector, err := workerlabel.LabelSelector(workerName)
+	return func() (map[string]*kubermaticv1.Seed, error) {
+		seeds, err := seedsGetter()
 		if err != nil {
-			return nil, fmt.Errorf("failed to construct label selector for worker-name: %v", err)
+			return nil, err
 		}
+		for idx := range seeds {
+			seeds[idx].SetDefaults()
+		}
+		return seeds, nil
+	}, nil
+}
+
+func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace string, dynamicDatacenters bool) (SeedsGetter, error) {
+	if dynamicDatacenters {
 		// We only have a options func for raw *metav1.ListOpts as the rbac controller currently required that
 		listOpts := &ctrlruntimeclient.ListOptions{
-			LabelSelector: labelSelector,
-			Namespace:     namespace,
+			Namespace: namespace,
 		}
 
 		return func() (map[string]*kubermaticv1.Seed, error) {
 			seeds := &kubermaticv1.SeedList{}
-			if err := client.List(ctx, listOpts, seeds); err != nil {
+			if err := client.List(ctx, seeds, listOpts); err != nil {
 				return nil, fmt.Errorf("failed to list the seeds: %v", err)
 			}
 			seedMap := map[string]*kubermaticv1.Seed{}
-			for _, seed := range seeds.Items {
-				seedMap[seed.Name] = &seed
+			for idx, seed := range seeds.Items {
+				seedMap[seed.Name] = &seeds.Items[idx]
 			}
 			return seedMap, nil
 		}, nil
@@ -205,8 +235,8 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 	if dcFile == "" {
 		return nil, errors.New("--datacenters is required")
 	}
-	// Make sure we fail early, an error here is nor recoverable
-	seedMap, err := loadSeeds(dcFile)
+	// Make sure we fail early, an error here is not recoverable
+	seedMap, err := LoadSeeds(dcFile)
 	if err != nil {
 		return nil, err
 	}

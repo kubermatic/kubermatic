@@ -25,6 +25,64 @@ type Client struct {
 }
 
 /*
+ListAWSSizes lists available a w s sizes
+*/
+func (a *Client) ListAWSSizes(params *ListAWSSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAWSSizesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAWSSizes",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/aws/sizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAWSSizesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListAWSSizesOK), nil
+
+}
+
+/*
+ListAWSSizesNoCredentials Lists available AWS sizes
+*/
+func (a *Client) ListAWSSizesNoCredentials(params *ListAWSSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAWSSizesNoCredentialsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAWSSizesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAWSSizesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListAWSSizesNoCredentialsOK), nil
+
+}
+
+/*
 ListAWSSubnets Lists available AWS subnets
 */
 func (a *Client) ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsOK, error) {
@@ -108,64 +166,6 @@ func (a *Client) ListAWSVPCS(params *ListAWSVPCSParams, authInfo runtime.ClientA
 		return nil, err
 	}
 	return result.(*ListAWSVPCSOK), nil
-
-}
-
-/*
-ListAWSZones Lists available AWS zones
-*/
-func (a *Client) ListAWSZones(params *ListAWSZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSZonesOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListAWSZonesParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "listAWSZones",
-		Method:             "GET",
-		PathPattern:        "/api/v1/providers/aws/{dc}/zones",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &ListAWSZonesReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*ListAWSZonesOK), nil
-
-}
-
-/*
-ListAWSZonesNoCredentials Lists available AWS zones
-*/
-func (a *Client) ListAWSZonesNoCredentials(params *ListAWSZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSZonesNoCredentialsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListAWSZonesNoCredentialsParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "listAWSZonesNoCredentials",
-		Method:             "GET",
-		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/zones",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &ListAWSZonesNoCredentialsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*ListAWSZonesNoCredentialsOK), nil
 
 }
 

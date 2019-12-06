@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -8,10 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/client-go/kubernetes/scheme"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestLoadDatacentersMeta(t *testing.T) {
@@ -108,7 +110,7 @@ datacenters:
 	err = file.Sync()
 	assert.NoError(t, err)
 
-	resultDatacenters, err := loadSeeds(file.Name())
+	resultDatacenters, err := LoadSeeds(file.Name())
 	if err != nil {
 		t.Fatalf("failed to load datacenters: %v", err)
 	}
@@ -116,7 +118,7 @@ datacenters:
 	assert.Equal(t, expectedSeeds, resultDatacenters)
 }
 
-func TestValidateDataCenters(t *testing.T) {
+func TestMigrateDatacenters(t *testing.T) {
 	testCases := []struct {
 		name        string
 		datacenters map[string]DatacenterMeta
@@ -144,7 +146,7 @@ func TestValidateDataCenters(t *testing.T) {
 			datacenters: map[string]DatacenterMeta{
 				"&invalid": {
 					IsSeed:           true,
-					SeedDNSOverwrite: utilpointer.StringPtr("valid"),
+					SeedDNSOverwrite: "valid",
 				},
 			},
 		},
@@ -153,24 +155,91 @@ func TestValidateDataCenters(t *testing.T) {
 			datacenters: map[string]DatacenterMeta{
 				"valid": {
 					IsSeed:           true,
-					SeedDNSOverwrite: utilpointer.StringPtr("&invalid"),
+					SeedDNSOverwrite: "&invalid",
 				},
 			},
 			errExpected: true,
 		},
-		{
-			name: "Invalid name, but is not a seed",
-			datacenters: map[string]DatacenterMeta{
-				"&invalid": {},
-			},
-		},
 	}
 
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			if err := validateDatacenters(tc.datacenters); (err != nil) != tc.errExpected {
-				t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
+			t.Parallel()
+			seeds, err := DatacenterMetasToSeeds(tc.datacenters)
+			if err != nil {
+				t.Fatalf("Failed to convert datacenters to seeds: %v", err)
+			}
+
+			for _, seed := range seeds {
+				if err := ValidateSeed(seed); (err != nil) != tc.errExpected {
+					t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
+				}
 			}
 		})
+	}
+}
+
+func TestSeedGetterFactorySetsDefaults(t *testing.T) {
+	t.Parallel()
+	initSeed := &kubermaticv1.Seed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-seed",
+			Namespace: "my-ns",
+		},
+		Spec: kubermaticv1.SeedSpec{
+			ProxySettings: &kubermaticv1.ProxySettings{
+				HTTPProxy: kubermaticv1.NewProxyValue("seed-proxy"),
+			},
+			Datacenters: map[string]kubermaticv1.Datacenter{"a": {}},
+		},
+	}
+	client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, initSeed)
+
+	seedGetter, err := SeedGetterFactory(context.Background(), client, "my-seed", "", "my-ns", true)
+	if err != nil {
+		t.Fatalf("failed getting seedGetter: %v", err)
+	}
+	seed, err := seedGetter()
+	if err != nil {
+		t.Fatalf("failed calling seedGetter: %v", err)
+	}
+	if seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy.String() != "seed-proxy" {
+		t.Errorf("expected the datacenters http proxy setting to get set but was %v",
+			seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy)
+	}
+}
+
+func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
+	t.Parallel()
+	initSeed := &kubermaticv1.Seed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-seed",
+			Namespace: "my-ns",
+		},
+		Spec: kubermaticv1.SeedSpec{
+			ProxySettings: &kubermaticv1.ProxySettings{
+				HTTPProxy: kubermaticv1.NewProxyValue("seed-proxy"),
+			},
+			Datacenters: map[string]kubermaticv1.Datacenter{"a": {}},
+		},
+	}
+	client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, initSeed)
+
+	seedsGetter, err := SeedsGetterFactory(context.Background(), client, "", "my-ns", true)
+	if err != nil {
+		t.Fatalf("failed getting seedsGetter: %v", err)
+	}
+	seeds, err := seedsGetter()
+	if err != nil {
+		t.Fatalf("failed calling seedsGetter: %v", err)
+	}
+	if _, exists := seeds["my-seed"]; !exists || len(seeds) != 1 {
+		t.Fatalf("expceted to get a map with exactly one key `my-seed`, got %v", seeds)
+	}
+	seed := seeds["my-seed"]
+	if seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy.String() != "seed-proxy" {
+		t.Errorf("expected the datacenters http proxy setting to get set but was %v",
+			seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy)
 	}
 }

@@ -10,6 +10,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
+	restclient "k8s.io/client-go/rest"
 )
 
 func TestCreateCluster(t *testing.T) {
@@ -85,13 +86,16 @@ func TestCreateCluster(t *testing.T) {
 			}
 
 			// act
-			target := kubernetes.NewClusterProvider(impersonationClient.CreateFakeImpersonatedClientSet, nil, tc.workerName, nil, nil, nil, tc.shareKubeconfig)
+			target := kubernetes.NewClusterProvider(&restclient.Config{}, impersonationClient.CreateFakeImpersonatedClientSet, nil, tc.workerName, nil, nil, nil, tc.shareKubeconfig)
 			partialCluster := &kubermaticv1.Cluster{}
 			partialCluster.Spec = *tc.spec
 			if tc.clusterType == "openshift" {
 				partialCluster.Annotations = map[string]string{
 					"kubermatic.io/openshift": "true",
 				}
+			}
+			if tc.expectedCluster != nil {
+				partialCluster.Finalizers = tc.expectedCluster.Finalizers
 			}
 
 			cluster, err := target.New(tc.project, tc.userInfo, partialCluster)

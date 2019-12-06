@@ -9,12 +9,13 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 # Deploy a user-cluster/ipam-controller for which we actuallly
 # have a pushed image
 export KUBERMATICCOMMIT="${KUBERMATICCOMMIT:-$(git rev-parse origin/master)}"
-make kubermatic-controller-manager
+make seed-controller-manager
 
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 
-./_build/kubermatic-controller-manager \
-  -datacenters=../../secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml \
+./_build/seed-controller-manager \
+  -dynamic-datacenters=true \
+  -namespace=kubermatic \
   -datacenter-name=europe-west3-c \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -versions=../config/kubermatic/static/master/versions.yaml \
@@ -22,6 +23,7 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
   -master-resources=../config/kubermatic/static/master \
   -kubernetes-addons-path=../addons \
   -openshift-addons-path=../openshift_addons \
+  -feature-gates=OpenIDAuthPlugin=true \
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
   -external-url=dev.kubermatic.io \
   -backup-container=../config/kubermatic/static/backup-container.yaml \
@@ -34,5 +36,6 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
   -monitoring-scrape-annotation-prefix='kubermatic.io' \
   -log-debug=true \
   -log-format=Console \
-  -logtostderr=1 \
-  -v=4 $@ 2>&1|tee /tmp/kubermatic-controller-manager.log
+  -max-parallel-reconcile=10 \
+  -logtostderr \
+  -v=4 # Log-level for the Kube dependencies. Increase up to 9 to get request-level logs.

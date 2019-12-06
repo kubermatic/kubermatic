@@ -13,6 +13,7 @@ import (
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
@@ -32,7 +33,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 		}
 
 		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
-		kubermaticProject, err := projectProvider.New(user, projectRq.Body.Name)
+		kubermaticProject, err := projectProvider.New(user, projectRq.Body.Name, projectRq.Body.Labels)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -43,6 +44,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 				CreationTimestamp: apiv1.NewTime(kubermaticProject.CreationTimestamp.Time),
 			},
 			Status: kubermaticProject.Status.Phase,
+			Labels: kubermaticProject.Labels,
 			Owners: []apiv1.User{
 				{
 					ObjectMeta: apiv1.ObjectMeta{
@@ -109,7 +111,7 @@ func isStatus(err error, status int32) bool {
 }
 
 // DeleteEndpoint defines an HTTP endpoint for deleting a project
-func DeleteEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func DeleteEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteRq)
 		if !ok {
@@ -119,15 +121,18 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 			return nil, errors.NewBadRequest("the id of the project cannot be empty")
 		}
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		err := projectProvider.Delete(userInfo, req.ProjectID)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		err = projectProvider.Delete(userInfo, req.ProjectID)
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 }
 
 // UpdateEndpoint defines an HTTP endpoint that updates an existing project in the system
 // in the current implementation only project renaming is supported
-func UpdateEndpoint(projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) endpoint.Endpoint {
+func UpdateEndpoint(projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateRq)
 		if !ok {
@@ -138,13 +143,17 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, memberProvider pro
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 		kubermaticProject, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		kubermaticProject.Spec.Name = req.Body.Name
+		kubermaticProject.Labels = req.Body.Labels
 		project, err := projectProvider.Update(userInfo, kubermaticProject)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -158,7 +167,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, memberProvider pro
 }
 
 // GeEndpoint defines an HTTP endpoint for getting a project
-func GetEndpoint(projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) endpoint.Endpoint {
+func GetEndpoint(projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetProjectRq)
 		if !ok {
@@ -168,7 +177,10 @@ func GetEndpoint(projectProvider provider.ProjectProvider, memberProvider provid
 			return nil, errors.NewBadRequest("the id of the project cannot be empty")
 		}
 
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 		kubermaticProject, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -195,6 +207,7 @@ func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project
 				return nil
 			}(),
 		},
+		Labels: label.FilterLabels(label.ProjectResourceType, kubermaticProject.Labels),
 		Status: kubermaticProject.Status.Phase,
 		Owners: projectOwners,
 	}
@@ -265,7 +278,8 @@ func DecodeUpdateRq(c context.Context, r *http.Request) (interface{}, error) {
 type projectReq struct {
 	// in:body
 	Body struct {
-		Name string `json:"name"`
+		Name   string            `json:"name"`
+		Labels map[string]string `json:"labels,omitempty"`
 	}
 }
 

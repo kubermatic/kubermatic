@@ -7,17 +7,17 @@ import (
 	"net"
 	"strings"
 
-	"github.com/golang/glog"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -27,7 +27,7 @@ type TemplateData struct {
 	client                                           ctrlruntimeclient.Client
 	cluster                                          *kubermaticv1.Cluster
 	dc                                               *kubermaticv1.Datacenter
-	SeedDC                                           string
+	seed                                             *kubermaticv1.Seed
 	OverwriteRegistry                                string
 	nodePortRange                                    string
 	nodeAccessNetwork                                string
@@ -43,6 +43,7 @@ type TemplateData struct {
 	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
 	dnatControllerImage                              string
+	supportsFailureDomainZoneAntiAffinity            bool
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -51,7 +52,7 @@ func NewTemplateData(
 	client ctrlruntimeclient.Client,
 	cluster *kubermaticv1.Cluster,
 	dc *kubermaticv1.Datacenter,
-	seedDatacenter string,
+	seed *kubermaticv1.Seed,
 	overwriteRegistry string,
 	nodePortRange string,
 	nodeAccessNetwork string,
@@ -66,13 +67,14 @@ func NewTemplateData(
 	oidcIssuerClientID string,
 	nodeLocalDNSCacheEnabled bool,
 	kubermaticImage string,
-	dnatControllerImage string) *TemplateData {
+	dnatControllerImage string,
+	supportsFailureDomainZoneAntiAffinity bool) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
 		client:                                 client,
 		cluster:                                cluster,
 		dc:                                     dc,
-		SeedDC:                                 seedDatacenter,
+		seed:                                   seed,
 		OverwriteRegistry:                      overwriteRegistry,
 		nodePortRange:                          nodePortRange,
 		nodeAccessNetwork:                      nodeAccessNetwork,
@@ -88,7 +90,17 @@ func NewTemplateData(
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,
 		dnatControllerImage:                              dnatControllerImage,
+		supportsFailureDomainZoneAntiAffinity:            supportsFailureDomainZoneAntiAffinity,
 	}
+}
+
+// GetViewerToken returns the viewer token
+func (d *TemplateData) GetViewerToken() (string, error) {
+	viewerTokenSecret := &corev1.Secret{}
+	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ViewerTokenSecretName, Namespace: d.cluster.Status.NamespaceName}, viewerTokenSecret); err != nil {
+		return "", err
+	}
+	return string(viewerTokenSecret.Data[ViewerTokenSecretKey]), nil
 }
 
 // GetDexCA returns the chain of public certificates of the Dex
@@ -197,7 +209,7 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 func (d *TemplateData) ProviderName() string {
 	p, err := provider.ClusterCloudProviderName(d.cluster.Spec.Cloud)
 	if err != nil {
-		glog.Errorf("could not identify cloud provider: %v", err)
+		klog.Errorf("could not identify cloud provider: %v", err)
 	}
 	return p
 }
@@ -212,17 +224,17 @@ func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
 
 // GetRootCA returns the root CA of the cluster
 func (d *TemplateData) GetRootCA() (*triple.KeyPair, error) {
-	return GetClusterRootCA(d.ctx, d.cluster, d.client)
+	return GetClusterRootCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
 
 // GetFrontProxyCA returns the root CA for the front proxy
 func (d *TemplateData) GetFrontProxyCA() (*triple.KeyPair, error) {
-	return GetClusterFrontProxyCA(d.ctx, d.cluster, d.client)
+	return GetClusterFrontProxyCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
 
 // GetOpenVPNCA returns the root ca for the OpenVPN
 func (d *TemplateData) GetOpenVPNCA() (*ECDSAKeyPair, error) {
-	return GetOpenVPNCA(d.ctx, d.cluster, d.client)
+	return GetOpenVPNCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
 
 // GetPodTemplateLabels returns a set of labels for a Pod including the revisions of depending secrets and configmaps.
@@ -286,6 +298,10 @@ func (d *TemplateData) DNATControllerImage() string {
 	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }
 
+func (d *TemplateData) SupportsFailureDomainZoneAntiAffinity() bool {
+	return d.supportsFailureDomainZoneAntiAffinity
+}
+
 func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
 	// We need all three of these to fetch and use a secret
 	if configVar.Name != "" && configVar.Namespace != "" && key != "" {
@@ -301,4 +317,39 @@ func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig
 		return "", fmt.Errorf("secret %q in namespace %q has no key %q", configVar.Name, configVar.Namespace, key)
 	}
 	return "", nil
+}
+
+func (d *TemplateData) GetKubernetesCloudProviderName() string {
+	return GetKubernetesCloudProviderName(d.Cluster())
+}
+
+func (d *TemplateData) CloudCredentialSecretTemplate() ([]byte, error) {
+	// This is needed for Openshift only
+	return nil, nil
+}
+
+func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
+	if cluster.Spec.Cloud.AWS != nil {
+		return "aws"
+	}
+	if cluster.Spec.Cloud.Openstack != nil {
+		if flag := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
+			return "external"
+		}
+		return "openstack"
+	}
+	if cluster.Spec.Cloud.VSphere != nil {
+		return "vsphere"
+	}
+	if cluster.Spec.Cloud.Azure != nil {
+		return "azure"
+	}
+	if cluster.Spec.Cloud.GCP != nil {
+		return "gce"
+	}
+	return ""
+}
+
+func (d *TemplateData) Seed() *kubermaticv1.Seed {
+	return d.seed
 }

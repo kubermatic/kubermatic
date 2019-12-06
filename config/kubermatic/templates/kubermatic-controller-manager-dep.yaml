@@ -1,9 +1,13 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controller-manager-v1
 spec:
   replicas: {{ .Values.kubermatic.controller.replicas }}
+  selector:
+    matchLabels:
+      role: controller-manager
+      version: v1
   template:
     metadata:
       labels:
@@ -48,20 +52,19 @@ spec:
         - name: addons
           mountPath: /opt/addons
       containers:
-      - name: controller-manager
+      - name: seed-controller-manager
         command:
-        - kubermatic-controller-manager
+        - seed-controller-manager
         args:
-        - -v=2
-        - -logtostderr
         - -external-url={{ .Values.kubermatic.domain }}
         - -datacenter-name={{ .Values.kubermatic.controller.datacenterName }}
         - -etcd-disk-size={{ .Values.kubermatic.etcd.diskSize }}
         - -master-resources=/opt/master-files
+        {{- if .Values.kubermatic.datacenters }}
+        - -datacenters=/opt/datacenter/datacenters.yaml
+        {{- end }}
         {{- if .Values.kubermatic.dynamicDatacenters }}
         - -dynamic-datacenters=true
-        {{- else }}
-        - -datacenters=/opt/datacenter/datacenters.yaml
         {{- end }}
         - -versions=/opt/master-files/versions.yaml
         - -updates=/opt/master-files/updates.yaml
@@ -111,9 +114,16 @@ spec:
         - -apiserver-default-replicas={{ .Values.kubermatic.apiserverDefaultReplicas }}
         - -controller-manager-default-replicas={{ .Values.kubermatic.controllerManagerDefaultReplicas}}
         - -scheduler-default-replicas={{ .Values.kubermatic.schedulerDefaultReplicas}}
+        - -max-parallel-reconcile={{ .Values.kubermatic.maxParallelReconcile}}
         - -namespace=$(NAMESPACE)
         - -seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/serverCert.pem
         - -seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/serverKey.pem
+        {{- if .Values.kubermatic.apiserverEndpointReconcilingDisabled }}
+        - -apiserver-reconciling-disabled-by-default=true
+        {{- else }}
+        - -apiserver-reconciling-disabled-by-default=false
+        {{- end }}
+        - -pprof-listen-address={{ .Values.kubermatic.controller.pprofEndpoint }}
         image: '{{ .Values.kubermatic.controller.image.repository }}:{{ .Values.kubermatic.controller.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.image.pullPolicy }}
         env:
@@ -134,7 +144,7 @@ spec:
         - name: master-files
           mountPath: "/opt/master-files/"
           readOnly: true
-        {{- if not .Values.kubermatic.dynamicDatacenters }}
+        {{- if .Values.kubermatic.datacenters }}
         - name: datacenters
           mountPath: "/opt/datacenter/"
           readOnly: true
@@ -173,7 +183,7 @@ spec:
       - name: master-files
         secret:
           secretName: master-files
-      {{- if not .Values.kubermatic.dynamicDatacenters }}
+      {{- if .Values.kubermatic.datacenters }}
       - name: datacenters
         secret:
           secretName: datacenters

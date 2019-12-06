@@ -110,6 +110,11 @@ func main() {
 				ResourceImportPath: "k8s.io/api/admissionregistration/v1beta1",
 			},
 			{
+				ResourceName: "ValidatingWebhookConfiguration",
+				ImportAlias:  "admissionregistrationv1beta1",
+				// Don't specify ResourceImportPath so this block does not create a new import line in the generated code
+			},
+			{
 				ResourceName:       "APIService",
 				ImportAlias:        "apiregistrationv1beta1",
 				ResourceImportPath: "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1",
@@ -119,6 +124,16 @@ func main() {
 				ResourceNamePlural: "Ingresses",
 				ImportAlias:        "extensionsv1beta1",
 				ResourceImportPath: "k8s.io/api/extensions/v1beta1",
+			},
+			{
+				ResourceName:       "Seed",
+				ImportAlias:        "kubermaticv1",
+				ResourceImportPath: "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1",
+			},
+			{
+				ResourceName:       "Certificate",
+				ImportAlias:        "certmanagerv1alpha2",
+				ResourceImportPath: "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2",
 			},
 		},
 	}
@@ -241,6 +256,9 @@ func Reconcile{{ .ResourceNamePlural }}(ctx context.Context, namedGetters []Name
 		create = {{ .DefaultingFunc }}(create)
 {{- end }}
 		createObject := {{ .ResourceName }}ObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
 		for _, objectModifier := range objectModifiers {
 			createObject = objectModifier(createObject)
 		}

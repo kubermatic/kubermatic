@@ -115,8 +115,12 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 			if err != nil {
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 			}
-
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableDexCA)
+			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
+			endpointReconcilingDisabled := false
+			if data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled != nil {
+				endpointReconcilingDisabled = *data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled
+			}
+			flags, err := getApiserverFlags(data, etcdEndpoints, enableDexCA, auditLogEnabled, endpointReconcilingDisabled)
 			if err != nil {
 				return nil, err
 			}
@@ -126,7 +130,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
 			}
 
-			envVars, err := getEnvVars(data)
+			envVars, err := GetEnvVars(data)
 			if err != nil {
 				return nil, err
 			}
@@ -178,31 +182,33 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				},
 			}
 
-			dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
-				corev1.Container{
-					Name:    "audit-logs",
-					Image:   "docker.io/fluent/fluent-bit:1.2.2",
-					Command: []string{"/fluent-bit/bin/fluent-bit"},
-					Args:    []string{"-i", "tail", "-p", "path=/var/log/kubernetes/audit/audit.log", "-p", "db=/var/log/kubernetes/audit/fluentbit.db", "-o", "stdout"},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      resources.AuditLogVolumeName,
-							MountPath: "/var/log/kubernetes/audit",
-							ReadOnly:  false,
+			if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled {
+				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
+					corev1.Container{
+						Name:    "audit-logs",
+						Image:   "docker.io/fluent/fluent-bit:1.2.2",
+						Command: []string{"/fluent-bit/bin/fluent-bit"},
+						Args:    []string{"-i", "tail", "-p", "path=/var/log/kubernetes/audit/audit.log", "-p", "db=/var/log/kubernetes/audit/fluentbit.db", "-o", "stdout"},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      resources.AuditLogVolumeName,
+								MountPath: "/var/log/kubernetes/audit",
+								ReadOnly:  false,
+							},
+						},
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("10Mi"),
+								corev1.ResourceCPU:    resource.MustParse("5m"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceMemory: resource.MustParse("60Mi"),
+								corev1.ResourceCPU:    resource.MustParse("50m"),
+							},
 						},
 					},
-					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("10Mi"),
-							corev1.ResourceCPU:    resource.MustParse("5m"),
-						},
-						Limits: corev1.ResourceList{
-							corev1.ResourceMemory: resource.MustParse("60Mi"),
-							corev1.ResourceCPU:    resource.MustParse("50m"),
-						},
-					},
-				},
-			)
+				)
+			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
@@ -211,7 +217,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableDexCA bool) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableDexCA, auditLogEnabled, endpointReconcilingDisabled bool) ([]string, error) {
 	nodePortRange := data.NodePortRange()
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
@@ -267,7 +273,14 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
-		"--audit-policy-file", "/etc/kubernetes/audit/policy.yaml",
+	}
+
+	if auditLogEnabled {
+		flags = append(flags, "--audit-policy-file", "/etc/kubernetes/audit/policy.yaml")
+	}
+
+	if endpointReconcilingDisabled {
+		flags = append(flags, "--endpoint-reconciler-type=none")
 	}
 
 	if data.Cluster().Spec.Cloud.GCP != nil {
@@ -286,8 +299,8 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, strings.Join(featureGates, ","))
 	}
 
-	cloudProviderName := GetKubernetesCloudProviderName(data.Cluster())
-	if cloudProviderName != "" {
+	cloudProviderName := data.GetKubernetesCloudProviderName()
+	if cloudProviderName != "" && cloudProviderName != "external" {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
@@ -305,32 +318,19 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 			flags = append(flags, "--oidc-required-claim", data.Cluster().Spec.OIDC.RequiredClaim)
 		}
 	} else if enableDexCA {
-		flags = append(flags, "--oidc-issuer-url", data.OIDCIssuerURL())
-		flags = append(flags, "--oidc-client-id", data.OIDCIssuerClientID())
-		flags = append(flags, "--oidc-username-claim", "email")
+		flags = append(flags,
+			"--oidc-issuer-url", data.OIDCIssuerURL(),
+			"--oidc-client-id", data.OIDCIssuerClientID(),
+			"--oidc-username-claim", "email",
+			"--oidc-groups-prefix", "oidc:",
+			"--oidc-groups-claim", "groups",
+		)
 		if len(data.OIDCCAFile()) > 0 {
 			flags = append(flags, "--oidc-ca-file", "/etc/kubernetes/dex/ca/caBundle.pem")
 		}
 	}
 
 	return flags, nil
-}
-
-func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
-	if cluster.Spec.Cloud.AWS != nil {
-		return "aws"
-	}
-	if cluster.Spec.Cloud.Openstack != nil {
-		return "openstack"
-	}
-	if cluster.Spec.Cloud.VSphere != nil {
-		return "vsphere"
-	}
-	if cluster.Spec.Cloud.Azure != nil {
-		return "azure"
-	}
-
-	return ""
 }
 
 func getVolumeMounts(enableDexCA bool) []corev1.VolumeMount {
@@ -521,7 +521,12 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
+type kubeAPIServerEnvData interface {
+	resources.CredentialsData
+	Seed() *kubermaticv1.Seed
+}
+
+func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
 	credentials, err := resources.GetCredentials(data)
 	if err != nil {
 		return nil, err
@@ -534,7 +539,7 @@ func getEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 	}
-	return vars, nil
+	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...), nil
 }
 
 func getDexCASecretVolume() corev1.Volume {

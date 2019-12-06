@@ -1,7 +1,4 @@
 # Kubermatic API
-[Drone](https://drone.loodse.com/kubermatic/kubermatic)
-
----
 
 ## Development environment
 
@@ -13,19 +10,12 @@ git clone git@github.com:kubermatic/secrets
 cd api
 ```
 
-There are a couple of scripts in the `api/hacks` directory to aid in running the components locally for testing
-purposes.
+There are a couple of scripts in the `api/hacks` directory to aid in running the components locally
+for testing purposes.
 
-#### Update dependencies
-Sure that you want to update? And not just install dependencies?
-```bash
-dep ensure -update
-```
-#### Update code generation
-
-```bash
-./hack/update-codegen.sh
-```
+You can create a cluster via the UI at `https://dev.kubermatic.io`, then use `kubectl` to add a
+`worker-name=<<hostname-of-your-laptop>>` label to the cluster. This will make your locally
+running controlers manage the cluster.
 
 ### Running locally
 #### kubermatic-api
@@ -34,14 +24,14 @@ dep ensure -update
 ./hack/run-api.sh
 ```
 
-#### kubermatic-controller-manager
+#### seed-controller-manager
 ```bash
 ./hack/run-controller.sh
 ```
 
-#### kubermatic-rbac-generator
+#### master-controller-manager
 ```bash
-./hack/run-rbac-generator.sh
+./hack/run-master-controller-manager.sh
 ```
 
 ### Run linters
@@ -60,13 +50,16 @@ make fix
 make test
 ```
 
-#### E2E-tests
-Locally run:
+#### Update dependencies
+Sure that you want to update? And not just install dependencies?
 ```bash
-make e2e         #run the e2e container (needs _artifacts/kubeconfig)
-make client-down #deletes all clusters from the given user
+dep ensure -update
+```
+#### Update code generation
+
+```bash
+./hack/update-codegen.sh
 ```
 
 # Documentation
 - [AWS Account Creation](docs/aws-account-creation.md)
-- [Load Script Usage](docs/load-script-usage.md)

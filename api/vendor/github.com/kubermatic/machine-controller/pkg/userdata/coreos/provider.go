@@ -29,7 +29,7 @@ import (
 	"github.com/Masterminds/semver"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/plugin"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	providerconfigtypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	userdatahelper "github.com/kubermatic/machine-controller/pkg/userdata/helper"
 )
 
@@ -49,7 +49,7 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 		return "", fmt.Errorf("invalid kubelet version: %v", err)
 	}
 
-	pconfig, err := providerconfig.GetConfig(req.MachineSpec.ProviderSpec)
+	pconfig, err := providerconfigtypes.GetConfig(req.MachineSpec.ProviderSpec)
 	if err != nil {
 		return "", fmt.Errorf("failed to get provider config: %v", err)
 	}
@@ -88,7 +88,7 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 
 	data := struct {
 		plugin.UserDataRequest
-		ProviderSpec           *providerconfig.Config
+		ProviderSpec           *providerconfigtypes.Config
 		CoreOSConfig           *Config
 		Kubeconfig             string
 		KubernetesCACert       string
@@ -215,6 +215,7 @@ systemd:
         Environment=KUBELET_IMAGE=docker://k8s.gcr.io/hyperkube-amd64:v{{ .KubeletVersion }}
 {{- end }}
         Environment="RKT_RUN_ARGS=--uuid-file-save=/var/cache/kubelet-pod.uuid \
+          --inherit-env \
           --insecure-options=image{{if .InsecureHyperkubeImage }},http{{ end }} \
           --volume=resolv,kind=host,source=/etc/resolv.conf \
           --mount volume=resolv,target=/etc/resolv.conf \

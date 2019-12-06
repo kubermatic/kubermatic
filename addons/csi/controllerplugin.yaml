@@ -1,0 +1,119 @@
+{{ if (.Cluster.Spec.Features.externalCloudProvider) }}
+{{ if .Cluster.Spec.Cloud.Openstack }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-cinder-controller-service
+  namespace: kube-system
+  labels:
+    app: csi-cinder-controllerplugin
+spec:
+  selector:
+    app: csi-cinder-controllerplugin
+  ports:
+    - name: dummy
+      port: 12345
+
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: csi-cinder-controllerplugin
+  namespace: kube-system
+spec:
+  serviceName: "csi-cinder-controller-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-cinder-controllerplugin
+  template:
+    metadata:
+      labels:
+        app: csi-cinder-controllerplugin
+    spec:
+      serviceAccount: csi-cinder-controller-sa
+      tolerations:
+      - key: "node.cloudprovider.kubernetes.io/uninitialized"
+        operator: "Exists"
+      containers:
+        - name: csi-attacher
+          image: quay.io/k8scsi/csi-attacher:v1.2.1
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: csi-provisioner
+          image: quay.io/k8scsi/csi-provisioner:v1.3.1
+          args:
+            - "--csi-address=$(ADDRESS)"
+            - "--feature-gates=Topology=true"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: csi-snapshotter
+          image: quay.io/k8scsi/csi-snapshotter:v1.2.2
+          args:
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /var/lib/csi/sockets/pluginproxy/
+              name: socket-dir
+        - name: csi-resizer
+          image: quay.io/k8scsi/csi-resizer:v0.3.0
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: cinder-csi-plugin
+          image: docker.io/k8scloudprovider/cinder-csi-plugin:v1.16.0
+          args :
+            - /bin/cinder-csi-plugin
+            - "--nodeid=$(NODE_ID)"
+            - "--endpoint=$(CSI_ENDPOINT)"
+            - "--cloud-config=$(CLOUD_CONFIG)"
+            - "--cluster=$(CLUSTER_NAME)"
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix://csi/csi.sock
+            - name: CLOUD_CONFIG
+              value: /etc/config/config
+            - name: CLUSTER_NAME
+              value: kubernetes
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+            - name: cloud-config
+              mountPath: /etc/config
+              readOnly: true
+      volumes:
+        - name: socket-dir
+          emptyDir:
+        - name: cloud-config
+          secret:
+            secretName: cloud-config
+{{ end }}
+{{ end }}

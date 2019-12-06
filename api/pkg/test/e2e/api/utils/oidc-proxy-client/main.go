@@ -163,7 +163,7 @@ func cmd() *cobra.Command {
 				ScopesSupported []string `json:"scopes_supported"`
 			}
 			if err := provider.Claims(&s); err != nil {
-				return fmt.Errorf("Failed to parse provider scopes_supported: %v", err)
+				return fmt.Errorf("failed to parse provider scopes_supported: %v", err)
 			}
 
 			if len(s.ScopesSupported) == 0 {
@@ -200,10 +200,10 @@ func cmd() *cobra.Command {
 			}
 		},
 	}
-	c.Flags().StringVar(&a.clientID, "client-id", "example-app", "OAuth2 client ID of this application.")
+	c.Flags().StringVar(&a.clientID, "client-id", "kubermatic", "OAuth2 client ID of this application.")
 	c.Flags().StringVar(&a.clientSecret, "client-secret", "ZXhhbXBsZS1hcHAtc2VjcmV0", "OAuth2 client secret of this application.")
-	c.Flags().StringVar(&a.redirectURI, "redirect-uri", "http://127.0.0.1:5555/callback", "Callback URL for OAuth2 responses.")
-	c.Flags().StringVar(&issuerURL, "issuer", "http://127.0.0.1:5556/dex", "URL of the OpenID Connect issuer.")
+	c.Flags().StringVar(&a.redirectURI, "redirect-uri", "http://localhost:8000", "Callback URL for OAuth2 responses.")
+	c.Flags().StringVar(&issuerURL, "issuer", "http://dex.oauth:5556", "URL of the OpenID Connect issuer.")
 	c.Flags().StringVar(&listen, "listen", "http://127.0.0.1:8000", "HTTP(S) address to listen at.")
 	c.Flags().StringVar(&tlsCert, "tls-cert", "", "X509 cert file to present when serving HTTPS.")
 	c.Flags().StringVar(&tlsKey, "tls-key", "", "Private key for the HTTPS cert.")

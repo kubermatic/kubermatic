@@ -6,30 +6,22 @@ import (
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	prometheusapi "github.com/prometheus/client_golang/api"
+	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
-	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
-
-// UpdateManager specifies a set of methods to handle cluster versions & updates
-type UpdateManager interface {
-	GetVersion(from, clusterType string) (*version.MasterVersion, error)
-	GetMasterVersions(clusterType string) ([]*version.MasterVersion, error)
-	GetDefault() (*version.MasterVersion, error)
-	AutomaticUpdate(from, clusterType string) (*version.MasterVersion, error)
-	GetPossibleUpdates(from, clusterType string) ([]*version.MasterVersion, error)
-}
 
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
+	log                         *zap.SugaredLogger
 	seedsGetter                 provider.SeedsGetter
-	privilegedSeedClientGetter  provider.SeedClientGetter
 	sshKeyProvider              provider.SSHKeyProvider
 	userProvider                provider.UserProvider
 	serviceAccountProvider      provider.ServiceAccountProvider
@@ -42,6 +34,7 @@ type Routing struct {
 	tokenExtractors             auth.TokenExtractor
 	clusterProviderGetter       provider.ClusterProviderGetter
 	addonProviderGetter         provider.AddonProviderGetter
+	addonConfigProvider         provider.AddonConfigProvider
 	updateManager               common.UpdateManager
 	prometheusClient            prometheusapi.Client
 	projectMemberProvider       provider.ProjectMemberProvider
@@ -51,14 +44,19 @@ type Routing struct {
 	eventRecorderProvider       provider.EventRecorderProvider
 	presetsManager              common.PresetsManager
 	exposeStrategy              corev1.ServiceType
+	accessibleAddons            sets.String
+	userInfoGetter              provider.UserInfoGetter
+	settingsProvider            provider.SettingsProvider
+	adminProvider               provider.AdminProvider
 }
 
 // NewRouting creates a new Routing.
 func NewRouting(
+	logger *zap.SugaredLogger,
 	seedsGetter provider.SeedsGetter,
-	seedClientGetter provider.SeedClientGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
+	addonConfigProvider provider.AddonConfigProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
@@ -77,12 +75,17 @@ func NewRouting(
 	eventRecorderProvider provider.EventRecorderProvider,
 	presetsManager common.PresetsManager,
 	exposeStrategy corev1.ServiceType,
+	accessibleAddons sets.String,
+	userInfoGetter provider.UserInfoGetter,
+	settingsProvider provider.SettingsProvider,
+	adminProvider provider.AdminProvider,
 ) Routing {
 	return Routing{
+		log:                         logger,
 		seedsGetter:                 seedsGetter,
-		privilegedSeedClientGetter:  seedClientGetter,
 		clusterProviderGetter:       clusterProviderGetter,
 		addonProviderGetter:         addonProviderGetter,
+		addonConfigProvider:         addonConfigProvider,
 		sshKeyProvider:              newSSHKeyProvider,
 		userProvider:                userProvider,
 		serviceAccountProvider:      serviceAccountProvider,
@@ -102,6 +105,10 @@ func NewRouting(
 		eventRecorderProvider:       eventRecorderProvider,
 		presetsManager:              presetsManager,
 		exposeStrategy:              exposeStrategy,
+		accessibleAddons:            accessibleAddons,
+		userInfoGetter:              userInfoGetter,
+		settingsProvider:            settingsProvider,
+		adminProvider:               adminProvider,
 	}
 }
 

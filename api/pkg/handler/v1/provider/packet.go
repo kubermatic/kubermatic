@@ -12,6 +12,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/packet"
+	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -62,32 +64,40 @@ func DecodePacketSizesNoCredentialsReq(c context.Context, r *http.Request) (inte
 	return req, nil
 }
 
-func PacketSizesEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint {
+func PacketSizesEndpoint(credentialManager common.PresetsManager, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PacketSizesReq)
 
 		projectID := req.ProjectID
 		apiKey := req.APIKey
 
-		if len(req.Credential) > 0 && credentialManager.GetPresets().Packet.Credentials != nil {
-			for _, credential := range credentialManager.GetPresets().Packet.Credentials {
-				if credential.Name == req.Credential {
-					projectID = credential.ProjectID
-					apiKey = credential.APIKey
-					break
-				}
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if len(req.Credential) > 0 {
+			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.Packet; credentials != nil {
+				projectID = credentials.ProjectID
+				apiKey = credentials.APIKey
 			}
 		}
 		return sizes(ctx, apiKey, projectID)
 	}
 }
 
-func PacketSizesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
+func PacketSizesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PacketSizesNoCredentialsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-		_, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -99,7 +109,17 @@ func PacketSizesWithClusterCredentialsEndpoint(projectProvider provider.ProjectP
 			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
 		}
 
-		return sizes(ctx, cluster.Spec.Cloud.Packet.APIKey, cluster.Spec.Cloud.Packet.ProjectID)
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider")
+		}
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		apiKey, projectID, err := packet.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+
+		return sizes(ctx, apiKey, projectID)
 	}
 }
 

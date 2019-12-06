@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kubermatic-operator
@@ -15,7 +15,7 @@ spec:
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/scrape_port: '8085'
-        fluentbit.io/parser: glog
+        fluentbit.io/parser: json
     spec:
       serviceAccountName: kubermatic-operator
       containers:
@@ -26,7 +26,13 @@ spec:
         - kubermatic-operator
         args:
         - -internal-address=0.0.0.0:8085
+        - -namespace=$(POD_NAMESPACE)
         - -log-format=json
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         ports:
         - name: metrics
           containerPort: 8085

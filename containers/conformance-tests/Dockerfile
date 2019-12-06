@@ -1,10 +1,10 @@
 FROM fedora:30
 
-ENV GO_VERSION="1.12.6"
+ENV GO_VERSION="1.12.12"
 ENV VAULT_VERSION="1.1.3"
-ENV HELM_VERSION="2.13.1"
-ENV KUBECTL_VERSION="1.14.4"
-ENV TERRAFORM_VERSION="0.12.5"
+ENV HELM_VERSION="2.16.1"
+ENV KUBECTL_VERSION="1.16.2"
+ENV TERRAFORM_VERSION="0.12.13"
 ENV KUBETEST_COMMIT="eb1a87c9083a31f9a9dda7822cb674f9f8d99439"
 
 RUN dnf install -y curl bash unzip jq buildah which findutils make git gcc
@@ -33,7 +33,11 @@ ENV PATH=$PATH:/usr/local/go/bin
 ENV GOPATH /go
 RUN curl -fL -o /tmp/golang.tag.gz https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf /tmp/golang.tag.gz && \
-    rm /tmp/golang.tag.gz
+    rm /tmp/golang.tag.gz && \
+    git clone https://github.com/kubernetes/test-infra.git $GOPATH/src/k8s.io/test-infra && \
+    cd $GOPATH/src/k8s.io/test-infra && \
+    git checkout 9601c165917cab9b850f24453365f1177aa934f0 && \
+    CGO_ENABLED=0 GO111MODULE=on GOPROXY=https://goproxy.io go build -v -o /usr/local/bin/boskosctl ./boskos/cmd/cli
 
 # Install the kubetest binary
 RUN GO111MODULE=on GOPROXY="https://proxy.golang.org" go get -v k8s.io/test-infra/kubetest@${KUBETEST_COMMIT} && \

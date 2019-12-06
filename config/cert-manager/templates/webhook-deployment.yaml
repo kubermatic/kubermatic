@@ -1,24 +1,24 @@
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: webhook
   labels:
     app: webhook
     app.kubernetes.io/name: webhook
-    app.kubernetes.io/instance:  {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.certManager.webhook.replicas }}
   selector:
     matchLabels:
       app: webhook
       app.kubernetes.io/name: webhook
-      app.kubernetes.io/instance:  {{ .Release.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
         app: webhook
         app.kubernetes.io/name: webhook
-        app.kubernetes.io/instance:  {{ .Release.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
         fluentbit.io/parser: glog
     spec:
@@ -28,10 +28,19 @@ spec:
         image: '{{ .Values.certManager.webhook.image.repository }}:{{ .Values.certManager.webhook.image.tag }}'
         imagePullPolicy: {{ .Values.certManager.webhook.image.pullPolicy }}
         args:
-        - --v=4
-        - --secure-port=6443
+        - --secure-port={{ .Values.certManager.webhook.securePort }}
         - --tls-cert-file=/certs/tls.crt
         - --tls-private-key-file=/certs/tls.key
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: 6080
+            scheme: HTTP
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 6080
+            scheme: HTTP
         env:
         - name: POD_NAMESPACE
           valueFrom:

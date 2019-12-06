@@ -1,3 +1,20 @@
+### Updates file
+#
+# Contains a list of allowed updated
+#
+# Each update may optionally contain `automatic: true` in which case the
+# controlplane of all clusters whose version matches the `from` directive
+# will get updated to the `to` version. If `automatic: true` is set, the
+# `to` version must be a version and not a version range.
+#
+# All `to` versions must be configured in the `versions.yaml`.
+#
+# Also, updates may contan `automaticNodeUpdate: true`, in which case
+# Nodes will get updates as well. `automaticNodeUpdate: true` sets
+# `automatic: true` as well if not yet the case, because Nodes may not have
+# a newer version than the controlplane.
+#
+####
 updates:
 # ======= 1.12 =======
 # Allow to next minor release
@@ -6,10 +23,6 @@ updates:
   automatic: false
 
 # ======= 1.13 =======
-# Allow to change to any patch version
-- from: 1.13.*
-  to: 1.13.*
-  automatic: false
 # CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514
 - from: <= 1.13.9, >= 1.13.0
   to: 1.13.10
@@ -24,9 +37,9 @@ updates:
 - from: 1.14.*
   to: 1.14.*
   automatic: false
-# CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514
-- from: <= 1.14.5, >= 1.14.0
-  to: 1.14.6
+# CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
+- from: <= 1.14.7, >= 1.14.0
+  to: 1.14.8
   automatic: true
 # Allow to next minor release
 - from: 1.14.*
@@ -38,7 +51,47 @@ updates:
 - from: 1.15.*
   to: 1.15.*
   automatic: false
-# CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514
-- from: <= 1.15.2, >= 1.15.0
-  to: 1.15.3
+# CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
+- from: <= 1.15.4, >= 1.15.0
+  to: 1.15.5
   automatic: true
+# Allow to next minor release
+- from: 1.15.*
+  to: 1.16.*
+  automatic: false
+
+# ======= 1.16 =======
+# Allow to change to any patch version
+- from: 1.16.*
+  to: 1.16.*
+  automatic: false
+# CVE-2019-11253
+- from: <= 1.16.1, >= 1.16.0
+  to: 1.16.2
+  automatic: true
+# Allow to next minor release
+- from: 1.16.*
+  to: 1.17.*
+  automatic: false
+
+# ======= 1.17 =======
+# Allow to change to any patch version
+- from: 1.17.*
+  to: 1.17.*
+  automatic: false
+# Allow to next minor release
+- from: 1.16.*
+  to: 1.18.*
+  automatic: false
+
+# ======= Openshift 4.1 =======
+# Allow to change to any patch version
+- from: 4.1.*
+  to: 4.1.*
+  automatic: false
+  type: openshift
+# Allow to next minor release
+- from: 4.1.*
+  to: 2.2.*
+  automatic: false
+  type: openshift

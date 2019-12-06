@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/mail"
 	"strings"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
@@ -18,18 +20,23 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
+	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 // DeleteEndpoint deletes the given user/member from the given project
-func DeleteEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
+func DeleteEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(DeleteReq)
 		if !ok {
 			return nil, k8cerrors.NewBadRequest("invalid request")
 		}
 		if len(req.UserID) == 0 {
 			return nil, k8cerrors.NewBadRequest("the user ID cannot be empty")
+		}
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
@@ -66,15 +73,17 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, userProvider provi
 }
 
 // EditEndpoint changes the group the given user/member belongs in the given project
-func EditEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
+func EditEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(EditReq)
 		if !ok {
 			return nil, k8cerrors.NewBadRequest("invalid request")
 		}
-
-		err := req.Validate(userInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		err = req.Validate(userInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -111,23 +120,25 @@ func EditEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		externalUser := convertInternalUserToExternal(memberToUpdate, updatedMemberBinding)
+		externalUser := convertInternalUserToExternal(memberToUpdate, false, updatedMemberBinding)
 		externalUser = filterExternalUser(externalUser, project.Name)
 		return externalUser, nil
 	}
 }
 
 // ListEndpoint returns user/members of the given project
-func ListEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
+func ListEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
 		req, ok := request.(common.GetProjectRq)
 		if !ok {
 			return nil, k8cerrors.NewBadRequest("invalid request")
 		}
-
 		if len(req.ProjectID) == 0 {
 			return nil, k8cerrors.NewBadRequest("the name of the project cannot be empty")
+		}
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
@@ -146,7 +157,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			externalUser := convertInternalUserToExternal(user, memberOfProjectBinding)
+			externalUser := convertInternalUserToExternal(user, false, memberOfProjectBinding)
 			externalUser = filterExternalUser(externalUser, project.Name)
 			externalUsers = append(externalUsers, externalUser)
 		}
@@ -156,12 +167,14 @@ func ListEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 }
 
 // AddEndpoint adds the given user to the given group within the given project
-func AddEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider) endpoint.Endpoint {
+func AddEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddReq)
-		userInfo := ctx.Value(middleware.UserInfoContextKey).(*provider.UserInfo)
-
-		err := req.Validate(userInfo)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		err = req.Validate(userInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -193,7 +206,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, userProvider provider
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		externalUser := convertInternalUserToExternal(userToInvite, generatedBinding)
+		externalUser := convertInternalUserToExternal(userToInvite, false, generatedBinding)
 		externalUser = filterExternalUser(externalUser, project.Name)
 		return externalUser, nil
 	}
@@ -209,22 +222,68 @@ func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalUserToExternal(authenticatedUser, bindings...), nil
+		return convertInternalUserToExternal(authenticatedUser, true, bindings...), nil
 	}
 }
 
-func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, bindings ...*kubermaticapiv1.UserProjectBinding) *apiv1.User {
+// GetSettingsEndpoint returns settings of the current user
+func GetSettingsEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+		return authenticatedUser.Spec.Settings, nil
+	}
+}
+
+// PatchSettingsEndpoint patches settings of the current user
+func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(PatchSettingsReq)
+		existingUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+
+		existingSettings := existingUser.Spec.Settings
+		if existingSettings == nil {
+			existingSettings = &kubermaticapiv1.UserSettings{}
+		}
+
+		existingSettingsJSON, err := json.Marshal(existingSettings)
+		if err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("cannot decode existing user settings: %v", err))
+		}
+
+		patchedSettingsJSON, err := jsonpatch.MergePatch(existingSettingsJSON, req.Patch)
+		if err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("cannot patch user settings: %v", err))
+		}
+
+		var patchedSettings *kubermaticapiv1.UserSettings
+		err = json.Unmarshal(patchedSettingsJSON, &patchedSettings)
+		if err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("cannot decode patched user settings: %v", err))
+		}
+
+		existingUser.Spec.Settings = patchedSettings
+		updatedUser, err := userProvider.UpdateUser(*existingUser)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return updatedUser.Spec.Settings, nil
+	}
+}
+
+func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, includeSettings bool, bindings ...*kubermaticapiv1.UserProjectBinding) *apiv1.User {
 	apiUser := &apiv1.User{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalUser.Name,
 			Name:              internalUser.Spec.Name,
 			CreationTimestamp: apiv1.NewTime(internalUser.CreationTimestamp.Time),
 		},
-		Email: internalUser.Spec.Email,
+		Email:   internalUser.Spec.Email,
+		IsAdmin: internalUser.Spec.IsAdmin,
 	}
-	for _, pg := range internalUser.Spec.Projects {
-		groupPrefix := rbac.ExtractGroupPrefix(pg.Group)
-		apiUser.Projects = append(apiUser.Projects, apiv1.ProjectGroup{ID: pg.Name, GroupPrefix: groupPrefix})
+
+	if includeSettings {
+		apiUser.Settings = internalUser.Spec.Settings
 	}
 
 	for _, binding := range bindings {
@@ -403,6 +462,25 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	req.UserID = userIDReq.UserID
+
+	return req, nil
+}
+
+// PatchSettingsReq defines HTTP request for patchCurrentUserSettings
+// swagger:parameters patchCurrentUserSettings
+type PatchSettingsReq struct {
+	// in: body
+	Patch []byte
+}
+
+// DecodePatchSettingsReq  decodes an HTTP request into PatchSettingsReq
+func DecodePatchSettingsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req PatchSettingsReq
+	var err error
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }

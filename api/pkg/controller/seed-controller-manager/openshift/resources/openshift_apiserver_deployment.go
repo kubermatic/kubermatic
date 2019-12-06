@@ -1,0 +1,280 @@
+package resources
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
+	utilpointer "k8s.io/utils/pointer"
+)
+
+var (
+	openshiftAPIServerDefaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("200Mi"),
+			corev1.ResourceCPU:    resource.MustParse("150m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("4Gi"),
+			corev1.ResourceCPU:    resource.MustParse("2"),
+		},
+	}
+)
+
+const (
+	OpenshiftAPIServerDeploymentName = "openshift-apiserver"
+	OpenshiftAPIServerServiceName    = OpenshiftAPIServerDeploymentName
+)
+
+func OpenshiftAPIServiceCreator() (string, reconciling.ServiceCreator) {
+	return OpenshiftAPIServerServiceName, func(svc *corev1.Service) (*corev1.Service, error) {
+		svc.Spec.Type = corev1.ServiceTypeClusterIP
+		svc.Spec.Ports = []corev1.ServicePort{{
+			Protocol:   corev1.ProtocolTCP,
+			Port:       443,
+			TargetPort: intstr.FromInt(8443),
+		}}
+		svc.Spec.Selector = resources.BaseAppLabel(OpenshiftAPIServerDeploymentName, nil)
+
+		return svc, nil
+	}
+}
+
+// OpenshiftAPIServerDeploymentCreator returns the deployment creator for the Openshift APIServer
+// This can not be part of the openshift-kube-apiserver pod, because the openshift-apiserver needs some CRD
+// definitions to work and get ready, however we can not talk to the API until at least one pod is ready, preventing
+// us from creating those CRDs
+func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData) reconciling.NamedDeploymentCreatorGetter {
+	return func() (string, reconciling.DeploymentCreator) {
+		return OpenshiftAPIServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			var err error
+			dep.Name = OpenshiftAPIServerDeploymentName
+
+			dep.Spec.Replicas = utilpointer.Int32Ptr(1)
+			if data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas != nil {
+				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas
+			}
+			dep.Spec.Selector = &metav1.LabelSelector{
+				MatchLabels: resources.BaseAppLabel(OpenshiftAPIServerDeploymentName, nil),
+			}
+
+			dep.Spec.Strategy.Type = appsv1.RollingUpdateDeploymentStrategyType
+			dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
+				MaxSurge: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 1,
+				},
+				MaxUnavailable: &intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 0,
+				},
+			}
+			dep.Spec.Template.Labels = resources.BaseAppLabel(OpenshiftAPIServerDeploymentName, nil)
+			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
+				{Name: resources.ImagePullSecretName},
+				{Name: openshiftImagePullSecretName},
+			}
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = utilpointer.BoolPtr(false)
+			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
+				{
+					Name: resources.CASecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.CASecretName,
+							Items: []corev1.KeyToPath{
+								{
+									Path: "ca-bundle.crt",
+									Key:  resources.CACertSecretKey,
+								},
+							},
+						},
+					},
+				},
+				{
+					Name: openshiftAPIServerTLSServingCertSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: openshiftAPIServerTLSServingCertSecretName,
+						},
+					},
+				},
+				{
+					Name: resources.FrontProxyCASecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.FrontProxyCASecretName,
+						},
+					},
+				},
+				{
+					Name: resources.ApiserverEtcdClientCertificateSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.ApiserverEtcdClientCertificateSecretName,
+						},
+					},
+				},
+				{
+					Name: resources.OpenVPNClientCertificatesSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.OpenVPNClientCertificatesSecretName,
+						},
+					},
+				},
+				{
+					Name: resources.KubeletDnatControllerKubeconfigSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
+						},
+					},
+				},
+				{
+					Name: openshiftAPIServerConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{Name: openshiftAPIServerConfigMapName},
+						},
+					},
+				},
+				{
+					Name: resources.InternalUserClusterAdminKubeconfigSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
+						},
+					},
+				},
+			}
+
+			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
+			if err != nil {
+				return nil, err
+			}
+
+			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+			if err != nil {
+				return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
+			}
+
+			dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller", "")
+			if err != nil {
+				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
+			}
+
+			resourceRequirements := openshiftAPIServerDefaultResourceRequirements.DeepCopy()
+			if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
+				resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
+			}
+
+			// TODO: Make it cope with our registry overwriting
+			image, err := hypershiftImage(data.Cluster().Spec.Version.String())
+			if err != nil {
+				return nil, err
+			}
+
+			dep.Spec.Template.Spec.Containers = []corev1.Container{
+				*openvpnSidecar,
+				*dnatControllerSidecar,
+				{
+					Name:      OpenshiftAPIServerDeploymentName,
+					Image:     image,
+					Command:   []string{"hypershift", "openshift-apiserver"},
+					Args:      []string{"--config=/etc/origin/master/master-config.yaml"},
+					Resources: *resourceRequirements,
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: 8443,
+							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/healthz",
+								Port:   intstr.FromInt(8443),
+								Scheme: "HTTPS",
+							},
+						},
+						FailureThreshold: 10,
+						PeriodSeconds:    10,
+						SuccessThreshold: 1,
+						TimeoutSeconds:   1,
+					},
+					LivenessProbe: &corev1.Probe{
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/healthz",
+								Port:   intstr.FromInt(8443),
+								Scheme: "HTTPS",
+							},
+						},
+						FailureThreshold: 10,
+						PeriodSeconds:    10,
+						SuccessThreshold: 1,
+						TimeoutSeconds:   1,
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      resources.ApiserverEtcdClientCertificateSecretName,
+							MountPath: "/etc/etcd/pki/client",
+							ReadOnly:  true,
+						},
+						{
+							Name:      resources.FrontProxyCASecretName,
+							MountPath: "/var/run/configmaps/aggregator-client-ca",
+							ReadOnly:  true,
+						},
+						{
+							Name:      openshiftAPIServerConfigMapName,
+							MountPath: "/etc/origin/master",
+							ReadOnly:  true,
+						},
+						{
+							Name:      resources.CASecretName,
+							MountPath: "/var/run/configmaps/client-ca",
+							ReadOnly:  true,
+						},
+						{
+							Name:      openshiftAPIServerTLSServingCertSecretName,
+							MountPath: "/var/run/secrets/serving-cert",
+							ReadOnly:  true,
+						},
+						{
+							Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
+							MountPath: "/etc/origin/master/kubeconfig",
+							ReadOnly:  true,
+						},
+					},
+				},
+			}
+
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(OpenshiftAPIServerDeploymentName, data.Cluster().Name)
+			podLabels, err := data.GetPodTemplateLabels(OpenshiftAPIServerDeploymentName, dep.Spec.Template.Spec.Volumes, nil)
+			if err != nil {
+				return nil, err
+			}
+			dep.Spec.Template.Labels = podLabels
+
+			// The openshift apiserver needs the normal apiserver
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OpenshiftAPIServerDeploymentName))
+			if err != nil {
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+			}
+			dep.Spec.Template.Spec = *wrappedPodSpec
+
+			return dep, nil
+		}
+	}
+}

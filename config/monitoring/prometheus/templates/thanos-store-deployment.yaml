@@ -43,6 +43,20 @@ spec:
           mountPath: /var/store-data
         - name: thanos
           mountPath: /etc/thanos
+        {{- if ge (int .Values.prometheus.thanos.store.probeDelaySeconds) 0 }}
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: http
+          initialDelaySeconds: {{ .Values.prometheus.thanos.store.probeDelaySeconds }}
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: http
+          initialDelaySeconds: {{ .Values.prometheus.thanos.store.probeDelaySeconds }}
+          failureThreshold: 10
+        {{- end }}
         resources:
 {{ toYaml .Values.prometheus.containers.thanosStore.resources | indent 10 }}
       volumes:

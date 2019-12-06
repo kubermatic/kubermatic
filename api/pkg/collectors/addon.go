@@ -16,14 +16,14 @@ const (
 
 // AddonCollector exports metrics for addon resources
 type AddonCollector struct {
-	client ctrlruntimeclient.Client
+	client ctrlruntimeclient.Reader
 
 	addonCreated *prometheus.Desc
 	addonDeleted *prometheus.Desc
 }
 
 // MustRegisterAddonCollector registers the addon collector at the given prometheus registry
-func MustRegisterAddonCollector(registry prometheus.Registerer, client ctrlruntimeclient.Client) {
+func MustRegisterAddonCollector(registry prometheus.Registerer, client ctrlruntimeclient.Reader) {
 	cc := &AddonCollector{
 		client: client,
 		addonCreated: prometheus.NewDesc(
@@ -52,7 +52,7 @@ func (cc AddonCollector) Describe(ch chan<- *prometheus.Desc) {
 // Collect gets called by prometheus to collect the metrics
 func (cc AddonCollector) Collect(ch chan<- prometheus.Metric) {
 	clusters := &kubermaticv1.ClusterList{}
-	if err := cc.client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, clusters); err != nil {
+	if err := cc.client.List(context.Background(), clusters); err != nil {
 		utilruntime.HandleError(fmt.Errorf("failed to list clusters from clusterLister in AddonCollector: %v", err))
 		return
 	}
@@ -60,9 +60,12 @@ func (cc AddonCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, cluster := range clusters.Items {
 		addons := &kubermaticv1.AddonList{}
 		// todo filter by cluster namespace
-		if err := cc.client.List(context.Background(), &ctrlruntimeclient.ListOptions{
-			Namespace: fmt.Sprintf("cluster-%s", cluster.Name),
-		}, addons); err != nil {
+		if err := cc.client.List(
+			context.Background(),
+			addons,
+			&ctrlruntimeclient.ListOptions{
+				Namespace: fmt.Sprintf("cluster-%s", cluster.Name),
+			}); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list addons for cluster %s from addonLister in AddonCollector: %v", cluster.Name, err))
 			return
 		}

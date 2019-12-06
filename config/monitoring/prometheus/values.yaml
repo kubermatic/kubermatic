@@ -1,7 +1,7 @@
 prometheus:
   image:
     repository: quay.io/prometheus/prometheus
-    tag: v2.12.0
+    tag: v2.14.0
     pullPolicy: IfNotPresent
 
   host: ''
@@ -18,7 +18,7 @@ prometheus:
 
   configReloaderImage:
     repository: docker.io/jimmidyson/configmap-reload
-    tag: v0.2.2
+    tag: v0.3.0
     pullPolicy: IfNotPresent
 
   # If you install Prometheus using a different Helm release name,
@@ -31,7 +31,7 @@ prometheus:
     enabled: true
     image:
       repository: quay.io/kubermatic/util
-      tag: 1.1.2
+      tag: 1.3.2
     timeout: 60m
 
   # Specify additional external labels which will be added to all
@@ -118,13 +118,22 @@ prometheus:
   thanos:
     enabled: false
     image:
-      repository: improbable/thanos
-      tag: v0.5.0
+      repository: quay.io/thanos/thanos
+      tag: v0.8.1
 
     store:
       replicas: 2
       indexCacheSize: 500MB
       chunkPoolSize: 2GB
+
+      # Thanos Store downloads blocks from the storage to create its local
+      # cache before enabling the readiness/liveness endpoints, see
+      # https://github.com/thanos-io/thanos/pull/1460
+      # This means that pods can stay un-ready for quite some time, which
+      # can slow down rollouts significantly. By default the probes for
+      # Thanos Store are therefore disabled, but you can re-enable them
+      # by setting probeDelaySeconds to any value >= 0.
+      probeDelaySeconds: -1
 
       nodeSelector: {}
       affinity:
@@ -166,6 +175,12 @@ prometheus:
       affinity: {}
       tolerations: []
 
+    ui:
+      replicas: 2
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+
     # Configure the target object score according to https://thanos.io/storage.md/.
     # Make sure to manually create the target bucket.
     objstore:
@@ -184,17 +199,17 @@ prometheus:
     enabled: false
     image:
       repository: quay.io/kubermatic/util
-      tag: 1.1.2
+      tag: 1.3.2
 
   containers:
     prometheus:
       resources:
         requests:
-          cpu: 150m
-          memory: 1Gi
-        limits:
-          cpu: 500m
+          cpu: 1
           memory: 3Gi
+        limits:
+          cpu: 2
+          memory: 6Gi
     backup:
       resources:
         requests:
@@ -228,13 +243,7 @@ prometheus:
           cpu: 300m
           memory: 1Gi
     thanosStore:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 1536Mi
-        limits:
-          cpu: 250m
-          memory: 3Gi
+      resources: {}
     thanosQuery:
       resources:
         requests:
@@ -246,11 +255,19 @@ prometheus:
     thanosCompact:
       resources:
         requests:
-          cpu: 250m
-          memory: 1Gi
-        limits:
-          cpu: 1
+          cpu: 500m
           memory: 4Gi
+        limits:
+          cpu: 2
+          memory: 8Gi
+    thanosUI:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 250m
+          memory: 128Mi
 
   nodeSelector: {}
   affinity:

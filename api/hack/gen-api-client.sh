@@ -45,4 +45,4 @@ cd ${API_DIR}/cmd/kubermatic-api/
 echo "${SWAGGER_META}$(cat ../../pkg/handler/routes_v1.go)" > ../../pkg/handler/routes_v1.go
 swagger generate spec --scan-models -o ${TMP_SWAGGER}
 mkdir -p ../../pkg/test/e2e/api/utils/apiclient/
-swagger generate client -q -f ${TMP_SWAGGER} -t ../../pkg/test/e2e/api/utils/apiclient/
+swagger generate client -q --skip-validation -f ${TMP_SWAGGER} -t ../../pkg/test/e2e/api/utils/apiclient/

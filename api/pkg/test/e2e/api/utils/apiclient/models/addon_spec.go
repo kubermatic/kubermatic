@@ -15,6 +15,9 @@ import (
 // swagger:model AddonSpec
 type AddonSpec struct {
 
+	// IsDefault indicates whether the addon is default
+	IsDefault bool `json:"isDefault,omitempty"`
+
 	// Variables is free form data to use for parsing the manifest templates
 	Variables map[string]interface{} `json:"variables,omitempty"`
 }

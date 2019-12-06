@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	utilpointer "k8s.io/utils/pointer"
 )
 
 var (
@@ -43,7 +44,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Name = resources.ControllerManagerDeploymentName
 			dep.Labels = resources.BaseAppLabel(name, nil)
 
-			flags, err := getFlags(data.Cluster())
+			flags, err := getFlags(data)
 			if err != nil {
 				return nil, err
 			}
@@ -140,7 +141,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources
 			}
 
-			envVars, err := getEnvVars(data)
+			envVars, err := GetEnvVars(data)
 			if err != nil {
 				return nil, err
 			}
@@ -190,14 +191,14 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 	}
 }
 
-func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
+func getFlags(data *resources.TemplateData) ([]string, error) {
 	flags := []string{
 		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
 		"--root-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-cert-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-key-file", "/etc/kubernetes/pki/ca/ca.key",
-		"--cluster-cidr", cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
+		"--cluster-cidr", data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 		"--allocate-node-cidrs=true",
 		"--controllers", "*,bootstrapsigner,tokencleaner",
 		"--use-service-account-credentials=true",
@@ -210,7 +211,7 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 	// TODO: Remove once we don't support Kube 1.10 anymore
 	// TODO: Before removing, add check that prevents upgrading to 1.12 when
 	// there is still a node < 1.11
-	if cluster.Spec.Version.Semver().Minor() >= 12 {
+	if data.Cluster().Spec.Version.Semver().Minor() >= 12 {
 		featureGates = append(featureGates, "ScheduleDaemonSetPods=false")
 	}
 	if len(featureGates) > 0 {
@@ -218,38 +219,22 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 		flags = append(flags, strings.Join(featureGates, ","))
 	}
 
-	if cluster.Spec.Cloud.AWS != nil {
-		flags = append(flags, "--cloud-provider", "aws")
+	cloudProviderName := data.GetKubernetesCloudProviderName()
+	if cloudProviderName != "" && cloudProviderName != "external" {
+		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes=false")
-	}
-	if cluster.Spec.Cloud.Openstack != nil {
-		flags = append(flags, "--cloud-provider", "openstack")
-		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes=false")
-	}
-	if cluster.Spec.Cloud.VSphere != nil {
-		flags = append(flags, "--cloud-provider", "vsphere")
-		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes=false")
-	}
-	if cluster.Spec.Cloud.Azure != nil {
-		flags = append(flags, "--cloud-provider", "azure")
-		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes=false")
-		if cluster.Spec.Version.Semver().Minor() >= 15 {
-			// Required so multiple clusters using the same resource group can
-			// allocate public IPs. Ref: https://github.com/kubernetes/kubernetes/pull/77630
-			flags = append(flags, "--cluster-name", cluster.Name)
+		if cloudProviderName == "azure" && data.Cluster().Spec.Version.Semver().Minor() >= 15 {
+			// Required so multiple clusters using the same resource group can allocate public IPs.
+			// Ref: https://github.com/kubernetes/kubernetes/pull/77630
+			flags = append(flags, "--cluster-name", data.Cluster().Name)
 		}
 	}
-	if cluster.Spec.Cloud.GCP != nil {
-		flags = append(flags, "--cloud-provider", "gce")
-		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		flags = append(flags, "--configure-cloud-routes=true")
+
+	if val := CloudRoutesFlagVal(data.Cluster().Spec.Cloud); val != nil {
+		flags = append(flags, fmt.Sprintf("--configure-cloud-routes=%t", *val))
 	}
 
-	if cluster.Spec.Version.Semver().Minor() >= 12 {
+	if data.Cluster().Spec.Version.Semver().Minor() >= 12 {
 		// New flag in v1.12 which gets used to perform permission checks for tokens
 		flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
 		// New flag in v1.12 which gets used to perform permission checks for certs
@@ -257,13 +242,13 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 	}
 
 	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
-	if cluster.Spec.Version.Semver().Minor() >= 13 {
+	if data.Cluster().Spec.Version.Semver().Minor() >= 13 {
 		flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
 		flags = append(flags, "--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
 		// We're going to use the https endpoints for scraping the metrics starting from 1.12. Thus we can deactivate the http endpoint
 		flags = append(flags, "--port", "0")
 		// Force the authentication lookup to succeed, otherwise if it fails all requests will be treated as anonymous and thus fail
-		if cluster.Spec.Version.Semver().Patch() > 0 {
+		if data.Cluster().Spec.Version.Semver().Patch() > 0 {
 			// Force the authentication lookup to succeed, otherwise if it fails all requests will be treated as anonymous and thus fail
 			// Both the flag and the issue only exist in 1.13.1 and above
 			flags = append(flags, "--authentication-tolerate-lookup-failure=false")
@@ -273,7 +258,7 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 	// This is required in 1.12.0 as a workaround for
 	// https://github.com/kubernetes/kubernetes/issues/68986, the patch
 	// got cherry-picked onto 1.12.1
-	if cluster.Spec.Version.Semver().Minor() == 12 && cluster.Spec.Version.Semver().Patch() == 0 {
+	if data.Cluster().Spec.Version.Semver().Minor() == 12 && data.Cluster().Spec.Version.Semver().Patch() == 0 {
 		flags = append(flags, "--authentication-skip-lookup=true")
 	}
 
@@ -327,7 +312,12 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
+type kubeControllerManagerEnvData interface {
+	resources.CredentialsData
+	Seed() *kubermaticv1.Seed
+}
+
+func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
 	credentials, err := resources.GetCredentials(data)
 	if err != nil {
 		return nil, err
@@ -343,6 +333,7 @@ func getEnvVars(data resources.CredentialsData) ([]corev1.EnvVar, error) {
 	if cluster.Spec.Cloud.GCP != nil {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_APPLICATION_CREDENTIALS", Value: "/etc/gcp/serviceAccount"})
 	}
+	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
 	return vars, nil
 }
 
@@ -375,4 +366,23 @@ func getHealthGetAction(data *resources.TemplateData) *corev1.HTTPGetAction {
 		action.Port = intstr.FromInt(10252)
 	}
 	return action
+}
+
+func CloudRoutesFlagVal(cloudSpec kubermaticv1.CloudSpec) *bool {
+	if cloudSpec.AWS != nil {
+		return utilpointer.BoolPtr(false)
+	}
+	if cloudSpec.Openstack != nil {
+		return utilpointer.BoolPtr(false)
+	}
+	if cloudSpec.VSphere != nil {
+		return utilpointer.BoolPtr(false)
+	}
+	if cloudSpec.Azure != nil {
+		return utilpointer.BoolPtr(false)
+	}
+	if cloudSpec.GCP != nil {
+		return utilpointer.BoolPtr(true)
+	}
+	return nil
 }

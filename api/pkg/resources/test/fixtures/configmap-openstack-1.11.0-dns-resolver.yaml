@@ -6,7 +6,7 @@ data:
         errors
     }
     cluster.local {
-        forward . 10.10.10.10
+        forward . 10.240.16.10
         errors
     }
     . {

@@ -18,7 +18,7 @@ const (
 
 // ClusterCollector exports metrics for cluster resources
 type ClusterCollector struct {
-	client ctrlruntimeclient.Client
+	client ctrlruntimeclient.Reader
 
 	clusterCreated *prometheus.Desc
 	clusterDeleted *prometheus.Desc
@@ -26,7 +26,7 @@ type ClusterCollector struct {
 }
 
 // MustRegisterClusterCollector registers the cluster collector at the given prometheus registry
-func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlruntimeclient.Client) {
+func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlruntimeclient.Reader) {
 	cc := &ClusterCollector{
 		client: client,
 		clusterCreated: prometheus.NewDesc(
@@ -52,6 +52,7 @@ func MustRegisterClusterCollector(registry prometheus.Registerer, client ctrlrun
 				"cloud_provider",
 				"datacenter",
 				"pause",
+				"type",
 			},
 			nil,
 		),
@@ -70,7 +71,7 @@ func (cc ClusterCollector) Describe(ch chan<- *prometheus.Desc) {
 // Collect gets called by prometheus to collect the metrics
 func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
 	clusters := &kubermaticv1.ClusterList{}
-	if err := cc.client.List(context.Background(), &ctrlruntimeclient.ListOptions{}, clusters); err != nil {
+	if err := cc.client.List(context.Background(), clusters); err != nil {
 		utilruntime.HandleError(fmt.Errorf("failed to list clusters from clusterLister in ClusterCollector: %v", err))
 		return
 	}
@@ -121,6 +122,11 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		pause = "true"
 	}
 
+	clusterType := "kubernetes"
+	if cluster.Spec.Openshift != nil {
+		clusterType = "openshift"
+	}
+
 	return []string{
 		cluster.Name,
 		cluster.Spec.HumanReadableName,
@@ -129,5 +135,6 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		provider,
 		cluster.Spec.Cloud.DatacenterName,
 		pause,
+		clusterType,
 	}, nil
 }

@@ -9,12 +9,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-	v1 "github.com/kubermatic/kubermatic/api/pkg/handler/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/addon"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
+	kubernetesdashboard "github.com/kubermatic/kubermatic/api/pkg/handler/v1/kubernetes-dashboard"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/node"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/openshift"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
@@ -30,7 +33,6 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/healthz").
 		HandlerFunc(statusOK)
-
 	//
 	// Defines endpoints for managing data centers
 	mux.Methods(http.MethodGet).
@@ -45,8 +47,8 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
 	mux.Methods(http.MethodGet).
-		Path("/providers/aws/{dc}/zones").
-		Handler(r.listAWSZones())
+		Path("/providers/aws/sizes").
+		Handler(r.listAWSSizes())
 
 	mux.Methods(http.MethodGet).
 		Path("/providers/aws/{dc}/subnets").
@@ -206,6 +208,86 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades").
 		Handler(r.upgradeClusterNodeDeployments())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics").
+		Handler(r.getClusterMetrics())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces").
+		Handler(r.listNamespace())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles").
+		Handler(r.createClusterRole())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles").
+		Handler(r.listClusterRole())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames").
+		Handler(r.listClusterRoleNames())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}").
+		Handler(r.getClusterRole())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}").
+		Handler(r.deleteClusterRole())
+
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}").
+		Handler(r.patchClusterRole())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings").
+		Handler(r.bindUserToClusterRole())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings").
+		Handler(r.unbindUserFromClusterRoleBinding())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterbindings").
+		Handler(r.listClusterRoleBinding())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles").
+		Handler(r.createRole())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles").
+		Handler(r.listRole())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/rolenames").
+		Handler(r.listRoleNames())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}").
+		Handler(r.getRole())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}").
+		Handler(r.deleteRole())
+
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}").
+		Handler(r.patchRole())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings").
+		Handler(r.bindUserToRole())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings").
+		Handler(r.unbindUserFromRoleBinding())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings").
+		Handler(r.listRoleBinding())
+
 	//
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
 	mux.Methods(http.MethodPut).
@@ -223,6 +305,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPut).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/token").
 		Handler(r.revokeClusterAdminToken())
+
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/viewertoken").
+		Handler(r.revokeClusterViewerToken())
 
 	//
 	// Defines a set of HTTP endpoint for node deployments that belong to a cluster
@@ -243,6 +329,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listNodeDeploymentNodes())
 
 	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics").
+		Handler(r.listNodeDeploymentMetrics())
+
+	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/events").
 		Handler(r.listNodeDeploymentNodesEvents())
 
@@ -253,6 +343,24 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}").
 		Handler(r.deleteNodeDeployment())
+
+	//
+	// Defines a set of HTTP endpoints for managing addons
+	mux.Methods(http.MethodGet).
+		Path("/addons").
+		Handler(r.listAccessibleAddons())
+
+	mux.Methods(http.MethodGet).
+		Path("/addonconfigs/{addon_id}").
+		Handler(r.getAddonConfig())
+
+	mux.Methods(http.MethodGet).
+		Path("/addonconfigs").
+		Handler(r.listAddonConfigs())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons").
+		Handler(r.listInstallableAddons())
 
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons").
@@ -278,8 +386,8 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines a set of HTTP endpoints for various cloud providers
 	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/zones").
-		Handler(r.listAWSZonesNoCredentials())
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes").
+		Handler(r.listAWSSizesNoCredentials())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets").
@@ -296,6 +404,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/zones").
 		Handler(r.listGCPZonesNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/hetzner/sizes").
+		Handler(r.listHetznerSizesNoCredentials())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/digitalocean/sizes").
@@ -336,6 +448,19 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes").
 		Handler(r.listPacketSizesNoCredentials())
+
+	//
+	// Defines a set of openshift-specific endpoints
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/login").
+		Handler(r.openshiftConsoleLogin())
+	mux.PathPrefix("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/proxy").
+		Handler(r.openshiftConsoleProxy())
+
+	//
+	// Defines a set of kubernetes-dashboard-specific endpoints
+	mux.PathPrefix("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/dashboard/proxy").
+		Handler(r.kubernetesDashboardProxy())
 
 	//
 	// Defines set of HTTP endpoints for Users of the given project
@@ -406,6 +531,18 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/me").
 		Handler(r.getCurrentUser())
+
+	mux.Methods(http.MethodGet).
+		Path("/me/settings").
+		Handler(r.getCurrentUserSettings())
+
+	mux.Methods(http.MethodPatch).
+		Path("/me/settings").
+		Handler(r.patchCurrentUserSettings())
+
+	mux.Methods(http.MethodGet).
+		Path("/labels/system").
+		Handler(r.listSystemLabels())
 }
 
 // swagger:route GET /api/v1/projects/{project_id}/sshkeys project listSSHKeys
@@ -426,8 +563,7 @@ func (r Routing) listSSHKeys() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(ssh.ListEndpoint(r.sshKeyProvider, r.projectProvider)),
+		)(ssh.ListEndpoint(r.sshKeyProvider, r.projectProvider, r.userInfoGetter)),
 		ssh.DecodeListReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -454,8 +590,7 @@ func (r Routing) createSSHKey() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(ssh.CreateEndpoint(r.sshKeyProvider, r.projectProvider)),
+		)(ssh.CreateEndpoint(r.sshKeyProvider, r.projectProvider, r.userInfoGetter)),
 		ssh.DecodeCreateReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -479,8 +614,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(ssh.DeleteEndpoint(r.sshKeyProvider, r.projectProvider)),
+		)(ssh.DeleteEndpoint(r.sshKeyProvider, r.projectProvider, r.userInfoGetter)),
 		ssh.DecodeDeleteReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -502,30 +636,30 @@ func (r Routing) listCredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(presets.CredentialEndpoint(r.presetsManager)),
+		)(presets.CredentialEndpoint(r.presetsManager, r.userInfoGetter)),
 		presets.DecodeProviderReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v1/providers/aws/{dc}/zones aws listAWSZones
+// swagger:route GET /api/v1/providers/aws/sizes aws listAWSSizes
 //
-// Lists available AWS zones
+// Lists available AWS sizes.
 //
 //     Produces:
 //     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: AWSZoneList
-func (r Routing) listAWSZones() http.Handler {
+//       200: AWSSizeList
+func (r Routing) listAWSSizes() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AWSZoneEndpoint(r.presetsManager, r.seedsGetter, r.privilegedSeedClientGetter)),
-		provider.DecodeAWSZoneReq,
+		)(provider.AWSSizeEndpoint()),
+		provider.DecodeAWSSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -546,7 +680,7 @@ func (r Routing) listAWSSubnets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AWSSubnetEndpoint(r.presetsManager, r.seedsGetter, r.privilegedSeedClientGetter)),
+		)(provider.AWSSubnetEndpoint(r.presetsManager, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeAWSSubnetReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -568,7 +702,7 @@ func (r Routing) listAWSVPCS() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AWSVPCEndpoint(r.presetsManager, r.seedsGetter, r.privilegedSeedClientGetter)),
+		)(provider.AWSVPCEndpoint(r.presetsManager, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeAWSVPCReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -590,7 +724,7 @@ func (r Routing) listGCPDiskTypes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GCPDiskTypesEndpoint(r.presetsManager)),
+		)(provider.GCPDiskTypesEndpoint(r.presetsManager, r.userInfoGetter)),
 		provider.DecodeGCPTypesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -612,7 +746,7 @@ func (r Routing) listGCPSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GCPSizeEndpoint(r.presetsManager)),
+		)(provider.GCPSizeEndpoint(r.presetsManager, r.userInfoGetter)),
 		provider.DecodeGCPTypesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -634,7 +768,7 @@ func (r Routing) listGCPZones() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GCPZoneEndpoint(r.presetsManager, r.seedsGetter)),
+		)(provider.GCPZoneEndpoint(r.presetsManager, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeGCPZoneReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -656,7 +790,7 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.DigitaloceanSizeEndpoint(r.presetsManager)),
+		)(provider.DigitaloceanSizeEndpoint(r.presetsManager, r.userInfoGetter)),
 		provider.DecodeDoSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -678,7 +812,7 @@ func (r Routing) listAzureSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureSizeEndpoint(r.presetsManager)),
+		)(provider.AzureSizeEndpoint(r.presetsManager, r.userInfoGetter)),
 		provider.DecodeAzureSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -700,7 +834,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.OpenstackSizeEndpoint(r.seedsGetter, r.presetsManager)),
+		)(provider.OpenstackSizeEndpoint(r.seedsGetter, r.presetsManager, r.userInfoGetter)),
 		provider.DecodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -722,7 +856,7 @@ func (r Routing) listVSphereNetworks() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.VsphereNetworksEndpoint(r.seedsGetter, r.presetsManager)),
+		)(provider.VsphereNetworksEndpoint(r.seedsGetter, r.presetsManager, r.userInfoGetter)),
 		provider.DecodeVSphereNetworksReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -744,7 +878,7 @@ func (r Routing) listVSphereFolders() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.VsphereFoldersEndpoint(r.seedsGetter, r.presetsManager)),
+		)(provider.VsphereFoldersEndpoint(r.seedsGetter, r.presetsManager, r.userInfoGetter)),
 		provider.DecodeVSphereFoldersReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -766,7 +900,7 @@ func (r Routing) listPacketSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.PacketSizesEndpoint(r.presetsManager)),
+		)(provider.PacketSizesEndpoint(r.presetsManager, r.userInfoGetter)),
 		provider.DecodePacketSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -788,7 +922,8 @@ func (r Routing) listPacketSizesNoCredentials() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.PacketSizesWithClusterCredentialsEndpoint(r.projectProvider)),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.PacketSizesWithClusterCredentialsEndpoint(r.projectProvider, r.userInfoGetter)),
 		provider.DecodePacketSizesNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -810,7 +945,7 @@ func (r Routing) listOpenstackTenants() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.OpenstackTenantEndpoint(r.seedsGetter, r.presetsManager)),
+		)(provider.OpenstackTenantEndpoint(r.seedsGetter, r.presetsManager, r.userInfoGetter)),
 		provider.DecodeOpenstackTenantReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -832,7 +967,7 @@ func (r Routing) listOpenstackNetworks() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.OpenstackNetworkEndpoint(r.seedsGetter, r.presetsManager)),
+		)(provider.OpenstackNetworkEndpoint(r.seedsGetter, r.presetsManager, r.userInfoGetter)),
 		provider.DecodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -854,7 +989,7 @@ func (r Routing) listOpenstackSubnets() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.OpenstackSubnetsEndpoint(r.seedsGetter, r.presetsManager)),
+		)(provider.OpenstackSubnetsEndpoint(r.seedsGetter, r.presetsManager, r.userInfoGetter)),
 		provider.DecodeOpenstackSubnetReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -876,7 +1011,7 @@ func (r Routing) listOpenstackSecurityGroups() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.OpenstackSecurityGroupEndpoint(r.seedsGetter, r.presetsManager)),
+		)(provider.OpenstackSecurityGroupEndpoint(r.seedsGetter, r.presetsManager, r.userInfoGetter)),
 		provider.DecodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -898,7 +1033,7 @@ func (r Routing) listHetznerSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.HetznerSizeEndpoint(r.presetsManager)),
+		)(provider.HetznerSizeEndpoint(r.presetsManager, r.userInfoGetter)),
 		provider.DecodeHetznerSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -918,7 +1053,7 @@ func (r Routing) datacentersHandler() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(dc.ListEndpoint(r.seedsGetter)),
+		)(dc.ListEndpoint(r.seedsGetter, r.userInfoGetter)),
 		dc.DecodeDatacentersReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -939,7 +1074,7 @@ func (r Routing) datacenterHandler() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(dc.GetEndpoint(r.seedsGetter)),
+		)(dc.GetEndpoint(r.seedsGetter, r.userInfoGetter)),
 		dc.DecodeLegacyDcReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1008,7 +1143,6 @@ func (r Routing) listProjects() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(project.ListEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userProjectMapper, r.projectMemberProvider, r.userProvider)),
 		decodeEmptyReq,
 		encodeJSON,
@@ -1033,8 +1167,7 @@ func (r Routing) getProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(project.GetEndpoint(r.projectProvider, r.projectMemberProvider, r.userProvider)),
+		)(project.GetEndpoint(r.projectProvider, r.projectMemberProvider, r.userProvider, r.userInfoGetter)),
 		common.DecodeGetProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1063,7 +1196,6 @@ func (r Routing) createProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
 		)(project.CreateEndpoint(r.projectProvider)),
 		project.DecodeCreate,
 		setStatusCreatedHeader(encodeJSON),
@@ -1090,8 +1222,7 @@ func (r Routing) updateProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(project.UpdateEndpoint(r.projectProvider, r.projectMemberProvider, r.userProvider)),
+		)(project.UpdateEndpoint(r.projectProvider, r.projectMemberProvider, r.userProvider, r.userInfoGetter)),
 		project.DecodeUpdateRq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1116,8 +1247,7 @@ func (r Routing) deleteProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(project.DeleteEndpoint(r.projectProvider)),
+		)(project.DeleteEndpoint(r.projectProvider, r.userInfoGetter)),
 		project.DecodeDelete,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1146,8 +1276,7 @@ func (r Routing) createCluster(initNodeDeploymentFailures *prometheus.CounterVec
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.CreateEndpoint(r.sshKeyProvider, r.projectProvider, r.seedsGetter, initNodeDeploymentFailures, r.eventRecorderProvider, r.presetsManager, r.exposeStrategy)),
+		)(cluster.CreateEndpoint(r.sshKeyProvider, r.projectProvider, r.seedsGetter, initNodeDeploymentFailures, r.eventRecorderProvider, r.presetsManager, r.exposeStrategy, r.userInfoGetter)),
 		cluster.DecodeCreateReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -1172,8 +1301,7 @@ func (r Routing) listClusters() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.ListEndpoint(r.projectProvider)),
+		)(cluster.ListEndpoint(r.projectProvider, r.userInfoGetter)),
 		cluster.DecodeListReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1197,8 +1325,7 @@ func (r Routing) listClustersForProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.ListAllEndpoint(r.projectProvider, r.seedsGetter, r.clusterProviderGetter)),
+		)(cluster.ListAllEndpoint(r.projectProvider, r.seedsGetter, r.clusterProviderGetter, r.userInfoGetter)),
 		common.DecodeGetProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1224,8 +1351,7 @@ func (r Routing) getCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.GetEndpoint(r.projectProvider)),
+		)(cluster.GetEndpoint(r.projectProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1250,8 +1376,7 @@ func (r Routing) patchCluster() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.PatchEndpoint(r.projectProvider, r.seedsGetter)),
+		)(cluster.PatchEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		cluster.DecodePatchReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1278,8 +1403,7 @@ func (r Routing) getClusterEvents() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.GetClusterEventsEndpoint()),
+		)(cluster.GetClusterEventsEndpoint(r.userInfoGetter)),
 		cluster.DecodeGetClusterEvents,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1305,8 +1429,7 @@ func (r Routing) getClusterKubeconfig() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.GetAdminKubeconfigEndpoint(r.projectProvider)),
+		)(cluster.GetAdminKubeconfigEndpoint(r.projectProvider, r.userInfoGetter)),
 		cluster.DecodeGetAdminKubeconfig,
 		cluster.EncodeKubeconfig,
 		r.defaultServerOptions()...,
@@ -1332,8 +1455,7 @@ func (r Routing) getOidcClusterKubeconfig() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.GetOidcKubeconfigEndpoint(r.projectProvider)),
+		)(cluster.GetOidcKubeconfigEndpoint(r.projectProvider, r.userInfoGetter)),
 		cluster.DecodeGetAdminKubeconfig,
 		cluster.EncodeKubeconfig,
 		r.defaultServerOptions()...,
@@ -1359,8 +1481,7 @@ func (r Routing) deleteCluster() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.DeleteEndpoint(r.sshKeyProvider, r.projectProvider)),
+		)(cluster.DeleteEndpoint(r.sshKeyProvider, r.projectProvider, r.userInfoGetter)),
 		cluster.DecodeDeleteReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1385,8 +1506,7 @@ func (r Routing) getClusterHealth() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.HealthEndpoint(r.projectProvider)),
+		)(cluster.HealthEndpoint(r.projectProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1414,8 +1534,7 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.AssignSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider)),
+		)(cluster.AssignSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider, r.userInfoGetter)),
 		cluster.DecodeAssignSSHKeyReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -1444,8 +1563,7 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.ListSSHKeysEndpoint(r.sshKeyProvider, r.projectProvider)),
+		)(cluster.ListSSHKeysEndpoint(r.sshKeyProvider, r.projectProvider, r.userInfoGetter)),
 		cluster.DecodeListSSHKeysReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1473,8 +1591,7 @@ func (r Routing) detachSSHKeyFromCluster() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.DetachSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider)),
+		)(cluster.DetachSSHKeyEndpoint(r.sshKeyProvider, r.projectProvider, r.userInfoGetter)),
 		cluster.DecodeDetachSSHKeysReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1499,8 +1616,32 @@ func (r Routing) revokeClusterAdminToken() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.RevokeAdminTokenEndpoint(r.projectProvider)),
+		)(cluster.RevokeAdminTokenEndpoint(r.projectProvider, r.userInfoGetter)),
+		cluster.DecodeAdminTokenReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/viewertoken project revokeClusterViewerToken
+//
+//     Revokes the current viewer token
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) revokeClusterViewerToken() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.RevokeViewerTokenEndpoint(r.userInfoGetter)),
 		cluster.DecodeAdminTokenReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1525,8 +1666,7 @@ func (r Routing) getClusterUpgrades() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.GetUpgradesEndpoint(r.updateManager, r.projectProvider)),
+		)(cluster.GetUpgradesEndpoint(r.updateManager, r.projectProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1575,8 +1715,7 @@ func (r Routing) upgradeClusterNodeDeployments() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(cluster.UpgradeNodeDeploymentsEndpoint(r.projectProvider)),
+		)(cluster.UpgradeNodeDeploymentsEndpoint(r.projectProvider, r.userInfoGetter)),
 		cluster.DecodeUpgradeNodeDeploymentsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1603,8 +1742,7 @@ func (r Routing) addUserToProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(user.AddEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider)),
+		)(user.AddEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider, r.userInfoGetter)),
 		user.DecodeAddReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -1631,8 +1769,7 @@ func (r Routing) getUsersForProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(user.ListEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider)),
+		)(user.ListEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider, r.userInfoGetter)),
 		common.DecodeGetProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1659,8 +1796,7 @@ func (r Routing) editUserInProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(user.EditEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider)),
+		)(user.EditEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider, r.userInfoGetter)),
 		user.DecodeEditReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1687,8 +1823,7 @@ func (r Routing) deleteUserFromProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(user.DeleteEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider)),
+		)(user.DeleteEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider, r.userInfoGetter)),
 		user.DecodeDeleteReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1697,7 +1832,7 @@ func (r Routing) deleteUserFromProject() http.Handler {
 
 // swagger:route GET /api/v1/me users getCurrentUser
 //
-// Returns information about the current user.
+//     Returns information about the current user.
 //
 //     Produces:
 //     - application/json
@@ -1713,6 +1848,55 @@ func (r Routing) getCurrentUser() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(user.GetEndpoint(r.userProjectMapper)),
 		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/me/settings settings getCurrentUserSettings
+//
+//     Returns settings of the current user.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: UserSettings
+//       401: empty
+func (r Routing) getCurrentUserSettings() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(user.GetSettingsEndpoint(r.userProjectMapper)),
+		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v1/me/settings settings patchCurrentUserSettings
+//
+//     Updates settings of the current user.
+//
+//	   Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: UserSettings
+//       401: empty
+func (r Routing) patchCurrentUserSettings() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(user.PatchSettingsEndpoint(r.userProvider)),
+		user.DecodePatchSettingsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1738,8 +1922,7 @@ func (r Routing) addServiceAccountToProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.CreateEndpoint(r.projectProvider, r.serviceAccountProvider)),
+		)(serviceaccount.CreateEndpoint(r.projectProvider, r.serviceAccountProvider, r.userInfoGetter)),
 		serviceaccount.DecodeAddReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -1763,8 +1946,7 @@ func (r Routing) listServiceAccounts() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.ListEndpoint(r.projectProvider, r.serviceAccountProvider, r.userProjectMapper)),
+		)(serviceaccount.ListEndpoint(r.projectProvider, r.serviceAccountProvider, r.userProjectMapper, r.userInfoGetter)),
 		common.DecodeGetProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1791,8 +1973,7 @@ func (r Routing) updateServiceAccount() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.UpdateEndpoint(r.projectProvider, r.serviceAccountProvider, r.userProjectMapper)),
+		)(serviceaccount.UpdateEndpoint(r.projectProvider, r.serviceAccountProvider, r.userProjectMapper, r.userInfoGetter)),
 		serviceaccount.DecodeUpdateReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1817,8 +1998,7 @@ func (r Routing) deleteServiceAccount() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.DeleteEndpoint(r.serviceAccountProvider, r.projectProvider)),
+		)(serviceaccount.DeleteEndpoint(r.serviceAccountProvider, r.projectProvider, r.userInfoGetter)),
 		serviceaccount.DecodeDeleteReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1845,8 +2025,7 @@ func (r Routing) addTokenToServiceAccount() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.CreateTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator)),
+		)(serviceaccount.CreateTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
 		serviceaccount.DecodeAddTokenReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -1870,8 +2049,7 @@ func (r Routing) listServiceAccountTokens() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.ListTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator)),
+		)(serviceaccount.ListTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.userInfoGetter)),
 		serviceaccount.DecodeTokenReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1898,8 +2076,7 @@ func (r Routing) updateServiceAccountToken() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.UpdateTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator)),
+		)(serviceaccount.UpdateTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
 		serviceaccount.DecodeUpdateTokenReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1926,8 +2103,7 @@ func (r Routing) patchServiceAccountToken() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.PatchTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator)),
+		)(serviceaccount.PatchTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
 		serviceaccount.DecodePatchTokenReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1951,32 +2127,30 @@ func (r Routing) deleteServiceAccountToken() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(serviceaccount.DeleteTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider)),
+		)(serviceaccount.DeleteTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.userInfoGetter)),
 		serviceaccount.DecodeDeleteTokenReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/zones aws listAWSZonesNoCredentials
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes aws listAWSSizesNoCredentials
 //
-// Lists available AWS zones
+// Lists available AWS sizes
 //
 //     Produces:
 //     - application/json
 //
 //     Responses:
 //       default: errorResponse
-//       200: AWSZoneList
-func (r Routing) listAWSZonesNoCredentials() http.Handler {
+//       200: AWSSizeList
+func (r Routing) listAWSSizesNoCredentials() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.AWSZoneWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		)(provider.AWSSizeNoCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1999,8 +2173,7 @@ func (r Routing) listAWSSubnetsNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.AWSSubnetWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		)(provider.AWSSubnetWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2023,8 +2196,7 @@ func (r Routing) listGCPSizesNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.GCPSizeWithClusterCredentialsEndpoint(r.projectProvider)),
+		)(provider.GCPSizeWithClusterCredentialsEndpoint(r.projectProvider, r.userInfoGetter)),
 		provider.DecodeGCPTypesNoCredentialReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2047,8 +2219,7 @@ func (r Routing) listGCPDiskTypesNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.GCPDiskTypesWithClusterCredentialsEndpoint(r.projectProvider)),
+		)(provider.GCPDiskTypesWithClusterCredentialsEndpoint(r.projectProvider, r.userInfoGetter)),
 		provider.DecodeGCPTypesNoCredentialReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2071,9 +2242,31 @@ func (r Routing) listGCPZonesNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.GCPZoneWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		)(provider.GCPZoneWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/hetzner/sizes hetzner listHetznerSizesNoCredentials
+//
+// Lists sizes from hetzner
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: HetznerSizeList
+func (r Routing) listHetznerSizesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.HetznerSizeWithClusterCredentialsEndpoint(r.projectProvider, r.userInfoGetter)),
+		provider.DecodeHetznerSizesNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -2095,8 +2288,7 @@ func (r Routing) listDigitaloceanSizesNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.DigitaloceanSizeWithClusterCredentialsEndpoint(r.projectProvider)),
+		)(provider.DigitaloceanSizeWithClusterCredentialsEndpoint(r.projectProvider, r.userInfoGetter)),
 		provider.DecodeDoSizesNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2119,8 +2311,7 @@ func (r Routing) listAzureSizesNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.AzureSizeWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		)(provider.AzureSizeWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeAzureSizesNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2143,8 +2334,7 @@ func (r Routing) listOpenstackSizesNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.OpenstackSizeWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		)(provider.OpenstackSizeWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2167,8 +2357,7 @@ func (r Routing) listOpenstackTenantsNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.OpenstackTenantWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		)(provider.OpenstackTenantWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2191,8 +2380,7 @@ func (r Routing) listOpenstackNetworksNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.OpenstackNetworkWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		)(provider.OpenstackNetworkWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2215,8 +2403,7 @@ func (r Routing) listOpenstackSecurityGroupsNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.OpenstackSecurityGroupWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		)(provider.OpenstackSecurityGroupWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2239,8 +2426,7 @@ func (r Routing) listOpenstackSubnetsNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.OpenstackSubnetsWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		)(provider.OpenstackSubnetsWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeOpenstackSubnetNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2263,8 +2449,7 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.VsphereNetworksWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		)(provider.VsphereNetworksWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeVSphereNetworksNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2287,8 +2472,7 @@ func (r Routing) listVSphereFoldersNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(provider.VsphereFoldersWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter)),
+		)(provider.VsphereFoldersWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeVSphereFoldersNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2316,8 +2500,7 @@ func (r Routing) createNodeDeployment() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(node.CreateNodeDeployment(r.sshKeyProvider, r.projectProvider, r.seedsGetter)),
+		)(node.CreateNodeDeployment(r.sshKeyProvider, r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		node.DecodeCreateNodeDeployment,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -2342,8 +2525,7 @@ func (r Routing) listNodeDeployments() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(node.ListNodeDeployments(r.projectProvider)),
+		)(node.ListNodeDeployments(r.projectProvider, r.userInfoGetter)),
 		node.DecodeListNodeDeployments,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2368,8 +2550,7 @@ func (r Routing) getNodeDeployment() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(node.GetNodeDeployment(r.projectProvider)),
+		)(node.GetNodeDeployment(r.projectProvider, r.userInfoGetter)),
 		node.DecodeGetNodeDeployment,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2394,9 +2575,33 @@ func (r Routing) listNodeDeploymentNodes() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(node.ListNodeDeploymentNodes(r.projectProvider)),
+		)(node.ListNodeDeploymentNodes(r.projectProvider, r.userInfoGetter)),
 		node.DecodeListNodeDeploymentNodes,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics metric listNodeDeploymentMetrics
+//
+//     Lists metrics that belong to the given node deployment.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []NodeMetric
+//       401: empty
+//       403: empty
+func (r Routing) listNodeDeploymentMetrics() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(node.ListNodeDeploymentMetrics(r.projectProvider, r.userInfoGetter)),
+		node.DecodeListNodeDeploymentMetrics,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -2421,8 +2626,7 @@ func (r Routing) listNodeDeploymentNodesEvents() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(node.ListNodeDeploymentNodesEvents()),
+		)(node.ListNodeDeploymentNodesEvents(r.userInfoGetter)),
 		node.DecodeListNodeDeploymentNodesEvents,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2451,8 +2655,7 @@ func (r Routing) patchNodeDeployment() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(node.PatchNodeDeployment(r.sshKeyProvider, r.projectProvider, r.seedsGetter)),
+		)(node.PatchNodeDeployment(r.sshKeyProvider, r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		node.DecodePatchNodeDeployment,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2477,9 +2680,61 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(node.DeleteNodeDeployment(r.projectProvider)),
+		)(node.DeleteNodeDeployment(r.projectProvider, r.userInfoGetter)),
 		node.DecodeDeleteNodeDeployment,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/addons addon
+//
+//     Lists names of addons that can be configured inside the user clusters
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AccessibleAddons
+//       401: empty
+//       403: empty
+func (r Routing) listAccessibleAddons() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(addon.ListAccessibleAddons(r.accessibleAddons)),
+		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons addon listInstallableAddons
+//
+//     Lists names of addons that can be installed inside the user cluster
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AccessibleAddons
+//       401: empty
+//       403: empty
+func (r Routing) listInstallableAddons() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
+		)(addon.ListInstallableAddonEndpoint(r.projectProvider, r.userInfoGetter, r.accessibleAddons)),
+		addon.DecodeListAddons,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -2507,8 +2762,7 @@ func (r Routing) createAddon() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(addon.CreateAddonEndpoint(r.projectProvider)),
+		)(addon.CreateAddonEndpoint(r.projectProvider, r.userInfoGetter)),
 		addon.DecodeCreateAddon,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -2534,8 +2788,7 @@ func (r Routing) listAddons() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(addon.ListAddonEndpoint(r.projectProvider)),
+		)(addon.ListAddonEndpoint(r.projectProvider, r.userInfoGetter)),
 		addon.DecodeListAddons,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2555,15 +2808,13 @@ func (r Routing) listAddons() http.Handler {
 //       401: empty
 //       403: empty
 func (r Routing) getAddon() http.Handler {
-
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(addon.GetAddonEndpoint(r.projectProvider)),
+		)(addon.GetAddonEndpoint(r.projectProvider, r.userInfoGetter)),
 		addon.DecodeGetAddon,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2592,8 +2843,7 @@ func (r Routing) patchAddon() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(addon.PatchAddonEndpoint(r.projectProvider)),
+		)(addon.PatchAddonEndpoint(r.projectProvider, r.userInfoGetter)),
 		addon.DecodePatchAddon,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2619,9 +2869,678 @@ func (r Routing) deleteAddon() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.UserInfoExtractor(r.userProjectMapper),
-		)(addon.DeleteAddonEndpoint(r.projectProvider)),
+		)(addon.DeleteAddonEndpoint(r.projectProvider, r.userInfoGetter)),
 		addon.DecodeGetAddon,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics project getClusterMetrics
+//
+//    Gets cluster metrics
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterMetrics
+//       401: empty
+//       403: empty
+func (r Routing) getClusterMetrics() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.GetMetricsEndpoint(r.projectProvider, r.userInfoGetter)),
+		common.DecodeGetClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles project createClusterRole
+//
+//    Creates cluster role
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ClusterRole
+//       401: empty
+//       403: empty
+func (r Routing) createClusterRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.CreateClusterRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeCreateClusterRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/login
+//
+//    Creates an oauth token for the user and redirects them to the Openshift Console
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       302: empty
+//       401: empty
+//       403: empty
+func (r Routing) openshiftConsoleLogin() http.Handler {
+	return openshift.ConsoleLoginEndpoint(
+		r.log,
+		middleware.TokenExtractor(r.tokenExtractors),
+		r.projectProvider,
+		r.userInfoGetter,
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
+			// client that allows access to the cluster namespace only
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		),
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/proxy
+//
+//    Proxies the Openshift console. Requires a valid OIDC token. The token can be obtained
+//    using the /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/login
+//    endpoint.
+//
+//     Responses:
+//       default: empty
+func (r Routing) openshiftConsoleProxy() http.Handler {
+	return openshift.ConsoleProxyEndpoint(
+		r.log,
+		middleware.TokenExtractor(r.tokenExtractors),
+		r.projectProvider,
+		r.userInfoGetter,
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
+			// client that allows access to the cluster namespace only
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		),
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/openshift/console/proxy
+//
+//    Proxies the Kubernetes Dashboard. Requires a valid bearer token. The token can be obtained
+//    using the /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/dashboard/login
+//    endpoint.
+//
+//     Responses:
+//       default: empty
+func (r Routing) kubernetesDashboardProxy() http.Handler {
+	return kubernetesdashboard.ProxyEndpoint(
+		r.log,
+		middleware.TokenExtractor(r.tokenExtractors),
+		r.projectProvider,
+		r.userInfoGetter,
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
+			// client that allows access to the cluster namespace only
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		),
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles project createRole
+//
+//    Creates cluster role
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: Role
+//       401: empty
+//       403: empty
+func (r Routing) createRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.CreateRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeCreateRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles project listClusterRole
+//
+//     Lists all ClusterRoles
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ClusterRole
+//       401: empty
+//       403: empty
+func (r Routing) listClusterRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.ListClusterRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeListClusterRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames project listClusterRoleNames
+//
+//     Lists all ClusterRoles
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ClusterRoleName
+//       401: empty
+//       403: empty
+func (r Routing) listClusterRoleNames() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.ListClusterRoleNamesEndpoint(r.userInfoGetter)),
+		cluster.DecodeListClusterRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles project listRole
+//
+//     Lists all Roles
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Role
+//       401: empty
+//       403: empty
+func (r Routing) listRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.ListRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeListClusterRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/rolenames project listRoleNames
+//
+//     Lists all Role names with namespaces
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []RoleName
+//       401: empty
+//       403: empty
+func (r Routing) listRoleNames() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.ListRoleNamesEndpoint(r.userInfoGetter)),
+		cluster.DecodeListClusterRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{role_id} project getClusterRole
+//
+//     Gets the cluster role with the given name
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterRole
+//       401: empty
+//       403: empty
+func (r Routing) getClusterRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.GetClusterRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeGetClusterRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id} project getRole
+//
+//     Gets the role with the given name
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Role
+//       401: empty
+//       403: empty
+func (r Routing) getRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.GetRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeGetRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id} project deleteClusterRole
+//
+//     Delete the cluster role with the given name
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteClusterRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.DeleteClusterRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeGetClusterRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id} project deleteRole
+//
+//     Delete the cluster role with the given name
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.DeleteRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeGetRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces project listNamespace
+//
+//     Lists all namespaces in the cluster
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Namespace
+//       401: empty
+//       403: empty
+func (r Routing) listNamespace() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.ListNamespaceEndpoint(r.userInfoGetter)),
+		common.DecodeGetClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id} project patchRole
+//
+//     Patch the role with the given name
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Role
+//       401: empty
+//       403: empty
+func (r Routing) patchRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.PatchRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodePatchRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id} project patchClusterRole
+//
+//     Patch the cluster role with the given name
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterRole
+//       401: empty
+//       403: empty
+func (r Routing) patchClusterRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.PatchClusterRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodePatchClusterRoleReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings project bindUserToRole
+//
+//    Binds user to the role
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: RoleBinding
+//       401: empty
+//       403: empty
+func (r Routing) bindUserToRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.BindUserToRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeRoleUserReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings project unbindUserFromRoleBinding
+//
+//    Unbinds user from the role binding
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: RoleBinding
+//       401: empty
+//       403: empty
+func (r Routing) unbindUserFromRoleBinding() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.UnbindUserFromRoleBindingEndpoint(r.userInfoGetter)),
+		cluster.DecodeRoleUserReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings project listRoleBinding
+//
+//    List role binding
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []RoleBinding
+//       401: empty
+//       403: empty
+func (r Routing) listRoleBinding() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.ListRoleBindingEndpoint(r.userInfoGetter)),
+		cluster.DecodeListBindingReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings project bindUserToClusterRole
+//
+//    Binds user to cluster role
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ClusterRoleBinding
+//       401: empty
+//       403: empty
+func (r Routing) bindUserToClusterRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.BindUserToClusterRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeClusterRoleUserReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings project unbindUserFromClusterRoleBinding
+//
+//    Unbinds user from cluster role binding
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ClusterRoleBinding
+//       401: empty
+//       403: empty
+func (r Routing) unbindUserFromClusterRoleBinding() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.UnbindUserFromClusterRoleBindingEndpoint(r.userInfoGetter)),
+		cluster.DecodeClusterRoleUserReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterbindings project listClusterRoleBinding
+//
+//    List cluster role binding
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ClusterRoleBinding
+//       401: empty
+//       403: empty
+func (r Routing) listClusterRoleBinding() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.ListClusterRoleBindingEndpoint(r.userInfoGetter)),
+		cluster.DecodeListBindingReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v1/labels/system listSystemLabels
+//
+//    List restricted system labels
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ResourceLabelMap
+//       401: empty
+//       403: empty
+func (r Routing) listSystemLabels() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+		)(label.ListSystemLabels()),
+		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/addonconfigs/{addon_id} getAddonConfig
+//
+//     Returns specified addon config.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AddonConfig
+//       401: empty
+func (r Routing) getAddonConfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(addon.GetAddonConfigEndpoint(r.addonConfigProvider)),
+		addon.DecodeGetConfig,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/addonconfigs listAddonConfigs
+//
+//     Returns all available addon configs.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []AddonConfig
+//       401: empty
+func (r Routing) listAddonConfigs() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(addon.ListAddonConfigsEndpoint(r.addonConfigProvider)),
+		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

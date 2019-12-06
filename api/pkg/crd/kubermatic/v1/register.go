@@ -1,10 +1,19 @@
 package v1
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes/scheme"
 )
+
+func init() {
+	if err := AddToScheme(scheme.Scheme); err != nil {
+		panic(fmt.Sprintf("failed to add kubermatic scheme: %v", err))
+	}
+}
 
 var (
 	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
@@ -40,6 +49,10 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&UserProjectBindingList{},
 		&Seed{},
 		&SeedList{},
+		&KubermaticSetting{},
+		&KubermaticSettingList{},
+		&AddonConfig{},
+		&AddonConfigList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)

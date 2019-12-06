@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: '{{ template "name" . }}'
+  labels:
+    app.kubernetes.io/name: karma
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/version: '{{ .Chart.Version }}'
+    app.kubernetes.io/managed-by: helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: karma
+      app.kubernetes.io/instance: '{{ .Release.Name }}'
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: karma
+        app.kubernetes.io/instance: '{{ .Release.Name }}'
+      annotations:
+        fluentbit.io/parser: json_iso
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha1sum }}
+    spec:
+      serviceAccountName: '{{ template "name" .}}'
+      initContainers:
+      - name: init-seeds
+        image: '{{ .Values.karma.images.initContainer.repository }}:{{ .Values.karma.images.initContainer.tag }}'
+        imagePullPolicy: {{ .Values.karma.images.initContainer.pullPolicy }}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -euo pipefail
+
+          ns={{ .Values.karma.kubermaticNamespace }}
+          out=/etc/karma-shared/karma.yaml
+
+          cp /etc/karma/karma.yaml $out
+
+          kubectl -n "$ns" get services -l 'app.kubernetes.io/name=seed-proxy' -o "custom-columns=name:{.metadata.labels['app\.kubernetes\.io/instance']}" --no-headers | while read seed; do
+            echo "  - name: $seed" >> $out
+            echo "    uri: http://seed-proxy-$seed.$ns.svc.cluster.local:8001/api/v1/namespaces/monitoring/services/alertmanager:web/proxy/" >> $out
+            echo "    proxy: true" >> $out
+          done
+        volumeMounts:
+        - name: config
+          mountPath: /etc/karma
+        - name: shared-config
+          mountPath: /etc/karma-shared
+      containers:
+      - name: karma
+        image: '{{ .Values.karma.images.karma.repository }}:{{ .Values.karma.images.karma.tag }}'
+        imagePullPolicy: {{ .Values.karma.images.karma.pullPolicy }}
+        args:
+        - --config.file=/etc/karma/karma.yaml
+        ports:
+        - containerPort: 8080
+          name: web
+        volumeMounts:
+        - name: shared-config
+          mountPath: /etc/karma
+      volumes:
+      - name: config
+        configMap:
+          name: '{{ template "name" . }}-config'
+      - name: shared-config
+        emptyDir: {}
+      nodeSelector:
+{{ toYaml .Values.karma.nodeSelector | indent 8 }}
+      affinity:
+{{ (tpl (toYaml .Values.karma.affinity) .) | fromYaml | toYaml | indent 8 }}
+      tolerations:
+{{ toYaml .Values.karma.tolerations | indent 8 }}

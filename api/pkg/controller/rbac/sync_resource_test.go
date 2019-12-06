@@ -562,7 +562,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			clusterRolesActions := allActions[0:len(test.expectedClusterRoles)]
 			offset := 0
 			for index, action := range clusterRolesActions {
-				offset = offset + 1
+				offset++
 				if !action.Matches(test.expectedActions[index], "clusterroles") {
 					t.Fatalf("unexpected action %#v", action)
 				}
@@ -754,7 +754,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 			rolesActions := allActions[0:len(test.expectedRoles)]
 			offset := 0
 			for index, action := range rolesActions {
-				offset = offset + 1
+				offset++
 				if !action.Matches(test.expectedActions[index], "roles") {
 					t.Fatalf("unexpected action %#v", action)
 				}

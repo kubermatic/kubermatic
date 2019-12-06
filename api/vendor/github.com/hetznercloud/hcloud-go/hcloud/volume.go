@@ -36,6 +36,17 @@ type VolumeClient struct {
 	client *Client
 }
 
+// VolumeStatus specifies a volume's status.
+type VolumeStatus string
+
+const (
+	// VolumeStatusCreating is the status when a volume is being created.
+	VolumeStatusCreating VolumeStatus = "creating"
+
+	// VolumeStatusAvailable is the status when a volume is available.
+	VolumeStatusAvailable VolumeStatus = "available"
+)
+
 // GetByID retrieves a volume by its ID. If the volume does not exist, nil is returned.
 func (c *VolumeClient) GetByID(ctx context.Context, id int) (*Volume, *Response, error) {
 	req, err := c.client.NewRequest(ctx, "GET", fmt.Sprintf("/volumes/%d", id), nil)
@@ -56,22 +67,11 @@ func (c *VolumeClient) GetByID(ctx context.Context, id int) (*Volume, *Response,
 
 // GetByName retrieves a volume by its name. If the volume does not exist, nil is returned.
 func (c *VolumeClient) GetByName(ctx context.Context, name string) (*Volume, *Response, error) {
-	path := "/volumes?name=" + url.QueryEscape(name)
-	req, err := c.client.NewRequest(ctx, "GET", path, nil)
-	if err != nil {
-		return nil, nil, err
+	volumes, response, err := c.List(ctx, VolumeListOpts{Name: name})
+	if len(volumes) == 0 {
+		return nil, response, err
 	}
-
-	var body schema.VolumeListResponse
-	resp, err := c.client.Do(req, &body)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if len(body.Volumes) == 0 {
-		return nil, resp, nil
-	}
-	return VolumeFromSchema(body.Volumes[0]), resp, nil
+	return volumes[0], response, err
 }
 
 // Get retrieves a volume by its ID if the input can be parsed as an integer, otherwise it
@@ -86,11 +86,24 @@ func (c *VolumeClient) Get(ctx context.Context, idOrName string) (*Volume, *Resp
 // VolumeListOpts specifies options for listing volumes.
 type VolumeListOpts struct {
 	ListOpts
+	Name   string
+	Status []VolumeStatus
+}
+
+func (l VolumeListOpts) values() url.Values {
+	vals := l.ListOpts.values()
+	if l.Name != "" {
+		vals.Add("name", l.Name)
+	}
+	for _, status := range l.Status {
+		vals.Add("status", string(status))
+	}
+	return vals
 }
 
 // List returns a list of volumes for a specific page.
 func (c *VolumeClient) List(ctx context.Context, opts VolumeListOpts) ([]*Volume, *Response, error) {
-	path := "/volumes?" + valuesForListOpts(opts.ListOpts).Encode()
+	path := "/volumes?" + opts.values().Encode()
 	req, err := c.client.NewRequest(ctx, "GET", path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -110,7 +123,7 @@ func (c *VolumeClient) List(ctx context.Context, opts VolumeListOpts) ([]*Volume
 
 // All returns all volumes.
 func (c *VolumeClient) All(ctx context.Context) ([]*Volume, error) {
-	return c.AllWithOpts(ctx, VolumeListOpts{ListOpts{PerPage: 50}})
+	return c.AllWithOpts(ctx, VolumeListOpts{ListOpts: ListOpts{PerPage: 50}})
 }
 
 // AllWithOpts returns all volumes with the given options.
@@ -135,11 +148,13 @@ func (c *VolumeClient) AllWithOpts(ctx context.Context, opts VolumeListOpts) ([]
 
 // VolumeCreateOpts specifies parameters for creating a volume.
 type VolumeCreateOpts struct {
-	Name     string
-	Size     int
-	Server   *Server
-	Location *Location
-	Labels   map[string]string
+	Name      string
+	Size      int
+	Server    *Server
+	Location  *Location
+	Labels    map[string]string
+	Automount *bool
+	Format    *string
 }
 
 // Validate checks if options are valid.
@@ -155,6 +170,9 @@ func (o VolumeCreateOpts) Validate() error {
 	}
 	if o.Server != nil && o.Location != nil {
 		return errors.New("only one of server or location must be provided")
+	}
+	if o.Server == nil && (o.Automount != nil && *o.Automount) {
+		return errors.New("server must be provided when automount is true")
 	}
 	return nil
 }
@@ -172,8 +190,10 @@ func (c *VolumeClient) Create(ctx context.Context, opts VolumeCreateOpts) (Volum
 		return VolumeCreateResult{}, nil, err
 	}
 	reqBody := schema.VolumeCreateRequest{
-		Name: opts.Name,
-		Size: opts.Size,
+		Name:      opts.Name,
+		Size:      opts.Size,
+		Automount: opts.Automount,
+		Format:    opts.Format,
 	}
 	if opts.Labels != nil {
 		reqBody.Labels = &opts.Labels
@@ -188,6 +208,7 @@ func (c *VolumeClient) Create(ctx context.Context, opts VolumeCreateOpts) (Volum
 			reqBody.Location = opts.Location.Name
 		}
 	}
+
 	reqBodyData, err := json.Marshal(reqBody)
 	if err != nil {
 		return VolumeCreateResult{}, nil, err
@@ -258,11 +279,19 @@ func (c *VolumeClient) Update(ctx context.Context, volume *Volume, opts VolumeUp
 	return VolumeFromSchema(respBody.Volume), resp, nil
 }
 
-// Attach attaches a volume to a server.
-func (c *VolumeClient) Attach(ctx context.Context, volume *Volume, server *Server) (*Action, *Response, error) {
+// VolumeAttachOpts specifies options for attaching a volume.
+type VolumeAttachOpts struct {
+	Server    *Server
+	Automount *bool
+}
+
+// AttachWithOpts attaches a volume to a server.
+func (c *VolumeClient) AttachWithOpts(ctx context.Context, volume *Volume, opts VolumeAttachOpts) (*Action, *Response, error) {
 	reqBody := schema.VolumeActionAttachVolumeRequest{
-		Server: server.ID,
+		Server:    opts.Server.ID,
+		Automount: opts.Automount,
 	}
+
 	reqBodyData, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, nil, err
@@ -280,6 +309,11 @@ func (c *VolumeClient) Attach(ctx context.Context, volume *Volume, server *Serve
 		return nil, resp, err
 	}
 	return ActionFromSchema(respBody.Action), resp, nil
+}
+
+// Attach attaches a volume to a server.
+func (c *VolumeClient) Attach(ctx context.Context, volume *Volume, server *Server) (*Action, *Response, error) {
+	return c.AttachWithOpts(ctx, volume, VolumeAttachOpts{Server: server})
 }
 
 // Detach detaches a volume from a server.

@@ -14,33 +14,52 @@ import (
 func HostnameAntiAffinity(app, clusterName string) *corev1.Affinity {
 	return &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-				// Avoid that we schedule multiple same-kind pods of a cluster on a single node
-				{
-					Weight: 100,
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								AppLabelKey:     app,
-								ClusterLabelKey: clusterName,
-							},
-						},
-						TopologyKey: TopologyKeyHostname,
+			PreferredDuringSchedulingIgnoredDuringExecution: hostnameAntiAffinity(app, clusterName),
+		},
+	}
+}
+
+func hostnameAntiAffinity(app, clusterName string) []corev1.WeightedPodAffinityTerm {
+	return []corev1.WeightedPodAffinityTerm{
+		// Avoid that we schedule multiple same-kind pods of a cluster on a single node
+		{
+			Weight: 100,
+			PodAffinityTerm: corev1.PodAffinityTerm{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						AppLabelKey:     app,
+						ClusterLabelKey: clusterName,
 					},
 				},
-				// Avoid that we schedule multiple same-kind pods on a single node
-				{
-					Weight: 10,
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						LabelSelector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								AppLabelKey: app,
-							},
-						},
-						TopologyKey: TopologyKeyHostname,
+				TopologyKey: TopologyKeyHostname,
+			},
+		},
+		// Avoid that we schedule multiple same-kind pods on a single node
+		{
+			Weight: 10,
+			PodAffinityTerm: corev1.PodAffinityTerm{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						AppLabelKey: app,
 					},
+				},
+				TopologyKey: TopologyKeyHostname,
+			},
+		},
+	}
+}
+
+// FailureDomainZoneAntiAffinity ensures that same-kind pods are spread across different availability zones.
+func FailureDomainZoneAntiAffinity(app, clusterName string) corev1.WeightedPodAffinityTerm {
+	return corev1.WeightedPodAffinityTerm{
+		Weight: 100,
+		PodAffinityTerm: corev1.PodAffinityTerm{
+			LabelSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					AppLabelKey: app,
 				},
 			},
+			TopologyKey: TopologyKeyFailureDomainZone,
 		},
 	}
 }

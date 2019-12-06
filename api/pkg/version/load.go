@@ -9,7 +9,7 @@ import (
 )
 
 // LoadUpdates loads the update definition file and returns the defined MasterUpdate
-func LoadUpdates(path string) ([]*MasterUpdate, error) {
+func LoadUpdates(path string) ([]*Update, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -21,19 +21,26 @@ func LoadUpdates(path string) ([]*MasterUpdate, error) {
 	}
 
 	s := struct {
-		Updates []*MasterUpdate `json:"updates"`
+		Updates []*Update `json:"updates"`
 	}{}
 
 	err = yaml.UnmarshalStrict(bytes, &s)
 	if err != nil {
 		return nil, err
 	}
+	for _, update := range s.Updates {
+		// AutomaticNodeUpdate implies automatic update, because nodes
+		// must not have a newer version than the control plane
+		if update.AutomaticNodeUpdate {
+			update.Automatic = true
+		}
+	}
 
 	return s.Updates, nil
 }
 
-// LoadVersions loads MasterVersions from a given path
-func LoadVersions(path string) ([]*MasterVersion, error) {
+// LoadVersions loads Versions from a given path
+func LoadVersions(path string) ([]*Version, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -45,7 +52,7 @@ func LoadVersions(path string) ([]*MasterVersion, error) {
 	}
 
 	s := struct {
-		Versions []*MasterVersion `json:"versions"`
+		Versions []*Version `json:"versions"`
 	}{}
 
 	err = yaml.UnmarshalStrict(bytes, &s)

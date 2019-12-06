@@ -67,7 +67,10 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 						"-v", "4",
 						"-listen-address", "0.0.0.0:9876",
 					},
-					Env:       envVars,
+					Env: append(envVars, corev1.EnvVar{
+						Name:  "KUBECONFIG",
+						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
+					}),
 					Resources: webhookResourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
@@ -110,7 +113,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 					},
 				},
 			}
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(Name))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(Name), "Machine,cluster.k8s.io/v1alpha1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 			}
@@ -205,10 +208,10 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate serving cert: %v", err)
 			}
-			se.Data[resources.MachineControllerWebhookServingCertCertKeyName] = certutil.EncodeCertPEM(newKP.Cert)
-			se.Data[resources.MachineControllerWebhookServingCertKeyKeyName] = certutil.EncodePrivateKeyPEM(newKP.Key)
+			se.Data[resources.MachineControllerWebhookServingCertCertKeyName] = triple.EncodeCertPEM(newKP.Cert)
+			se.Data[resources.MachineControllerWebhookServingCertKeyKeyName] = triple.EncodePrivateKeyPEM(newKP.Key)
 			// Include the CA for simplicity
-			se.Data[resources.CACertSecretKey] = certutil.EncodeCertPEM(ca.Cert)
+			se.Data[resources.CACertSecretKey] = triple.EncodeCertPEM(ca.Cert)
 
 			return se, nil
 		}

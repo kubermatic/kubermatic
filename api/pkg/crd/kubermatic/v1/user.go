@@ -26,11 +26,19 @@ type User struct {
 
 // UserSpec specifies a user
 type UserSpec struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	// Depreciated: Projects field is depreciated, was replaced by UserProjectBinding
-	Projects []ProjectGroup `json:"projects,omitempty"`
+	ID       string        `json:"id"`
+	Name     string        `json:"name"`
+	Email    string        `json:"email"`
+	IsAdmin  bool          `json:"admin"`
+	Settings *UserSettings `json:"settings,omitempty"`
+}
+
+// UserSettings represent an user settings
+type UserSettings struct {
+	SelectedTheme          string `json:"selectedTheme,omitempty"`
+	ItemsPerPage           int8   `json:"itemsPerPage,omitempty"`
+	SelectedProjectID      string `json:"selectedProjectId,omitempty"`
+	SelectProjectTableView bool   `json:"selectProjectTableView,omitempty"`
 }
 
 // UserList is a list of users

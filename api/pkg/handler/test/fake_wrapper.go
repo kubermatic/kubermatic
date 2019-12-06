@@ -254,3 +254,33 @@ func (k NewAddonSliceWrapper) EqualOrDie(expected NewAddonSliceWrapper, t *testi
 		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
 	}
 }
+
+// NewRoleNameSliceWrapper wraps []apiv1.RoleName
+// to provide convenient methods for tests
+type NewRoleNameSliceWrapper []apiv1.RoleName
+
+// Sort sorts the collection by CreationTimestamp
+func (k NewRoleNameSliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].Name < (k[j].Name)
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *NewRoleNameSliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewRoleNameSliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k NewRoleNameSliceWrapper) EqualOrDie(expected NewRoleNameSliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}

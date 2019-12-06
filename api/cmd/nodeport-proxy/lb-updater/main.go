@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/golang/glog"
+	"github.com/go-test/deep"
 
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 
@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -37,6 +38,7 @@ var (
 )
 
 func main() {
+	klog.InitFlags(nil)
 	flag.StringVar(&lbName, "lb-name", "nodeport-lb", "name of the LoadBalancer service to manage.")
 	flag.StringVar(&lbNamespace, "lb-namespace", "nodeport-proxy", "namespace of the LoadBalancer service to manage. Needs to exist")
 	flag.BoolVar(&namespaced, "namespaced", false, "Whether this controller should only watch services in the lbNamespace")
@@ -45,7 +47,7 @@ func main() {
 
 	config, err := ctrlruntimeconfig.GetConfig()
 	if err != nil {
-		glog.Fatalf("Failed to get config: %v", err)
+		klog.Fatalf("Failed to get config: %v", err)
 	}
 
 	stopCh := signals.SetupSignalHandler()
@@ -62,7 +64,7 @@ func main() {
 	}
 	mgr, err := manager.New(config, manager.Options{Namespace: namespace})
 	if err != nil {
-		glog.Fatalf("failed to construct mgr: %v", err)
+		klog.Fatalf("failed to construct mgr: %v", err)
 	}
 
 	r := &LBUpdater{
@@ -76,13 +78,13 @@ func main() {
 	ctrl, err := controller.New("lb-updater", mgr,
 		controller.Options{Reconciler: r, MaxConcurrentReconciles: 1})
 	if err != nil {
-		glog.Fatalf("failed to construct controller: %v", err)
+		klog.Fatalf("failed to construct controller: %v", err)
 	}
 	if err := ctrl.Watch(&source.Kind{Type: &corev1.Service{}}, controllerutil.EnqueueConst("")); err != nil {
-		glog.Fatalf("Failed to add watch for Service: %v", err)
+		klog.Fatalf("Failed to add watch for Service: %v", err)
 	}
 	if err := mgr.Start(stopCh); err != nil {
-		glog.Fatalf("manager ended: %v", err)
+		klog.Fatalf("manager ended: %v", err)
 	}
 }
 
@@ -99,17 +101,17 @@ type LBUpdater struct {
 func (u *LBUpdater) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	err := u.syncLB(request.NamespacedName.String())
 	if err != nil {
-		glog.Errorf("Error syncing lb: %v", err)
+		klog.Errorf("Error syncing lb: %v", err)
 	}
 	return reconcile.Result{}, err
 }
 
 func (u *LBUpdater) syncLB(s string) error {
-	glog.V(4).Infof("Syncing LB as Service %s got modified", s)
+	klog.V(4).Infof("Syncing LB as Service %s got modified", s)
 
 	services := &corev1.ServiceList{}
 	opts := &ctrlruntimeclient.ListOptions{Namespace: u.namespace}
-	if err := u.client.List(u.ctx, opts, services); err != nil {
+	if err := u.client.List(u.ctx, services, opts); err != nil {
 		return fmt.Errorf("failed to list services: %v", err)
 	}
 
@@ -122,33 +124,31 @@ func (u *LBUpdater) syncLB(s string) error {
 	})
 	for _, service := range services.Items {
 		if service.Annotations[exposeAnnotationKey] != "true" {
-			glog.V(4).Infof("skipping service %s/%s as the annotation %s is not set to 'true'", service.Namespace, service.Name, exposeAnnotationKey)
+			klog.V(4).Infof("skipping service %s/%s as the annotation %s is not set to 'true'", service.Namespace, service.Name, exposeAnnotationKey)
 			continue
 		}
 
 		if service.Spec.ClusterIP == "" {
-			glog.V(4).Infof("skipping service %s/%s as it has no clusterIP set", service.Namespace, service.Name)
+			klog.V(4).Infof("skipping service %s/%s as it has no clusterIP set", service.Namespace, service.Name)
 			continue
 		}
 
 		// We require a NodePort because we abuse it as allocation mechanism for a unique port
 		for _, servicePort := range service.Spec.Ports {
 			if servicePort.NodePort == 0 {
-				glog.V(4).Infof("skipping service port %s/%s/%d as it has no nodePort set", service.Namespace, service.Name, servicePort.NodePort)
+				klog.V(4).Infof("skipping service port %s/%s/%d as it has no nodePort set", service.Namespace, service.Name, servicePort.NodePort)
 				continue
 			}
 			wantLBPorts = append(wantLBPorts, corev1.ServicePort{
-				Name:       fmt.Sprintf("%s-%s-%d-%d", service.Namespace, service.Name, servicePort.Port, servicePort.NodePort),
+				Name:       fmt.Sprintf("%s-%s", service.Namespace, service.Name),
 				Port:       servicePort.NodePort,
 				TargetPort: intstr.FromInt(int(servicePort.NodePort)),
 				Protocol:   corev1.ProtocolTCP,
+				// Not a mistake. We must know the original Port for name comparison and this is the only
+				// field left in which we can put it.
+				NodePort: servicePort.Port,
 			})
 		}
-	}
-
-	if len(wantLBPorts) == 0 {
-		// Nothing to do
-		return nil
 	}
 
 	lb := &corev1.Service{}
@@ -166,10 +166,11 @@ func (u *LBUpdater) syncLB(s string) error {
 		return lb.Spec.Ports[i].Name < lb.Spec.Ports[j].Name
 	})
 
-	wantLBPorts = fillWithNodePorts(wantLBPorts, lb.Spec.Ports)
+	wantLBPorts = fillNodePortsAndNames(wantLBPorts, lb.Spec.Ports)
 
 	if !equality.Semantic.DeepEqual(wantLBPorts, lb.Spec.Ports) {
-		glog.Infof("Updating LB ports...")
+		diff := deep.Equal(wantLBPorts, lb.Spec.Ports)
+		klog.Infof("Updating LB ports, diff: %v", diff)
 		lb.Spec.Ports = wantLBPorts
 		if err := u.client.Update(u.ctx, lb); err != nil {
 			return fmt.Errorf("failed to update LB service %s/%s: %v", u.lbNamespace, u.lbName, err)
@@ -181,23 +182,46 @@ func (u *LBUpdater) syncLB(s string) error {
 		for _, p := range lb.Spec.Ports {
 			buf.WriteString(fmt.Sprintf("Name: %s\n", p.Name))
 			buf.WriteString(fmt.Sprintf("Port: %d\n", p.Port))
+			buf.WriteString(fmt.Sprintf("NodePort: %d\n", p.NodePort))
 			buf.WriteString("\n")
 		}
 		buf.WriteString("======================\n")
-		glog.Infof("%s\n", buf.String())
+		klog.Infof("%s\n", buf.String())
+	} else {
+		klog.V(4).Infof("LB service already up to date, nothing to do")
 	}
 
 	return nil
 }
 
-func fillWithNodePorts(wantPorts, lbPorts []corev1.ServicePort) []corev1.ServicePort {
+func fillNodePortsAndNames(wantPorts, lbPorts []corev1.ServicePort) []corev1.ServicePort {
 	for wi := range wantPorts {
-		for _, lp := range lbPorts {
-			if wantPorts[wi].Name == lp.Name {
-				wantPorts[wi].NodePort = lp.NodePort
-			}
-		}
+		setNodePortAndName(&wantPorts[wi], lbPorts)
 	}
 
 	return wantPorts
+}
+
+func setNodePortAndName(portToSet *corev1.ServicePort, lbPorts []corev1.ServicePort) {
+	// We must support both the old name schema that included the port and resulted in a change
+	// when the port was changed and the new one, where we only include the node port. This is
+	// needed because some LB implementations can not cope with a config change where only the
+	// nodeport differs.
+	// Additionally we have to compare the name directly, because in the case of the healthCheckPort
+	// the NodePort or Port is not part of the name.
+	oldSchemaName := fmt.Sprintf("%s-%d-%d", portToSet.Name, portToSet.NodePort, portToSet.Port)
+	newSchemaName := fmt.Sprintf("%s-%d", portToSet.Name, portToSet.Port)
+	for _, lbPort := range lbPorts {
+		if oldSchemaName == lbPort.Name || newSchemaName == lbPort.Name || portToSet.Name == lbPort.Name {
+			portToSet.Name = lbPort.Name
+			portToSet.NodePort = lbPort.NodePort
+			return
+		}
+	}
+	if portToSet.Name != "healthz" {
+		portToSet.Name = fmt.Sprintf("%s-%d", portToSet.Name, portToSet.Port)
+	}
+	// We must reset the NodePort, it is being abused to carry over the port of the target service
+	// which is in all cases not a valid NodePort
+	portToSet.NodePort = 0
 }

@@ -8,8 +8,10 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -23,6 +25,7 @@ var providerNames = []string{
 	"openstack",
 	"packet",
 	"gcp",
+	"kubevirt",
 }
 
 // providerReq represents a request for provider name
@@ -34,7 +37,7 @@ type providerReq struct {
 }
 
 // CredentialEndpoint returns custom credential list name for the provider
-func CredentialEndpoint(credentialManager common.PresetsManager) endpoint.Endpoint {
+func CredentialEndpoint(credentialManager common.PresetsManager, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(providerReq)
 		if !ok {
@@ -45,23 +48,41 @@ func CredentialEndpoint(credentialManager common.PresetsManager) endpoint.Endpoi
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
 		credentials := apiv1.CredentialList{}
 		names := make([]string, 0)
 
 		providerN := parseProvider(req.ProviderName)
-		providers := reflect.ValueOf(credentialManager.GetPresets()).Elem()
-		providerItems := providers.Field(providerN)
-		credentialItems := providerItems.FieldByName("Credentials")
-		if credentialItems.Kind() == reflect.Slice {
-			for i := 0; i < credentialItems.Len(); i++ {
-				item := credentialItems.Index(i)
-				if item.Kind() == reflect.Struct {
-					v := reflect.Indirect(item)
-					if _, ok := v.Type().FieldByName("Name"); ok {
-						rawName := v.FieldByName("Name").Interface()
-						name := rawName.(string)
-						names = append(names, name)
-					}
+		presets, err := credentialManager.GetPresets(userInfo)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		for _, preset := range presets {
+			// get specific provider by name from the Preset spec struct:
+			// type PresetSpec struct {
+			//	Digitalocean Digitalocean
+			//	Hetzner      Hetzner
+			//	Azure        Azure
+			//	VSphere      VSphere
+			//	AWS          AWS
+			//	Openstack    Openstack
+			//	Packet       Packet
+			//	GCP          GCP
+			//	Kubevirt     Kubevirt
+			// }
+			providersRaw := reflect.ValueOf(preset.Spec)
+			if providersRaw.Kind() == reflect.Struct {
+				providers := reflect.Indirect(providersRaw)
+				providerItem := providers.Field(providerN)
+
+				// append preset name if specific provider is not empty:
+				if !providerItem.IsNil() {
+					names = append(names, preset.Name)
 				}
 			}
 		}

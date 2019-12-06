@@ -5,18 +5,262 @@
   "produces": [
     "application/json"
   ],
-  "schemes": [
-    "https"
-  ],
   "swagger": "2.0",
   "info": {
     "description": "Kubermatic API\n\nThis describes possible operations which can be made against the Kubermatic API.",
     "title": "Kubermatic API.",
-    "termsOfService": "there are no TOS at this moment, use at your own risk we take no responsibility",
+    "termsOfService": "There are no TOS at this moment, use at your own risk we take no responsibility",
     "version": "2.11"
   },
-  "host": "cloud.kubermatic.io",
   "paths": {
+    "/api/v1/addonconfigs": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Returns all available addon configs.",
+        "operationId": "listAddonConfigs",
+        "responses": {
+          "200": {
+            "description": "AddonConfig",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AddonConfig"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/addonconfigs/{addon_id}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Returns specified addon config.",
+        "operationId": "getAddonConfig",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AddonID",
+            "name": "addon_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AddonConfig",
+            "schema": {
+              "$ref": "#/definitions/AddonConfig"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/addons": {
+      "post": {
+        "description": "Lists names of addons that can be configured inside the user clusters",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "addon",
+        "responses": {
+          "200": {
+            "description": "AccessibleAddons",
+            "schema": {
+              "$ref": "#/definitions/AccessibleAddons"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Returns list of admin users.",
+        "operationId": "getAdmins",
+        "responses": {
+          "200": {
+            "description": "Admin",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Admin"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Allows setting and clearing admin role for users.",
+        "operationId": "setAdmin",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Admin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin",
+            "schema": {
+              "$ref": "#/definitions/Admin"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/settings": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Gets the global settings.",
+        "operationId": "getKubermaticSettings",
+        "responses": {
+          "200": {
+            "description": "GlobalSettings",
+            "schema": {
+              "$ref": "#/definitions/GlobalSettings"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Patches the global settings.",
+        "operationId": "patchKubermaticSettings",
+        "parameters": [
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GlobalSettings",
+            "schema": {
+              "$ref": "#/definitions/GlobalSettings"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/dc": {
       "get": {
         "produces": [
@@ -121,6 +365,35 @@
         }
       }
     },
+    "/api/v1/labels/system": {
+      "patch": {
+        "description": "List restricted system labels",
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "listSystemLabels",
+        "responses": {
+          "200": {
+            "description": "ResourceLabelMap",
+            "schema": {
+              "$ref": "#/definitions/ResourceLabelMap"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me": {
       "get": {
         "produces": [
@@ -136,6 +409,78 @@
             "description": "User",
             "schema": {
               "$ref": "#/definitions/User"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/settings": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "settings"
+        ],
+        "summary": "Returns settings of the current user.",
+        "operationId": "getCurrentUserSettings",
+        "responses": {
+          "200": {
+            "description": "UserSettings",
+            "schema": {
+              "$ref": "#/definitions/UserSettings"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "settings"
+        ],
+        "summary": "Updates settings of the current user.",
+        "operationId": "patchCurrentUserSettings",
+        "parameters": [
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "UserSettings",
+            "schema": {
+              "$ref": "#/definitions/UserSettings"
             }
           },
           "401": {
@@ -204,6 +549,13 @@
             "schema": {
               "type": "object",
               "properties": {
+                "labels": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "x-go-name": "Labels"
+                },
                 "name": {
                   "type": "string",
                   "x-go-name": "Name"
@@ -987,6 +1339,573 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings": {
+      "get": {
+        "description": "List role binding",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "listRoleBinding",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RoleBinding",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RoleBinding"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterbindings": {
+      "get": {
+        "description": "List cluster role binding",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "listClusterRoleBinding",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterRoleBinding",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ClusterRoleBinding"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterrolenames": {
+      "get": {
+        "description": "Lists all ClusterRoles",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "listClusterRoleNames",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterRoleName",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ClusterRoleName"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles": {
+      "get": {
+        "description": "Lists all ClusterRoles",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "listClusterRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterRole",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ClusterRole"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates cluster role",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "createClusterRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/ClusterRole"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "ClusterRole",
+            "schema": {
+              "$ref": "#/definitions/ClusterRole"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}": {
+      "delete": {
+        "description": "Delete the cluster role with the given name",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "deleteClusterRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RoleID",
+            "name": "role_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "description": "Patch the cluster role with the given name",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "patchClusterRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RoleID",
+            "name": "role_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterRole",
+            "schema": {
+              "$ref": "#/definitions/ClusterRole"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings": {
+      "post": {
+        "description": "Binds user to cluster role",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "bindUserToClusterRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RoleID",
+            "name": "role_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/ClusterRoleUser"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "ClusterRoleBinding",
+            "schema": {
+              "$ref": "#/definitions/ClusterRoleBinding"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Unbinds user from cluster role binding",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "unbindUserFromClusterRoleBinding",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RoleID",
+            "name": "role_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/ClusterRoleUser"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "ClusterRoleBinding",
+            "schema": {
+              "$ref": "#/definitions/ClusterRoleBinding"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/events": {
       "get": {
         "produces": [
@@ -1143,6 +2062,119 @@
             "description": "Kubeconfig",
             "schema": {
               "$ref": "#/definitions/Kubeconfig"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics": {
+      "get": {
+        "description": "Gets cluster metrics",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "getClusterMetrics",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterMetrics",
+            "schema": {
+              "$ref": "#/definitions/ClusterMetrics"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces": {
+      "get": {
+        "description": "Lists all namespaces in the cluster",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "listNamespace",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Namespace",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Namespace"
+              }
             }
           },
           "401": {
@@ -1616,6 +2648,71 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes/metrics": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "metric"
+        ],
+        "summary": "Lists metrics that belong to the given node deployment.",
+        "operationId": "listNodeDeploymentMetrics",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeDeploymentID",
+            "name": "nodedeployment_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeMetric",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NodeMetric"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes": {
       "get": {
         "description": "This endpoint is deprecated, please create a Node Deployment instead.",
@@ -1989,6 +3086,55 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes": {
+      "get": {
+        "description": "Lists available AWS sizes",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aws"
+        ],
+        "operationId": "listAWSSizesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AWSSizeList",
+            "schema": {
+              "$ref": "#/definitions/AWSSizeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets": {
       "get": {
         "description": "Lists available AWS subnets",
@@ -2027,55 +3173,6 @@
             "description": "AWSSubnetList",
             "schema": {
               "$ref": "#/definitions/AWSSubnetList"
-            }
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/zones": {
-      "get": {
-        "description": "Lists available AWS zones",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "aws"
-        ],
-        "operationId": "listAWSZonesNoCredentials",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "AWSZoneList",
-            "schema": {
-              "$ref": "#/definitions/AWSZoneList"
             }
           },
           "default": {
@@ -2331,6 +3428,55 @@
             "description": "GCPZoneList",
             "schema": {
               "$ref": "#/definitions/GCPZoneList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/hetzner/sizes": {
+      "get": {
+        "description": "Lists sizes from hetzner",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "hetzner"
+        ],
+        "operationId": "listHetznerSizesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HetznerSizeList",
+            "schema": {
+              "$ref": "#/definitions/HetznerSizeList"
             }
           },
           "default": {
@@ -2763,6 +3909,614 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/rolenames": {
+      "get": {
+        "description": "Lists all Role names with namespaces",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "listRoleNames",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RoleName",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RoleName"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles": {
+      "get": {
+        "description": "Lists all Roles",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "listRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Role",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Role"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates cluster role",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "createRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Role"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Role",
+            "schema": {
+              "$ref": "#/definitions/Role"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}": {
+      "get": {
+        "description": "Gets the role with the given name",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "getRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RoleID",
+            "name": "role_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Namespace",
+            "name": "namespace",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Role",
+            "schema": {
+              "$ref": "#/definitions/Role"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete the cluster role with the given name",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "deleteRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RoleID",
+            "name": "role_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Namespace",
+            "name": "namespace",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "description": "Patch the role with the given name",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "patchRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RoleID",
+            "name": "role_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Namespace",
+            "name": "namespace",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Role",
+            "schema": {
+              "$ref": "#/definitions/Role"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings": {
+      "post": {
+        "description": "Binds user to the role",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "bindUserToRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RoleID",
+            "name": "role_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Namespace",
+            "name": "namespace",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/RoleUser"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "RoleBinding",
+            "schema": {
+              "$ref": "#/definitions/RoleBinding"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Unbinds user from the role binding",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "unbindUserFromRoleBinding",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RoleID",
+            "name": "role_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Namespace",
+            "name": "namespace",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/RoleUser"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "RoleBinding",
+            "schema": {
+              "$ref": "#/definitions/RoleBinding"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{role_id}": {
+      "get": {
+        "description": "Gets the cluster role with the given name",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "getClusterRole",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RoleID",
+            "name": "role_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterRole",
+            "schema": {
+              "$ref": "#/definitions/ClusterRole"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys": {
       "get": {
         "description": "Lists ssh keys that are assigned to the cluster\nThe returned collection is sorted by creation timestamp.",
@@ -3043,6 +4797,58 @@
                 "$ref": "#/definitions/MasterVersion"
               }
             }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/viewertoken": {
+      "put": {
+        "description": "Revokes the current viewer token",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "revokeClusterViewerToken",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -3877,6 +5683,39 @@
         }
       }
     },
+    "/api/v1/providers/aws/sizes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aws"
+        ],
+        "summary": "Lists available AWS sizes.",
+        "operationId": "listAWSSizes",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AWSSizeList",
+            "schema": {
+              "$ref": "#/definitions/AWSSizeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/aws/{dc}/subnets": {
       "get": {
         "description": "Lists available AWS subnets",
@@ -3972,56 +5811,6 @@
             "description": "AWSVPCList",
             "schema": {
               "$ref": "#/definitions/AWSVPCList"
-            }
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/providers/aws/{dc}/zones": {
-      "get": {
-        "description": "Lists available AWS zones",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "aws"
-        ],
-        "operationId": "listAWSZones",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "AccessKeyID",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "SecretAccessKey",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "name": "Credential",
-            "in": "header"
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "AWSZoneList",
-            "schema": {
-              "$ref": "#/definitions/AWSZoneList"
             }
           },
           "default": {
@@ -4673,64 +6462,6 @@
           }
         }
       }
-    },
-    "/api/v1alpha/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics": {
-      "get": {
-        "description": "Gets cluster metrics",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "operationId": "getClusterMetrics",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "DC",
-            "name": "dc",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ClusterMetric",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ClusterMetric"
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
     }
   },
   "definitions": {
@@ -4803,6 +6534,11 @@
           "type": "string",
           "x-go-name": "AMI"
         },
+        "assignPublicIP": {
+          "description": "This flag controls a property of the AWS instance. When set the AWS instance will get a public IP address\nassigned during launch overriding a possible setting in the used AWS subnet.",
+          "type": "boolean",
+          "x-go-name": "AssignPublicIP"
+        },
         "availabilityZone": {
           "description": "Availiability zone in which to place the node. It is coupled with the subnet to which the node will belong.",
           "type": "string",
@@ -4840,6 +6576,44 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "AWSSize": {
+      "type": "object",
+      "title": "AWSSize represents a object of AWS size.",
+      "properties": {
+        "memory": {
+          "type": "number",
+          "format": "float",
+          "x-go-name": "Memory"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "pretty_name": {
+          "type": "string",
+          "x-go-name": "PrettyName"
+        },
+        "price": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Price"
+        },
+        "vcpus": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "VCPUs"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AWSSizeList": {
+      "type": "array",
+      "title": "AWSSizeList represents an array of AWS sizes.",
+      "items": {
+        "$ref": "#/definitions/AWSSize"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "AWSSubnet": {
       "type": "object",
       "title": "AWSSubnet represents a object of AWS availability subnet.",
@@ -4872,6 +6646,10 @@
         "ipv6cidr": {
           "type": "string",
           "x-go-name": "IPv6CIDR"
+        },
+        "isDefaultSubnet": {
+          "type": "boolean",
+          "x-go-name": "IsDefaultSubnet"
         },
         "name": {
           "type": "string",
@@ -5046,22 +6824,11 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "AWSZone": {
-      "type": "object",
-      "title": "AWSZone represents a object of AWS availability zone.",
-      "properties": {
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "AWSZoneList": {
+    "AccessibleAddons": {
       "type": "array",
-      "title": "AWSZoneList represents an array of AWS availability zones.",
+      "title": "AccessibleAddons represents an array of addons that can be configured in the user clusters.",
       "items": {
-        "$ref": "#/definitions/AWSZone"
+        "type": "string"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
@@ -5097,10 +6864,104 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "AddonConfig": {
+      "description": "AddonConfig represents a addon configuration",
+      "type": "object",
+      "properties": {
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
+        },
+        "deletionTimestamp": {
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeletionTimestamp"
+        },
+        "id": {
+          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "Name represents human readable name for the resource",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/AddonConfigSpec"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AddonConfigSpec": {
+      "description": "AddonConfigSpec specifies configuration of addon",
+      "type": "object",
+      "properties": {
+        "description": {
+          "description": "Description of the configured addon",
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "formSpec": {
+          "description": "Controls that can be set for configured addon",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AddonFormControl"
+          },
+          "x-go-name": "Controls"
+        },
+        "logo": {
+          "description": "Logo of the configured addon, encoded in base64",
+          "type": "string",
+          "x-go-name": "Logo"
+        },
+        "logoFormat": {
+          "description": "LogoFormat contains logo format of the configured addon, i.e. svg+xml.",
+          "type": "string",
+          "x-go-name": "LogoFormat"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "AddonFormControl": {
+      "description": "AddonFormControl specifies addon form control",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "description": "DisplayName is visible in the UI",
+          "type": "string",
+          "x-go-name": "DisplayName"
+        },
+        "internalName": {
+          "description": "InternalName is used internally to save in the addon object",
+          "type": "string",
+          "x-go-name": "InternalName"
+        },
+        "required": {
+          "description": "Required indicates if the control has to be set",
+          "type": "boolean",
+          "x-go-name": "Required"
+        },
+        "type": {
+          "description": "Type of displayed control",
+          "type": "string",
+          "x-go-name": "Type"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "AddonSpec": {
       "description": "AddonSpec addon specification",
       "type": "object",
       "properties": {
+        "isDefault": {
+          "description": "IsDefault indicates whether the addon is default",
+          "type": "boolean",
+          "x-go-name": "IsDefault"
+        },
         "variables": {
           "description": "Variables is free form data to use for parsing the manifest templates",
           "type": "object",
@@ -5111,6 +6972,38 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "Admin": {
+      "description": "Admin represents admin user",
+      "type": "object",
+      "properties": {
+        "email": {
+          "description": "Email address of the admin user",
+          "type": "string",
+          "x-go-name": "Email"
+        },
+        "isAdmin": {
+          "description": "IsAdmin indicates admin role",
+          "type": "boolean",
+          "x-go-name": "IsAdmin"
+        },
+        "name": {
+          "description": "Name of the admin user",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AuditLoggingSettings": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "AuthInfo": {
       "type": "object",
@@ -5238,6 +7131,9 @@
         "clientSecret": {
           "type": "string",
           "x-go-name": "ClientSecret"
+        },
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
         },
         "resourceGroup": {
           "type": "string",
@@ -5375,6 +7271,18 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "CleanupOptions": {
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "type": "boolean"
+        },
+        "Enforced": {
+          "type": "boolean"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "CloudSpec": {
       "type": "object",
       "title": "CloudSpec mutually stores access data to a cloud provider.",
@@ -5404,6 +7312,9 @@
         },
         "hetzner": {
           "$ref": "#/definitions/HetznerCloudSpec"
+        },
+        "kubevirt": {
+          "$ref": "#/definitions/KubevirtCloudSpec"
         },
         "openstack": {
           "$ref": "#/definitions/OpenstackCloudSpec"
@@ -5442,6 +7353,20 @@
           "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
           "type": "string",
           "x-go-name": "ID"
+        },
+        "inheritedLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "InheritedLabels"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
         },
         "name": {
           "description": "Name represents human readable name for the resource",
@@ -5497,21 +7422,101 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "ClusterMetric": {
-      "description": "ClusterMetric defines a metric for the given cluster",
+    "ClusterMetrics": {
+      "description": "ControlPlaneMetrics defines a metric for the user cluster control plane resources",
       "type": "object",
       "properties": {
+        "cpuTotalMillicores": {
+          "description": "CPUTotalMillicores in m cores",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUTotalMillicores"
+        },
+        "memoryTotalBytes": {
+          "description": "MemoryTotalBytes in bytes",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryTotalBytes"
+        }
+      },
+      "x-go-name": "ControlPlaneMetrics",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ClusterRole": {
+      "description": "ClusterRole defines cluster RBAC role for the user cluster",
+      "type": "object",
+      "properties": {
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
+        },
+        "deletionTimestamp": {
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeletionTimestamp"
+        },
+        "id": {
+          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
+          "type": "string",
+          "x-go-name": "ID"
+        },
         "name": {
+          "description": "Name represents human readable name for the resource",
           "type": "string",
           "x-go-name": "Name"
         },
-        "values": {
+        "rules": {
+          "description": "Rules holds all the PolicyRules for this ClusterRole",
           "type": "array",
           "items": {
-            "type": "number",
-            "format": "double"
+            "$ref": "#/definitions/PolicyRule"
           },
-          "x-go-name": "Values"
+          "x-go-name": "Rules"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ClusterRoleBinding": {
+      "type": "object",
+      "title": "ClusterRoleBinding references a cluster role, but does not contain it.",
+      "properties": {
+        "roleRefName": {
+          "type": "string",
+          "x-go-name": "RoleRefName"
+        },
+        "subjects": {
+          "description": "Subjects holds references to the objects the role applies to.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Subject"
+          },
+          "x-go-name": "Subjects"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ClusterRoleName": {
+      "description": "ClusterRoleName defines RBAC cluster role name object for the user cluster",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name of the cluster role.",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ClusterRoleUser": {
+      "description": "ClusterRoleUser defines associated user with cluster role",
+      "type": "object",
+      "properties": {
+        "userEmail": {
+          "type": "string",
+          "x-go-name": "UserEmail"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -5520,6 +7525,9 @@
       "description": "ClusterSpec defines the cluster specification",
       "type": "object",
       "properties": {
+        "auditLogging": {
+          "$ref": "#/definitions/AuditLoggingSettings"
+        },
         "cloud": {
           "$ref": "#/definitions/CloudSpec"
         },
@@ -5533,6 +7541,9 @@
         },
         "oidc": {
           "$ref": "#/definitions/OIDCSettings"
+        },
+        "openshift": {
+          "$ref": "#/definitions/Openshift"
         },
         "usePodSecurityPolicyAdmissionPlugin": {
           "description": "If active the PodSecurityPolicy admission plugin is configured at the apiserver",
@@ -5629,6 +7640,35 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "CustomLink": {
+      "type": "object",
+      "properties": {
+        "icon": {
+          "type": "string",
+          "x-go-name": "Icon"
+        },
+        "label": {
+          "type": "string",
+          "x-go-name": "Label"
+        },
+        "location": {
+          "type": "string",
+          "x-go-name": "Location"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "CustomLinks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/CustomLink"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "Datacenter": {
       "type": "object",
       "title": "Datacenter is the object representing a Kubernetes infra datacenter.",
@@ -5680,6 +7720,9 @@
         "hetzner": {
           "$ref": "#/definitions/HetznerDatacenterSpec"
         },
+        "kubevirt": {
+          "$ref": "#/definitions/KubevirtDatacenterSpec"
+        },
         "location": {
           "type": "string",
           "x-go-name": "Location"
@@ -5693,6 +7736,18 @@
         "provider": {
           "type": "string",
           "x-go-name": "Provider"
+        },
+        "requiredEmailDomain": {
+          "description": "Deprecated. Automatically migrated to the RequiredEmailDomains field.",
+          "type": "string",
+          "x-go-name": "RequiredEmailDomain"
+        },
+        "requiredEmailDomains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "RequiredEmailDomains"
         },
         "seed": {
           "type": "string",
@@ -5708,6 +7763,9 @@
       "type": "object",
       "title": "DigitaloceanCloudSpec specifies access data to DigitalOcean.",
       "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "token": {
           "type": "string",
           "x-go-name": "Token"
@@ -5990,6 +8048,9 @@
       "type": "object",
       "title": "GCPCloudSpec specifies access data to GCP.",
       "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "network": {
           "type": "string",
           "x-go-name": "Network"
@@ -6186,10 +8247,14 @@
           "$ref": "#/definitions/UID"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/providerconfig"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/providerconfig/types"
     },
     "GlobalSecretKeySelector": {
       "$ref": "#/definitions/GlobalObjectKeySelector"
+    },
+    "GlobalSettings": {
+      "description": "GlobalSettings defines global settings",
+      "$ref": "#/definitions/SettingSpec"
     },
     "HealthStatus": {
       "type": "integer",
@@ -6373,6 +8438,77 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "KubevirtCloudSpec": {
+      "type": "object",
+      "title": "KubevirtCloudSpec specifies the access data to Kubevirt.",
+      "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
+        "kubeconfig": {
+          "type": "string",
+          "x-go-name": "Kubeconfig"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "KubevirtDatacenterSpec": {
+      "type": "object",
+      "title": "KubevirtDatacenterSpec specifies a datacenter of Kubevirt.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "KubevirtNodeSpec": {
+      "description": "KubevirtNodeSpec kubevirt specific node settings",
+      "type": "object",
+      "required": [
+        "cpus",
+        "memory",
+        "namespace",
+        "sourceURL",
+        "storageClassName",
+        "pvcSize"
+      ],
+      "properties": {
+        "cpus": {
+          "description": "CPUs states how many cpus the kubevirt node will have.",
+          "type": "string",
+          "x-go-name": "CPUs"
+        },
+        "memory": {
+          "description": "Memory states the memory that kubevirt node will have.",
+          "type": "string",
+          "x-go-name": "Memory"
+        },
+        "namespace": {
+          "description": "Namespace states in which namespace kubevirt node will be provisioned.",
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
+        "pvcSize": {
+          "description": "PVCSize states the size of the provisioned pvc per node.",
+          "type": "string",
+          "x-go-name": "PVCSize"
+        },
+        "sourceURL": {
+          "description": "SourceURL states the url from which the imported image will be downloaded.",
+          "type": "string",
+          "x-go-name": "SourceURL"
+        },
+        "storageClassName": {
+          "description": "StorageClassName states the storage class name for the provisioned PVCs.",
+          "type": "string",
+          "x-go-name": "StorageClassName"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "LabelKeyList": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "LegacyObjectMeta": {
       "description": "Deprecated: LegacyObjectMeta is deprecated use ObjectMeta instead.",
       "type": "object",
@@ -6448,7 +8584,7 @@
           "x-go-name": "UpdatedReplicas"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
     },
     "MachineNetworkingConfig": {
       "type": "object",
@@ -6551,6 +8687,17 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
+    "Namespace": {
+      "description": "Namespace defines namespace",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "Node": {
       "description": "Node represents a worker node that is part of a cluster",
       "type": "object",
@@ -6622,6 +8769,9 @@
         "hetzner": {
           "$ref": "#/definitions/HetznerNodeSpec"
         },
+        "kubevirt": {
+          "$ref": "#/definitions/KubevirtNodeSpec"
+        },
         "openstack": {
           "$ref": "#/definitions/OpenstackNodeSpec"
         },
@@ -6690,6 +8840,53 @@
           "$ref": "#/definitions/NodeSpec"
         }
       },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "NodeMetric": {
+      "description": "NodeMetric defines a metric for the given node",
+      "type": "object",
+      "properties": {
+        "cpuAvailableMillicores": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUAvailableMillicores"
+        },
+        "cpuTotalMillicores": {
+          "description": "CPUTotalMillicores in m cores",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUTotalMillicores"
+        },
+        "cpuUsedPercentage": {
+          "description": "CPUUsedPercentage in percentage",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUUsedPercentage"
+        },
+        "memoryAvailableBytes": {
+          "description": "MemoryAvailableBytes available memory for node",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryAvailableBytes"
+        },
+        "memoryTotalBytes": {
+          "description": "MemoryTotalBytes current memory usage in bytes",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryTotalBytes"
+        },
+        "memoryUsedPercentage": {
+          "description": "MemoryUsedPercentage in percentage",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryUsedPercentage"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-name": "NodesMetric",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "NodeResources": {
@@ -6914,10 +9111,23 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "Openshift": {
+      "type": "object",
+      "properties": {
+        "imagePullSecret": {
+          "type": "string",
+          "x-go-name": "ImagePullSecret"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "OpenstackCloudSpec": {
       "type": "object",
       "title": "OpenstackCloudSpec specifies access data to an OpenStack cloud.",
       "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "domain": {
           "type": "string",
           "x-go-name": "Domain"
@@ -7019,6 +9229,12 @@
         "image"
       ],
       "properties": {
+        "diskSize": {
+          "description": "if set, the rootDisk will be a volume. If not, the rootDisk will be on ephemeral storage and its size will be derived from the flavor",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "RootDiskSizeGB"
+        },
         "flavor": {
           "description": "instance flavor",
           "type": "string",
@@ -7078,7 +9294,7 @@
           "x-go-name": "IsPublic"
         },
         "memory": {
-          "description": "Memory is the amount of memory, measured in MB",
+          "description": "MemoryTotalBytes is the amount of memory, measured in MB",
           "type": "integer",
           "format": "int64",
           "x-go-name": "Memory"
@@ -7290,6 +9506,53 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "PolicyRule": {
+      "description": "PolicyRule holds information that describes a policy rule, but does not contain information\nabout who the rule applies to or which namespace the rule applies to.",
+      "type": "object",
+      "properties": {
+        "apiGroups": {
+          "description": "APIGroups is the name of the APIGroup that contains the resources.  If multiple API groups are specified, any action requested against one of\nthe enumerated resources in any API group will be allowed.\n+optional",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "APIGroups"
+        },
+        "nonResourceURLs": {
+          "description": "NonResourceURLs is a set of partial urls that a user should have access to.  *s are allowed, but only as the full, final step in the path\nSince non-resource URLs are not namespaced, this field is only applicable for ClusterRoles referenced from a ClusterRoleBinding.\nRules can either apply to API resources (such as \"pods\" or \"secrets\") or non-resource URL paths (such as \"/api\"),  but not both.\n+optional",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "NonResourceURLs"
+        },
+        "resourceNames": {
+          "description": "ResourceNames is an optional white list of names that the rule applies to.  An empty set means that everything is allowed.\n+optional",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "ResourceNames"
+        },
+        "resources": {
+          "description": "Resources is a list of resources this rule applies to.  ResourceAll represents all resources.\n+optional",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Resources"
+        },
+        "verbs": {
+          "description": "Verbs is a list of Verbs that apply to ALL the ResourceKinds and AttributeRestrictions contained in this rule.  VerbAll represents all kinds.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Verbs"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/rbac/v1"
+    },
     "Preferences": {
       "type": "object",
       "properties": {
@@ -7329,6 +9592,13 @@
           "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
           "type": "string",
           "x-go-name": "ID"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
         },
         "name": {
           "description": "Name represents human readable name for the resource",
@@ -7409,6 +9679,9 @@
         "hetzner": {
           "$ref": "#/definitions/PublicHetznerCloudSpec"
         },
+        "kubevirt": {
+          "$ref": "#/definitions/PublicKubevirtCloudSpec"
+        },
         "openstack": {
           "$ref": "#/definitions/PublicOpenstackCloudSpec"
         },
@@ -7439,6 +9712,11 @@
     "PublicHetznerCloudSpec": {
       "type": "object",
       "title": "PublicHetznerCloudSpec is a public counterpart of apiv1.HetznerCloudSpec.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "PublicKubevirtCloudSpec": {
+      "type": "object",
+      "title": "PublicKubevirtCloudSpec is a public counterpart of apiv1.KubevirtCloudSpec.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PublicOpenstackCloudSpec": {
@@ -7512,6 +9790,111 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/runtime"
+    },
+    "ResourceLabelMap": {
+      "title": "ResourceLabelMap defines list of labels grouped by specific resource types.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ResourceType": {
+      "type": "string",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "Role": {
+      "description": "Role defines RBAC role for the user cluster",
+      "type": "object",
+      "properties": {
+        "creationTimestamp": {
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreationTimestamp"
+        },
+        "deletionTimestamp": {
+          "description": "DeletionTimestamp is a timestamp representing the server time when this object was deleted.",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DeletionTimestamp"
+        },
+        "id": {
+          "description": "ID unique value that identifies the resource generated by the server. Read-Only.",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "Name represents human readable name for the resource",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Indicates the scope of this role.",
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
+        "rules": {
+          "description": "Rules holds all the PolicyRules for this Role",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PolicyRule"
+          },
+          "x-go-name": "Rules"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "RoleBinding": {
+      "type": "object",
+      "title": "RoleBinding references a role, but does not contain it.",
+      "properties": {
+        "namespace": {
+          "description": "Indicates the scope of this binding.",
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
+        "roleRefName": {
+          "type": "string",
+          "x-go-name": "RoleRefName"
+        },
+        "subjects": {
+          "description": "Subjects holds references to the objects the role applies to.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Subject"
+          },
+          "x-go-name": "Subjects"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "RoleName": {
+      "description": "RoleName defines RBAC role name object for the user cluster",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name of the role.",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Indicates the scopes of this role.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Namespace"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "RoleUser": {
+      "description": "RoleUser defines associated user with role",
+      "type": "object",
+      "properties": {
+        "userEmail": {
+          "type": "string",
+          "x-go-name": "UserEmail"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "SSHKey": {
       "description": "SSHKey represents a ssh key",
@@ -7644,6 +10027,63 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "SettingSpec": {
+      "type": "object",
+      "properties": {
+        "cleanupOptions": {
+          "$ref": "#/definitions/CleanupOptions"
+        },
+        "clusterTypeOptions": {
+          "type": "integer",
+          "format": "int8",
+          "x-go-name": "ClusterTypeOptions"
+        },
+        "customLinks": {
+          "$ref": "#/definitions/CustomLinks"
+        },
+        "defaultNodeCount": {
+          "type": "integer",
+          "format": "int8",
+          "x-go-name": "DefaultNodeCount"
+        },
+        "displayAPIDocs": {
+          "type": "boolean",
+          "x-go-name": "DisplayAPIDocs"
+        },
+        "displayDemoInfo": {
+          "type": "boolean",
+          "x-go-name": "DisplayDemoInfo"
+        },
+        "displayTermsOfService": {
+          "type": "boolean",
+          "x-go-name": "DisplayTermsOfService"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "Subject": {
+      "description": "Right now we support \"User\" as a API group.",
+      "type": "object",
+      "title": "Subject contains a reference to the object or user identities a role binding applies to.",
+      "properties": {
+        "apiGroup": {
+          "description": "APIGroup holds the API group of the referenced subject.\nDefaults to \"rbac.authorization.k8s.io\" for User and Group subjects.",
+          "type": "string",
+          "x-go-name": "APIGroup"
+        },
+        "kind": {
+          "description": "Kind of object being referenced. Values defined by this API group are \"User\" and \"Group\".\nIf the Authorizer does not recognized the kind value, the Authorizer should report an error.",
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "name": {
+          "description": "Name of the object being referenced.",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "TaintSpec": {
       "description": "TaintSpec defines a node taint",
       "type": "object",
@@ -7711,6 +10151,11 @@
           "type": "string",
           "x-go-name": "ID"
         },
+        "isAdmin": {
+          "description": "IsAdmin indicates admin role",
+          "type": "boolean",
+          "x-go-name": "IsAdmin"
+        },
         "name": {
           "description": "Name represents human readable name for the resource",
           "type": "string",
@@ -7723,14 +10168,44 @@
             "$ref": "#/definitions/ProjectGroup"
           },
           "x-go-name": "Projects"
+        },
+        "userSettings": {
+          "$ref": "#/definitions/UserSettings"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "UserSettings": {
+      "description": "UserSettings represent an user settings",
+      "type": "object",
+      "properties": {
+        "itemsPerPage": {
+          "type": "integer",
+          "format": "int8",
+          "x-go-name": "ItemsPerPage"
+        },
+        "selectProjectTableView": {
+          "type": "boolean",
+          "x-go-name": "SelectProjectTableView"
+        },
+        "selectedProjectId": {
+          "type": "string",
+          "x-go-name": "SelectedProjectID"
+        },
+        "selectedTheme": {
+          "type": "string",
+          "x-go-name": "SelectedTheme"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "VSphereCloudSpec": {
       "type": "object",
       "title": "VSphereCloudSpec specifies access data to VSphere cloud.",
       "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
         "folder": {
           "type": "string",
           "x-go-name": "Folder"

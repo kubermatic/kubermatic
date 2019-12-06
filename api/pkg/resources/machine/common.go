@@ -8,15 +8,16 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/packet"
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig"
+	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
+	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
+	digitalocean "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
+	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
+	hetzner "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
+	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
+	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
+	packet "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/packet/types"
+	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
@@ -62,6 +63,7 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 		DiskType:         providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.VolumeType},
 		DiskSize:         nodeSpec.Cloud.AWS.VolumeSize,
 		AMI:              providerconfig.ConfigVarString{Value: ami},
+		AssignPublicIP:   nodeSpec.Cloud.AWS.AssignPublicIP,
 	}
 	if config.DiskType.Value == "" {
 		config.DiskType.Value = ec2.VolumeTypeGp2
@@ -93,11 +95,6 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 
 func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
 	config := azure.RawConfig{
-		SubscriptionID: providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SubscriptionID},
-		TenantID:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.TenantID},
-		ClientID:       providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ClientID},
-		ClientSecret:   providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ClientSecret},
-
 		Location:          providerconfig.ConfigVarString{Value: dc.Spec.Azure.Location},
 		ResourceGroup:     providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ResourceGroup},
 		VMSize:            providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Azure.Size},
@@ -169,6 +166,10 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 
 	if nodeSpec.Cloud.Openstack.UseFloatingIP || dc.Spec.Openstack.EnforceFloatingIP {
 		config.FloatingIPPool = providerconfig.ConfigVarString{Value: c.Spec.Cloud.Openstack.FloatingIPPool}
+	}
+
+	if nodeSpec.Cloud.Openstack.RootDiskSizeGB != nil && *nodeSpec.Cloud.Openstack.RootDiskSizeGB > 0 {
+		config.RootDiskSizeGB = nodeSpec.Cloud.Openstack.RootDiskSizeGB
 	}
 
 	if dc.Spec.Openstack.TrustDevicePath != nil {
@@ -299,6 +300,26 @@ func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 	config.Labels = map[string]string{}
 	for key, value := range nodeSpec.Cloud.GCP.Labels {
 		config.Labels[key] = value
+	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getKubevirtProviderSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
+	config := kubevirt.RawConfig{
+		CPUs:             providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.CPUs},
+		PVCSize:          providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PVCSize},
+		StorageClassName: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.StorageClassName},
+		SourceURL:        providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.SourceURL},
+		Namespace:        providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.Namespace},
+		Memory:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.Memory},
 	}
 
 	ext := &runtime.RawExtension{}

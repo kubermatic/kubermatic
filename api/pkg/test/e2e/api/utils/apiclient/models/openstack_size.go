@@ -21,7 +21,7 @@ type OpenstackSize struct {
 	// IsPublic indicates whether the size is public (available to all projects) or scoped to a set of projects
 	IsPublic bool `json:"isPublic,omitempty"`
 
-	// Memory is the amount of memory, measured in MB
+	// MemoryTotalBytes is the amount of memory, measured in MB
 	Memory int64 `json:"memory,omitempty"`
 
 	// Region specifies the geographic region in which the size resides

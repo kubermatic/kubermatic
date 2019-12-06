@@ -7,9 +7,10 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
+	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 )
 
 // LegacyObjectMeta is an object storing common metadata for persistable objects.
@@ -64,6 +65,10 @@ type VSphereDatacenterSpec struct {
 	Templates  ImageList `json:"templates"`
 }
 
+// KubevirtDatacenterSpec specifies a datacenter of Kubevirt.
+type KubevirtDatacenterSpec struct {
+}
+
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
 type BringYourOwnDatacenterSpec struct{}
 
@@ -113,6 +118,11 @@ type DatacenterSpec struct {
 	GCP          *GCPDatacenterSpec           `json:"gcp,omitempty"`
 	Hetzner      *HetznerDatacenterSpec       `json:"hetzner,omitempty"`
 	VSphere      *VSphereDatacenterSpec       `json:"vsphere,omitempty"`
+	Kubevirt     *KubevirtDatacenterSpec      `json:"kubevirt,omitempty"`
+
+	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
+	RequiredEmailDomain  string   `json:"requiredEmailDomain,omitempty"`
+	RequiredEmailDomains []string `json:"requiredEmailDomains,omitempty"`
 }
 
 // DatacenterList represents a list of datacenters
@@ -127,15 +137,19 @@ type Datacenter struct {
 	Seed     bool             `json:"seed,omitempty"`
 }
 
-// AWSZone represents a object of AWS availability zone.
-// swagger:model AWSZone
-type AWSZone struct {
-	Name string `json:"name"`
+// AWSSize represents a object of AWS size.
+// swagger:model AWSSize
+type AWSSize struct {
+	Name       string  `json:"name"`
+	PrettyName string  `json:"pretty_name"`
+	Memory     float32 `json:"memory"`
+	VCPUs      int     `json:"vcpus"`
+	Price      float64 `json:"price"`
 }
 
-// AWSZoneList represents an array of AWS availability zones.
-// swagger:model AWSZoneList
-type AWSZoneList []AWSZone
+// AWSSizeList represents an array of AWS sizes.
+// swagger:model AWSSizeList
+type AWSSizeList []AWSSize
 
 // AWSSubnetList represents an array of AWS availability subnets.
 // swagger:model AWSSubnetList
@@ -154,6 +168,7 @@ type AWSSubnet struct {
 	State                   string   `json:"state"`
 	AvailableIPAddressCount int64    `json:"available_ip_address_count"`
 	DefaultForAz            bool     `json:"default"`
+	IsDefaultSubnet         bool     `json:"isDefaultSubnet"`
 }
 
 // AWSTag represents a object of AWS tags.
@@ -368,10 +383,25 @@ type User struct {
 
 	// Email an email address of the user
 	Email string `json:"email"`
+	// IsAdmin indicates admin role
+	IsAdmin bool `json:"isAdmin,omitempty"`
 
 	// Projects holds the list of project the user belongs to
 	// along with the group names
 	Projects []ProjectGroup `json:"projects,omitempty"`
+
+	Settings *kubermaticv1.UserSettings `json:"userSettings,omitempty"`
+}
+
+// Admin represents admin user
+// swagger:model Admin
+type Admin struct {
+	// Email address of the admin user
+	Email string `json:"email"`
+	// Name of the admin user
+	Name string `json:"name,omitempty"`
+	// IsAdmin indicates admin role
+	IsAdmin bool `json:"isAdmin"`
 }
 
 // ProjectGroup is a helper data structure that
@@ -424,7 +454,8 @@ type ServiceAccountToken struct {
 // swagger:model Project
 type Project struct {
 	ObjectMeta
-	Status string `json:"status"`
+	Status string            `json:"status"`
+	Labels map[string]string `json:"labels,omitempty"`
 	// Owners an optional owners list for the given project
 	Owners []User `json:"owners,omitempty"`
 }
@@ -440,7 +471,7 @@ type Kubeconfig struct {
 type OpenstackSize struct {
 	// Slug holds  the name of the size
 	Slug string `json:"slug"`
-	// Memory is the amount of memory, measured in MB
+	// MemoryTotalBytes is the amount of memory, measured in MB
 	Memory int `json:"memory"`
 	// VCPUs indicates how many (virtual) CPUs are available for this flavor
 	VCPUs int `json:"vcpus"`
@@ -545,11 +576,13 @@ const (
 //
 // swagger:model Cluster
 type Cluster struct {
-	ObjectMeta `json:",inline"`
-	Type       string        `json:"type"`
-	Credential string        `json:"credential,omitempty"`
-	Spec       ClusterSpec   `json:"spec"`
-	Status     ClusterStatus `json:"status"`
+	ObjectMeta      `json:",inline"`
+	Labels          map[string]string `json:"labels,omitempty"`
+	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
+	Type            string            `json:"type"`
+	Credential      string            `json:"credential,omitempty"`
+	Spec            ClusterSpec       `json:"spec"`
+	Status          ClusterStatus     `json:"status"`
 }
 
 // ClusterSpec defines the cluster specification
@@ -568,6 +601,12 @@ type ClusterSpec struct {
 
 	// If active the PodSecurityPolicy admission plugin is configured at the apiserver
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
+
+	// AuditLogging
+	AuditLogging *kubermaticv1.AuditLoggingSettings `json:"auditLogging,omitempty"`
+
+	// Openshift holds all openshift-specific settings
+	Openshift *kubermaticv1.Openshift `json:"openshift,omitempty"`
 }
 
 // MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
@@ -579,6 +618,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		Version                             ksemver.Semver                         `json:"version"`
 		OIDC                                kubermaticv1.OIDCSettings              `json:"oidc"`
 		UsePodSecurityPolicyAdmissionPlugin bool                                   `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
+		AuditLogging                        *kubermaticv1.AuditLoggingSettings     `json:"auditLogging,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
@@ -592,11 +632,13 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			Hetzner:        newPublicHetznerCloudSpec(cs.Cloud.Hetzner),
 			VSphere:        newPublicVSphereCloudSpec(cs.Cloud.VSphere),
 			GCP:            newPublicGCPCloudSpec(cs.Cloud.GCP),
+			Kubevirt:       newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
 		},
 		Version:                             cs.Version,
 		MachineNetworks:                     cs.MachineNetworks,
 		OIDC:                                cs.OIDC,
 		UsePodSecurityPolicyAdmissionPlugin: cs.UsePodSecurityPolicyAdmissionPlugin,
+		AuditLogging:                        cs.AuditLogging,
 	})
 
 	return ret, err
@@ -615,6 +657,7 @@ type PublicCloudSpec struct {
 	Hetzner        *PublicHetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere        *PublicVSphereCloudSpec      `json:"vsphere,omitempty"`
 	GCP            *PublicGCPCloudSpec          `json:"gcp,omitempty"`
+	Kubevirt       *PublicKubevirtCloudSpec     `json:"kubevirt,omitempty"`
 }
 
 // PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.
@@ -731,6 +774,17 @@ func newPublicGCPCloudSpec(internal *kubermaticv1.GCPCloudSpec) (public *PublicG
 	return &PublicGCPCloudSpec{}
 }
 
+// PublicKubevirtCloudSpec is a public counterpart of apiv1.KubevirtCloudSpec.
+type PublicKubevirtCloudSpec struct{}
+
+func newPublicKubevirtCloudSpec(internal *kubermaticv1.KubevirtCloudSpec) (public *PublicKubevirtCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicKubevirtCloudSpec{}
+}
+
 // ClusterStatus defines the cluster status
 type ClusterStatus struct {
 	// Version actual version of the kubernetes master components
@@ -752,6 +806,10 @@ type ClusterHealth struct {
 	UserClusterControllerManager kubermaticv1.HealthStatus `json:"userClusterControllerManager"`
 }
 
+// AccessibleAddons represents an array of addons that can be configured in the user clusters.
+// swagger:model AccessibleAddons
+type AccessibleAddons []string
+
 // Addon represents a predefined addon that users may install into their cluster
 // swagger:model Addon
 type Addon struct {
@@ -765,6 +823,16 @@ type Addon struct {
 type AddonSpec struct {
 	// Variables is free form data to use for parsing the manifest templates
 	Variables map[string]interface{} `json:"variables,omitempty"`
+	// IsDefault indicates whether the addon is default
+	IsDefault bool `json:"isDefault,omitempty"`
+}
+
+// AddonConfig represents a addon configuration
+// swagger:model AddonConfig
+type AddonConfig struct {
+	ObjectMeta `json:",inline"`
+
+	Spec kubermaticv1.AddonConfigSpec `json:"spec"`
 }
 
 // ClusterList represents a list of clusters
@@ -790,6 +858,7 @@ type NodeCloudSpec struct {
 	Hetzner      *HetznerNodeSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
 	GCP          *GCPNodeSpec          `json:"gcp,omitempty"`
+	Kubevirt     *KubevirtNodeSpec     `json:"kubevirt,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -914,6 +983,9 @@ type OpenstackNodeSpec struct {
 	// Defines whether floating ip should be used
 	// required: false
 	UseFloatingIP bool `json:"useFloatingIP,omitempty"`
+	// if set, the rootDisk will be a volume. If not, the rootDisk will be on ephemeral storage and its size will be derived from the flavor
+	// required: false
+	RootDiskSizeGB *int `json:"diskSize"`
 }
 
 // AWSNodeSpec aws specific node settings
@@ -936,6 +1008,10 @@ type AWSNodeSpec struct {
 	AvailabilityZone string `json:"availabilityZone"`
 	// The VPC subnet to which the node shall be connected.
 	SubnetID string `json:"subnetID"`
+	// This flag controls a property of the AWS instance. When set the AWS instance will get a public IP address
+	// assigned during launch overriding a possible setting in the used AWS subnet.
+	// required: false
+	AssignPublicIP *bool `json:"assignPublicIP"`
 }
 
 // PacketNodeSpec specifies packet specific node settings
@@ -959,6 +1035,29 @@ type GCPNodeSpec struct {
 	Preemptible bool              `json:"preemptible"`
 	Labels      map[string]string `json:"labels"`
 	Tags        []string          `json:"tags"`
+}
+
+// KubevirtNodeSpec kubevirt specific node settings
+// swagger:model KubevirtNodeSpec
+type KubevirtNodeSpec struct {
+	// CPUs states how many cpus the kubevirt node will have.
+	// required: true
+	CPUs string `json:"cpus"`
+	// Memory states the memory that kubevirt node will have.
+	// required: true
+	Memory string `json:"memory"`
+	// Namespace states in which namespace kubevirt node will be provisioned.
+	// required: true
+	Namespace string `json:"namespace"`
+	// SourceURL states the url from which the imported image will be downloaded.
+	// required: true
+	SourceURL string `json:"sourceURL"`
+	// StorageClassName states the storage class name for the provisioned PVCs.
+	// required: true
+	StorageClassName string `json:"storageClassName"`
+	// PVCSize states the size of the provisioned pvc per node.
+	// required: true
+	PVCSize string `json:"pvcSize"`
 }
 
 // NodeResources cpu and memory of a node
@@ -1008,11 +1107,54 @@ type NodeSystemInfo struct {
 	Architecture            string `json:"architecture"`
 }
 
-// ClusterMetric defines a metric for the given cluster
-// swagger:model ClusterMetric
-type ClusterMetric struct {
-	Name   string    `json:"name"`
-	Values []float64 `json:"values,omitempty"`
+// ClusterMetrics defines a metric for the given cluster
+// swagger:model ClusterMetrics
+type ClusterMetrics struct {
+	Name                string              `json:"name"`
+	ControlPlaneMetrics ControlPlaneMetrics `json:"controlPlane"`
+	NodesMetrics        NodesMetric         `json:"nodes"`
+}
+
+// ControlPlaneMetrics defines a metric for the user cluster control plane resources
+// swagger:model ClusterMetrics
+type ControlPlaneMetrics struct {
+	// MemoryTotalBytes in bytes
+	MemoryTotalBytes int64 `json:"memoryTotalBytes,omitempty"`
+	// CPUTotalMillicores in m cores
+	CPUTotalMillicores int64 `json:"cpuTotalMillicores,omitempty"`
+}
+
+// NodesMetric defines a metric for a group of nodes
+// swagger:model NodeMetric
+type NodesMetric struct {
+	// MemoryTotalBytes current memory usage in bytes
+	MemoryTotalBytes int64 `json:"memoryTotalBytes,omitempty"`
+	// MemoryAvailableBytes available memory for node
+	MemoryAvailableBytes int64 `json:"memoryAvailableBytes,omitempty"`
+	// MemoryUsedPercentage in percentage
+	MemoryUsedPercentage int64 `json:"memoryUsedPercentage,omitempty"`
+	// CPUTotalMillicores in m cores
+	CPUTotalMillicores     int64 `json:"cpuTotalMillicores,omitempty"`
+	CPUAvailableMillicores int64 `json:"cpuAvailableMillicores,omitempty"`
+	// CPUUsedPercentage in percentage
+	CPUUsedPercentage int64 `json:"cpuUsedPercentage,omitempty"`
+}
+
+// NodeMetric defines a metric for the given node
+// swagger:model NodeMetric
+type NodeMetric struct {
+	Name string `json:"name"`
+	// MemoryTotalBytes current memory usage in bytes
+	MemoryTotalBytes int64 `json:"memoryTotalBytes,omitempty"`
+	// MemoryAvailableBytes available memory for node
+	MemoryAvailableBytes int64 `json:"memoryAvailableBytes,omitempty"`
+	// MemoryUsedPercentage in percentage
+	MemoryUsedPercentage int64 `json:"memoryUsedPercentage,omitempty"`
+	// CPUTotalMillicores in m cores
+	CPUTotalMillicores     int64 `json:"cpuTotalMillicores,omitempty"`
+	CPUAvailableMillicores int64 `json:"cpuAvailableMillicores,omitempty"`
+	// CPUUsedPercentage in percentage
+	CPUUsedPercentage int64 `json:"cpuUsedPercentage,omitempty"`
 }
 
 // NodeDeployment represents a set of worker nodes that is part of a cluster
@@ -1077,6 +1219,104 @@ type KubermaticVersions struct {
 	API string `json:"api"`
 }
 
+// ClusterRole defines cluster RBAC role for the user cluster
+// swagger:model ClusterRole
+type ClusterRole struct {
+	ObjectMeta `json:",inline"`
+	// Rules holds all the PolicyRules for this ClusterRole
+	Rules []rbacv1.PolicyRule `json:"rules"`
+}
+
+// RoleName defines RBAC role name object for the user cluster
+// swagger:model RoleName
+type RoleName struct {
+	// Name of the role.
+	Name string `json:"name"`
+	// Indicates the scopes of this role.
+	Namespace []string `json:"namespace"`
+}
+
+// ClusterRoleName defines RBAC cluster role name object for the user cluster
+// swagger:model ClusterRoleName
+type ClusterRoleName struct {
+	// Name of the cluster role.
+	Name string `json:"name"`
+}
+
+// RoleUser defines associated user with role
+// swagger:model RoleUser
+type RoleUser struct {
+	UserEmail string `json:"userEmail"`
+}
+
+// ClusterRoleUser defines associated user with cluster role
+// swagger:model ClusterRoleUser
+type ClusterRoleUser struct {
+	UserEmail string `json:"userEmail"`
+}
+
+// Role defines RBAC role for the user cluster
+// swagger:model Role
+type Role struct {
+	ObjectMeta `json:",inline"`
+	// Indicates the scope of this role.
+	Namespace string `json:"namespace,omitempty"`
+	// Rules holds all the PolicyRules for this Role
+	Rules []rbacv1.PolicyRule `json:"rules"`
+}
+
+// RoleBinding references a role, but does not contain it.
+type RoleBinding struct {
+	// Indicates the scope of this binding.
+	Namespace string `json:"namespace,omitempty"`
+	// Subjects holds references to the objects the role applies to.
+	Subjects []rbacv1.Subject `json:"subjects,omitempty"`
+
+	RoleRefName string `json:"roleRefName"`
+}
+
+// ClusterRoleBinding references a cluster role, but does not contain it.
+type ClusterRoleBinding struct {
+	// Subjects holds references to the objects the role applies to.
+	Subjects []rbacv1.Subject `json:"subjects,omitempty"`
+
+	RoleRefName string `json:"roleRefName"`
+}
+
+// Subject contains a reference to the object or user identities a role binding applies to.
+// Right now we support "User" as a API group.
+type Subject struct {
+	// Kind of object being referenced. Values defined by this API group are "User" and "Group".
+	// If the Authorizer does not recognized the kind value, the Authorizer should report an error.
+	Kind string `json:"kind"`
+	// APIGroup holds the API group of the referenced subject.
+	// Defaults to "rbac.authorization.k8s.io" for User and Group subjects.
+	APIGroup string `json:"apiGroup,omitempty"`
+	// Name of the object being referenced.
+	Name string `json:"name"`
+}
+
+// Namespace defines namespace
+// swagger:model Namespace
+type Namespace struct {
+	Name string `json:"name"`
+}
+
+// swagger:model ResourceType
+type ResourceType string
+
+// swagger:model LabelKeyList
+type LabelKeyList []string
+
+// ResourceLabelMap defines list of labels grouped by specific resource types.
+//
+// swagger:model ResourceLabelMap
+type ResourceLabelMap map[ResourceType]LabelKeyList
+
+// GlobalSettings defines global settings
+// swagger:model GlobalSettings
+type GlobalSettings kubermaticv1.SettingSpec
+
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup
 	NodeDeletionFinalizer = "kubermatic.io/delete-nodes"
@@ -1084,6 +1324,14 @@ const (
 	InClusterPVCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-pv"
 	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup
 	InClusterLBCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-lb"
+	// InClusterCredentialsRequestsCleanupFinalizer indicates that CredentialsRequests still need cleanup. This
+	// CRD only exists on Openshift and is a no-op for Kubernetes.
+	InClusterCredentialsRequestsCleanupFinalizer = "kubermatic.io/cleanup-credentials-requests"
+	// InClusterImageRegistryConfigCleanupFinalizer indicates that CredentialsRequests still need
+	// cleanup. This CRD only exists on Openshift and is a no-op for Kubernetes.
+	InClusterImageRegistryConfigCleanupFinalizer = "kubermatic.io/cleanup-image-registry-configs"
 	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup
 	CredentialsSecretsCleanupFinalizer = "kubermatic.io/cleanup-credentials-secrets"
+	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup
+	UserClusterRoleCleanupFinalizer = "kubermatic.io/user-cluster-role"
 )

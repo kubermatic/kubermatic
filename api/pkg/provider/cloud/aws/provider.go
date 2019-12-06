@@ -4,22 +4,25 @@ import (
 	"errors"
 	"fmt"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-
-	"github.com/golang/glog"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/iam"
+
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	httperror "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
+	"k8s.io/klog"
 )
 
 const (
 	resourceNamePrefix = "kubernetes-"
+
+	regionAnnotationKey = "kubermatic.io/aws-region"
 
 	securityGroupCleanupFinalizer    = "kubermatic.io/cleanup-aws-security-group"
 	instanceProfileCleanupFinalizer  = "kubermatic.io/cleanup-aws-instance-profile"
@@ -27,6 +30,8 @@ const (
 	tagCleanupFinalizer              = "kubermatic.io/cleanup-aws-tags"
 
 	tagNameKubernetesClusterPrefix = "kubernetes.io/cluster/"
+
+	authFailure = "AuthFailure"
 )
 
 type AmazonEC2 struct {
@@ -87,12 +92,13 @@ func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster, clusterUpdat
 			return fmt.Errorf("failed to get already existing aws IAM role %s: %v", cluster.Spec.Cloud.AWS.RoleName, err)
 		}
 
-		cluster, err = clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		newCluster, err := clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.AWS.ControlPlaneRoleARN = *getRoleOut.Role.Arn
 		})
 		if err != nil {
 			return err
 		}
+		*cluster = *newCluster
 	}
 
 	return nil
@@ -102,7 +108,7 @@ func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster, clusterUpdat
 // It is a part of a migration for older clusers (migrationRevision < 1) that didn't have these rules.
 func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 	if cluster.Spec.Cloud.AWS.SecurityGroupID == "" {
-		glog.Infof("Not adding ICMP allow rules for cluster %q as it has no securityGroupID set",
+		klog.Infof("Not adding ICMP allow rules for cluster %q as it has no securityGroupID set",
 			cluster.Name)
 		return nil
 	}
@@ -143,7 +149,7 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 
 	var secGroupRules []*ec2.IpPermission
 	if !hasIPV4ICMPRule {
-		glog.Infof("Adding allow rule for icmp to cluster %q", cluster.Name)
+		klog.Infof("Adding allow rule for icmp to cluster %q", cluster.Name)
 		secGroupRules = append(secGroupRules,
 			(&ec2.IpPermission{}).
 				SetIpProtocol("icmp").
@@ -154,7 +160,7 @@ func (a *AmazonEC2) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 				}))
 	}
 	if !hasIPV6ICMPRule {
-		glog.Infof("Adding allow rule for icmpv6 to cluster %q", cluster.Name)
+		klog.Infof("Adding allow rule for icmpv6 to cluster %q", cluster.Name)
 		secGroupRules = append(secGroupRules,
 			(&ec2.IpPermission{}).
 				SetIpProtocol("icmpv6").
@@ -325,6 +331,8 @@ func getSecurityGroupByID(client ec2iface.EC2API, vpc *ec2.Vpc, id string) (*ec2
 // in a sg must be unique within the vpc (no pre-existing sg with
 // that name is allowed).
 func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (string, error) {
+	var securityGroupID string
+
 	newSecurityGroupName := resourceNamePrefix + clusterName
 	csgOut, err := client.CreateSecurityGroup(&ec2.CreateSecurityGroupInput{
 		VpcId:       &vpcID,
@@ -332,35 +340,44 @@ func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (str
 		Description: aws.String(fmt.Sprintf("Security group for the Kubernetes cluster %s", clusterName)),
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to create security group %s: %v", newSecurityGroupName, err)
+		if awsErr, ok := err.(awserr.Error); !ok || awsErr.Code() != "InvalidGroup.Duplicate" {
+			return "", fmt.Errorf("failed to create security group %s: %v", newSecurityGroupName, err)
+		}
+		describeOut, err := client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+			Filters: []*ec2.Filter{{
+				Name:   aws.String("group-name"),
+				Values: []*string{aws.String(newSecurityGroupName)}}},
+		})
+		if err != nil {
+			return "", fmt.Errorf("failed to get security group after creation failed because the group already existed: %v", err)
+		}
+		if n := len(describeOut.SecurityGroups); n != 1 {
+			return "", fmt.Errorf("expected to get exactly one security group after create failed because the group already existed, got %d", n)
+		}
+
+		securityGroupID = aws.StringValue(describeOut.SecurityGroups[0].GroupId)
 	}
-	sgid := aws.StringValue(csgOut.GroupId)
-	glog.V(2).Infof("Security group %s for cluster %s created with id %s.", newSecurityGroupName, clusterName, sgid)
+	if csgOut != nil && csgOut.GroupId != nil {
+		securityGroupID = *csgOut.GroupId
+	}
+	klog.V(2).Infof("Security group %s for cluster %s created with id %s.", newSecurityGroupName, clusterName, securityGroupID)
 
 	// Add permissions.
 	_, err = client.AuthorizeSecurityGroupIngress(&ec2.AuthorizeSecurityGroupIngressInput{
-		GroupId: aws.String(sgid),
+		GroupId: aws.String(securityGroupID),
 		IpPermissions: []*ec2.IpPermission{
 			(&ec2.IpPermission{}).
 				// all protocols from within the sg
 				SetIpProtocol("-1").
 				SetUserIdGroupPairs([]*ec2.UserIdGroupPair{
 					(&ec2.UserIdGroupPair{}).
-						SetGroupId(sgid),
+						SetGroupId(securityGroupID),
 				}),
 			(&ec2.IpPermission{}).
 				// tcp:22 from everywhere
 				SetIpProtocol("tcp").
 				SetFromPort(provider.DefaultSSHPort).
 				SetToPort(provider.DefaultSSHPort).
-				SetIpRanges([]*ec2.IpRange{
-					{CidrIp: aws.String("0.0.0.0/0")},
-				}),
-			(&ec2.IpPermission{}).
-				// tcp:10250 from everywhere
-				SetIpProtocol("tcp").
-				SetFromPort(provider.DefaultKubeletPort).
-				SetToPort(provider.DefaultKubeletPort).
 				SetIpRanges([]*ec2.IpRange{
 					{CidrIp: aws.String("0.0.0.0/0")},
 				}),
@@ -383,10 +400,12 @@ func createSecurityGroup(client ec2iface.EC2API, vpcID, clusterName string) (str
 		},
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to authorize security group %s with id %s: %v", newSecurityGroupName, sgid, err)
+		if awsErr, ok := err.(awserr.Error); !ok || awsErr.Code() != "InvalidPermission.Duplicate" {
+			return "", fmt.Errorf("failed to authorize security group %s with id %s: %v", newSecurityGroupName, securityGroupID, err)
+		}
 	}
 
-	return sgid, nil
+	return securityGroupID, nil
 }
 
 func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
@@ -480,32 +499,55 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 	}
 
-	return cluster, nil
-}
-
-func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, error) {
-	accessKeyID := cloud.AWS.AccessKeyID
-	secretAccessKey := cloud.AWS.SecretAccessKey
-	var err error
-
-	if accessKeyID == "" {
-		if cloud.AWS.CredentialsReference == nil {
-			return nil, errors.New("no credentials provided")
-		}
-		accessKeyID, err = a.secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSAccessKeyID)
+	// We put this as an annotation on the cluster to allow addons to read this
+	// information.
+	if cluster.Annotations[regionAnnotationKey] != a.dc.Region {
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			if cluster.Annotations == nil {
+				cluster.Annotations = map[string]string{}
+			}
+			cluster.Annotations[regionAnnotationKey] = a.dc.Region
+		})
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	return cluster, nil
+}
+
+// GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (accessKeyID, secretAccessKey string, err error) {
+	accessKeyID = cloud.AWS.AccessKeyID
+	secretAccessKey = cloud.AWS.SecretAccessKey
+
+	if accessKeyID == "" {
+		if cloud.AWS.CredentialsReference == nil {
+			return "", "", errors.New("no credentials provided")
+		}
+		accessKeyID, err = secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSAccessKeyID)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
 	if secretAccessKey == "" {
 		if cloud.AWS.CredentialsReference == nil {
-			return nil, errors.New("no credentials provided")
+			return "", "", errors.New("no credentials provided")
 		}
-		secretAccessKey, err = a.secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSSecretAccessKey)
+		secretAccessKey, err = secretKeySelector(cloud.AWS.CredentialsReference, resources.AWSSecretAccessKey)
 		if err != nil {
-			return nil, err
+			return "", "", err
 		}
+	}
+
+	return accessKeyID, secretAccessKey, nil
+}
+
+func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, error) {
+	accessKeyID, secretAccessKey, err := GetCredentialsForCluster(cloud, a.secretKeySelector)
+	if err != nil {
+		return nil, err
 	}
 
 	return GetClientSet(accessKeyID, secretAccessKey, a.dc.Region)
@@ -577,7 +619,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 
 	if kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
 		if err := removeTags(cluster, client.EC2); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to cleanup tags: %v", err)
 		}
 		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinalizer)
@@ -612,30 +654,11 @@ func (a *AmazonEC2) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newS
 	return nil
 }
 
-// GetAvailabilityZonesInRegion returns the list of availability zones in the selected AWS region.
-func (a *AmazonEC2) GetAvailabilityZonesInRegion(spec kubermaticv1.CloudSpec, regionName string) ([]*ec2.AvailabilityZone, error) {
-	client, err := a.getClientSet(spec)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get API client: %v", err)
-	}
-
-	filters := []*ec2.Filter{
-		{Name: aws.String("region-name"), Values: []*string{aws.String(regionName)}},
-	}
-	azinput := &ec2.DescribeAvailabilityZonesInput{Filters: filters}
-	out, err := client.EC2.DescribeAvailabilityZones(azinput)
+// GetSubnets returns the list of subnets for a selected AWS vpc.
+func GetSubnets(accessKeyID, secretAccessKey, region, vpcID string) ([]*ec2.Subnet, error) {
+	client, err := GetClientSet(accessKeyID, secretAccessKey, region)
 	if err != nil {
 		return nil, err
-	}
-
-	return out.AvailabilityZones, nil
-}
-
-// GetSubnets returns the list of subnets for a selected AWS vpc.
-func (a *AmazonEC2) GetSubnets(spec kubermaticv1.CloudSpec, vpcID string) ([]*ec2.Subnet, error) {
-	client, err := a.getClientSet(spec)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get API client: %v", err)
 	}
 
 	filters := []*ec2.Filter{
@@ -651,15 +674,19 @@ func (a *AmazonEC2) GetSubnets(spec kubermaticv1.CloudSpec, vpcID string) ([]*ec
 }
 
 // GetVPCS returns the list of AWS VPC's.
-func (a *AmazonEC2) GetVPCS(spec kubermaticv1.CloudSpec) ([]*ec2.Vpc, error) {
-	client, err := a.getClientSet(spec)
+func GetVPCS(accessKeyID, secretAccessKey, region string) ([]*ec2.Vpc, error) {
+	client, err := GetClientSet(accessKeyID, secretAccessKey, region)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get API client: %v", err)
+		return nil, err
 	}
 
 	vpcOut, err := client.EC2.DescribeVpcs(&ec2.DescribeVpcsInput{})
 
 	if err != nil {
+		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == authFailure {
+			return nil, httperror.New(401, fmt.Sprintf("failed to list vpc's: %s", awsErr.Message()))
+		}
+
 		return nil, fmt.Errorf("failed to list vpc's: %v", err)
 	}
 

@@ -12,14 +12,15 @@ import (
 
 	addonutil "github.com/kubermatic/kubermatic/api/pkg/addon"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/backup"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/cluster"
-	containerlinux "github.com/kubermatic/kubermatic/api/pkg/controller/container-linux"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/monitoring"
+	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/backup"
+	kubernetescontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/monitoring"
+	containerlinux "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/container-linux"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/docker"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	metricsserver "github.com/kubermatic/kubermatic/api/pkg/resources/metrics-server"
 	ksemver "github.com/kubermatic/kubermatic/api/pkg/semver"
 	kubermaticversion "github.com/kubermatic/kubermatic/api/pkg/version"
 
@@ -37,6 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
@@ -61,6 +63,7 @@ type opts struct {
 }
 
 func main() {
+	klog.InitFlags(nil)
 	o := opts{}
 	flag.StringVar(&o.versionsFile, "versions", "../config/kubermatic/static/master/versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&o.versionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
@@ -136,7 +139,7 @@ func processImages(ctx context.Context, log *zap.Logger, dryRun bool, images []s
 	return nil
 }
 
-func getImagesForVersion(log *zap.Logger, version *kubermaticversion.MasterVersion, addonsPath string) (images []string, err error) {
+func getImagesForVersion(log *zap.Logger, version *kubermaticversion.Version, addonsPath string) (images []string, err error) {
 	templateData, err := getTemplateData(version)
 	if err != nil {
 		return nil, err
@@ -160,14 +163,14 @@ func getImagesForVersion(log *zap.Logger, version *kubermaticversion.MasterVersi
 }
 
 func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
-	statefulsetCreators := cluster.GetStatefulSetCreators(templateData, false)
+	statefulsetCreators := kubernetescontroller.GetStatefulSetCreators(templateData, false)
 	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators(templateData)...)
 
-	deploymentCreators := cluster.GetDeploymentCreators(templateData, false)
+	deploymentCreators := kubernetescontroller.GetDeploymentCreators(templateData, false)
 	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(templateData)...)
 	deploymentCreators = append(deploymentCreators, containerlinux.GetDeploymentCreators("")...)
 
-	cronjobCreators := cluster.GetCronJobCreators(templateData)
+	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
 
 	daemonSetCreators := containerlinux.GetDaemonSetCreators("")
 
@@ -222,7 +225,7 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(version *kubermaticversion.MasterVersion) (*resources.TemplateData, error) {
+func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -329,6 +332,9 @@ func getTemplateData(version *kubermaticversion.MasterVersion) (*resources.Templ
 		resources.MachineControllerWebhookServingCertSecretName,
 		resources.InternalUserClusterAdminKubeconfigSecretName,
 		resources.ClusterAutoscalerKubeconfigSecretName,
+		resources.KubernetesDashboardKubeconfigSecretName,
+		metricsserver.ServingCertSecretName,
+		resources.UserSSHKeys,
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 
@@ -351,7 +357,7 @@ func getTemplateData(version *kubermaticversion.MasterVersion) (*resources.Templ
 		fakeDynamicClient,
 		fakeCluster,
 		&kubermaticv1.Datacenter{},
-		"",
+		&kubermaticv1.Seed{},
 		"",
 		"",
 		"192.0.2.0/24",
@@ -368,6 +374,7 @@ func getTemplateData(version *kubermaticversion.MasterVersion) (*resources.Templ
 		// Since this is the image-loader we hardcode the default image for pulling.
 		resources.DefaultKubermaticImage,
 		resources.DefaultDNATControllerImage,
+		false,
 	), nil
 }
 
@@ -385,7 +392,7 @@ func createNamedSecrets(secretNames []string) *corev1.SecretList {
 	return &secretList
 }
 
-func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kubermaticversion.MasterVersion, error) {
+func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kubermaticversion.Version, error) {
 	log = log.With(
 		zap.String("versions-file", versionsFile),
 		zap.String("versions-filter", versionFilter),
@@ -406,7 +413,7 @@ func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kuberm
 		return nil, fmt.Errorf("failed to parse version filter %q: %v", versionFilter, err)
 	}
 
-	var filteredVersions []*kubermaticversion.MasterVersion
+	var filteredVersions []*kubermaticversion.Version
 	for _, ver := range versions {
 		if constraint.Check(ver.Version) {
 			filteredVersions = append(filteredVersions, ver)
@@ -417,9 +424,10 @@ func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kuberm
 
 func getImagesFromAddons(log *zap.Logger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
 	addonData := &addonutil.TemplateData{
-		Cluster:   cluster,
-		Addon:     &kubermaticv1.Addon{},
-		Variables: map[string]interface{}{},
+		Cluster:           cluster,
+		MajorMinorVersion: cluster.Spec.Version.MajorMinor(),
+		Addon:             &kubermaticv1.Addon{},
+		Variables:         map[string]interface{}{},
 	}
 	infos, err := ioutil.ReadDir(addonsPath)
 	if err != nil {
