@@ -134,8 +134,8 @@ trap print_cluster_exposer_logs EXIT
 
 TEST_NAME="Wait for cluster exposer"
 echodate "Waiting for cluster exposer to be running"
-retry 5 curl --fail http://127.0.0.1:2047/metrics \
-  |egrep -q 'rest_client_request_latency_seconds_bucket.*GET'
+
+retry 5 curl --fail http://127.0.0.1:2047/metrics
 echodate "Cluster exposer is running"
 
 echodate "Setting up iptables rules for to make nodeports available"
