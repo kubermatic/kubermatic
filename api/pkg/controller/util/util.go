@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -38,13 +39,18 @@ func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) *handler
 // EnqueueClusterForNamespacedObjectWithSeedName enqueues the cluster that owns a namespaced object,
 // if any. The seedName is put into the namespace field
 // It is used by various controllers to react to changes in the resources in the cluster namespace
-func EnqueueClusterForNamespacedObjectWithSeedName(client ctrlruntimeclient.Client, seedName string) *handler.EnqueueRequestsFromMapFunc {
+func EnqueueClusterForNamespacedObjectWithSeedName(client ctrlruntimeclient.Client, seedName string, clusterSelector labels.Selector) *handler.EnqueueRequestsFromMapFunc {
 	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
-		if err := client.List(context.Background(), clusterList); err != nil {
+		listOpts := &ctrlruntimeclient.ListOptions{
+			LabelSelector: clusterSelector,
+		}
+
+		if err := client.List(context.Background(), clusterList, listOpts); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
 			return []reconcile.Request{}
 		}
+
 		for _, cluster := range clusterList.Items {
 			if cluster.Status.NamespaceName == a.Meta.GetNamespace() {
 				return []reconcile.Request{{NamespacedName: types.NamespacedName{
@@ -65,6 +71,7 @@ func EnqueueClusterScopedObjectWithSeedName(seedName string) *handler.EnqueueReq
 		if a.Meta.GetNamespace() != "" {
 			utilruntime.HandleError(fmt.Errorf("EnqueueClusterScopedObjectWithSeedName was used with namespace scoped object %s/%s of type %T", a.Meta.GetNamespace(), a.Meta.GetName(), a.Object))
 		}
+
 		return []reconcile.Request{{NamespacedName: types.NamespacedName{
 			Namespace: seedName,
 			Name:      a.Meta.GetName(),
@@ -143,4 +150,15 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 	clustersUpdatingInProgressCount := len(clusters.Items) - finishedUpdatingClustersCount
 
 	return clustersUpdatingInProgressCount >= limit, nil
+}
+
+// IsCacheNotStarted returns true if the given error is not nil and an instance of
+// cache.ErrCacheNotStarted.
+func IsCacheNotStarted(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	_, ok := err.(*cache.ErrCacheNotStarted)
+	return ok
 }

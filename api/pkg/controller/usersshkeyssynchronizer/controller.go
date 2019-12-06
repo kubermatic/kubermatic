@@ -3,6 +3,7 @@ package usersshkeyssynchronizer
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -12,9 +13,11 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -51,6 +54,10 @@ func Add(
 	workerName string,
 	numWorkers int,
 ) error {
+	workerSelector, err := workerlabel.LabelSelector(workerName)
+	if err != nil {
+		return fmt.Errorf("failed to build worker-name selector: %v", err)
+	}
 
 	reconciler := &Reconciler{
 		ctx:         ctx,
@@ -75,7 +82,7 @@ func Add(
 		}
 		if err := c.Watch(
 			secretSource,
-			controllerutil.EnqueueClusterForNamespacedObjectWithSeedName(seedManager.GetClient(), seedName),
+			controllerutil.EnqueueClusterForNamespacedObjectWithSeedName(seedManager.GetClient(), seedName, workerSelector),
 			predicateutil.ByName(resources.UserSSHKeys),
 		); err != nil {
 			return fmt.Errorf("failed to establish watch for secrets in seed %s: %v", seedName, err)
@@ -88,6 +95,7 @@ func Add(
 		if err := c.Watch(
 			clusterSource,
 			controllerutil.EnqueueClusterScopedObjectWithSeedName(seedName),
+			workerlabel.Predicates(workerName),
 		); err != nil {
 			return fmt.Errorf("failed to establish watch for clusters in seed %s: %v", seedName, err)
 		}
@@ -95,7 +103,7 @@ func Add(
 
 	if err := c.Watch(
 		&source.Kind{Type: &kubermaticv1.UserSSHKey{}},
-		enqueueAllClusters(reconciler.seedClients),
+		enqueueAllClusters(reconciler.seedClients, workerSelector),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for userSSHKey: %v", err)
 	}
@@ -108,6 +116,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log.Debug("Processing")
 
 	err := r.reconcile(log, request)
+	if controllerutil.IsCacheNotStarted(err) {
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
 	if err != nil {
 		log.Errorw("Reconciliation failed", zap.Error(err))
 	}
@@ -122,12 +133,18 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 		return nil
 	}
 
+	// find all clusters in this seed
 	cluster := &kubermaticv1.Cluster{}
 	if err := seedClient.Get(r.ctx, types.NamespacedName{Name: request.Name}, cluster); err != nil {
+		if controllerutil.IsCacheNotStarted(err) {
+			return err
+		}
+
 		if kubeapierrors.IsNotFound(err) {
 			log.Debug("Could not find cluster")
 			return nil
 		}
+
 		return fmt.Errorf("failed to get cluster %s from seed %s: %v", cluster.Name, request.Namespace, err)
 	}
 
@@ -208,13 +225,17 @@ func buildUserSSHKeysForCluster(clusterName string, list *kubermaticv1.UserSSHKe
 }
 
 // enqueueAllClusters enqueues all clusters
-func enqueueAllClusters(clients map[string]ctrlruntimeclient.Client) *handler.EnqueueRequestsFromMapFunc {
+func enqueueAllClusters(clients map[string]ctrlruntimeclient.Client, workerSelector labels.Selector) *handler.EnqueueRequestsFromMapFunc {
 	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		var requests []reconcile.Request
 
+		listOpts := &ctrlruntimeclient.ListOptions{
+			LabelSelector: workerSelector,
+		}
+
 		for seedName, client := range clients {
 			clusterList := &kubermaticv1.ClusterList{}
-			if err := client.List(context.Background(), clusterList); err != nil {
+			if err := client.List(context.Background(), clusterList, listOpts); err != nil {
 				utilruntime.HandleError(fmt.Errorf("failed to list Clusters in seed %s: %v", seedName, err))
 				continue
 			}

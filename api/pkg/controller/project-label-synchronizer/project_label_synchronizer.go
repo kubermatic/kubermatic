@@ -3,10 +3,13 @@ package projectlabelsynchronizer
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
+	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
@@ -60,7 +63,12 @@ func Add(
 	seedManagers map[string]manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
-	workerNameLabelSelector labels.Selector) error {
+	workerName string,
+) error {
+	workerSelector, err := workerlabel.LabelSelector(workerName)
+	if err != nil {
+		return fmt.Errorf("failed to build worker-name selector: %v", err)
+	}
 
 	log = log.Named(ControllerName)
 	r := &reconciler{
@@ -68,7 +76,7 @@ func Add(
 		log:                     log,
 		masterClient:            masterManager.GetClient(),
 		seedClients:             map[string]ctrlruntimeclient.Client{},
-		workerNameLabelSelector: workerNameLabelSelector,
+		workerNameLabelSelector: workerSelector,
 	}
 
 	ctrlOpts := controller.Options{
@@ -87,13 +95,15 @@ func Add(
 		if err := seedClusterWatch.InjectCache(seedManager.GetCache()); err != nil {
 			return fmt.Errorf("failed to inject cache for seed %q into watch: %v", seedName, err)
 		}
-		if err := c.Watch(seedClusterWatch, requestFromCluster(log)); err != nil {
+		if err := c.Watch(seedClusterWatch, requestFromCluster(log), workerlabel.Predicates(workerName)); err != nil {
 			return fmt.Errorf("failed to watch clusters in seed %q: %v", seedName, err)
 		}
 	}
+
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch projects: %v", err)
 	}
+
 	return nil
 }
 
@@ -102,6 +112,9 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log.Debug("Processing")
 
 	err := r.reconcile(log, request)
+	if controllerutil.IsCacheNotStarted(err) {
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
 	}
@@ -111,10 +124,15 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request) error {
 	project := &kubermaticv1.Project{}
 	if err := r.masterClient.Get(r.ctx, request.NamespacedName, project); err != nil {
+		if controllerutil.IsCacheNotStarted(err) {
+			return err
+		}
+
 		if kerrors.IsNotFound(err) {
 			log.Debug("Didn't find project, returning")
 			return nil
 		}
+
 		return fmt.Errorf("failed to get project %s: %v", request.Name, err)
 	}
 
@@ -126,9 +144,12 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 	workerNameLabelSelectorRequirements, _ := r.workerNameLabelSelector.Requirements()
 	projectLabelRequirement, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{project.Name})
 	if err != nil {
-		return fmt.Errorf("failed to consturct label requirement for project: %v", err)
+		return fmt.Errorf("failed to construct label requirement for project: %v", err)
 	}
-	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(append(workerNameLabelSelectorRequirements, *projectLabelRequirement)...)}
+
+	listOpts := &ctrlruntimeclient.ListOptions{
+		LabelSelector: labels.NewSelector().Add(append(workerNameLabelSelectorRequirements, *projectLabelRequirement)...),
+	}
 
 	// We use an error aggregate to make sure we return an error if we encountered one but
 	// still continue processing everything we can.
@@ -138,7 +159,12 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 
 		unfilteredClusters := &kubermaticv1.ClusterList{}
 		if err := seedClient.List(r.ctx, unfilteredClusters, listOpts); err != nil {
-			errs = append(errs, fmt.Errorf("failed to list clusters in seed %q: %v", seedName, err))
+			if controllerutil.IsCacheNotStarted(err) {
+				log.Debug("cache for seed client was not yet started, cannot list Clusters")
+			} else {
+				errs = append(errs, fmt.Errorf("failed to list clusters in seed %q: %v", seedName, err))
+			}
+
 			continue
 		}
 
