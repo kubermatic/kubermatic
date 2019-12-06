@@ -247,7 +247,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, fmt.Errorf("failed to sync health: %v", err)
 	}
 
-	if kubermaticv1.HealthStatusDown == cluster.Status.ExtendedHealth.Apiserver {
+	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
 		// We have to wait for the APIServer to not be completely down. Changes for it
 		// will trigger us, so we can just return here.
 		return nil, nil
