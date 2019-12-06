@@ -80,11 +80,26 @@ func Add(
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 	controllerFactories ...ControllerFactory,
 ) error {
+	// prepare a shared cache across all future master managers; this cache
+	// will be wrapped so that ctrlruntime cannot start and stop it, which
+	// would cause it to close the same channels multiple times and panic
+	cache := mgr.GetCache()
+
+	go func() {
+		if err := cache.Start(ctx.Done()); err != nil {
+			log.Fatalw("failed to start cache", zap.Error(err))
+		}
+	}()
+
+	if !cache.WaitForCacheSync(ctx.Done()) {
+		log.Fatal("failed to wait for caches to synchronize")
+	}
+
 	reconciler := &Reconciler{
 		ctx:                  ctx,
 		masterKubeCfg:        mgr.GetConfig(),
 		masterClient:         mgr.GetClient(),
-		masterCache:          mgr.GetCache(),
+		masterCache:          &unstartableCache{cache},
 		log:                  log.Named(ControllerName),
 		seedsGetter:          seedsGetter,
 		seedKubeconfigGetter: seedKubeconfigGetter,
@@ -246,4 +261,18 @@ func (r *Reconciler) createSeedManagers(masterMgr manager.Manager, seeds map[str
 	}
 
 	return seedManagers, nil
+}
+
+// unstartableCache is used to prevent the ctrlruntime manager from starting the
+// cache *again*, just after we started and initialized it.
+type unstartableCache struct {
+	cache.Cache
+}
+
+func (m *unstartableCache) Start(_ <-chan struct{}) error {
+	return nil
+}
+
+func (m *unstartableCache) WaitForCacheSync(_ <-chan struct{}) bool {
+	return true
 }
