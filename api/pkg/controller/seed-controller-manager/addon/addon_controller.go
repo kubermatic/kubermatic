@@ -221,8 +221,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		return nil, fmt.Errorf("failed to ensure that the isDefault field is up to date in the addon: %v", err)
 	}
 
-	// When the apiserver is not healthy, we must skip it
-	if kubermaticv1.HealthStatusDown == cluster.Status.ExtendedHealth.Apiserver {
+	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
 		log.Debug("Skipping because the API server is not running")
 		return nil, nil
 	}
