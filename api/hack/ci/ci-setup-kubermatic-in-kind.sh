@@ -124,9 +124,31 @@ DOCKER_CONFIG=/ docker run \
   --namespace "default" \
   --build-id "$PROW_JOB_ID"
 
-TEST_NAME="Wait for service controller"
-echodate "Waiting for service controller to be running"
-retry 5 docker ps|grep controller
+echodate "Starting clusterexposer"
+CGO_ENABLED=0 go run ./api/pkg/test/clusterexposer/cmd \
+  --kubeconfig-inner "$KUBECONFIG" \
+  --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
+  --build-id "$PROW_JOB_ID" &> /var/log/clusterexposer.log &
+
+function print_cluster_exposer_logs {
+  originalRC=$?
+
+  # Tolerate errors and just continue
+  set +e
+  echodate "Printing clusterexposer logs"
+  cat /var/log/clusterexposer.log
+  echodate "Done printing clusterexposer logs"
+  set -e
+
+  return $originalRC
+}
+trap print_cluster_exposer_logs EXIT
+
+TEST_NAME="Wait for cluster exposer"
+echodate "Waiting for cluster exposer to be running"
+retry 5 curl --fail http://127.0.0.1:2047/metrics \
+  |egrep -q 'rest_client_request_latency_seconds_bucket.*GET'
+echodate "Cluster exposer is running"
 
 echodate "Setting up iptables rules for to make nodeports available"
 iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.17.0.2
@@ -378,11 +400,6 @@ function cleanup_kubermatic_clusters_in_kind {
 
   # Tolerate errors and just continue
   set +e
-  kubectl delete service -l "prow.k8s.io/id=$PROW_JOB_ID"
-
-  # Kill all descendant processes
-  pkill -P $$
-
   # Clean up clusters
   kubectl delete cluster --all --ignore-not-found=true
   set -e
