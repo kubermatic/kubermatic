@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -72,7 +73,7 @@ func rbacControllerFactoryCreator(
 	rbacMetrics := rbac.NewMetrics()
 	prometheus.MustRegister(rbacMetrics.Workers)
 
-	return func(mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		masterClusterProvider, err := rbacClusterProvider(mastercfg, "master", true, selectorOps)
 		if err != nil {
 			return "", fmt.Errorf("failed to create master rbac provider: %v", err)
@@ -118,9 +119,9 @@ func rbacClusterProvider(cfg *rest.Config, name string, master bool, labelSelect
 }
 
 func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
-	return func(masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return projectlabelsynchronizer.ControllerName, projectlabelsynchronizer.Add(
-			ctrlCtx.ctx,
+			ctx,
 			masterMgr,
 			seedManagerMap,
 			ctrlCtx.log,
@@ -131,9 +132,9 @@ func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcont
 }
 
 func userSSHKeysSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
-	return func(mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return usersshkeyssynchronizer.ControllerName, usersshkeyssynchronizer.Add(
-			ctrlCtx.ctx,
+			ctx,
 			mgr,
 			seedManagerMap,
 			ctrlCtx.log,

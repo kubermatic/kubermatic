@@ -61,14 +61,15 @@ type Reconciler struct {
 
 // managerInstance represents an instance of controllerManager
 type managerInstance struct {
-	config   map[string]rest.Config
-	mgr      manager.Manager
-	running  bool
-	stopChan chan struct{}
+	config    map[string]rest.Config
+	mgr       manager.Manager
+	running   bool
+	stopChan  chan struct{}
+	cancelCtx context.CancelFunc
 }
 
 // ControllerFactory is a function to create a new controller instance
-type ControllerFactory func(manager.Manager, map[string]manager.Manager) (controllerName string, err error)
+type ControllerFactory func(context.Context, manager.Manager, map[string]manager.Manager) (controllerName string, err error)
 
 func Add(
 	ctx context.Context,
@@ -182,8 +183,10 @@ func (r *Reconciler) reconcile() error {
 		return fmt.Errorf("failed to create managers for all seeds: %v", err)
 	}
 
+	ctrlCtx, cancelCtrlCtx := context.WithCancel(r.ctx)
+
 	for _, factory := range r.controllerFactories {
-		controllerName, err := factory(mgr, seedManagers)
+		controllerName, err := factory(ctrlCtx, mgr, seedManagers)
 		if err != nil {
 			return fmt.Errorf("failed to construct controller %s: %v", controllerName, err)
 		}
@@ -191,14 +194,17 @@ func (r *Reconciler) reconcile() error {
 
 	if r.activeManager != nil {
 		r.log.Info("Stopping old instance of controller manager")
+		r.activeManager.cancelCtx() // Just in case any controller ever actually makes use of their context
 		close(r.activeManager.stopChan)
 	}
 
 	mi := &managerInstance{
-		config:   seedKubeconfigMap,
-		mgr:      mgr,
-		stopChan: make(chan struct{}),
+		config:    seedKubeconfigMap,
+		mgr:       mgr,
+		stopChan:  make(chan struct{}),
+		cancelCtx: cancelCtrlCtx,
 	}
+
 	go func() {
 		r.log.Info("Starting controller manager")
 		mi.running = true

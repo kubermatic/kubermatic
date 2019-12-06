@@ -37,6 +37,8 @@ type controllerRunOptions struct {
 }
 
 func main() {
+	ctx := context.Background()
+
 	klog.InitFlags(nil)
 	pprofOpts := &pprof.Opts{}
 	pprofOpts.AddFlags(flag.CommandLine)
@@ -92,8 +94,6 @@ func main() {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", certmanagerv1alpha2.SchemeGroupVersion), zap.Error(err))
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	seedsGetter, err := provider.SeedsGetterFactory(ctx, mgr.GetClient(), "", opt.namespace, true)
 	if err != nil {
@@ -109,7 +109,7 @@ func main() {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
 	}
 
-	seedOperatorControllerFactory := func(mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+	seedOperatorControllerFactory := func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return seedctrl.ControllerName, seedctrl.Add(
 			ctx,
 			log,
