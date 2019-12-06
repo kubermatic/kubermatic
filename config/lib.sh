@@ -1,4 +1,7 @@
-#!/usr/bin/env bash
+# Required for signal propagation to work so
+# the cleanup trap gets executed when a script
+# receives a SIGINT
+set -o monitor
 
 retry() {
   # Works only with bash but doesn't fail on other shells

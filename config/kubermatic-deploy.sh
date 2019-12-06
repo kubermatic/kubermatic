@@ -2,7 +2,7 @@
 
 if [ "$#" -lt 1 ] || [ "${1}" == "--help" ]; then
   cat <<EOF
-Usage: $(basename $0) (master|seed) path/to/${VALUES_FILE}  path/to/${CHART_FOLDER} "[EXTRA HELM ARGUMENTS]"
+Usage: $(basename $0) (master|seed) path/to/VALUES_FILE  path/to/CHART_FOLDER "[EXTRA HELM ARGUMENTS]"
 EOF
   exit 0
 fi
@@ -31,7 +31,7 @@ DEPLOY_MINIO=${DEPLOY_MINIO:-true}
 DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 TILLER_NAMESPACE=${TILLER_NAMESPACE:-kubermatic}
 HELM_INIT_ARGS=${HELM_INIT_ARGS:-""}
-SKIP_TILLER_INIT=${SKIP_TILLER_INIT:-""}
+SKIP_TILLER_INIT=${SKIP_TILLER_INIT:-true}
 #replaces var KUBERMATIC_TAG in master charts of https://github.com/kubermatic/kubermatic/tree/master/config
 KUBERMATIC_TAG=${KUBERMATIC_TAG:-""}
 
@@ -66,7 +66,7 @@ function deploy {
   retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --atomic --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
 
   if [ "${CANARY_DEPLOYMENT:-}" = "true" ]; then
-    TEST_NAME="[Helm] Roll back chart ${name}"
+    TEST_NAME="[Helm] Rollback chart ${name}"
     echodate "Rolling back ${name} to revision ${inital_revision} as this was only a canary deployment"
     retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} rollback --wait --timeout $timeout ${name} ${inital_revision}
   fi
@@ -75,7 +75,7 @@ function deploy {
 }
 
 function initTiller() {
-    if [ -z "$SKIP_TILLER_INIT" ]; then
+    if [[ "${SKIP_TILLER_INIT}" = true ]]; then
         echo "[Helm] skipp Tiller init"
     else
       TEST_NAME="[Helm] Init Tiller"
@@ -97,9 +97,12 @@ case "${DEPLOY_STACK}" in
     deploy "node-exporter" "monitoring" ./monitoring/node-exporter/
     deploy "kube-state-metrics" "monitoring" ./monitoring/kube-state-metrics/
     deploy "grafana" "monitoring" ./monitoring/grafana/
-    deploy "helm-exporter" "monitoring" ./monitoring/helm-exporter/
+    deploy "blackbox-exporter" "monitoring" ./monitoring/blackbox-exporter/
     if [[ "${DEPLOY_ALERTMANAGER}" = true ]]; then
       deploy "alertmanager" "monitoring" ./monitoring/alertmanager/
+      if [[ "${1}" = "master" ]]; then
+        deploy "karma" "monitoring" ./monitoring/karma/
+      fi
     fi
 
     # Prometheus can take a long time to become ready, depending on the WAL size.
