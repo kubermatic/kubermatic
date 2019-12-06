@@ -5,138 +5,180 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
+
 	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
-	controllerName = "cluster_exposer_controller"
+	controllerName                 = "cluster_exposer_controller"
+	labelKey                       = "prow.k8s.io/id"
+	serviceIdentifyerAnnotationKey = "clusterexposer/service-name"
 )
 
 type reconciler struct {
-	ctx         context.Context
-	log         *zap.SugaredLogger
-	client      ctrlruntimeclient.Client
-	outerClient ctrlruntimeclient.Client
-	recorder    record.EventRecorder
-	namespace   string
-	kubeconfig  *string
-	cmd         *cobra.Command
-	jobID       string
+	ctx            context.Context
+	log            *zap.SugaredLogger
+	innerClient    ctrlruntimeclient.Client
+	outerClient    ctrlruntimeclient.Client
+	outerAPIReader ctrlruntimeclient.Reader
+	jobID          string
 }
 
-func Add(ctx context.Context, outerClient ctrlruntimeclient.Client, log *zap.SugaredLogger, mgr manager.Manager, namespace string, kubeconfig *string, cmd *cobra.Command, jobID string) error {
+func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		ctx:         ctx,
-		log:         log,
-		client:      mgr.GetClient(),
-		outerClient: outerClient,
-		recorder:    mgr.GetEventRecorderFor(controllerName),
-		namespace:   namespace,
-		kubeconfig:  kubeconfig,
-		cmd:         cmd,
-		jobID:       jobID,
+		ctx:            context.Background(),
+		log:            log,
+		innerClient:    inner.GetClient(),
+		outerClient:    outer.GetClient(),
+		outerAPIReader: outer.GetAPIReader(),
+		jobID:          jobID,
 	}
-	c, err := controller.New(controllerName, mgr, controller.Options{
+	c, err := controller.New(controllerName, inner, controller.Options{
 		Reconciler: r,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create controller: %v", err)
 	}
-	// Watch for changes
-	if err = c.Watch(&source.Kind{Type: &v1.Pod{}}, &handler.EnqueueRequestForObject{}, clusterAPI()); err != nil {
-		return fmt.Errorf("failed to establish watch for the Pod %v", err)
+
+	if err := c.Watch(
+		&source.Kind{Type: &corev1.Service{}},
+		&handler.EnqueueRequestForObject{},
+		predicate.Factory(
+			func(m metav1.Object, _ runtime.Object) bool {
+				if _, exists := m.GetAnnotations()["nodeport-proxy.k8s.io/expose"]; exists {
+					return true
+				}
+				return false
+			},
+		),
+	); err != nil {
+		return fmt.Errorf("failed to create watch for services in the inner cluster: %v", err)
+	}
+
+	outerServiceWatch := &source.Kind{Type: &corev1.Service{}}
+	if err := outerServiceWatch.InjectCache(outer.GetCache()); err != nil {
+		return fmt.Errorf("failed to inject cache into outer service watch: %v", err)
+	}
+	outererServiceMapper := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+		val, exists := a.Meta.GetAnnotations()[serviceIdentifyerAnnotationKey]
+		if !exists {
+			return nil
+		}
+		split := strings.Split(val, "/")
+		if n := len(split); n != 2 {
+			log.Errorf("splitting value of key %q by `/` (%q) didn't yield two but %d results",
+				serviceIdentifyerAnnotationKey, val, n)
+			return nil
+		}
+		return []reconcile.Request{{
+			NamespacedName: types.NamespacedName{Namespace: split[0], Name: split[1]},
+		}}
+	},
+	)}
+	outerServicePredicate := predicate.Factory(func(m metav1.Object, _ runtime.Object) bool {
+		return m.GetLabels()[labelKey] == jobID
+	})
+	if err := c.Watch(outerServiceWatch, outererServiceMapper, outerServicePredicate); err != nil {
+		return fmt.Errorf("failed to create watch for services in outer cluster: %v", err)
 	}
 
 	return nil
 }
 
 func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("Pod", request.Name)
+	log := r.log.With("request", request.String())
 	log.Debug("Reconciling")
 
-	pod := &v1.Pod{}
-	if err := r.client.Get(r.ctx, request.NamespacedName, pod); err != nil {
-		if kerrors.IsNotFound(err) {
-			log.Debug("pod deleted, returning")
-			return reconcile.Result{}, err
-		}
-		return reconcile.Result{}, fmt.Errorf("failed to get pod: %v", err)
-	}
-
-	err := r.reconcile(log, pod)
+	err := r.reconcile(log, request)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Event(pod, v1.EventTypeWarning, "ExposingClusterFailed", err.Error())
 	}
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(log *zap.SugaredLogger, pod *v1.Pod) error {
+func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request) error {
 
-	outerService := &v1.Service{}
-	if err := r.outerClient.Get(r.ctx, ctrlruntimeclient.ObjectKey{Namespace: r.namespace, Name: pod.Namespace}, outerService); err != nil {
+	innerService := &corev1.Service{}
+	if err := r.innerClient.Get(r.ctx, request.NamespacedName, innerService); err != nil {
 		if kerrors.IsNotFound(err) {
-			outerService, err = r.createOuterService(pod, r.jobID)
-			if err != nil {
-				return err
-			}
-		} else {
-			return fmt.Errorf("failed to get outer service: %v", err)
-		}
-	}
-
-	service := &v1.Service{}
-	if err := r.client.Get(r.ctx, ctrlruntimeclient.ObjectKey{Namespace: pod.Namespace, Name: UserClusterAPIServerServiceName}, service); err != nil {
-		if kerrors.IsNotFound(err) {
-			log.Debug("user cluster external service not found")
+			log.Info("Got request for service that doesn't exist, returning")
 			return nil
 		}
-		return fmt.Errorf("failed to get user cluster service: %v", err)
+		return fmt.Errorf("failed to get inner service: %v", err)
 	}
 
-	nodePort := getNodePort(outerService)
-	oldService := service.DeepCopy()
-	if nodePort != oldService.Spec.Ports[0].NodePort {
-		oldService.Spec.Ports[0].NodePort = nodePort
-		oldService.Spec.Ports[0].Port = nodePort
-		oldService.Spec.Ports[0].TargetPort = intstr.FromInt(int(nodePort))
-		if err := r.client.Update(r.ctx, oldService); err != nil {
-			return fmt.Errorf("failed to update user cluster service: %v", err)
+	outerServices := &corev1.ServiceList{}
+	labelSelector := ctrlruntimeclient.MatchingLabels(map[string]string{labelKey: r.jobID})
+	if err := r.outerClient.List(r.ctx, outerServices, labelSelector); err != nil {
+		return fmt.Errorf("failed to list service in outer cluster: %v", err)
+	}
+	outerService := getServiceFromServiceList(outerServices, request.NamespacedName)
+	if outerService == nil {
+		outerService, err := r.createOuterService(request.NamespacedName.String())
+		if err != nil {
+			return fmt.Errorf("failed to create service in outer cluster: %v", err)
 		}
+		log = log.With("outer-cluster-service-name", outerService.Name)
+		log.Info("Successfully created service in outer cluster")
+	}
+
+	if n := len(outerService.Spec.Ports); n != 1 {
+		return fmt.Errorf("expected outer service to have exactly one port, had %d", n)
+	}
+	if outerService.Spec.Type != corev1.ServiceTypeNodePort {
+		return fmt.Errorf("expected outer service to be of type NodePort, was %q", outerService.Spec.Type)
+	}
+	if n := len(innerService.Spec.Ports); n != 1 {
+		return fmt.Errorf("expected inner service to have exactly one port, had %d", n)
+	}
+
+	if innerService.Spec.Ports[0].NodePort == outerService.Spec.Ports[0].NodePort {
+		log.Info("Node port already matched, nothing to do")
 		return nil
 	}
+
+	log = log.With("nodeport", innerService.Spec.Ports[0].NodePort)
+	log.Info("Updating nodeport of inner service")
+
+	oldInnerService := innerService.DeepCopy()
+	innerService.Spec.Ports[0].NodePort = outerService.Spec.Ports[0].NodePort
+	if err := r.innerClient.Patch(r.ctx, innerService, ctrlruntimeclient.MergeFrom(oldInnerService)); err != nil {
+		return fmt.Errorf("failed to update nodeport of service %s/%s to %d: %v", innerService.Namespace, innerService.Name, outerService.Spec.Ports[0].NodePort, err)
+	}
+
+	log.Info("Successfully updated nodeport of inner service")
 
 	return nil
 }
 
-func (r *reconciler) createOuterService(pod *v1.Pod, jobID string) (*v1.Service, error) {
+func (r *reconciler) createOuterService(targetServiceName string) (*v1.Service, error) {
 	newService := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Annotations: defaultServiceAnnotations,
-			Name:        pod.Namespace,
-			Namespace:   r.namespace,
-			Labels:      map[string]string{"prow.k8s.io/id": jobID, "app": "cluster-exposer"},
+			GenerateName: "cluster-exposer-",
+			Namespace:    "default",
+			Labels:       map[string]string{labelKey: r.jobID},
+			Annotations:  map[string]string{serviceIdentifyerAnnotationKey: targetServiceName},
 		},
 		Spec: v1.ServiceSpec{
-			Selector: map[string]string{"prow.k8s.io/id": jobID},
+			Selector: map[string]string{labelKey: r.jobID},
 			Type:     v1.ServiceTypeNodePort,
 			Ports: []v1.ServicePort{
 				{
@@ -147,53 +189,26 @@ func (r *reconciler) createOuterService(pod *v1.Pod, jobID string) (*v1.Service,
 			},
 		},
 	}
-	err := r.outerClient.Create(r.ctx, newService)
-	if err != nil {
+	myself := &corev1.Pod{}
+	myselfName := types.NamespacedName{Namespace: "default", Name: r.jobID}
+	// Use APIreader so we don't create a pod cache
+	if err := r.outerAPIReader.Get(r.ctx, myselfName, myself); err != nil {
+		return nil, fmt.Errorf("failed to get pod for self from outer cluster: %v", err)
+	}
+	if err := controllerutil.SetControllerReference(myself, newService, scheme.Scheme); err != nil {
+		return nil, fmt.Errorf("failed to set owner ref for pod on outer service: %v", err)
+	}
+	if err := r.outerClient.Create(r.ctx, newService); err != nil {
 		return nil, fmt.Errorf("failed to create outer service: %v", err)
 	}
-
-	// Update specified port to be the same as autogenerated NodePort
-	nodePort := getNodePort(newService)
-	newService.Spec.Ports[0].Port = nodePort
-	newService.Spec.Ports[0].TargetPort = intstr.FromInt(int(nodePort))
-
-	if err := r.outerClient.Update(r.ctx, newService); err != nil {
-		return nil, fmt.Errorf("failed to update outer service: %v", err)
-	}
-	r.log.Debug("outer service created")
-	return newService.DeepCopy(), nil
+	return newService, nil
 }
 
-// clusterAPI returns a predicate func that only includes API pods in user cluster scope
-func clusterAPI() predicate.Funcs {
-	return Factory(func(m metav1.Object, r runtime.Object) bool {
-		return strings.HasPrefix(m.GetName(), "apiserver-") && strings.HasPrefix(m.GetNamespace(), "cluster-")
-	})
-}
-
-// Factory returns a predicate func that applies the given filter function
-// on CREATE, UPDATE and DELETE events. For UPDATE events, the filter is applied
-// to both the old and new object and OR's the result.
-func Factory(filter func(m metav1.Object, r runtime.Object) bool) predicate.Funcs {
-	return predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			return filter(e.Meta, e.Object)
-		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			return filter(e.MetaOld, e.ObjectOld) || filter(e.MetaNew, e.ObjectNew)
-		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			return filter(e.Meta, e.Object)
-		},
-	}
-}
-
-func getNodePort(service *v1.Service) int32 {
-	for _, port := range service.Spec.Ports {
-		if port.NodePort != 0 {
-			return port.NodePort
+func getServiceFromServiceList(list *corev1.ServiceList, service types.NamespacedName) *corev1.Service {
+	for _, svc := range list.Items {
+		if svc.Annotations[serviceIdentifyerAnnotationKey] == service.String() {
+			return &svc
 		}
 	}
-
-	return 0
+	return nil
 }
