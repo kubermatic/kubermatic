@@ -251,8 +251,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil
 	}
 
-	// Wait until we have a running etcd
-	if kubermaticv1.HealthStatusDown == cluster.Status.ExtendedHealth.Etcd {
+	if cluster.Status.ExtendedHealth.Etcd != kubermaticv1.HealthStatusUp {
 		log.Debug("Skipping because the cluster has no running etcd yet")
 		return nil
 	}
