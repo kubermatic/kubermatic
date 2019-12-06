@@ -390,6 +390,9 @@ function cleanup_kubermatic_clusters_in_kind {
   set +e
   # Clean up clusters
   kubectl delete cluster --all --ignore-not-found=true
+
+  # Kill all descendant processes
+  pkill -P $$
   set -e
 
   return $originalRC
