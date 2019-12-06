@@ -25,8 +25,8 @@ type BindUserToRoleReader struct {
 func (o *BindUserToRoleReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
 
-	case 201:
-		result := NewBindUserToRoleCreated()
+	case 200:
+		result := NewBindUserToRoleOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -58,24 +58,24 @@ func (o *BindUserToRoleReader) ReadResponse(response runtime.ClientResponse, con
 	}
 }
 
-// NewBindUserToRoleCreated creates a BindUserToRoleCreated with default headers values
-func NewBindUserToRoleCreated() *BindUserToRoleCreated {
-	return &BindUserToRoleCreated{}
+// NewBindUserToRoleOK creates a BindUserToRoleOK with default headers values
+func NewBindUserToRoleOK() *BindUserToRoleOK {
+	return &BindUserToRoleOK{}
 }
 
-/*BindUserToRoleCreated handles this case with default header values.
+/*BindUserToRoleOK handles this case with default header values.
 
 RoleBinding
 */
-type BindUserToRoleCreated struct {
+type BindUserToRoleOK struct {
 	Payload *models.RoleBinding
 }
 
-func (o *BindUserToRoleCreated) Error() string {
-	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] bindUserToRoleCreated  %+v", 201, o.Payload)
+func (o *BindUserToRoleOK) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] bindUserToRoleOK  %+v", 200, o.Payload)
 }
 
-func (o *BindUserToRoleCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (o *BindUserToRoleOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.RoleBinding)
 
