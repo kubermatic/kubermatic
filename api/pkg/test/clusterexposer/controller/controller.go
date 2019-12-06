@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -201,6 +202,12 @@ func (r *reconciler) createOuterService(targetServiceName string) (*v1.Service, 
 	}
 	if err := r.outerClient.Create(r.ctx, newService); err != nil {
 		return nil, fmt.Errorf("failed to create outer service: %v", err)
+	}
+	// We must set our TargetPort to the same port as our NodePort
+	oldSvc := newService.DeepCopy()
+	newService.Spec.Ports[0].TargetPort = intstr.FromInt(int(newService.Spec.Ports[0].NodePort))
+	if err := r.outerClient.Patch(r.ctx, newService, ctrlruntimeclient.MergeFrom(oldSvc)); err != nil {
+		return nil, fmt.Errorf("failed to set target port to nodeport: %v", err)
 	}
 	return newService, nil
 }
