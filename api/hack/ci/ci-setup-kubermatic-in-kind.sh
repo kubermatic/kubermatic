@@ -138,6 +138,9 @@ function print_cluster_exposer_logs {
   echodate "Printing clusterexposer logs"
   cat /var/log/clusterexposer.log
   echodate "Done printing clusterexposer logs"
+
+  echodate "Sleeping for debug"
+  sleep 1h
   set -e
 
   return $originalRC
