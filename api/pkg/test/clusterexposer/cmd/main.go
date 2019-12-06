@@ -113,7 +113,7 @@ func run(cmd *cobra.Command, _ []string) error {
 	// Create a new Cmd to provide shared dependencies and start components
 	log.Info("Setting up inner manager")
 	mgr, err := manager.New(innerCfg, manager.Options{
-		MetricsBindAddress: "2047",
+		MetricsBindAddress: "127.0.0.1:2047",
 		Port:               0,
 	})
 	if err != nil {

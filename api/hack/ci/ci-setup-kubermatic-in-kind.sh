@@ -111,20 +111,8 @@ echodate "Creating the kind cluster"
 export KUBECONFIG=~/.kube/config
 kind create cluster --name ${SEED_NAME} --image=kindest/node:v1.15.6
 
-DOCKER_CONFIG=/ docker run \
-  --name controller \
-  --detach \
-  -v ${KUBECONFIG}:/inner \
-  -v /etc/kubeconfig/kubeconfig:/outer \
-  --network host \
-  --privileged \
-  quay.io/kubermatic/cluster-exposer:v1.1.0-dev-2 \
-  --kubeconfig-inner "/inner" \
-  --kubeconfig-outer "/outer" \
-  --namespace "default" \
-  --build-id "$PROW_JOB_ID"
-
 echodate "Starting clusterexposer"
+make -C api download-gocache
 CGO_ENABLED=0 go run ./api/pkg/test/clusterexposer/cmd \
   --kubeconfig-inner "$KUBECONFIG" \
   --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
@@ -138,9 +126,6 @@ function print_cluster_exposer_logs {
   echodate "Printing clusterexposer logs"
   cat /var/log/clusterexposer.log
   echodate "Done printing clusterexposer logs"
-
-  echodate "Sleeping for debug"
-  sleep 1h
   set -e
 
   return $originalRC
