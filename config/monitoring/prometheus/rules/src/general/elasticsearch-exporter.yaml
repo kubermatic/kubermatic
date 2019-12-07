@@ -43,3 +43,5 @@ groups:
     runbook:
       steps:
       - Check the shard allocation via `http://es-data:9200/_cat/shards?v`.
+      - potential fix could be to delete the `UNASSIGNED` shards by `curl http://es-data:9200/_cat/shards | grep UNASSIGNED | awk {'print $1'} | xargs -i curl -XDELETE \"http://es-data:9200/{}\"`
+
