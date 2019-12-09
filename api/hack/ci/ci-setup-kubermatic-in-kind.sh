@@ -183,7 +183,7 @@ helm init --wait --service-account=tiller
 TEST_NAME="Deploying dex"
 echodate "Deploying dex"
 rm config/oauth/templates/ingress.yaml
-cp $(dirname $0)/testdata/oauth_configmap.yaml config/oauth/templates/configmap.yaml
+cp ./api/hack/ci/testdata/oauth_configmap.yaml config/oauth/templates/configmap.yaml
 
 echodate "Creating kubermatic-fast storageclass"
 TEST_NAME="Create kubermatic-fast storageclass"
