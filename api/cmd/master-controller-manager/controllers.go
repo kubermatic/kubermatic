@@ -69,7 +69,6 @@ func rbacControllerFactoryCreator(
 	workerCount int,
 	selectorOps func(*metav1.ListOptions),
 ) seedcontrollerlifecycle.ControllerFactory {
-	// register metrics
 	rbacMetrics := rbac.NewMetrics()
 	prometheus.MustRegister(rbacMetrics.Workers)
 
