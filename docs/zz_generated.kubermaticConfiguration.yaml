@@ -7,7 +7,8 @@ spec:
   # API configures the frontend REST API used by the dashboard.
   api:
     # AccessibleAddons is a list of addons that should be enabled in the API.
-    accessibleAddons: []
+    accessibleAddons:
+      - node-exporter
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic REST API image.
@@ -330,7 +331,6 @@ spec:
           - rbac
           - kubelet-configmap
           - default-storage-class
-          - node-exporter
           - nodelocal-dns-cache
           - pod-security-policy
           - logrotate
