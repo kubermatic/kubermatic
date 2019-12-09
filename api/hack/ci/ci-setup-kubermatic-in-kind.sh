@@ -120,6 +120,7 @@ kind create cluster --name ${SEED_NAME} --image=kindest/node:v1.15.6
 
 echodate "Starting clusterexposer"
 make -C api download-gocache
+CGO_ENABLED=0 go build -v -o /dev/null ./api/pkg/test/clusterexposer/cmd
 CGO_ENABLED=0 go run ./api/pkg/test/clusterexposer/cmd \
   --kubeconfig-inner "$KUBECONFIG" \
   --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
