@@ -103,7 +103,7 @@ func TestReconcilingSeed(t *testing.T) {
 				},
 			}
 
-			if err := reconciler.reconcile(test.input, log); err != nil {
+			if err := reconciler.reconcile(test.input, seedClient, log); err != nil {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
