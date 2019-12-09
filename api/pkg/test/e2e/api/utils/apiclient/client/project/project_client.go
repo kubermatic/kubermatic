@@ -56,7 +56,7 @@ func (a *Client) AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, auth
 /*
 BindUserToClusterRole Binds user to cluster role
 */
-func (a *Client) BindUserToClusterRole(params *BindUserToClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToClusterRoleCreated, error) {
+func (a *Client) BindUserToClusterRole(params *BindUserToClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToClusterRoleOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewBindUserToClusterRoleParams()
@@ -78,7 +78,7 @@ func (a *Client) BindUserToClusterRole(params *BindUserToClusterRoleParams, auth
 	if err != nil {
 		return nil, err
 	}
-	return result.(*BindUserToClusterRoleCreated), nil
+	return result.(*BindUserToClusterRoleOK), nil
 
 }
 
@@ -1552,7 +1552,7 @@ func (a *Client) RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams
 /*
 UnbindUserFromClusterRoleBinding Unbinds user from cluster role binding
 */
-func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromClusterRoleBindingCreated, error) {
+func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromClusterRoleBindingOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUnbindUserFromClusterRoleBindingParams()
@@ -1574,7 +1574,7 @@ func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterR
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UnbindUserFromClusterRoleBindingCreated), nil
+	return result.(*UnbindUserFromClusterRoleBindingOK), nil
 
 }
 
