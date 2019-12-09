@@ -71,7 +71,7 @@ func Add(
 		return fmt.Errorf("failed to construct controller: %v", err)
 	}
 
-	// watch for changes to KubermaticConfigurations in the master cluster
+	// watch for changes to KubermaticConfigurations in the master cluster and reconcile all seeds
 	configEventHandler := newEventHandler(func(_ handler.MapObject) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
@@ -92,15 +92,15 @@ func Add(
 		return requests
 	})
 
-	typesToWatch := []runtime.Object{
-		&operatorv1alpha1.KubermaticConfiguration{},
-		&kubermaticv1.Seed{},
+	config := &operatorv1alpha1.KubermaticConfiguration{}
+	if err := c.Watch(&source.Kind{Type: config}, configEventHandler, namespacePredicate); err != nil {
+		return fmt.Errorf("failed to create watcher for %T: %v", config, err)
 	}
 
-	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, configEventHandler, namespacePredicate); err != nil {
-			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
-		}
+	// watch for changes to Seed CRs inside the master cluster and reconcile the seed itself only
+	seed := &kubermaticv1.Seed{}
+	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate); err != nil {
+		return fmt.Errorf("failed to create watcher for %T: %v", seed, err)
 	}
 
 	// watch all resources we manage inside all configured seeds
