@@ -17,6 +17,9 @@ export KUBERMATIC_UI_REPLICAS="${KUBERMATIC_UI_REPLICAS:-0}"
 # got successfully built.
 export KUBERMATIC_DASHBOARD_VERSION="${KUBERMATIC_DASHBOARD_VERSION:-latest}"
 
+# Consider self-installed go installations
+export PATH=$PATH:/usr/local/go/bin
+
 if [[ -z ${JOB_NAME} ]]; then
 	echo "This script should only be running in a CI environment."
 	exit 1
