@@ -1,10 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
-
-	"go.uber.org/zap"
 
 	projectlabelsynchronizer "github.com/kubermatic/kubermatic/api/pkg/controller/project-label-synchronizer"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
@@ -21,7 +20,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -71,71 +69,31 @@ func rbacControllerFactoryCreator(
 	workerCount int,
 	selectorOps func(*metav1.ListOptions),
 ) seedcontrollerlifecycle.ControllerFactory {
-
 	rbacMetrics := rbac.NewMetrics()
-	seedKubeconfigRetrievalSuccessMetric := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "kubermatic",
-		Subsystem: "master_controller_manager",
-		Name:      "seed_kubeconfig_retrieval_success",
-		Help:      "Indicates if retrieving the kubeconfig for the given seed was successful",
-	}, []string{"seed"})
-	// GaugeVec doesn't have a func to only keep metrics with a given label value, it only
-	// has a func to delete metrics with a given label value. Hence we have to track ourselves
-	// which label values get removed
-	seedsWithMetrics := sets.NewString()
-	prometheus.MustRegister(rbacMetrics.Workers, seedKubeconfigRetrievalSuccessMetric)
+	prometheus.MustRegister(rbacMetrics.Workers)
 
-	factory := func(mgr manager.Manager) error {
-		seeds, err := seedsGetter()
-		if err != nil {
-			return fmt.Errorf("failed to get seeds: %v", err)
-		}
+	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		masterClusterProvider, err := rbacClusterProvider(mastercfg, "master", true, selectorOps)
 		if err != nil {
-			return fmt.Errorf("failed to create master rbac provider: %v", err)
+			return "", fmt.Errorf("failed to create master rbac provider: %v", err)
 		}
+
 		allClusterProviders := []*rbac.ClusterProvider{masterClusterProvider}
 
-		newSeedsWithMetrics := sets.NewString()
-		for _, seed := range seeds {
-			kubeConfig, err := seedKubeconfigGetter(seed)
+		for seedName, seedMgr := range seedManagerMap {
+			clusterProvider, err := rbacClusterProvider(seedMgr.GetConfig(), seedName, false, selectorOps)
 			if err != nil {
-				kubermaticlog.Logger.With("error", err).With("seed", seed.Name).Error("error getting kubeconfig")
-				// Dont let a single broken kubeconfig break the whole controller creation
-				seedKubeconfigRetrievalSuccessMetric.WithLabelValues(seed.Name).Set(0)
-				continue
-			}
-			seedKubeconfigRetrievalSuccessMetric.WithLabelValues(seed.Name).Set(1)
-			clusterProvider, err := rbacClusterProvider(kubeConfig, seed.Name, false, selectorOps)
-			if err != nil {
-				return fmt.Errorf("failed to create rbac provider for seed %q: %v", seed.Name, err)
+				return "", fmt.Errorf("failed to create rbac provider for seed %q: %v", seedName, err)
 			}
 			allClusterProviders = append(allClusterProviders, clusterProvider)
 		}
-		removedSeeds := sets.NewString(seedsWithMetrics.List()...)
-		removedSeeds.Delete(newSeedsWithMetrics.List()...)
-		_ = seedKubeconfigRetrievalSuccessMetric.DeleteLabelValues(removedSeeds.List()...)
-		seedsWithMetrics = newSeedsWithMetrics
 
 		ctrl, err := rbac.New(rbacMetrics, allClusterProviders, workerCount)
 		if err != nil {
-			return fmt.Errorf("failed to create rbac controller: %v", err)
+			return "", fmt.Errorf("failed to create rbac controller: %v", err)
 		}
 
-		return mgr.Add(manager.RunnableFunc(func(stopCh <-chan struct{}) error {
-			// This is an implementation of sigs.k8s.io/controller-runtime/pkg/manager.Runnable
-			// It wraps the actual controllers implementation to make sure informers are started first
-			for _, clusterProvider := range allClusterProviders {
-				clusterProvider.StartInformers(stopCh)
-				if err := clusterProvider.WaitForCachesToSync(stopCh); err != nil {
-					return fmt.Errorf("RBAC controller failed to sync cache: %v", err)
-				}
-			}
-			return ctrl.Start(stopCh)
-		}))
-	}
-	return func(mgr manager.Manager) (string, error) {
-		return "rbac-controller", factory(mgr)
+		return "rbac-controller", mgr.Add(ctrl)
 	}
 }
 
@@ -160,34 +118,22 @@ func rbacClusterProvider(cfg *rest.Config, name string, master bool, labelSelect
 }
 
 func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
-	factory := func(mgr manager.Manager) error {
-		seedManagerMap, err := createSeedManagers("project-label-synchronizer-factory", ctrlCtx, mgr)
-		if err != nil {
-			return fmt.Errorf("failed build seeds managers: %v", err)
-		}
-
-		return projectlabelsynchronizer.Add(
-			ctrlCtx.ctx,
-			mgr,
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return projectlabelsynchronizer.ControllerName, projectlabelsynchronizer.Add(
+			ctx,
+			masterMgr,
 			seedManagerMap,
 			ctrlCtx.log,
 			ctrlCtx.workerCount,
-			ctrlCtx.workerName)
-	}
-	return func(mgr manager.Manager) (string, error) {
-		return projectlabelsynchronizer.ControllerName, factory(mgr)
+			ctrlCtx.workerName,
+		)
 	}
 }
 
 func userSSHKeysSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
-	factory := func(mgr manager.Manager) error {
-		seedManagerMap, err := createSeedManagers("usersshkeys-synchronizer-factory", ctrlCtx, mgr)
-		if err != nil {
-			return fmt.Errorf("failed build seeds managers: %v", err)
-		}
-
-		return usersshkeyssynchronizer.Add(
-			ctrlCtx.ctx,
+	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return usersshkeyssynchronizer.ControllerName, usersshkeyssynchronizer.Add(
+			ctx,
 			mgr,
 			seedManagerMap,
 			ctrlCtx.log,
@@ -195,41 +141,4 @@ func userSSHKeysSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontr
 			ctrlCtx.workerCount,
 		)
 	}
-	return func(mgr manager.Manager) (string, error) {
-		return usersshkeyssynchronizer.ControllerName, factory(mgr)
-	}
-}
-
-func createSeedManagers(name string, ctrlCtx *controllerContext, mgr manager.Manager) (map[string]manager.Manager, error) {
-	log := ctrlCtx.log.Named(name)
-	seeds, err := ctrlCtx.seedsGetter()
-	if err != nil {
-		log.Errorw("Failed to get seeds", zap.Error(err))
-		return nil, fmt.Errorf("failed to get seeds: %v", err)
-	}
-
-	seedManagerMap := make(map[string]manager.Manager, len(seeds))
-	for seedName, seed := range seeds {
-		log := ctrlCtx.log.With("seed", seed.Name)
-		kubeconfig, err := ctrlCtx.seedKubeconfigGetter(seed)
-		if err != nil {
-			log.Errorw("Failed to get kubeconfig for seed", zap.Error(err))
-			// Don't let one defunct seed break everything. We have a metric for this
-			// in the rbac controller factory, so just log it here
-			continue
-		}
-		seedMgr, err := manager.New(kubeconfig, manager.Options{
-			MetricsBindAddress: "0",
-		})
-		if err != nil {
-			log.Errorw("Failed to construct mgr for seed", zap.Error(err))
-			continue
-		}
-		seedManagerMap[seedName] = seedMgr
-		if err := mgr.Add(seedMgr); err != nil {
-			return nil, fmt.Errorf("failed to add controller manager for seed %q to mgr: %v", seedName, err)
-		}
-	}
-
-	return seedManagerMap, nil
 }

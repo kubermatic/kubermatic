@@ -1,6 +1,7 @@
 package rbac
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -42,7 +43,8 @@ type ControllerAggregator struct {
 	rbacProjectController  *projectController
 	rbacResourceController *resourcesController
 
-	metrics *Metrics
+	metrics             *Metrics
+	allClusterProviders []*ClusterProvider
 }
 
 type projectResource struct {
@@ -130,6 +132,7 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider, workerCount i
 		rbacProjectController:  projectRBACCtrl,
 		rbacResourceController: resourcesRBACCtrl,
 		metrics:                metrics,
+		allClusterProviders:    allClusterProviders,
 	}, nil
 }
 
@@ -137,6 +140,14 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider, workerCount i
 // sigs.k8s.io/controller-runtime/pkg/manager.Runnable
 func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
 	defer runtime.HandleCrash()
+
+	// wait for all caches in all clusters to get in-sync
+	for _, clusterProvider := range a.allClusterProviders {
+		clusterProvider.StartInformers(stopCh)
+		if err := clusterProvider.WaitForCachesToSync(stopCh); err != nil {
+			return fmt.Errorf("failed to sync cache: %v", err)
+		}
+	}
 
 	go a.rbacProjectController.run(a.workerCount, stopCh)
 	go a.rbacResourceController.run(a.workerCount, stopCh)
@@ -149,7 +160,6 @@ func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
 }
 
 func shouldEnqueueSecret(name string) bool {
-
 	supportedPrefixes := []string{"sa-token", "credential"}
 	for _, prefix := range supportedPrefixes {
 		if strings.HasPrefix(name, prefix) {
