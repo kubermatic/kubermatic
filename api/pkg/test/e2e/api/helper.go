@@ -61,23 +61,15 @@ func GetMasterToken() (string, error) {
 	}
 
 	issuerURLPrefix := getIssuerURLPrefix()
-
-	var requestToken string
-	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
-		requestToken, err = oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, "http://localhost:8000")
-		if err != nil {
-			fmt.Printf("Failed to get OIDC request token: %v\n", err)
-			return false, nil
-		}
-		return true, nil
-	}); err != nil {
-		return "", fmt.Errorf("failed to get OIDC request token: %v", err)
-	}
-
 	login, password := oidc.GetOIDCClient()
 
 	var oidcAuthToken string
 	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+		requestToken, err := oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, "http://localhost:8000")
+		if err != nil {
+			fmt.Printf("Failed to get OIDC request token: %v\n", err)
+			return false, nil
+		}
 		oidcAuthToken, err = oidc.GetOIDCAuthToken(hClient, requestToken, u, issuerURLPrefix, login, password)
 		if err != nil {
 			fmt.Printf("Failed to get OIDC auth token: %v\n", err)
@@ -85,7 +77,7 @@ func GetMasterToken() (string, error) {
 		}
 		return true, nil
 	}); err != nil {
-		return "", fmt.Errorf("failed to get OIDC quath token: %v", err)
+		return "", fmt.Errorf("failed to get OIDC token: %v", err)
 	}
 
 	return oidcAuthToken, nil
