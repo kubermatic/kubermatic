@@ -6,12 +6,21 @@
 # This script should be sourced, not called, so callers get the variables it sets
 
 # The kubemaric version to build
-export KUBERMATIC_VERSION=$(git rev-parse HEAD)
-# Number of UI replicas, zero by default
-export KUBERMATIC_UI_REPLICAS="${KUBERMATIC_UI_REPLICAS:-0}"
+export KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
 export SEED_NAME=prow-build-cluster
 export KUBERMATIC_APISERVER_ADDRESS="localhost:8080"
 export KUBERMATIC_NO_WORKER_NAME=true
+export KUBERMATIC_SKIP_BUILDING="${KUBERMATIC_SKIP_BUILDING:-false}"
+# Number of UI replicas, zero by default as we do not test the UI
+export KUBERMATIC_UI_REPLICAS="${KUBERMATIC_UI_REPLICAS:-0}"
+# Defaults to a hardcoded version so we do not test by default if the latest dashboard version
+# got successfully built.
+export KUBERMATIC_DASHBOARD_VERSION="${KUBERMATIC_DASHBOARD_VERSION:-latest}"
+# ADDITIONAL_HELM_ARGS allows to configure extra args for helm
+export ADDITIONAL_HELM_ARGS="${ADDITIONAL_HELM_ARGS:-}"
+
+# Consider self-installed go installations
+export PATH=$PATH:/usr/local/go/bin
 
 if [[ -z ${JOB_NAME} ]]; then
 	echo "This script should only be running in a CI environment."
@@ -23,7 +32,7 @@ if [[ -z ${PROW_JOB_ID} ]]; then
 	exit 1
 fi
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
+cd "${GOPATH}/src/github.com/kubermatic/kubermatic"
 source ./api/hack/lib.sh
 
 TEST_NAME="Get Vault token"
@@ -100,8 +109,6 @@ echodate "Set aliases in .bashrc"
 echodate "Setting dex.oauth alias in /etc/hosts"
 temp_hosts="$(mktemp)"
 sed 's/localhost/localhost dex.oauth/' /etc/hosts > $temp_hosts
-# I will regret this...
-echo '10.98.184.166 minio.gocache.svc.cluster.local.' >> $temp_hosts
 cat $temp_hosts >/etc/hosts
 echodate "Set dex.oauth alias in /etc/hosts"
 
@@ -113,6 +120,7 @@ kind create cluster --name ${SEED_NAME} --image=kindest/node:v1.15.6
 
 echodate "Starting clusterexposer"
 make -C api download-gocache
+CGO_ENABLED=0 go build -v -o /dev/null ./api/pkg/test/clusterexposer/cmd
 CGO_ENABLED=0 go run ./api/pkg/test/clusterexposer/cmd \
   --kubeconfig-inner "$KUBECONFIG" \
   --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
@@ -175,7 +183,7 @@ helm init --wait --service-account=tiller
 TEST_NAME="Deploying dex"
 echodate "Deploying dex"
 rm config/oauth/templates/ingress.yaml
-cp $(dirname $0)/testdata/oauth_configmap.yaml config/oauth/templates/configmap.yaml
+cp ./api/hack/ci/testdata/oauth_configmap.yaml config/oauth/templates/configmap.yaml
 
 echodate "Creating kubermatic-fast storageclass"
 TEST_NAME="Create kubermatic-fast storageclass"
@@ -193,65 +201,65 @@ helm install --wait --timeout 180 \
 TEST_NAME="Deploying kubermatic CRDs"
 retry 5 kubectl apply -f config/kubermatic/crd
 
-# Build kubermatic binaries and push the image
-echodate "Building containers with tag $KUBERMATIC_VERSION"
-echodate "Building binaries"
-TEST_NAME="Build Kubermatic binaries"
-time retry 1 make -C api build
+if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
+  # Build kubermatic binaries and push the image
+  echodate "Building containers with tag $KUBERMATIC_VERSION"
+  echodate "Building binaries"
+  TEST_NAME="Build Kubermatic binaries"
+  time retry 1 make -C api build
 
-(
-  echodate "Building docker image"
-  TEST_NAME="Build Kubermatic Docker image"
-  cd api
-  IMAGE_NAME="quay.io/kubermatic/api:$KUBERMATIC_VERSION"
-  time retry 5 docker build -t "$IMAGE_NAME" .
-  time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
-)
-(
-  echodate "Building addons image"
-  TEST_NAME="Build addons Docker image"
-  cd addons
-  IMAGE_NAME="quay.io/kubermatic/addons:$KUBERMATIC_VERSION"
-  time retry 5 docker build -t "${IMAGE_NAME}" .
-  time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
-)
-(
-  echodate "Building openshift addons image"
-  TEST_NAME="Build openshift Docker image"
-  cd openshift_addons
-  IMAGE_NAME="quay.io/kubermatic/openshift-addons:$KUBERMATIC_VERSION"
-  time retry 5 docker build -t "${IMAGE_NAME}" .
-  time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
-)
-(
-  echodate "Building dnatcontroller image"
-  TEST_NAME="Build dnatcontroller Docker image"
-  cd api/cmd/kubeletdnat-controller
-  make build
-  IMAGE_NAME="quay.io/kubermatic/kubeletdnat-controller:$KUBERMATIC_VERSION"
-  time retry 5 docker build -t "${IMAGE_NAME}" .
-  time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
-)
-(
-  echodate "Building user-ssh-keys-agent image"
-  TEST_NAME="Build user-ssh-keys-agent Docker image"
-  cd api/cmd/user-ssh-keys-agent
-  make build
-  retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-  IMAGE_NAME=quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION
-  time retry 5 docker build -t "${IMAGE_NAME}" .
-  time retry 5 docker push "quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
-)
-echodate "Successfully built and loaded all images"
+  (
+    echodate "Building docker image"
+    TEST_NAME="Build Kubermatic Docker image"
+    cd api
+    IMAGE_NAME="quay.io/kubermatic/api:$KUBERMATIC_VERSION"
+    time retry 5 docker build -t "$IMAGE_NAME" .
+    time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
+  )
+  (
+    echodate "Building addons image"
+    TEST_NAME="Build addons Docker image"
+    cd addons
+    IMAGE_NAME="quay.io/kubermatic/addons:$KUBERMATIC_VERSION"
+    time retry 5 docker build -t "${IMAGE_NAME}" .
+    time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
+  )
+  (
+    echodate "Building openshift addons image"
+    TEST_NAME="Build openshift Docker image"
+    cd openshift_addons
+    IMAGE_NAME="quay.io/kubermatic/openshift-addons:$KUBERMATIC_VERSION"
+    time retry 5 docker build -t "${IMAGE_NAME}" .
+    time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
+  )
+  (
+    echodate "Building dnatcontroller image"
+    TEST_NAME="Build dnatcontroller Docker image"
+    cd api/cmd/kubeletdnat-controller
+    make build
+    IMAGE_NAME="quay.io/kubermatic/kubeletdnat-controller:$KUBERMATIC_VERSION"
+    time retry 5 docker build -t "${IMAGE_NAME}" .
+    time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
+  )
+  (
+    echodate "Building user-ssh-keys-agent image"
+    TEST_NAME="Build user-ssh-keys-agent Docker image"
+    cd api/cmd/user-ssh-keys-agent
+    make build
+    retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
+    IMAGE_NAME=quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION
+    time retry 5 docker build -t "${IMAGE_NAME}" .
+    time retry 5 docker push "quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
+  )
+  echodate "Successfully built and loaded all images"
+fi
 
-# Defaults to a hardcoded version so we do not test by default if the latest dashboard version
-# got successfully built.
-LATEST_DASHBOARD="${LATEST_DASHBOARD:-43037e8f118f0e310cfcae713bc2b3bd1a2c8496}"
 
 # --force is needed in case the first attempt at installing didn't succeed
 # see https://github.com/helm/helm/pull/3597
 retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set=kubermatic.isMaster=true \
+  --set=kubermatic.imagePullSecretData=$IMAGE_PULL_SECRET_DATA \
   --set-string=kubermatic.controller.addons.kubernetes.image.tag="$KUBERMATIC_VERSION" \
   --set-string=kubermatic.controller.image.tag="$KUBERMATIC_VERSION" \
   --set-string=kubermatic.controller.addons.openshift.image.tag="$KUBERMATIC_VERSION" \
@@ -259,7 +267,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set=kubermatic.controller.datacenterName=${SEED_NAME} \
   --set=kubermatic.api.replicas=1 \
   --set-string=kubermatic.masterController.image.tag="$KUBERMATIC_VERSION" \
-  --set-string=kubermatic.ui.image.tag=${LATEST_DASHBOARD} \
+  --set-string=kubermatic.ui.image.tag=${KUBERMATIC_DASHBOARD_VERSION} \
   --set=kubermatic.ui.replicas="${KUBERMATIC_UI_REPLICAS}" \
   --set=kubermatic.ingressClass=non-existent \
   --set=kubermatic.checks.crd.disable=true \
@@ -272,6 +280,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set=kubermatic.apiserverDefaultReplicas=1 \
   --set=kubermatic.deployVPA=false \
   --namespace=kubermatic \
+  ${ADDITIONAL_HELM_ARGS} \
   ${OPENSHIFT_HELM_ARGS:-} \
   --values ${VALUES_FILE} \
   kubermatic \
@@ -304,6 +313,11 @@ spec:
     namespace: kubermatic
     fieldPath: kubeconfig
   datacenters:
+    byo-kubernetes:
+      location: Frankfurt
+      country: DE
+      spec:
+         bringyourown: {}
     aws-eu-central-1a:
       location: EU (Frankfurt)
       country: DE
@@ -357,6 +371,12 @@ spec:
       spec:
         digitalocean:
           region: ams3
+    do-fra1:
+      location: Frankfurt
+      country: DE
+      spec:
+        digitalocean:
+          region: fra1
     kubevirt-europe-west3-c:
       location: Frankfurt
       country: DE
@@ -398,3 +418,5 @@ function cleanup_kubermatic_clusters_in_kind {
   return $originalRC
 }
 trap cleanup_kubermatic_clusters_in_kind EXIT
+
+cd -
