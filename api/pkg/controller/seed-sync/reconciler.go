@@ -14,6 +14,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -95,7 +96,7 @@ func (r *Reconciler) cleanupDeletedSeed(seedInMaster *kubermaticv1.Seed, seedCli
 		// The DELETE op can block indefinitely if the Kubermatic Operator
 		// has put a finalizer on the Seed inside the seed cluster and
 		// no operator is running at the moment.
-		cleanupCtx, cancel := context.WithTimeout(r.ctx, 30*time.Second)
+		cleanupCtx, cancel := context.WithTimeout(r.ctx, 60*time.Second)
 		defer cancel()
 
 		seedInSeed := &kubermaticv1.Seed{}
@@ -105,18 +106,39 @@ func (r *Reconciler) cleanupDeletedSeed(seedInMaster *kubermaticv1.Seed, seedCli
 			return fmt.Errorf("failed to probe for %s: %v", key, err)
 		}
 
-		// In cases where master and seed cluster are inside the same Kubernetes
-		// cluster, the Seed CR's copy is not actually a copy, but the same resource.
-		// This means that the "copy" has our CleanupFinalizer attached as well.
-		// Attempting to delete seedInMaster would therefore be blocked by
-		// our own finalizer.
-		// For this reason we check if master==seed and if so, only remove the
-		// finalizer later on.
+		// Now we can delete the Seed CR copy inside the seed cluster. This will not block
+		// until the operator had time to cleanup, so after this call we must wait for
+		// the Seed CR to be actually gone.
+		// If seed==master cluster, we must not wait for the deletion, because the Seed
+		// "copy" has a finalizer from ourselves and we would therefore wait indefinitely
+		// for ourselves.
 		if err == nil {
-			if seedInMaster.UID == seedInSeed.UID {
-				logger.Debug("Seed CR is identical to master version, not performing additional DELETE operation", "uid", seedInSeed.UID)
-			} else if err := seedClient.Delete(cleanupCtx, seedInSeed); err != nil {
+			logger.Debug("Deleting Seed now")
+			if err := seedClient.Delete(cleanupCtx, seedInSeed); err != nil {
 				return fmt.Errorf("failed to delete %s: %v", key, err)
+			}
+
+			if seedInMaster.UID != seedInSeed.UID {
+				logger.Debug("Waiting for Seed CR to be actually removed....")
+
+				err := wait.PollImmediate(1*time.Second, 30*time.Second, func() (done bool, err error) {
+					tmpSeed := &kubermaticv1.Seed{}
+					err = seedClient.Get(cleanupCtx, key, tmpSeed)
+					if err == nil {
+						return false, nil
+					}
+
+					if kerrors.IsNotFound(err) {
+						return true, nil
+					}
+
+					return false, fmt.Errorf("failed to probe for %s: %v", key, err)
+				})
+				if err != nil {
+					return fmt.Errorf("failed to wait for Seed to be removed in seed cluster: %v", err)
+				}
+
+				logger.Debug("Seed CR has been removed.")
 			}
 		}
 
