@@ -313,6 +313,11 @@ spec:
     namespace: kubermatic
     fieldPath: kubeconfig
   datacenters:
+    byo-kubernetes:
+      location: Frankfurt
+      country: DE
+      spec:
+         bringyourown: {}
     aws-eu-central-1a:
       location: EU (Frankfurt)
       country: DE
@@ -366,6 +371,12 @@ spec:
       spec:
         digitalocean:
           region: ams3
+    do-fra1:
+      location: Frankfurt
+      country: DE
+      spec:
+        digitalocean:
+          region: fra1
     kubevirt-europe-west3-c:
       location: Frankfurt
       country: DE
