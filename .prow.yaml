@@ -866,6 +866,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-gce: "true"
       preset-kind-volume-mounts: "true"
+      preset-vault: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
