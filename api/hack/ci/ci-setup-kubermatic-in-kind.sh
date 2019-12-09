@@ -109,8 +109,6 @@ echodate "Set aliases in .bashrc"
 echodate "Setting dex.oauth alias in /etc/hosts"
 temp_hosts="$(mktemp)"
 sed 's/localhost/localhost dex.oauth/' /etc/hosts > $temp_hosts
-# I will regret this...
-echo '10.98.184.166 minio.gocache.svc.cluster.local.' >> $temp_hosts
 cat $temp_hosts >/etc/hosts
 echodate "Set dex.oauth alias in /etc/hosts"
 
