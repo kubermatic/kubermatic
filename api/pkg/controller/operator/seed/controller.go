@@ -72,7 +72,6 @@ func Add(
 	}
 
 	// watch for changes to KubermaticConfigurations in the master cluster
-	obj := &operatorv1alpha1.KubermaticConfiguration{}
 	configEventHandler := newEventHandler(func(_ handler.MapObject) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
@@ -93,8 +92,15 @@ func Add(
 		return requests
 	})
 
-	if err := c.Watch(&source.Kind{Type: obj}, configEventHandler, namespacePredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %v", obj, err)
+	typesToWatch := []runtime.Object{
+		&operatorv1alpha1.KubermaticConfiguration{},
+		&kubermaticv1.Seed{},
+	}
+
+	for _, t := range typesToWatch {
+		if err := c.Watch(&source.Kind{Type: t}, configEventHandler, namespacePredicate); err != nil {
+			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
+		}
 	}
 
 	// watch all resources we manage inside all configured seeds
@@ -137,7 +143,6 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 		&rbacv1.ClusterRoleBinding{},
 		&policyv1beta1.PodDisruptionBudget{},
 		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
-		&kubermaticv1.Seed{},
 	}
 
 	for _, t := range typesToWatch {
@@ -146,9 +151,19 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 		}
 	}
 
+	// Seeds are not managed by the operator, but we still need to be notified when
+	// they are marked for deletion inside seed clusters
+	if err := watch(&kubermaticv1.Seed{}, predicateutil.ByNamespace(namespace)); err != nil {
+		return err
+	}
+
 	// namespaces are not managed by the operator and so can use neither namespacePredicate
 	// nor ManagedByPredicate, but still need to get their labels reconciled
-	return watch(&corev1.Namespace{}, predicateutil.ByName(namespace))
+	if err := watch(&corev1.Namespace{}, predicateutil.ByName(namespace)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // newEventHandler takes a obj->request mapper function and wraps it into an
