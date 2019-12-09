@@ -25,8 +25,8 @@ type UnbindUserFromRoleBindingReader struct {
 func (o *UnbindUserFromRoleBindingReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
 
-	case 201:
-		result := NewUnbindUserFromRoleBindingCreated()
+	case 200:
+		result := NewUnbindUserFromRoleBindingOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -58,24 +58,24 @@ func (o *UnbindUserFromRoleBindingReader) ReadResponse(response runtime.ClientRe
 	}
 }
 
-// NewUnbindUserFromRoleBindingCreated creates a UnbindUserFromRoleBindingCreated with default headers values
-func NewUnbindUserFromRoleBindingCreated() *UnbindUserFromRoleBindingCreated {
-	return &UnbindUserFromRoleBindingCreated{}
+// NewUnbindUserFromRoleBindingOK creates a UnbindUserFromRoleBindingOK with default headers values
+func NewUnbindUserFromRoleBindingOK() *UnbindUserFromRoleBindingOK {
+	return &UnbindUserFromRoleBindingOK{}
 }
 
-/*UnbindUserFromRoleBindingCreated handles this case with default header values.
+/*UnbindUserFromRoleBindingOK handles this case with default header values.
 
 RoleBinding
 */
-type UnbindUserFromRoleBindingCreated struct {
+type UnbindUserFromRoleBindingOK struct {
 	Payload *models.RoleBinding
 }
 
-func (o *UnbindUserFromRoleBindingCreated) Error() string {
-	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBindingCreated  %+v", 201, o.Payload)
+func (o *UnbindUserFromRoleBindingOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBindingOK  %+v", 200, o.Payload)
 }
 
-func (o *UnbindUserFromRoleBindingCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (o *UnbindUserFromRoleBindingOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.RoleBinding)
 

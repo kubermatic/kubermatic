@@ -3324,7 +3324,7 @@ func (r Routing) patchClusterRole() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: RoleBinding
+//       200: RoleBinding
 //       401: empty
 //       403: empty
 func (r Routing) bindUserToRole() http.Handler {
@@ -3352,7 +3352,7 @@ func (r Routing) bindUserToRole() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: RoleBinding
+//       200: RoleBinding
 //       401: empty
 //       403: empty
 func (r Routing) unbindUserFromRoleBinding() http.Handler {

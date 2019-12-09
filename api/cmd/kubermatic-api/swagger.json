@@ -4357,7 +4357,7 @@
           }
         ],
         "responses": {
-          "201": {
+          "200": {
             "description": "RoleBinding",
             "schema": {
               "$ref": "#/definitions/RoleBinding"
@@ -4434,7 +4434,7 @@
           }
         ],
         "responses": {
-          "201": {
+          "200": {
             "description": "RoleBinding",
             "schema": {
               "$ref": "#/definitions/RoleBinding"
