@@ -11,7 +11,7 @@ function cleanup {
 }
 trap cleanup EXIT
 
-PRESET=$(cat <<EOF
+cat <<EOF >preset.yaml
 presets:
   items:
     - metadata:
@@ -32,9 +32,8 @@ presets:
           tenant: ${OS_TENANT_NAME}
           domain: ${OS_DOMAIN}
 EOF
-)
 
-export ADDITIONAL_HELM_ARGS="--set=kubermatic.presets=$(echo $PRESET|base64 -w0)"
+export ADDITIONAL_HELM_ARGS="--set=kubermatic.presets=$(cat preset.yaml|base64 -w0)"
 source "${SDIR}/ci-setup-kubermatic-in-kind.sh"
 
 # Create and run OIDC proxy client
