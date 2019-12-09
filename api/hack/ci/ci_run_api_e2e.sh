@@ -2,7 +2,8 @@
 set -euo pipefail
 
 SDIR=$(dirname $0)
-CONTROLLER_IMAGE="quay.io/kubermatic/cluster-exposer:v2.0.0"
+
+source ./api/hack/lib.sh
 
 function cleanup {
     cat ${SDIR}/../../pkg/test/e2e/api/utils/oidc-proxy-client/_build/oidc-proxy-client-errors
@@ -37,8 +38,37 @@ time docker build --network host -t quay.io/kubermatic/api:latestbuild .
 # Note that latestbuild tag comes from running "make docker-build"
 # scripts deploy.sh and expose.sh are provided by the docker image
 time deploy.sh latestbuild
-DOCKER_CONFIG=/ docker run --name controller -d -v /root/.kube/config:/inner -v /etc/kubeconfig/kubeconfig:/outer --network host --privileged ${CONTROLLER_IMAGE} --kubeconfig-inner "/inner" --kubeconfig-outer "/outer" --namespace "default" --build-id "$PROW_JOB_ID"
-docker logs -f controller &
+
+echo "Starting clusterexposer"
+make -C api download-gocache
+CGO_ENABLED=0 go run ./api/pkg/test/clusterexposer/cmd \
+  --kubeconfig-inner "$KUBECONFIG" \
+  --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
+  --build-id "$PROW_JOB_ID" &> /var/log/clusterexposer.log &
+
+function print_cluster_exposer_logs {
+  originalRC=$?
+
+  # Tolerate errors and just continue
+  set +e
+  echo "Printing clusterexposer logs"
+  cat /var/log/clusterexposer.log
+  echo "Done printing clusterexposer logs"
+  set -e
+
+  return $originalRC
+}
+trap print_cluster_exposer_logs EXIT
+
+echo "Waiting for cluster exposer to be running"
+
+retry 5 curl --fail http://127.0.0.1:2047/metrics
+echo "Cluster exposer is running"
+
+echo "Setting up iptables rules for to make nodeports available"
+iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.17.0.2
+echo "Successfully set up iptables rules for nodeports"
+
 time expose.sh
 
 # Step 3: An elegant hack that routes dex.oauth domain to localhost and then down to a dex service inside the inner Kube cluster

@@ -79,7 +79,7 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			for attempt := 1; attempt <= getMaxAttempts; attempt++ {
 				roleNameList, err = apiRunner.GetRoles(project.ID, tc.dc, cluster.ID)
 				if err != nil {
-					t.Fatalf("can not get user cluster roles due to error: %v", err)
+					t.Fatalf("can not get user cluster roles due to error: %v", GetErrorResponse(err))
 				}
 
 				if len(roleNameList) == len(tc.expectedRoleNames) {
