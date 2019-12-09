@@ -256,6 +256,7 @@ presubmits:
     labels:
       preset-azure: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -329,6 +330,7 @@ presubmits:
     labels:
       preset-gce: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -360,6 +362,7 @@ presubmits:
     labels:
       preset-gce: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -395,6 +398,7 @@ presubmits:
     labels:
       preset-azure: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -429,6 +433,7 @@ presubmits:
     labels:
       preset-digitalocean: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -462,6 +467,7 @@ presubmits:
     labels:
       preset-packet: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -493,6 +499,7 @@ presubmits:
     labels:
       preset-kubevirt: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -526,6 +533,7 @@ presubmits:
     labels:
       preset-hetzner: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -562,6 +570,7 @@ presubmits:
     labels:
       preset-openstack: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -595,6 +604,7 @@ presubmits:
     labels:
       preset-vsphere: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -627,6 +637,7 @@ presubmits:
     labels:
       preset-vsphere: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -699,6 +710,7 @@ presubmits:
     labels:
       preset-openstack: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -734,6 +746,7 @@ presubmits:
     labels:
       preset-openstack: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -769,6 +782,7 @@ presubmits:
     labels:
       preset-openstack: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
@@ -808,6 +822,7 @@ presubmits:
       preset-openshift-pull-secret: "true"
       preset-vault: "true"
       preset-docker-push: "true"
+      preset-docker-pull: "true"
       preset-oidc: "true"
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
