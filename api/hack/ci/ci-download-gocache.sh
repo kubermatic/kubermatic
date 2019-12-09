@@ -30,7 +30,7 @@ GOCACHE=$(go env GOCACHE)
 # Make sure it actually exists
 mkdir -p $GOCACHE
 
-CACHE_VERSION="${PULL_BASE_SHA}"
+CACHE_VERSION="${CACHE_VERSION:-${PULL_BASE_SHA}}"
 if [ -z ${PULL_NUMBER:-} ]; then
   # Special case: This is called in a Postubmit. Go one revision back,
   # as there can't be a cache for the current revision
