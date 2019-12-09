@@ -1815,7 +1815,7 @@
           }
         ],
         "responses": {
-          "201": {
+          "200": {
             "description": "ClusterRoleBinding",
             "schema": {
               "$ref": "#/definitions/ClusterRoleBinding"
@@ -1885,7 +1885,7 @@
           }
         ],
         "responses": {
-          "201": {
+          "200": {
             "description": "ClusterRoleBinding",
             "schema": {
               "$ref": "#/definitions/ClusterRoleBinding"

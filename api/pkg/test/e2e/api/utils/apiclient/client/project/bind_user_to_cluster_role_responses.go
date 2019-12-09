@@ -25,8 +25,8 @@ type BindUserToClusterRoleReader struct {
 func (o *BindUserToClusterRoleReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
 
-	case 201:
-		result := NewBindUserToClusterRoleCreated()
+	case 200:
+		result := NewBindUserToClusterRoleOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -58,24 +58,24 @@ func (o *BindUserToClusterRoleReader) ReadResponse(response runtime.ClientRespon
 	}
 }
 
-// NewBindUserToClusterRoleCreated creates a BindUserToClusterRoleCreated with default headers values
-func NewBindUserToClusterRoleCreated() *BindUserToClusterRoleCreated {
-	return &BindUserToClusterRoleCreated{}
+// NewBindUserToClusterRoleOK creates a BindUserToClusterRoleOK with default headers values
+func NewBindUserToClusterRoleOK() *BindUserToClusterRoleOK {
+	return &BindUserToClusterRoleOK{}
 }
 
-/*BindUserToClusterRoleCreated handles this case with default header values.
+/*BindUserToClusterRoleOK handles this case with default header values.
 
 ClusterRoleBinding
 */
-type BindUserToClusterRoleCreated struct {
+type BindUserToClusterRoleOK struct {
 	Payload *models.ClusterRoleBinding
 }
 
-func (o *BindUserToClusterRoleCreated) Error() string {
-	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleCreated  %+v", 201, o.Payload)
+func (o *BindUserToClusterRoleOK) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleOK  %+v", 200, o.Payload)
 }
 
-func (o *BindUserToClusterRoleCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (o *BindUserToClusterRoleOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.ClusterRoleBinding)
 

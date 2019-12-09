@@ -16,22 +16,24 @@ const getMaxAttempts = 24
 
 func TestCreateClusterRoleBinding(t *testing.T) {
 	tests := []struct {
-		name              string
-		dc                string
-		location          string
-		version           string
-		credential        string
-		replicas          int32
-		expectedRoleNames []string
+		name                     string
+		dc                       string
+		location                 string
+		version                  string
+		credential               string
+		replicas                 int32
+		expectedRoleNames        []string
+		expectedClusterRoleNames []string
 	}{
 		{
-			name:              "create role binding",
-			dc:                "prow-build-cluster",
-			location:          "do-fra1",
-			version:           "v1.15.6",
-			credential:        "loodse",
-			replicas:          1,
-			expectedRoleNames: []string{"namespace-admin", "namespace-editor", "namespace-viewer"},
+			name:                     "create cluster/role binding",
+			dc:                       "prow-build-cluster",
+			location:                 "do-fra1",
+			version:                  "v1.15.6",
+			credential:               "loodse",
+			replicas:                 1,
+			expectedRoleNames:        []string{"namespace-admin", "namespace-editor", "namespace-viewer"},
+			expectedClusterRoleNames: []string{"admin", "edit", "view"},
 		},
 	}
 	for _, tc := range tests {
@@ -75,7 +77,7 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			roleNameList := []v1.RoleName{}
 			// wait for controller
 			for attempt := 1; attempt <= getMaxAttempts; attempt++ {
-				roleNameList, err = apiRunner.GetUserClusterRoles(project.ID, tc.dc, cluster.ID)
+				roleNameList, err = apiRunner.GetRoles(project.ID, tc.dc, cluster.ID)
 				if err != nil {
 					t.Fatalf("can not get user cluster roles due to error: %v", err)
 				}
@@ -109,8 +111,44 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 				}
 			}
 
-			cleanUpCluster(t, apiRunner, project.ID, tc.dc, cluster.ID)
+			clusterRoleNameList := []v1.ClusterRoleName{}
+			// wait for controller
+			for attempt := 1; attempt <= getMaxAttempts; attempt++ {
+				clusterRoleNameList, err = apiRunner.GetClusterRoles(project.ID, tc.dc, cluster.ID)
+				if err != nil {
+					t.Fatalf("can not get cluster roles due to error: %v", err)
+				}
 
+				if len(clusterRoleNameList) == len(tc.expectedClusterRoleNames) {
+					break
+				}
+				time.Sleep(2 * time.Second)
+			}
+
+			if len(clusterRoleNameList) != len(tc.expectedClusterRoleNames) {
+				t.Fatalf("expectd length list is different then returned")
+			}
+
+			clusterRoleNames := []string{}
+			for _, clusterRoleName := range clusterRoleNameList {
+				clusterRoleNames = append(clusterRoleNames, clusterRoleName.Name)
+			}
+			namesSet = sets.NewString(tc.expectedClusterRoleNames...)
+			if !namesSet.HasAll(clusterRoleNames...) {
+				t.Fatalf("expects cluster roles %v, got %v", tc.expectedRoleNames, roleNames)
+			}
+
+			for _, clusterRoleName := range clusterRoleNameList {
+				binding, err := apiRunner.BindUserToClusterRole(project.ID, tc.dc, cluster.ID, clusterRoleName.Name, "test@example.com")
+				if err != nil {
+					t.Fatalf("can not create cluster binding due to error: %v", err)
+				}
+				if binding.RoleRefName != clusterRoleName.Name {
+					t.Fatalf("expected cluster binding RoleRefName %s got %s", clusterRoleName.Name, binding.RoleRefName)
+				}
+			}
+
+			cleanUpCluster(t, apiRunner, project.ID, tc.dc, cluster.ID)
 		})
 	}
 }

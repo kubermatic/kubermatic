@@ -25,8 +25,8 @@ type UnbindUserFromClusterRoleBindingReader struct {
 func (o *UnbindUserFromClusterRoleBindingReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
 
-	case 201:
-		result := NewUnbindUserFromClusterRoleBindingCreated()
+	case 200:
+		result := NewUnbindUserFromClusterRoleBindingOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -58,24 +58,24 @@ func (o *UnbindUserFromClusterRoleBindingReader) ReadResponse(response runtime.C
 	}
 }
 
-// NewUnbindUserFromClusterRoleBindingCreated creates a UnbindUserFromClusterRoleBindingCreated with default headers values
-func NewUnbindUserFromClusterRoleBindingCreated() *UnbindUserFromClusterRoleBindingCreated {
-	return &UnbindUserFromClusterRoleBindingCreated{}
+// NewUnbindUserFromClusterRoleBindingOK creates a UnbindUserFromClusterRoleBindingOK with default headers values
+func NewUnbindUserFromClusterRoleBindingOK() *UnbindUserFromClusterRoleBindingOK {
+	return &UnbindUserFromClusterRoleBindingOK{}
 }
 
-/*UnbindUserFromClusterRoleBindingCreated handles this case with default header values.
+/*UnbindUserFromClusterRoleBindingOK handles this case with default header values.
 
 ClusterRoleBinding
 */
-type UnbindUserFromClusterRoleBindingCreated struct {
+type UnbindUserFromClusterRoleBindingOK struct {
 	Payload *models.ClusterRoleBinding
 }
 
-func (o *UnbindUserFromClusterRoleBindingCreated) Error() string {
-	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] unbindUserFromClusterRoleBindingCreated  %+v", 201, o.Payload)
+func (o *UnbindUserFromClusterRoleBindingOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] unbindUserFromClusterRoleBindingOK  %+v", 200, o.Payload)
 }
 
-func (o *UnbindUserFromClusterRoleBindingCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (o *UnbindUserFromClusterRoleBindingOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.ClusterRoleBinding)
 
