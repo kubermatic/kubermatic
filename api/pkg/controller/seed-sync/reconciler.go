@@ -85,71 +85,71 @@ func (r *Reconciler) reconcile(seed *kubermaticv1.Seed, logger *zap.SugaredLogge
 }
 
 func (r *Reconciler) cleanupDeletedSeed(seedInMaster *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
-	if kubernetes.HasAnyFinalizer(seedInMaster, CleanupFinalizer) {
-		logger.Debug("Seed was deleted, removing copy in seed cluster")
+	if !kubernetes.HasAnyFinalizer(seedInMaster, CleanupFinalizer) {
+		return nil
+	}
 
-		key, err := ctrlruntimeclient.ObjectKeyFromObject(seedInMaster)
-		if err != nil {
-			return fmt.Errorf("failed to create object key for Seed CR: %v", err)
+	logger.Debug("Seed was deleted, removing copy in seed cluster")
+
+	key, err := ctrlruntimeclient.ObjectKeyFromObject(seedInMaster)
+	if err != nil {
+		return fmt.Errorf("failed to create object key for Seed CR: %v", err)
+	}
+
+	// The DELETE op can block indefinitely if the Kubermatic Operator
+	// has put a finalizer on the Seed inside the seed cluster and
+	// no operator is running at the moment.
+	cleanupCtx, cancel := context.WithTimeout(r.ctx, 60*time.Second)
+	defer cancel()
+
+	seedInSeed := &kubermaticv1.Seed{}
+
+	err = seedClient.Get(cleanupCtx, key, seedInSeed)
+	if err != nil && !kerrors.IsNotFound(err) {
+		return fmt.Errorf("failed to probe for %s: %v", key, err)
+	}
+
+	// Now we can delete the Seed CR copy inside the seed cluster. This will not block
+	// until the operator had time to cleanup, so after this call we must wait for
+	// the Seed CR to be actually gone.
+	// If seed==master cluster, we must not wait for the deletion, because the Seed
+	// "copy" has a finalizer from ourselves and we would therefore wait indefinitely
+	// for ourselves.
+	if err == nil {
+		logger.Debug("Deleting Seed now")
+		if err := seedClient.Delete(cleanupCtx, seedInSeed); err != nil {
+			return fmt.Errorf("failed to delete %s: %v", key, err)
 		}
 
-		// The DELETE op can block indefinitely if the Kubermatic Operator
-		// has put a finalizer on the Seed inside the seed cluster and
-		// no operator is running at the moment.
-		cleanupCtx, cancel := context.WithTimeout(r.ctx, 60*time.Second)
-		defer cancel()
+		if seedInMaster.UID != seedInSeed.UID {
+			logger.Debug("Waiting for Seed CR to be actually removed....")
 
-		seedInSeed := &kubermaticv1.Seed{}
-
-		err = seedClient.Get(cleanupCtx, key, seedInSeed)
-		if err != nil && !kerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to probe for %s: %v", key, err)
-		}
-
-		// Now we can delete the Seed CR copy inside the seed cluster. This will not block
-		// until the operator had time to cleanup, so after this call we must wait for
-		// the Seed CR to be actually gone.
-		// If seed==master cluster, we must not wait for the deletion, because the Seed
-		// "copy" has a finalizer from ourselves and we would therefore wait indefinitely
-		// for ourselves.
-		if err == nil {
-			logger.Debug("Deleting Seed now")
-			if err := seedClient.Delete(cleanupCtx, seedInSeed); err != nil {
-				return fmt.Errorf("failed to delete %s: %v", key, err)
-			}
-
-			if seedInMaster.UID != seedInSeed.UID {
-				logger.Debug("Waiting for Seed CR to be actually removed....")
-
-				err := wait.PollImmediate(1*time.Second, 30*time.Second, func() (done bool, err error) {
-					tmpSeed := &kubermaticv1.Seed{}
-					err = seedClient.Get(cleanupCtx, key, tmpSeed)
-					if err == nil {
-						return false, nil
-					}
-
-					if kerrors.IsNotFound(err) {
-						return true, nil
-					}
-
-					return false, fmt.Errorf("failed to probe for %s: %v", key, err)
-				})
-				if err != nil {
-					return fmt.Errorf("failed to wait for Seed to be removed in seed cluster: %v", err)
+			err := wait.PollImmediate(1*time.Second, 30*time.Second, func() (done bool, err error) {
+				tmpSeed := &kubermaticv1.Seed{}
+				err = seedClient.Get(cleanupCtx, key, tmpSeed)
+				if err == nil {
+					return false, nil
 				}
 
-				logger.Debug("Seed CR has been removed.")
+				if kerrors.IsNotFound(err) {
+					return true, nil
+				}
+
+				return false, fmt.Errorf("failed to probe for %s: %v", key, err)
+			})
+			if err != nil {
+				return fmt.Errorf("failed to wait for Seed to be removed in seed cluster: %v", err)
 			}
+
+			logger.Debug("Seed CR has been removed.")
 		}
+	}
 
-		oldSeed := seedInMaster.DeepCopy()
-		kubernetes.RemoveFinalizer(seedInMaster, CleanupFinalizer)
+	oldSeed := seedInMaster.DeepCopy()
+	kubernetes.RemoveFinalizer(seedInMaster, CleanupFinalizer)
 
-		if err := r.Patch(r.ctx, seedInMaster, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
-			return fmt.Errorf("failed to remove finalizer from Seed in master cluster: %v", err)
-		}
-
-		return nil
+	if err := r.Patch(r.ctx, seedInMaster, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
+		return fmt.Errorf("failed to remove finalizer from Seed in master cluster: %v", err)
 	}
 
 	return nil

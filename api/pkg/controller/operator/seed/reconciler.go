@@ -150,25 +150,25 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 }
 
 func (r *Reconciler) cleanupDeletedSeed(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	if kubernetes.HasAnyFinalizer(seed, common.CleanupFinalizer) {
-		log.Debug("Seed was deleted, cleaning up cluster-wide resources")
-
-		if err := common.CleanupClusterResource(client, &rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(cfg)); err != nil {
-			return fmt.Errorf("failed to clean up ClusterRoleBinding: %v", err)
-		}
-
-		if err := common.CleanupClusterResource(client, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(cfg)); err != nil {
-			return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %v", err)
-		}
-
-		oldSeed := seed.DeepCopy()
-		kubernetes.RemoveFinalizer(seed, common.CleanupFinalizer)
-
-		if err := client.Patch(r.ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
-			return fmt.Errorf("failed to remove finalizer from Seed: %v", err)
-		}
-
+	if !kubernetes.HasAnyFinalizer(seed, common.CleanupFinalizer) {
 		return nil
+	}
+
+	log.Debug("Seed was deleted, cleaning up cluster-wide resources")
+
+	if err := common.CleanupClusterResource(client, &rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(cfg)); err != nil {
+		return fmt.Errorf("failed to clean up ClusterRoleBinding: %v", err)
+	}
+
+	if err := common.CleanupClusterResource(client, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(cfg)); err != nil {
+		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %v", err)
+	}
+
+	oldSeed := seed.DeepCopy()
+	kubernetes.RemoveFinalizer(seed, common.CleanupFinalizer)
+
+	if err := client.Patch(r.ctx, seed, ctrlruntimeclient.MergeFrom(oldSeed)); err != nil {
+		return fmt.Errorf("failed to remove finalizer from Seed: %v", err)
 	}
 
 	return nil
