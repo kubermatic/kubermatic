@@ -3406,7 +3406,7 @@ func (r Routing) listRoleBinding() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: ClusterRoleBinding
+//       200: ClusterRoleBinding
 //       401: empty
 //       403: empty
 func (r Routing) bindUserToClusterRole() http.Handler {
@@ -3434,7 +3434,7 @@ func (r Routing) bindUserToClusterRole() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: ClusterRoleBinding
+//       200: ClusterRoleBinding
 //       401: empty
 //       403: empty
 func (r Routing) unbindUserFromClusterRoleBinding() http.Handler {

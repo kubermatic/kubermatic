@@ -893,8 +893,8 @@ func (r *APIRunner) SetAdmin(email string, isAdmin bool) error {
 	return nil
 }
 
-// GetUserClusterRoles
-func (r *APIRunner) GetUserClusterRoles(projectID, dc, clusterID string) ([]apiv1.RoleName, error) {
+// GetRoles
+func (r *APIRunner) GetRoles(projectID, dc, clusterID string) ([]apiv1.RoleName, error) {
 	params := &project.ListRoleNamesParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 
@@ -950,6 +950,63 @@ func (r *APIRunner) BindUserToRole(projectID, dc, clusterID, roleName, namespace
 
 	return &apiv1.RoleBinding{
 		Namespace:   response.Payload.Namespace,
+		RoleRefName: response.Payload.RoleRefName,
+	}, nil
+}
+
+func (r *APIRunner) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.ClusterRoleName, error) {
+	params := &project.ListClusterRoleNamesParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
+	params.WithTimeout(timeout)
+
+	var err error
+	var response *project.ListClusterRoleNamesOK
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		response, err = r.client.Project.ListClusterRoleNames(params, r.bearerToken)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	clusterRoleNames := []apiv1.ClusterRoleName{}
+
+	for _, roleName := range response.Payload {
+		clusterRoleNames = append(clusterRoleNames, apiv1.ClusterRoleName{
+			Name: roleName.Name,
+		})
+	}
+
+	return clusterRoleNames, nil
+}
+
+// BindUserToClusterRole
+func (r *APIRunner) BindUserToClusterRole(projectID, dc, clusterID, roleName, user string) (*apiv1.ClusterRoleBinding, error) {
+	params := &project.BindUserToClusterRoleParams{
+		Body:      &models.ClusterRoleUser{UserEmail: user},
+		ClusterID: clusterID,
+		Dc:        dc,
+		ProjectID: projectID,
+		RoleID:    roleName,
+	}
+	params.WithTimeout(timeout)
+
+	var err error
+	var response *project.BindUserToClusterRoleOK
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		response, err = r.client.Project.BindUserToClusterRole(params, r.bearerToken)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &apiv1.ClusterRoleBinding{
 		RoleRefName: response.Payload.RoleRefName,
 	}, nil
 }
