@@ -869,8 +869,8 @@ func (r *APIRunner) SetAdmin(email string, isAdmin bool) error {
 	return nil
 }
 
-// GetClusterRoles
-func (r *APIRunner) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.RoleName, error) {
+// GetUserClusterRoles
+func (r *APIRunner) GetUserClusterRoles(projectID, dc, clusterID string) ([]apiv1.RoleName, error) {
 	params := &project.ListRoleNamesParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 
@@ -897,4 +897,35 @@ func (r *APIRunner) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.Ro
 	}
 
 	return roleNames, nil
+}
+
+// BindUserToRole
+func (r *APIRunner) BindUserToRole(projectID, dc, clusterID, roleName, namespace, user string) (*apiv1.RoleBinding, error) {
+	params := &project.BindUserToRoleParams{
+		Body:      &models.RoleUser{UserEmail: user},
+		ClusterID: clusterID,
+		Dc:        dc,
+		Namespace: namespace,
+		ProjectID: projectID,
+		RoleID:    roleName,
+	}
+	params.WithTimeout(timeout)
+
+	var err error
+	var response *project.BindUserToRoleOK
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		response, err = r.client.Project.BindUserToRole(params, r.bearerToken)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &apiv1.RoleBinding{
+		Namespace:   response.Payload.Namespace,
+		RoleRefName: response.Payload.RoleRefName,
+	}, nil
 }

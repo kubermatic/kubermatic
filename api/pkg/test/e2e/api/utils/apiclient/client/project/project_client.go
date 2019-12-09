@@ -85,7 +85,7 @@ func (a *Client) BindUserToClusterRole(params *BindUserToClusterRoleParams, auth
 /*
 BindUserToRole Binds user to the role
 */
-func (a *Client) BindUserToRole(params *BindUserToRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleCreated, error) {
+func (a *Client) BindUserToRole(params *BindUserToRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewBindUserToRoleParams()
@@ -107,7 +107,7 @@ func (a *Client) BindUserToRole(params *BindUserToRoleParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	return result.(*BindUserToRoleCreated), nil
+	return result.(*BindUserToRoleOK), nil
 
 }
 
@@ -1581,7 +1581,7 @@ func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterR
 /*
 UnbindUserFromRoleBinding Unbinds user from the role binding
 */
-func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingCreated, error) {
+func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUnbindUserFromRoleBindingParams()
@@ -1603,7 +1603,7 @@ func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingPara
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UnbindUserFromRoleBindingCreated), nil
+	return result.(*UnbindUserFromRoleBindingOK), nil
 
 }
 
