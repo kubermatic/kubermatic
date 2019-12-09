@@ -92,7 +92,6 @@ kubermatic:
         - rbac
         - kubelet-configmap
         - default-storage-class
-        - node-exporter
         - nodelocal-dns-cache
         - pod-security-policy
         - logrotate
@@ -151,7 +150,9 @@ kubermatic:
 
   api:
     replicas: 2
-    accessibleAddons: []
+    # List of optional addons that can be installed into every user-cluster. All need to exist in the addons image.
+    accessibleAddons:
+    - node-exporter
     image:
       repository: "quay.io/kubermatic/api"
       tag: "__KUBERMATIC_TAG__"

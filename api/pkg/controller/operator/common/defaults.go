@@ -33,7 +33,6 @@ var (
 		"rbac",
 		"kubelet-configmap",
 		"default-storage-class",
-		"node-exporter",
 		"nodelocal-dns-cache",
 		"pod-security-policy",
 		"logrotate",
@@ -47,6 +46,10 @@ var (
 		"default-storage-class",
 		"registry",
 		"logrotate",
+	}
+
+	defaultAccessibleAddons = []string{
+		"node-exporter",
 	}
 
 	defaultUIResources = corev1.ResourceRequirements{
@@ -137,6 +140,11 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	if len(copy.Spec.UserCluster.Addons.Openshift.Default) == 0 {
 		copy.Spec.UserCluster.Addons.Openshift.Default = openshiftDefaultAddons
 		logger.Debugw("Defaulting field", "field", "userCluster.addons.openshift.default", "value", copy.Spec.UserCluster.Addons.Openshift.Default)
+	}
+
+	if len(copy.Spec.API.AccessibleAddons) == 0 {
+		copy.Spec.API.AccessibleAddons = defaultAccessibleAddons
+		logger.Debugw("Defaulting field", "field", "copy.Spec.API.AccessibleAddons", "value", copy.Spec.API.AccessibleAddons)
 	}
 
 	if copy.Spec.UserCluster.NodePortRange == "" {
