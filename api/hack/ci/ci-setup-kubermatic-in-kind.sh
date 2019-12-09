@@ -17,7 +17,7 @@ export KUBERMATIC_UI_REPLICAS="${KUBERMATIC_UI_REPLICAS:-0}"
 # got successfully built.
 export KUBERMATIC_DASHBOARD_VERSION="${KUBERMATIC_DASHBOARD_VERSION:-latest}"
 # ADDITIONAL_HELM_ARGS allows to configure extra args for helm
-export ADDITIONAL_HELM_ARGS=""
+export ADDITIONAL_HELM_ARGS="${ADDITIONAL_HELM_ARGS:-}"
 
 # Consider self-installed go installations
 export PATH=$PATH:/usr/local/go/bin
@@ -282,7 +282,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set=kubermatic.apiserverDefaultReplicas=1 \
   --set=kubermatic.deployVPA=false \
   --namespace=kubermatic \
-  ${ADDITIONAL_HELM_ARGS:-} \
+  ${ADDITIONAL_HELM_ARGS} \
   ${OPENSHIFT_HELM_ARGS:-} \
   --values ${VALUES_FILE} \
   kubermatic \
