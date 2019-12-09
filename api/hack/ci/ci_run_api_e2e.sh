@@ -11,6 +11,30 @@ function cleanup {
 }
 trap cleanup EXIT
 
+PRESET=$(cat <<EOF
+presets:
+  items:
+    - metadata:
+        name: loodse
+      spec:
+        azure:
+          tenantId: ${AZURE_E2E_TESTS_TENANT_ID}
+          subscriptionId: ${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
+          clientId: ${AZURE_E2E_TESTS_CLIENT_ID}
+          clientSecret: ${AZURE_E2E_TESTS_CLIENT_SECRET}
+        digitalocean:
+          token: ${DO_E2E_TESTS_TOKEN}
+        gcp:
+          serviceAccount: ${GOOGLE_SERVICE_ACCOUNT}
+        openstack:
+          username: ${OS_USERNAME}
+          password: ${OS_PASSWORD}
+          tenant: ${OS_TENANT_NAME}
+          domain: ${OS_DOMAIN}
+EOF
+)
+
+export ADDITIONAL_HELM_ARGS="--set=kubermatic.presets=$(echo $PRESET|base64 -w0)"
 source "${SDIR}/ci-setup-kubermatic-in-kind.sh"
 
 # Create and run OIDC proxy client
