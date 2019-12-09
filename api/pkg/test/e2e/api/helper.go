@@ -12,6 +12,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Masterminds/semver"
+	"github.com/go-openapi/runtime"
+	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	oidc "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils"
@@ -26,10 +31,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
-	"github.com/Masterminds/semver"
-	"github.com/go-openapi/runtime"
-	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
@@ -60,14 +62,33 @@ func GetMasterToken() (string, error) {
 
 	issuerURLPrefix := getIssuerURLPrefix()
 
-	requestToken, err := oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, "http://localhost:8000")
-	if err != nil {
-		return "", err
+	var requestToken string
+	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+		requestToken, err = oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, "http://localhost:8000")
+		if err != nil {
+			fmt.Printf("Failed to get OIDC request token: %v\n", err)
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		return "", fmt.Errorf("failed to get OIDC request token: %v", err)
 	}
 
 	login, password := oidc.GetOIDCClient()
 
-	return oidc.GetOIDCAuthToken(hClient, requestToken, u, issuerURLPrefix, login, password)
+	var oidcAuthToken string
+	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+		oidcAuthToken, err = oidc.GetOIDCAuthToken(hClient, requestToken, u, issuerURLPrefix, login, password)
+		if err != nil {
+			fmt.Printf("Failed to get OIDC auth token: %v\n", err)
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		return "", fmt.Errorf("failed to get OIDC quath token: %v", err)
+	}
+
+	return oidcAuthToken, nil
 }
 
 func GetAdminMasterToken() (string, error) {
@@ -794,6 +815,9 @@ func RunOIDCProxy(errChan chan error, cancel <-chan struct{}) error {
 	if err := oidProxyCommand.Start(); err != nil {
 		return fmt.Errorf("failed to run oidc proxy command: %v", err)
 	}
+	defer func() {
+		fmt.Printf("Output of oidc proxy:\n---\n%s\n---\n", out.String())
+	}()
 
 	go func() {
 		if err := oidProxyCommand.Wait(); err != nil {
