@@ -69,6 +69,10 @@ if [ -n "${UPGRADE_TEST_BASE_HASH:-}" ]; then
   kubermatic_delete_cluster="false"
 fi
 
+echodate "Building OIDC proxy"
+make -C api/pkg/test/e2e/api/utils/oidc-proxy-client build
+echodate "Finished building OIDC proxy"
+
 timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
   -debug \
   -worker-name=${WORKER_NAME} \
