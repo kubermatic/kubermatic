@@ -134,7 +134,7 @@ data:
     enforceNodeAllocatable:
     - pods
     eventBurst: 10
-    eventRecordQPS: 5
+    eventRecordQPS: {{if .Variables.EventRecordQPS}}{{.Variables.EventRecordQPS}}{{else}}5{{end}}
     evictionHard:
       imagefs.available: 15%
       memory.available: 100Mi
@@ -154,7 +154,7 @@ data:
     iptablesMasqueradeBit: 14
     kind: KubeletConfiguration
     kubeAPIBurst: 10
-    kubeAPIQPS: 5
+    kubeAPIQPS: {{if .Variables.KubeAPIQPS}}{{.Variables.KubeAPIQPS}}{{else}}5{{end}}
     makeIPTablesUtilChains: true
     maxOpenFiles: 1000000
     maxPods: 110
@@ -163,7 +163,7 @@ data:
     podPidsLimit: -1
     port: 10250
     registryBurst: 10
-    registryPullQPS: 5
+    registryPullQPS: {{if .Variables.RegistryPullQPS}}{{.Variables.RegistryPullQPS}}{{else}}5{{end}}
     resolvConf: /etc/resolv.conf
     rotateCertificates: true
     runtimeRequestTimeout: 2m0s
