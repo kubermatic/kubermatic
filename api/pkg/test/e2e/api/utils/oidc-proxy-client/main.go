@@ -22,6 +22,8 @@ import (
 	"github.com/coreos/go-oidc"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
+
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const exampleAppState = "I wish to wash my irish wristwatch"
@@ -55,10 +57,10 @@ func httpClientForRootCAs(rootCAs string) (*http.Client, error) {
 		Transport: &http.Transport{
 			TLSClientConfig: &tlsConfig,
 			Proxy:           http.ProxyFromEnvironment,
-			Dial: (&net.Dialer{
+			DialContext: (&net.Dialer{
 				Timeout:   30 * time.Second,
 				KeepAlive: 30 * time.Second,
-			}).Dial,
+			}).DialContext,
 			TLSHandshakeTimeout:   10 * time.Second,
 			ExpectContinueTimeout: 1 * time.Second,
 		},
@@ -140,20 +142,18 @@ func cmd() *cobra.Command {
 				a.client = http.DefaultClient
 			}
 
-			ctx := oidc.ClientContext(context.Background(), a.client)
 			var provider *oidc.Provider
-			for i := 0; i < 3; i++ {
-				var err error
+			if err := wait.PollImmediate(2*time.Second, 10*time.Second, func() (bool, error) {
+				ctx := oidc.ClientContext(context.Background(), a.client)
 				provider, err = oidc.NewProvider(ctx, issuerURL)
-				if err == nil {
-					break
+				if err != nil {
+					fmt.Printf("failed to create new provider %q: %v", issuerURL, err)
+					return false, nil
 				}
-				fmt.Printf("Failed to query provider %q: %v, trying one more time", issuerURL, err)
-				provider = nil
-				time.Sleep(2 * time.Second)
-			}
-			if provider == nil {
-				return fmt.Errorf("failed to query provider %q", issuerURL)
+				return true, nil
+
+			}); err != nil {
+				return fmt.Errorf("failed to query provider %q: %v", issuerURL, err)
 			}
 
 			var s struct {
@@ -294,10 +294,10 @@ func (a *app) handleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	buff := new(bytes.Buffer)
-	if err := json.Indent(buff, []byte(claims), "", "  "); err != nil {
+	if err := json.Indent(buff, claims, "", "  "); err != nil {
 		http.Error(w, fmt.Sprintf("failed to append claims to the filnal response, err: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	renderToken(w, a.redirectURI, rawIDToken, token.RefreshToken, buff.Bytes())
+	renderToken(w, a.redirectURI, rawIDToken, token.RefreshToken, buff.String())
 }
