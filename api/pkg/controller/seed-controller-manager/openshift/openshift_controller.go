@@ -358,7 +358,6 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 	creators := []reconciling.NamedSecretCreatorGetter{
 		certificates.RootCACreator(osData),
 		openvpn.CACreator(),
-		apiserver.DexCACertificateCreator(osData.GetDexCA),
 		certificates.FrontProxyCACreator(),
 		openshiftresources.OpenShiftTLSServingCertificateCreator(osData),
 		openshiftresources.ServiceSignerCA(),
