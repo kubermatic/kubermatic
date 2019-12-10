@@ -273,6 +273,8 @@ func main() {
 
 		projectID, err := createProject(opts.kubermaticClient, opts.kubermaticAuthenticator, log)
 		if err != nil {
+			log.Info("Failed to create project")
+			time.Sleep(15 * time.Minute)
 			log.Fatalw("Failed to create project", zap.Error(err))
 		}
 		opts.kubermatcProjectID = projectID
