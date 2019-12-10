@@ -15,7 +15,7 @@ versions:
 - version: "v1.16.3"
   default: false
 # Kubernetes 1.17
-- version: "v1.17.0-rc.1"
+- version: "v1.17.0"
   default: false
 # OpenShift 4.1.9
 - version: "v4.1.9"
