@@ -32,7 +32,7 @@ var (
 const (
 	name      = resources.KubernetesDashboardDeploymentName
 	imageName = "kubernetesui/dashboard"
-	tag       = "v2.0.0-beta4"
+	tag       = "v2.0.0-beta8"
 	// Namespace used by Dashboard to find required resources.
 	Namespace     = "kubernetes-dashboard"
 	ContainerPort = 9090
