@@ -255,15 +255,6 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
 fi
 
 
-if [[ -n ${OPENSHIFT:-} ]]; then
-  echodate "Adding openshift args"
-  OPENSHIFT_HELM_ARGS="--set-string=kubermatic.controller.featureGates=OpenIDAuthPlugin=true
- --set-string=kubermatic.auth.caBundle=$(cat /etc/oidc-data/oidc-ca-file|base64 -w0)
- --set-string=kubermatic.auth.tokenIssuer=$OIDC_ISSUER_URL
- --set-string=kubermatic.auth.issuerClientID=$OIDC_ISSUER_CLIENT_ID
- --set-string=kubermatic.auth.issuerClientSecret=$OIDC_ISSUER_CLIENT_SECRET"
-fi
-
 # --force is needed in case the first attempt at installing didn't succeed
 # see https://github.com/helm/helm/pull/3597
 retry 3 helm upgrade --install --force --wait --timeout 300 \
