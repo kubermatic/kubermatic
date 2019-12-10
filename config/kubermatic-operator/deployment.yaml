@@ -8,6 +8,9 @@ metadata:
     app.kubernetes.io/version: '__KUBERMATIC_TAG__'
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kubermatic-operator
   template:
     metadata:
       labels:
