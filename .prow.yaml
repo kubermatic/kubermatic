@@ -271,6 +271,11 @@ presubmits:
           value: "azure"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -343,6 +348,11 @@ presubmits:
           value: "v1.15.5"
         - name: PROVIDER
           value: "gcp"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -379,6 +389,11 @@ presubmits:
           value: "true"
         - name: ONLY_TEST_CREATION
           value: "true"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -413,6 +428,11 @@ presubmits:
           value: "azure"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -448,6 +468,11 @@ presubmits:
           value: "ubuntu,coreos"
         - name: PROVIDER
           value: "digitalocean"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -480,6 +505,11 @@ presubmits:
           value: "v1.15.5"
         - name: PROVIDER
           value: "packet"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -514,6 +544,11 @@ presubmits:
           value: "kubevirt"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "ubuntu,coreos"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -551,6 +586,11 @@ presubmits:
           value: "centos,coreos"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -585,6 +625,11 @@ presubmits:
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -617,6 +662,11 @@ presubmits:
           value: "v1.15.5"
         - name: PROVIDER
           value: "vsphere"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -652,6 +702,11 @@ presubmits:
           value: "vsphere"
         - name: SCENARIO_OPTIONS
           value: "custom-folder"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -727,6 +782,11 @@ presubmits:
           value: "20"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "coreos,ubuntu"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -763,6 +823,11 @@ presubmits:
           value: "20"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "coreos,centos"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -797,6 +862,11 @@ presubmits:
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -835,6 +905,11 @@ presubmits:
           value: "true"
         - name: OPENSHIFT_VERSION
           value: "4.1.18"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
         - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
