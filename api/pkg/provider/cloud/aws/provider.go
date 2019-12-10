@@ -269,16 +269,22 @@ func tagResources(cluster *kubermaticv1.Cluster, client ec2iface.EC2API) error {
 		return fmt.Errorf("failed to list subnets: %v", err)
 	}
 
-	resourceIDs := []*string{&cluster.Spec.Cloud.AWS.SecurityGroupID, &cluster.Spec.Cloud.AWS.RouteTableID, &cluster.Spec.Cloud.AWS.SecurityGroupID}
+	resourceIDs := []*string{&cluster.Spec.Cloud.AWS.SecurityGroupID, &cluster.Spec.Cloud.AWS.RouteTableID}
+	var subnetIDs []string
 	for _, subnet := range sOut.Subnets {
 		resourceIDs = append(resourceIDs, subnet.SubnetId)
+		subnetIDs = append(subnetIDs, *subnet.SubnetId)
 	}
 
 	_, err = client.CreateTags(&ec2.CreateTagsInput{
 		Resources: resourceIDs,
 		Tags:      []*ec2.Tag{clusterTag(cluster.Name)},
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to tag securityGroup(id=%s), routeTable(id=%s) and subnets (ids=%v): %v",
+			cluster.Spec.Cloud.AWS.SecurityGroupID, cluster.Spec.Cloud.AWS.RouteTableID, subnetIDs, err)
+	}
+	return nil
 }
 
 func removeTags(cluster *kubermaticv1.Cluster, client ec2iface.EC2API) error {
