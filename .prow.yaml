@@ -269,7 +269,7 @@ presubmits:
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -339,7 +339,7 @@ presubmits:
         - name: PROVIDER
           value: "gcp"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -373,7 +373,7 @@ presubmits:
         - name: ONLY_TEST_CREATION
           value: "true"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -405,7 +405,7 @@ presubmits:
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -438,7 +438,7 @@ presubmits:
         - name: PROVIDER
           value: "digitalocean"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -468,7 +468,7 @@ presubmits:
         - name: PROVIDER
           value: "packet"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -500,7 +500,7 @@ presubmits:
         - name: EXCLUDE_DISTRIBUTIONS
           value: "ubuntu,coreos"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -535,7 +535,7 @@ presubmits:
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -567,7 +567,7 @@ presubmits:
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -597,7 +597,7 @@ presubmits:
         - name: PROVIDER
           value: "vsphere"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -630,7 +630,7 @@ presubmits:
         - name: SCENARIO_OPTIONS
           value: "custom-folder"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -703,7 +703,7 @@ presubmits:
         - name: EXCLUDE_DISTRIBUTIONS
           value: "coreos,ubuntu"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -737,7 +737,7 @@ presubmits:
         - name: EXCLUDE_DISTRIBUTIONS
           value: "coreos,centos"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -769,7 +769,7 @@ presubmits:
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -805,7 +805,7 @@ presubmits:
         - name: OPENSHIFT_VERSION
           value: "4.1.18"
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true

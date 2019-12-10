@@ -6,9 +6,9 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
-. $(dirname $0)/lib.sh
+cd $(dirname $0)
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api/hack/ci
+. ../lib.sh
 
 export UPGRADE_TEST_BASE_HASH=${UPGRADE_TEST_BASE_HASH:-"master"}
 
