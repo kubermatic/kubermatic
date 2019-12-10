@@ -216,18 +216,6 @@ func (od *openshiftData) GetDexCA() ([]*x509.Certificate, error) {
 	return kubernetesresources.GetDexCAFromFile(od.oidc.CAFile)
 }
 
-func (od *openshiftData) OIDCIssuerURL() string {
-	return od.oidc.IssuerURL
-}
-
-func (od *openshiftData) OIDCClientID() string {
-	return od.oidc.ClientID
-}
-
-func (od *openshiftData) OIDCClientSecret() string {
-	return od.oidc.ClientSecret
-}
-
 // We didn't have openshift at the time we used the Etcd operator so
 // we can safely assume it doesn't exist
 // We must keep this in the etcd creators data for eternity thought, thats

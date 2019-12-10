@@ -29,9 +29,6 @@ var (
 type masterConfigData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetApiserverExternalNodePort(context.Context) (int32, error)
-	OIDCIssuerURL() string
-	OIDCClientID() string
-	OIDCClientSecret() string
 	GetKubernetesCloudProviderName() string
 }
 
