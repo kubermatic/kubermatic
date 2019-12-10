@@ -33,7 +33,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 	} else {
 		// GenerateName can be set only if Name is empty to avoid confusing error:
 		// https://github.com/kubernetes/kubernetes/issues/32220
-		md.GenerateName = "worker-"
+		md.GenerateName = fmt.Sprintf("%s-worker-", c.Spec.HumanReadableName)
 	}
 
 	md.Namespace = metav1.NamespaceSystem
