@@ -864,24 +864,16 @@ presubmits:
       preset-azure: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-pull: "true"
+      preset-docker-push: "true"
       preset-gce: "true"
+      preset-kind-volume-mounts: "true"
+      preset-vault: "true"
     spec:
-      # DNS configuration allows inner cluster to access the internet.
-      dnsPolicy: "None"
-      dnsConfig:
-        nameservers:
-        - 1.1.1.1 # Cloudflare DNS servers
-        - 1.0.0.1
       containers:
-      - image: quay.io/kubermatic/e2e-kind:v1.0.13
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         imagePullPolicy: Always
         command:
         - "./api/hack/ci/ci_run_api_e2e.sh"
-        volumeMounts:
-        - name: modules
-          mountPath: /lib/modules
-        - name: cgroup
-          mountPath: /sys/fs/cgroup
         securityContext:
           privileged: true
         resources:
@@ -890,23 +882,12 @@ presubmits:
             cpu: 2
           limits:
             memory: 6Gi
-            cpu: 3.5
         env:
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
-      # Those volumes are required by inner docker instance to properly start the k8s cluster inside the pod.
-      volumes:
-      - name: modules
-        hostPath:
-          path: /lib/modules
-          type: Directory
-      - name: cgroup
-        hostPath:
-          path: /sys/fs/cgroup
-          type: Directory
 
   #########################################################
   # misc
