@@ -211,7 +211,7 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	// TODO: Remove once we don't support Kube 1.10 anymore
 	// TODO: Before removing, add check that prevents upgrading to 1.12 when
 	// there is still a node < 1.11
-	if data.Cluster().Spec.Version.Semver().Minor() >= 12 {
+	if data.Cluster().Spec.Version.Semver().Minor() >= 12 && data.Cluster().Spec.Version.Semver().Minor() < 17 {
 		featureGates = append(featureGates, "ScheduleDaemonSetPods=false")
 	}
 	if len(featureGates) > 0 {

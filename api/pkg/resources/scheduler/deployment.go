@@ -204,7 +204,7 @@ func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
 	// TODO: Remove once we don't support Kube 1.10 anymore
 	// TODO: Before removing, add check that prevents upgrading to 1.12 when
 	// there is still a node < 1.11
-	if cluster.Spec.Version.Semver().Minor() >= 12 {
+	if cluster.Spec.Version.Semver().Minor() >= 12 && cluster.Spec.Version.Semver().Minor() < 17 {
 		featureGates = append(featureGates, "ScheduleDaemonSetPods=false")
 	}
 
