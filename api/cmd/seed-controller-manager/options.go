@@ -16,7 +16,6 @@ import (
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/backup"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
@@ -58,7 +57,6 @@ type controllerRunOptions struct {
 	inClusterPrometheusScrapingConfigsFile           string
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSONFile                         string
-	log                                              kubermaticlog.Options
 	kubermaticImage                                  string
 	dnatControllerImage                              string
 	dynamicDatacenters                               bool
@@ -118,8 +116,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
-	flag.BoolVar(&c.log.Debug, "log-debug", false, "Enables debug logging")
-	flag.StringVar(&c.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.StringVar(&c.kubermaticImage, "kubermatic-image", resources.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
 	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", resources.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
 	flag.BoolVar(&c.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
@@ -219,10 +215,6 @@ func (o controllerRunOptions) validate() error {
 	// we create for the metrics-server running in the seed and will render the latter unusable
 	if strings.Contains(o.kubernetesAddonsList, "metrics-server") {
 		return errors.New("the metrics-server addon must be disabled, it is now deployed inside the seed cluster")
-	}
-
-	if err := o.log.Validate(); err != nil {
-		return err
 	}
 
 	return nil
