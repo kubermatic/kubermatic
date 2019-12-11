@@ -23,7 +23,7 @@ karma:
   images:
     karma:
       repository: docker.io/lmierzwa/karma
-      tag: v0.43
+      tag: v0.52
       pullPolicy: IfNotPresent
     initContainer:
       repository: quay.io/kubermatic/util
