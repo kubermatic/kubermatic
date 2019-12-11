@@ -44,7 +44,7 @@ const (
 	// will write the backup to
 	SharedVolumeName = "etcd-backup"
 	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups
-	DefaultBackupContainerImage = "gcr.io/etcd-development/etcd:"
+	DefaultBackupContainerImage = "gcr.io/etcd-development/etcd"
 	// DefaultBackupInterval defines the default interval used to create backups
 	DefaultBackupInterval = "20m"
 	// cronJobPrefix defines the prefix used for all backup cronjob names
@@ -361,10 +361,14 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) reconciling.NamedCro
 			cronJob.Spec.SuccessfulJobsHistoryLimit = utilpointer.Int32Ptr(0)
 
 			endpoints := etcd.GetClientEndpoints(cluster.Status.NamespaceName)
+			image := r.backupContainerImage
+			if !strings.Contains(image, ":") {
+				image = image + ":" + etcd.ImageTag(cluster)
+			}
 			cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:  "backup-creator",
-					Image: r.backupContainerImage + etcd.ImageTag(cluster),
+					Image: image,
 					Env: []corev1.EnvVar{
 						{
 							Name:  "ETCDCTL_API",
