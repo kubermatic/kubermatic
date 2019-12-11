@@ -42,7 +42,7 @@ func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGett
 			job.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "defragger",
-					Image:   data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag,
+					Image:   data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag(data.Cluster()),
 					Command: command,
 					VolumeMounts: []corev1.VolumeMount{
 						{

@@ -44,7 +44,7 @@ const (
 	// will write the backup to
 	SharedVolumeName = "etcd-backup"
 	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups
-	DefaultBackupContainerImage = "gcr.io/etcd-development/etcd:" + etcd.ImageTag
+	DefaultBackupContainerImage = "gcr.io/etcd-development/etcd:"
 	// DefaultBackupInterval defines the default interval used to create backups
 	DefaultBackupInterval = "20m"
 	// cronJobPrefix defines the prefix used for all backup cronjob names
@@ -364,22 +364,30 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) reconciling.NamedCro
 			cronJob.Spec.JobTemplate.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:  "backup-creator",
-					Image: r.backupContainerImage,
+					Image: r.backupContainerImage + etcd.ImageTag(cluster),
 					Env: []corev1.EnvVar{
 						{
 							Name:  "ETCDCTL_API",
 							Value: "3",
 						},
+						{
+							Name:  "ETCDCTL_DIAL_TIMEOUT",
+							Value: "3s",
+						},
+						{
+							Name:  "ETCDCTL_CACERT",
+							Value: "/etc/etcd/client/ca.crt",
+						},
+						{
+							Name:  "ETCDCTL_CERT",
+							Value: "/etc/etcd/client/backup-etcd-client.crt",
+						},
+						{
+							Name:  "ETCDCTL_KEY",
+							Value: "/etc/etcd/client/backup-etcd-client.key",
+						},
 					},
-					Command: []string{
-						"/usr/bin/time",
-						"/usr/local/bin/etcdctl",
-						"--endpoints", strings.Join(endpoints, ","),
-						"--cacert", "/etc/etcd/client/ca.crt",
-						"--cert", "/etc/etcd/client/backup-etcd-client.crt",
-						"--key", "/etc/etcd/client/backup-etcd-client.key",
-						"snapshot", "save", "/backup/snapshot.db",
-					},
+					Command: snapshotCommand(endpoints),
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      SharedVolumeName,
@@ -446,4 +454,29 @@ func validateStoreContainer(storeContainer corev1.Container) error {
 		}
 	}
 	return fmt.Errorf("storeContainer does not have a mount for the shared volume %s", SharedVolumeName)
+}
+
+func snapshotCommand(etcdEndpoints []string) []string {
+	cmd := []string{
+		"/bin/sh",
+		"-c",
+	}
+	script := &strings.Builder{}
+	// Accordings to its godoc, this always returns a nil error
+	_, _ = script.WriteString(
+		`backupOrReportFailure() {
+  echo "Creating backup"
+  if ! eval $@; then
+    echo "Backup creation failed"
+    return 1
+  fi
+  echo "Successfully created backup, exiting"
+  exit 0
+}`)
+	for _, endpoint := range etcdEndpoints {
+		_, _ = script.WriteString(fmt.Sprintf("\nbackupOrReportFailure etcdctl --endpoints %s snapshot save /backup/snapshot.db", endpoint))
+	}
+	_, _ = script.WriteString("\necho \"Unable to create backup\"\nexit 1")
+	cmd = append(cmd, script.String())
+	return cmd
 }
