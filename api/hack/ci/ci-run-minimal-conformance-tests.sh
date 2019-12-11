@@ -30,8 +30,6 @@ export USE_KIND=${USE_KIND:-false}
 provider=${PROVIDER:-"aws"}
 
 if [[ -n ${OPENSHIFT:-} ]]; then
-  OPENSHIFT_ARG="-openshift=true"
-  export VERSIONS=${OPENSHIFT_VERSION}
   OPENSHIFT_HELM_ARGS="--set-string=kubermatic.controller.featureGates=OpenIDAuthPlugin=true
  --set-string=kubermatic.auth.caBundle=$(cat /etc/oidc-data/oidc-ca-file|base64 -w0)
  --set-string=kubermatic.auth.tokenIssuer=$OIDC_ISSUER_URL

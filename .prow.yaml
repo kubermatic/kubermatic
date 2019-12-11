@@ -256,11 +256,14 @@ presubmits:
     labels:
       preset-azure: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: docker.io/kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.14.8"
@@ -268,18 +271,22 @@ presubmits:
           value: "azure"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2.5Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   #########################################################
   # e2e tests for Kubernetes 1.15
@@ -328,28 +335,35 @@ presubmits:
     labels:
       preset-gce: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: docker.io/kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
         - name: PROVIDER
           value: "gcp"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2.5Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   - name: pre-kubermatic-e2e-gcp-coreos-1.15-psp
     decorate: true
@@ -358,11 +372,14 @@ presubmits:
     labels:
       preset-gce: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: docker.io/kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -372,18 +389,22 @@ presubmits:
           value: "true"
         - name: ONLY_TEST_CREATION
           value: "true"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2.5Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   - name: pre-kubermatic-e2e-azure-coreos-1.15
     decorate: true
@@ -392,11 +413,14 @@ presubmits:
     labels:
       preset-azure: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: docker.io/kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -404,18 +428,22 @@ presubmits:
           value: "azure"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2.5Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   - name: pre-kubermatic-e2e-do-centos-1.15
     decorate: true
@@ -425,11 +453,14 @@ presubmits:
     labels:
       preset-digitalocean: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: docker.io/kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -437,18 +468,22 @@ presubmits:
           value: "ubuntu,coreos"
         - name: PROVIDER
           value: "digitalocean"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2.5Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   - name: pre-kubermatic-e2e-packet-coreos-1.15
     decorate: true
@@ -457,28 +492,35 @@ presubmits:
     labels:
       preset-packet: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
         - name: PROVIDER
           value: "packet"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   - name: pre-kubermatic-e2e-kubevirt-centos-1.15
     decorate: true
@@ -487,11 +529,14 @@ presubmits:
     labels:
       preset-kubevirt: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -499,18 +544,22 @@ presubmits:
           value: "kubevirt"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "ubuntu,coreos"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   - name: pre-kubermatic-e2e-hetzner-ubuntu-1.15
     decorate: true
@@ -519,11 +568,14 @@ presubmits:
     labels:
       preset-hetzner: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -534,18 +586,22 @@ presubmits:
           value: "centos,coreos"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   - name: pre-kubermatic-e2e-openstack-coreos-1.15
     decorate: true
@@ -554,11 +610,14 @@ presubmits:
     labels:
       preset-openstack: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -566,18 +625,22 @@ presubmits:
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   - name: pre-kubermatic-e2e-vsphere-coreos-1.15
     decorate: true
@@ -586,28 +649,35 @@ presubmits:
     labels:
       preset-vsphere: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
         - name: PROVIDER
           value: "vsphere"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   - name: pre-kubermatic-e2e-vsphere-coreos-1.15-customfolder
     decorate: true
@@ -617,11 +687,14 @@ presubmits:
     labels:
       preset-vsphere: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -629,18 +702,22 @@ presubmits:
           value: "vsphere"
         - name: SCENARIO_OPTIONS
           value: "custom-folder"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   #########################################################
   # e2e tests for Kubernetes 1.16
@@ -688,11 +765,14 @@ presubmits:
     labels:
       preset-openstack: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.16.3"
@@ -702,18 +782,22 @@ presubmits:
           value: "20"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "coreos,ubuntu"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   - name: pre-kubermatic-e2e-openstack-ubuntu-1.16
     decorate: true
@@ -722,11 +806,14 @@ presubmits:
     labels:
       preset-openstack: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.16.3"
@@ -736,18 +823,22 @@ presubmits:
           value: "20"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "coreos,centos"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   - name: pre-kubermatic-e2e-openstack-coreos-1.16
     decorate: true
@@ -756,11 +847,14 @@ presubmits:
     labels:
       preset-openstack: "true"
       preset-vault: "true"
+      preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.16.3"
@@ -768,18 +862,22 @@ presubmits:
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   #########################################################
   # e2e tests for Openshift 4.1
@@ -794,28 +892,35 @@ presubmits:
       preset-openshift-pull-secret: "true"
       preset-vault: "true"
       preset-docker-push: "true"
+      preset-docker-pull: "true"
       preset-oidc: "true"
       preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: docker.io/kubermatic/kubernetes-test-binaries:v0.10.8
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
         env:
         - name: OPENSHIFT
           value: "true"
         - name: OPENSHIFT_VERSION
           value: "4.1.18"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci-run-minimal-conformance-tests.sh"
+        - "./api/hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
         resources:
           requests:
-            memory: 2.5Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 3.5
           limits:
             memory: 4Gi
-            cpu: 2
 
   #########################################################
   # upgrade tests
