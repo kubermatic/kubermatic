@@ -42,7 +42,6 @@ type controllerRunOptions struct {
 	masterURL          string
 	internalAddr       string
 	dynamicDatacenters bool
-	log                kubermaticlog.Options
 	seedvalidationHook seedvalidation.WebhookOpts
 
 	workerName string
@@ -68,6 +67,8 @@ func main() {
 	klog.InitFlags(nil)
 	pprofOpts := &pprof.Opts{}
 	pprofOpts.AddFlags(flag.CommandLine)
+	logOpts := kubermaticlog.NewDefaultOptions()
+	logOpts.AddFlags(flag.CommandLine)
 	runOpts.seedvalidationHook.AddFlags(flag.CommandLine)
 	flag.StringVar(&runOpts.kubeconfig, "kubeconfig", "", "Path to a kubeconfig.")
 	flag.StringVar(&runOpts.dcFile, "datacenters", "", "The datacenters.yaml file path.")
@@ -77,12 +78,10 @@ func main() {
 	flag.StringVar(&runOpts.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served.")
 	flag.BoolVar(&runOpts.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters. Enabling this and defining the datcenters flag will enable the migration of the datacenters defined in datancenters.yaml to Seed custom resources.")
 	flag.StringVar(&ctrlCtx.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources.")
-	flag.BoolVar(&runOpts.log.Debug, "log-debug", false, "Enables debug logging.")
-	flag.StringVar(&runOpts.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
 
 	ctrlruntimelog.SetLogger(ctrlruntimelog.ZapLogger(false))
-	rawLog := kubermaticlog.New(runOpts.log.Debug, kubermaticlog.Format(runOpts.log.Format))
+	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 	defer func() {
 		if err := log.Sync(); err != nil {

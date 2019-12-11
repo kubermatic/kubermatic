@@ -74,7 +74,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	rawLog := kubermaticlog.New(options.log.Debug, kubermaticlog.Format(options.log.Format))
+	rawLog := kubermaticlog.New(options.log.Debug, options.log.Format)
 	log := rawLog.Sugar()
 	defer func() {
 		if err := log.Sync(); err != nil {
@@ -308,7 +308,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	serviceAccountTokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey))
 
 	r := handler.NewRouting(
-		kubermaticlog.New(options.log.Debug, kubermaticlog.Format(options.log.Format)).Sugar(),
+		kubermaticlog.New(options.log.Debug, options.log.Format).Sugar(),
 		prov.seedsGetter,
 		prov.clusterProviderGetter,
 		prov.addons,

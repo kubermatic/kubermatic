@@ -20,23 +20,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-type controllerRunOptions struct {
-	log kubermaticlog.Options
-}
-
 func main() {
-	runOp := controllerRunOptions{}
-	flag.BoolVar(&runOp.log.Debug, "log-debug", false, "Enables debug logging")
-	flag.StringVar(&runOp.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
-
+	logOpts := kubermaticlog.NewDefaultOptions()
+	logOpts.AddFlags(flag.CommandLine)
 	flag.Parse()
 
-	if err := runOp.log.Validate(); err != nil {
-		fmt.Printf("error occurred while validating zap logger options: %v\n", err)
-		os.Exit(1)
-	}
-
-	rawLog := kubermaticlog.New(runOp.log.Debug, kubermaticlog.Format(runOp.log.Format))
+	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 
 	cfg, err := config.GetConfig()
