@@ -114,12 +114,6 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.etcdDiskSize,
 		ctrlCtx.dockerPullConfigJSON,
 		ctrlCtx.runOptions.externalURL,
-		openshiftcontroller.OIDCConfig{
-			CAFile:       ctrlCtx.runOptions.oidcCAFile,
-			ClientID:     ctrlCtx.runOptions.oidcIssuerClientID,
-			ClientSecret: ctrlCtx.runOptions.oidcIssuerClientSecret,
-			IssuerURL:    ctrlCtx.runOptions.oidcIssuerURL,
-		},
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.dnatControllerImage,
 		openshiftcontroller.Features{

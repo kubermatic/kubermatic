@@ -382,6 +382,26 @@ spec:
       country: DE
       spec:
         kubevirt: {}
+    syseleven-dbl1:
+      country: DE
+      location: Syseleven - dbl1
+      spec:
+        openstack:
+          auth_url: https://api.cbk.cloud.syseleven.net:5000/v3
+          availability_zone: dbl1
+          dns_servers:
+          - 37.123.105.116
+          - 37.123.105.117
+          enforce_floating_ip: true
+          ignore_volume_az: false
+          images:
+            centos: kubermatic-e2e-centos
+            coreos: kubermatic-e2e-coreos
+            ubuntu: kubermatic-e2e-ubuntu
+          node_size_requirements:
+            minimum_memory: 0
+            minimum_vcpus: 0
+          region: dbl
 EOF
 TEST_NAME="Deploy Seed Manifest"
 retry 7 kubectl apply -f $SEED_MANIFEST

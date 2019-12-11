@@ -102,7 +102,6 @@ func Add(
 	etcdDiskSize resource.Quantity,
 	dockerPullConfigJSON []byte,
 	externalURL string,
-	oidcConfig OIDCConfig,
 	kubermaticImage string,
 	dnatControllerImage string,
 	features Features,
@@ -121,7 +120,6 @@ func Add(
 		dockerPullConfigJSON:     dockerPullConfigJSON,
 		workerName:               workerName,
 		externalURL:              externalURL,
-		oidc:                     oidcConfig,
 		kubermaticImage:          kubermaticImage,
 		dnatControllerImage:      dnatControllerImage,
 		features:                 features,
@@ -358,7 +356,6 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 	creators := []reconciling.NamedSecretCreatorGetter{
 		certificates.RootCACreator(osData),
 		openvpn.CACreator(),
-		apiserver.DexCACertificateCreator(osData.GetDexCA),
 		certificates.FrontProxyCACreator(),
 		openshiftresources.OpenShiftTLSServingCertificateCreator(osData),
 		openshiftresources.ServiceSignerCA(),
