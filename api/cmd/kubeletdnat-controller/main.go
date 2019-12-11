@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"net"
-	"os"
 	"time"
 
 	"go.uber.org/zap"
@@ -26,28 +24,17 @@ import (
 func main() {
 	pprofOpts := &pprof.Opts{}
 	pprofOpts.AddFlags(flag.CommandLine)
+	logOpts := kubermaticlog.NewDefaultOptions()
+	logOpts.AddFlags(flag.CommandLine)
 	klog.InitFlags(nil)
 	kubeconfigFlag := flag.String("kubeconfig", "", "Path to a kubeconfig.")
 	master := flag.String("master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig")
 	networkFlag := flag.String("node-access-network", "", "The network in CIDR notation to translate to.")
 	chainNameFlag := flag.String("chain-name", "node-access-dnat", "Name of the chain in nat table.")
 	vpnInterfaceFlag := flag.String("vpn-interface", "tun0", "Name of the vpn interface.")
-	logDebugFlag := flag.Bool("log-debug", false, "Enables debug logging")
-	logFormatFlag := flag.String("log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
-
-	logOptions := kubermaticlog.Options{
-		Debug:  *logDebugFlag,
-		Format: *logFormatFlag,
-	}
-
 	flag.Parse()
 
-	if err := logOptions.Validate(); err != nil {
-		fmt.Printf("error occurred while validating zap logger options: %v\n", err)
-		os.Exit(1)
-	}
-
-	rawLog := kubermaticlog.New(logOptions.Debug, kubermaticlog.Format(logOptions.Format))
+	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 
 	_, network, err := net.ParseCIDR(*networkFlag)

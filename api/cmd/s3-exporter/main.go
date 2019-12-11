@@ -17,7 +17,8 @@ import (
 )
 
 func main() {
-	logFormat := log.FormatJSON
+	logOpts := log.NewDefaultOptions()
+	logOpts.AddFlags(flag.CommandLine)
 
 	endpointWithProto := flag.String("endpoint", "", "The s3 endpoint, e.G. https://my-s3.com:9000")
 	accessKeyID := flag.String("access-key-id", "", "S3 Access key, defaults to the ACCESS_KEY_ID environment variable")
@@ -25,12 +26,10 @@ func main() {
 	bucket := flag.String("bucket", "kubermatic-etcd-backups", "The bucket to monitor")
 	kubeconfig := flag.String("kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	listenAddress := flag.String("address", ":9340", "The port to listen on")
-	debugLogging := flag.Bool("log-debug", false, "Enable more verbose logging")
-	flag.Var(&logFormat, "log-format", fmt.Sprintf("Use one of [%v] to change the log output format", log.AvailableFormats))
 	flag.Parse()
 
 	// setup logging
-	rawLog := log.New(*debugLogging, logFormat)
+	rawLog := log.New(logOpts.Debug, logOpts.Format)
 	logger := rawLog.Sugar()
 	defer func() {
 		if err := logger.Sync(); err != nil {

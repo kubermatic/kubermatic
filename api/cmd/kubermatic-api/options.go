@@ -58,6 +58,9 @@ func newServerRunOptions() (serverRunOptions, error) {
 		rawAccessibleAddons string
 	)
 
+	s.log = kubermaticlog.NewDefaultOptions()
+	s.log.AddFlags(flag.CommandLine)
+
 	flag.StringVar(&s.listenAddress, "address", ":8080", "The address to listen on")
 	flag.StringVar(&s.kubeconfig, "kubeconfig", "", "Path to the kubeconfig.")
 	flag.StringVar(&s.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal handler should be exposed")
@@ -85,8 +88,6 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&rawExposeStrategy, "expose-strategy", "NodePort", "The strategy to expose the controlplane with, either \"NodePort\" which creates NodePorts with a \"nodeport-proxy.k8s.io/expose: true\" annotation or \"LoadBalancer\", which creates a LoadBalancer")
 	flag.BoolVar(&s.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
 	flag.StringVar(&s.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
-	flag.BoolVar(&s.log.Debug, "log-debug", false, "Enables debug logging")
-	flag.StringVar(&s.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format. Available are: "+kubermaticlog.AvailableFormats.String())
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)

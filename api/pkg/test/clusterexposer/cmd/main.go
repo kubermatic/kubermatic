@@ -86,7 +86,7 @@ func isRequired(flagName string) bool {
 }
 
 func run(cmd *cobra.Command, _ []string) error {
-	rawLog := log.New(debug, log.Format(string(log.FormatJSON)))
+	rawLog := log.New(debug, log.FormatJSON)
 	log := rawLog.Sugar()
 	outerCfg, err := clientcmd.BuildConfigFromFlags("", kubeconfigOuterFile)
 	if err != nil {

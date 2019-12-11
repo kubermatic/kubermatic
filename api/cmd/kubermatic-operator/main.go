@@ -31,7 +31,6 @@ type controllerRunOptions struct {
 	kubeconfig   string
 	namespace    string
 	internalAddr string
-	log          kubermaticlog.Options
 	workerCount  int
 	workerName   string
 }
@@ -40,19 +39,21 @@ func main() {
 	ctx := context.Background()
 
 	klog.InitFlags(nil)
+
 	pprofOpts := &pprof.Opts{}
 	pprofOpts.AddFlags(flag.CommandLine)
+	logOpts := kubermaticlog.NewDefaultOptions()
+	logOpts.AddFlags(flag.CommandLine)
+
 	opt := &controllerRunOptions{}
 	flag.StringVar(&opt.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if outside of cluster.")
 	flag.StringVar(&opt.namespace, "namespace", "", "The namespace the operator runs in, uses to determine where to look for KubermaticConfigurations.")
 	flag.IntVar(&opt.workerCount, "worker-count", 4, "Number of workers which process reconcilings in parallel.")
 	flag.StringVar(&opt.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served")
-	flag.BoolVar(&opt.log.Debug, "log-debug", false, "Enables debug logging")
-	flag.StringVar(&opt.log.Format, "log-format", string(kubermaticlog.FormatJSON), "Log format, one of "+kubermaticlog.AvailableFormats.String())
 	flag.StringVar(&opt.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.Parse()
 
-	rawLog := kubermaticlog.New(opt.log.Debug, kubermaticlog.Format(opt.log.Format)).Named(opt.workerName)
+	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format).Named(opt.workerName)
 	log := rawLog.Sugar()
 	defer func() {
 		if err := log.Sync(); err != nil {

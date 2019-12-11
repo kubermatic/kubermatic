@@ -44,6 +44,8 @@ func main() {
 	klog.InitFlags(nil)
 	pprofOpts := &pprof.Opts{}
 	pprofOpts.AddFlags(flag.CommandLine)
+	logOpts := kubermaticlog.NewDefaultOptions()
+	logOpts.AddFlags(flag.CommandLine)
 	options, err := newControllerRunOptions()
 	if err != nil {
 		fmt.Printf("Failed to create controller run options due to = %v\n", err)
@@ -54,7 +56,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	rawLog := kubermaticlog.New(options.log.Debug, kubermaticlog.Format(options.log.Format))
+	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar().With(
 		"worker-name", options.workerName,
 	)
