@@ -4,23 +4,28 @@
 #############################################################
 #
 # This script should be sourced, not called, so callers get the variables it sets
+# Note: This script is used in upgrade test, hence it must be idempotent
 
-# The kubemaric version to build
+# The kubemaric version to build. The script will checkout the configured
+# revision before building the binaries and go back to the initial HEAD after
+# building finished. Defaults to current HEAD.
 export KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
-export SEED_NAME=prow-build-cluster
 export KUBERMATIC_APISERVER_ADDRESS="localhost:8080"
-export KUBERMATIC_NO_WORKER_NAME=true
+# If set to `true`, the script will just use `latest`. Used e.G. in the UI tests.
 export KUBERMATIC_SKIP_BUILDING="${KUBERMATIC_SKIP_BUILDING:-false}"
 # Number of UI replicas, zero by default as we do not test the UI
 export KUBERMATIC_UI_REPLICAS="${KUBERMATIC_UI_REPLICAS:-0}"
-# Defaults to a hardcoded version so we do not test by default if the latest dashboard version
-# got successfully built.
+# Defaults to `latest` so we do not test by default if the latest dashboard version
+# got successfully built and published, as that may race with the dashboard postsubmit.
 export KUBERMATIC_DASHBOARD_VERSION="${KUBERMATIC_DASHBOARD_VERSION:-latest}"
-# ADDITIONAL_HELM_ARGS allows to configure extra args for helm
+# ADDITIONAL_HELM_ARGS allows to configure extra args for helm. Used e.G. in UI and API tests.
 export ADDITIONAL_HELM_ARGS="${ADDITIONAL_HELM_ARGS:-}"
 
 # Consider self-installed go installations
 export PATH=$PATH:/usr/local/go/bin
+
+# This is just used as a const
+export SEED_NAME=prow-build-cluster
 
 if [[ -z ${JOB_NAME} ]]; then
 	echo "This script should only be running in a CI environment."
@@ -226,6 +231,9 @@ retry 5 kubectl apply -f config/kubermatic/crd
 
 if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   # Build kubermatic binaries and push the image
+  local OLD_HEAD
+  OLD_HEAD="$(git rev-parse HEAD)"
+  git checkout ${KUBERMATIC_VERSION}
   echodate "Building containers with tag $KUBERMATIC_VERSION"
   echodate "Building binaries"
   TEST_NAME="Build Kubermatic binaries"
@@ -274,6 +282,7 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
     time retry 5 docker build -t "${IMAGE_NAME}" .
     time retry 5 docker push "quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
   )
+  git checkout ${OLD_HEAD}
   echodate "Successfully built and loaded all images"
 fi
 
