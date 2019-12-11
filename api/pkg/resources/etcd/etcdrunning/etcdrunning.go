@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 
@@ -12,12 +13,13 @@ import (
 
 type etcdRunningData interface {
 	ImageRegistry(defaultRegistry string) string
+	Cluster() *kubermaticv1.Cluster
 }
 
 func Container(etcdEndpoints []string, data etcdRunningData) corev1.Container {
 	return corev1.Container{
 		Name:  "etcd-running",
-		Image: data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + etcd.ImageTag,
+		Image: data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + etcd.ImageTag(data.Cluster()),
 		Command: []string{
 			"/bin/sh",
 			"-ec",

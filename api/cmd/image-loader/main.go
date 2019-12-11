@@ -12,7 +12,6 @@ import (
 
 	addonutil "github.com/kubermatic/kubermatic/api/pkg/addon"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/backup"
 	kubernetescontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/monitoring"
 	containerlinux "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/container-linux"
@@ -46,9 +45,7 @@ import (
 const mockNamespaceName = "mock-namespace"
 
 var (
-	staticImages = []string{
-		backupcontroller.DefaultBackupContainerImage,
-	}
+	staticImages = []string{}
 )
 
 type opts struct {

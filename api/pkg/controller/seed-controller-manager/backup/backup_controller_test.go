@@ -8,6 +8,7 @@ import (
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,6 +33,9 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
+		},
+		Spec: kubermaticv1.ClusterSpec{
+			Version: *semver.NewSemverOrDie("1.16.3"),
 		},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "testnamespace",
