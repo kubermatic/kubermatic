@@ -181,7 +181,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 					},
 				}}, {
 				Name:  "envoy",
-				Image: data.ImageRegistry("docker.io") + "/envoyproxy/envoy-alpine:v1.10.0",
+				Image: data.ImageRegistry("docker.io") + "/envoyproxy/envoy-alpine:v1.12.2",
 				Command: []string{
 					"/usr/local/bin/envoy",
 					"-c",
