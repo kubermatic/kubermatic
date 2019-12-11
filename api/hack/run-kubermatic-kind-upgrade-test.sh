@@ -12,6 +12,8 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api/hack/ci
 
 export UPGRADE_TEST_BASE_HASH=${UPGRADE_TEST_BASE_HASH:-"master"}
 
+export ONLY_TEST_CREATION=true
+
 # We need to fetch UPGRADE_TEST_BASE_HASH in case its not in either the PRs base or the Prs HEAD
 ensure_github_host_pubkey
 git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
