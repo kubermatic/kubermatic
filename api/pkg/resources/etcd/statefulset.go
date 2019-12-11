@@ -34,7 +34,8 @@ const (
 	name    = "etcd"
 	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
 	// ImageTag defines the image tag to use for the etcd image
-	ImageTag = "v3.3.15"
+	imageTagV33 = "v3.3.18"
+	imageTagV34 = "v3.4.3"
 )
 
 type etcdStatefulSetCreatorData interface {
@@ -90,10 +91,11 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			if data.Cluster().Spec.ComponentsOverride.Etcd.Resources != nil {
 				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Etcd.Resources
 			}
+
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
-					Image:   data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag,
+					Image:   data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag(data.Cluster()),
 					Command: etcdStartCmd,
 					Env: []corev1.EnvVar{
 						{
@@ -366,3 +368,11 @@ exec /usr/local/bin/etcd \
     --auto-compaction-retention=8
 `
 )
+
+// ImageTag returns the correct etcd image tag for a given Cluster
+func ImageTag(c *kubermaticv1.Cluster) string {
+	if c.IsOpenshift() || c.Spec.Version.Minor() < 17 {
+		return imageTagV33
+	}
+	return imageTagV34
+}
