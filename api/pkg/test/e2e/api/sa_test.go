@@ -1,6 +1,6 @@
 // +build e2e
 
-package e2e
+package api
 
 import (
 	"strings"
@@ -25,12 +25,12 @@ func TestCreateSA(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := GetMasterToken()
+			masterToken, err := retrieveMasterToken()
 			if err != nil {
 				t.Fatalf("can not get master token due error: %v", err)
 			}
 
-			apiRunner := CreateAPIRunner(masterToken, t)
+			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
 				t.Fatalf("can not create project due error: %v", err)
@@ -66,11 +66,11 @@ func TestTokenAccessForProject(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := GetMasterToken()
+			masterToken, err := retrieveMasterToken()
 			if err != nil {
 				t.Fatalf("can not get master token due error: %v", err)
 			}
-			apiRunner := CreateAPIRunner(masterToken, t)
+			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
 				t.Fatalf("can not create project due error: %v", GetErrorResponse(err))
@@ -88,7 +88,7 @@ func TestTokenAccessForProject(t *testing.T) {
 				t.Fatalf("can not create token due error: %v", err)
 			}
 
-			apiRunnerWithSAToken := CreateAPIRunner(saToken.Token, t)
+			apiRunnerWithSAToken := createRunner(saToken.Token, t)
 
 			project, err = apiRunnerWithSAToken.GetProject(project.ID, 1)
 			if err != nil {

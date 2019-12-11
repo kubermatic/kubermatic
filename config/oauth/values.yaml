@@ -4,8 +4,14 @@ dex:
     tag: "v2.21.0"
   replicas: 2
   ingress:
+    # this option is required
     host: ""
     path: "/dex"
+    # this option is only used for testing and should not be
+    # changed to anything unencrypted in production setups
+    scheme: "https"
+    # if set to "non-existent", no Ingress resource will be created
+    class: "nginx"
   expiry:
     signingKeys: "6h"
     idTokens: "24h"
@@ -30,7 +36,7 @@ dex:
 #    - http://localhost:8000/projects
 #    - https://dev.kubermatic.io/projects
 #
-#  staticPasswordLogins:
+#  staticPasswords:
 #  - email: "admin@example.com"
 #    # bcrypt hash of the string "password"
 #    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"

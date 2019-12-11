@@ -10,7 +10,8 @@
 # revision before building the binaries and go back to the initial HEAD after
 # building finished. Defaults to current HEAD.
 export KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
-export KUBERMATIC_APISERVER_ADDRESS="localhost:8080"
+export KUBERMATIC_SCHEME="http"
+export KUBERMATIC_HOST="localhost:8080"
 # If set to `true`, the script will just use `latest`. Used e.G. in the UI tests.
 export KUBERMATIC_SKIP_BUILDING="${KUBERMATIC_SKIP_BUILDING:-false}"
 # Number of UI replicas, zero by default as we do not test the UI
@@ -118,7 +119,10 @@ EOF
 echodate "Set aliases in .bashrc"
 
 # The container runtime allows us to change the content but not to change the inode
-# which is what sed -i does, so write to a tempfile and write the tempfiles content back
+# which is what sed -i does, so write to a tempfile and write the tempfiles content back.
+# The alias makes it easier to access the port-forwarded Dex inside the Kind cluster;
+# the token issuer cannot be localhost:5556, because pods inside the cluster would not
+# find Dex anymore.
 echodate "Setting dex.oauth alias in /etc/hosts"
 temp_hosts="$(mktemp)"
 sed 's/localhost/localhost dex.oauth/' /etc/hosts > $temp_hosts
@@ -172,6 +176,13 @@ iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -
 # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
 echodate "Successfully set up iptables rules for nodeports"
 
+echodate "Creating kubermatic-fast storageclass"
+TEST_NAME="Create kubermatic-fast storageclass"
+retry 5 kubectl get storageclasses.storage.k8s.io standard -o json \
+  |jq 'del(.metadata)|.metadata.name = "kubermatic-fast"'\
+  |kubectl apply -f -
+echodate "Successfully created kubermatic-fast storageclass"
+
 INITIAL_MANIFESTS="$(mktemp)"
 cat <<EOF >$INITIAL_MANIFESTS
 apiVersion: v1
@@ -194,8 +205,13 @@ subjects:
     namespace: kube-system
 ---
 EOF
+
 TEST_NAME="Create Helm bindings"
+echodate "Creating Helm bindings"
 retry 5 kubectl apply -f $INITIAL_MANIFESTS
+
+TEST_NAME="Deploy Tiller"
+echodate "Deploying Tiller"
 
 if kubectl get deployment -n kube-system tiller-deploy &>/dev/null; then
   echodate "Tiller already deployed"
@@ -205,28 +221,26 @@ else
   helm init --wait --service-account=tiller
 fi
 
-echodate "Creating kubermatic-fast storageclass"
-TEST_NAME="Create kubermatic-fast storageclass"
-retry 5 kubectl get storageclasses.storage.k8s.io standard -o json \
-  |jq 'del(.metadata)|.metadata.name = "kubermatic-fast"'\
-  |kubectl apply -f -
-echodate "Successfully created kubermatic-fast storageclass"
+TEST_NAME="Deploy Dex"
+echodate "Deploying Dex"
+
+export KUBERMATIC_DEX_VALUES_FILE=$(realpath api/hack/ci/testdata/oauth_values.yaml)
 
 if kubectl get namespace oauth; then
   echodate "Dex already deployed"
 else
-  TEST_NAME="Deploying dex"
-  echodate "Deploying dex"
-  rm config/oauth/templates/ingress.yaml
-  cp ./api/hack/ci/testdata/oauth_configmap.yaml config/oauth/templates/configmap.yaml
   retry 5 helm install --wait --timeout 180 \
-    --set-string=dex.ingress.host=http://dex.oauth:5556 \
-    --values ./api/hack/ci/testdata/oauth_values.yaml \
+    --values $KUBERMATIC_DEX_VALUES_FILE \
     --namespace oauth \
-    --name kubermatic-oauth-e2e ./config/oauth
+    --name oauth ./config/oauth
 fi
 
-TEST_NAME="Deploying kubermatic CRDs"
+export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
+export KUBERMATIC_OIDC_PASSWORD="password"
+
+TEST_NAME="Deploy Kubermatic CRDs"
+echodate "Deploying Kubermatic CRDs"
+
 retry 5 kubectl apply -f config/kubermatic/crd
 
 if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
@@ -289,7 +303,6 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   echodate "Successfully built and loaded all images"
 fi
 
-
 # --force is needed in case the first attempt at installing didn't succeed
 # see https://github.com/helm/helm/pull/3597
 retry 3 helm upgrade --install --force --wait --timeout 300 \
@@ -309,7 +322,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set=kubermatic.datacenters='' \
   --set=kubermatic.dynamicDatacenters=true \
   --set=kubermatic.kubeconfig="$(cat $KUBECONFIG|sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./'|base64 -w0)" \
-  --set=kubermatic.auth.tokenIssuer=http://dex.oauth:5556 \
+  --set=kubermatic.auth.tokenIssuer=http://dex.oauth:5556/dex \
   --set=kubermatic.auth.clientID=kubermatic \
   --set=kubermatic.auth.serviceAccountKey=$SERVICE_ACCOUNT_KEY \
   --set=kubermatic.apiserverDefaultReplicas=1 \
@@ -455,22 +468,6 @@ else
   echodate "No existing port-forward for the kubermatic api found"
 fi
 
-# Expose dex to localhost
-TEST_NAME="Expose dex and kubermatic API to localhost"
-kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556  &
-
-# Expose kubermatic API to localhost
-kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 &
-echodate "Finished exposing components"
-
-echodate "Waiting for dex to be ready"
-retry 5 curl --fail http://127.0.0.1:5556/healthz
-echodate "Dex got ready"
-
-echodate "Waiting for api to be ready"
-retry 5 curl --fail http://127.0.0.1:8080/api/v1/healthz
-echodate "API got ready"
-
 function cleanup_kubermatic_clusters_in_kind {
   originalRC=$?
 
@@ -488,5 +485,19 @@ function cleanup_kubermatic_clusters_in_kind {
   return $originalRC
 }
 appendTrap cleanup_kubermatic_clusters_in_kind EXIT
+
+TEST_NAME="Expose Dex and Kubermatic API"
+echodate "Exposing Dex and Kubermatic API to localhost"
+kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556  &
+kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 &
+echodate "Finished exposing components"
+
+echodate "Waiting for Dex to be ready"
+retry 5 curl --fail http://127.0.0.1:5556/dex/healthz
+echodate "Dex became ready"
+
+echodate "Waiting for Kubermatic API to be ready"
+retry 5 curl --fail http://127.0.0.1:8080/api/v1/healthz
+echodate "API became ready"
 
 cd -

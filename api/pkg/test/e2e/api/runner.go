@@ -1,15 +1,10 @@
-package e2e
+package api
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
-	"os/exec"
-	"strings"
 	"testing"
 	"time"
 
@@ -20,7 +15,6 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	oidc "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils"
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/admin"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/credentials"
@@ -33,120 +27,42 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
-	defaultIssuerURL       = "http://dex.oauth:5556"
-	defaultHost            = "localhost:8080"
-	defaultScheme          = "http"
-	defaultIssuerURLPrefix = ""
-	maxAttempts            = 8
-	timeout                = time.Second * 4
+	maxAttempts = 8
+	timeout     = time.Second * 4
 )
 
-type APIRunner struct {
+type runner struct {
 	client      *apiclient.Kubermatic
 	bearerToken runtime.ClientAuthInfoWriter
 	test        *testing.T
 }
 
-func GetMasterToken() (string, error) {
-
-	var hClient = &http.Client{
-		Timeout: time.Second * 10,
-	}
-
-	u, err := getIssuerURL()
-	if err != nil {
-		return "", err
-	}
-
-	issuerURLPrefix := getIssuerURLPrefix()
-	login, password := oidc.GetOIDCClient()
-
-	var oidcAuthToken string
-	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
-		requestToken, err := oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, "http://localhost:8000")
-		if err != nil {
-			fmt.Printf("Failed to get OIDC request token: %v\n", err)
-			return false, nil
-		}
-		oidcAuthToken, err = oidc.GetOIDCAuthToken(hClient, requestToken, u, issuerURLPrefix, login, password)
-		if err != nil {
-			fmt.Printf("Failed to get OIDC auth token: %v\n", err)
-			return false, nil
-		}
-		return true, nil
-	}); err != nil {
-		return "", fmt.Errorf("failed to get OIDC token: %v", err)
-	}
-
-	return oidcAuthToken, nil
-}
-
-func GetAdminMasterToken() (string, error) {
-	var hClient = &http.Client{
-		Timeout: time.Second * 10,
-	}
-
-	u, err := getIssuerURL()
-	if err != nil {
-		return "", err
-	}
-
-	issuerURLPrefix := getIssuerURLPrefix()
-
-	requestToken, err := oidc.GetOIDCReqToken(hClient, u, issuerURLPrefix, "http://localhost:8000")
-	if err != nil {
-		return "", err
-	}
-
-	return oidc.GetOIDCAuthToken(hClient, requestToken, u, issuerURLPrefix, "roxy2@loodse.com", "password")
-}
-
 func getHost() string {
 	host := os.Getenv("KUBERMATIC_HOST")
-	if len(host) > 0 {
-		return host
+	if len(host) == 0 {
+		fmt.Printf("No KUBERMATIC_HOST env variable set.")
+		os.Exit(1)
 	}
-	return defaultHost
+	return host
 }
 
 func getScheme() string {
 	scheme := os.Getenv("KUBERMATIC_SCHEME")
-	if len(scheme) > 0 {
-		return scheme
+	if len(scheme) == 0 {
+		fmt.Printf("No KUBERMATIC_SCHEME env variable set.")
+		os.Exit(1)
 	}
-	return defaultScheme
+	return scheme
 }
 
-func getIssuerURL() (url.URL, error) {
-	issuerURL := os.Getenv("KUBERMATIC_OIDC_ISSUER")
-	if len(issuerURL) == 0 {
-		issuerURL = defaultIssuerURL
-	}
-	u, err := url.Parse(issuerURL)
-	if err != nil {
-		return url.URL{}, err
-	}
-	return *u, nil
-}
-
-func getIssuerURLPrefix() string {
-	prefix := os.Getenv("KUBERMATIC_OIDC_ISSUER_URL_PREFIX")
-	if len(prefix) > 0 {
-		return prefix
-	}
-	return defaultIssuerURLPrefix
-}
-
-// CreateAPIRunner util method to create APIRunner
-func CreateAPIRunner(token string, t *testing.T) *APIRunner {
+func createRunner(token string, t *testing.T) *runner {
 	client := apiclient.New(httptransport.New(getHost(), "", []string{getScheme()}), strfmt.Default)
 
 	bearerTokenAuth := httptransport.BearerToken(token)
-	return &APIRunner{
+	return &runner{
 		client:      client,
 		bearerToken: bearerTokenAuth,
 		test:        t,
@@ -154,7 +70,7 @@ func CreateAPIRunner(token string, t *testing.T) *APIRunner {
 }
 
 // CreateProject creates a new project
-func (r *APIRunner) CreateProject(name string) (*apiv1.Project, error) {
+func (r *runner) CreateProject(name string) (*apiv1.Project, error) {
 	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: name}}
 	params.WithTimeout(timeout)
 	project, err := r.client.Project.CreateProject(params, r.bearerToken)
@@ -183,7 +99,7 @@ func (r *APIRunner) CreateProject(name string) (*apiv1.Project, error) {
 }
 
 // GetProject gets the project with the given ID
-func (r *APIRunner) GetProject(id string, attempts int) (*apiv1.Project, error) {
+func (r *runner) GetProject(id string, attempts int) (*apiv1.Project, error) {
 	params := &project.GetProjectParams{ProjectID: id}
 	params.WithTimeout(timeout)
 
@@ -204,7 +120,7 @@ func (r *APIRunner) GetProject(id string, attempts int) (*apiv1.Project, error) 
 }
 
 // UpdateProject updates the given project
-func (r *APIRunner) UpdateProject(projectToUpdate *apiv1.Project) (*apiv1.Project, error) {
+func (r *runner) UpdateProject(projectToUpdate *apiv1.Project) (*apiv1.Project, error) {
 	params := &project.UpdateProjectParams{ProjectID: projectToUpdate.ID, Body: &models.Project{Name: projectToUpdate.Name}}
 	params.WithTimeout(timeout)
 	project, err := r.client.Project.UpdateProject(params, r.bearerToken)
@@ -231,7 +147,7 @@ func convertProject(project *models.Project) (*apiv1.Project, error) {
 }
 
 // DeleteProject deletes given project
-func (r *APIRunner) DeleteProject(id string) error {
+func (r *runner) DeleteProject(id string) error {
 	params := &project.DeleteProjectParams{ProjectID: id}
 	params.WithTimeout(timeout)
 	if _, err := r.client.Project.DeleteProject(params, r.bearerToken); err != nil {
@@ -241,7 +157,7 @@ func (r *APIRunner) DeleteProject(id string) error {
 }
 
 // CreateServiceAccount method creates a new service account
-func (r *APIRunner) CreateServiceAccount(name, group, projectID string) (*apiv1.ServiceAccount, error) {
+func (r *runner) CreateServiceAccount(name, group, projectID string) (*apiv1.ServiceAccount, error) {
 	params := &serviceaccounts.AddServiceAccountToProjectParams{ProjectID: projectID, Body: &models.ServiceAccount{Name: name, Group: group}}
 	params.WithTimeout(timeout)
 	params.SetTimeout(timeout)
@@ -270,7 +186,7 @@ func (r *APIRunner) CreateServiceAccount(name, group, projectID string) (*apiv1.
 }
 
 // GetServiceAccount returns service account for given ID and project
-func (r *APIRunner) GetServiceAccount(saID, projectID string) (*apiv1.ServiceAccount, error) {
+func (r *runner) GetServiceAccount(saID, projectID string) (*apiv1.ServiceAccount, error) {
 	params := &serviceaccounts.ListServiceAccountsParams{ProjectID: projectID}
 	params.WithTimeout(timeout)
 
@@ -313,7 +229,7 @@ func convertServiceAccount(sa *models.ServiceAccount) (*apiv1.ServiceAccount, er
 }
 
 // AddTokenToServiceAccount creates a new token for service account
-func (r *APIRunner) AddTokenToServiceAccount(name, saID, projectID string) (*apiv1.ServiceAccountToken, error) {
+func (r *runner) AddTokenToServiceAccount(name, saID, projectID string) (*apiv1.ServiceAccountToken, error) {
 	params := &tokens.AddTokenToServiceAccountParams{ProjectID: projectID, ServiceaccountID: saID, Body: &models.ServiceAccountToken{Name: name}}
 	params.WithTimeout(timeout)
 	token, err := r.client.Tokens.AddTokenToServiceAccount(params, r.bearerToken)
@@ -340,7 +256,7 @@ func convertServiceAccountToken(saToken *models.ServiceAccountToken) (*apiv1.Ser
 }
 
 // ListCredentials returns list of credential names for the provider
-func (r *APIRunner) ListCredentials(providerName string) ([]string, error) {
+func (r *runner) ListCredentials(providerName string) ([]string, error) {
 	params := &credentials.ListCredentialsParams{ProviderName: providerName}
 	params.WithTimeout(timeout)
 	credentialsResponse, err := r.client.Credentials.ListCredentials(params, r.bearerToken)
@@ -355,7 +271,7 @@ func (r *APIRunner) ListCredentials(providerName string) ([]string, error) {
 }
 
 // CreateAWSCluster creates cluster for AWS provider
-func (r *APIRunner) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location, availabilityZone string, replicas int32) (*apiv1.Cluster, error) {
+func (r *runner) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location, availabilityZone string, replicas int32) (*apiv1.Cluster, error) {
 
 	vr, err := semver.NewVersion(version)
 	if err != nil {
@@ -412,7 +328,7 @@ func (r *APIRunner) CreateAWSCluster(projectID, dc, name, secretAccessKey, acces
 }
 
 // CreateDOCluster creates cluster for DigitalOcean provider
-func (r *APIRunner) CreateDOCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
+func (r *runner) CreateDOCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
 
 	vr, err := semver.NewVersion(version)
 	if err != nil {
@@ -466,7 +382,7 @@ func (r *APIRunner) CreateDOCluster(projectID, dc, name, credential, version, lo
 }
 
 // DeleteCluster delete cluster method
-func (r *APIRunner) DeleteCluster(projectID, dc, clusterID string) error {
+func (r *runner) DeleteCluster(projectID, dc, clusterID string) error {
 
 	params := &project.DeleteClusterParams{ProjectID: projectID, Dc: dc, ClusterID: clusterID}
 	params.WithTimeout(timeout)
@@ -478,7 +394,7 @@ func (r *APIRunner) DeleteCluster(projectID, dc, clusterID string) error {
 }
 
 // GetCluster cluster getter
-func (r *APIRunner) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster, error) {
+func (r *runner) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster, error) {
 
 	params := &project.GetClusterParams{ProjectID: projectID, Dc: dc, ClusterID: clusterID}
 	params.WithTimeout(timeout)
@@ -491,7 +407,7 @@ func (r *APIRunner) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster,
 }
 
 // GetClusterEvents returns the cluster events
-func (r *APIRunner) GetClusterEvents(projectID, dc, clusterID string) ([]*models.Event, error) {
+func (r *runner) GetClusterEvents(projectID, dc, clusterID string) ([]*models.Event, error) {
 	params := &project.GetClusterEventsParams{ProjectID: projectID, Dc: dc, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 
@@ -503,7 +419,7 @@ func (r *APIRunner) GetClusterEvents(projectID, dc, clusterID string) ([]*models
 }
 
 // PrintClusterEvents prints all cluster events using its test.Logf
-func (r *APIRunner) PrintClusterEvents(projectID, dc, clusterID string) error {
+func (r *runner) PrintClusterEvents(projectID, dc, clusterID string) error {
 	events, err := r.GetClusterEvents(projectID, dc, clusterID)
 	if err != nil {
 		return fmt.Errorf("failed to get cluster events: %v", err)
@@ -517,7 +433,7 @@ func (r *APIRunner) PrintClusterEvents(projectID, dc, clusterID string) error {
 }
 
 // GetClusterHealthStatus gets the cluster status
-func (r *APIRunner) GetClusterHealthStatus(projectID, dc, clusterID string) (*apiv1.ClusterHealth, error) {
+func (r *runner) GetClusterHealthStatus(projectID, dc, clusterID string) (*apiv1.ClusterHealth, error) {
 	params := &project.GetClusterHealthParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 
@@ -557,7 +473,7 @@ func convertHealthStatus(status models.HealthStatus) kubermaticv1.HealthStatus {
 }
 
 // GetClusterNodeDeployment returns the cluster node deployments
-func (r *APIRunner) GetClusterNodeDeployment(projectID, dc, clusterID string) ([]apiv1.NodeDeployment, error) {
+func (r *runner) GetClusterNodeDeployment(projectID, dc, clusterID string) ([]apiv1.NodeDeployment, error) {
 	params := &project.ListNodeDeploymentsParams{ClusterID: clusterID, ProjectID: projectID, Dc: dc}
 	params.WithTimeout(timeout * 2)
 
@@ -605,7 +521,7 @@ func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
 }
 
 // ListGCPZones returns list of GCP zones
-func (r *APIRunner) ListGCPZones(credential, dc string) ([]string, error) {
+func (r *runner) ListGCPZones(credential, dc string) ([]string, error) {
 	params := &gcp.ListGCPZonesParams{Credential: &credential, Dc: dc}
 	params.WithTimeout(timeout)
 	zonesResponse, err := r.client.Gcp.ListGCPZones(params, r.bearerToken)
@@ -621,7 +537,7 @@ func (r *APIRunner) ListGCPZones(credential, dc string) ([]string, error) {
 }
 
 // ListGCPDiskTypes returns list of GCP disk types
-func (r *APIRunner) ListGCPDiskTypes(credential, zone string) ([]string, error) {
+func (r *runner) ListGCPDiskTypes(credential, zone string) ([]string, error) {
 	params := &gcp.ListGCPDiskTypesParams{Credential: &credential, Zone: &zone}
 	params.WithTimeout(timeout)
 	typesResponse, err := r.client.Gcp.ListGCPDiskTypes(params, r.bearerToken)
@@ -637,7 +553,7 @@ func (r *APIRunner) ListGCPDiskTypes(credential, zone string) ([]string, error) 
 }
 
 // ListGCPSizes returns list of GCP sizes
-func (r *APIRunner) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSize, error) {
+func (r *runner) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSize, error) {
 	params := &gcp.ListGCPSizesParams{Credential: &credential, Zone: &zone}
 	params.WithTimeout(timeout)
 	sizesResponse, err := r.client.Gcp.ListGCPSizes(params, r.bearerToken)
@@ -679,24 +595,24 @@ func IsHealthyCluster(healthStatus *apiv1.ClusterHealth) bool {
 
 func cleanUpProject(id string, attempts int) func(t *testing.T) {
 	return func(t *testing.T) {
-		masterToken, err := GetMasterToken()
+		masterToken, err := retrieveMasterToken()
 		if err != nil {
 			t.Fatalf("can not get master token due error: %v", err)
 		}
-		apiRunner := CreateAPIRunner(masterToken, t)
+		runner := createRunner(masterToken, t)
 
-		if err := apiRunner.DeleteProject(id); err != nil {
+		if err := runner.DeleteProject(id); err != nil {
 			t.Fatalf("can not delete project due error: %v", err)
 		}
 		t.Log("project deleting ...")
 		for attempt := 1; attempt <= attempts; attempt++ {
-			_, err := apiRunner.GetProject(id, 5)
+			_, err := runner.GetProject(id, 5)
 			if err != nil {
 				break
 			}
 			time.Sleep(3 * time.Second)
 		}
-		_, err = apiRunner.GetProject(id, 5)
+		_, err = runner.GetProject(id, 5)
 		if err == nil {
 			t.Fatalf("can not delete the project")
 		}
@@ -704,26 +620,26 @@ func cleanUpProject(id string, attempts int) func(t *testing.T) {
 	}
 }
 
-func cleanUpCluster(t *testing.T, apiRunner *APIRunner, projectID, dc, clusterID string) {
-	if err := apiRunner.DeleteCluster(projectID, dc, clusterID); err != nil {
+func cleanUpCluster(t *testing.T, runner *runner, projectID, dc, clusterID string) {
+	if err := runner.DeleteCluster(projectID, dc, clusterID); err != nil {
 		t.Fatalf("can not delete the cluster %v", GetErrorResponse(err))
 	}
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		_, err := apiRunner.GetCluster(projectID, dc, clusterID)
+		_, err := runner.GetCluster(projectID, dc, clusterID)
 		if err != nil {
 			t.Logf("cluster deleted %v", GetErrorResponse(err))
 			break
 		}
 		time.Sleep(60 * time.Second)
 	}
-	_, err := apiRunner.GetCluster(projectID, dc, clusterID)
+	_, err := runner.GetCluster(projectID, dc, clusterID)
 	if err == nil {
 		t.Fatalf("can not delete the cluster after %d attempts", maxAttempts)
 	}
 }
 
-func (r *APIRunner) DeleteUserFromProject(projectID, userID string) error {
+func (r *runner) DeleteUserFromProject(projectID, userID string) error {
 	params := &users.DeleteUserFromProjectParams{ProjectID: projectID, UserID: userID}
 	params.WithTimeout(timeout)
 	if _, err := r.client.Users.DeleteUserFromProject(params, r.bearerToken); err != nil {
@@ -732,7 +648,7 @@ func (r *APIRunner) DeleteUserFromProject(projectID, userID string) error {
 	return nil
 }
 
-func (r *APIRunner) GetProjectUsers(projectID string) ([]apiv1.User, error) {
+func (r *runner) GetProjectUsers(projectID string) ([]apiv1.User, error) {
 	params := &users.GetUsersForProjectParams{ProjectID: projectID}
 	params.WithTimeout(timeout)
 
@@ -763,7 +679,7 @@ func (r *APIRunner) GetProjectUsers(projectID string) ([]apiv1.User, error) {
 	return users, nil
 }
 
-func (r *APIRunner) AddProjectUser(projectID, email, name, group string) (*apiv1.User, error) {
+func (r *runner) AddProjectUser(projectID, email, name, group string) (*apiv1.User, error) {
 	params := &users.AddUserToProjectParams{ProjectID: projectID, Body: &models.User{
 		Email: email,
 		Name:  name,
@@ -789,40 +705,7 @@ func (r *APIRunner) AddProjectUser(projectID, email, name, group string) (*apiv1
 	return usr, nil
 }
 
-// RunOIDCProxy runs the OIDC proxy. It is non-blocking. It does
-// so by shelling out which is not pretty, but better than the previous
-// approach of forking in a script and having no way of making the test
-// fail of the OIDC failed
-func RunOIDCProxy(errChan chan error, cancel <-chan struct{}) error {
-	gopathRaw, err := exec.Command("go", "env", "GOPATH").CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("failed to get gopath: %v", err)
-	}
-	goPathSanitized := strings.Replace(string(gopathRaw), "\n", "", -1)
-	oidcProxyDir := fmt.Sprintf("%s/src/github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/oidc-proxy-client", goPathSanitized)
-
-	oidProxyCommand := exec.Command("make", "run")
-	oidProxyCommand.Dir = oidcProxyDir
-	var out bytes.Buffer
-	oidProxyCommand.Stdout = &out
-	oidProxyCommand.Stderr = &out
-	if err := oidProxyCommand.Start(); err != nil {
-		return fmt.Errorf("failed to run oidc proxy command: %v", err)
-	}
-	defer func() {
-		fmt.Printf("Output of oidc proxy:\n---\n%s\n---\n", out.String())
-	}()
-
-	go func() {
-		if err := oidProxyCommand.Wait(); err != nil {
-			errChan <- fmt.Errorf("failed to run oidc proxy. Output:\n%s\nError: %v", out.String(), err)
-		}
-	}()
-
-	return nil
-}
-
-func (r *APIRunner) GetGlobalSettings() (*apiv1.GlobalSettings, error) {
+func (r *runner) GetGlobalSettings() (*apiv1.GlobalSettings, error) {
 	params := &admin.GetKubermaticSettingsParams{}
 	params.WithTimeout(timeout)
 	responseSettings, err := r.client.Admin.GetKubermaticSettings(params, r.bearerToken)
@@ -833,7 +716,7 @@ func (r *APIRunner) GetGlobalSettings() (*apiv1.GlobalSettings, error) {
 	return convertGlobalSettings(responseSettings.Payload), nil
 }
 
-func (r *APIRunner) UpdateGlobalSettings(s string) (*apiv1.GlobalSettings, error) {
+func (r *runner) UpdateGlobalSettings(s string) (*apiv1.GlobalSettings, error) {
 	params := &admin.PatchKubermaticSettingsParams{
 		Patch: []uint8(s),
 	}
@@ -873,7 +756,7 @@ func convertGlobalSettings(gSettings *models.GlobalSettings) *apiv1.GlobalSettin
 	}
 }
 
-func (r *APIRunner) SetAdmin(email string, isAdmin bool) error {
+func (r *runner) SetAdmin(email string, isAdmin bool) error {
 	params := &admin.SetAdminParams{
 		Body: &models.Admin{
 			Email:   email,
@@ -890,7 +773,7 @@ func (r *APIRunner) SetAdmin(email string, isAdmin bool) error {
 }
 
 // GetRoles
-func (r *APIRunner) GetRoles(projectID, dc, clusterID string) ([]apiv1.RoleName, error) {
+func (r *runner) GetRoles(projectID, dc, clusterID string) ([]apiv1.RoleName, error) {
 	params := &project.ListRoleNamesParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 
@@ -920,7 +803,7 @@ func (r *APIRunner) GetRoles(projectID, dc, clusterID string) ([]apiv1.RoleName,
 }
 
 // BindUserToRole
-func (r *APIRunner) BindUserToRole(projectID, dc, clusterID, roleName, namespace, user string) (*apiv1.RoleBinding, error) {
+func (r *runner) BindUserToRole(projectID, dc, clusterID, roleName, namespace, user string) (*apiv1.RoleBinding, error) {
 	params := &project.BindUserToRoleParams{
 		Body:      &models.RoleUser{UserEmail: user},
 		ClusterID: clusterID,
@@ -950,7 +833,7 @@ func (r *APIRunner) BindUserToRole(projectID, dc, clusterID, roleName, namespace
 	}, nil
 }
 
-func (r *APIRunner) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.ClusterRoleName, error) {
+func (r *runner) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.ClusterRoleName, error) {
 	params := &project.ListClusterRoleNamesParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 
@@ -979,7 +862,7 @@ func (r *APIRunner) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.Cl
 }
 
 // BindUserToClusterRole
-func (r *APIRunner) BindUserToClusterRole(projectID, dc, clusterID, roleName, user string) (*apiv1.ClusterRoleBinding, error) {
+func (r *runner) BindUserToClusterRole(projectID, dc, clusterID, roleName, user string) (*apiv1.ClusterRoleBinding, error) {
 	params := &project.BindUserToClusterRoleParams{
 		Body:      &models.ClusterRoleUser{UserEmail: user},
 		ClusterID: clusterID,
@@ -1007,7 +890,7 @@ func (r *APIRunner) BindUserToClusterRole(projectID, dc, clusterID, roleName, us
 	}, nil
 }
 
-func (r *APIRunner) GetClusterBindings(projectID, dc, clusterID string) ([]apiv1.ClusterRoleBinding, error) {
+func (r *runner) GetClusterBindings(projectID, dc, clusterID string) ([]apiv1.ClusterRoleBinding, error) {
 	params := &project.ListClusterRoleBindingParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 

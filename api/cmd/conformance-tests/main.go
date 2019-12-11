@@ -29,6 +29,7 @@ import (
 	apitest "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api"
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/dex"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
@@ -74,6 +75,7 @@ type Opts struct {
 	onlyTestCreation             bool
 	pspEnabled                   bool
 	createOIDCToken              bool
+	dexHelmValuesFile            string
 	kubermatcProjectID           string
 	kubermaticClient             *apiclient.Kubermatic
 	kubermaticAuthenticator      runtime.ClientAuthInfoWriter
@@ -184,6 +186,9 @@ func main() {
 	flag.BoolVar(&opts.onlyTestCreation, "only-test-creation", false, "Only test if nodes become ready. Does not perform any extended checks like conformance tests")
 	_ = flag.Bool("debug", false, "No-Op flag kept for compatibility reasons")
 	flag.BoolVar(&opts.createOIDCToken, "create-oidc-token", false, "Whether to create a OIDC token. If false, environment vars for projectID and OIDC token must be set.")
+	// This won't be used directly for backwards compatibility in upgrade-tests;
+	// instead the KUBERMATIC_DEX_VALUES_FILE env variable will be used.
+	flag.StringVar(&opts.dexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
 	flag.StringVar(&opts.scenarioOptions, "scenario-options", "", "Additional options to be passed to scenarios, e.g. to configure specific features to be tested.")
 
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
@@ -238,14 +243,21 @@ func main() {
 		opts.versions = append(opts.versions, semver.NewSemverOrDie(s))
 	}
 
-	kubermaticAPIServerAddress := os.Getenv("KUBERMATIC_APISERVER_ADDRESS")
+	kubermaticAPIServerAddress := os.Getenv("KUBERMATIC_HOST")
 	if kubermaticAPIServerAddress == "" {
-		log.Fatalf("Kubermatic apiserver address must be set via KUBERMATIC_APISERVER_ADDRESS env var")
+		log.Fatal("Kubermatic apiserver address must be set via KUBERMATIC_HOST env var")
 	}
-	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{"http"}), nil)
+	kubermaticAPIServerScheme := os.Getenv("KUBERMATIC_SCHEME")
+	if kubermaticAPIServerScheme == "" {
+		log.Fatal("Kubermatic apiserver protocol must be set via KUBERMATIC_SCHEME env var")
+	}
+	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{kubermaticAPIServerScheme}), nil)
 	opts.secrets.kubermaticClient = opts.kubermaticClient
 	// May be empty if creating an OIDC token
 	opts.kubermatcProjectID = strings.TrimSpace(os.Getenv("KUBERMATIC_PROJECT_ID"))
+
+	rootCtx, rootCancel := context.WithCancel(context.Background())
+	defer rootCancel()
 
 	if !opts.createOIDCToken {
 		if opts.kubermatcProjectID == "" {
@@ -257,16 +269,20 @@ func main() {
 		}
 		opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
 	} else {
-		errChan := make(chan error, 1)
-		if err := apitest.RunOIDCProxy(errChan, context.Background().Done()); err != nil {
-			log.Fatalw("Failed to run oidc proxy", zap.Error(err))
+		// fallback to the KUBERMATIC_DEX_HELM_VALUES_FILE env var if the CLI flag
+		// was not specified due to backwards compatibility
+		if opts.dexHelmValuesFile == "" {
+			opts.dexHelmValuesFile = os.Getenv("KUBERMATIC_DEX_VALUES_FILE")
 		}
-		go func() {
-			if err := <-errChan; err != nil {
-				log.Errorw("OIDC proxy enxountered error", zap.Error(err))
-			}
-		}()
-		token, err := apitest.GetMasterToken()
+
+		dexClient, err := dex.NewClientFromHelmValues(opts.dexHelmValuesFile, "kubermatic", log)
+		if err != nil {
+			log.Fatalw("Failed to create OIDC client", zap.Error(err))
+		}
+
+		login, password := apitest.OIDCCredentials()
+
+		token, err := dexClient.Login(rootCtx, login, password)
 		if err != nil {
 			log.Fatalw("Failed to get master token", zap.Error(err))
 		}
@@ -329,7 +345,6 @@ func main() {
 	log = log.With("home", homeDir)
 
 	stopCh := kubermaticsignals.SetupSignalHandler()
-	rootCtx, rootCancel := context.WithCancel(context.Background())
 
 	go func() {
 		select {
@@ -561,7 +576,7 @@ func createProject(client *apiclient.Kubermatic, bearerToken runtime.ClientAuthI
 			log.Infow("Project not active yet", "project-status", response.Payload.Status)
 			return false, nil
 		}
-		log.Info("Successfully  got project")
+		log.Info("Successfully got project")
 		return true, nil
 	}); err != nil {
 		return "", fmt.Errorf("failed to wait for project to be ready: %v", err)
