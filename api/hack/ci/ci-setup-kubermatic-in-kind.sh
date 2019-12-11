@@ -231,7 +231,6 @@ retry 5 kubectl apply -f config/kubermatic/crd
 
 if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   # Build kubermatic binaries and push the image
-  local OLD_HEAD
   OLD_HEAD="$(git rev-parse HEAD)"
   git checkout ${KUBERMATIC_VERSION}
   echodate "Building containers with tag $KUBERMATIC_VERSION"
