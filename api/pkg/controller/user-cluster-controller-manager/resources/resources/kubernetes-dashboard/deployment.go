@@ -49,7 +49,15 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 
 			volumes := getVolumes()
 			dep.Spec.Template.Spec.Volumes = volumes
+
 			dep.Spec.Template.Spec.Containers = getContainers()
+			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
+				scraperName: defaultResourceRequirements.DeepCopy(),
+			}, nil, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
+
 			dep.Spec.Template.Spec.ServiceAccountName = scraperName
 
 			return dep, nil
@@ -64,7 +72,6 @@ func getContainers() []corev1.Container {
 			Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, scraperImageName, scraperTag),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/metrics-sidecar"},
-			Resources:       defaultResourceRequirements,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      "tmp-volume",

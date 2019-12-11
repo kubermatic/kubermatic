@@ -76,8 +76,13 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 					Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
 					MountPath: "/etc/kubernetes/kubeconfig",
 				}},
-				Resources: *openshiftDNSOperatorResourceRequirements.DeepCopy(),
 			}}
+			err = resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
+				openshiftDNSOperatorContainerName: openshiftDNSOperatorResourceRequirements.DeepCopy(),
+			}, nil, d.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
 			d.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
 					// TODO: Properly limit this instead of just using cluster-admin

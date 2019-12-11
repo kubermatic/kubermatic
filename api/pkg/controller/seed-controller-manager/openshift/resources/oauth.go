@@ -354,6 +354,7 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 					},
 				},
 			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  OauthName,
 				Image: image,
@@ -417,9 +418,13 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 					SuccessThreshold: 1,
 					TimeoutSeconds:   1,
 				},
-				Resources: *oauthDeploymentResourceRequirements.DeepCopy(),
 			}}
-
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
+				OauthName: oauthDeploymentResourceRequirements.DeepCopy(),
+			}, nil, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(OpenshiftAPIServerDeploymentName, data.Cluster().Name)
 			podLabels, err := data.GetPodTemplateLabels(OauthName, dep.Spec.Template.Spec.Volumes, nil)
 			if err != nil {

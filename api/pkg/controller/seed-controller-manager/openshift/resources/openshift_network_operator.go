@@ -65,6 +65,7 @@ func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.Name
 			if err != nil {
 				return nil, err
 			}
+
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  "network-operator",
 				Image: image,
@@ -80,8 +81,13 @@ func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.Name
 					Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
 					MountPath: "/etc/kubernetes/kubeconfig",
 				}},
-				Resources: *openshiftNetworkOperatorResourceRequirements.DeepCopy(),
 			}}
+			err = resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
+				"network-operator": openshiftNetworkOperatorResourceRequirements.DeepCopy(),
+			}, nil, d.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
 			d.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
 					Name: resources.InternalUserClusterAdminKubeconfigSecretName,

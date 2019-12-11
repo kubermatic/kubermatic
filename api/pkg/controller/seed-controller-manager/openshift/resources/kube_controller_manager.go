@@ -251,11 +251,6 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 					return nil, err
 				}
 
-				resourceRequirements := defaultKubeControllerResourceRequirements
-				if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
-					resourceRequirements = *data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources
-				}
-
 				env, err := controllermanager.GetEnvVars(data)
 				if err != nil {
 					return nil, fmt.Errorf("failed to get controller manager env vars: %v", err)
@@ -266,10 +261,11 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 					return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 				}
 				kubeControllerManagerContainerName := "kube-controller-manager"
+
 				dep.Spec.Template.Spec.Containers = []corev1.Container{
 					*openvpnSidecar,
 					{
-						Name:    "kube-controller-manager",
+						Name:    kubeControllerManagerContainerName,
 						Image:   image,
 						Env:     env,
 						Command: []string{"hyperkube", kubeControllerManagerContainerName},
@@ -279,7 +275,6 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 							kubeControllerManagerCACertPath,
 							"/etc/kubernetes/pki/front-proxy/ca/ca.crt",
 						),
-						Resources: resourceRequirements,
 						ReadinessProbe: &corev1.Probe{
 							Handler: corev1.Handler{
 								HTTPGet: &corev1.HTTPGetAction{
@@ -296,7 +291,18 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 						VolumeMounts: volumeMounts,
 					},
 				}
-
+				defResourceRequirements := map[string]*corev1.ResourceRequirements{
+					kubeControllerManagerContainerName: defaultKubeControllerResourceRequirements.DeepCopy(),
+					openvpnSidecar.Name:                openvpnSidecar.Resources.DeepCopy(),
+				}
+				overrides := map[string]*corev1.ResourceRequirements{}
+				if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
+					overrides[kubeControllerManagerContainerName] = data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources.DeepCopy()
+				}
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
+				if err != nil {
+					return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+				}
 				podLabels, err := data.GetPodTemplateLabels(resources.ControllerManagerDeploymentName, dep.Spec.Template.Spec.Volumes, nil)
 				if err != nil {
 					return nil, err
