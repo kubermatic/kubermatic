@@ -438,15 +438,15 @@ TEST_NAME="Deploy Seed Manifest"
 retry 7 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing seed"
 
-if ps x|grep -v grep|grep -q 'kubectl port-forward --address 0.0.0.0 -n oauth svc/dex'; then
+if ps xf|grep -v grep|grep -q 'kubectl port-forward --address 0.0.0.0 -n oauth svc/dex'; then
   echodate "Found existing port-forward for dex, killing"
-  kill "$(ps x|grep -v grep|grep 'kubectl port-forward --address 0.0.0.0 -n oauth svc/dex'|awk '{print $1}')"
+  kill "$(ps xf|grep -v grep|grep 'kubectl port-forward --address 0.0.0.0 -n oauth svc/dex'|awk '{print $1}')"
 else
   echodate "No existing port-forward for dex found"
 fi
-if ps x|grep -v grep|grep -q 'kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80'; then
+if ps xf|grep -v grep|grep -q 'kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80'; then
   echodate "Found existing port-forward for kubermatic api, killing"
-  kill "$(ps x|grep -v grep|grep 'kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80'|awk '{print $1}')"
+  kill "$(ps xf|grep -v grep|grep 'kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80'|awk '{print $1}')"
 else
   echodate "No existing port-forward for the kubermatic api found"
 fi
