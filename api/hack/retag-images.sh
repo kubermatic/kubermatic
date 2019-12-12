@@ -8,9 +8,9 @@ function retag {
   NAME="$(echo ${IMAGE} | cut -d / -f3 | cut -d : -f1)"
   TAG="$(echo ${IMAGE} | cut -d / -f3 | cut -d : -f2)"
   TARGET_IMAGE="${TARGET_REGISTRY}/${ORG}/${NAME}:${TAG}"
-  echo "Retagging ${IMAGE} to ${TARGET_IMAGE}"
+  echo "Retagging ${IMAGE} as ${TARGET_IMAGE}"
 
-  if curl -Ss --fail "http://${TARGET_REGISTRY}/v2/${ORG}/${NAME}/tags/list"|grep -q ${TAG}; then
+  if curl -Ss --fail "http://${TARGET_REGISTRY}/v2/${ORG}/${NAME}/tags/list" | jq -e ".tags | index(\"${TAG}\")" >/dev/null; then
     echo "Skipping image ${TARGET_IMAGE} because it already exists in the target registry"
     return
   fi
