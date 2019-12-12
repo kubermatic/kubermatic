@@ -150,6 +150,8 @@ func getOSVersion(version semver.Semver) (string, error) {
 	switch version.Minor() {
 	case 16:
 		return "1.16.0", nil
+	case 17:
+		return "1.17.0", nil
 	default:
 		return "", fmt.Errorf("kubernetes version %s not supported", version.String())
 	}

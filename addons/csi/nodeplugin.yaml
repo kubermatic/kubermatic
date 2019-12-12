@@ -1,10 +1,12 @@
-
 {{ if (.Cluster.Spec.Features.externalCloudProvider) }}
 
 {{ if .Cluster.Spec.Cloud.Openstack }}
 {{ $version := "UNSUPPORTED" }}
 {{ if eq .MajorMinorVersion "1.16" }}
 {{ $version = "v1.16.0 "}}
+{{ end }}
+{{ if eq .MajorMinorVersion "1.17" }}
+{{ $version = "v1.17.0 "}}
 {{ end }}
 
 kind: DaemonSet
