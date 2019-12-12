@@ -1,5 +1,13 @@
 {{ if (.Cluster.Spec.Features.externalCloudProvider) }}
 {{ if .Cluster.Spec.Cloud.Openstack }}
+{{ $version := "UNSUPPORTED" }}
+{{ if eq .MajorMinorVersion "1.16" }}
+{{ $version = "v1.16.0 "}}
+{{ end }}
+{{ if eq .MajorMinorVersion "1.17" }}
+{{ $version = "v1.17.0 "}}
+{{ end }}
+
 kind: Service
 apiVersion: v1
 metadata:
@@ -84,7 +92,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: cinder-csi-plugin
-          image: docker.io/k8scloudprovider/cinder-csi-plugin:v1.16.0
+          image: docker.io/k8scloudprovider/cinder-csi-plugin:{{ $version}}
           args :
             - /bin/cinder-csi-plugin
             - "--nodeid=$(NODE_ID)"
