@@ -725,7 +725,8 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-coreos-1.16
     decorate: true
-    run_if_changed: "(api/|config/kubermatic)"
+    always_run: false
+    optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -862,6 +863,45 @@ presubmits:
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
+        command:
+        - "./api/hack/ci/ci-kind-e2e.sh"
+        # docker-in-docker needs privileged mode
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: 3.5
+          limits:
+            memory: 4Gi
+
+  #########################################################
+  # e2e tests for Kubernetes 1.17
+  #########################################################
+
+  - name: pre-kubermatic-e2e-aws-coreos-1.17
+    decorate: true
+    run_if_changed: "(api/|config/kubermatic)"
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-vault: "true"
+      preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
+    spec:
+      containers:
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+        env:
+        - name: VERSIONS_TO_TEST
+          value: "v1.17.0"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
