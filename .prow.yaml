@@ -294,7 +294,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-coreos-1.15
     decorate: true
-    run_if_changed: "(api/|config/kubermatic)"
+    run_if_changed: "(api/|config/kubermatic|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -886,7 +886,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-coreos-1.17
     decorate: true
-    run_if_changed: "(api/|config/kubermatic)"
+    run_if_changed: "(api/|config/kubermatic|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -925,7 +925,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-openshift-4.1
     decorate: true
-    run_if_changed: "(api/|config/kubermatic)"
+    run_if_changed: "(api/|config/kubermatic|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -1000,7 +1000,7 @@ presubmits:
   #########################################################
 
   - name: pre-kubermatic-api-e2e
-    run_if_changed: "^api/"
+    run_if_changed: "(api/|config/kubermatic|.prow.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
