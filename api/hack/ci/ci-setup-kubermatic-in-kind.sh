@@ -73,7 +73,7 @@ function docker_logs {
   fi
   return $originalRC
 }
-trap docker_logs EXIT
+appendTrap docker_logs EXIT
 
 # Wait for it to start
 echodate "Waiting for docker"
@@ -159,7 +159,7 @@ function print_cluster_exposer_logs {
 
   return $originalRC
 }
-trap print_cluster_exposer_logs EXIT
+appendTrap print_cluster_exposer_logs EXIT
 
 TEST_NAME="Wait for cluster exposer"
 echodate "Waiting for cluster exposer to be running"
@@ -481,6 +481,6 @@ function cleanup_kubermatic_clusters_in_kind {
 
   return $originalRC
 }
-trap cleanup_kubermatic_clusters_in_kind EXIT
+appendTrap cleanup_kubermatic_clusters_in_kind EXIT
 
 cd -
