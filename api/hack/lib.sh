@@ -156,7 +156,7 @@ appendTrap() {
   newHandlerName="${command}_$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 13)"
   # Need eval to get a random func name
   eval "$newHandlerName() { $command; $existingHandlerName; }"
-  echodate "Appending $command as trap for $signal"
+  echodate "Appending $command as trap for $signal, existing command $existingHandlerName"
   trap $newHandlerName $signal
   # First trap
   else
