@@ -26,3 +26,6 @@ export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
 echodate "Setting up kubermatic in kind on revision ${KUBERMATIC_VERSION} for upgradetest"
 source ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
 echodate "Done setting up kubermatic in kind"
+
+echodate "Running conformance tests a second time"
+./api/hack/ci/ci-run-conformance-tester.sh
