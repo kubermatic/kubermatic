@@ -204,7 +204,7 @@ func oauthBootstrapSecretCreatorGetter(userClusterClient ctrlruntimeclient.Clien
 			if s.Data == nil {
 				s.Data = map[string][]byte{}
 			}
-			s.Data[name] = userClusterOAuthSecret.Data[name]
+			s.Data[name] = userClusterOAuthSecret.Data[userclusteropenshiftresources.OAuthBootstrapUnencryptedKeyName]
 
 			return s, nil
 		}

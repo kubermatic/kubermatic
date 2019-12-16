@@ -49,6 +49,7 @@ func RoleCreator() (string, reconciling.RoleCreator) {
 				ResourceNames: []string{
 					resources.AdminKubeconfigSecretName,
 					openshiftresources.ConsoleOAuthSecretName,
+					openshiftresources.ConsoleAdminPasswordSecretName,
 				},
 				Verbs: []string{"update"},
 			},
