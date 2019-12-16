@@ -36,6 +36,7 @@ fi
 
 export ONLY_TEST_CREATION=false
 export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
+export KUBERMATIC_USE_EXISTING_CLUSTER=true
 echodate "Setting up kubermatic in kind on revision ${KUBERMATIC_VERSION} for upgradetest"
 source ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
 echodate "Done setting up kubermatic in kind"
