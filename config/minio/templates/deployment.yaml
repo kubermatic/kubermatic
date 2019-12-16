@@ -12,13 +12,16 @@ spec:
     metadata:
       labels:
         app: minio
-      {{- if .Values.minio.backup.enabled }}
       annotations:
+        kubermatic/scrape: "true"
+        kubermatic/scrape_port: "9000"
+        kubermatic/metric_path: /minio/prometheus/metrics
+        {{- if .Values.minio.backup.enabled }}
         backup.velero.io/backup-volumes: minio-backup
         pre.hook.backup.velero.io/container: backup
         pre.hook.backup.velero.io/timeout: 60m
         pre.hook.backup.velero.io/command: '["mc", "mirror", "--remove", "--quiet", "src", "/backup"]'
-      {{- end }}
+        {{- end }}
     spec:
       containers:
       - name: minio
@@ -43,6 +46,9 @@ spec:
             secretKeyRef:
               name: minio
               key: secretKey
+        # disable authentication for /metrics endpoints
+        - name: MINIO_PROMETHEUS_AUTH_TYPE
+          value: public
         ports:
         - containerPort: 9000
         volumeMounts:
