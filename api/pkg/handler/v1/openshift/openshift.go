@@ -128,8 +128,10 @@ func ConsoleProxyEndpoint(
 			if err != nil {
 				return nil, fmt.Errorf("failed to get portforwarder for console: %v", err)
 			}
-			defer func() { close(closeChan) }()
-			defer portforwarder.Close()
+			defer func() {
+				portforwarder.Close()
+				close(closeChan)
+			}()
 
 			if err = common.ForwardPort(log, portforwarder); err != nil {
 				common.WriteHTTPError(log, w, err)
