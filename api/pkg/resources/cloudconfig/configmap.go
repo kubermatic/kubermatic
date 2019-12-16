@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	gcp "github.com/kubermatic/kubermatic/api/pkg/provider/cloud/gcp"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
@@ -64,7 +65,6 @@ func CloudConfig(
 	credentials resources.Credentials,
 ) (cloudConfig string, err error) {
 	cloud := cluster.Spec.Cloud
-
 	switch {
 	case cloud.AWS != nil:
 		awsCloudConfig := &aws.CloudConfig{
@@ -168,8 +168,18 @@ func CloudConfig(
 		if len(dc.Spec.GCP.ZoneSuffixes) > 1 {
 			multizone = true
 		}
-		if cloud.GCP.Network == "" {
-			cloud.GCP.Network = "global/networks/default"
+		if cloud.GCP.Network == "" || cloud.GCP.Network == gcp.DefaultNetwork {
+			// NetworkName is used by the gce cloud provider to populate the provider's NetworkURL.
+			// This value can be provided in the config as a name or a url. Internally,
+			// the gce cloud provider checks it and if it's a name, it will infer the URL from it.
+			// However, if the name has a '/', the provider assumes it's a URL and uses it as is.
+			// This breaks routes cleanup since the routes are matched against the URL,
+			// which would be incorrect in this case.
+			// On the provider side, the "global/networks/default" format is the valid
+			// one since it's used internally for firewall rules and and network interfaces,
+			// so it has to be kept this way.
+			// tl;dr: use "default" or a full network URL, not "global/networks/default"
+			cloud.GCP.Network = "default"
 		}
 
 		gcpCloudConfig := &gce.CloudConfig{

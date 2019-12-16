@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	defaultNetwork               = "global/networks/default"
+	DefaultNetwork               = "global/networks/default"
 	firewallSelfCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall-self"
 	firewallICMPCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall-icmp"
 )
@@ -41,7 +41,7 @@ func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update prov
 	var err error
 	if cluster.Spec.Cloud.GCP.Network == "" && cluster.Spec.Cloud.GCP.Subnetwork == "" {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.GCP.Network = defaultNetwork
+			cluster.Spec.Cloud.GCP.Network = DefaultNetwork
 		})
 		if err != nil {
 			return nil, err
