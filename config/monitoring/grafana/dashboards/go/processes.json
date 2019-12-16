@@ -57,7 +57,7 @@
           "refId": "A"
         },
         {
-          "expr": "avg(container_memory_rss{namespace=\"$namespace\",pod_name=\"$pod\",container_name=~\"$container\"})",
+          "expr": "avg(container_memory_rss{namespace=\"$namespace\",pod=\"$pod\",container=~\"$container\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "container rss",
