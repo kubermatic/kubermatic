@@ -13,6 +13,11 @@ echodate "Setting up kubermatic in kind on revision ${KUBERMATIC_VERSION}"
 source ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
 echodate "Done setting up kubermatic in kind"
 
+# We can safely assume that the base version got tested already
+if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
+  export ONLY_TEST_CREATION=true
+fi
+
 echodate "Running conformance tests"
 ./api/hack/ci/ci-run-conformance-tester.sh
 
@@ -29,6 +34,7 @@ if [[ -n "$(pidof oidc-proxy-client)" ]]; then
   echodate "Done killing oidc-proxy-client"
 fi
 
+export ONLY_TEST_CREATION=false
 export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
 echodate "Setting up kubermatic in kind on revision ${KUBERMATIC_VERSION} for upgradetest"
 source ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
