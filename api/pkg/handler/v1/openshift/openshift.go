@@ -113,7 +113,7 @@ func ConsoleProxyEndpoint(
 			log = log.With("cluster", cluster.Name)
 
 			// Ideally we would cache these to not open a port for every single request
-			portforwarder, outBuffer, err := common.GetPortForwarder(
+			portforwarder, outBuffer, closeChan, err := common.GetPortForwarder(
 				clusterProvider.GetSeedClusterAdminClient().CoreV1(),
 				clusterProvider.SeedAdminConfig(),
 				cluster.Status.NamespaceName,
@@ -123,6 +123,7 @@ func ConsoleProxyEndpoint(
 			if err != nil {
 				return nil, fmt.Errorf("failed to get portforwarder for console: %v", err)
 			}
+			defer func() { close(closeChan) }()
 			defer portforwarder.Close()
 
 			if err = common.ForwardPort(log, portforwarder); err != nil {
