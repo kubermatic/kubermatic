@@ -145,12 +145,12 @@ func GetPortForwarder(
 	containerPort int) (*portforward.PortForwarder, chan struct{}, error) {
 	pod, err := GetReadyPod(coreClient.Pods(namespace), labelSelector)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	dialer, err := getDialerForPod(pod, coreClient.RESTClient(), cfg)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	readyChan := make(chan struct{})
@@ -158,7 +158,7 @@ func GetPortForwarder(
 	errorBuffer := bytes.NewBuffer(make([]byte, 1024))
 	portforwarder, err := portforward.NewOnAddresses(dialer, []string{"127.0.0.1"}, []string{"0:" + strconv.Itoa(containerPort)}, stopChan, readyChan, bytes.NewBuffer(make([]byte, 1024)), errorBuffer)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to create portforwarder: %v", err)
+		return nil, nil, fmt.Errorf("failed to create portforwarder: %v", err)
 	}
 
 	// Portforwarding is blocking, so we can't do it here
