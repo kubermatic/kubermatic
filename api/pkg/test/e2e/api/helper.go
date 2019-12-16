@@ -867,6 +867,8 @@ func convertGlobalSettings(gSettings *models.GlobalSettings) *apiv1.GlobalSettin
 		DisplayDemoInfo:       gSettings.DisplayDemoInfo,
 		DisplayAPIDocs:        gSettings.DisplayAPIDocs,
 		DisplayTermsOfService: gSettings.DisplayTermsOfService,
+		EnableOIDCKubeconfig:  gSettings.EnableOIDCKubeconfig,
+		EnableDashboard:       gSettings.EnableDashboard,
 	}
 }
 

@@ -26,6 +26,8 @@ type SettingSpec struct {
 	DisplayDemoInfo       bool           `json:"displayDemoInfo"`
 	DisplayAPIDocs        bool           `json:"displayAPIDocs"`
 	DisplayTermsOfService bool           `json:"displayTermsOfService"`
+	EnableDashboard       bool           `json:"enableDashboard"`
+	EnableOIDCKubeconfig  bool           `json:"enableOIDCKubeconfig"`
 
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }

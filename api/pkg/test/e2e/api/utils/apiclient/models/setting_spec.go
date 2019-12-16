@@ -31,6 +31,12 @@ type SettingSpec struct {
 	// display terms of service
 	DisplayTermsOfService bool `json:"displayTermsOfService,omitempty"`
 
+	// enable dashboard
+	EnableDashboard bool `json:"enableDashboard,omitempty"`
+
+	// enable o ID c kubeconfig
+	EnableOIDCKubeconfig bool `json:"enableOIDCKubeconfig,omitempty"`
+
 	// cleanup options
 	CleanupOptions *CleanupOptions `json:"cleanupOptions,omitempty"`
 
