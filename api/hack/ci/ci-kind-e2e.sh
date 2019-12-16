@@ -22,6 +22,13 @@ if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
   exit 0
 fi
 
+# Kill OIDC proxy if it still runs to avoid "socket already in use" errors
+if [[ -n "$(pidof oidc-proxy-client)" ]]; then
+  echodate "oidc-proxy-client still running, killing"
+  kill "$(pidof oidc-proxy-client)"
+  echodate "Done killing oidc-proxy-client"
+fi
+
 export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
 echodate "Setting up kubermatic in kind on revision ${KUBERMATIC_VERSION} for upgradetest"
 source ./api/hack/ci/ci-setup-kubermatic-in-kind.sh

@@ -473,7 +473,9 @@ function cleanup_kubermatic_clusters_in_kind {
   # Tolerate errors and just continue
   set +e
   # Clean up clusters
+  echodate "Cleaning up clusters"
   kubectl delete cluster --all --ignore-not-found=true
+  echodate "Done cleaning up clusters"
 
   # Kill all descendant processes
   pkill -P $$
