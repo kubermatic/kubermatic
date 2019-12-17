@@ -470,11 +470,6 @@ echodate "API got ready"
 function cleanup_kubermatic_clusters_in_kind {
   originalRC=$?
 
-  if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
-    echodate "Sleeping for debug"
-    sleep 1h
-  fi
-
   # Tolerate errors and just continue
   set +e
   # Clean up clusters
