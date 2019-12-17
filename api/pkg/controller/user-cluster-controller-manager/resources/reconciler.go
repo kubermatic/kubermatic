@@ -424,7 +424,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		cloudcontroller.CloudConfig(data.cloudConfig),
 	}
 	if r.openshift {
-		creators = append(creators, openshift.OAuthBootstrapPassword)
+		creators = append(creators, openshift.OAuthBootstrapPasswordCreatorGetter(r.seedClient, r.namespace))
 		if r.cloudCredentialSecretTemplate != nil {
 			creators = append(creators, openshift.CloudCredentialSecretCreator(*r.cloudCredentialSecretTemplate))
 		}
