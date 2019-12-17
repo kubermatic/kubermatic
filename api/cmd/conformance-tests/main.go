@@ -244,9 +244,10 @@ func main() {
 	}
 	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{"http"}), nil)
 	opts.secrets.kubermaticClient = opts.kubermaticClient
+	// May be empty if creating an OIDC token
+	opts.kubermatcProjectID = strings.TrimSpace(os.Getenv("KUBERMATIC_PROJECT_ID"))
 
 	if !opts.createOIDCToken {
-		opts.kubermatcProjectID = os.Getenv("KUBERMATIC_PROJECT_ID")
 		if opts.kubermatcProjectID == "" {
 			log.Fatalf("Kubermatic project id must be set via KUBERMATIC_PROJECT_ID env var")
 		}
@@ -273,11 +274,13 @@ func main() {
 
 		opts.kubermaticAuthenticator = httptransport.BearerToken(token)
 
-		projectID, err := createProject(opts.kubermaticClient, opts.kubermaticAuthenticator, log)
-		if err != nil {
-			log.Fatalw("Failed to create project", zap.Error(err))
+		if opts.kubermatcProjectID == "" {
+			projectID, err := createProject(opts.kubermaticClient, opts.kubermaticAuthenticator, log)
+			if err != nil {
+				log.Fatalw("Failed to create project", zap.Error(err))
+			}
+			opts.kubermatcProjectID = projectID
 		}
-		opts.kubermatcProjectID = projectID
 	}
 	opts.secrets.kubermaticAuthenticator = opts.kubermaticAuthenticator
 

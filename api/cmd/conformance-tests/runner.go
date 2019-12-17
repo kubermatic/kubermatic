@@ -267,6 +267,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 			return report, fmt.Errorf("failed to create cluster: %v", err)
 		}
 	} else {
+		log.Infow("Using existing cluster")
 		selector, err := labels.Parse(r.existingClusterLabel)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse labelselector %q: %v", r.existingClusterLabel, err)
