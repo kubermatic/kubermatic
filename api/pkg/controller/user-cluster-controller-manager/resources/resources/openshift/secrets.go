@@ -1,17 +1,25 @@
 package openshift
 
 import (
+	"context"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"io"
 
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/servingcerthelper"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func CloudCredentialSecretCreator(templateSecret corev1.Secret) reconciling.NamedSecretCreatorGetter {
@@ -35,46 +43,115 @@ func RegistryServingCert(caCert *triple.KeyPair) reconciling.NamedSecretCreatorG
 }
 
 const (
-	OAuthBootstrapSecretName         = "kubeadmin"
-	OAuthBootstrapUnencryptedKeyName = "raw"
+	OAuthBootstrapSecretName       = "kubeadmin"
+	OAuthBootstrapEncryptedkeyName = "encrypted"
 )
 
 // OAuthBootstrapPassword is the password we use to authenticate the dashboard against the OAuth
 // service. It must be created in the kube-system namespace.
-func OAuthBootstrapPassword() (string, reconciling.SecretCreator) {
-	return OAuthBootstrapSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+// We also have to transport its raw value into the seed, because its used by the Openshift Console endpoint
+// to authenticate against the oauth service. To not expose the raw value to the user, we AES encrypt it using the
+// admin token as key (Anyone with that token may do everything in the seed anyways).
+func OAuthBootstrapPasswordCreatorGetter(seedClient ctrlruntimeclient.Client, seedNamespace string) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return OAuthBootstrapSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 
-		// The only way this ever gets updated is if someone empties it. It won't be accepted if
-		// its creation timestamp is after kube-system namespace creation timestamp + 1h.
-		// https://github.com/openshift/origin/blob/e774f85c15aef11d76db1ffc458484867e503293/pkg/oauthserver/authenticator/password/bootstrap/bootstrap.go#L131
-		if value, exists := s.Data[OAuthBootstrapSecretName]; exists {
-			hashedPassword, err := bcrypt.GenerateFromPassword(value, 12)
+			adminTokenSecret := &corev1.Secret{}
+			name := types.NamespacedName{
+				Namespace: seedNamespace,
+				Name:      resources.AdminKubeconfigSecretName,
+			}
+			if err := seedClient.Get(context.Background(), name, adminTokenSecret); err != nil {
+				return nil, fmt.Errorf("failed to get admin token secret: %v", err)
+			}
+			adminTokenSecretValue, adminTokenSecretValueExists := adminTokenSecret.Data["token"]
+			if !adminTokenSecretValueExists {
+				return nil, errors.New("adminTokenSecret has no `token` key")
+			}
+
+			// The only way this ever gets updated is if someone empties it. It won't be accepted if
+			// its creation timestamp is after kube-system namespace creation timestamp + 1h.
+			// https://github.com/openshift/origin/blob/e774f85c15aef11d76db1ffc458484867e503293/pkg/oauthserver/authenticator/password/bootstrap/bootstrap.go#L131
+			if encryptedValue, exists := s.Data[OAuthBootstrapEncryptedkeyName]; exists {
+				plainValue, err := aesDecrypt(encryptedValue, adminTokenSecretValue)
+				if err != nil {
+					// The openshift seed sync controller will empty the secret if this can not be encrypted, so just return here
+					return nil, fmt.Errorf("failed to decrypt: %v", err)
+				}
+				hashedValue, err := bcrypt.GenerateFromPassword(plainValue, 12)
+				if err != nil {
+					return nil, fmt.Errorf("failed to hash existing password: %v", err)
+				}
+				if string(s.Data[OAuthBootstrapSecretName]) == string(hashedValue) {
+					return s, nil
+				}
+			}
+
+			if s.Data == nil {
+				s.Data = map[string][]byte{}
+			}
+
+			rawPassword, err := generateNewSecret()
 			if err != nil {
-				return nil, fmt.Errorf("failed to hash old password: %v", err)
+				return nil, fmt.Errorf("failed to generate password: %v", err)
 			}
-			if string(s.Data[OAuthBootstrapUnencryptedKeyName]) == string(hashedPassword) {
-				return s, nil
+			hashedPassword, err := bcrypt.GenerateFromPassword([]byte(rawPassword), 12)
+			if err != nil {
+				return nil, fmt.Errorf("failed to hash password: %v", err)
 			}
-		}
+			encyptedPassword, err := aesEncrypt([]byte(rawPassword), adminTokenSecretValue)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encrypt password: %v", err)
+			}
+			s.Data[OAuthBootstrapSecretName] = hashedPassword
+			// We need this to be available in the seed so our API can use it to authenticate against the Oauth service
+			s.Data[OAuthBootstrapEncryptedkeyName] = encyptedPassword
 
-		if s.Data == nil {
-			s.Data = map[string][]byte{}
+			return s, nil
 		}
-
-		rawPassword, err := generateNewSecret()
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate password: %v", err)
-		}
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(rawPassword), 12)
-		if err != nil {
-			return nil, fmt.Errorf("failed to hash password: %v", err)
-		}
-		s.Data[OAuthBootstrapSecretName] = hashedPassword
-		// We need to transport the raw value into the seed
-		s.Data[OAuthBootstrapUnencryptedKeyName] = []byte(rawPassword)
-
-		return s, nil
 	}
+}
+
+// Based on https://golang.org/src/crypto/cipher/example_test.go
+func aesEncrypt(data, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to construct cipher: %v", err)
+	}
+	nonce := make([]byte, 12)
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, fmt.Errorf("failed to gather entropy: %v", err)
+	}
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to construct aesgcm: %v", err)
+	}
+	return aesgcm.Seal(nil, nonce, data, nil), nil
+}
+
+func aesDecrypt(data, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to construct cipher: %v", err)
+	}
+
+	// Never use more than 2^32 random nonces with a given key because of the risk of a repeat.
+	nonce := make([]byte, 12)
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, fmt.Errorf("failed to gather entropy: %v", err)
+	}
+
+	aesgcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("failed to construct aesgcm: %v", err)
+	}
+
+	plaintext, err := aesgcm.Open(nil, nonce, data, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt: %v", err)
+	}
+
+	return plaintext, nil
 }
 
 func generateNewSecret() (string, error) {
