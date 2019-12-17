@@ -61,6 +61,8 @@ func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.Kubermat
 			DisplayDemoInfo:       false,
 			DisplayAPIDocs:        false,
 			DisplayTermsOfService: false,
+			EnableDashboard:       true,
+			EnableOIDCKubeconfig:  false,
 		},
 	}
 	return s.client.KubermaticV1().KubermaticSettings().Create(defaultSettings)

@@ -10057,6 +10057,14 @@
         "displayTermsOfService": {
           "type": "boolean",
           "x-go-name": "DisplayTermsOfService"
+        },
+        "enableDashboard": {
+          "type": "boolean",
+          "x-go-name": "EnableDashboard"
+        },
+        "enableOIDCKubeconfig": {
+          "type": "boolean",
+          "x-go-name": "EnableOIDCKubeconfig"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"

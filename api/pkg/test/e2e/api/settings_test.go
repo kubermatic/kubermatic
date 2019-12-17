@@ -30,6 +30,8 @@ func TestGetDefaultGlobalSettings(t *testing.T) {
 				DisplayDemoInfo:       false,
 				DisplayAPIDocs:        false,
 				DisplayTermsOfService: false,
+				EnableDashboard:       true,
+				EnableOIDCKubeconfig:  false,
 			},
 		},
 	}
