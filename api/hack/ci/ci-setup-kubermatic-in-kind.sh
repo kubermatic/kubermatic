@@ -4,23 +4,28 @@
 #############################################################
 #
 # This script should be sourced, not called, so callers get the variables it sets
+# Note: This script is used in upgrade test, hence it must be idempotent
 
-# The kubemaric version to build
+# The kubemaric version to build. The script will checkout the configured
+# revision before building the binaries and go back to the initial HEAD after
+# building finished. Defaults to current HEAD.
 export KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
-export SEED_NAME=prow-build-cluster
 export KUBERMATIC_APISERVER_ADDRESS="localhost:8080"
-export KUBERMATIC_NO_WORKER_NAME=true
+# If set to `true`, the script will just use `latest`. Used e.G. in the UI tests.
 export KUBERMATIC_SKIP_BUILDING="${KUBERMATIC_SKIP_BUILDING:-false}"
 # Number of UI replicas, zero by default as we do not test the UI
 export KUBERMATIC_UI_REPLICAS="${KUBERMATIC_UI_REPLICAS:-0}"
-# Defaults to a hardcoded version so we do not test by default if the latest dashboard version
-# got successfully built.
+# Defaults to `latest` so we do not test by default if the latest dashboard version
+# got successfully built and published, as that may race with the dashboard postsubmit.
 export KUBERMATIC_DASHBOARD_VERSION="${KUBERMATIC_DASHBOARD_VERSION:-latest}"
-# ADDITIONAL_HELM_ARGS allows to configure extra args for helm
+# ADDITIONAL_HELM_ARGS allows to configure extra args for helm. Used e.G. in UI and API tests.
 export ADDITIONAL_HELM_ARGS="${ADDITIONAL_HELM_ARGS:-}"
 
 # Consider self-installed go installations
 export PATH=$PATH:/usr/local/go/bin
+
+# This is just used as a const
+export SEED_NAME=prow-build-cluster
 
 if [[ -z ${JOB_NAME} ]]; then
 	echo "This script should only be running in a CI environment."
@@ -51,9 +56,13 @@ retry 5 vault kv get -field=values.yaml \
 echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json
 
 # Start docker daemon
-echodate "Starting docker"
-dockerd > /tmp/docker.log 2>&1 &
-echodate "Started docker"
+if ps xf|grep -v grep|grep -q dockerd; then
+  echodate "Docker already started"
+else
+  echodate "Starting docker"
+  dockerd > /tmp/docker.log 2>&1 &
+  echodate "Started docker"
+fi
 
 function docker_logs {
   originalRC=$?
@@ -64,7 +73,7 @@ function docker_logs {
   fi
   return $originalRC
 }
-trap docker_logs EXIT
+appendTrap docker_logs EXIT
 
 # Wait for it to start
 echodate "Waiting for docker"
@@ -72,15 +81,19 @@ retry 5 docker stats --no-stream
 echodate "Docker became ready"
 
 # Load kind image
-echodate "Loading kindest image"
-docker load --input /kindest.tar
-echodate "Loaded kindest image"
+if docker images|grep -q kindest; then
+  echodate "Kindest image already loaded"
+else
+  echodate "Loading kindest image"
+  docker load --input /kindest.tar
+  echodate "Loaded kindest image"
+fi
+
 
 # Prevent mtu-related timeouts
 echodate "Setting iptables rule to clamp mss to path mtu"
 iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 echodate "Set iptables rule to clamp mss to path mtu"
-
 
 # Make debugging a bit better
 echodate "Setting aliases in .bashrc"
@@ -112,19 +125,27 @@ sed 's/localhost/localhost dex.oauth/' /etc/hosts > $temp_hosts
 cat $temp_hosts >/etc/hosts
 echodate "Set dex.oauth alias in /etc/hosts"
 
-# Create kind cluster
-TEST_NAME="Create kind cluster"
-echodate "Creating the kind cluster"
-export KUBECONFIG=~/.kube/config
-kind create cluster --name ${SEED_NAME} --image=kindest/node:v1.15.6
+if kind get clusters |grep -q ${SEED_NAME}; then
+  echodate "Kind cluster already exists"
+else
+  # Create kind cluster
+  TEST_NAME="Create kind cluster"
+  echodate "Creating the kind cluster"
+  export KUBECONFIG=~/.kube/config
+  kind create cluster --name ${SEED_NAME} --image=kindest/node:v1.15.6
+fi
 
-echodate "Starting clusterexposer"
-make -C api download-gocache
-CGO_ENABLED=0 go build -v -o /dev/null ./api/pkg/test/clusterexposer/cmd
-CGO_ENABLED=0 go run ./api/pkg/test/clusterexposer/cmd \
-  --kubeconfig-inner "$KUBECONFIG" \
-  --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
-  --build-id "$PROW_JOB_ID" &> /var/log/clusterexposer.log &
+if ls /var/log/clusterexposer.log &>/dev/null; then
+  echodate "Cluster-Exposer already running"
+else
+  echodate "Starting clusterexposer"
+  make -C api download-gocache
+  CGO_ENABLED=0 go build -v -o /tmp/clusterexposer ./api/pkg/test/clusterexposer/cmd
+  CGO_ENABLED=0 /tmp/clusterexposer \
+    --kubeconfig-inner "$KUBECONFIG" \
+    --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
+    --build-id "$PROW_JOB_ID" &> /var/log/clusterexposer.log &
+fi
 
 function print_cluster_exposer_logs {
   originalRC=$?
@@ -138,12 +159,12 @@ function print_cluster_exposer_logs {
 
   return $originalRC
 }
-trap print_cluster_exposer_logs EXIT
+appendTrap print_cluster_exposer_logs EXIT
 
 TEST_NAME="Wait for cluster exposer"
 echodate "Waiting for cluster exposer to be running"
 
-retry 5 curl --fail http://127.0.0.1:2047/metrics
+retry 5 curl --fail http://127.0.0.1:2047/metrics -o /dev/null
 echodate "Cluster exposer is running"
 
 echodate "Setting up iptables rules for to make nodeports available"
@@ -176,14 +197,13 @@ EOF
 TEST_NAME="Create Helm bindings"
 retry 5 kubectl apply -f $INITIAL_MANIFESTS
 
-echodate "Deploying tiller"
-TEST_NAME="Deploy Tiller"
-helm init --wait --service-account=tiller
-
-TEST_NAME="Deploying dex"
-echodate "Deploying dex"
-rm config/oauth/templates/ingress.yaml
-cp ./api/hack/ci/testdata/oauth_configmap.yaml config/oauth/templates/configmap.yaml
+if kubectl get deployment -n kube-system tiller-deploy &>/dev/null; then
+  echodate "Tiller already deployed"
+else
+  echodate "Deploying tiller"
+  TEST_NAME="Deploy Tiller"
+  helm init --wait --service-account=tiller
+fi
 
 echodate "Creating kubermatic-fast storageclass"
 TEST_NAME="Create kubermatic-fast storageclass"
@@ -192,17 +212,27 @@ retry 5 kubectl get storageclasses.storage.k8s.io standard -o json \
   |kubectl apply -f -
 echodate "Successfully created kubermatic-fast storageclass"
 
-helm install --wait --timeout 180 \
-  --set-string=dex.ingress.host=http://dex.oauth:5556 \
-  --values ./api/hack/ci/testdata/oauth_values.yaml \
-  --namespace oauth \
-  --name kubermatic-oauth-e2e ./config/oauth
+if kubectl get namespace oauth; then
+  echodate "Dex already deployed"
+else
+  TEST_NAME="Deploying dex"
+  echodate "Deploying dex"
+  rm config/oauth/templates/ingress.yaml
+  cp ./api/hack/ci/testdata/oauth_configmap.yaml config/oauth/templates/configmap.yaml
+  retry 5 helm install --wait --timeout 180 \
+    --set-string=dex.ingress.host=http://dex.oauth:5556 \
+    --values ./api/hack/ci/testdata/oauth_values.yaml \
+    --namespace oauth \
+    --name kubermatic-oauth-e2e ./config/oauth
+fi
 
 TEST_NAME="Deploying kubermatic CRDs"
 retry 5 kubectl apply -f config/kubermatic/crd
 
 if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   # Build kubermatic binaries and push the image
+  OLD_HEAD="$(git rev-parse HEAD)"
+  git checkout ${KUBERMATIC_VERSION}
   echodate "Building containers with tag $KUBERMATIC_VERSION"
   echodate "Building binaries"
   TEST_NAME="Build Kubermatic binaries"
@@ -251,6 +281,7 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
     time retry 5 docker build -t "${IMAGE_NAME}" .
     time retry 5 docker push "quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
   )
+  git checkout ${OLD_HEAD}
   echodate "Successfully built and loaded all images"
 fi
 
@@ -407,6 +438,19 @@ TEST_NAME="Deploy Seed Manifest"
 retry 7 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing seed"
 
+if ps xf|grep -v grep|grep -q 'kubectl port-forward --address 0.0.0.0 -n oauth svc/dex'; then
+  echodate "Found existing port-forward for dex, killing"
+  kill "$(ps xf|grep -v grep|grep 'kubectl port-forward --address 0.0.0.0 -n oauth svc/dex'|awk '{print $1}')"
+else
+  echodate "No existing port-forward for dex found"
+fi
+if ps xf|grep -v grep|grep -q 'kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80'; then
+  echodate "Found existing port-forward for kubermatic api, killing"
+  kill "$(ps xf|grep -v grep|grep 'kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80'|awk '{print $1}')"
+else
+  echodate "No existing port-forward for the kubermatic api found"
+fi
+
 # Expose dex to localhost
 TEST_NAME="Expose dex and kubermatic API to localhost"
 kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556  &
@@ -429,7 +473,9 @@ function cleanup_kubermatic_clusters_in_kind {
   # Tolerate errors and just continue
   set +e
   # Clean up clusters
+  echodate "Cleaning up clusters"
   kubectl delete cluster --all --ignore-not-found=true
+  echodate "Done cleaning up clusters"
 
   # Kill all descendant processes
   pkill -P $$
@@ -437,6 +483,6 @@ function cleanup_kubermatic_clusters_in_kind {
 
   return $originalRC
 }
-trap cleanup_kubermatic_clusters_in_kind EXIT
+appendTrap cleanup_kubermatic_clusters_in_kind EXIT
 
 cd -
