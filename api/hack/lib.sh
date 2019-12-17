@@ -140,3 +140,27 @@ format_dashboard() {
 
   mv "$tmpfile" "$filename"
 }
+
+# appendTrap appends to existing traps, if any. It is needed because Bash replaces existing handlers
+# rather than appending: https://stackoverflow.com/questions/3338030/multiple-bash-traps-for-the-same-signal
+# Needing this func is a strong indicator that Bash is not the right language anymore. Also, this
+# basically needs unit tests.
+appendTrap() {
+  command="$1"
+  signal="$2"
+
+  # Have existing traps, must append
+  if [[ "$(trap -p|grep $signal)" ]]; then
+  existingHandlerName="$(trap -p|grep $signal|awk '{print $3}'|tr -d "'")"
+
+  newHandlerName="${command}_$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 13)"
+  # Need eval to get a random func name
+  eval "$newHandlerName() { $command; $existingHandlerName; }"
+  echodate "Appending $command as trap for $signal, existing command $existingHandlerName"
+  trap $newHandlerName $signal
+  # First trap
+  else
+    echodate "Using $command as trap for $signal"
+    trap $command $signal
+  fi
+}
