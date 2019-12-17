@@ -150,25 +150,24 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			if err != nil {
 				return nil, errors.NewBadRequest("failed to create an initial node deployment due to an invalid spec: %v", err)
 			}
-			if isBYO {
+			if !isBYO {
+				go func() {
+					defer utilruntime.HandleCrash()
+					ndName := getNodeDeploymentDisplayName(req.Body.NodeDeployment)
+					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationStart), "Started creation of initial node deployment %s", ndName)
+					err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, seedsGetter, clusterProvider, userInfo)
+					if err != nil {
+						eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(nodeDeploymentCreationFail), "Failed to create initial node deployment %s: %v", ndName, err)
+						klog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
+						initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "datacenter": req.Body.Cluster.Spec.Cloud.DatacenterName}).Add(1)
+					} else {
+						eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationSuccess), "Successfully created initial node deployment %s", ndName)
+						klog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)
+					}
+				}()
+			} else {
 				klog.V(5).Infof("KubeAdm provider detected an initial node deployment won't be created for cluster %s", newCluster.Name)
-				return convertInternalClusterToExternal(newCluster), nil
 			}
-
-			go func() {
-				defer utilruntime.HandleCrash()
-				ndName := getNodeDeploymentDisplayName(req.Body.NodeDeployment)
-				eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationStart), "Started creation of initial node deployment %s", ndName)
-				err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, seedsGetter, clusterProvider, userInfo)
-				if err != nil {
-					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(nodeDeploymentCreationFail), "Failed to create initial node deployment %s: %v", ndName, err)
-					klog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
-					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "datacenter": req.Body.Cluster.Spec.Cloud.DatacenterName}).Add(1)
-				} else {
-					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationSuccess), "Successfully created initial node deployment %s", ndName)
-					klog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)
-				}
-			}()
 		}
 
 		log := kubermaticlog.Logger.With("cluster", newCluster.Name)
