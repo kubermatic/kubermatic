@@ -2999,6 +2999,7 @@ func (r Routing) kubernetesDashboardProxy() http.Handler {
 		middleware.TokenExtractor(r.tokenExtractors),
 		r.projectProvider,
 		r.userInfoGetter,
+		r.settingsProvider,
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
