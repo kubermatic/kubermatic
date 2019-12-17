@@ -59,6 +59,7 @@ func RunAsLeader(ctx context.Context, log *zap.SugaredLogger, cfg *rest.Config, 
 	if err != nil {
 		return err
 	}
+	log = log.With("leader-name", leaderName)
 
 	leaderElectionCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -75,6 +76,10 @@ func RunAsLeader(ctx context.Context, log *zap.SugaredLogger, cfg *rest.Config, 
 			// Gets called when we could not renew the lease or the parent context was closed
 			log.Info("lost leader lease")
 			cancel()
+			// We will not do anything anymore at this point, so we must sure we exist here so we get restarted
+			// and it becomes visible that there is an issue. If we have any kind of bug in the cmds signal handling
+			// we may just get stuck here in a defunct state.
+			log.Fatal("Leader lease lost, exiting.")
 		},
 	}
 
