@@ -77,7 +77,7 @@ func ProxyEndpoint(
 			log = log.With("cluster", userCluster.Name)
 
 			// Ideally we would cache these to not open a port for every single request
-			portforwarder, outBuffer, closeChan, err := common.GetPortForwarder(
+			portforwarder, closeChan, err := common.GetPortForwarder(
 				clusterProvider.GetSeedClusterAdminClient().CoreV1(),
 				clusterProvider.SeedAdminConfig(),
 				userCluster.Status.NamespaceName,
@@ -96,15 +96,19 @@ func ProxyEndpoint(
 				return nil, nil
 			}
 
-			port, err := common.GetLocalPortFromPortForwardOutput(outBuffer.String())
+			ports, err := portforwarder.GetPorts()
 			if err != nil {
 				common.WriteHTTPError(log, w, fmt.Errorf("failed to get backend port: %v", err))
+				return nil, nil
+			}
+			if len(ports) != 1 {
+				common.WriteHTTPError(log, w, fmt.Errorf("didn't get exactly one port but %d", len(ports)))
 				return nil, nil
 			}
 
 			proxyURL := &url.URL{
 				Scheme: "http",
-				Host:   fmt.Sprintf("127.0.0.1:%d", port),
+				Host:   fmt.Sprintf("127.0.0.1:%d", ports[0].Local),
 			}
 
 			// Override strict CSP policy for proxy
