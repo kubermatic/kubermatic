@@ -201,9 +201,9 @@ func oauthBootstrapSecretCreatorGetter(userClusterClient, seedClient ctrlruntime
 			if err := userClusterClient.Get(ctx, userClusterOAuthSecretName, userClusterOAuthSecret); err != nil {
 				return nil, fmt.Errorf("failed to get the %s/%s secret from the usercluster: %v", userClusterOAuthSecretName.Namespace, userClusterOAuthSecretName.Name, err)
 			}
-			encyptedValue, exists := userClusterOAuthSecret.Data[name]
+			encyptedValue, exists := userClusterOAuthSecret.Data[userclusteropenshiftresources.OAuthBootstrapEncryptedkeyName]
 			if !exists {
-				return nil, fmt.Errorf("usercluster secret has no %s key", name)
+				return nil, fmt.Errorf("usercluster secret has no %s key", userclusteropenshiftresources.OAuthBootstrapEncryptedkeyName)
 			}
 			secretKey, err := userclusteropenshiftresources.GetOAuthEncryptionKey(ctx, seedClient, seedNamespace)
 			if err != nil {

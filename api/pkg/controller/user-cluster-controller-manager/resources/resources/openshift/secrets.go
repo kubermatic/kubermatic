@@ -159,11 +159,7 @@ func encryptedValueMatchesBcryptHash(encryptedValue, key, hash []byte) bool {
 	if err != nil {
 		return false
 	}
-	hashedValue, err := bcrypt.GenerateFromPassword(plainValue, 12)
-	if err != nil {
-		return false
-	}
-	return string(hashedValue) == string(hash)
+	return bcrypt.CompareHashAndPassword(hash, plainValue) == nil
 }
 
 func generateNewSecret() (string, error) {
