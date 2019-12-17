@@ -32,11 +32,23 @@ func ProxyEndpoint(
 	extractor transporthttp.RequestFunc,
 	projectProvider provider.ProjectProvider,
 	userInfoGetter provider.UserInfoGetter,
+	settingsProvider provider.SettingsProvider,
 	middlewares endpoint.Middleware) http.Handler {
 	return dynamicHTTPHandler(func(w http.ResponseWriter, r *http.Request) {
-
 		log := log.With("endpoint", "kubernetes-dashboard-proxy", "uri", r.URL.Path)
 		ctx := extractor(r.Context(), r)
+
+		settings, err := settingsProvider.GetGlobalSettings()
+		if err != nil {
+			common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusInternalServerError, "could not read global settings"))
+			return
+		}
+
+		if !settings.Spec.EnableDashboard {
+			common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusForbidden, "Kubernetes Dashboard access is disabled by the global settings"))
+			return
+		}
+
 		request, err := common.DecodeGetClusterReq(ctx, r)
 		if err != nil {
 			common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, err.Error()))
