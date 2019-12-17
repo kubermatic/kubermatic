@@ -260,6 +260,7 @@ func consoleLogin(
 	oauthCode := redirectURL.Query().Get("code")
 	if oauthCode == "" {
 		common.WriteHTTPError(log, w, errors.New("did not get an OAuth code back from Openshift OAuth server"))
+		return
 	}
 	// We don't check this here again. If something is wrong with it, Openshift will complain
 	returnedOAuthState := redirectURL.Query().Get("state")

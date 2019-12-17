@@ -18,6 +18,7 @@ import (
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -95,6 +96,8 @@ func TestResourceReconciliationIdempotency(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.CASecretName,
 			Namespace: seedNamespace,
+			// Used for encrypting the OAuthBootstrapSecret, so must be set
+			UID: types.UID("567a5759-20ce-11ea-b48e-42010a9c0115"),
 		},
 		Data: getRSACAData(),
 	}
