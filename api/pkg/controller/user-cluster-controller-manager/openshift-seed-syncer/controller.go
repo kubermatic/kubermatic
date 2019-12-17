@@ -145,7 +145,7 @@ func (r *reconciler) reconcile() (*reconcile.Result, error) {
 
 	secretCreators := []reconciling.NamedSecretCreatorGetter{
 		seedAdminKubeconfigSecretCreatorGetter(caCert, r.externalClusterAddress, r.clusterName, token),
-		oauthBootstrapSecretCreatorGetter(r.userClusterClient),
+		oauthBootstrapSecretCreatorGetter(r.userClusterClient, r.seedClient, r.clusterNamespace),
 		consoleOAuthSecretCreatorGetter(r.userClusterClient),
 	}
 	if err := reconciling.ReconcileSecrets(
@@ -188,8 +188,9 @@ func seedAdminKubeconfigSecretCreatorGetter(
 	}
 }
 
-func oauthBootstrapSecretCreatorGetter(userClusterClient ctrlruntimeclient.Client) reconciling.NamedSecretCreatorGetter {
+func oauthBootstrapSecretCreatorGetter(userClusterClient, seedClient ctrlruntimeclient.Client, seedNamespace string) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
+		ctx := context.Background()
 		name := userclusteropenshiftresources.OAuthBootstrapSecretName
 		return ConsoleAdminPasswordSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			userClusterOAuthSecretName := types.NamespacedName{
@@ -197,14 +198,26 @@ func oauthBootstrapSecretCreatorGetter(userClusterClient ctrlruntimeclient.Clien
 				Name:      name,
 			}
 			userClusterOAuthSecret := &corev1.Secret{}
-			if err := userClusterClient.Get(context.Background(), userClusterOAuthSecretName, userClusterOAuthSecret); err != nil {
+			if err := userClusterClient.Get(ctx, userClusterOAuthSecretName, userClusterOAuthSecret); err != nil {
 				return nil, fmt.Errorf("failed to get the %s/%s secret from the usercluster: %v", userClusterOAuthSecretName.Namespace, userClusterOAuthSecretName.Name, err)
+			}
+			encyptedValue, exists := userClusterOAuthSecret.Data[name]
+			if !exists {
+				return nil, fmt.Errorf("usercluster secret has no %s key", name)
+			}
+			secretKey, err := userclusteropenshiftresources.GetOAuthEncryptionKey(ctx, seedClient, seedNamespace)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get the oauth encryption key: %v", err)
+			}
+			rawValue, err := userclusteropenshiftresources.AESDecrypt(encyptedValue, secretKey)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decrypt: %v", err)
 			}
 
 			if s.Data == nil {
 				s.Data = map[string][]byte{}
 			}
-			s.Data[name] = userClusterOAuthSecret.Data[userclusteropenshiftresources.OAuthBootstrapEncryptedkeyName]
+			s.Data[name] = rawValue
 
 			return s, nil
 		}

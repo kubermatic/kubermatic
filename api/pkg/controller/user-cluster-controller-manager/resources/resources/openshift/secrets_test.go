@@ -8,7 +8,7 @@ func TestAESRoundTripping(t *testing.T) {
 	valueToEncrypt := []byte("my-very-secret-text")
 	psk := []byte("8w6xrx.89vwtn8strwcwbzt")
 
-	ciphertext, err := AESEncrypt(valueToEncrypt, psk)
+	ciphertext, err := aesEncrypt(valueToEncrypt, psk)
 	if err != nil {
 		t.Fatalf("encryption failed: %v", err)
 	}

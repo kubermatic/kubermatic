@@ -6,7 +6,6 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
 
@@ -56,40 +55,21 @@ func OAuthBootstrapPasswordCreatorGetter(seedClient ctrlruntimeclient.Client, se
 	return func() (string, reconciling.SecretCreator) {
 		return OAuthBootstrapSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 
-			adminTokenSecret := &corev1.Secret{}
-			name := types.NamespacedName{
-				Namespace: seedNamespace,
-				Name:      resources.AdminKubeconfigSecretName,
-			}
-			if err := seedClient.Get(context.Background(), name, adminTokenSecret); err != nil {
-				return nil, fmt.Errorf("failed to get admin token secret: %v", err)
-			}
-			adminTokenSecretValue, adminTokenSecretValueExists := adminTokenSecret.Data["token"]
-			if !adminTokenSecretValueExists {
-				return nil, errors.New("adminTokenSecret has no `token` key")
+			secretKey, err := GetOAuthEncryptionKey(context.Background(), seedClient, seedNamespace)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get oauth encryption key: %v", err)
 			}
 
 			// The only way this ever gets updated is if someone empties it. It won't be accepted if
 			// its creation timestamp is after kube-system namespace creation timestamp + 1h.
 			// https://github.com/openshift/origin/blob/e774f85c15aef11d76db1ffc458484867e503293/pkg/oauthserver/authenticator/password/bootstrap/bootstrap.go#L131
 			if encryptedValue, exists := s.Data[OAuthBootstrapEncryptedkeyName]; exists {
-				plainValue, err := AESDecrypt(encryptedValue, adminTokenSecretValue)
-				if err != nil {
-					// The openshift seed sync controller will empty the secret if this can not be encrypted, so just return here
-					return nil, fmt.Errorf("failed to decrypt: %v", err)
-				}
-				hashedValue, err := bcrypt.GenerateFromPassword(plainValue, 12)
-				if err != nil {
-					return nil, fmt.Errorf("failed to hash existing password: %v", err)
-				}
-				if string(s.Data[OAuthBootstrapSecretName]) == string(hashedValue) {
+				if encryptedValueMatchesBcryptHash(encryptedValue, secretKey, s.Data[OAuthBootstrapSecretName]) {
 					return s, nil
 				}
 			}
 
-			if s.Data == nil {
-				s.Data = map[string][]byte{}
-			}
+			s.Data = map[string][]byte{}
 
 			rawPassword, err := generateNewSecret()
 			if err != nil {
@@ -99,7 +79,7 @@ func OAuthBootstrapPasswordCreatorGetter(seedClient ctrlruntimeclient.Client, se
 			if err != nil {
 				return nil, fmt.Errorf("failed to hash password: %v", err)
 			}
-			encyptedPassword, err := AESEncrypt([]byte(rawPassword), adminTokenSecretValue)
+			encyptedPassword, err := aesEncrypt([]byte(rawPassword), secretKey)
 			if err != nil {
 				return nil, fmt.Errorf("failed to encrypt password: %v", err)
 			}
@@ -112,8 +92,22 @@ func OAuthBootstrapPasswordCreatorGetter(seedClient ctrlruntimeclient.Client, se
 	}
 }
 
+// GetOAuthEncryptionKey fetches the key used to encrypt the OAuthBootstrapPassword in the usercluster.
+// We simply use the UID of the CA secret, as it it should be very hard to guess.
+func GetOAuthEncryptionKey(ctx context.Context, seedClient ctrlruntimeclient.Client, seedNamespace string) ([]byte, error) {
+	caSecret := &corev1.Secret{}
+	name := types.NamespacedName{
+		Namespace: seedNamespace,
+		Name:      resources.CASecretName,
+	}
+	if err := seedClient.Get(ctx, name, caSecret); err != nil {
+		return nil, fmt.Errorf("failed to get ca secret: %v", err)
+	}
+	return []byte(string(caSecret.UID)), nil
+}
+
 // Based on https://golang.org/src/crypto/cipher/example_test.go
-func AESEncrypt(data, key []byte) ([]byte, error) {
+func aesEncrypt(data, key []byte) ([]byte, error) {
 	if n := len(key); n < 16 {
 		return nil, fmt.Errorf("key must at least be 16 bytes long, was %d", n)
 	}
@@ -158,6 +152,18 @@ func AESDecrypt(data, key []byte) ([]byte, error) {
 	}
 
 	return plaintext, nil
+}
+
+func encryptedValueMatchesBcryptHash(encryptedValue, key, hash []byte) bool {
+	plainValue, err := AESDecrypt(encryptedValue, key)
+	if err != nil {
+		return false
+	}
+	hashedValue, err := bcrypt.GenerateFromPassword(plainValue, 12)
+	if err != nil {
+		return false
+	}
+	return string(hashedValue) == string(hash)
 }
 
 func generateNewSecret() (string, error) {
