@@ -73,7 +73,7 @@ func OAuthBootstrapPasswordCreatorGetter(seedClient ctrlruntimeclient.Client, se
 			// its creation timestamp is after kube-system namespace creation timestamp + 1h.
 			// https://github.com/openshift/origin/blob/e774f85c15aef11d76db1ffc458484867e503293/pkg/oauthserver/authenticator/password/bootstrap/bootstrap.go#L131
 			if encryptedValue, exists := s.Data[OAuthBootstrapEncryptedkeyName]; exists {
-				plainValue, err := aesDecrypt(encryptedValue, adminTokenSecretValue)
+				plainValue, err := AESDecrypt(encryptedValue, adminTokenSecretValue)
 				if err != nil {
 					// The openshift seed sync controller will empty the secret if this can not be encrypted, so just return here
 					return nil, fmt.Errorf("failed to decrypt: %v", err)
@@ -99,7 +99,7 @@ func OAuthBootstrapPasswordCreatorGetter(seedClient ctrlruntimeclient.Client, se
 			if err != nil {
 				return nil, fmt.Errorf("failed to hash password: %v", err)
 			}
-			encyptedPassword, err := aesEncrypt([]byte(rawPassword), adminTokenSecretValue)
+			encyptedPassword, err := AESEncrypt([]byte(rawPassword), adminTokenSecretValue)
 			if err != nil {
 				return nil, fmt.Errorf("failed to encrypt password: %v", err)
 			}
@@ -113,8 +113,11 @@ func OAuthBootstrapPasswordCreatorGetter(seedClient ctrlruntimeclient.Client, se
 }
 
 // Based on https://golang.org/src/crypto/cipher/example_test.go
-func aesEncrypt(data, key []byte) ([]byte, error) {
-	block, err := aes.NewCipher(key)
+func AESEncrypt(data, key []byte) ([]byte, error) {
+	if n := len(key); n < 16 {
+		return nil, fmt.Errorf("key must at least be 16 bytes long, was %d", n)
+	}
+	block, err := aes.NewCipher(key[0:16])
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct cipher: %v", err)
 	}
@@ -126,20 +129,23 @@ func aesEncrypt(data, key []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct aesgcm: %v", err)
 	}
-	return aesgcm.Seal(nil, nonce, data, nil), nil
+	return append(nonce, aesgcm.Seal(nil, nonce, data, nil)...), nil
 }
 
-func aesDecrypt(data, key []byte) ([]byte, error) {
-	block, err := aes.NewCipher(key)
+func AESDecrypt(data, key []byte) ([]byte, error) {
+	if n := len(key); n < 16 {
+		return nil, fmt.Errorf("key must at least be 16 bytes long, was %d", n)
+	}
+	if n := len(data); n < 12 {
+		return nil, fmt.Errorf("data must at least be 12 bytes, got %d", n)
+	}
+	block, err := aes.NewCipher(key[0:16])
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct cipher: %v", err)
 	}
 
-	// Never use more than 2^32 random nonces with a given key because of the risk of a repeat.
-	nonce := make([]byte, 12)
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return nil, fmt.Errorf("failed to gather entropy: %v", err)
-	}
+	nonce := data[:12]
+	data = data[12:]
 
 	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
