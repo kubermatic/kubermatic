@@ -247,7 +247,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 func (r *Reconciler) markDefaultAddons(ctx context.Context, log *zap.SugaredLogger,
 	addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
 	var defaultAddons sets.String
-	if cluster.Annotations["kubermatic.io/openshift"] != "" {
+	if cluster.IsOpenshift() {
 		defaultAddons = r.defaultOpenshiftAddons
 	} else {
 		defaultAddons = r.defaultKubernetesAddons
@@ -279,7 +279,7 @@ func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.Sugare
 
 func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]runtime.RawExtension, error) {
 	addonDir := r.kubernetesAddonDir
-	if isOpenshift(cluster) {
+	if cluster.IsOpenshift() {
 		addonDir = r.openshiftAddonDir
 	}
 
@@ -479,7 +479,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 
 	// We delete all resources with this label which are not in the combined manifest
 	selector := labels.SelectorFromSet(r.getAddonLabel(addon))
-	cmd := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, isOpenshift(cluster))
+	cmd := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, cluster.IsOpenshift())
 	cmdLog := log.With("cmd", strings.Join(cmd.Args, " "))
 
 	cmdLog.Debug("Applying manifest...")
@@ -489,8 +489,4 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 	return err
-}
-
-func isOpenshift(c *kubermaticv1.Cluster) bool {
-	return c.Annotations["kubermatic.io/openshift"] != ""
 }
