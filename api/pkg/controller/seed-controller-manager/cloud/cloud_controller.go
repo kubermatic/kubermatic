@@ -2,7 +2,6 @@ package cloud
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -234,24 +233,5 @@ func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluste
 }
 
 func (r *Reconciler) getGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
-	if configVar == nil {
-		return "", errors.New("configVar is nil")
-	}
-	if configVar.Name == "" || configVar.Namespace == "" {
-		return "", fmt.Errorf("both name and namespace must be specified in the secret key selector")
-	}
-	if key == "" {
-		return "", fmt.Errorf("key cannot be empty")
-	}
-
-	secret := &corev1.Secret{}
-	namespacedName := types.NamespacedName{Namespace: configVar.Namespace, Name: configVar.Name}
-	if err := r.Get(context.Background(), namespacedName, secret); err != nil {
-		return "", fmt.Errorf("error retrieving secret %q from namespace %q: %v", configVar.Name, configVar.Namespace, err)
-	}
-
-	if val, ok := secret.Data[key]; ok {
-		return string(val), nil
-	}
-	return "", fmt.Errorf("secret %q in namespace %q has no key %q", configVar.Name, configVar.Namespace, key)
+	return provider.SecretKeySelectorValueFuncFactory(context.Background(), r.Client)(configVar, key)
 }

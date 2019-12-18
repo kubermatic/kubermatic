@@ -303,20 +303,7 @@ func (d *TemplateData) SupportsFailureDomainZoneAntiAffinity() bool {
 }
 
 func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
-	// We need all three of these to fetch and use a secret
-	if configVar.Name != "" && configVar.Namespace != "" && key != "" {
-		secret := &corev1.Secret{}
-		namespacedName := types.NamespacedName{Namespace: configVar.Namespace, Name: configVar.Name}
-		if err := d.client.Get(d.ctx, namespacedName, secret); err != nil {
-			return "", fmt.Errorf("error retrieving secret %q from namespace %q: %v", configVar.Name, configVar.Namespace, err)
-		}
-
-		if val, ok := secret.Data[key]; ok {
-			return string(val), nil
-		}
-		return "", fmt.Errorf("secret %q in namespace %q has no key %q", configVar.Name, configVar.Namespace, key)
-	}
-	return "", nil
+	return provider.SecretKeySelectorValueFuncFactory(d.ctx, d.client)(configVar, key)
 }
 
 func (d *TemplateData) GetKubernetesCloudProviderName() string {

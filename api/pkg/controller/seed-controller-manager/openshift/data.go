@@ -11,6 +11,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift/resources"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesresources "github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -247,20 +248,7 @@ func (od *openshiftData) KubermaticAPIImage() string {
 }
 
 func (od *openshiftData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
-	// We need all three of these to fetch and use a secret
-	if configVar.Name != "" && configVar.Namespace != "" && key != "" {
-		secret := &corev1.Secret{}
-		namespacedName := types.NamespacedName{Namespace: configVar.Namespace, Name: configVar.Name}
-		if err := od.client.Get(context.TODO(), namespacedName, secret); err != nil {
-			return "", fmt.Errorf("error retrieving secret '%s' from namespace '%s': '%v'", configVar.Name, configVar.Namespace, err)
-		}
-
-		if val, ok := secret.Data[key]; ok {
-			return string(val), nil
-		}
-		return "", fmt.Errorf("secret '%s' in namespace '%s' has no key '%s'", configVar.Name, configVar.Namespace, key)
-	}
-	return "", nil
+	return provider.SecretKeySelectorValueFuncFactory(context.Background(), od.client)(configVar, key)
 }
 
 func (od *openshiftData) DNATControllerImage() string {
