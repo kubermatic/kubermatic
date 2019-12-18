@@ -272,14 +272,18 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
     time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
   )
   (
-    echodate "Building user-ssh-keys-agent image"
-    TEST_NAME="Build user-ssh-keys-agent Docker image"
-    cd api/cmd/user-ssh-keys-agent
-    make build
-    retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-    IMAGE_NAME=quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION
-    time retry 5 docker build -t "${IMAGE_NAME}" .
-    time retry 5 docker push "quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
+    # This may not exist during upgrade tests.
+    # TODO @kdomanski after 2.13 release: remove this condition
+    if [[ -e api/cmd/user-ssh-keys-agent ]]; then
+      echodate "Building user-ssh-keys-agent image"
+      TEST_NAME="Build user-ssh-keys-agent Docker image"
+      cd api/cmd/user-ssh-keys-agent
+      make build
+      retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
+      IMAGE_NAME=quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION
+      time retry 5 docker build -t "${IMAGE_NAME}" .
+      time retry 5 docker push "quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
+    fi
   )
   git checkout ${OLD_HEAD}
   echodate "Successfully built and loaded all images"
