@@ -16,16 +16,14 @@ import (
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubermaticerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	corev1interface "k8s.io/client-go/kubernetes/typed/core/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -97,19 +95,7 @@ func (d CredentialsData) Cluster() *kubermaticv1.Cluster {
 }
 
 func (d CredentialsData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
-	if configVar.Name != "" && configVar.Namespace != "" && key != "" {
-		secret := &corev1.Secret{}
-		name := types.NamespacedName{Namespace: configVar.Namespace, Name: configVar.Name}
-		if err := d.Client.Get(d.Ctx, name, secret); err != nil {
-			return "", fmt.Errorf("error retrieving secret %q from namespace %q: %v", configVar.Name, configVar.Namespace, err)
-		}
-
-		if val, ok := secret.Data[key]; ok {
-			return string(val), nil
-		}
-		return "", fmt.Errorf("secret %q in namespace %q has no key %q", configVar.Name, configVar.Namespace, key)
-	}
-	return "", nil
+	return provider.SecretKeySelectorValueFuncFactory(d.Ctx, d.Client)(configVar, key)
 }
 
 // GetReadyPod returns a pod matching provided label selector if it is posting ready status, error otherwise.
