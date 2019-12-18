@@ -2009,7 +2009,7 @@
   revision = "c2654d5206da6b7b6ace12841e8f359bb89b443c"
 
 [[projects]]
-  digest = "1:3916f94d42dc5caedf99978932fd87836fe940eee2bea63f2cef3f6ca13b44d3"
+  digest = "1:8c0691e0782560c6dc4f48e90e7c0c5c3ce9eb7f2b8a6562100e8a65ad6234ef"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/cache",
@@ -2024,6 +2024,7 @@
     "pkg/envtest/printer",
     "pkg/event",
     "pkg/handler",
+    "pkg/healthz",
     "pkg/internal/controller",
     "pkg/internal/controller/metrics",
     "pkg/internal/log",
@@ -2051,8 +2052,8 @@
     "pkg/webhook/internal/metrics",
   ]
   pruneopts = "NUT"
-  revision = "d21241119ea4de139f1892ba2f5bc72c96d07f3f"
-  version = "v0.3.0"
+  revision = "198197fe0fd7553cadd8afcd3338f8ee4b8a7e3f"
+  version = "v0.4.0"
 
 [[projects]]
   digest = "1:79012a83a6630d5e3ec068e6e8dd44d199393f53ab05e741b832abaa1ce3c756"
