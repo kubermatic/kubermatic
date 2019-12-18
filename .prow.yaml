@@ -679,6 +679,43 @@ presubmits:
           limits:
             memory: 4Gi
 
+  - name: pre-kubermatic-e2e-vsphere-coreos-1.17
+    decorate: true
+    run_if_changed: "api/pkg/provider/cloud/vsphere"
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-vsphere: "true"
+      preset-vault: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
+    spec:
+      containers:
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.13-dev3
+        env:
+        - name: VERSIONS_TO_TEST
+          value: "v1.17.0"
+        - name: PROVIDER
+          value: "vsphere"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
+        command:
+        - "./api/hack/ci/ci-kind-e2e.sh"
+        # docker-in-docker needs privileged mode
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: 3.5
+          limits:
+            memory: 4Gi
+
   - name: pre-kubermatic-e2e-vsphere-coreos-1.15-customfolder
     decorate: true
     optional: true
