@@ -64,7 +64,7 @@ func DecodePacketSizesNoCredentialsReq(c context.Context, r *http.Request) (inte
 	return req, nil
 }
 
-func PacketSizesEndpoint(credentialManager common.PresetsManager, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func PacketSizesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PacketSizesReq)
 
@@ -76,7 +76,7 @@ func PacketSizesEndpoint(credentialManager common.PresetsManager, userInfoGetter
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

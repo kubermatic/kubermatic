@@ -44,7 +44,6 @@ import (
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	metricspkg "github.com/kubermatic/kubermatic/api/pkg/metrics"
 	"github.com/kubermatic/kubermatic/api/pkg/pprof"
-	"github.com/kubermatic/kubermatic/api/pkg/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
@@ -106,11 +105,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to create update manager", "error", err)
 	}
-	presetsManager, err := presets.NewFromFile(options.presetsFile)
-	if err != nil {
-		log.Fatalw("failed to create presets manager", "error", err)
-	}
-	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, updateManager, presetsManager)
+	apiHandler, err := createAPIHandler(options, providers, oidcIssuerVerifier, tokenVerifiers, tokenExtractors, updateManager)
 	if err != nil {
 		log.Fatalw("failed to create API Handler", "error", err)
 	}
@@ -174,6 +169,10 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
 	clusterProviderGetter := clusterProviderFactory(seedKubeconfigGetter, seedClientGetter, options.workerName, options.featureGates.Enabled(features.OIDCKubeCfgEndpoint))
 
+	presetsProvider, err := kubernetesprovider.NewPresetsProvider(context.Background(), mgr.GetClient(), options.presetsFile, options.dynamicPresets)
+	if err != nil {
+		return providers{}, err
+	}
 	// Warm up the restMapper cache. Log but ignore errors encountered here, maybe there are stale seeds
 	go func() {
 		seeds, err := seedsGetter()
@@ -244,7 +243,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		addonConfigProvider:                   addonConfigProvider,
 		userInfoGetter:                        userInfoGetter,
 		settingsProvider:                      settingsProvider,
-		adminProvider:                         adminProvider}, nil
+		adminProvider:                         adminProvider,
+		presetProvider:                        presetsProvider}, nil
 }
 
 func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error) {
@@ -290,7 +290,7 @@ func createAuthClients(options serverRunOptions, prov providers) (auth.TokenVeri
 	return tokenVerifiers, tokenExtractors, nil
 }
 
-func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifier auth.OIDCIssuerVerifier, tokenVerifiers auth.TokenVerifier, tokenExtractors auth.TokenExtractor, updateManager common.UpdateManager, presetsManager common.PresetsManager) (http.HandlerFunc, error) {
+func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifier auth.OIDCIssuerVerifier, tokenVerifiers auth.TokenVerifier, tokenExtractors auth.TokenExtractor, updateManager common.UpdateManager) (http.HandlerFunc, error) {
 	var prometheusClient prometheusapi.Client
 	if options.featureGates.Enabled(features.PrometheusEndpoint) {
 		var err error
@@ -309,6 +309,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 
 	r := handler.NewRouting(
 		kubermaticlog.New(options.log.Debug, options.log.Format).Sugar(),
+		prov.presetProvider,
 		prov.seedsGetter,
 		prov.clusterProviderGetter,
 		prov.addons,
@@ -329,7 +330,6 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		serviceAccountTokenAuth,
 		serviceAccountTokenGenerator,
 		prov.eventRecorderProvider,
-		presetsManager,
 		options.exposeStrategy,
 		options.accessibleAddons,
 		prov.userInfoGetter,

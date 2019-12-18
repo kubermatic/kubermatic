@@ -17,7 +17,7 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
-	"github.com/kubermatic/kubermatic/api/pkg/presets"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 )
 
 func TestCredentialEndpoint(t *testing.T) {
@@ -290,9 +290,9 @@ func TestCredentialEndpoint(t *testing.T) {
 
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/providers/%s/presets/credentials", tc.provider), strings.NewReader(""))
 
-			credentialsManager := presets.New()
+			credentialsManager := kubernetes.NewEmptyPresetsProvider()
 			if tc.credentials != nil {
-				credentialsManager = presets.NewWithPresets(tc.credentials)
+				credentialsManager = kubernetes.NewWithPresetsProvider(tc.credentials)
 			}
 
 			res := httptest.NewRecorder()

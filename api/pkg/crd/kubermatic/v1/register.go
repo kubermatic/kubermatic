@@ -53,6 +53,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&KubermaticSettingList{},
 		&AddonConfig{},
 		&AddonConfigList{},
+		&Preset{},
+		&PresetList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)

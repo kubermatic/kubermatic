@@ -21,6 +21,7 @@ import (
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
 	log                         *zap.SugaredLogger
+	presetsProvider             provider.PresetProvider
 	seedsGetter                 provider.SeedsGetter
 	sshKeyProvider              provider.SSHKeyProvider
 	userProvider                provider.UserProvider
@@ -42,7 +43,6 @@ type Routing struct {
 	saTokenAuthenticator        serviceaccount.TokenAuthenticator
 	saTokenGenerator            serviceaccount.TokenGenerator
 	eventRecorderProvider       provider.EventRecorderProvider
-	presetsManager              common.PresetsManager
 	exposeStrategy              corev1.ServiceType
 	accessibleAddons            sets.String
 	userInfoGetter              provider.UserInfoGetter
@@ -53,6 +53,7 @@ type Routing struct {
 // NewRouting creates a new Routing.
 func NewRouting(
 	logger *zap.SugaredLogger,
+	presetsProvider provider.PresetProvider,
 	seedsGetter provider.SeedsGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
@@ -73,7 +74,6 @@ func NewRouting(
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
-	presetsManager common.PresetsManager,
 	exposeStrategy corev1.ServiceType,
 	accessibleAddons sets.String,
 	userInfoGetter provider.UserInfoGetter,
@@ -82,6 +82,7 @@ func NewRouting(
 ) Routing {
 	return Routing{
 		log:                         logger,
+		presetsProvider:             presetsProvider,
 		seedsGetter:                 seedsGetter,
 		clusterProviderGetter:       clusterProviderGetter,
 		addonProviderGetter:         addonProviderGetter,
@@ -103,7 +104,6 @@ func NewRouting(
 		saTokenAuthenticator:        saTokenAuthenticator,
 		saTokenGenerator:            saTokenGenerator,
 		eventRecorderProvider:       eventRecorderProvider,
-		presetsManager:              presetsManager,
 		exposeStrategy:              exposeStrategy,
 		accessibleAddons:            accessibleAddons,
 		userInfoGetter:              userInfoGetter,
