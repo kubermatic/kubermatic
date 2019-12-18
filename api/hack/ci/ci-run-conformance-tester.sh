@@ -56,6 +56,9 @@ elif [[ $provider == "kubevirt" ]]; then
   EXTRA_ARGS="-kubevirt-kubeconfig=${KUBEVIRT_E2E_TESTS_KUBECONFIG}"
 fi
 
+# TODO: Remove after 2.13 release, only needed for upgrade tests
+export NAMESPACE="${NAMESPACE:-kubermatic}"
+
 # Needed when running in kind
 which kind && EXTRA_ARGS="$EXTRA_ARGS -create-oidc-token=true"
 
