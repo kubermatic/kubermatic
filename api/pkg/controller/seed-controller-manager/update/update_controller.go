@@ -108,7 +108,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	clusterType := v1.KubernetesClusterType
-	if _, ok := cluster.Annotations["kubermatic.io/openshift"]; ok {
+	if cluster.IsOpenshift() {
 		clusterType = v1.OpenShiftClusterType
 	}
 

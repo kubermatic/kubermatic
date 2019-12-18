@@ -249,8 +249,7 @@ func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticv1.C
 
 // GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster
 func (p *ClusterProvider) GetViewerKubeconfigForCustomerCluster(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
-	isOpenShift, ok := c.Annotations["kubermatic.io/openshift"]
-	if ok && isOpenShift == "true" {
+	if c.IsOpenshift() {
 		return nil, fmt.Errorf("not implemented")
 	}
 	s := &corev1.Secret{}
