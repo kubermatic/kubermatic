@@ -67,6 +67,8 @@ type ClusterGetOptions struct {
 	CheckInitStatus bool
 }
 
+// SecretKeySelectorValueFunc is used to fetch the value of a config var. Do not build your own
+// implementation, use SecretKeySelectorValueFuncFactory.
 type SecretKeySelectorValueFunc func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 
 func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimeclient.Client) SecretKeySelectorValueFunc {
