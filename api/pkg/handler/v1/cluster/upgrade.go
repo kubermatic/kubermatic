@@ -60,7 +60,7 @@ func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider pro
 		}
 
 		clusterType := apiv1.KubernetesClusterType
-		if _, ok := cluster.Annotations["kubermatic.io/openshift"]; ok {
+		if cluster.IsOpenshift() {
 			clusterType = apiv1.OpenShiftClusterType
 		}
 

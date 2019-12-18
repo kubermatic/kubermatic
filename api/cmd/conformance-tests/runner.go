@@ -413,7 +413,7 @@ func (r *testRunner) executeTests(
 
 	var overallTimeout = 10 * time.Minute
 	var timeoutLeft time.Duration
-	if cluster.Annotations["kubermatic.io/openshift"] == "true" {
+	if cluster.IsOpenshift() {
 		// Openshift installs a lot more during node provisioning, hence this may take longer
 		overallTimeout += 5 * time.Minute
 	}

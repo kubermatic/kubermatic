@@ -171,7 +171,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	log = log.With("cluster", cluster.Name)
 
-	if _, found := cluster.Annotations["kubermatic.io/openshift"]; !found {
+	if !cluster.IsOpenshift() {
 		log.Debug("Skipping because the cluster is an Kubernetes cluster")
 		return reconcile.Result{}, nil
 	}

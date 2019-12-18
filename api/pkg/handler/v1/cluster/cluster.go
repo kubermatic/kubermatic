@@ -708,8 +708,7 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 		Type: apiv1.KubernetesClusterType,
 	}
 
-	isOpenShift, ok := internalCluster.Annotations["kubermatic.io/openshift"]
-	if ok && isOpenShift == "true" {
+	if internalCluster.IsOpenshift() {
 		cluster.Type = apiv1.OpenShiftClusterType
 	}
 
