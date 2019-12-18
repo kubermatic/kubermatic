@@ -30,6 +30,10 @@ GOCACHE=$(go env GOCACHE)
 # Make sure it actually exists
 mkdir -p $GOCACHE
 
+# Periodics just use their head ref
+if [[ -z "${PULL_BASE_SHA:-}" ]]; then
+  export CACHE_VERSION="$(git rev-parse HEAD)"
+fi
 CACHE_VERSION="${CACHE_VERSION:-${PULL_BASE_SHA}}"
 if [ -z ${PULL_NUMBER:-} ]; then
   # Special case: This is called in a Postubmit. Go one revision back,
