@@ -421,6 +421,11 @@ func (r *testRunner) executeTests(
 	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		overallTimeout += 5 * time.Minute
 	}
+	// Packet is slower at provisioning the instances, presumably because those are actual
+	// physical hosts.
+	if cluster.Spec.Cloud.Packet != nil {
+		overallTimeout += 5 * time.Minute
+	}
 
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for machines to get a node",
