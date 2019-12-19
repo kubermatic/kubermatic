@@ -17,6 +17,7 @@ import (
 	"go.uber.org/zap"
 
 	addonutils "github.com/kubermatic/kubermatic/api/pkg/addon"
+	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -24,6 +25,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -51,6 +53,7 @@ const (
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig
 type KubeconfigProvider interface {
 	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
+	GetClient(c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
 // Reconciler stores necessary components that are required to manage in-cluster Add-On's
@@ -210,6 +213,14 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
 		log.Debug("Skipping because the API server is not running")
 		return nil, nil
+	}
+
+	reqeueAfter, err := r.ensureRequiredResourceTypesExist(ctx, log, addon, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if all required resources exist: %v", err)
+	}
+	if reqeueAfter != nil {
+		return reqeueAfter, nil
 	}
 
 	// Openshift needs some time to create this, so avoid getting into the backoff
@@ -517,6 +528,38 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 	return nil
+}
+
+func (r *Reconciler) ensureRequiredResourceTypesExist(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+
+	if len(addon.Spec.RequiredResourceTypes) == 0 {
+		// Avoid constructing a client we don't need and just return early
+		return nil, nil
+	}
+	userClusterClient, err := r.KubeconfigProvider.GetClient(cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get client for usercluster: %v", err)
+	}
+
+	for _, requiredResource := range addon.Spec.RequiredResourceTypes {
+		unstructuedList := &metav1unstructured.UnstructuredList{}
+		unstructuedList.SetAPIVersion(requiredResource.Group + "/" + requiredResource.Version)
+		unstructuedList.SetKind(requiredResource.Kind)
+
+		// We do not care about the result, just if the resource is served, so make sure we only
+		// get as little as possible.
+		listOpts := &ctrlruntimeclient.ListOptions{Limit: 1}
+		if err := userClusterClient.List(ctx, unstructuedList, listOpts); err != nil {
+			if _, ok := err.(*meta.NoKindMatchError); ok {
+				// Try again later
+				log.Info("Required resource %s isn't served, trying again in 10 seconds", requiredResource.String())
+				return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+			}
+			return nil, fmt.Errorf("failed to check if type %q is served: %v", requiredResource.String(), err)
+		}
+	}
+
+	return nil, nil
 }
 
 func deleteCommand(ctx context.Context, kubeconfigFilename, manifestFilename string) *exec.Cmd {
