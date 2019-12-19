@@ -102,7 +102,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
       containers:
-      - image: quay.io/kubermatic/go-docker:13.3-1806-2
+      - image: quay.io/kubermatic/go-docker:12.12-1806-3
         command:
         - "./api/hack/verify-yaml-examples.sh"
         resources:
@@ -1055,7 +1055,7 @@ presubmits:
       preset-repo-ssh: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/go-docker:13.3-1806-2
+      - image: quay.io/kubermatic/go-docker:12.12-1806-3
         command:
         - "./api/hack/ci/ci-run-offline-test.sh"
         # docker-in-docker needs privileged mode
@@ -1085,7 +1085,7 @@ presubmits:
       preset-repo-ssh: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/go-docker:13.3-1806-2
+      - image: quay.io/kubermatic/go-docker:12.12-1806-3
         command:
         - ./api/hack/ci/ci-deploy-ci-kubermatic-io.sh
         env:
