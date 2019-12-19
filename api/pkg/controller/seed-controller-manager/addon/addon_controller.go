@@ -161,21 +161,17 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
-	// remove old finalizers if they are still set; otherwise they'd block
-	// cluster namespace deletion
-	if kuberneteshelper.HasFinalizer(addon, cleanupFinalizerName) {
-		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to remove addon cleanup finalizer: %v", err)
-		}
-
-		return reconcile.Result{}, nil
-	}
-
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
 		// If it's not a NotFound err, return it
 		if !kerrors.IsNotFound(err) {
 			return reconcile.Result{}, err
+		}
+
+		// Remove the cleanup finalizer if the cluster is gone, as we can not delete the addons manifests
+		// from the cluster anymore
+		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to remove addon cleanup finalizer: %v", err)
 		}
 
 		return reconcile.Result{}, nil
@@ -207,16 +203,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	if addon.DeletionTimestamp != nil {
-		log.Debug("Skipping addon because deletion timestamp is set")
-		return nil, nil
-	}
-
-	if cluster.DeletionTimestamp != nil {
-		log.Debug("Skipping addon because cluster is deleted")
-		return nil, nil
-	}
-
 	if err := r.markDefaultAddons(ctx, log, addon, cluster); err != nil {
 		return nil, fmt.Errorf("failed to ensure that the isDefault field is up to date in the addon: %v", err)
 	}
@@ -236,9 +222,22 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		return nil, err
 	}
 
+	if addon.DeletionTimestamp != nil {
+		if err := r.cleanupManifests(ctx, log, addon, cluster); err != nil {
+			return nil, fmt.Errorf("failed to delete manifests from cluster: %v", err)
+		}
+		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
+			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
+		}
+		return nil, nil
+	}
+
 	// Reconciling
 	if err := r.ensureIsInstalled(ctx, log, addon, cluster); err != nil {
 		return nil, fmt.Errorf("failed to deploy the addon manifests into the cluster: %v", err)
+	}
+	if err := r.ensureFinalizerIsSet(ctx, addon); err != nil {
+		return nil, fmt.Errorf("failed to ensure that the cleanup finalizer existis on the addon: %v", err)
 	}
 
 	return nil, nil
@@ -272,7 +271,7 @@ func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.Sugare
 		if err := r.Client.Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon)); err != nil {
 			return err
 		}
-		log.Infow("Removed the cleanup finalizer", "finalizer", cleanupFinalizerName)
+		log.Debugw("Removed the cleanup finalizer", "finalizer", cleanupFinalizerName)
 	}
 	return nil
 }
@@ -489,4 +488,37 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 	return err
+}
+
+func (r *Reconciler) ensureFinalizerIsSet(ctx context.Context, addon *kubermaticv1.Addon) error {
+	if kuberneteshelper.HasFinalizer(addon, cleanupFinalizerName) {
+		return nil
+	}
+
+	oldAddon := addon.DeepCopy()
+	kuberneteshelper.AddFinalizer(addon, cleanupFinalizerName)
+	return r.Client.Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
+}
+
+func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
+	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(log, addon, cluster)
+	if err != nil {
+		return err
+	}
+	defer done()
+
+	cmd := deleteCommand(ctx, kubeconfigFilename, manifestFilename)
+	cmdLog := log.With("cmd", strings.Join(cmd.Args, " "))
+
+	cmdLog.Debug("Deleting resources...")
+	out, err := cmd.CombinedOutput()
+	cmdLog.Debugw("Finished executing command", "output", string(out))
+	if err != nil {
+		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
+	}
+	return nil
+}
+
+func deleteCommand(ctx context.Context, kubeconfigFilename, manifestFilename string) *exec.Cmd {
+	return exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename, "--ignore-not-found", "true")
 }
