@@ -15,7 +15,6 @@ const (
 )
 
 //+genclient
-//+genclient:noStatus
 
 // Addon specifies a add-on
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -23,8 +22,7 @@ type Addon struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AddonSpec   `json:"spec"`
-	Status AddonStatus `json:"status"`
+	Spec AddonSpec `json:"spec"`
 }
 
 // AddonSpec specifies details of an addon
@@ -37,14 +35,6 @@ type AddonSpec struct {
 	Variables runtime.RawExtension `json:"variables,omitempty"`
 	// IsDefault indicates whether the addon is default
 	IsDefault bool `json:"isDefault,omitempty"`
-}
-
-// AddonStatus contains details about the current status of an addon
-type AddonStatus struct {
-	// LastSuccessfulDeploymentTimestamp contains the time at which the addon
-	// was successfully deployed last. It is nil if the addon was never deployed
-	// successfully.
-	LastSuccessfulDeploymentTimestamp *metav1.Time `json:"lastSuccessfulDeploymentTimestamp,omitempty"`
 }
 
 // AddonList is a list of addons
