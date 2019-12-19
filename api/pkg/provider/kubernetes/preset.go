@@ -96,7 +96,7 @@ func NewPresetsProvider(ctx context.Context, client ctrlruntimeclient.Client, pr
 	return &PresetsProvider{presetsGetter: presetsGetter}, nil
 }
 
-// presetsGetter returns presets which belong to the specific email group and for all users
+// GetPresets returns presets which belong to the specific email group and for all users
 func (m *PresetsProvider) GetPresets(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
 	return m.presetsGetter(userInfo)
 }

@@ -81,7 +81,7 @@ type ClusterProvider struct {
 	seedKubeconfig       *restclient.Config
 }
 
-// NewPresetsProvider creates a brand new cluster that is bound to the given project
+// New creates a brand new cluster that is bound to the given project
 func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	if project == nil || userInfo == nil || cluster == nil {
 		return nil, errors.New("project and/or userInfo and/or cluster is missing but required")
