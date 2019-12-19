@@ -168,6 +168,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 		URL               string
 		QueryParams       map[string]string
 		Credential        string
+		Credentials       []runtime.Object
 		OpenstackURL      string
 		OpenstackResponse string
 		ExpectedResponse  string
@@ -190,7 +191,10 @@ func TestOpenstackEndpoints(t *testing.T) {
 		{
 			Name:       "test tenants endpoint with predefined credentials",
 			Credential: test.TestFakeCredential,
-			URL:        "/api/v1/providers/openstack/tenants",
+			Credentials: []runtime.Object{
+				test.GenDefaultPreset(),
+			},
+			URL: "/api/v1/providers/openstack/tenants",
 			ExpectedResponse: `[
 				{"id":"456788", "name": "a project name"},
 				{"id":"456789", "name": "another domain"}
@@ -210,6 +214,9 @@ func TestOpenstackEndpoints(t *testing.T) {
 			Credential:  test.TestFakeCredential,
 			URL:         "/api/v1/providers/openstack/subnets",
 			QueryParams: map[string]string{"network_id": "foo"},
+			Credentials: []runtime.Object{
+				test.GenDefaultPreset(),
+			},
 			ExpectedResponse: `[
 				{"id": "08eae331-0402-425a-923c-34f7cfe39c1b", "name": "private-subnet"},
 				{"id": "54d6f61d-db07-451c-9ab3-b9609b6b6f0b", "name": "my_subnet"}
@@ -226,6 +233,9 @@ func TestOpenstackEndpoints(t *testing.T) {
 			Name:       "test networks endpoint with predefined credentials",
 			Credential: test.TestFakeCredential,
 			URL:        "/api/v1/providers/openstack/networks",
+			Credentials: []runtime.Object{
+				test.GenDefaultPreset(),
+			},
 			ExpectedResponse: `[
 				{"id": "71c1e68c-171a-4aa2-aca5-50ea153a3718", "name": "net2", "external": false}
 			]`,
@@ -248,7 +258,10 @@ func TestOpenstackEndpoints(t *testing.T) {
 		{
 			Name:       "test sizes endpoint with predefined credentials",
 			Credential: test.TestFakeCredential,
-			URL:        "/api/v1/providers/openstack/sizes",
+			Credentials: []runtime.Object{
+				test.GenDefaultPreset(),
+			},
+			URL: "/api/v1/providers/openstack/sizes",
 			ExpectedResponse: `[
 				{
 					"disk":40, "isPublic":true, "memory":4096, "region":"RegionOne", "slug":"m1.medium", "swap":0, "vcpus":2
@@ -290,7 +303,11 @@ func TestOpenstackEndpoints(t *testing.T) {
 			apiUser := test.GenDefaultAPIUser()
 
 			res := httptest.NewRecorder()
-			router, _, err := test.CreateTestEndpointAndGetClients(*apiUser, buildOpenstackDatacenter(), []runtime.Object{}, []runtime.Object{}, []runtime.Object{test.APIUserToKubermaticUser(*apiUser)}, nil, nil, hack.NewTestRouting)
+			credentials := []runtime.Object{}
+			if tc.Credentials != nil {
+				credentials = tc.Credentials
+			}
+			router, _, err := test.CreateTestEndpointAndGetClients(*apiUser, buildOpenstackDatacenter(), []runtime.Object{}, credentials, []runtime.Object{test.APIUserToKubermaticUser(*apiUser)}, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v\n", err)
 			}

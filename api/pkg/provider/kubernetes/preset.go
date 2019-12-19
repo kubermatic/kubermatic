@@ -76,18 +76,6 @@ type PresetsProvider struct {
 	presetsGetter presetsGetter
 }
 
-func NewEmptyPresetsProvider() *PresetsProvider {
-	return &PresetsProvider{presetsGetter: func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
-		return filterOutPresets(userInfo, &kubermaticv1.PresetList{Items: []kubermaticv1.Preset{}})
-	}}
-}
-
-func NewWithPresetsProvider(presets *kubermaticv1.PresetList) *PresetsProvider {
-	return &PresetsProvider{presetsGetter: func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
-		return filterOutPresets(userInfo, presets)
-	}}
-}
-
 func NewPresetsProvider(ctx context.Context, client ctrlruntimeclient.Client, presetsFile string, dynamicPresets bool) (*PresetsProvider, error) {
 	presetsGetter, err := presetsGetterFactory(ctx, client, presetsFile, dynamicPresets)
 	if err != nil {
