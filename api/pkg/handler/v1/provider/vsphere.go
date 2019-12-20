@@ -16,7 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
-func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, credentialManager common.PresetsManager, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(VSphereNetworksReq)
 		if !ok {
@@ -30,7 +30,7 @@ func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, credentialManager
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -111,7 +111,7 @@ func getVsphereNetworks(userInfo *provider.UserInfo, seedsGetter provider.SeedsG
 	return apiNetworks, nil
 }
 
-func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, credentialManager common.PresetsManager, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(VSphereFoldersReq)
 		if !ok {
@@ -125,7 +125,7 @@ func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, credentialManager 
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

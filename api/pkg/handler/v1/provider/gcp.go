@@ -110,7 +110,7 @@ func DecodeGCPTypesNoCredentialReq(c context.Context, r *http.Request) (interfac
 	return req, nil
 }
 
-func GCPDiskTypesEndpoint(credentialManager common.PresetsManager, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GCPDiskTypesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesReq)
 
@@ -121,7 +121,7 @@ func GCPDiskTypesEndpoint(credentialManager common.PresetsManager, userInfoGette
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -196,7 +196,7 @@ func listGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDis
 	return diskTypes, err
 }
 
-func GCPSizeEndpoint(credentialManager common.PresetsManager, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GCPSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesReq)
 
@@ -208,7 +208,7 @@ func GCPSizeEndpoint(credentialManager common.PresetsManager, userInfoGetter pro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -285,7 +285,7 @@ func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachine
 	return sizes, err
 }
 
-func GCPZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GCPZoneEndpoint(presetsProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPZoneReq)
 		sa := req.ServiceAccount
@@ -295,7 +295,7 @@ func GCPZoneEndpoint(credentialManager common.PresetsManager, seedsGetter provid
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := credentialManager.GetPreset(userInfo, req.Credential)
+			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
 			if err != nil {
 				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

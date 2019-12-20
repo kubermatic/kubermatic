@@ -47,11 +47,12 @@ func NewTestRouting(
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
-	credentialManager common.PresetsManager) http.Handler {
+	presetsProvider provider.PresetProvider) http.Handler {
 
 	updateManager := version.New(versions, updates)
 	r := handler.NewRouting(
 		kubermaticlog.Logger,
+		presetsProvider,
 		seedsGetter,
 		clusterProvidersGetter,
 		addonProviderGetter,
@@ -72,7 +73,6 @@ func NewTestRouting(
 		saTokenAuthenticator,
 		saTokenGenerator,
 		eventRecorderProvider,
-		credentialManager,
 		corev1.ServiceTypeNodePort,
 		sets.String{},
 		userInfoGetter,
