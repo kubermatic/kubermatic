@@ -265,7 +265,7 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 				dep.Spec.Template.Spec.Containers = []corev1.Container{
 					*openvpnSidecar,
 					{
-						Name:    kubeControllerManagerContainerName,
+						Name:    resources.ControllerManagerDeploymentName,
 						Image:   image,
 						Env:     env,
 						Command: []string{"hyperkube", kubeControllerManagerContainerName},
@@ -295,11 +295,7 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 					kubeControllerManagerContainerName: defaultKubeControllerResourceRequirements.DeepCopy(),
 					openvpnSidecar.Name:                openvpnSidecar.Resources.DeepCopy(),
 				}
-				overrides := map[string]*corev1.ResourceRequirements{}
-				if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
-					overrides[kubeControllerManagerContainerName] = data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources.DeepCopy()
-				}
-				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 				if err != nil {
 					return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 				}
