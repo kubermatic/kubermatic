@@ -520,7 +520,7 @@ func (r *Reconciler) ensureRequiredResourceTypesExist(ctx context.Context, log *
 		if err := userClusterClient.List(ctx, unstructuedList, listOpts); err != nil {
 			if _, ok := err.(*meta.NoKindMatchError); ok {
 				// Try again later
-				log.Info("Required resource %s isn't served, trying again in 10 seconds", requiredResource.String())
+				log.Infow("Required resource isn't served, trying again in 10 seconds", "resource", requiredResource.String())
 				return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 			}
 			return nil, fmt.Errorf("failed to check if type %q is served: %v", requiredResource.String(), err)
