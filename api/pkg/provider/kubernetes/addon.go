@@ -33,7 +33,7 @@ func NewAddonProvider(
 	}
 }
 
-// NewPresetsProvider creates a new addon in the given cluster
+// New creates a new addon in the given cluster
 func (p *AddonProvider) New(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension) (*kubermaticv1.Addon, error) {
 	if !p.accessibleAddons.Has(addonName) {
 		return nil, kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
