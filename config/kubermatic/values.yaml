@@ -100,7 +100,7 @@ kubermatic:
           tag: "__KUBERMATIC_TAG__"
           pullPolicy: "IfNotPresent"
       openshift:
-        # Mutually exclusive with `defaultAddons`. The file referenced here is in the static/ folder
+        # Mutually exclusive with `defaultAddons`. The file referenced here is in the static/master/ folder
         defaultAddonsFile: openshift-addons.yaml
         image:
           repository: "quay.io/kubermatic/openshift-addons"
