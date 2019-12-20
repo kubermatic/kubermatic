@@ -173,11 +173,6 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 			}
 
-			resourceRequirements := openshiftAPIServerDefaultResourceRequirements.DeepCopy()
-			if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
-				resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
-			}
-
 			// TODO: Make it cope with our registry overwriting
 			image, err := hypershiftImage(data.Cluster().Spec.Version.String())
 			if err != nil {
@@ -188,11 +183,10 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 				*openvpnSidecar,
 				*dnatControllerSidecar,
 				{
-					Name:      OpenshiftAPIServerDeploymentName,
-					Image:     image,
-					Command:   []string{"hypershift", "openshift-apiserver"},
-					Args:      []string{"--config=/etc/origin/master/master-config.yaml"},
-					Resources: *resourceRequirements,
+					Name:    OpenshiftAPIServerDeploymentName,
+					Image:   image,
+					Command: []string{"hypershift", "openshift-apiserver"},
+					Args:    []string{"--config=/etc/origin/master/master-config.yaml"},
 					Ports: []corev1.ContainerPort{
 						{
 							ContainerPort: 8443,
@@ -259,7 +253,19 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 					},
 				},
 			}
-
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				OpenshiftAPIServerDeploymentName: openshiftAPIServerDefaultResourceRequirements.DeepCopy(),
+				openvpnSidecar.Name:              openvpnSidecar.Resources.DeepCopy(),
+				dnatControllerSidecar.Name:       dnatControllerSidecar.Resources.DeepCopy(),
+			}
+			overrides := map[string]*corev1.ResourceRequirements{}
+			if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
+				overrides[OpenshiftAPIServerDeploymentName] = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources.DeepCopy()
+			}
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(OpenshiftAPIServerDeploymentName, data.Cluster().Name)
 			podLabels, err := data.GetPodTemplateLabels(OpenshiftAPIServerDeploymentName, dep.Spec.Template.Spec.Volumes, nil)
 			if err != nil {

@@ -119,10 +119,6 @@ func KubeSchedulerDeploymentCreator(data openshiftData) reconciling.NamedDeploym
 
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: openshiftImagePullSecretName}}
 
-			resourceRequirements := defaultResourceRequirements
-			if data.Cluster().Spec.ComponentsOverride.Scheduler.Resources != nil {
-				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Scheduler.Resources
-			}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
@@ -171,7 +167,6 @@ func KubeSchedulerDeploymentCreator(data openshiftData) reconciling.NamedDeploym
 							ReadOnly:  true,
 						},
 					},
-					Resources: resourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: getSchedulerHealthGetAction(),
@@ -194,7 +189,14 @@ func KubeSchedulerDeploymentCreator(data openshiftData) reconciling.NamedDeploym
 					},
 				},
 			}
-
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				name:                defaultResourceRequirements.DeepCopy(),
+				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
+			}
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))

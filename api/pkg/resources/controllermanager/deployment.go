@@ -136,11 +136,6 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				controllerManagerMounts = append(controllerManagerMounts, serviceAccountMount)
 			}
 
-			resourceRequirements := defaultResourceRequirements
-			if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
-				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources
-			}
-
 			envVars, err := GetEnvVars(data)
 			if err != nil {
 				return nil, err
@@ -149,12 +144,11 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:      name,
-					Image:     data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
-					Command:   []string{"/hyperkube", "kube-controller-manager"},
-					Args:      flags,
-					Env:       envVars,
-					Resources: resourceRequirements,
+					Name:    resources.ControllerManagerDeploymentName,
+					Image:   data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
+					Command: []string{"/hyperkube", "kube-controller-manager"},
+					Args:    flags,
+					Env:     envVars,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: getHealthGetAction(data),
@@ -176,6 +170,14 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					},
 					VolumeMounts: controllerManagerMounts,
 				},
+			}
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				name:                defaultResourceRequirements.DeepCopy(),
+				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
+			}
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)

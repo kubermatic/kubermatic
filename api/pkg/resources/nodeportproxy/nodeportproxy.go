@@ -30,6 +30,41 @@ const (
 	NodePortProxyExposeNamespacedAnnotationKey = "nodeport-proxy.k8s.io/expose-namespaced"
 )
 
+var (
+	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+		"envoy-manager": {
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("10m"),
+				corev1.ResourceMemory: resource.MustParse("32Mi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceMemory: resource.MustParse("48Mi"),
+			},
+		},
+		"envoy": {
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceMemory: resource.MustParse("32Mi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("64Mi"),
+			},
+		},
+		"lb-updater": {
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("10m"),
+				corev1.ResourceMemory: resource.MustParse("32Mi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceMemory: resource.MustParse("32Mi"),
+			},
+		},
+	}
+)
+
 func EnsureResources(ctx context.Context, client ctrlruntimeclient.Client, data nodePortProxyData) error {
 	image := data.ImageRegistry("quay.io") + "/" + imageName + ":" + resources.KUBERMATICCOMMIT
 	namespace := data.Cluster().Status.NamespaceName
@@ -170,16 +205,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 						FieldPath: "metadata.namespace",
 					}},
 				}},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("10m"),
-						corev1.ResourceMemory: resource.MustParse("32Mi"),
-					},
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("50m"),
-						corev1.ResourceMemory: resource.MustParse("48Mi"),
-					},
-				}}, {
+			}, {
 				Name:  "envoy",
 				Image: data.ImageRegistry("docker.io") + "/envoyproxy/envoy-alpine:v1.12.2",
 				Command: []string{
@@ -202,16 +228,6 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 						},
 					},
 				},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("50m"),
-						corev1.ResourceMemory: resource.MustParse("32Mi"),
-					},
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("100m"),
-						corev1.ResourceMemory: resource.MustParse("64Mi"),
-					},
-				},
 				ReadinessProbe: &corev1.Probe{
 					FailureThreshold: 3,
 					Handler: corev1.Handler{
@@ -230,6 +246,10 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 					MountPath: "/etc/envoy",
 				}},
 			}}
+			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, d.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
 			d.Spec.Template.Spec.Volumes = []corev1.Volume{{
 				Name: volumeMountNameEnvoyConfig,
 				VolumeSource: corev1.VolumeSource{
@@ -254,6 +274,7 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 			}
+
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name: "lb-updater",
 				Command: []string{
@@ -270,17 +291,11 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 						FieldPath: "metadata.namespace",
 					}},
 				}},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("10m"),
-						corev1.ResourceMemory: resource.MustParse("32Mi"),
-					},
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("50m"),
-						corev1.ResourceMemory: resource.MustParse("32Mi"),
-					},
-				},
 			}}
+			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, d.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
 			d.Spec.Template.Spec.ServiceAccountName = "nodeport-proxy"
 
 			return d, nil

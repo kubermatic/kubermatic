@@ -17,25 +17,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var (
-	defaultResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("256Mi"),
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("2Gi"),
-			corev1.ResourceCPU:    resource.MustParse("2"),
-		},
-	}
-)
-
 const (
 	name    = "etcd"
 	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
 	// ImageTag defines the image tag to use for the etcd image
 	imageTagV33 = "v3.3.18"
 	imageTagV34 = "v3.4.3"
+)
+
+var (
+	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+		name: {
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("256Mi"),
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("2Gi"),
+				corev1.ResourceCPU:    resource.MustParse("2"),
+			},
+		},
+	}
 )
 
 type etcdStatefulSetCreatorData interface {
@@ -87,14 +89,10 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			if err != nil {
 				return nil, err
 			}
-			resourceRequirements := defaultResourceRequirements
-			if data.Cluster().Spec.ComponentsOverride.Etcd.Resources != nil {
-				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Etcd.Resources
-			}
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    name,
+					Name:    resources.EtcdStatefulSetName,
 					Image:   data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag(data.Cluster()),
 					Command: etcdStartCmd,
 					Env: []corev1.EnvVar{
@@ -133,7 +131,6 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 							Name:          "peer",
 						},
 					},
-					Resources: resourceRequirements,
 					ReadinessProbe: &corev1.Probe{
 						TimeoutSeconds:      10,
 						PeriodSeconds:       30,
@@ -173,6 +170,10 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 						},
 					},
 				},
+			}
+			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), set.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 
 			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.EtcdStatefulSetName, data.Cluster().Name)

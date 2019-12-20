@@ -155,19 +155,13 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 			}
 
-			resourceRequirements := controllerManagerDefaultResourceRequirements
-			if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
-				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources
-			}
-
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:      OpenshiftControllerManagerDeploymentName,
-					Image:     image,
-					Command:   []string{"hypershift", "openshift-controller-manager"},
-					Args:      []string{"--config=/etc/origin/master/config.yaml", "-v=2"},
-					Resources: resourceRequirements,
+					Name:    OpenshiftControllerManagerDeploymentName,
+					Image:   image,
+					Command: []string{"hypershift", "openshift-controller-manager"},
+					Args:    []string{"--config=/etc/origin/master/config.yaml", "-v=2"},
 					Env: []corev1.EnvVar{{
 						Name:  "KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -196,7 +190,18 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 					},
 				},
 			}
-
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				OpenshiftControllerManagerDeploymentName: controllerManagerDefaultResourceRequirements.DeepCopy(),
+				openvpnSidecar.Name:                      openvpnSidecar.Resources.DeepCopy(),
+			}
+			overrides := map[string]*corev1.ResourceRequirements{}
+			if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
+				overrides[OpenshiftAPIServerDeploymentName] = data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources.DeepCopy()
+			}
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(OpenshiftControllerManagerDeploymentName, data.Cluster().Name)
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(OpenshiftControllerManagerDeploymentName), "OAuthClient,oauth.openshift.io/v1")
