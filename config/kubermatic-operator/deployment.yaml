@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kubermatic-operator
-  namespace: kubermatic-operator
+  namespace: '__NAMESPACE__'
   labels:
     app.kubernetes.io/name: kubermatic-operator
     app.kubernetes.io/version: '__KUBERMATIC_TAG__'
@@ -30,8 +30,10 @@ spec:
         args:
         - -internal-address=0.0.0.0:8085
         - -namespace=$(POD_NAMESPACE)
+        - -worker-name=__WORKER_NAME__
         - -log-format=json
-        - -worker-name=kubermatic-operator
+        - -log-debug=true
+        - -v=8
         env:
         - name: POD_NAMESPACE
           valueFrom:
