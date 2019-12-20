@@ -16,7 +16,7 @@ import (
 
 	"go.uber.org/zap"
 
-	rancherclient "github.com/kubermatic/kubermatic/api/pkg/controller/rancher/client"
+	rancherclient "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/rancher/client"
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
