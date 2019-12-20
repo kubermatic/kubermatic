@@ -940,3 +940,24 @@ func SetResourceRequirements(containers []corev1.Container, requirements, overri
 
 	return nil
 }
+
+func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*corev1.ResourceRequirements {
+	r := map[string]*corev1.ResourceRequirements{}
+	if componentSettings.Apiserver.Resources != nil {
+		r[ApiserverDeploymentName] = componentSettings.Apiserver.Resources.DeepCopy()
+	}
+	if componentSettings.ControllerManager.Resources != nil {
+		r[ControllerManagerDeploymentName] = componentSettings.ControllerManager.Resources.DeepCopy()
+	}
+	if componentSettings.Scheduler.Resources != nil {
+		r[SchedulerDeploymentName] = componentSettings.Scheduler.Resources.DeepCopy()
+	}
+	if componentSettings.Etcd.Resources != nil {
+		r[EtcdStatefulSetName] = componentSettings.Etcd.Resources.DeepCopy()
+	}
+	if componentSettings.Prometheus.Resources != nil {
+		r[PrometheusStatefulSetName] = componentSettings.Prometheus.Resources.DeepCopy()
+	}
+
+	return r
+}

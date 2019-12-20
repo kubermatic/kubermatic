@@ -134,7 +134,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				*openvpnSidecar,
 				*dnatControllerSidecar,
 				{
-					Name:    name,
+					Name:    resources.ApiserverDeploymentName,
 					Image:   data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
 					Command: []string{"/hyperkube", "kube-apiserver"},
 					Env:     envVars,
@@ -181,7 +181,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
 				dnatControllerSidecar.Name: dnatControllerSidecar.Resources.DeepCopy(),
 			}
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, data.Cluster().Spec.ComponentsOverride.GetOverrides(), dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

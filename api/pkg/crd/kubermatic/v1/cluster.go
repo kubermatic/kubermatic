@@ -269,31 +269,6 @@ type ComponentSettings struct {
 	Prometheus        StatefulSetSettings `json:"prometheus"`
 }
 
-func (cs *ComponentSettings) GetOverrides() map[string]*corev1.ResourceRequirements {
-	if cs == nil {
-		return nil
-	}
-
-	r := map[string]*corev1.ResourceRequirements{}
-	if cs.Apiserver.Resources != nil {
-		r["apiserver"] = cs.Apiserver.Resources.DeepCopy()
-	}
-	if cs.ControllerManager.Resources != nil {
-		r["controller-manager"] = cs.ControllerManager.Resources.DeepCopy()
-	}
-	if cs.Scheduler.Resources != nil {
-		r["scheduler"] = cs.Scheduler.Resources.DeepCopy()
-	}
-	if cs.Etcd.Resources != nil {
-		r["etcd"] = cs.Etcd.Resources.DeepCopy()
-	}
-	if cs.Prometheus.Resources != nil {
-		r["prometheus"] = cs.Prometheus.Resources.DeepCopy()
-	}
-
-	return r
-}
-
 type APIServerSettings struct {
 	DeploymentSettings `json:",inline"`
 

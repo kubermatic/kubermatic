@@ -217,11 +217,7 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				openvpnSidecar.Name:               openvpnSidecar.Resources.DeepCopy(),
 				dnatControllerSidecar.Name:        dnatControllerSidecar.Resources.DeepCopy(),
 			}
-			overrides := map[string]*corev1.ResourceRequirements{}
-			if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
-				overrides[resources.ApiserverDeploymentName] = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources.DeepCopy()
-			}
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

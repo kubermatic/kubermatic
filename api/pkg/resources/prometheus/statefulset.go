@@ -82,7 +82,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:  name,
+					Name:  resources.PrometheusStatefulSetName,
 					Image: data.ImageRegistry(resources.RegistryQuay) + "/prometheus/prometheus:" + tag,
 					Args: []string{
 						"--config.file=/etc/prometheus/config/prometheus.yaml",
@@ -152,7 +152,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 					},
 				},
 			}
-			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, data.Cluster().Spec.ComponentsOverride.GetOverrides(), set.Annotations)
+			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), set.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

@@ -92,7 +92,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    name,
+					Name:    resources.EtcdStatefulSetName,
 					Image:   data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag(data.Cluster()),
 					Command: etcdStartCmd,
 					Env: []corev1.EnvVar{
@@ -171,7 +171,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 					},
 				},
 			}
-			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, data.Cluster().Spec.ComponentsOverride.GetOverrides(), set.Annotations)
+			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), set.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
