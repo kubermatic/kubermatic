@@ -221,7 +221,10 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 			if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
 				overrides[resources.ApiserverDeploymentName] = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources.DeepCopy()
 			}
-			resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.ApiserverDeploymentName, data.Cluster().Name)
 
