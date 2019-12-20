@@ -70,7 +70,7 @@ func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, se
 // swagger:parameters patchKubermaticSettings
 type patchKubermaticSettingsReq struct {
 	// in: body
-	Patch []byte
+	Patch json.RawMessage
 }
 
 func DecodePatchKubermaticSettingsReq(c context.Context, r *http.Request) (interface{}, error) {

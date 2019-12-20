@@ -592,7 +592,7 @@ type patchRoleReq struct {
 	// required: true
 	Namespace string `json:"namespace"`
 	// in: body
-	Patch []byte
+	Patch json.RawMessage
 }
 
 func DecodePatchRoleReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -684,7 +684,7 @@ type patchClusterRoleReq struct {
 	// required: true
 	RoleID string `json:"role_id"`
 	// in: body
-	Patch []byte
+	Patch json.RawMessage
 }
 
 func DecodePatchClusterRoleReq(c context.Context, r *http.Request) (interface{}, error) {

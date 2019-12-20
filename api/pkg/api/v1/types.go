@@ -610,7 +610,7 @@ const (
 // Cluster has a custom MarshalJSON method defined
 // and thus the output may vary
 //
-// swagger:model Cluster
+// swagger:model ClusterResource
 type Cluster struct {
 	ObjectMeta      `json:",inline"`
 	Labels          map[string]string `json:"labels,omitempty"`
@@ -691,6 +691,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 }
 
 // PublicCloudSpec is a public counterpart of apiv1.CloudSpec.
+// swagger:model PublicCloudSpec
 type PublicCloudSpec struct {
 	DatacenterName string                       `json:"dc"`
 	Fake           *PublicFakeCloudSpec         `json:"fake,omitempty"`
@@ -1170,7 +1171,7 @@ type ClusterMetrics struct {
 }
 
 // ControlPlaneMetrics defines a metric for the user cluster control plane resources
-// swagger:model ClusterMetrics
+// swagger:model ControlPlaneMetrics
 type ControlPlaneMetrics struct {
 	// MemoryTotalBytes in bytes
 	MemoryTotalBytes int64 `json:"memoryTotalBytes,omitempty"`
@@ -1179,7 +1180,7 @@ type ControlPlaneMetrics struct {
 }
 
 // NodesMetric defines a metric for a group of nodes
-// swagger:model NodeMetric
+// swagger:model NodesMetric
 type NodesMetric struct {
 	// MemoryTotalBytes current memory usage in bytes
 	MemoryTotalBytes int64 `json:"memoryTotalBytes,omitempty"`
@@ -1234,6 +1235,7 @@ type NodeDeploymentSpec struct {
 }
 
 // Event is a report of an event somewhere in the cluster.
+// swagger:model Event
 type Event struct {
 	ObjectMeta `json:",inline"`
 
@@ -1322,6 +1324,7 @@ type Role struct {
 }
 
 // RoleBinding references a role, but does not contain it.
+// swagger:model RoleBinding
 type RoleBinding struct {
 	// Indicates the scope of this binding.
 	Namespace string `json:"namespace,omitempty"`
@@ -1332,6 +1335,7 @@ type RoleBinding struct {
 }
 
 // ClusterRoleBinding references a cluster role, but does not contain it.
+// swagger:model ClusterRoleBinding
 type ClusterRoleBinding struct {
 	// Subjects holds references to the objects the role applies to.
 	Subjects []rbacv1.Subject `json:"subjects,omitempty"`
