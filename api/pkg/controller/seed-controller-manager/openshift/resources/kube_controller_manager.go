@@ -295,7 +295,11 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 					kubeControllerManagerContainerName: defaultKubeControllerResourceRequirements.DeepCopy(),
 					openvpnSidecar.Name:                openvpnSidecar.Resources.DeepCopy(),
 				}
-				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
+				overrides := map[string]*corev1.ResourceRequirements{}
+				if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
+					overrides[kubeControllerManagerContainerName] = data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources.DeepCopy()
+				}
+				err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
 				if err != nil {
 					return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 				}

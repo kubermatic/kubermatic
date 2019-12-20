@@ -122,7 +122,7 @@ func KubeSchedulerDeploymentCreator(data openshiftData) reconciling.NamedDeploym
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:    name,
+					Name:    resources.SchedulerDeploymentName,
 					Image:   image,
 					Command: []string{"hyperkube", "kube-scheduler"},
 					Args: []string{
