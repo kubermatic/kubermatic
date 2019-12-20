@@ -126,10 +126,12 @@ const (
 )
 
 var (
-	oauthDeploymentResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("10m"),
-			corev1.ResourceMemory: resource.MustParse("50Mi"),
+	oauthDeploymentResourceRequirements = map[string]*corev1.ResourceRequirements{
+		OauthName: {
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("10m"),
+				corev1.ResourceMemory: resource.MustParse("50Mi"),
+			},
 		},
 	}
 	oauthCLIConfigTemplate = template.Must(template.New("base").Funcs(sprig.TxtFuncMap()).Parse(oauthCLIConfigTemplateRaw))
@@ -354,6 +356,7 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 					},
 				},
 			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  OauthName,
 				Image: image,
@@ -417,9 +420,11 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 					SuccessThreshold: 1,
 					TimeoutSeconds:   1,
 				},
-				Resources: *oauthDeploymentResourceRequirements.DeepCopy(),
 			}}
-
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, oauthDeploymentResourceRequirements, nil, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(OpenshiftAPIServerDeploymentName, data.Cluster().Name)
 			podLabels, err := data.GetPodTemplateLabels(OauthName, dep.Spec.Template.Spec.Volumes, nil)
 			if err != nil {

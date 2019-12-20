@@ -22,14 +22,16 @@ const (
 )
 
 var (
-	defaultResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("256Mi"),
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("1Gi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
+	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+		name: {
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("256Mi"),
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("1Gi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+			},
 		},
 	}
 )
@@ -77,14 +79,10 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 			// We don't persist data, so there's no need for a graceful shutdown.
 			// The faster restart time is preferable
 			set.Spec.Template.Spec.TerminationGracePeriodSeconds = resources.Int64(0)
-			resourceRequirements := defaultResourceRequirements
-			if data.Cluster().Spec.ComponentsOverride.Prometheus.Resources != nil {
-				resourceRequirements = *data.Cluster().Spec.ComponentsOverride.Prometheus.Resources
-			}
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:  name,
+					Name:  resources.PrometheusStatefulSetName,
 					Image: data.ImageRegistry(resources.RegistryQuay) + "/prometheus/prometheus:" + tag,
 					Args: []string{
 						"--config.file=/etc/prometheus/config/prometheus.yaml",
@@ -103,7 +101,6 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					Resources: resourceRequirements,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      volumeConfigName,
@@ -155,7 +152,10 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 					},
 				},
 			}
-
+			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), set.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
 			set.Spec.Template.Spec.Volumes = volumes
 
 			return set, nil

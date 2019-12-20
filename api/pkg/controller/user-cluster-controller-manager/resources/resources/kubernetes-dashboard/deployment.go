@@ -14,14 +14,16 @@ import (
 )
 
 var (
-	defaultResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
+	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+		scraperName: {
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("32Mi"),
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("64Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+			},
 		},
 	}
 )
@@ -49,7 +51,13 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 
 			volumes := getVolumes()
 			dep.Spec.Template.Spec.Volumes = volumes
+
 			dep.Spec.Template.Spec.Containers = getContainers()
+			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
+			}
+
 			dep.Spec.Template.Spec.ServiceAccountName = scraperName
 
 			return dep, nil
@@ -64,7 +72,6 @@ func getContainers() []corev1.Container {
 			Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, scraperImageName, scraperTag),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/metrics-sidecar"},
-			Resources:       defaultResourceRequirements,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      "tmp-volume",

@@ -157,11 +157,6 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 			}
 
-			resourceRequirements := apiServerDefaultResourceRequirements.DeepCopy()
-			if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
-				resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
-			}
-
 			envVars, err := apiserver.GetEnvVars(data)
 			if err != nil {
 				return nil, err
@@ -176,12 +171,11 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 				*openvpnSidecar,
 				*dnatControllerSidecar,
 				{
-					Name:      resources.ApiserverDeploymentName,
-					Image:     image,
-					Command:   []string{"hypershift", "openshift-kube-apiserver"},
-					Args:      []string{"--config=/etc/origin/master/master-config.yaml"},
-					Env:       envVars,
-					Resources: *resourceRequirements,
+					Name:    resources.ApiserverDeploymentName,
+					Image:   image,
+					Command: []string{"hypershift", "openshift-kube-apiserver"},
+					Args:    []string{"--config=/etc/origin/master/master-config.yaml"},
+					Env:     envVars,
 					Ports: []corev1.ContainerPort{
 						{
 							ContainerPort: externalNodePort,
@@ -217,6 +211,15 @@ func APIDeploymentCreator(ctx context.Context, data openshiftData) reconciling.N
 					},
 					VolumeMounts: getVolumeMounts(),
 				},
+			}
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				resources.ApiserverDeploymentName: apiServerDefaultResourceRequirements.DeepCopy(),
+				openvpnSidecar.Name:               openvpnSidecar.Resources.DeepCopy(),
+				dnatControllerSidecar.Name:        dnatControllerSidecar.Resources.DeepCopy(),
+			}
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.ApiserverDeploymentName, data.Cluster().Name)

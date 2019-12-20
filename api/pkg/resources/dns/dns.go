@@ -92,10 +92,9 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:      resources.DNSResolverDeploymentName,
-					Image:     data.ImageRegistry(resources.RegistryGCR) + "/google_containers/coredns:1.1.3",
-					Args:      []string{"-conf", "/etc/coredns/Corefile"},
-					Resources: defaultResourceRequirements,
+					Name:  resources.DNSResolverDeploymentName,
+					Image: data.ImageRegistry(resources.RegistryGCR) + "/google_containers/coredns:1.1.3",
+					Args:  []string{"-conf", "/etc/coredns/Corefile"},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.DNSResolverConfigMapName,
@@ -118,6 +117,14 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 						TimeoutSeconds:      15,
 					},
 				},
+			}
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				resources.DNSResolverDeploymentName: defaultResourceRequirements.DeepCopy(),
+				openvpnSidecar.Name:                 openvpnSidecar.Resources.DeepCopy(),
+			}
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 
 			dep.Spec.Template.Spec.Volumes = volumes

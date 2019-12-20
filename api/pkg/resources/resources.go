@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -482,6 +483,12 @@ type CRDCreateor = func(version semver.Semver, existing *apiextensionsv1beta1.Cu
 // APIServiceCreator defines an interface to create/update APIService's
 type APIServiceCreator = func(existing *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error)
 
+// Requirements are how much resources are needed by containers in the pod
+type Requirements struct {
+	Name     string                       `json:"name,omitempty"`
+	Requires *corev1.ResourceRequirements `json:"requires,omitempty"`
+}
+
 // GetClusterExternalIP returns a net.IP for the given Cluster
 func GetClusterExternalIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
 	ip := net.ParseIP(cluster.Address.IP)
@@ -904,4 +911,53 @@ func GetHTTPProxyEnvVarsFromSeed(seed *kubermaticv1.Seed, inClusterAPIServerURL 
 	)
 
 	return envVars
+}
+
+// SetResourceRequirements sets resource requirements on provided slice of containers.
+// The highest priority has requirements provided using overrides, then requirements provided by the vpa-updater
+// (if VPA is enabled), and at the end provided default requirements for a given resource.
+func SetResourceRequirements(containers []corev1.Container, requirements, overrides map[string]*corev1.ResourceRequirements, annotations map[string]string) error {
+	val, ok := annotations[kubermaticv1.UpdatedByVPALabelKey]
+	if ok && val != "" {
+		var req []Requirements
+		err := json.Unmarshal([]byte(val), &req)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal resource requirements provided by vpa from annotation %s: %v", kubermaticv1.UpdatedByVPALabelKey, err)
+		}
+		for _, r := range req {
+			requirements[r.Name] = r.Requires
+		}
+	}
+	for k, v := range overrides {
+		requirements[k] = v
+	}
+
+	for i := range containers {
+		if requirements[containers[i].Name] != nil {
+			containers[i].Resources = *requirements[containers[i].Name]
+		}
+	}
+
+	return nil
+}
+
+func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*corev1.ResourceRequirements {
+	r := map[string]*corev1.ResourceRequirements{}
+	if componentSettings.Apiserver.Resources != nil {
+		r[ApiserverDeploymentName] = componentSettings.Apiserver.Resources.DeepCopy()
+	}
+	if componentSettings.ControllerManager.Resources != nil {
+		r[ControllerManagerDeploymentName] = componentSettings.ControllerManager.Resources.DeepCopy()
+	}
+	if componentSettings.Scheduler.Resources != nil {
+		r[SchedulerDeploymentName] = componentSettings.Scheduler.Resources.DeepCopy()
+	}
+	if componentSettings.Etcd.Resources != nil {
+		r[EtcdStatefulSetName] = componentSettings.Etcd.Resources.DeepCopy()
+	}
+	if componentSettings.Prometheus.Resources != nil {
+		r[PrometheusStatefulSetName] = componentSettings.Prometheus.Resources.DeepCopy()
+	}
+
+	return r
 }

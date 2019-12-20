@@ -117,7 +117,6 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 						"--tls-cert-file", servingCertMountFolder + "/" + resources.ServingCertSecretKey,
 						"--tls-private-key-file", servingCertMountFolder + "/" + resources.ServingCertKeySecretKey,
 					},
-					Resources: defaultResourceRequirements,
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.MetricsServerKubeconfigSecretName,
@@ -133,6 +132,15 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 				},
 				*openvpnSidecar,
 				*dnatControllerSidecar,
+			}
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				name:                       defaultResourceRequirements.DeepCopy(),
+				openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
+				dnatControllerSidecar.Name: dnatControllerSidecar.Resources.DeepCopy(),
+			}
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)

@@ -125,11 +125,6 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				return nil, err
 			}
 
-			resourceRequirements := defaultResourceRequirements.DeepCopy()
-			if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
-				resourceRequirements = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources
-			}
-
 			envVars, err := GetEnvVars(data)
 			if err != nil {
 				return nil, err
@@ -139,12 +134,11 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				*openvpnSidecar,
 				*dnatControllerSidecar,
 				{
-					Name:      name,
-					Image:     data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
-					Command:   []string{"/hyperkube", "kube-apiserver"},
-					Env:       envVars,
-					Args:      flags,
-					Resources: *resourceRequirements,
+					Name:    resources.ApiserverDeploymentName,
+					Image:   data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
+					Command: []string{"/hyperkube", "kube-apiserver"},
+					Env:     envVars,
+					Args:    flags,
 					Ports: []corev1.ContainerPort{
 						{
 							ContainerPort: data.Cluster().Address.Port,
@@ -180,6 +174,16 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 					},
 					VolumeMounts: getVolumeMounts(enableDexCA),
 				},
+			}
+
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				name:                       defaultResourceRequirements.DeepCopy(),
+				openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
+				dnatControllerSidecar.Name: dnatControllerSidecar.Resources.DeepCopy(),
+			}
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 
 			if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled {
