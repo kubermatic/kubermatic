@@ -127,7 +127,7 @@ const (
 
 var (
 	oauthDeploymentResourceRequirements = map[string]*corev1.ResourceRequirements{
-		OauthName: &corev1.ResourceRequirements{
+		OauthName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceCPU:    resource.MustParse("10m"),
 				corev1.ResourceMemory: resource.MustParse("50Mi"),

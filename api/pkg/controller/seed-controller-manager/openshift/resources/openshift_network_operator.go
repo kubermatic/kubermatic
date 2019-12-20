@@ -18,7 +18,7 @@ import (
 
 var (
 	openshiftNetworkOperatorResourceRequirements = map[string]*corev1.ResourceRequirements{
-		"network-operator": &corev1.ResourceRequirements{
+		"network-operator": {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("50Mi"),
 				corev1.ResourceCPU:    resource.MustParse("10m"),

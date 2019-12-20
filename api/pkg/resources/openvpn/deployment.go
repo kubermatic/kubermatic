@@ -29,7 +29,7 @@ var (
 
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
 		name: openvpnResourceRequirements.DeepCopy(),
-		"ip-fixup": &corev1.ResourceRequirements{
+		"ip-fixup": {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("16Mi"),
 				corev1.ResourceCPU:    resource.MustParse("5m"),

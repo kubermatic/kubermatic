@@ -22,7 +22,7 @@ const (
 
 var (
 	openshiftDNSOperatorResourceRequirements = map[string]*corev1.ResourceRequirements{
-		openshiftDNSOperatorContainerName: &corev1.ResourceRequirements{
+		openshiftDNSOperatorContainerName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("50Mi"),
 				corev1.ResourceCPU:    resource.MustParse("10m"),

@@ -27,7 +27,7 @@ const (
 
 var (
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		name: &corev1.ResourceRequirements{
+		name: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("256Mi"),
 				corev1.ResourceCPU:    resource.MustParse("50m"),

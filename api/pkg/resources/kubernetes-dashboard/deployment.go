@@ -18,7 +18,7 @@ import (
 
 var (
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		resources.KubernetesDashboardDeploymentName: &corev1.ResourceRequirements{
+		resources.KubernetesDashboardDeploymentName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("256Mi"),
 				corev1.ResourceCPU:    resource.MustParse("100m"),

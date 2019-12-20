@@ -32,7 +32,7 @@ const (
 
 var (
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		"envoy-manager": &corev1.ResourceRequirements{
+		"envoy-manager": {
 			Requests: corev1.ResourceList{
 				corev1.ResourceCPU:    resource.MustParse("10m"),
 				corev1.ResourceMemory: resource.MustParse("32Mi"),
@@ -42,7 +42,7 @@ var (
 				corev1.ResourceMemory: resource.MustParse("48Mi"),
 			},
 		},
-		"envoy": &corev1.ResourceRequirements{
+		"envoy": {
 			Requests: corev1.ResourceList{
 				corev1.ResourceCPU:    resource.MustParse("50m"),
 				corev1.ResourceMemory: resource.MustParse("32Mi"),
@@ -52,7 +52,7 @@ var (
 				corev1.ResourceMemory: resource.MustParse("64Mi"),
 			},
 		},
-		"lb-updater": &corev1.ResourceRequirements{
+		"lb-updater": {
 			Requests: corev1.ResourceList{
 				corev1.ResourceCPU:    resource.MustParse("10m"),
 				corev1.ResourceMemory: resource.MustParse("32Mi"),

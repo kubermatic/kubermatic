@@ -117,7 +117,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				"test": defaultResourceRequirements.DeepCopy(),
 			},
 			expectedRequirements: map[string]*corev1.ResourceRequirements{
-				"test": &corev1.ResourceRequirements{
+				"test": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("64Mi"),
 						corev1.ResourceCPU:    resource.MustParse("20m"),
@@ -151,7 +151,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				"test-3": defaultResourceRequirements.DeepCopy(),
 			},
 			expectedRequirements: map[string]*corev1.ResourceRequirements{
-				"test-1": &corev1.ResourceRequirements{
+				"test-1": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("16Mi"),
 						corev1.ResourceCPU:    resource.MustParse("10m"),
@@ -161,7 +161,7 @@ func TestSetResourceRequirements(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("100m"),
 					},
 				},
-				"test-2": &corev1.ResourceRequirements{
+				"test-2": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("64Mi"),
 						corev1.ResourceCPU:    resource.MustParse("20m"),
@@ -171,7 +171,7 @@ func TestSetResourceRequirements(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("2"),
 					},
 				},
-				"test-3": &corev1.ResourceRequirements{
+				"test-3": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("1Gi"),
 						corev1.ResourceCPU:    resource.MustParse("500m"),
@@ -205,7 +205,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				"test-3": defaultResourceRequirements.DeepCopy(),
 			},
 			expectedRequirements: map[string]*corev1.ResourceRequirements{
-				"test-1": &corev1.ResourceRequirements{
+				"test-1": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("16Mi"),
 						corev1.ResourceCPU:    resource.MustParse("10m"),
@@ -216,7 +216,7 @@ func TestSetResourceRequirements(t *testing.T) {
 					},
 				},
 				"test-2": defaultResourceRequirements.DeepCopy(),
-				"test-3": &corev1.ResourceRequirements{
+				"test-3": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("1Gi"),
 						corev1.ResourceCPU:    resource.MustParse("500m"),
@@ -245,7 +245,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				kubermaticv1.UpdatedByVPALabelKey: `[{"name":"test-1","requires":{"limits":{"cpu":"100m","memory":"32Mi"},"requests":{"cpu":"10m","memory":"16Mi"}}},{"name":"test-3","requires":{"limits":{"cpu":"1","memory":"2Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}]`,
 			},
 			overrides: map[string]*corev1.ResourceRequirements{
-				"test-2": &corev1.ResourceRequirements{
+				"test-2": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("512Mi"),
 						corev1.ResourceCPU:    resource.MustParse("200m"),
@@ -262,7 +262,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				"test-3": defaultResourceRequirements.DeepCopy(),
 			},
 			expectedRequirements: map[string]*corev1.ResourceRequirements{
-				"test-1": &corev1.ResourceRequirements{
+				"test-1": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("16Mi"),
 						corev1.ResourceCPU:    resource.MustParse("10m"),
@@ -272,7 +272,7 @@ func TestSetResourceRequirements(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("100m"),
 					},
 				},
-				"test-2": &corev1.ResourceRequirements{
+				"test-2": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("512Mi"),
 						corev1.ResourceCPU:    resource.MustParse("200m"),
@@ -282,7 +282,7 @@ func TestSetResourceRequirements(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("3"),
 					},
 				},
-				"test-3": &corev1.ResourceRequirements{
+				"test-3": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("1Gi"),
 						corev1.ResourceCPU:    resource.MustParse("500m"),
@@ -311,7 +311,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				kubermaticv1.UpdatedByVPALabelKey: `[{"name":"test-3","requires":{"limits":{"cpu":"1","memory":"2Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}]`,
 			},
 			overrides: map[string]*corev1.ResourceRequirements{
-				"test-2": &corev1.ResourceRequirements{
+				"test-2": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("512Mi"),
 						corev1.ResourceCPU:    resource.MustParse("200m"),
@@ -329,7 +329,7 @@ func TestSetResourceRequirements(t *testing.T) {
 			},
 			expectedRequirements: map[string]*corev1.ResourceRequirements{
 				"test-1": defaultResourceRequirements.DeepCopy(),
-				"test-2": &corev1.ResourceRequirements{
+				"test-2": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("512Mi"),
 						corev1.ResourceCPU:    resource.MustParse("200m"),
@@ -339,7 +339,7 @@ func TestSetResourceRequirements(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("3"),
 					},
 				},
-				"test-3": &corev1.ResourceRequirements{
+				"test-3": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("1Gi"),
 						corev1.ResourceCPU:    resource.MustParse("500m"),
@@ -395,7 +395,7 @@ func TestSetResourceRequirements(t *testing.T) {
 			},
 			annotations: map[string]string{},
 			overrides: map[string]*corev1.ResourceRequirements{
-				"test-1": &corev1.ResourceRequirements{
+				"test-1": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("16Mi"),
 						corev1.ResourceCPU:    resource.MustParse("10m"),
@@ -405,7 +405,7 @@ func TestSetResourceRequirements(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("100m"),
 					},
 				},
-				"test-2": &corev1.ResourceRequirements{
+				"test-2": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("1Gi"),
 						corev1.ResourceCPU:    resource.MustParse("500m"),
@@ -421,7 +421,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				"test-2": defaultResourceRequirements.DeepCopy(),
 			},
 			expectedRequirements: map[string]*corev1.ResourceRequirements{
-				"test-1": &corev1.ResourceRequirements{
+				"test-1": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("16Mi"),
 						corev1.ResourceCPU:    resource.MustParse("10m"),
@@ -431,7 +431,7 @@ func TestSetResourceRequirements(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("100m"),
 					},
 				},
-				"test-2": &corev1.ResourceRequirements{
+				"test-2": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceMemory: resource.MustParse("1Gi"),
 						corev1.ResourceCPU:    resource.MustParse("500m"),
@@ -452,7 +452,7 @@ func TestSetResourceRequirements(t *testing.T) {
 			},
 			annotations: map[string]string{},
 			defaultRequirements: map[string]*corev1.ResourceRequirements{
-				"test-1": &corev1.ResourceRequirements{
+				"test-1": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceCPU: resource.MustParse("100m"),
 					},
@@ -462,7 +462,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				},
 			},
 			expectedRequirements: map[string]*corev1.ResourceRequirements{
-				"test-1": &corev1.ResourceRequirements{
+				"test-1": {
 					Requests: corev1.ResourceList{
 						corev1.ResourceCPU: resource.MustParse("100m"),
 					},
@@ -481,10 +481,10 @@ func TestSetResourceRequirements(t *testing.T) {
 			},
 			annotations: map[string]string{},
 			defaultRequirements: map[string]*corev1.ResourceRequirements{
-				"test-1": &corev1.ResourceRequirements{},
+				"test-1": {},
 			},
 			expectedRequirements: map[string]*corev1.ResourceRequirements{
-				"test-1": &corev1.ResourceRequirements{},
+				"test-1": {},
 			},
 		},
 		{

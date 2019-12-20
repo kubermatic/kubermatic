@@ -18,7 +18,7 @@ import (
 
 var (
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		resources.ClusterAutoscalerDeploymentName: &corev1.ResourceRequirements{
+		resources.ClusterAutoscalerDeploymentName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("32Mi"),
 				corev1.ResourceCPU:    resource.MustParse("25m"),
