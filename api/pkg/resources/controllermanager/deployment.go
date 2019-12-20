@@ -144,7 +144,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:    name,
+					Name:    resources.ControllerManagerDeploymentName,
 					Image:   data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
 					Command: []string{"/hyperkube", "kube-controller-manager"},
 					Args:    flags,
@@ -175,11 +175,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				name:                defaultResourceRequirements.DeepCopy(),
 				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
 			}
-			overrides := map[string]*corev1.ResourceRequirements{}
-			if data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources != nil {
-				overrides[name] = data.Cluster().Spec.ComponentsOverride.ControllerManager.Resources.DeepCopy()
-			}
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, data.Cluster().Spec.ComponentsOverride.GetOverrides(), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

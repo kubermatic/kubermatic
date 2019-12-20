@@ -181,11 +181,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 				openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
 				dnatControllerSidecar.Name: dnatControllerSidecar.Resources.DeepCopy(),
 			}
-			overrides := map[string]*corev1.ResourceRequirements{}
-			if data.Cluster().Spec.ComponentsOverride.Apiserver.Resources != nil {
-				overrides[name] = data.Cluster().Spec.ComponentsOverride.Apiserver.Resources.DeepCopy()
-			}
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, data.Cluster().Spec.ComponentsOverride.GetOverrides(), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

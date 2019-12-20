@@ -152,11 +152,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 					},
 				},
 			}
-			overrides := map[string]*corev1.ResourceRequirements{}
-			if data.Cluster().Spec.ComponentsOverride.Prometheus.Resources != nil {
-				overrides[name] = data.Cluster().Spec.ComponentsOverride.Prometheus.Resources.DeepCopy()
-			}
-			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, overrides, set.Annotations)
+			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, data.Cluster().Spec.ComponentsOverride.GetOverrides(), set.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
