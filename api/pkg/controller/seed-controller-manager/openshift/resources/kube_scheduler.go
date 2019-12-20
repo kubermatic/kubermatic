@@ -193,11 +193,7 @@ func KubeSchedulerDeploymentCreator(data openshiftData) reconciling.NamedDeploym
 				name:                defaultResourceRequirements.DeepCopy(),
 				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
 			}
-			overrides := map[string]*corev1.ResourceRequirements{}
-			if data.Cluster().Spec.ComponentsOverride.Scheduler.Resources != nil {
-				overrides[name] = data.Cluster().Spec.ComponentsOverride.Scheduler.Resources.DeepCopy()
-			}
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
