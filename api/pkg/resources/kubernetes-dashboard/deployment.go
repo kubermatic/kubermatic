@@ -17,14 +17,16 @@ import (
 )
 
 var (
-	defaultResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("256Mi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("512Mi"),
-			corev1.ResourceCPU:    resource.MustParse("250m"),
+	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+		resources.KubernetesDashboardDeploymentName: &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("256Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("512Mi"),
+				corev1.ResourceCPU:    resource.MustParse("250m"),
+			},
 		},
 	}
 )
@@ -70,9 +72,7 @@ func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeployment
 
 			dep.Spec.Template.Spec.Volumes = volumes
 			dep.Spec.Template.Spec.Containers = getContainers(data, dep.Spec.Template.Spec.Containers)
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
-				name: defaultResourceRequirements.DeepCopy(),
-			}, nil, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

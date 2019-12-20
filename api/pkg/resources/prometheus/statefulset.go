@@ -22,14 +22,16 @@ const (
 )
 
 var (
-	defaultResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("256Mi"),
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("1Gi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
+	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+		name: &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("256Mi"),
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("1Gi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+			},
 		},
 	}
 )
@@ -150,14 +152,11 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 					},
 				},
 			}
-			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				name: defaultResourceRequirements.DeepCopy(),
-			}
 			overrides := map[string]*corev1.ResourceRequirements{}
 			if data.Cluster().Spec.ComponentsOverride.Prometheus.Resources != nil {
 				overrides[name] = data.Cluster().Spec.ComponentsOverride.Prometheus.Resources.DeepCopy()
 			}
-			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defResourceRequirements, overrides, set.Annotations)
+			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, overrides, set.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

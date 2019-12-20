@@ -19,14 +19,16 @@ import (
 )
 
 var (
-	webhookResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
-			corev1.ResourceCPU:    resource.MustParse("10m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("512Mi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
+	webhookResourceRequirements = map[string]*corev1.ResourceRequirements{
+		Name: &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("32Mi"),
+				corev1.ResourceCPU:    resource.MustParse("10m"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("512Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+			},
 		},
 	}
 )
@@ -112,9 +114,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 					},
 				},
 			}
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
-				Name: webhookResourceRequirements.DeepCopy(),
-			}, nil, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, webhookResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

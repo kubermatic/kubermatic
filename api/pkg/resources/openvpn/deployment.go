@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	defaultResourceRequirements = corev1.ResourceRequirements{
+	openvpnResourceRequirements = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceMemory: resource.MustParse("5Mi"),
 			corev1.ResourceCPU:    resource.MustParse("5m"),
@@ -27,14 +27,17 @@ var (
 		},
 	}
 
-	ipForwardRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("16Mi"),
-			corev1.ResourceCPU:    resource.MustParse("5m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
-			corev1.ResourceCPU:    resource.MustParse("10m"),
+	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+		name: openvpnResourceRequirements.DeepCopy(),
+		"ip-fixup": &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("16Mi"),
+				corev1.ResourceCPU:    resource.MustParse("5m"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("32Mi"),
+				corev1.ResourceCPU:    resource.MustParse("10m"),
+			},
 		},
 	}
 )
@@ -145,7 +148,7 @@ iptables -A INPUT -i tun0 -j DROP
 						},
 						ProcMount: &procMountType,
 					},
-					Resources: defaultResourceRequirements,
+					Resources: openvpnResourceRequirements,
 				},
 			}
 
@@ -242,11 +245,7 @@ done`,
 					},
 				},
 			}
-			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				name:       defaultResourceRequirements.DeepCopy(),
-				"ip-fixup": ipForwardRequirements.DeepCopy(),
-			}
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

@@ -17,14 +17,16 @@ import (
 )
 
 var (
-	openshiftNetworkOperatorResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("50Mi"),
-			corev1.ResourceCPU:    resource.MustParse("10m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("200Mi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
+	openshiftNetworkOperatorResourceRequirements = map[string]*corev1.ResourceRequirements{
+		"network-operator": &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("50Mi"),
+				corev1.ResourceCPU:    resource.MustParse("10m"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("200Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+			},
 		},
 	}
 )
@@ -82,9 +84,7 @@ func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.Name
 					MountPath: "/etc/kubernetes/kubeconfig",
 				}},
 			}}
-			err = resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
-				"network-operator": openshiftNetworkOperatorResourceRequirements.DeepCopy(),
-			}, nil, d.Annotations)
+			err = resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, openshiftNetworkOperatorResourceRequirements, nil, d.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

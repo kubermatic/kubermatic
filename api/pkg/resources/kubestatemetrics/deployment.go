@@ -16,14 +16,16 @@ import (
 )
 
 var (
-	defaultResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("12Mi"),
-			corev1.ResourceCPU:    resource.MustParse("10m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("1Gi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
+	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+		name: &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("12Mi"),
+				corev1.ResourceCPU:    resource.MustParse("10m"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("1Gi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+			},
 		},
 	}
 )
@@ -107,9 +109,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					},
 				},
 			}
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
-				name: defaultResourceRequirements.DeepCopy(),
-			}, nil, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

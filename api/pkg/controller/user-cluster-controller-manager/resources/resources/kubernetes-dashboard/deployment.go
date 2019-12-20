@@ -14,14 +14,16 @@ import (
 )
 
 var (
-	defaultResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
+	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+		scraperName: &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("32Mi"),
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("64Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+			},
 		},
 	}
 )
@@ -51,9 +53,7 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			dep.Spec.Template.Spec.Volumes = volumes
 
 			dep.Spec.Template.Spec.Containers = getContainers()
-			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
-				scraperName: defaultResourceRequirements.DeepCopy(),
-			}, nil, dep.Annotations)
+			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

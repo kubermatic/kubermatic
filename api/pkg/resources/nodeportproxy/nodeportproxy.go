@@ -31,36 +31,36 @@ const (
 )
 
 var (
-	envoyManagerResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("10m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
+	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+		"envoy-manager": &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("10m"),
+				corev1.ResourceMemory: resource.MustParse("32Mi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceMemory: resource.MustParse("48Mi"),
+			},
 		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-			corev1.ResourceMemory: resource.MustParse("48Mi"),
+		"envoy": &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceMemory: resource.MustParse("32Mi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("64Mi"),
+			},
 		},
-	}
-
-	envoyResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("100m"),
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
-		},
-	}
-
-	lbUpdaterResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("10m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		"lb-updater": &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("10m"),
+				corev1.ResourceMemory: resource.MustParse("32Mi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceMemory: resource.MustParse("32Mi"),
+			},
 		},
 	}
 )
@@ -246,11 +246,7 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 					MountPath: "/etc/envoy",
 				}},
 			}}
-			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				"envoy-manager": envoyManagerResourceRequirements.DeepCopy(),
-				"envoy":         envoyResourceRequirements.DeepCopy(),
-			}
-			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defResourceRequirements, nil, d.Annotations)
+			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, d.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
@@ -296,9 +292,7 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 					}},
 				}},
 			}}
-			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
-				"lb-updater": lbUpdaterResourceRequirements.DeepCopy(),
-			}, nil, d.Annotations)
+			err := resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, d.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

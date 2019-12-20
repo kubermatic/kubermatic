@@ -21,14 +21,16 @@ const (
 )
 
 var (
-	openshiftDNSOperatorResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("50Mi"),
-			corev1.ResourceCPU:    resource.MustParse("10m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("200Mi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
+	openshiftDNSOperatorResourceRequirements = map[string]*corev1.ResourceRequirements{
+		openshiftDNSOperatorContainerName: &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("50Mi"),
+				corev1.ResourceCPU:    resource.MustParse("10m"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("200Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+			},
 		},
 	}
 )
@@ -77,9 +79,7 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 					MountPath: "/etc/kubernetes/kubeconfig",
 				}},
 			}}
-			err = resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
-				openshiftDNSOperatorContainerName: openshiftDNSOperatorResourceRequirements.DeepCopy(),
-			}, nil, d.Annotations)
+			err = resources.SetResourceRequirements(d.Spec.Template.Spec.Containers, openshiftDNSOperatorResourceRequirements, nil, d.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}

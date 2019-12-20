@@ -126,10 +126,12 @@ const (
 )
 
 var (
-	oauthDeploymentResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("10m"),
-			corev1.ResourceMemory: resource.MustParse("50Mi"),
+	oauthDeploymentResourceRequirements = map[string]*corev1.ResourceRequirements{
+		OauthName: &corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("10m"),
+				corev1.ResourceMemory: resource.MustParse("50Mi"),
+			},
 		},
 	}
 	oauthCLIConfigTemplate = template.Must(template.New("base").Funcs(sprig.TxtFuncMap()).Parse(oauthCLIConfigTemplateRaw))
@@ -419,9 +421,7 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 					TimeoutSeconds:   1,
 				},
 			}}
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, map[string]*corev1.ResourceRequirements{
-				OauthName: oauthDeploymentResourceRequirements.DeepCopy(),
-			}, nil, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, oauthDeploymentResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
