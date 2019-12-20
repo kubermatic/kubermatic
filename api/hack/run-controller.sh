@@ -22,7 +22,7 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
   -updates=../config/kubermatic/static/master/updates.yaml \
   -kubernetes-addons-path=../addons \
   -openshift-addons-path=../openshift_addons \
-  -ppenshift-addons-file=../config/kubermatic/static/openshift-addons.yaml \
+  -openshift-addons-file=../config/kubermatic/static/openshift-addons.yaml \
   -feature-gates=OpenIDAuthPlugin=true \
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
   -external-url=dev.kubermatic.io \
