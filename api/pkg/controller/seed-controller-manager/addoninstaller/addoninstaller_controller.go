@@ -30,8 +30,8 @@ const ControllerName = "kubermatic_addoninstaller_controller"
 type Reconciler struct {
 	log              *zap.SugaredLogger
 	workerName       string
-	kubernetesAddons []string
-	openshiftAddons  []string
+	kubernetesAddons []kubermaticv1.Addon
+	openshiftAddons  []kubermaticv1.Addon
 	ctrlruntimeclient.Client
 	recorder record.EventRecorder
 }
@@ -41,8 +41,9 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
-	kubernetesAddons,
-	openshiftAddons []string) error {
+	kubernetesAddons []kubermaticv1.Addon,
+	openshiftAddons []kubermaticv1.Addon,
+) error {
 	log = log.Named(ControllerName)
 
 	reconciler := &Reconciler{
@@ -126,7 +127,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// This controller handles Kubernetes & OpenShift cluster.
 	// Based on the type we install different default addons
-	var addonsToInstall []string
+	var addonsToInstall []kubermaticv1.Addon
 	if cluster.IsOpenshift() {
 		log = log.With("clustertype", "openshift")
 		addonsToInstall = r.openshiftAddons
@@ -145,54 +146,49 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	return nil, r.ensureAddons(ctx, log, cluster, addonsToInstall)
 }
 
-func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, addons []string) error {
-	for _, addonName := range addons {
-		addon := &kubermaticv1.Addon{}
-		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: addonName}
+func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, addons []kubermaticv1.Addon) error {
+	for _, addon := range addons {
+		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: addon.Name}
 		addonLog := log.With("addon", name)
-		err := r.Get(ctx, name, addon)
+		err := r.Get(ctx, name, &kubermaticv1.Addon{})
 		if err == nil {
 			addonLog.Debug("Addon already exists")
 			continue
 		}
 		if !kerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get addon %q: %v", addonName, err)
+			return fmt.Errorf("failed to get addon %q: %v", addon.Name, err)
 		}
-		if err := r.createAddon(ctx, addonLog, addonName, cluster); err != nil {
-			return fmt.Errorf("failed to create addon %q: %v", addonName, err)
+		if err := r.createAddon(ctx, addonLog, addon, cluster); err != nil {
+			return fmt.Errorf("failed to create addon %q: %v", addon.Name, err)
 		}
 	}
 	return nil
 }
 
-func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, addonName string, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, referenceAddon kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
 	gv := kubermaticv1.SchemeGroupVersion
 
-	addon := &kubermaticv1.Addon{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            addonName,
-			Namespace:       cluster.Status.NamespaceName,
-			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))},
-			Labels:          map[string]string{},
-		},
-		Spec: kubermaticv1.AddonSpec{
-			Name: addonName,
-			Cluster: corev1.ObjectReference{
-				Name:       cluster.Name,
-				Namespace:  "",
-				UID:        cluster.UID,
-				APIVersion: cluster.APIVersion,
-				Kind:       "Cluster",
-			},
-		},
+	addon := referenceAddon.DeepCopy()
+	addon.Namespace = cluster.Status.NamespaceName
+	addon.OwnerReferences = []metav1.OwnerReference{*metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))}
+	addon.Labels = map[string]string{}
+	addon.Spec.Name = referenceAddon.Name
+	addon.Spec.Cluster = corev1.ObjectReference{
+		Name:       cluster.Name,
+		Namespace:  "",
+		UID:        cluster.UID,
+		APIVersion: cluster.APIVersion,
+		Kind:       "Cluster",
 	}
 
 	if r.workerName != "" {
 		addon.Labels[kubermaticv1.WorkerNameLabelKey] = r.workerName
 	}
 
-	if err := r.Create(ctx, addon); err != nil {
-		return fmt.Errorf("failed to create addon %q: %v", addonName, err)
+	// Swallow IsAlreadyExists, we have predictable names and our cache may not be
+	// up to date, leading us to think the addon wasn't installed yet.
+	if err := r.Create(ctx, addon); err != nil && !kerrors.IsAlreadyExists(err) {
+		return fmt.Errorf("failed to create addon %q: %v", addon.Name, err)
 	}
 
 	log.Info("Addon successfully created")

@@ -105,9 +105,9 @@ kubermatic:
         - crd
         - openvpn
         - rbac
-        - network
+        - network=requires[{"kind":"Network","group":"config.openshift.io","version":"v1"}]
         - default-storage-class
-        - registry
+        - registry=requires[{"kind":"CredentialsRequest","group":"cloudcredential.openshift.io","version":"v1"}]
         - logrotate
         image:
           repository: "quay.io/kubermatic/openshift-addons"

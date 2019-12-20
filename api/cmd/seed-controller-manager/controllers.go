@@ -284,14 +284,14 @@ func createAddonController(ctrlCtx *controllerContext) error {
 }
 
 func createAddonInstallerController(ctrlCtx *controllerContext) error {
-	kubernetesAddons := strings.Split(ctrlCtx.runOptions.kubernetesAddonsList, ",")
-	for i, a := range kubernetesAddons {
-		kubernetesAddons[i] = strings.TrimSpace(a)
+	kubernetesAddons, err := parseAddons(ctrlCtx.runOptions.kubernetesAddonsList)
+	if err != nil {
+		return err
 	}
 
-	openshiftAddons := strings.Split(ctrlCtx.runOptions.openshiftAddonsList, ",")
-	for i, a := range openshiftAddons {
-		openshiftAddons[i] = strings.TrimSpace(a)
+	openshiftAddons, err := parseAddons(ctrlCtx.runOptions.openshiftAddonsList)
+	if err != nil {
+		return err
 	}
 
 	return addoninstaller.Add(
