@@ -29,9 +29,9 @@ const ControllerName = "kubermatic_addoninstaller_controller"
 
 type Reconciler struct {
 	log              *zap.SugaredLogger
+	kubernetesAddons kubermaticv1.AddonList
+	openshiftAddons  kubermaticv1.AddonList
 	workerName       string
-	kubernetesAddons []kubermaticv1.Addon
-	openshiftAddons  []kubermaticv1.Addon
 	ctrlruntimeclient.Client
 	recorder record.EventRecorder
 }
@@ -41,8 +41,8 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
-	kubernetesAddons []kubermaticv1.Addon,
-	openshiftAddons []kubermaticv1.Addon,
+	kubernetesAddons kubermaticv1.AddonList,
+	openshiftAddons kubermaticv1.AddonList,
 ) error {
 	log = log.Named(ControllerName)
 
@@ -127,13 +127,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// This controller handles Kubernetes & OpenShift cluster.
 	// Based on the type we install different default addons
-	var addonsToInstall []kubermaticv1.Addon
+	var addonsToInstall *kubermaticv1.AddonList
 	if cluster.IsOpenshift() {
 		log = log.With("clustertype", "openshift")
-		addonsToInstall = r.openshiftAddons
+		addonsToInstall = r.openshiftAddons.DeepCopy()
 	} else {
 		log = log.With("clustertype", "kubernetes")
-		addonsToInstall = r.kubernetesAddons
+		addonsToInstall = r.kubernetesAddons.DeepCopy()
 	}
 
 	// Wait until the Apiserver is running to ensure the namespace exists at least.
@@ -143,11 +143,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return &reconcile.Result{RequeueAfter: 1 * time.Second}, nil
 	}
 
-	return nil, r.ensureAddons(ctx, log, cluster, addonsToInstall)
+	return nil, r.ensureAddons(ctx, log, cluster, *addonsToInstall)
 }
 
-func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, addons []kubermaticv1.Addon) error {
-	for _, addon := range addons {
+func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, addons kubermaticv1.AddonList) error {
+	for _, addon := range addons.Items {
 		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: addon.Name}
 		addonLog := log.With("addon", name)
 		err := r.Get(ctx, name, &kubermaticv1.Addon{})
@@ -165,14 +165,13 @@ func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, c
 	return nil
 }
 
-func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, referenceAddon kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, addon kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
 	gv := kubermaticv1.SchemeGroupVersion
 
-	addon := referenceAddon.DeepCopy()
 	addon.Namespace = cluster.Status.NamespaceName
 	addon.OwnerReferences = []metav1.OwnerReference{*metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))}
 	addon.Labels = map[string]string{}
-	addon.Spec.Name = referenceAddon.Name
+	addon.Spec.Name = addon.Name
 	addon.Spec.Cluster = corev1.ObjectReference{
 		Name:       cluster.Name,
 		Namespace:  "",
@@ -180,14 +179,11 @@ func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, re
 		APIVersion: cluster.APIVersion,
 		Kind:       "Cluster",
 	}
-
-	if r.workerName != "" {
-		addon.Labels[kubermaticv1.WorkerNameLabelKey] = r.workerName
-	}
+	addon.Spec.IsDefault = true
 
 	// Swallow IsAlreadyExists, we have predictable names and our cache may not be
 	// up to date, leading us to think the addon wasn't installed yet.
-	if err := r.Create(ctx, addon); err != nil && !kerrors.IsAlreadyExists(err) {
+	if err := r.Create(ctx, &addon); err != nil && !kerrors.IsAlreadyExists(err) {
 		return fmt.Errorf("failed to create addon %q: %v", addon.Name, err)
 	}
 

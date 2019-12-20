@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -22,10 +21,11 @@ import (
 	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
 
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/net"
 	certutil "k8s.io/client-go/util/cert"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/yaml"
 )
 
 type controllerRunOptions struct {
@@ -33,7 +33,6 @@ type controllerRunOptions struct {
 	masterURL    string
 	internalAddr string
 
-	masterResources                                  string
 	externalURL                                      string
 	dc                                               string
 	dcFile                                           string
@@ -46,8 +45,8 @@ type controllerRunOptions struct {
 	nodeAccessNetwork                                string
 	kubernetesAddonsPath                             string
 	openshiftAddonsPath                              string
-	kubernetesAddonsList                             string
-	openshiftAddonsList                              string
+	kubernetesAddons                                 kubermaticv1.AddonList
+	openshiftAddons                                  kubermaticv1.AddonList
 	backupContainerFile                              string
 	cleanupContainerFile                             string
 	backupContainerImage                             string
@@ -80,19 +79,21 @@ type controllerRunOptions struct {
 }
 
 const (
-	defaultKubernetesAddons = "canal;csi;dns;kube-proxy;openvpn;rbac;kubelet-configmap;default-storage-class;node-exporter;nodelocal-dns-cache;logrotate"
-	defaultOpenshiftAddons  = `openvpn;rbac;crd;network=requires[{"kind":"Network","group":"config.openshift.io","version":"v1"}];default-storage-class;registry=requires[{"kind":"CredentialsRequest","group":"cloudcredential.openshift.io","version":"v1"}];logrotate`
+	defaultKubernetesAddons = "canal,csi,dns,kube-proxy,openvpn,rbac,kubelet-configmap,default-storage-class,node-exporter,nodelocal-dns-cache,logrotate"
 )
 
 func newControllerRunOptions() (controllerRunOptions, error) {
 	c := controllerRunOptions{}
 	var rawFeatureGates string
 	var rawEtcdDiskSize string
+	var defaultKubernetesAddonsList string
+	var defaultKubernetesAddonsFile string
+	var defaultOpenshiftAddonList string
+	var defaultOpenshiftAddonsFile string
 
 	flag.StringVar(&c.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&c.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&c.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal server is running on")
-	flag.StringVar(&c.masterResources, "master-resources", "", "The path to the master resources (Required).")
 	flag.StringVar(&c.externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	flag.StringVar(&c.dc, "datacenter-name", "", "The name of the seed datacenter, the controller is running in. It will be used to build the absolute url for a customer cluster.")
 	flag.StringVar(&c.dcFile, "datacenters", "", "The datacenters.yaml file path")
@@ -105,8 +106,10 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.nodeAccessNetwork, "node-access-network", kubermaticv1.DefaultNodeAccessNetwork, "A network which allows direct access to nodes via VPN. Uses CIDR notation.")
 	flag.StringVar(&c.kubernetesAddonsPath, "kubernetes-addons-path", "/opt/addons/kubernetes", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&c.openshiftAddonsPath, "openshift-addons-path", "/opt/addons/openshift", "Path to addon manifests. Should contain sub-folders for each addon")
-	flag.StringVar(&c.kubernetesAddonsList, "kubernetes-addons-list", defaultKubernetesAddons, `Comma separated list of Addons to install into every user-cluster.Each addon may contain a list of required resources by using the '<addonName>=requires[{"kind":"the-kind","group":"my-api-group","version":"my-version"}]' syntax.`)
-	flag.StringVar(&c.openshiftAddonsList, "openshift-addons-list", defaultOpenshiftAddons, `Comma separated list of addons to install into every openshift user cluster. Each addon may contain a list of required resources by using the '<addonName>=after[{"kind":"the-kind","group":"my-api-group","version":"my-version"}]' syntax.`)
+	flag.StringVar(&defaultKubernetesAddonsList, "kubernetes-addons-list", defaultKubernetesAddons, "Comma separated list of Addons to install into every user-cluster. Mutually exclusive with `--kubernetes-addons-file`")
+	flag.StringVar(&defaultKubernetesAddonsFile, "kubernetes-addons-file", "", "File that contains a list of default kubernetes addons. Mutually exclusive with `--openshift-addons-list`")
+	flag.StringVar(&defaultOpenshiftAddonList, "openshift-addons-list", "", "Comma separated list of addons to install into every openshift user cluster. Mutually exclusive with `--openshift-addons-file`")
+	flag.StringVar(&defaultOpenshiftAddonsFile, "openshift-addons-file", "", "File that contains a list of default openshift addons. Mutually exclusive with `--openshift-addons-list`")
 	flag.StringVar(&c.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backup container yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
 	flag.StringVar(&c.cleanupContainerFile, "cleanup-container", "", "[Required] Filepath of a cleanup container yaml. The container will be used to cleanup the backup directory for a cluster after it got deleted.")
 	flag.StringVar(&c.backupContainerImage, "backup-container-init-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
@@ -151,6 +154,16 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 		c.overwriteRegistry = path.Clean(strings.TrimSpace(c.overwriteRegistry))
 	}
 
+	c.kubernetesAddons, err = loadAddons(defaultKubernetesAddonsList, defaultKubernetesAddonsFile)
+	if err != nil {
+		return c, err
+	}
+
+	c.openshiftAddons, err = loadAddons(defaultOpenshiftAddonList, defaultOpenshiftAddonsFile)
+	if err != nil {
+		return c, err
+	}
+
 	return c, nil
 }
 
@@ -172,10 +185,6 @@ func (o controllerRunOptions) validate() error {
 		if len(o.oidcIssuerClientSecret) == 0 {
 			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-secret\" flag was not specified", features.OpenIDAuthPlugin)
 		}
-	}
-
-	if o.masterResources == "" {
-		return fmt.Errorf("master-resources path is undefined")
 	}
 
 	if o.externalURL == "" {
@@ -222,15 +231,10 @@ func (o controllerRunOptions) validate() error {
 
 	// Validate the metrics-server addon is disabled, otherwise it creates conflicts with the resources
 	// we create for the metrics-server running in the seed and will render the latter unusable
-	if strings.Contains(o.kubernetesAddonsList, "metrics-server") {
-		return errors.New("the metrics-server addon must be disabled, it is now deployed inside the seed cluster")
-	}
-
-	if _, err := parseAddons(o.kubernetesAddonsList); err != nil {
-		return fmt.Errorf("failed to parse kubernetes addons: %v", err)
-	}
-	if _, err := parseAddons(o.openshiftAddonsList); err != nil {
-		return fmt.Errorf("failed to parse openshift addons: %v", err)
+	for _, addon := range o.kubernetesAddons.Items {
+		if addon.Name == "metrics-server" {
+			return errors.New("the metrics-server addon must be disabled, it is now deployed inside the seed cluster")
+		}
 	}
 
 	return nil
@@ -263,44 +267,25 @@ type controllerContext struct {
 	log                  *zap.SugaredLogger
 }
 
-func parseAddons(raw string) ([]kubermaticv1.Addon, error) {
-	// Simple sanity check to prevent old notation of coma-separated addons from passing validation
-	if n := len(strings.Split(raw, ",")); n > 1 && !strings.Contains(raw, "=requires") {
-		return nil, errors.New("addons must be semicolon-delimited")
+func loadAddons(listOpt, fileOpt string) (kubermaticv1.AddonList, error) {
+	addonList := kubermaticv1.AddonList{}
+	if listOpt != "" && fileOpt != "" {
+		return addonList, errors.New("addon-list and addon-path are mutually exclusive")
+	}
+	if listOpt != "" {
+		for _, addonName := range strings.Split(listOpt, ",") {
+			addonList.Items = append(addonList.Items, kubermaticv1.Addon{ObjectMeta: metav1.ObjectMeta{Name: addonName}})
+		}
+	}
+	if fileOpt != "" {
+		data, err := ioutil.ReadFile(fileOpt)
+		if err != nil {
+			return addonList, fmt.Errorf("failed to read %q: %v", fileOpt, err)
+		}
+		if err := yaml.Unmarshal(data, &addonList); err != nil {
+			return addonList, fmt.Errorf("failed to parse file from addon-path %q: %v", fileOpt, err)
+		}
 	}
 
-	var result []kubermaticv1.Addon
-	for _, rawAddon := range strings.Split(raw, ";") {
-		rawAddon = strings.TrimSpace(rawAddon)
-		splitAddon := strings.Split(rawAddon, "=requires")
-		if len(splitAddon) == 0 {
-			continue
-		}
-		addon := kubermaticv1.Addon{}
-		addon.Name = splitAddon[0]
-
-		if len(splitAddon) > 1 {
-			requiresDirectiveSet := strings.Join(splitAddon[1:], "")
-			gvks := []schema.GroupVersionKind{}
-			if err := json.Unmarshal([]byte(requiresDirectiveSet), &gvks); err != nil {
-				return nil, fmt.Errorf("failed to parse `=requires` directive of addon %s(%s): %v", addon.Name, requiresDirectiveSet, err)
-			}
-			for _, gvk := range gvks {
-				if gvk.Kind == "" {
-					return nil, fmt.Errorf("requires directive for addon %s lacks required `kind` parameter", addon.Name)
-				}
-				if gvk.Group == "" {
-					return nil, fmt.Errorf("requires directive for addon %s lacks required `group` parameter", addon.Name)
-				}
-				if gvk.Version == "" {
-					return nil, fmt.Errorf("requires directive for addon %s lacks required `version` parameter", addon.Name)
-				}
-			}
-			addon.Spec.RequiredResourceTypes = gvks
-		}
-
-		result = append(result, addon)
-	}
-
-	return result, nil
+	return addonList, nil
 }

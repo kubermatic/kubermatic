@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -59,14 +58,12 @@ type KubeconfigProvider interface {
 
 // Reconciler stores necessary components that are required to manage in-cluster Add-On's
 type Reconciler struct {
-	log                     *zap.SugaredLogger
-	workerName              string
-	addonVariables          map[string]interface{}
-	defaultKubernetesAddons sets.String
-	defaultOpenshiftAddons  sets.String
-	kubernetesAddonDir      string
-	openshiftAddonDir       string
-	overwriteRegistry       string
+	log                *zap.SugaredLogger
+	workerName         string
+	addonVariables     map[string]interface{}
+	kubernetesAddonDir string
+	openshiftAddonDir  string
+	overwriteRegistry  string
 	ctrlruntimeclient.Client
 	recorder record.EventRecorder
 
@@ -81,8 +78,6 @@ func Add(
 	numWorkers int,
 	workerName string,
 	addonCtxVariables map[string]interface{},
-	defaultKubernetesAddons,
-	defaultOpenshiftAddons sets.String,
 	kubernetesAddonDir,
 	openshiftAddonDir,
 	overwriteRegistey string,
@@ -92,17 +87,15 @@ func Add(
 	client := mgr.GetClient()
 
 	reconciler := &Reconciler{
-		log:                     log,
-		addonVariables:          addonCtxVariables,
-		defaultKubernetesAddons: defaultKubernetesAddons,
-		defaultOpenshiftAddons:  defaultOpenshiftAddons,
-		kubernetesAddonDir:      kubernetesAddonDir,
-		openshiftAddonDir:       openshiftAddonDir,
-		KubeconfigProvider:      kubeconfigProvider,
-		Client:                  client,
-		workerName:              workerName,
-		recorder:                mgr.GetEventRecorderFor(ControllerName),
-		overwriteRegistry:       overwriteRegistey,
+		log:                log,
+		addonVariables:     addonCtxVariables,
+		kubernetesAddonDir: kubernetesAddonDir,
+		openshiftAddonDir:  openshiftAddonDir,
+		KubeconfigProvider: kubeconfigProvider,
+		Client:             client,
+		workerName:         workerName,
+		recorder:           mgr.GetEventRecorderFor(ControllerName),
+		overwriteRegistry:  overwriteRegistey,
 	}
 
 	ctrlOptions := controller.Options{
@@ -207,10 +200,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	if err := r.markDefaultAddons(ctx, log, addon, cluster); err != nil {
-		return nil, fmt.Errorf("failed to ensure that the isDefault field is up to date in the addon: %v", err)
-	}
-
 	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
 		log.Debug("Skipping because the API server is not running")
 		return nil, nil
@@ -259,27 +248,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		return nil, fmt.Errorf("failed to set LastSuccessfulDeploymentTimestamp: %v", err)
 	}
 	return nil, nil
-}
-
-func (r *Reconciler) markDefaultAddons(ctx context.Context, log *zap.SugaredLogger,
-	addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	var defaultAddons sets.String
-	if cluster.IsOpenshift() {
-		defaultAddons = r.defaultOpenshiftAddons
-	} else {
-		defaultAddons = r.defaultKubernetesAddons
-	}
-
-	// Update only when the value was incorrect
-	if isDefault := defaultAddons.Has(addon.Name); addon.Spec.IsDefault != isDefault {
-		oldAddon := addon.DeepCopy()
-		addon.Spec.IsDefault = isDefault
-		if err := r.Client.Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon)); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {
