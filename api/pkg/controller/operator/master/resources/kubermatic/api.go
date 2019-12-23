@@ -65,6 +65,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				"-address=0.0.0.0:8080",
 				"-internal-address=0.0.0.0:8085",
 				"-dynamic-datacenters=true",
+				"-dynamic-presets=true",
 				"-swagger=/opt/swagger.json",
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-oidc-url=%s", cfg.Spec.Auth.TokenIssuer),
@@ -123,27 +124,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 					Name:      "master-files",
 					ReadOnly:  true,
 				})
-			}
-
-			if cfg.Spec.UI.Presets != "" {
-				args = append(args, "-presets=/opt/presets/presets.yaml")
-
-				volumes = append(volumes, corev1.Volume{
-					Name: "presets",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: presetsSecretName,
-						},
-					},
-				})
-
-				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					MountPath: "/opt/presets/",
-					Name:      "presets",
-					ReadOnly:  true,
-				})
-			} else {
-				args = append(args, "-dynamic-presets=true")
 			}
 
 			d.Spec.Template.Spec.Volumes = volumes

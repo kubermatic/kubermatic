@@ -195,7 +195,6 @@ func (r *Reconciler) reconcileSecrets(config *operatorv1alpha1.KubermaticConfigu
 		common.SeedWebhookServingCASecretCreator(config),
 		common.SeedWebhookServingCertSecretCreator(config, r.Client),
 		common.MasterFilesSecretCreator(config),
-		kubermatic.PresetsSecretCreator(config),
 	}
 
 	if err := reconciling.ReconcileSecrets(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
