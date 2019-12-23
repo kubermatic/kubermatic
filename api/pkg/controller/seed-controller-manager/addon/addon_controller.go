@@ -17,6 +17,7 @@ import (
 	"go.uber.org/zap"
 
 	addonutils "github.com/kubermatic/kubermatic/api/pkg/addon"
+	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
@@ -24,12 +25,12 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -51,18 +52,17 @@ const (
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig
 type KubeconfigProvider interface {
 	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
+	GetClient(c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
 // Reconciler stores necessary components that are required to manage in-cluster Add-On's
 type Reconciler struct {
-	log                     *zap.SugaredLogger
-	workerName              string
-	addonVariables          map[string]interface{}
-	defaultKubernetesAddons sets.String
-	defaultOpenshiftAddons  sets.String
-	kubernetesAddonDir      string
-	openshiftAddonDir       string
-	overwriteRegistry       string
+	log                *zap.SugaredLogger
+	workerName         string
+	addonVariables     map[string]interface{}
+	kubernetesAddonDir string
+	openshiftAddonDir  string
+	overwriteRegistry  string
 	ctrlruntimeclient.Client
 	recorder record.EventRecorder
 
@@ -77,8 +77,6 @@ func Add(
 	numWorkers int,
 	workerName string,
 	addonCtxVariables map[string]interface{},
-	defaultKubernetesAddons,
-	defaultOpenshiftAddons sets.String,
 	kubernetesAddonDir,
 	openshiftAddonDir,
 	overwriteRegistey string,
@@ -88,17 +86,15 @@ func Add(
 	client := mgr.GetClient()
 
 	reconciler := &Reconciler{
-		log:                     log,
-		addonVariables:          addonCtxVariables,
-		defaultKubernetesAddons: defaultKubernetesAddons,
-		defaultOpenshiftAddons:  defaultOpenshiftAddons,
-		kubernetesAddonDir:      kubernetesAddonDir,
-		openshiftAddonDir:       openshiftAddonDir,
-		KubeconfigProvider:      kubeconfigProvider,
-		Client:                  client,
-		workerName:              workerName,
-		recorder:                mgr.GetEventRecorderFor(ControllerName),
-		overwriteRegistry:       overwriteRegistey,
+		log:                log,
+		addonVariables:     addonCtxVariables,
+		kubernetesAddonDir: kubernetesAddonDir,
+		openshiftAddonDir:  openshiftAddonDir,
+		KubeconfigProvider: kubeconfigProvider,
+		Client:             client,
+		workerName:         workerName,
+		recorder:           mgr.GetEventRecorderFor(ControllerName),
+		overwriteRegistry:  overwriteRegistey,
 	}
 
 	ctrlOptions := controller.Options{
@@ -203,13 +199,17 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	if err := r.markDefaultAddons(ctx, log, addon, cluster); err != nil {
-		return nil, fmt.Errorf("failed to ensure that the isDefault field is up to date in the addon: %v", err)
-	}
-
 	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
 		log.Debug("Skipping because the API server is not running")
 		return nil, nil
+	}
+
+	reqeueAfter, err := r.ensureRequiredResourceTypesExist(ctx, log, addon, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if all required resources exist: %v", err)
+	}
+	if reqeueAfter != nil {
+		return reqeueAfter, nil
 	}
 
 	// Openshift needs some time to create this, so avoid getting into the backoff
@@ -241,27 +241,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	}
 
 	return nil, nil
-}
-
-func (r *Reconciler) markDefaultAddons(ctx context.Context, log *zap.SugaredLogger,
-	addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	var defaultAddons sets.String
-	if cluster.IsOpenshift() {
-		defaultAddons = r.defaultOpenshiftAddons
-	} else {
-		defaultAddons = r.defaultKubernetesAddons
-	}
-
-	// Update only when the value was incorrect
-	if isDefault := defaultAddons.Has(addon.Name); addon.Spec.IsDefault != isDefault {
-		oldAddon := addon.DeepCopy()
-		addon.Spec.IsDefault = isDefault
-		if err := r.Client.Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon)); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {
@@ -517,6 +496,38 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %v\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 	return nil
+}
+
+func (r *Reconciler) ensureRequiredResourceTypesExist(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+
+	if len(addon.Spec.RequiredResourceTypes) == 0 {
+		// Avoid constructing a client we don't need and just return early
+		return nil, nil
+	}
+	userClusterClient, err := r.KubeconfigProvider.GetClient(cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get client for usercluster: %v", err)
+	}
+
+	for _, requiredResource := range addon.Spec.RequiredResourceTypes {
+		unstructuedList := &metav1unstructured.UnstructuredList{}
+		unstructuedList.SetAPIVersion(requiredResource.Group + "/" + requiredResource.Version)
+		unstructuedList.SetKind(requiredResource.Kind)
+
+		// We do not care about the result, just if the resource is served, so make sure we only
+		// get as little as possible.
+		listOpts := &ctrlruntimeclient.ListOptions{Limit: 1}
+		if err := userClusterClient.List(ctx, unstructuedList, listOpts); err != nil {
+			if _, ok := err.(*meta.NoKindMatchError); ok {
+				// Try again later
+				log.Infow("Required resource isn't served, trying again in 10 seconds", "resource", requiredResource.String())
+				return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+			}
+			return nil, fmt.Errorf("failed to check if type %q is served: %v", requiredResource.String(), err)
+		}
+	}
+
+	return nil, nil
 }
 
 func deleteCommand(ctx context.Context, kubeconfigFilename, manifestFilename string) *exec.Cmd {

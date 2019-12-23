@@ -59,7 +59,6 @@ spec:
         - -external-url={{ .Values.kubermatic.domain }}
         - -datacenter-name={{ .Values.kubermatic.controller.datacenterName }}
         - -etcd-disk-size={{ .Values.kubermatic.etcd.diskSize }}
-        - -master-resources=/opt/master-files
         {{- if .Values.kubermatic.datacenters }}
         - -datacenters=/opt/datacenter/datacenters.yaml
         {{- end }}
@@ -69,8 +68,18 @@ spec:
         - -versions=/opt/master-files/versions.yaml
         - -updates=/opt/master-files/updates.yaml
         - -internal-address=0.0.0.0:8085
+        {{- if .Values.kubermatic.controller.addons.kubernetes.defaultAddons }}
         - -kubernetes-addons-list={{ join "," .Values.kubermatic.controller.addons.kubernetes.defaultAddons }}
+        {{- end }}
+        {{- if .Values.kubermatic.controller.addons.kubernetes.defaultAddonsFile }}
+        - -kubernetes-addons-file=/opt/master-files/{{ .Values.kubermatic.controller.addons.kubernetes.defaultAddonsFile }}
+        {{- end }}
+        {{- if .Values.kubermatic.controller.addons.openshift.defaultAddons }}
         - -openshift-addons-list={{ join "," .Values.kubermatic.controller.addons.openshift.defaultAddons }}
+        {{- end }}
+        {{- if .Values.kubermatic.controller.addons.openshift.defaultAddonsFile }}
+        - -openshift-addons-file=/opt/master-files/{{ .Values.kubermatic.controller.addons.openshift.defaultAddonsFile }}
+        {{- end }}
         - -kubernetes-addons-path=/opt/addons/kubernetes
         - -openshift-addons-path=/opt/addons/openshift
         - -overwrite-registry={{ .Values.kubermatic.controller.overwriteRegistry }}

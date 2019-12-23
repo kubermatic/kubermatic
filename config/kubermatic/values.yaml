@@ -100,15 +100,8 @@ kubermatic:
           tag: "__KUBERMATIC_TAG__"
           pullPolicy: "IfNotPresent"
       openshift:
-        # list of Addons to install into every user-cluster. All need to exist in the addons image
-        defaultAddons:
-        - crd
-        - openvpn
-        - rbac
-        - network
-        - default-storage-class
-        - registry
-        - logrotate
+        # Mutually exclusive with `defaultAddons`. The file referenced here is in the static/master/ folder
+        defaultAddonsFile: openshift-addons.yaml
         image:
           repository: "quay.io/kubermatic/openshift-addons"
           tag: "__KUBERMATIC_TAG__"

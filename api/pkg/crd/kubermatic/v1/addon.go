@@ -4,6 +4,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
@@ -33,6 +34,11 @@ type AddonSpec struct {
 	Cluster corev1.ObjectReference `json:"cluster"`
 	// Variables is free form data to use for parsing the manifest templates
 	Variables runtime.RawExtension `json:"variables,omitempty"`
+	// RequiredResourceTypes allows to indicate that this addon needs some resource type before it
+	// can be installed. This can be used to indicate that a specific CRD and/or extension
+	// apiserver must be installed before this addon can be installed. The addon will not
+	// be installed until that resource is served.
+	RequiredResourceTypes []schema.GroupVersionKind `json:"requiredResourceTypes,omitempty"`
 	// IsDefault indicates whether the addon is default
 	IsDefault bool `json:"isDefault,omitempty"`
 }
