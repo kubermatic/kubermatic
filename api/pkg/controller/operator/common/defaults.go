@@ -189,6 +189,11 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "masterFiles.'updates.yaml'")
 	}
 
+	if copy.Spec.MasterFiles["openshift-addons.yaml"] == "" {
+		copy.Spec.MasterFiles["openshift-addons.yaml"] = strings.TrimSpace(defaultOpenshiftAddons)
+		logger.Debugw("Defaulting field", "field", "masterFiles.'openshift-addons.yaml'")
+	}
+
 	auth := copy.Spec.Auth
 
 	if auth.ClientID == "" {
@@ -502,4 +507,48 @@ updates:
   to: 2.2.*
   automatic: false
   type: openshift
+`
+
+const defaultOpenshiftAddons = `
+apiVersion: v1
+kind: List
+items:
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: crd
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: default-storage-class
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: logrotate
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: network
+  spec:
+    requiredResourceTypes:
+    - Group: config.openshift.io
+      Kind: Network
+      Version: v1
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: openvpn
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: rbac
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: registry
+  spec:
+    requiredResourceTypes:
+    - Group: cloudcredential.openshift.io
+      Kind: CredentialsRequest
+      Version: v1
 `
