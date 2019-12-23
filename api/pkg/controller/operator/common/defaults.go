@@ -129,7 +129,7 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 
 	if len(copy.Spec.UserCluster.Addons.Openshift.Default) == 0 && copy.Spec.UserCluster.Addons.Openshift.DefaultManifests == "" {
 		copy.Spec.UserCluster.Addons.Openshift.DefaultManifests = strings.TrimSpace(defaultOpenshiftAddons)
-		logger.Debugw("Defaulting field", "field", "usercluster.Addons.Openshift.DefaultManifests")
+		logger.Debugw("Defaulting field", "field", "userCluster.Addons.Openshift.DefaultManifests")
 	}
 
 	if len(copy.Spec.API.AccessibleAddons) == 0 {
