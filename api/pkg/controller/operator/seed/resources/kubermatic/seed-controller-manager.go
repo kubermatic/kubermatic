@@ -68,7 +68,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 				fmt.Sprintf("-worker-name=%s", workerName),
 				fmt.Sprintf("-kubermatic-image=%s", cfg.Spec.UserCluster.KubermaticDockerRepository),
 				fmt.Sprintf("-dnatcontroller-image=%s", cfg.Spec.UserCluster.DNATControllerDockerRepository),
-				fmt.Sprintf("-kubernetes-addons-list=%s", strings.Join(cfg.Spec.UserCluster.Addons.Kubernetes.Default, ",")),
 				fmt.Sprintf("-overwrite-registry=%s", cfg.Spec.UserCluster.OverwriteRegistry),
 				fmt.Sprintf("-apiserver-default-replicas=%d", 2),
 				fmt.Sprintf("-controller-manager-default-replicas=%d", 1),
@@ -149,29 +148,39 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 				},
 			}
 
-			if len(cfg.Spec.MasterFiles) > 0 {
-				args = append(
-					args,
-					"-versions=/opt/master-files/versions.yaml",
-					"-updates=/opt/master-files/updates.yaml",
-					"-openshift-adons-file=/opt/master-files/openshift-addons.yaml",
-				)
+			args = append(
+				args,
+				"-versions=/opt/master-files/versions.yaml",
+				"-updates=/opt/master-files/updates.yaml",
+			)
 
-				volumes = append(volumes, corev1.Volume{
-					Name: "master-files",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: common.MasterFilesSecretName,
-						},
-					},
-				})
-
-				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					MountPath: "/opt/master-files/",
-					Name:      "master-files",
-					ReadOnly:  true,
-				})
+			if cfg.Spec.UserCluster.Addons.Openshift.DefaultManifests != "" {
+				args = append(args, "-openshift-addons-file=/opt/master-files/"+common.OpenshiftAddonsFileName)
+			} else {
+				args = append(args, fmt.Sprintf("-openshift-addons-list=%s", strings.Join(cfg.Spec.UserCluster.Addons.Openshift.Default, ",")))
 			}
+
+			if cfg.Spec.UserCluster.Addons.Kubernetes.DefaultManifests != "" {
+				args = append(args, "-kubernetes-addons-file=/opt/master-files/"+common.KubernetesAddonsFileName)
+			} else {
+
+				args = append(args, fmt.Sprintf("-kubernetes-addons-list=%s", strings.Join(cfg.Spec.UserCluster.Addons.Kubernetes.Default, ",")))
+			}
+
+			volumes = append(volumes, corev1.Volume{
+				Name: "master-files",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: common.MasterFilesSecretName,
+					},
+				},
+			})
+
+			volumeMounts = append(volumeMounts, corev1.VolumeMount{
+				MountPath: "/opt/master-files/",
+				Name:      "master-files",
+				ReadOnly:  true,
+			})
 
 			if cfg.Spec.FeatureGates.Has(features.OpenIDAuthPlugin) {
 				args = append(args,

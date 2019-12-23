@@ -38,16 +38,6 @@ var (
 		"logrotate",
 	}
 
-	openshiftDefaultAddons = []string{
-		"crd",
-		"openvpn",
-		"rbac",
-		"network",
-		"default-storage-class",
-		"registry",
-		"logrotate",
-	}
-
 	defaultAccessibleAddons = []string{
 		"node-exporter",
 	}
@@ -132,14 +122,14 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "masterController.pprofEndpoint", "value", *copy.Spec.MasterController.PProfEndpoint)
 	}
 
-	if len(copy.Spec.UserCluster.Addons.Kubernetes.Default) == 0 {
+	if len(copy.Spec.UserCluster.Addons.Kubernetes.Default) == 0 && copy.Spec.UserCluster.Addons.Kubernetes.DefaultManifests == "" {
 		copy.Spec.UserCluster.Addons.Kubernetes.Default = kubernetesDefaultAddons
 		logger.Debugw("Defaulting field", "field", "userCluster.addons.kubernetes.default", "value", copy.Spec.UserCluster.Addons.Kubernetes.Default)
 	}
 
-	if len(copy.Spec.UserCluster.Addons.Openshift.Default) == 0 {
-		copy.Spec.UserCluster.Addons.Openshift.Default = openshiftDefaultAddons
-		logger.Debugw("Defaulting field", "field", "userCluster.addons.openshift.default", "value", copy.Spec.UserCluster.Addons.Openshift.Default)
+	if len(copy.Spec.UserCluster.Addons.Openshift.Default) == 0 && copy.Spec.UserCluster.Addons.Openshift.DefaultManifests == "" {
+		copy.Spec.UserCluster.Addons.Openshift.DefaultManifests = strings.TrimSpace(defaultOpenshiftAddons)
+		logger.Debugw("Defaulting field", "field", "userCluster.Addons.Openshift.DefaultManifests")
 	}
 
 	if len(copy.Spec.API.AccessibleAddons) == 0 {
@@ -187,11 +177,6 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	if copy.Spec.MasterFiles["updates.yaml"] == "" {
 		copy.Spec.MasterFiles["updates.yaml"] = strings.TrimSpace(defaultUpdatesYAML)
 		logger.Debugw("Defaulting field", "field", "masterFiles.'updates.yaml'")
-	}
-
-	if copy.Spec.MasterFiles["openshift-addons.yaml"] == "" {
-		copy.Spec.MasterFiles["openshift-addons.yaml"] = strings.TrimSpace(defaultOpenshiftAddons)
-		logger.Debugw("Defaulting field", "field", "masterFiles.'openshift-addons.yaml'")
 	}
 
 	auth := copy.Spec.Auth
