@@ -18,6 +18,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/rancher"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
 	updatecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/update"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/vpaupdater"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
@@ -42,6 +43,7 @@ var AllControllers = map[string]controllerCreator{
 	clustercomponentdefaulter.ControllerName:      createClusterComponentDefaulter,
 	seedresourcesuptodatecondition.ControllerName: createSeedConditionUpToDateController,
 	rancher.ControllerName:                        createrancherController,
+	vpaupdater.ControllerName:                     createVPAUpdaterController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -289,4 +291,13 @@ func createrancherController(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.clientProvider)
+}
+
+func createVPAUpdaterController(ctrlCtx *controllerContext) error {
+	return vpaupdater.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+	)
 }
