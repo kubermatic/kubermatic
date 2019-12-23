@@ -107,7 +107,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.kubernetesAddonsPath, "kubernetes-addons-path", "/opt/addons/kubernetes", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&c.openshiftAddonsPath, "openshift-addons-path", "/opt/addons/openshift", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&defaultKubernetesAddonsList, "kubernetes-addons-list", defaultKubernetesAddons, "Comma separated list of Addons to install into every user-cluster. Mutually exclusive with `--kubernetes-addons-file`")
-	flag.StringVar(&defaultKubernetesAddonsFile, "kubernetes-addons-file", "", "File that contains a list of default kubernetes addons. Mutually exclusive with `--openshift-addons-list`")
+	flag.StringVar(&defaultKubernetesAddonsFile, "kubernetes-addons-file", "", "File that contains a list of default kubernetes addons. Mutually exclusive with `--kubernetes-addons-list`")
 	flag.StringVar(&defaultOpenshiftAddonList, "openshift-addons-list", "", "Comma separated list of addons to install into every openshift user cluster. Mutually exclusive with `--openshift-addons-file`")
 	flag.StringVar(&defaultOpenshiftAddonsFile, "openshift-addons-file", "", "File that contains a list of default openshift addons. Mutually exclusive with `--openshift-addons-list`")
 	flag.StringVar(&c.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backup container yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
