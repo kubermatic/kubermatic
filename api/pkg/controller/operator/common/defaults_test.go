@@ -98,3 +98,25 @@ func TestDefaultUIConfigMatchesChart(t *testing.T) {
 		t.Errorf("defaultUIConfig from chart does not match default from operator, diff: %v", err)
 	}
 }
+
+func TestDefaultVersionsYAMLMatchesChart(t *testing.T) {
+	t.Parallel()
+	fromChart, err := ioutil.ReadFile(kubermaticChartPath + "/static/master/versions.yaml")
+	if err != nil {
+		t.Fatalf("failed to read versions from disk: %v", err)
+	}
+	if diff := getStringDiff(string(fromChart), defaultVersionsYAML); diff != nil {
+		t.Errorf("versions.yaml from chart does not match default from operator, diff: %v", diff)
+	}
+}
+
+func TestDefaultUpdatesYAMLMatchesChart(t *testing.T) {
+	t.Parallel()
+	fromChart, err := ioutil.ReadFile(kubermaticChartPath + "/static/master/updates.yaml")
+	if err != nil {
+		t.Fatalf("failed to read versions from disk: %v", err)
+	}
+	if diff := getStringDiff(string(fromChart), defaultUpdatesYAML); diff != nil {
+		t.Errorf("versions.yaml from chart does not match default from operator, diff: %v", diff)
+	}
+}
