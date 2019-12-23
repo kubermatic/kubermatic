@@ -142,6 +142,8 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 					Name:      "presets",
 					ReadOnly:  true,
 				})
+			} else {
+				args = append(args, "-dynamic-presets=true")
 			}
 
 			d.Spec.Template.Spec.Volumes = volumes
