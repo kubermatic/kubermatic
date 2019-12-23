@@ -1,11 +1,11 @@
+name: cleanup-container
+image: quay.io/kubermatic/s3-storer:v0.1.4
 command:
 - /bin/sh
 - -c
 - |
   set -euo pipefail
   s3-storeuploader delete-all --endpoint minio.minio.svc.cluster.local:9000 --bucket kubermatic-etcd-backups --prefix $CLUSTER
-image: quay.io/kubermatic/s3-storer:v0.1.4
-name: cleanup-container
 env:
 - name: ACCESS_KEY_ID
   valueFrom:
