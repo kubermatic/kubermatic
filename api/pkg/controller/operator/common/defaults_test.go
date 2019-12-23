@@ -117,6 +117,17 @@ func TestDefaultUpdatesYAMLMatchesChart(t *testing.T) {
 		t.Fatalf("failed to read versions from disk: %v", err)
 	}
 	if diff := getStringDiff(string(fromChart), defaultUpdatesYAML); diff != nil {
-		t.Errorf("versions.yaml from chart does not match default from operator, diff: %v", diff)
+		t.Errorf("updates.yaml from chart does not match default from operator, diff: %v", diff)
+	}
+}
+
+func TestDefaultOpenshiftAddonsMatchesChart(t *testing.T) {
+	t.Parallel()
+	fromChart, err := ioutil.ReadFile(kubermaticChartPath + "/static/master/openshift-addons.yaml")
+	if err != nil {
+		t.Fatalf("failed to read versions from disk: %v", err)
+	}
+	if diff := getStringDiff(string(fromChart), defaultOpenshiftAddons); diff != nil {
+		t.Errorf("openshift-addons.yaml from chart does not match default from operator, diff: %v", diff)
 	}
 }
