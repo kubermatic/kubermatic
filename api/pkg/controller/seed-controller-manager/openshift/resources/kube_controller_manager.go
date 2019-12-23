@@ -265,7 +265,7 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 				dep.Spec.Template.Spec.Containers = []corev1.Container{
 					*openvpnSidecar,
 					{
-						Name:    kubeControllerManagerContainerName,
+						Name:    resources.ControllerManagerDeploymentName,
 						Image:   image,
 						Env:     env,
 						Command: []string{"hyperkube", kubeControllerManagerContainerName},
@@ -304,7 +304,7 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 					return nil, err
 				}
 				dep.Spec.Template.Labels = podLabels
-				wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(kubeControllerManagerContainerName))
+				wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(resources.ControllerManagerDeploymentName))
 				if err != nil {
 					return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
 				}
