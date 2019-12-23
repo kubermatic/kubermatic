@@ -20,7 +20,7 @@ func TestGCPZones(t *testing.T) {
 		{
 			name:                "test, get GCP zones",
 			provider:            "gcp",
-			expectedCredentials: []string{"loodse"},
+			expectedCredentials: []string{"e2e-gcp"},
 			datacenter:          "gcp-westeurope",
 			resultList:          []string{"europe-west3-a", "europe-west3-b", "europe-west3-c"},
 		},
@@ -68,7 +68,7 @@ func TestGCPDiskTypes(t *testing.T) {
 		{
 			name:                "test, get GCP disk types",
 			provider:            "gcp",
-			expectedCredentials: []string{"loodse"},
+			expectedCredentials: []string{"e2e-gcp"},
 			zone:                "europe-west3-c",
 			resultList:          []string{"pd-ssd", "pd-standard"},
 		},
@@ -115,7 +115,7 @@ func TestGCPSizes(t *testing.T) {
 		{
 			name:                "test, get GCP sizes",
 			provider:            "gcp",
-			expectedCredentials: []string{"loodse"},
+			expectedCredentials: []string{"e2e-gcp"},
 			zone:                "europe-west3-c",
 		},
 	}
