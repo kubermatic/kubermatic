@@ -93,48 +93,6 @@ spec:
         memory: 128Mi
   # MasterFiles is a map of additional files to mount into each master component.
   masterFiles:
-    openshift-addons.yaml: |-
-      apiVersion: v1
-      kind: List
-      items:
-      - apiVersion: kubermatic.k8s.io/v1
-        kind: Addon
-        metadata:
-        name: crd
-      - apiVersion: kubermatic.k8s.io/v1
-        kind: Addon
-        metadata:
-        name: default-storage-class
-      - apiVersion: kubermatic.k8s.io/v1
-        kind: Addon
-        metadata:
-        name: logrotate
-      - apiVersion: kubermatic.k8s.io/v1
-        kind: Addon
-        metadata:
-        name: network
-        spec:
-        requiredResourceTypes:
-        - Group: config.openshift.io
-          Kind: Network
-          Version: v1
-      - apiVersion: kubermatic.k8s.io/v1
-        kind: Addon
-        metadata:
-        name: openvpn
-      - apiVersion: kubermatic.k8s.io/v1
-        kind: Addon
-        metadata:
-        name: rbac
-      - apiVersion: kubermatic.k8s.io/v1
-        kind: Addon
-        metadata:
-        name: registry
-        spec:
-        requiredResourceTypes:
-        - Group: cloudcredential.openshift.io
-          Kind: CredentialsRequest
-          Version: v1
     updates.yaml: |-
       ### Updates file
       #
@@ -364,6 +322,7 @@ spec:
       # Kubernetes controls the addons for Kubernetes-based clusters.
       kubernetes:
         # Default is the list of addons to be installed by default into each cluster.
+        # Mutually exclusive with "defaultManifests".
         default:
           - canal
           - csi
@@ -376,20 +335,61 @@ spec:
           - nodelocal-dns-cache
           - pod-security-policy
           - logrotate
+        # DefaultManifests is a list of addon manifests to install into all clusters.
+        # Mutually exclusive with "default".
+        defaultManifests: ""
         # DockerRepository is the repository containing the Docker image containing
         # the possible addon manifests.
         dockerRepository: quay.io/kubermatic/addons
       # Openshift controls the addons for Openshift-based clusters.
       openshift:
         # Default is the list of addons to be installed by default into each cluster.
-        default:
-          - crd
-          - openvpn
-          - rbac
-          - network
-          - default-storage-class
-          - registry
-          - logrotate
+        # Mutually exclusive with "defaultManifests".
+        default: null
+        # DefaultManifests is a list of addon manifests to install into all clusters.
+        # Mutually exclusive with "default".
+        defaultManifests: |-
+          apiVersion: v1
+          kind: List
+          items:
+          - apiVersion: kubermatic.k8s.io/v1
+            kind: Addon
+            metadata:
+            name: crd
+          - apiVersion: kubermatic.k8s.io/v1
+            kind: Addon
+            metadata:
+            name: default-storage-class
+          - apiVersion: kubermatic.k8s.io/v1
+            kind: Addon
+            metadata:
+            name: logrotate
+          - apiVersion: kubermatic.k8s.io/v1
+            kind: Addon
+            metadata:
+            name: network
+            spec:
+            requiredResourceTypes:
+            - Group: config.openshift.io
+              Kind: Network
+              Version: v1
+          - apiVersion: kubermatic.k8s.io/v1
+            kind: Addon
+            metadata:
+            name: openvpn
+          - apiVersion: kubermatic.k8s.io/v1
+            kind: Addon
+            metadata:
+            name: rbac
+          - apiVersion: kubermatic.k8s.io/v1
+            kind: Addon
+            metadata:
+            name: registry
+            spec:
+            requiredResourceTypes:
+            - Group: cloudcredential.openshift.io
+              Kind: CredentialsRequest
+              Version: v1
         # DockerRepository is the repository containing the Docker image containing
         # the possible addon manifests.
         dockerRepository: quay.io/kubermatic/openshift-addons
