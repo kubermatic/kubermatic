@@ -136,6 +136,7 @@ const (
 	ClusterConditionComponentDefaulterReconcilingSuccess       ClusterConditionType = "ComponentDefaulterReconciledSuccessfully"
 	ClusterConditionUpdateControllerReconcilingSuccess         ClusterConditionType = "UpdateControllerReconciledSuccessfully"
 	ClusterConditionMonitoringControllerReconcilingSuccess     ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
+	ClusterConditionVPAUpdaterControllerReconcilingSuccess     ClusterConditionType = "VPAUpdaterControllerReconciledSuccessfully"
 	ClusterConditionOpenshiftControllerReconcilingSuccess      ClusterConditionType = "OpenshiftControllerReconciledSuccessfully"
 	ClusterConditionClusterInitialized                         ClusterConditionType = "ClusterInitialized"
 

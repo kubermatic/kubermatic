@@ -485,8 +485,9 @@ type APIServiceCreator = func(existing *apiregistrationv1beta1.APIService) (*api
 
 // Requirements are how much resources are needed by containers in the pod
 type Requirements struct {
-	Name     string                       `json:"name,omitempty"`
-	Requires *corev1.ResourceRequirements `json:"requires,omitempty"`
+	Name        string                       `json:"name,omitempty"`
+	Requires    *corev1.ResourceRequirements `json:"requires,omitempty"`
+	LastUpdated string                       `json:"lastUpdated,omitempty"`
 }
 
 // GetClusterExternalIP returns a net.IP for the given Cluster
