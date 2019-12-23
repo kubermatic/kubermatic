@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"strings"
 	"time"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/addon"
@@ -24,7 +23,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	utilpointer "k8s.io/utils/pointer"
 )
@@ -127,6 +125,15 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 }
 
 func createKubernetesController(ctrlCtx *controllerContext) error {
+	var nodeLocalDNSCacheEnabled bool
+	for _, addon := range ctrlCtx.runOptions.kubernetesAddons.Items {
+		if addon.Name == "nodelocal-dns-cache" {
+			nodeLocalDNSCacheEnabled = true
+			break
+		}
+
+	}
+
 	return kubernetescontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
@@ -145,7 +152,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		ctrlCtx.dockerPullConfigJSON,
-		strings.Contains(ctrlCtx.runOptions.kubernetesAddonsList, "nodelocal-dns-cache"),
+		nodeLocalDNSCacheEnabled,
 		ctrlCtx.runOptions.concurrentClusterUpdate,
 		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
@@ -208,8 +215,6 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		dockerPullConfigJSON,
-		strings.Contains(ctrlCtx.runOptions.kubernetesAddonsList, "nodelocal-dns-cache"),
-
 		ctrlCtx.runOptions.concurrentClusterUpdate,
 		monitoring.Features{
 			VPA: ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
@@ -252,18 +257,6 @@ func createUpdateController(ctrlCtx *controllerContext) error {
 }
 
 func createAddonController(ctrlCtx *controllerContext) error {
-	kubernetesAddons := strings.Split(ctrlCtx.runOptions.kubernetesAddonsList, ",")
-	kubernetesAddonsSet := sets.String{}
-	for _, a := range kubernetesAddons {
-		kubernetesAddonsSet.Insert(strings.TrimSpace(a))
-	}
-
-	openshiftAddons := strings.Split(ctrlCtx.runOptions.openshiftAddonsList, ",")
-	openshiftAddonsSet := sets.String{}
-	for _, a := range openshiftAddons {
-		openshiftAddonsSet.Insert(strings.TrimSpace(a))
-	}
-
 	return addon.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
@@ -274,8 +267,6 @@ func createAddonController(ctrlCtx *controllerContext) error {
 				"NodeAccessNetwork": ctrlCtx.runOptions.nodeAccessNetwork,
 			},
 		},
-		kubernetesAddonsSet,
-		openshiftAddonsSet,
 		ctrlCtx.runOptions.kubernetesAddonsPath,
 		ctrlCtx.runOptions.openshiftAddonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
@@ -284,23 +275,13 @@ func createAddonController(ctrlCtx *controllerContext) error {
 }
 
 func createAddonInstallerController(ctrlCtx *controllerContext) error {
-	kubernetesAddons := strings.Split(ctrlCtx.runOptions.kubernetesAddonsList, ",")
-	for i, a := range kubernetesAddons {
-		kubernetesAddons[i] = strings.TrimSpace(a)
-	}
-
-	openshiftAddons := strings.Split(ctrlCtx.runOptions.openshiftAddonsList, ",")
-	for i, a := range openshiftAddons {
-		openshiftAddons[i] = strings.TrimSpace(a)
-	}
-
 	return addoninstaller.Add(
 		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		kubernetesAddons,
-		openshiftAddons)
+		ctrlCtx.runOptions.kubernetesAddons,
+		ctrlCtx.runOptions.openshiftAddons)
 }
 
 func createrancherController(ctrlCtx *controllerContext) error {

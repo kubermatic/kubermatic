@@ -69,7 +69,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 				fmt.Sprintf("-kubermatic-image=%s", cfg.Spec.UserCluster.KubermaticDockerRepository),
 				fmt.Sprintf("-dnatcontroller-image=%s", cfg.Spec.UserCluster.DNATControllerDockerRepository),
 				fmt.Sprintf("-kubernetes-addons-list=%s", strings.Join(cfg.Spec.UserCluster.Addons.Kubernetes.Default, ",")),
-				fmt.Sprintf("-openshift-addons-list=%s", strings.Join(cfg.Spec.UserCluster.Addons.Openshift.Default, ",")),
 				fmt.Sprintf("-overwrite-registry=%s", cfg.Spec.UserCluster.OverwriteRegistry),
 				fmt.Sprintf("-apiserver-default-replicas=%d", 2),
 				fmt.Sprintf("-controller-manager-default-replicas=%d", 1),
@@ -155,7 +154,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 					args,
 					"-versions=/opt/master-files/versions.yaml",
 					"-updates=/opt/master-files/updates.yaml",
-					"-master-resources=/opt/master-files",
+					"-openshift-adons-file=/opt/master-files/openshift-addons.yaml",
 				)
 
 				volumes = append(volumes, corev1.Volume{

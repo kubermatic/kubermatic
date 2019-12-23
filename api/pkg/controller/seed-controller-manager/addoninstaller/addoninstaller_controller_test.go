@@ -4,18 +4,22 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-test/deep"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-var addons = []string{"Foo", "Bar"}
+var addons = kubermaticv1.AddonList{Items: []kubermaticv1.Addon{
+	{ObjectMeta: metav1.ObjectMeta{Name: "Foo"}},
+	{ObjectMeta: metav1.ObjectMeta{Name: "Bar"}},
+}}
 
 func truePtr() *bool {
 	b := true
@@ -52,6 +56,7 @@ func TestCreateAddon(t *testing.T) {
 							Kind: "Cluster",
 							Name: name,
 						},
+						IsDefault: true,
 					},
 				},
 				{
@@ -74,6 +79,7 @@ func TestCreateAddon(t *testing.T) {
 							Kind: "Cluster",
 							Name: name,
 						},
+						IsDefault: true,
 					},
 				},
 			},
@@ -118,8 +124,8 @@ func TestCreateAddon(t *testing.T) {
 					addonFromClient); err != nil {
 					t.Fatalf("Did not find expected addon %q", expectedAddon.Name)
 				}
-				if equal := equality.Semantic.DeepEqual(expectedAddon, addonFromClient); !equal {
-					t.Fatalf("created addon is not equal to expected addon\n%+v\n---\n%+v", expectedAddon, addonFromClient)
+				if diff := deep.Equal(addonFromClient, expectedAddon); diff != nil {
+					t.Errorf("created addon is not equal to expected addon, diff: %v", diff)
 				}
 			}
 
