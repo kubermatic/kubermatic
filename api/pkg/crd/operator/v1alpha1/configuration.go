@@ -171,7 +171,11 @@ type KubermaticUserClusterMonitoringConfiguration struct {
 // KubermaticAddonConfiguration describes the addons for a given cluster runtime.
 type KubermaticAddonConfiguration struct {
 	// Default is the list of addons to be installed by default into each cluster.
+	// Mutually exclusive with "defaultManifests".
 	Default []string `json:"default,omitempty"`
+	// DefaultManifests is a list of addon manifests to install into all clusters.
+	// Mutually exclusive with "default".
+	DefaultManifests string `json:"defaultManifests,omitempty"`
 	// DockerRepository is the repository containing the Docker image containing
 	// the possible addon manifests.
 	DockerRepository string `json:"dockerRepository,omitempty"`
