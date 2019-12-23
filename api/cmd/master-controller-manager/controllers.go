@@ -12,7 +12,7 @@ import (
 	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/service-account"
 	userprojectbinding "github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/user-project-binding"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/usersshkeyssynchronizer"
-	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-lifecycle"
+	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/shared/seed-controller-lifecycle"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"

@@ -11,7 +11,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	masterctrl "github.com/kubermatic/kubermatic/api/pkg/controller/operator/master"
 	seedctrl "github.com/kubermatic/kubermatic/api/pkg/controller/operator/seed"
-	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-lifecycle"
+	seedcontrollerlifecycle "github.com/kubermatic/kubermatic/api/pkg/controller/shared/seed-controller-lifecycle"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/pprof"
