@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac/test"
-	fakeInformerProvider "github.com/kubermatic/kubermatic/api/pkg/controller/rbac/test/fake"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac/test"
+	fakeInformerProvider "github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac/test/fake"
 	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
