@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	presetsSecretName     = "presets"
 	serviceAccountName    = "kubermatic-master"
 	uiConfigConfigMapName = "ui-config"
 	ingressName           = "kubermatic"
@@ -29,16 +28,6 @@ const (
 
 func ClusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
 	return fmt.Sprintf("%s:%s-master:cluster-admin", cfg.Namespace, cfg.Name)
-}
-
-func PresetsSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return presetsSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			return createSecretData(s, map[string]string{
-				"presets.yaml": cfg.Spec.UI.Presets,
-			}), nil
-		}
-	}
 }
 
 func UIConfigConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {

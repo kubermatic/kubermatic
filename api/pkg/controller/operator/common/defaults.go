@@ -160,11 +160,6 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "ui.config", "value", copy.Spec.UI.Config)
 	}
 
-	if copy.Spec.UI.Presets == "" {
-		copy.Spec.UI.Presets = strings.TrimSpace(defaultUIPresets)
-		logger.Debugw("Defaulting field", "field", "ui.presets", "value", copy.Spec.UI.Presets)
-	}
-
 	if copy.Spec.MasterFiles == nil {
 		copy.Spec.MasterFiles = map[string]string{}
 	}
@@ -358,11 +353,6 @@ const defaultUIConfig = `
 {
   "share_kubeconfig": false
 }`
-
-const defaultUIPresets = `
-presets:
-  items: []
-`
 
 const defaultVersionsYAML = `
 versions:
