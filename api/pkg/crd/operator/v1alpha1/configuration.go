@@ -94,8 +94,6 @@ type KubermaticUIConfiguration struct {
 	DockerRepository string `json:"dockerRepository,omitempty"`
 	// Config sets flags for various dashboard features.
 	Config string `json:"config,omitempty"`
-	// Presets is a YAML string containing pre-defined credentials for cloud providers.
-	Presets string `json:"presets,omitempty"`
 	// Resources describes the requested and maximum allowed CPU/memory usage.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }

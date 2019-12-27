@@ -37,6 +37,9 @@ spec:
         {{- if .Values.kubermatic.dynamicDatacenters }}
         - -dynamic-datacenters=true
         {{- end }}
+        {{- if .Values.kubermatic.dynamicPresets }}
+        - -dynamic-presets=true
+        {{- end }}
         - -oidc-url={{ .Values.kubermatic.auth.tokenIssuer }}
         - -oidc-authenticator-client-id={{ .Values.kubermatic.auth.clientID }}
         - -oidc-skip-tls-verify={{ default false .Values.kubermatic.auth.skipTokenIssuerTLSVerify }}

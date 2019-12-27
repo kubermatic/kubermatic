@@ -297,10 +297,6 @@ spec:
       }
     # DockerRepository is the repository containing the Kubermatic dashboard image.
     dockerRepository: quay.io/kubermatic/ui-v2
-    # Presets is a YAML string containing pre-defined credentials for cloud providers.
-    presets: |-
-      presets:
-        items: []
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
       # Limits describes the maximum amount of compute resources allowed.
