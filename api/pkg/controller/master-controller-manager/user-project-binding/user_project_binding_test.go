@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac/test"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac/test"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/api/equality"

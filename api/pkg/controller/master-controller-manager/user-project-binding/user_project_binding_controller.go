@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 

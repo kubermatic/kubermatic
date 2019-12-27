@@ -33,7 +33,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/rbac"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
