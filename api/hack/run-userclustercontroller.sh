@@ -13,6 +13,8 @@ NAMESPACE="${NAMESPACE:-$(kubectl config view --minify|grep namespace |awk '{ pr
 CLUSTER_NAME="$(echo $NAMESPACE|sed 's/cluster-//')"
 CLUSTER_RAW="$(kubectl get cluster $CLUSTER_NAME -o json)"
 CLUSTER_URL="$(echo $CLUSTER_RAW|jq -r '.address.url')"
+# You must set the email address of the cluster owner, otherwise the controller will fail to start
+OWNER_EMAIL=""
 # We can not use the `admin-kubeconfig` secret because the user-cluster-controller-manager is
 # the one creating it in case of openshift. So we just use the internal kubeconfig and replace
 # the apiserver uurl
@@ -63,4 +65,5 @@ fi
     -logtostderr \
     -v=4 \
     -seed-kubeconfig=${SEED_KUBECONFIG} \
+    -owner-email=${OWNER_EMAIL} \
     ${ARGS}
