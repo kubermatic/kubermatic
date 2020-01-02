@@ -66,11 +66,13 @@ func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update prov
 	}
 
 	// add the routes cleanup finalizer
-	cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kuberneteshelper.AddFinalizer(cluster, routesCleanupFinalizer)
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to add %s finalizer: %v", routesCleanupFinalizer, err)
+	if !kuberneteshelper.HasFinalizer(cluster, routesCleanupFinalizer) {
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.AddFinalizer(cluster, routesCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to add %s finalizer: %v", routesCleanupFinalizer, err)
+		}
 	}
 	return cluster, nil
 }
@@ -300,11 +302,11 @@ func isHTTPError(err error, status int) bool {
 func (g *gcp) cleanUnusedRoutes(cluster *kubermaticv1.Cluster) error {
 	serviceAccount, err := GetCredentialsForCluster(cluster.Spec.Cloud, g.secretKeySelector)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get GCP service account: %v", err)
 	}
 	svc, projectID, err := ConnectToComputeService(serviceAccount)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to connect to GCP comput service: %v", err)
 	}
 	// filter routes on:
 	// - name prefix for routes created by gcp cloud provider
@@ -350,7 +352,7 @@ func (g *gcp) networkURL(project, network string) string {
 func isClusterRoute(cluster *kubermaticv1.Cluster, route *compute.Route) (bool, error) {
 	_, routeCIDR, err := net.ParseCIDR(route.DestRange)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to parse route destination CIDR: %v", err)
 	}
 	// Not responsible if this route's CIDR is not within our clusterCIDR
 	lastIP := make([]byte, len(routeCIDR.IP))
@@ -362,7 +364,7 @@ func isClusterRoute(cluster *kubermaticv1.Cluster, route *compute.Route) (bool, 
 	for _, clusterCIDRStr := range cluster.Spec.ClusterNetwork.Pods.CIDRBlocks {
 		_, clusterCIDR, err := net.ParseCIDR(clusterCIDRStr)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("failed to parse cluster CIDR: %v", err)
 		}
 		if clusterCIDR.Contains(routeCIDR.IP) || clusterCIDR.Contains(lastIP) {
 			return true, nil
