@@ -6,14 +6,16 @@ import (
 
 	"go.uber.org/zap"
 
+	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 
-	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -24,7 +26,7 @@ import (
 )
 
 const (
-	// This controller creates cluster role binding for the cluster creator with admin privileges
+	// This controller creates cluster role bindings for the API roles.
 	controllerName = "owner_binding_controller"
 )
 
@@ -54,7 +56,11 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, owner
 	}
 
 	// Watch for changes to ClusterRoles
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByName("admin"), predicateutil.ByLabel(cluster.UserClusterComponentKey, cluster.UserClusterRoleComponentValue)); err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByLabel(cluster.UserClusterComponentKey, cluster.UserClusterRoleComponentValue)); err != nil {
+		return fmt.Errorf("failed to establish watch for the ClusterRoles %v", err)
+	}
+	// Watch for changes to ClusterRoleBindings
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, enqueueAPIBindings(mgr.GetClient()), predicateutil.ByLabel(cluster.UserClusterComponentKey, cluster.UserClusterBindingComponentValue)); err != nil {
 		return fmt.Errorf("failed to establish watch for the ClusterRoles %v", err)
 	}
 
@@ -97,8 +103,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, clusterRole *rbacv1.Clust
 		}
 	}
 
-	// Add cluster owner only once when binding doesn't exist yet.
-	// Later the user can remove/add subjects from the binding using API
+	// Create Cluster Role Binding if doesn't exist
 	if existingClusterRoleBinding == nil {
 		log.Debug("creating cluster role binding for cluster role ", clusterRole.Name)
 		crb := &rbacv1.ClusterRoleBinding{
@@ -111,17 +116,39 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, clusterRole *rbacv1.Clust
 				Kind:     "ClusterRole",
 				Name:     clusterRole.Name,
 			},
-			Subjects: []rbacv1.Subject{
+		}
+		// Bind user who created the cluster to the `admin` ClusterRole.
+		// Add cluster owner only once when binding doesn't exist yet.
+		// Later the user can remove/add subjects from the binding using the API.
+		if clusterRole.Name == "admin" {
+			crb.Subjects = []rbacv1.Subject{
 				{
 					Kind:     rbacv1.UserKind,
 					APIGroup: rbacv1.GroupName,
 					Name:     r.ownerEmail,
 				},
-			},
+			}
 		}
 		if err := r.client.Create(r.ctx, crb); err != nil {
 			return fmt.Errorf("failed to create cluster role binding %v", err)
 		}
 	}
 	return nil
+}
+
+// enqueueAPIBindings enqueues the ClusterRoleBindings with a special label component=userClusterRole
+func enqueueAPIBindings(client ctrlruntimeclient.Client) *handler.EnqueueRequestsFromMapFunc {
+	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+		clusterRoleList := &rbacv1.ClusterRoleList{}
+		if err := client.List(context.Background(), clusterRoleList, ctrlruntimeclient.MatchingLabels{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue}); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list Cluster Roles: %v", err))
+			return []reconcile.Request{}
+		}
+
+		var request []reconcile.Request
+		for _, clusterRole := range clusterRoleList.Items {
+			request = append(request, reconcile.Request{NamespacedName: types.NamespacedName{Name: clusterRole.Name}})
+		}
+		return request
+	})}
 }

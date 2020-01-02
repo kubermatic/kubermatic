@@ -56,6 +56,25 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "role binding created for no admin role",
+			clusterRole: &rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{
+				Name:   "view",
+				Labels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+			}},
+			requestName: "view",
+			ownerEmail:  "test@test.com",
+			expectedBinding: rbacv1.ClusterRoleBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+				},
+				RoleRef: rbacv1.RoleRef{
+					APIGroup: rbacv1.GroupName,
+					Kind:     "ClusterRole",
+					Name:     "view",
+				},
+			},
+		},
 	}
 
 	for idx := range testCases {
