@@ -2,10 +2,8 @@
 
 approvers:
   - team-lifecycle
-  - team-seed
   - team-ui
 
 reviewers:
   - team-lifecycle
-  - team-seed
   - team-ui
