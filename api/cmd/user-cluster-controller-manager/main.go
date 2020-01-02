@@ -22,6 +22,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/nodecsrapprover"
 	openshiftmasternodelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-master-node-labeler"
 	openshiftseedsyncer "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/openshift-seed-syncer"
+	ownerbindingcreator "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/owner-binding-creator"
 	rbacusercluster "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/rbac"
 	usercluster "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources"
 	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
@@ -59,6 +60,7 @@ type controllerRunOptions struct {
 	nodelabels                    string
 	seedKubeconfig                string
 	openshiftConsoleCallbackURI   string
+	ownerEmail                    string
 }
 
 func main() {
@@ -83,11 +85,15 @@ func main() {
 	flag.StringVar(&runOp.nodelabels, "node-labels", "", "A json-encoded map of node labels. If set, those labels will be enforced on all nodes.")
 	flag.StringVar(&runOp.seedKubeconfig, "seed-kubeconfig", "", "Path to the seed kubeconfig. In-Cluster config will be used if unset")
 	flag.StringVar(&runOp.openshiftConsoleCallbackURI, "openshift-console-callback-uri", "", "The callback uri for the openshift console")
+	flag.StringVar(&runOp.ownerEmail, "owner-email", "", "An email address of the user who created the cluster. Used as default subject for the admin cluster role binding")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 
+	if runOp.ownerEmail == "" {
+		log.Fatal("-owner-email must be set")
+	}
 	if runOp.namespace == "" {
 		log.Fatal("-namespace must be set")
 	}
@@ -257,6 +263,10 @@ func main() {
 		log.Fatalw("Failed to register rolecloner controller", zap.Error(err))
 	}
 	log.Info("Registered rolecloner controller")
+	if err := ownerbindingcreator.Add(ctx, log, mgr, runOp.ownerEmail); err != nil {
+		log.Fatalw("Failed to register ownerbindingcreator controller", zap.Error(err))
+	}
+	log.Info("Registered ownerbindingcreator controller")
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{

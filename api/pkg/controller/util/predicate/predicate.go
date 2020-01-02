@@ -39,3 +39,18 @@ func ByName(names ...string) predicate.Funcs {
 		return namesSet.Has(m.GetName())
 	})
 }
+
+// ByLabel returns a predicate func that only includes objects with the given label
+func ByLabel(key, value string) predicate.Funcs {
+	return Factory(func(m metav1.Object, r runtime.Object) bool {
+		labels := m.GetLabels()
+		if labels != nil {
+			if existingValue, ok := labels[key]; ok {
+				if existingValue == value {
+					return true
+				}
+			}
+		}
+		return false
+	})
+}
