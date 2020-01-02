@@ -2,15 +2,12 @@
 
 approvers:
   - team-ui
-  - team-seed
 
 reviewers:
   - team-ui
-  - team-seed
 
 labels:
   - team/ui
-  - team/seed
 
 options:
   no_parent_owners: true
