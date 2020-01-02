@@ -85,7 +85,7 @@ func main() {
 	flag.StringVar(&runOp.nodelabels, "node-labels", "", "A json-encoded map of node labels. If set, those labels will be enforced on all nodes.")
 	flag.StringVar(&runOp.seedKubeconfig, "seed-kubeconfig", "", "Path to the seed kubeconfig. In-Cluster config will be used if unset")
 	flag.StringVar(&runOp.openshiftConsoleCallbackURI, "openshift-console-callback-uri", "", "The callback uri for the openshift console")
-	flag.StringVar(&runOp.ownerEmail, "owner-email", "", "An email address of the user who created the cluster. Used to create binding for the admin cluster role")
+	flag.StringVar(&runOp.ownerEmail, "owner-email", "", "An email address of the user who created the cluster. Used as default subject for the admin cluster role binding")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)

@@ -11,7 +11,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -71,24 +70,15 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log := r.log.With("ClusterRole", request.Name)
 	log.Debug("Reconciling")
 
-	clusterRole := &rbacv1.ClusterRole{}
-	if err := r.client.Get(r.ctx, request.NamespacedName, clusterRole); err != nil {
-		if kerrors.IsNotFound(err) {
-			log.Debug("cluster role not found, returning")
-			return reconcile.Result{}, nil
-		}
-		return reconcile.Result{}, fmt.Errorf("failed to get cluster role: %v", err)
-	}
-
-	err := r.reconcile(log, clusterRole)
+	err := r.reconcile(log, request.Name)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Event(clusterRole, corev1.EventTypeWarning, "AddingBindingFailed", err.Error())
+		r.recorder.Event(&rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{Name: request.Name}}, corev1.EventTypeWarning, "AddingBindingFailed", err.Error())
 	}
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(log *zap.SugaredLogger, clusterRole *rbacv1.ClusterRole) error {
+func (r *reconciler) reconcile(log *zap.SugaredLogger, clusterRoleName string) error {
 
 	clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
 	if err := r.client.List(r.ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue}); err != nil {
@@ -97,7 +87,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, clusterRole *rbacv1.Clust
 
 	var existingClusterRoleBinding *rbacv1.ClusterRoleBinding
 	for _, clusterRoleBinding := range clusterRoleBindingList.Items {
-		if clusterRoleBinding.RoleRef.Name == clusterRole.Name {
+		if clusterRoleBinding.RoleRef.Name == clusterRoleName {
 			existingClusterRoleBinding = clusterRoleBinding.DeepCopy()
 			break
 		}
@@ -105,22 +95,22 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, clusterRole *rbacv1.Clust
 
 	// Create Cluster Role Binding if doesn't exist
 	if existingClusterRoleBinding == nil {
-		log.Debug("creating cluster role binding for cluster role ", clusterRole.Name)
+		log.Debug("creating cluster role binding for cluster role ", clusterRoleName)
 		crb := &rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   fmt.Sprintf("%s:%s", rand.String(10), clusterRole.Name),
+				Name:   fmt.Sprintf("%s:%s", rand.String(10), clusterRoleName),
 				Labels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
 			},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
 				Kind:     "ClusterRole",
-				Name:     clusterRole.Name,
+				Name:     clusterRoleName,
 			},
 		}
 		// Bind user who created the cluster to the `admin` ClusterRole.
 		// Add cluster owner only once when binding doesn't exist yet.
 		// Later the user can remove/add subjects from the binding using the API.
-		if clusterRole.Name == "admin" {
+		if clusterRoleName == "admin" {
 			crb.Subjects = []rbacv1.Subject{
 				{
 					Kind:     rbacv1.UserKind,
@@ -145,10 +135,10 @@ func enqueueAPIBindings(client ctrlruntimeclient.Client) *handler.EnqueueRequest
 			return []reconcile.Request{}
 		}
 
-		var request []reconcile.Request
+		var requests []reconcile.Request
 		for _, clusterRole := range clusterRoleList.Items {
-			request = append(request, reconcile.Request{NamespacedName: types.NamespacedName{Name: clusterRole.Name}})
+			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: clusterRole.Name}})
 		}
-		return request
+		return requests
 	})}
 }

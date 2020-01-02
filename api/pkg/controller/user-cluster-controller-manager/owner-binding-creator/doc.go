@@ -1,6 +1,6 @@
 /*
-The ownerbindingcreator controller is responsible for init the API Cluster Role Bindings.
-It creates Cluster Role Bindings for the all API Cluster Roles (containing label `component=userClusterRole`)
-and adds subject with the user who created the cluster for the `admin` Cluster Role.
+The ownerbindingcreator controller is responsible for making sure that the binding exists and if it doesn't, will create
+it and use the cluster owner as subject. It is not responsible for doing any changes to the binding once it exists, this
+is done by users via the API/UI.
 */
 package ownerbindingcreator
