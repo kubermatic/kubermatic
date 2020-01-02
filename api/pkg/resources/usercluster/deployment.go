@@ -108,6 +108,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				fmt.Sprintf("-openshift=%t", openshift),
 				"-version", data.Cluster().Spec.Version.String(),
 				"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
+				"-owner-email", data.Cluster().Status.UserEmail,
 			}, getNetworkArgs(data)...)
 
 			if openshiftConsoleCallbackURI := data.Cluster().Address.OpenshiftConsoleCallBack; openshiftConsoleCallbackURI != "" {
