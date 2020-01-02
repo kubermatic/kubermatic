@@ -1,6 +1,6 @@
 // +build e2e
 
-package e2e
+package api
 
 import (
 	"fmt"
@@ -41,12 +41,12 @@ func TestListCredentials(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := GetMasterToken()
+			masterToken, err := retrieveMasterToken()
 			if err != nil {
 				t.Fatalf("can not get master token due error: %v", err)
 			}
 
-			apiRunner := CreateAPIRunner(masterToken, t)
+			apiRunner := createRunner(masterToken, t)
 			credentialList, err := apiRunner.ListCredentials(tc.provider)
 			if err != nil {
 				t.Fatalf("can not get credential names for provider %s: %v", tc.provider, err)
@@ -82,7 +82,7 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := GetMasterToken()
+			masterToken, err := retrieveMasterToken()
 			if err != nil {
 				t.Fatalf("can not get master token due error: %v", err)
 			}

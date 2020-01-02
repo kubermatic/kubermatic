@@ -1,6 +1,6 @@
 // +build create
 
-package e2e
+package api
 
 import (
 	"testing"
@@ -38,12 +38,12 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := GetMasterToken()
+			masterToken, err := retrieveMasterToken()
 			if err != nil {
 				t.Fatalf("can not get master token %v", err)
 			}
 
-			apiRunner := CreateAPIRunner(masterToken, t)
+			apiRunner := createRunner(masterToken, t)
 			project, cluster := createProjectWithCluster(t, apiRunner, tc.dc, tc.credential, tc.version, tc.location, tc.replicas)
 			teardown := cleanUpProject(project.ID, getMaxAttempts)
 			defer teardown(t)
@@ -143,7 +143,7 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 	}
 }
 
-func createProjectWithCluster(t *testing.T, apiRunner *APIRunner, dc, credential, version, location string, replicas int32) (*v1.Project, *v1.Cluster) {
+func createProjectWithCluster(t *testing.T, apiRunner *runner, dc, credential, version, location string, replicas int32) (*v1.Project, *v1.Cluster) {
 	project, err := apiRunner.CreateProject(rand.String(10))
 	if err != nil {
 		t.Fatalf("can not create project %v", err)

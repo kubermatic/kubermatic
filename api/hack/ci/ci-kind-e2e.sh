@@ -8,7 +8,7 @@ source ./api/hack/lib.sh
 export KUBERMATIC_NO_WORKER_NAME=true
 export GIT_HEAD_HASH="$(git rev-parse HEAD)"
 
-export KUBERMATIC_VERSION="${UPGRADE_TEST_BASE_HASH:-$(git rev-parse HEAD)}"
+export KUBERMATIC_VERSION="${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH}"
 echodate "Setting up kubermatic in kind on revision ${KUBERMATIC_VERSION}"
 source ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
 echodate "Done setting up kubermatic in kind"

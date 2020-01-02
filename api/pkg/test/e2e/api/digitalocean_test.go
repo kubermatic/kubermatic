@@ -1,6 +1,6 @@
 // +build create
 
-package e2e
+package api
 
 import (
 	"fmt"
@@ -36,12 +36,12 @@ func TestCreateDOCluster(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := GetMasterToken()
+			masterToken, err := retrieveMasterToken()
 			if err != nil {
 				t.Fatalf("can not get master token %v", err)
 			}
 
-			apiRunner := CreateAPIRunner(masterToken, t)
+			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
 				t.Fatalf("can not create project %v", err)
@@ -132,12 +132,12 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := GetMasterToken()
+			masterToken, err := retrieveMasterToken()
 			if err != nil {
 				t.Fatalf("can not get master token %v", err)
 			}
 
-			apiRunner := CreateAPIRunner(masterToken, t)
+			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
 				t.Fatalf("can not create project %v", GetErrorResponse(err))
@@ -190,12 +190,12 @@ func TestGetClusterKubeconfig(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := GetMasterToken()
+			masterToken, err := retrieveMasterToken()
 			if err != nil {
 				t.Fatalf("can not get master token %v", err)
 			}
 
-			apiRunner := CreateAPIRunner(masterToken, t)
+			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
 				t.Fatalf("can not create project %v", err)

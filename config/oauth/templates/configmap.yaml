@@ -4,7 +4,7 @@ metadata:
   name: dex
 data:
   config.yaml: |
-    issuer: https://{{ .Values.dex.ingress.host }}{{ .Values.dex.ingress.path }}
+    issuer: {{ .Values.dex.ingress.scheme }}://{{ .Values.dex.ingress.host }}{{ .Values.dex.ingress.path }}
     oauth2:
       skipApprovalScreen: true
       responseTypes:
@@ -17,27 +17,30 @@ data:
         inCluster: true
     web:
       http: 0.0.0.0:5556
+    # this is a requirement for static passwords, so we just enable it by default
+    enablePasswordDB: true
 {{ if .Values.dex.expiry }}
     expiry:
 {{ toYaml .Values.dex.expiry | indent 6 }}
 {{- end }}
 {{ if .Values.dex.grpc }}
-    enablePasswordDB: true
     grpc:
-{{ toYaml .Values.dex.grpc.api | indent 7 }}
+{{ toYaml .Values.dex.grpc.api | indent 6 }}
 {{- end }}
 {{ if .Values.dex.connectors }}
     connectors:
-{{ toYaml .Values.dex.connectors | indent 7 }}
+{{ toYaml .Values.dex.connectors | indent 6 }}
 {{- end }}
 {{ if .Values.dex.clients }}
     staticClients:
-{{ toYaml .Values.dex.clients | indent 7 }}
+{{ toYaml .Values.dex.clients | indent 6 }}
 {{- end }}
-{{ if .Values.dex.staticPasswordLogins }}
-{{ if not .Values.dex.grpc }}
-    enablePasswordDB: true
-{{- end }}
+{{ if or .Values.dex.staticPasswords .Values.dex.staticPasswordLogins }}
     staticPasswords:
-{{ toYaml .Values.dex.staticPasswordLogins | indent 7 }}
+{{- if .Values.dex.staticPasswords }}
+{{ toYaml .Values.dex.staticPasswords | indent 6 }}
+{{- end }}
+{{- if .Values.dex.staticPasswordLogins }}
+{{ toYaml .Values.dex.staticPasswordLogins | indent 6 }}
+{{- end }}
 {{- end }}

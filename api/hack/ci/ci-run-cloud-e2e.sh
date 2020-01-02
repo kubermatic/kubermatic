@@ -2,26 +2,24 @@
 
 set -euo pipefail
 
-SDIR=$(dirname $0)
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
+source ./api/hack/lib.sh
 
+if [ -z "${KUBERMATIC_DEX_DEV_E2E_USERNAME:-}" ]; then
+  echo "KUBERMATIC_DEX_DEV_E2E_USERNAME must be defined."
+  exit 1
+fi
 
-export KUBERMATIC_OIDC_CLIENT_ID="kubermatic"
-export KUBERMATIC_OIDC_CLIENT_SECRET="ZXhhbXBsZS1hcHAtc2VjcmV0"
-export KUBERMATIC_OIDC_ISSUER="https://cloud.kubermatic.io/dex"
-export KUBERMATIC_OIDC_REDIRECT_URI="http://localhost:8000"
-export KUBERMATIC_OIDC_ISSUER_URL_PREFIX="dex"
+if [ -z "${KUBERMATIC_DEX_DEV_E2E_PASSWORD:-}" ]; then
+  echo "KUBERMATIC_DEX_DEV_E2E_PASSWORD must be defined."
+  exit 1
+fi
+
+export KUBERMATIC_DEX_VALUES_FILE=$(realpath api/hack/ci/testdata/oauth_values_cloud.yaml)
+export KUBERMATIC_OIDC_LOGIN="$KUBERMATIC_DEX_DEV_E2E_USERNAME"
+export KUBERMATIC_OIDC_PASSWORD="$KUBERMATIC_DEX_DEV_E2E_PASSWORD"
 export KUBERMATIC_SCHEME="https"
 export KUBERMATIC_HOST="cloud.kubermatic.io"
 
-
-(
-cd ${SDIR}/../../pkg/test/e2e/api/utils/oidc-proxy-client
-make build
-)
-
-export KUBERMATIC_OIDC_USER=${KUBERMATIC_DEX_DEV_E2E_USERNAME:-"roxy@loodse.com"}
-export KUBERMATIC_OIDC_PASSWORD=${KUBERMATIC_DEX_DEV_E2E_PASSWORD:-"password"}
-
-
-echo "running the API E2E tests"
-go test -v -tags=cloud -timeout 25m ${SDIR}/../../pkg/test/e2e/api
+echodate "Running Kubermatic API end-to-end tests..."
+go test -v -tags=cloud -timeout 25m ./api/pkg/test/e2e/api

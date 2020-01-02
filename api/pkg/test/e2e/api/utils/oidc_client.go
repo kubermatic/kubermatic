@@ -1,3 +1,5 @@
+// TODO(2.13): Package utils is deprecated and only used for upgrade tests
+// from pre 2.13 releases. Once 2.13 is released, remove this file.
 package utils
 
 import (

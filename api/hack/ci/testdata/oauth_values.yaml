@@ -1,81 +1,44 @@
+# This file is not just a Helm values.yaml, but also used by the e2e test for constructing
+# a matching OIDC client for fetching an access token. The file is also used by the dashboard
+# when setting up Kubermatic, so the configuration must match.
+# NB: Our Go code does not load the default values.yaml, so especially for the ingress
+# config you cannot rely on defaults.
+
 dex:
-  image:
-    repository: "quay.io/dexidp/dex"
-    tag: "v2.16.0"
-  replicas: 2
+  replicas: 1
   ingress:
-    host: ""
-    path: ""
-  expiry:
-    signingKeys: "6h"
-    idTokens: "24h"
-#  connectors:
-#  - type: github
-#    id: github
-#    name: GitHub
-#    config:
-#      clientID: some-client-id
-#      clientSecret: some-client-secret
-#      redirectURI: https://dev.kubermatic.io/dex/callback
-#      orgs:
-#      - name: kubermatic
-#
-#  clients:
-#  - id: kubermatic
-#    name: Kubermatic
-#    secret: very-secret
-#    RedirectURIs:
-#    - http://localhost:8000
-#    - https://dev.kubermatic.io
-#    - http://localhost:8000/projects
-#    - https://dev.kubermatic.io/projects
-#
-#  staticPasswordLogins:
-#  - email: "admin@example.com"
-#    # bcrypt hash of the string "password"
-#    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
-#    username: "admin"
-#    userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+    scheme: http
+    # this the the service name inside the kind cluster, so that the Kubermatic pods can find Dex to validate our token
+    host: dex.oauth:5556
+    path: "/dex"
+    class: non-existent
   clients:
   - id: kubermatic
     name: Kubermatic
+    # change this to a new random secret after 2.13 is released
     secret: ZXhhbXBsZS1hcHAtc2VjcmV0
     RedirectURIs:
+    # used by Kubermatic's tests
     - http://localhost:8000
-    - https://dev.kubermatic.io
+    # used by the dashboard
     - http://localhost:8000/projects
-    - https://dev.kubermatic.io/projects
-  - id: kubermaticIssuer
-    name: KubermaticIssuer
-    secret: MTc2ODQ3MDg4MmRlMzRjNjBiZjVlNzk0
-    RedirectURIs:
-    - http://localhost:8080/api/v1/kubeconfig
+  # The Github connector is only here to make the upgrade tests for pre-2.13 releases
+  # work. It is not used during tests and only exists to force Dex to output a certain
+  # kind of HTML markup that we then parse. Remove this connector after 2.13 was released.
   connectors:
   - type: github
     id: github
     name: GitHub
     config:
-      clientID: 0233c724a6d3c31f27a4
-      clientSecret: 1026f76467f95d274dcab0cfb6d16df168481736
-      redirectURI: https://dev.kubermatic.io/dex/callback
-      orgs:
-      - name: kubermatic
-  resources:
-    requests:
-      cpu: 10m
-      memory: 128Mi
-    limits:
-      cpu: 50m
-      memory: 200Mi
-
-  nodeSelector: {}
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app: dex
-          topologyKey: kubernetes.io/hostname
-        weight: 10
-  tolerations: []
+      clientID: totally-irrelevant
+      clientSecret: equally-irrelevant
+      redirectURI: https://example.com/does/not/matter
+  staticPasswords:
+  - email: "roxy@loodse.com"
+    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+    username: "roxy"
+    userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+  - email: "roxy2@loodse.com"
+    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+    username: "roxy2"
+    userID: "08a8684b-db88-4b73-90a9-3cd1661f5467"
