@@ -1,9 +1,10 @@
+{{- if ne .Values.dex.ingress.class "non-existent" }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: dex
   annotations:
-    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/ingress.class: "{{ .Values.dex.ingress.class }}"
 spec:
   tls:
   - hosts:
@@ -20,4 +21,5 @@ spec:
           serviceName: dex
           servicePort: 5556
 {{ if .Values.dex.grpc }}{{ toYaml .Values.dex.grpc.ingress | trim | indent 6 }}
+{{- end }}
 {{- end }}
