@@ -6,32 +6,45 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
+	"net/url"
+	"path"
+	"strings"
 
+	"go.uber.org/zap"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 )
 
 const (
-	defaultNetwork               = "global/networks/default"
+	DefaultNetwork               = "global/networks/default"
+	computeAPIEndpoint           = "https://www.googleapis.com/compute/v1/"
 	firewallSelfCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall-self"
 	firewallICMPCleanupFinalizer = "kubermatic.io/cleanup-gcp-firewall-icmp"
+	routesCleanupFinalizer       = "kubermatic.io/cleanup-gcp-routes"
+
+	k8sNodeRouteTag          = "k8s-node-route"
+	k8sNodeRoutePrefixRegexp = "kubernetes-.*"
 )
 
 type gcp struct {
 	secretKeySelector provider.SecretKeySelectorValueFunc
+	log               *zap.SugaredLogger
 }
 
 // NewCloudProvider creates a new gcp provider.
 func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provider.CloudProvider {
 	return &gcp{
 		secretKeySelector: secretKeyGetter,
+		log:               log.Logger,
 	}
 }
 
@@ -41,7 +54,7 @@ func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update prov
 	var err error
 	if cluster.Spec.Cloud.GCP.Network == "" && cluster.Spec.Cloud.GCP.Subnetwork == "" {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.GCP.Network = defaultNetwork
+			cluster.Spec.Cloud.GCP.Network = DefaultNetwork
 		})
 		if err != nil {
 			return nil, err
@@ -52,6 +65,15 @@ func (g *gcp) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update prov
 		return nil, err
 	}
 
+	// add the routes cleanup finalizer
+	if !kuberneteshelper.HasFinalizer(cluster, routesCleanupFinalizer) {
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.AddFinalizer(cluster, routesCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to add %s finalizer: %v", routesCleanupFinalizer, err)
+		}
+	}
 	return cluster, nil
 }
 
@@ -70,6 +92,7 @@ func (g *gcp) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 // CleanUpCloudProvider removes firewall rules and related finalizer.
 func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+
 	serviceAccount, err := GetCredentialsForCluster(cluster.Spec.Cloud, g.secretKeySelector)
 	if err != nil {
 		return nil, err
@@ -112,6 +135,18 @@ func (g *gcp) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provide
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to remove %s finalizer: %v", firewallICMPCleanupFinalizer, err)
+		}
+	}
+
+	if kuberneteshelper.HasFinalizer(cluster, routesCleanupFinalizer) {
+		if err := g.cleanUnusedRoutes(cluster); err != nil {
+			return nil, err
+		}
+		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(cluster, routesCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to remove %s finalizer: %v", routesCleanupFinalizer, err)
 		}
 	}
 
@@ -261,4 +296,89 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 func isHTTPError(err error, status int) bool {
 	gerr, ok := err.(*googleapi.Error)
 	return ok && gerr.Code == status
+}
+
+// cleanUnusedRoutes finds and remove unused gcp routes
+func (g *gcp) cleanUnusedRoutes(cluster *kubermaticv1.Cluster) error {
+	serviceAccount, err := GetCredentialsForCluster(cluster.Spec.Cloud, g.secretKeySelector)
+	if err != nil {
+		return fmt.Errorf("failed to get GCP service account: %v", err)
+	}
+	svc, projectID, err := ConnectToComputeService(serviceAccount)
+	if err != nil {
+		return fmt.Errorf("failed to connect to GCP comput service: %v", err)
+	}
+	// filter routes on:
+	// - name prefix for routes created by gcp cloud provider
+	// - default tag for routes created by gcp cloud provider
+	// - GCP network
+	filterStr := fmt.Sprintf("(name eq \"%s\")(description eq \"%s\")(network eq \".*%s.*\")",
+		k8sNodeRoutePrefixRegexp,
+		k8sNodeRouteTag,
+		g.networkURL(projectID, cluster.Spec.Cloud.GCP.Network))
+
+	routesList, err := svc.Routes.List(projectID).Filter(filterStr).Do()
+	if err != nil {
+		return fmt.Errorf("failed to list GCP routes: %v", err)
+	}
+	logger := g.log.With("cluster", cluster.Name)
+	for _, route := range routesList.Items {
+		if isMyRoute, err := isClusterRoute(cluster, route); err != nil || !isMyRoute {
+			if err != nil {
+				logger.Warnf("failed to determine route [%s] CIDR", route.Name)
+			}
+			continue
+		}
+		if isNextHopNotFound(route) {
+			logger.Infof("deleting unused GCP route [%s]", route.Name)
+			if _, err := svc.Routes.Delete(projectID, route.Name).Do(); err != nil && !isHTTPError(err, http.StatusNotFound) {
+				return fmt.Errorf("failed to delete GCP route %s: %v", route.Name, err)
+			}
+		}
+	}
+	return nil
+}
+
+// networkURL checks the network name and retuen the network URL based on it
+func (g *gcp) networkURL(project, network string) string {
+	url, err := url.Parse(network)
+	if err == nil && url.Host != "" {
+		return network
+	}
+	return computeAPIEndpoint + strings.Join([]string{"projects", project, "global", "networks", path.Base(network)}, "/")
+}
+
+// isClusterRoute checks if the route CIDR is part of the Cluster CIDR
+func isClusterRoute(cluster *kubermaticv1.Cluster, route *compute.Route) (bool, error) {
+	_, routeCIDR, err := net.ParseCIDR(route.DestRange)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse route destination CIDR: %v", err)
+	}
+	// Not responsible if this route's CIDR is not within our clusterCIDR
+	lastIP := make([]byte, len(routeCIDR.IP))
+	for i := range lastIP {
+		lastIP[i] = routeCIDR.IP[i] | ^routeCIDR.Mask[i]
+	}
+
+	// check across all cluster cidrs
+	for _, clusterCIDRStr := range cluster.Spec.ClusterNetwork.Pods.CIDRBlocks {
+		_, clusterCIDR, err := net.ParseCIDR(clusterCIDRStr)
+		if err != nil {
+			return false, fmt.Errorf("failed to parse cluster CIDR: %v", err)
+		}
+		if clusterCIDR.Contains(routeCIDR.IP) || clusterCIDR.Contains(lastIP) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// isNextHopNotFound checks if the route has a NEXT_HOP_INSTANCE_NOT_FOUND warning
+func isNextHopNotFound(route *compute.Route) bool {
+	for _, w := range route.Warnings {
+		if w.Code == "NEXT_HOP_INSTANCE_NOT_FOUND" {
+			return true
+		}
+	}
+	return false
 }
