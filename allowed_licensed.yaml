@@ -1,23 +1,30 @@
 
 blacklist:
   - GPL-2.0
+  - LGPL-3.0
 
 whitelist:
   - Apache-2.0
   - MIT
   - NewBSD
   - FreeBSD
-  - LGPL-3.0
-  - MPL-2.0
+  - ISC
 
 exceptions:
-  - github.com/kr/logfmt
-  - github.com/davecgh/go-spew/spew/testdata
-  - github.com/howeyc/gopass
-  - github.com/davecgh/go-spew/spew
-  - github.com/go-openapi/inflect
-  - bitbucket.org/ww/goautoneg
-  - github.com/ajeddeloh/go-json
-  - github.com/opencontainers/go-digest # Cannot detect the license for some reason. Its Apache 2.0
+  - github.com/kr/logfmt  # MIT - No separate license file included.
+  - github.com/go-openapi/inflect  # MIT - Cannot detect the license for some reason.
+  - github.com/opencontainers/go-digest # Apache 2.0 - Cannot detect the license for some reason.
   - github.com/cristim/ec2-instances-info # Public domain: https://github.com/cristim/ec2-instances-info/blob/master/LICENSE.
   - github.com/cristim/ec2-instances-info/data # MIT: https://github.com/powdahound/ec2instances.info/blob/master/LICENSE.
+  - github.com/hashicorp/hcl/json/scanner # MPL-2.0 - used in transient vendor projects 
+  - github.com/hashicorp/hcl/hcl/strconv # MPL-2.0 - used in transient vendor projects 
+  - github.com/hashicorp/hcl/hcl/printer # MPL-2.0 - used in transient vendor projects 
+  - github.com/hashicorp/hcl/hcl/ast # MPL-2.0 - used in transient vendor projects 
+  - github.com/hashicorp/hcl/hcl/parser # MPL-2.0 - used in transient vendor projects 
+  - github.com/hashicorp/hcl/json/token # MPL-2.0 - used in transient vendor projects 
+  - github.com/hashicorp/golang-lru # MPL-2.0 - used in transient vendor projects 
+  - github.com/hashicorp/hcl # MPL-2.0 - used in transient vendor projects 
+  - github.com/hashicorp/hcl/hcl/scanner # MPL-2.0 - used in transient vendor projects 
+  - github.com/hashicorp/golang-lru/simplelru # MPL-2.0 - used in transient vendor projects 
+  - github.com/hashicorp/hcl/json/parser # MPL-2.0 - used in transient vendor projects 
+  - github.com/hashicorp/hcl/hcl/token # MPL-2.0 - used in transient vendor projects 
