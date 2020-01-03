@@ -300,12 +300,12 @@ func TestBindUserToClusterRole(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			name:             "scenario 1: bind user to role-1",
+			name:             "scenario 1: bind user to role-1, when cluster role binding doesn't exist",
 			roleName:         "role-1",
 			body:             `{"userEmail":"test@example.com"}`,
-			expectedResponse: `{"subjects":[{"kind":"User","apiGroup":"rbac.authorization.k8s.io","name":"test@example.com"}],"roleRefName":"role-1"}`,
+			expectedResponse: `{"error":{"code":500,"message":"the cluster role binding not found"}}`,
 			clusterToGet:     test.GenDefaultCluster().Name,
-			httpStatus:       http.StatusOK,
+			httpStatus:       http.StatusInternalServerError,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
 			),
