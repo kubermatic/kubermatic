@@ -29,8 +29,6 @@ type KubermaticConfiguration struct {
 
 // KubermaticConfigurationSpec is the spec for a Kubermatic installation.
 type KubermaticConfigurationSpec struct {
-	// Domain is the base domain where the dashboard shall be available.
-	Domain string `json:"domain"`
 	// ImagePullSecret is used to authenticate against Docker registries.
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 	// Auth defines keys and URLs for Dex.
@@ -53,11 +51,8 @@ type KubermaticConfigurationSpec struct {
 	// Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
 	// if this is set to LoadBalancerStrategy.
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
-	// CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)
-	// that will be used to acquire the certificate for the configured domain.
-	// To use a namespaced Issuer, set the Kind to "Issuer" and manually create the
-	// matching Issuer in Kubermatic's namespace.
-	CertificateIssuer corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
+	// Ingress contains settings for making the API and UI accessible remotely.
+	Ingress KubermaticIngressConfiguration `json:"ingress,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
@@ -185,6 +180,24 @@ type KubermaticAddonConfiguration struct {
 	// DockerRepository is the repository containing the Docker image containing
 	// the possible addon manifests.
 	DockerRepository string `json:"dockerRepository,omitempty"`
+}
+
+type KubermaticIngressConfiguration struct {
+	// Domain is the base domain where the dashboard shall be available. Even with
+	// a disabled Ingress, this must always be a valid hostname.
+	Domain string `json:"domain"`
+
+	// ClassName is the Ingress resource's class name, used for selecting the appropriate
+	// ingress controller. If set to "non-existent", no Ingress will be created at all,
+	// in which case the CertificateIssuer setting can also be left empty, as no
+	// Certificate resource will be created.
+	ClassName string `json:"className,omitempty"`
+
+	// CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)
+	// that will be used to acquire the certificate for the configured domain.
+	// To use a namespaced Issuer, set the Kind to "Issuer" and manually create the
+	// matching Issuer in Kubermatic's namespace.
+	CertificateIssuer corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
 }
 
 // KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.

@@ -286,6 +286,11 @@ func (r *Reconciler) reconcileServices(config *operatorv1alpha1.KubermaticConfig
 }
 
 func (r *Reconciler) reconcileIngresses(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	if config.Spec.Ingress.ClassName == common.NonExistentIngressClass {
+		logger.Debug("Skipping Ingress creation", "class", config.Spec.Ingress.ClassName)
+		return nil
+	}
+
 	logger.Debug("Reconciling Ingresses")
 
 	creators := []reconciling.NamedIngressCreatorGetter{
@@ -300,6 +305,11 @@ func (r *Reconciler) reconcileIngresses(config *operatorv1alpha1.KubermaticConfi
 }
 
 func (r *Reconciler) reconcileCertificates(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	if config.Spec.Ingress.ClassName == common.NonExistentIngressClass && config.Spec.Ingress.CertificateIssuer.Name == "" {
+		logger.Debug("Skipping Certificate creation because Ingress and Issuer are disabled")
+		return nil
+	}
+
 	logger.Debug("Reconciling Certificates")
 
 	creators := []reconciling.NamedCertificateCreatorGetter{

@@ -173,12 +173,17 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "userCluster.etcdVolumeSize", "value", copy.Spec.UserCluster.EtcdVolumeSize)
 	}
 
+	if copy.Spec.Ingress.ClassName == "" {
+		copy.Spec.Ingress.ClassName = defaultIngressClass
+		logger.Debugw("Defaulting field", "field", "ingress.className", "value", copy.Spec.Ingress.ClassName)
+	}
+
 	// cert-manager's default is Issuer, but since we do not create an Issuer,
 	// it does not make sense to force to change the configuration for the
 	// default case
-	if copy.Spec.CertificateIssuer.Kind == "" {
-		copy.Spec.CertificateIssuer.Kind = certmanagerv1alpha2.ClusterIssuerKind
-		logger.Debugw("Defaulting field", "field", "certificateIssuer.kind", "value", copy.Spec.CertificateIssuer.Kind)
+	if copy.Spec.Ingress.CertificateIssuer.Kind == "" {
+		copy.Spec.Ingress.CertificateIssuer.Kind = certmanagerv1alpha2.ClusterIssuerKind
+		logger.Debugw("Defaulting field", "field", "ingress.certificateIssuer.kind", "value", copy.Spec.Ingress.CertificateIssuer.Kind)
 	}
 
 	if copy.Spec.UI.Config == "" {
@@ -217,13 +222,13 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "auth.issuerClientID", "value", auth.IssuerClientID)
 	}
 
-	if auth.TokenIssuer == "" && copy.Spec.Domain != "" {
-		auth.TokenIssuer = fmt.Sprintf("https://%s/dex", copy.Spec.Domain)
+	if auth.TokenIssuer == "" && copy.Spec.Ingress.Domain != "" {
+		auth.TokenIssuer = fmt.Sprintf("https://%s/dex", copy.Spec.Ingress.Domain)
 		logger.Debugw("Defaulting field", "field", "auth.tokenIssuer", "value", auth.TokenIssuer)
 	}
 
-	if auth.IssuerRedirectURL == "" && copy.Spec.Domain != "" {
-		auth.IssuerRedirectURL = fmt.Sprintf("https://%s/api/v1/kubeconfig", copy.Spec.Domain)
+	if auth.IssuerRedirectURL == "" && copy.Spec.Ingress.Domain != "" {
+		auth.IssuerRedirectURL = fmt.Sprintf("https://%s/api/v1/kubeconfig", copy.Spec.Ingress.Domain)
 		logger.Debugw("Defaulting field", "field", "auth.issuerRedirectURL", "value", auth.IssuerRedirectURL)
 	}
 

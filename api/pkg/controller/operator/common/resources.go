@@ -33,9 +33,13 @@ const (
 	// OpenshiftAddonsFileName is the name of the openshift addons manifest file
 	// in the master files.
 	OpenshiftAddonsFileName = "openshift-addons.yaml"
+
 	// KubernetesAddonsFileName is the name of the kubernetes addons manifest file
 	// in the master files.
 	KubernetesAddonsFileName = "kubernetes-addons.yaml"
+
+	// NonExistentIngressClass is used to disable the creation of an Ingress.
+	NonExistentIngressClass = "non-existent"
 
 	DockercfgSecretName                   = "dockercfg"
 	DexCASecretName                       = "dex-ca"

@@ -59,7 +59,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 				fmt.Sprintf("-seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertSecretKey),
 				fmt.Sprintf("-seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
-				fmt.Sprintf("-external-url=%s", cfg.Spec.Domain),
+				fmt.Sprintf("-external-url=%s", cfg.Spec.Ingress.Domain),
 				fmt.Sprintf("-datacenter-name=%s", seed.Name),
 				fmt.Sprintf("-etcd-disk-size=%s", cfg.Spec.UserCluster.EtcdVolumeSize),
 				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
