@@ -1,6 +1,6 @@
 // +build integration
 
-package usercluster
+package resources
 
 import (
 	"context"

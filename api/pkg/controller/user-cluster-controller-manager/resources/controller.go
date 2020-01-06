@@ -1,4 +1,4 @@
-package usercluster
+package resources
 
 import (
 	"context"
