@@ -86,6 +86,8 @@ type KubermaticAPIConfiguration struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
+	// Replicas sets the number of pod replicas for the API deployment.
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // KubermaticUIConfiguration configures the dashboard.
@@ -96,6 +98,8 @@ type KubermaticUIConfiguration struct {
 	Config string `json:"config,omitempty"`
 	// Resources describes the requested and maximum allowed CPU/memory usage.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Replicas sets the number of pod replicas for the UI deployment.
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // KubermaticSeedControllerConfiguration configures the Kubermatic seed controller-manager.
@@ -113,6 +117,8 @@ type KubermaticSeedControllerConfiguration struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
+	// Replicas sets the number of pod replicas for the seed-controller-manager.
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // KubermaticUserClusterConfiguration controls various aspects of the user-created clusters.
@@ -137,6 +143,8 @@ type KubermaticUserClusterConfiguration struct {
 	DisableAPIServerEndpointReconciling bool `json:"disableApiserverEndpointReconciling,omitempty"`
 	// EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
 	EtcdVolumeSize string `json:"etcdVolumeSize,omitempty"`
+	// APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
+	APIServerReplicas *int32 `json:"apiserverReplicas,omitempty"`
 }
 
 // KubermaticAddonsConfiguration controls the optional additions installed into each user cluster.
@@ -192,6 +200,8 @@ type KubermaticMasterControllerConfiguration struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
+	// Replicas sets the number of pod replicas for the master-controller-manager.
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // KubermaticProjectsMigratorConfiguration configures the Kubermatic master controller-manager.

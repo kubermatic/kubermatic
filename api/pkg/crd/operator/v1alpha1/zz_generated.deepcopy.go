@@ -23,6 +23,11 @@ func (in *KubermaticAPIConfiguration) DeepCopyInto(out *KubermaticAPIConfigurati
 		**out = **in
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.Replicas != nil {
+		in, out := &in.Replicas, &out.Replicas
+		*out = new(int32)
+		**out = **in
+	}
 	return
 }
 
@@ -198,6 +203,11 @@ func (in *KubermaticMasterControllerConfiguration) DeepCopyInto(out *KubermaticM
 		**out = **in
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.Replicas != nil {
+		in, out := &in.Replicas, &out.Replicas
+		*out = new(int32)
+		**out = **in
+	}
 	return
 }
 
@@ -236,6 +246,11 @@ func (in *KubermaticSeedControllerConfiguration) DeepCopyInto(out *KubermaticSee
 		**out = **in
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.Replicas != nil {
+		in, out := &in.Replicas, &out.Replicas
+		*out = new(int32)
+		**out = **in
+	}
 	return
 }
 
@@ -253,6 +268,11 @@ func (in *KubermaticSeedControllerConfiguration) DeepCopy() *KubermaticSeedContr
 func (in *KubermaticUIConfiguration) DeepCopyInto(out *KubermaticUIConfiguration) {
 	*out = *in
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.Replicas != nil {
+		in, out := &in.Replicas, &out.Replicas
+		*out = new(int32)
+		**out = **in
+	}
 	return
 }
 
@@ -271,6 +291,11 @@ func (in *KubermaticUserClusterConfiguration) DeepCopyInto(out *KubermaticUserCl
 	*out = *in
 	in.Addons.DeepCopyInto(&out.Addons)
 	out.Monitoring = in.Monitoring
+	if in.APIServerReplicas != nil {
+		in, out := &in.APIServerReplicas, &out.APIServerReplicas
+		*out = new(int32)
+		**out = **in
+	}
 	return
 }
 

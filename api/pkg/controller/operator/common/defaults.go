@@ -17,10 +17,16 @@ import (
 )
 
 const (
-	defaultPProfEndpoint  = ":6600"
-	defaultNodePortRange  = "30000-32767"
-	defaultEtcdVolumeSize = "5Gi"
-	defaultAuthClientID   = "kubermatic"
+	defaultPProfEndpoint               = ":6600"
+	defaultNodePortRange               = "30000-32767"
+	defaultEtcdVolumeSize              = "5Gi"
+	defaultAuthClientID                = "kubermatic"
+	defaultIngressClass                = "nginx"
+	defaultAPIReplicas                 = 2
+	defaultUIReplicas                  = 1
+	defaultSeedControllerMgrReplicas   = 2
+	defaultMasterControllerMgrReplicas = 2
+	defaultAPIServerReplicas           = 2
 )
 
 var (
@@ -107,6 +113,11 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "seedController.backupCleanupContainer")
 	}
 
+	if copy.Spec.SeedController.Replicas == nil {
+		copy.Spec.SeedController.Replicas = pointer.Int32Ptr(defaultSeedControllerMgrReplicas)
+		logger.Debugw("Defaulting field", "field", "seedController.replicas", "value", *copy.Spec.SeedController.Replicas)
+	}
+
 	if copy.Spec.API.PProfEndpoint == nil {
 		copy.Spec.API.PProfEndpoint = pointer.StringPtr(defaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "api.pprofEndpoint", "value", *copy.Spec.API.PProfEndpoint)
@@ -122,6 +133,11 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "masterController.pprofEndpoint", "value", *copy.Spec.MasterController.PProfEndpoint)
 	}
 
+	if copy.Spec.MasterController.Replicas == nil {
+		copy.Spec.MasterController.Replicas = pointer.Int32Ptr(defaultMasterControllerMgrReplicas)
+		logger.Debugw("Defaulting field", "field", "masterController.replicas", "value", *copy.Spec.MasterController.Replicas)
+	}
+
 	if len(copy.Spec.UserCluster.Addons.Kubernetes.Default) == 0 && copy.Spec.UserCluster.Addons.Kubernetes.DefaultManifests == "" {
 		copy.Spec.UserCluster.Addons.Kubernetes.Default = kubernetesDefaultAddons
 		logger.Debugw("Defaulting field", "field", "userCluster.addons.kubernetes.default", "value", copy.Spec.UserCluster.Addons.Kubernetes.Default)
@@ -132,9 +148,19 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "userCluster.Addons.Openshift.DefaultManifests")
 	}
 
+	if copy.Spec.UserCluster.APIServerReplicas == nil {
+		copy.Spec.UserCluster.APIServerReplicas = pointer.Int32Ptr(defaultAPIServerReplicas)
+		logger.Debugw("Defaulting field", "field", "userCluster.apiserverReplicas", "value", *copy.Spec.UserCluster.APIServerReplicas)
+	}
+
 	if len(copy.Spec.API.AccessibleAddons) == 0 {
 		copy.Spec.API.AccessibleAddons = defaultAccessibleAddons
-		logger.Debugw("Defaulting field", "field", "copy.Spec.API.AccessibleAddons", "value", copy.Spec.API.AccessibleAddons)
+		logger.Debugw("Defaulting field", "field", "api.accessibleAddons", "value", copy.Spec.API.AccessibleAddons)
+	}
+
+	if copy.Spec.API.Replicas == nil {
+		copy.Spec.API.Replicas = pointer.Int32Ptr(defaultAPIReplicas)
+		logger.Debugw("Defaulting field", "field", "api.replicas", "value", *copy.Spec.API.Replicas)
 	}
 
 	if copy.Spec.UserCluster.NodePortRange == "" {
@@ -158,6 +184,11 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	if copy.Spec.UI.Config == "" {
 		copy.Spec.UI.Config = strings.TrimSpace(defaultUIConfig)
 		logger.Debugw("Defaulting field", "field", "ui.config", "value", copy.Spec.UI.Config)
+	}
+
+	if copy.Spec.UI.Replicas == nil {
+		copy.Spec.UI.Replicas = pointer.Int32Ptr(defaultUIReplicas)
+		logger.Debugw("Defaulting field", "field", "ui.replicas", "value", *copy.Spec.UI.Replicas)
 	}
 
 	if copy.Spec.MasterFiles == nil {
