@@ -7,6 +7,8 @@ set -o pipefail
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 make user-cluster-controller-manager
 
+KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
+
 # Getting everything we need from the api
 # This script assumes you are in your cluster namespace, which you can configure via `kubectl config set-context $(kubectl config current-context) --namespace=<<cluster-namespace>>`
 NAMESPACE="${NAMESPACE:-$(kubectl config view --minify|grep namespace |awk '{ print $2 }')}"
@@ -58,7 +60,7 @@ fi
     -cluster-url=${CLUSTER_URL} \
     -version=${CLUSTER_VERSION} \
     -openshift-console-callback-uri="${CONSOLE_CALLBACK_URI}" \
-    -log-debug=true \
+    -log-debug=$KUBERMATIC_DEBUG \
     -log-format=Console \
     -logtostderr \
     -v=4 \

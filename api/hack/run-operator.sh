@@ -8,6 +8,7 @@ export NAMESPACE="${NAMESPACE:-}"
 
 export KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 KUBERMATIC_WORKERNAME=$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')
+KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
 
 if [ -z "$NAMESPACE" ]; then
   echo "You must specify a NAMESPACE environment variable to run the operator in."
@@ -42,7 +43,7 @@ set -x
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -namespace="$NAMESPACE" \
   -worker-name="$KUBERMATIC_WORKERNAME" \
-  -log-debug=true \
+  -log-debug=$KUBERMATIC_DEBUG \
   -log-format=Console \
   -logtostderr \
   -v=4 # Log-level for the Kube dependencies. Increase up to 9 to get request-level logs.
