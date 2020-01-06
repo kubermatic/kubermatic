@@ -12,6 +12,7 @@ export KUBERMATICCOMMIT="${KUBERMATICCOMMIT:-$(git rev-parse origin/master)}"
 make seed-controller-manager
 
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
+KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
 
 ./_build/seed-controller-manager \
   -dynamic-datacenters=true \
@@ -34,7 +35,7 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
   -oidc-issuer-client-id=$(vault kv get -field=oidc-issuer-client-id dev/seed-clusters/dev.kubermatic.io) \
   -oidc-issuer-client-secret=$(vault kv get -field=oidc-issuer-client-secret dev/seed-clusters/dev.kubermatic.io) \
   -monitoring-scrape-annotation-prefix='kubermatic.io' \
-  -log-debug=true \
+  -log-debug=$KUBERMATIC_DEBUG \
   -log-format=Console \
   -max-parallel-reconcile=10 \
   -logtostderr \
