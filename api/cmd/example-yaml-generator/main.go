@@ -155,7 +155,9 @@ func createExampleKubermaticConfiguration() *operatorv1alpha1.KubermaticConfigur
 			Namespace: "kubermatic",
 		},
 		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
-			Domain:       "example.com",
+			Ingress: operatorv1alpha1.KubermaticIngressConfiguration{
+				Domain: "example.com",
+			},
 			FeatureGates: sets.NewString(),
 			API: operatorv1alpha1.KubermaticAPIConfiguration{
 				AccessibleAddons: []string{},

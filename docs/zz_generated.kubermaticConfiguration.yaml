@@ -16,6 +16,8 @@ spec:
     # PProfEndpoint controls the port the API should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
+    # Replicas sets the number of pod replicas for the API deployment.
+    replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
       # Limits describes the maximum amount of compute resources allowed.
@@ -41,21 +43,6 @@ spec:
     serviceAccountKey: ""
     skipTokenIssuerTLSVerify: false
     tokenIssuer: https://example.com/dex
-  # CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)
-  # that will be used to acquire the certificate for the configured domain.
-  # To use a namespaced Issuer, set the Kind to "Issuer" and manually create the
-  # matching Issuer in Kubermatic's namespace.
-  certificateIssuer:
-    # APIGroup is the group for the resource being referenced.
-    # If APIGroup is not specified, the specified Kind must be in the core API group.
-    # For any other third-party types, APIGroup is required.
-    apiGroup: null
-    # Kind is the type of resource being referenced
-    kind: ClusterIssuer
-    # Name is the name of resource being referenced
-    name: ""
-  # Domain is the base domain where the dashboard shall be available.
-  domain: example.com
   # ExposeStrategy is the strategy to expose the cluster with.
   # Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
   # if this is set to LoadBalancerStrategy.
@@ -64,6 +51,31 @@ spec:
   featureGates: {}
   # ImagePullSecret is used to authenticate against Docker registries.
   imagePullSecret: ""
+  # Ingress contains settings for making the API and UI accessible remotely.
+  ingress:
+    # CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)
+    # that will be used to acquire the certificate for the configured domain.
+    # To use a namespaced Issuer, set the Kind to "Issuer" and manually create the
+    # matching Issuer in Kubermatic's namespace.
+    certificateIssuer:
+      # APIGroup is the group for the resource being referenced.
+      # If APIGroup is not specified, the specified Kind must be in the core API group.
+      # For any other third-party types, APIGroup is required.
+      apiGroup: null
+      # Kind is the type of resource being referenced
+      kind: ClusterIssuer
+      # Name is the name of resource being referenced
+      name: ""
+    # ClassName is the Ingress resource's class name, used for selecting the appropriate
+    # ingress controller.
+    className: nginx
+    # Disable will prevent an Ingress from being created at all. This is mostly useful
+    # during testing. If the Ingress is disabled, the CertificateIssuer setting can also
+    # be left empty, as no Certificate resource will be created.
+    disable: false
+    # Domain is the base domain where the dashboard shall be available. Even with
+    # a disabled Ingress, this must always be a valid hostname.
+    domain: example.com
   # MasterController configures the master-controller-manager.
   masterController:
     # DebugLog enables more verbose logging.
@@ -77,6 +89,8 @@ spec:
     projectsMigrator:
       # DryRun makes the migrator only log the actions it would take.
       dryRun: false
+    # Replicas sets the number of pod replicas for the master-controller-manager.
+    replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
       # Limits describes the maximum amount of compute resources allowed.
@@ -274,6 +288,8 @@ spec:
     # PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
+    # Replicas sets the number of pod replicas for the seed-controller-manager.
+    replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
       # Limits describes the maximum amount of compute resources allowed.
@@ -297,6 +313,8 @@ spec:
       }
     # DockerRepository is the repository containing the Kubermatic dashboard image.
     dockerRepository: quay.io/kubermatic/ui-v2
+    # Replicas sets the number of pod replicas for the UI deployment.
+    replicas: 1
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
       # Limits describes the maximum amount of compute resources allowed.
@@ -389,6 +407,8 @@ spec:
         # DockerRepository is the repository containing the Docker image containing
         # the possible addon manifests.
         dockerRepository: quay.io/kubermatic/openshift-addons
+    # APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
+    apiserverReplicas: 2
     # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
     # the Kubernetes API server.
     disableApiserverEndpointReconciling: false

@@ -82,11 +82,11 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 			if i.Annotations == nil {
 				i.Annotations = make(map[string]string)
 			}
-			i.Annotations["kubernetes.io/ingress.class"] = "nginx"
+			i.Annotations["kubernetes.io/ingress.class"] = cfg.Spec.Ingress.ClassName
 
 			i.Spec.TLS = []extensionsv1beta1.IngressTLS{
 				{
-					Hosts:      []string{cfg.Spec.Domain},
+					Hosts:      []string{cfg.Spec.Ingress.Domain},
 					SecretName: certificateSecretName,
 				},
 			}
@@ -98,7 +98,7 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 
 			i.Spec.Rules = []extensionsv1beta1.IngressRule{
 				{
-					Host: cfg.Spec.Domain,
+					Host: cfg.Spec.Ingress.Domain,
 					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
 						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
 							Paths: []extensionsv1beta1.HTTPIngressPath{
@@ -127,20 +127,20 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 func CertificateCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedCertificateCreatorGetter {
 	return func() (string, reconciling.CertificateCreator) {
 		return certificateName, func(c *certmanagerv1alpha2.Certificate) (*certmanagerv1alpha2.Certificate, error) {
-			name := cfg.Spec.CertificateIssuer.Name
+			name := cfg.Spec.Ingress.CertificateIssuer.Name
 			if name == "" {
 				return nil, errors.New("no certificateIssuer configured in KubermaticConfiguration")
 			}
 
 			c.Spec.IssuerRef.Name = name
-			c.Spec.IssuerRef.Kind = cfg.Spec.CertificateIssuer.Kind
+			c.Spec.IssuerRef.Kind = cfg.Spec.Ingress.CertificateIssuer.Kind
 
-			if group := cfg.Spec.CertificateIssuer.APIGroup; group != nil {
+			if group := cfg.Spec.Ingress.CertificateIssuer.APIGroup; group != nil {
 				c.Spec.IssuerRef.Group = *group
 			}
 
 			c.Spec.SecretName = certificateSecretName
-			c.Spec.DNSNames = []string{cfg.Spec.Domain}
+			c.Spec.DNSNames = []string{cfg.Spec.Ingress.Domain}
 
 			return c, nil
 		}

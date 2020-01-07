@@ -29,8 +29,6 @@ type KubermaticConfiguration struct {
 
 // KubermaticConfigurationSpec is the spec for a Kubermatic installation.
 type KubermaticConfigurationSpec struct {
-	// Domain is the base domain where the dashboard shall be available.
-	Domain string `json:"domain"`
 	// ImagePullSecret is used to authenticate against Docker registries.
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 	// Auth defines keys and URLs for Dex.
@@ -53,11 +51,8 @@ type KubermaticConfigurationSpec struct {
 	// Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
 	// if this is set to LoadBalancerStrategy.
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
-	// CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)
-	// that will be used to acquire the certificate for the configured domain.
-	// To use a namespaced Issuer, set the Kind to "Issuer" and manually create the
-	// matching Issuer in Kubermatic's namespace.
-	CertificateIssuer corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
+	// Ingress contains settings for making the API and UI accessible remotely.
+	Ingress KubermaticIngressConfiguration `json:"ingress,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
@@ -86,6 +81,8 @@ type KubermaticAPIConfiguration struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
+	// Replicas sets the number of pod replicas for the API deployment.
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // KubermaticUIConfiguration configures the dashboard.
@@ -96,6 +93,8 @@ type KubermaticUIConfiguration struct {
 	Config string `json:"config,omitempty"`
 	// Resources describes the requested and maximum allowed CPU/memory usage.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Replicas sets the number of pod replicas for the UI deployment.
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // KubermaticSeedControllerConfiguration configures the Kubermatic seed controller-manager.
@@ -113,6 +112,8 @@ type KubermaticSeedControllerConfiguration struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
+	// Replicas sets the number of pod replicas for the seed-controller-manager.
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // KubermaticUserClusterConfiguration controls various aspects of the user-created clusters.
@@ -137,6 +138,8 @@ type KubermaticUserClusterConfiguration struct {
 	DisableAPIServerEndpointReconciling bool `json:"disableApiserverEndpointReconciling,omitempty"`
 	// EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
 	EtcdVolumeSize string `json:"etcdVolumeSize,omitempty"`
+	// APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
+	APIServerReplicas *int32 `json:"apiserverReplicas,omitempty"`
 }
 
 // KubermaticAddonsConfiguration controls the optional additions installed into each user cluster.
@@ -179,6 +182,27 @@ type KubermaticAddonConfiguration struct {
 	DockerRepository string `json:"dockerRepository,omitempty"`
 }
 
+type KubermaticIngressConfiguration struct {
+	// Domain is the base domain where the dashboard shall be available. Even with
+	// a disabled Ingress, this must always be a valid hostname.
+	Domain string `json:"domain"`
+
+	// ClassName is the Ingress resource's class name, used for selecting the appropriate
+	// ingress controller.
+	ClassName string `json:"className,omitempty"`
+
+	// Disable will prevent an Ingress from being created at all. This is mostly useful
+	// during testing. If the Ingress is disabled, the CertificateIssuer setting can also
+	// be left empty, as no Certificate resource will be created.
+	Disable bool `json:"disable,omitempty"`
+
+	// CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)
+	// that will be used to acquire the certificate for the configured domain.
+	// To use a namespaced Issuer, set the Kind to "Issuer" and manually create the
+	// matching Issuer in Kubermatic's namespace.
+	CertificateIssuer corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
+}
+
 // KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.
 type KubermaticMasterControllerConfiguration struct {
 	// DockerRepository is the repository containing the Kubermatic master-controller-manager image.
@@ -192,6 +216,8 @@ type KubermaticMasterControllerConfiguration struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// DebugLog enables more verbose logging.
 	DebugLog bool `json:"debugLog,omitempty"`
+	// Replicas sets the number of pod replicas for the master-controller-manager.
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // KubermaticProjectsMigratorConfiguration configures the Kubermatic master controller-manager.
