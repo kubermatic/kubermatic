@@ -105,15 +105,18 @@ func (r *runner) GetProject(id string, attempts int) (*apiv1.Project, error) {
 	var errGetProject error
 	var project *project.GetProjectOK
 	duration := time.Duration(attempts) * time.Second
-	wait.PollImmediate(time.Second, duration, func() (bool, error) {
+	if err := wait.PollImmediate(time.Second, duration, func() (bool, error) {
 		project, errGetProject = r.client.Project.GetProject(params, r.bearerToken)
 		if errGetProject != nil {
 			return false, nil
 		}
 		return true, nil
-	})
-	if errGetProject != nil {
-		return nil, errGetProject
+	}); err != nil {
+		// first check error from GetProject
+		if errGetProject != nil {
+			return nil, errGetProject
+		}
+		return nil, err
 	}
 
 	return convertProject(project.Payload)
