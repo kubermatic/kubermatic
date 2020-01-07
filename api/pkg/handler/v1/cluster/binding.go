@@ -290,13 +290,8 @@ func BindUserToClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpo
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		labelSelector, err := labels.Parse(UserClusterBindingLabelSelector)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
 		clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
-		if err := client.List(ctx, clusterRoleBindingList, &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}); err != nil {
+		if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterBindingComponentValue}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -309,10 +304,7 @@ func BindUserToClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpo
 		}
 
 		if existingClusterRoleBinding == nil {
-			existingClusterRoleBinding, err = generateRBACClusterRoleBinding(ctx, client, req.RoleID)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
+			return nil, fmt.Errorf("the cluster role binding not found")
 		}
 
 		clusterRoleUser := req.Body
@@ -534,27 +526,6 @@ func generateRBACRoleBinding(ctx context.Context, client ctrlruntimeclient.Clien
 	}
 
 	return roleBinding, nil
-}
-
-// generateRBACClusterRoleBinding creates cluster role binding
-func generateRBACClusterRoleBinding(ctx context.Context, client ctrlruntimeclient.Client, roleName string) (*rbacv1.ClusterRoleBinding, error) {
-
-	crb := &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   fmt.Sprintf("%s:%s", rand.String(10), roleName),
-			Labels: map[string]string{UserClusterComponentKey: UserClusterBindingComponentValue},
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: rbacv1.GroupName,
-			Kind:     "ClusterRole",
-			Name:     roleName,
-		},
-		Subjects: []rbacv1.Subject{},
-	}
-	if err := client.Create(ctx, crb); err != nil {
-		return nil, err
-	}
-	return crb, nil
 }
 
 func convertInternalRoleBindingToExternal(clusterRole *rbacv1.RoleBinding) *apiv1.RoleBinding {
