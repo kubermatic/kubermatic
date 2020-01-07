@@ -27,6 +27,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
@@ -79,19 +80,17 @@ func (r *runner) CreateProject(name string) (*apiv1.Project, error) {
 	}
 
 	var apiProject *apiv1.Project
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
+	if err := wait.PollImmediate(time.Second, maxAttempts*time.Second, func() (bool, error) {
 		apiProject, err = r.GetProject(project.Payload.ID, maxAttempts)
 		if err != nil {
-			return nil, err
+			return false, nil
 		}
-
 		if apiProject.Status == kubermaticv1.ProjectActive {
-			break
+			return true, nil
 		}
-		time.Sleep(time.Second)
-	}
+		return false, nil
 
-	if apiProject.Status != kubermaticv1.ProjectActive {
+	}); err != nil {
 		return nil, fmt.Errorf("project is not redy after %d attempts", maxAttempts)
 	}
 
@@ -103,16 +102,20 @@ func (r *runner) GetProject(id string, attempts int) (*apiv1.Project, error) {
 	params := &project.GetProjectParams{ProjectID: id}
 	params.WithTimeout(timeout)
 
-	var err error
+	var errGetProject error
 	var project *project.GetProjectOK
-	for attempt := 0; attempt <= attempts; attempt++ {
-		project, err = r.client.Project.GetProject(params, r.bearerToken)
-		if err == nil {
-			break
+	duration := time.Duration(attempts) * time.Second
+	if err := wait.PollImmediate(time.Second, duration, func() (bool, error) {
+		project, errGetProject = r.client.Project.GetProject(params, r.bearerToken)
+		if errGetProject != nil {
+			return false, nil
 		}
-		time.Sleep(time.Second)
-	}
-	if err != nil {
+		return true, nil
+	}); err != nil {
+		// first check error from GetProject
+		if errGetProject != nil {
+			return nil, errGetProject
+		}
 		return nil, err
 	}
 
