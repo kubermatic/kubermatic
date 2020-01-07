@@ -22,7 +22,7 @@ func uiPodLabels() map[string]string {
 func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, versions common.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return uiDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = pointer.Int32Ptr(2)
+			d.Spec.Replicas = cfg.Spec.UI.Replicas
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: uiPodLabels(),
 			}

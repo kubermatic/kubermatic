@@ -14,7 +14,6 @@ import (
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 )
 
 func apiPodLabels() map[string]string {
@@ -41,7 +40,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				},
 			}
 
-			d.Spec.Replicas = pointer.Int32Ptr(2)
+			d.Spec.Replicas = cfg.Spec.API.Replicas
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: apiPodLabels(),
 			}
@@ -71,7 +70,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				fmt.Sprintf("-oidc-url=%s", cfg.Spec.Auth.TokenIssuer),
 				fmt.Sprintf("-oidc-authenticator-client-id=%s", cfg.Spec.Auth.ClientID),
 				fmt.Sprintf("-oidc-skip-tls-verify=%v", cfg.Spec.Auth.SkipTokenIssuerTLSVerify),
-				fmt.Sprintf("-domain=%s", cfg.Spec.Domain),
+				fmt.Sprintf("-domain=%s", cfg.Spec.Ingress.Domain),
 				fmt.Sprintf("-service-account-signing-key=%s", cfg.Spec.Auth.ServiceAccountKey),
 				fmt.Sprintf("-expose-strategy=%s", cfg.Spec.ExposeStrategy),
 				fmt.Sprintf("-feature-gates=%s", featureGates(cfg)),

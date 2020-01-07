@@ -13,7 +13,6 @@ import (
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 )
 
 func masterControllerManagerPodLabels() map[string]string {
@@ -25,7 +24,7 @@ func masterControllerManagerPodLabels() map[string]string {
 func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerName string, versions common.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return common.MasterControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = pointer.Int32Ptr(2)
+			d.Spec.Replicas = cfg.Spec.MasterController.Replicas
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: masterControllerManagerPodLabels(),
 			}
