@@ -67,10 +67,12 @@ spec:
       # Name is the name of resource being referenced
       name: ""
     # ClassName is the Ingress resource's class name, used for selecting the appropriate
-    # ingress controller. If set to "non-existent", no Ingress will be created at all,
-    # in which case the CertificateIssuer setting can also be left empty, as no
-    # Certificate resource will be created.
+    # ingress controller.
     className: nginx
+    # Disable will prevent an Ingress from being created at all. This is mostly useful
+    # during testing. If the Ingress is disabled, the CertificateIssuer setting can also
+    # be left empty, as no Certificate resource will be created.
+    disable: false
     # Domain is the base domain where the dashboard shall be available. Even with
     # a disabled Ingress, this must always be a valid hostname.
     domain: example.com

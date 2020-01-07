@@ -188,10 +188,13 @@ type KubermaticIngressConfiguration struct {
 	Domain string `json:"domain"`
 
 	// ClassName is the Ingress resource's class name, used for selecting the appropriate
-	// ingress controller. If set to "non-existent", no Ingress will be created at all,
-	// in which case the CertificateIssuer setting can also be left empty, as no
-	// Certificate resource will be created.
+	// ingress controller.
 	ClassName string `json:"className,omitempty"`
+
+	// Disable will prevent an Ingress from being created at all. This is mostly useful
+	// during testing. If the Ingress is disabled, the CertificateIssuer setting can also
+	// be left empty, as no Certificate resource will be created.
+	Disable bool `json:"disable,omitempty"`
 
 	// CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)
 	// that will be used to acquire the certificate for the configured domain.

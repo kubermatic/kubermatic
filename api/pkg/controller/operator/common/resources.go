@@ -38,9 +38,6 @@ const (
 	// in the master files.
 	KubernetesAddonsFileName = "kubernetes-addons.yaml"
 
-	// NonExistentIngressClass is used to disable the creation of an Ingress.
-	NonExistentIngressClass = "non-existent"
-
 	DockercfgSecretName                   = "dockercfg"
 	DexCASecretName                       = "dex-ca"
 	MasterFilesSecretName                 = "extra-files"
