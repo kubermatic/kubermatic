@@ -229,14 +229,16 @@ func main() {
 	}
 	log.Info("Registered user RBAC controller")
 
+	if err := nodecsrapprover.Add(mgr, 4, cfg, log); err != nil {
+		log.Fatalw("Failed to add nodecsrapprover controller", zap.Error(err))
+	}
+	log.Info("Registered nodecsrapprover controller")
+
 	if runOp.openshift {
-		if err := nodecsrapprover.Add(mgr, 4, cfg, log); err != nil {
-			log.Fatalw("Failed to add nodecsrapprover controller", zap.Error(err))
-		}
 		if err := openshiftmasternodelabeler.Add(context.Background(), kubermaticlog.Logger, mgr); err != nil {
 			log.Fatalw("Failed to add openshiftmasternodelabeler controller", zap.Error(err))
 		}
-		log.Info("Registered nodecsrapprover controller")
+		log.Info("Registered openshiftmasternodelabeler controller")
 
 		if err := openshiftseedsyncer.Add(log, mgr, seedMgr, runOp.clusterURL, runOp.namespace); err != nil {
 			log.Fatalw("Failed to register the openshiftseedsyncer", zap.Error(err))
