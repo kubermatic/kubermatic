@@ -19,8 +19,6 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -209,13 +207,8 @@ func ListClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.En
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		clusterRoleLabelSelector, err := labels.Parse(UserClusterRoleLabelSelector)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
 		clusterRoleList := &rbacv1.ClusterRoleList{}
-		if err := client.List(ctx, clusterRoleList, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}); err != nil {
+		if err := client.List(ctx, clusterRoleList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterRoleComponentValue}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -242,13 +235,8 @@ func ListClusterRoleNamesEndpoint(userInfoGetter provider.UserInfoGetter) endpoi
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		clusterRoleLabelSelector, err := labels.Parse(UserClusterRoleLabelSelector)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
 		clusterRoleList := &rbacv1.ClusterRoleList{}
-		if err := client.List(ctx, clusterRoleList, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}); err != nil {
+		if err := client.List(ctx, clusterRoleList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterRoleComponentValue}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -281,13 +269,8 @@ func ListRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		clusterRoleLabelSelector, err := labels.Parse(UserClusterRoleLabelSelector)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
 		roleList := &rbacv1.RoleList{}
-		if err := client.List(ctx, roleList, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}); err != nil {
+		if err := client.List(ctx, roleList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterRoleComponentValue}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -314,13 +297,8 @@ func ListRoleNamesEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endp
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		clusterRoleLabelSelector, err := labels.Parse(UserClusterRoleLabelSelector)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
 		roleList := &rbacv1.RoleList{}
-		if err := client.List(ctx, roleList, &ctrlruntimeclient.ListOptions{LabelSelector: clusterRoleLabelSelector}); err != nil {
+		if err := client.List(ctx, roleList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterRoleComponentValue}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
