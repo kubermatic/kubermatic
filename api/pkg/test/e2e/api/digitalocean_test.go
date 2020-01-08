@@ -30,7 +30,7 @@ func TestCreateDOCluster(t *testing.T) {
 			dc:         "prow-build-cluster",
 			location:   "do-fra1",
 			version:    "v1.15.6",
-			credential: "loodse",
+			credential: "e2e-digitalocean",
 			replicas:   1,
 		},
 	}
@@ -126,7 +126,7 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 			dc:         "prow-build-cluster",
 			location:   "do-fra1",
 			version:    "v1.15.6",
-			credential: "loodse",
+			credential: "e2e-digitalocean",
 			replicas:   1,
 		},
 	}
@@ -182,7 +182,7 @@ func TestGetClusterKubeconfig(t *testing.T) {
 			dc:           "prow-build-cluster",
 			location:     "do-fra1",
 			version:      "v1.15.6",
-			credential:   "loodse",
+			credential:   "e2e-digitalocean",
 			replicas:     1,
 			path:         "/api/v1/projects/%s/dc/%s/clusters/%s/kubeconfig",
 			expectedCode: http.StatusOK,
