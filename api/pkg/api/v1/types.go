@@ -279,7 +279,7 @@ type GCPZoneList []GCPZone
 // swagger:model GCPNetworkList
 type GCPNetworkList []GCPNetwork
 
-// GCPNetwork represents a object of GCP machine size.
+// GCPNetwork represents a object of GCP networks.
 // swagger:model GCPNetwork
 type GCPNetwork struct {
 	ID                    uint64   `json:"id"`

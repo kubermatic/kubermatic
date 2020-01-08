@@ -11,7 +11,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// GCPNetwork GCPNetwork represents a object of GCP machine size.
+// GCPNetwork GCPNetwork represents a object of GCP networks.
 // swagger:model GCPNetwork
 type GCPNetwork struct {
 
