@@ -299,7 +299,7 @@ func removeTags(cluster *kubermaticv1.Cluster, client ec2iface.EC2API) error {
 		return fmt.Errorf("failed to list subnets: %v", err)
 	}
 
-	resourceIDs := []*string{&cluster.Spec.Cloud.AWS.SecurityGroupID, &cluster.Spec.Cloud.AWS.RouteTableID, &cluster.Spec.Cloud.AWS.SecurityGroupID}
+	resourceIDs := []*string{&cluster.Spec.Cloud.AWS.SecurityGroupID, &cluster.Spec.Cloud.AWS.RouteTableID}
 	for _, subnet := range sOut.Subnets {
 		resourceIDs = append(resourceIDs, subnet.SubnetId)
 	}
