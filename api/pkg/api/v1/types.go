@@ -648,9 +648,9 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			GCP:            newPublicGCPCloudSpec(cs.Cloud.GCP),
 			Kubevirt:       newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
 		},
-		Version:         cs.Version,
-		MachineNetworks: cs.MachineNetworks,
-		OIDC:            cs.OIDC,
+		Version:                             cs.Version,
+		MachineNetworks:                     cs.MachineNetworks,
+		OIDC:                                cs.OIDC,
 		UsePodSecurityPolicyAdmissionPlugin: cs.UsePodSecurityPolicyAdmissionPlugin,
 		AuditLogging:                        cs.AuditLogging,
 	})

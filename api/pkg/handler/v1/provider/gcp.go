@@ -442,8 +442,8 @@ func listGCPNetworks(ctx context.Context, sa string) (apiv1.GCPNetworkList, erro
 	err = req.Pages(ctx, func(page *compute.NetworkList) error {
 		for _, network := range page.Items {
 			net := apiv1.GCPNetwork{
-				ID:   network.Id,
-				Name: network.Name,
+				ID:                    network.Id,
+				Name:                  network.Name,
 				AutoCreateSubnetworks: network.AutoCreateSubnetworks,
 				Subnetworks:           network.Subnetworks,
 				Kind:                  network.Kind,
