@@ -275,6 +275,20 @@ type GCPZone struct {
 // swagger:model GCPZoneList
 type GCPZoneList []GCPZone
 
+// GCPNetworkList represents an array of GCP networks.
+// swagger:model GCPNetworkList
+type GCPNetworkList []GCPNetwork
+
+// GCPNetwork represents a object of GCP machine size.
+// swagger:model GCPNetwork
+type GCPNetwork struct {
+	ID                    uint64   `json:"id"`
+	Name                  string   `json:"name"`
+	AutoCreateSubnetworks bool     `json:"autoCreateSubnetworks"`
+	Subnetworks           []string `json:"subnetworks"`
+	Kind                  string   `json:"kind"`
+}
+
 // DigitaloceanSizeList represents a object of digitalocean sizes.
 // swagger:model DigitaloceanSizeList
 type DigitaloceanSizeList struct {
@@ -634,9 +648,9 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			GCP:            newPublicGCPCloudSpec(cs.Cloud.GCP),
 			Kubevirt:       newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
 		},
-		Version:                             cs.Version,
-		MachineNetworks:                     cs.MachineNetworks,
-		OIDC:                                cs.OIDC,
+		Version:         cs.Version,
+		MachineNetworks: cs.MachineNetworks,
+		OIDC:            cs.OIDC,
 		UsePodSecurityPolicyAdmissionPlugin: cs.UsePodSecurityPolicyAdmissionPlugin,
 		AuditLogging:                        cs.AuditLogging,
 	})
