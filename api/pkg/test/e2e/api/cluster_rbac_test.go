@@ -30,7 +30,7 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			dc:                       "prow-build-cluster",
 			location:                 "do-fra1",
 			version:                  "v1.15.6",
-			credential:               "loodse",
+			credential:               "e2e-digitalocean",
 			replicas:                 1,
 			expectedRoleNames:        []string{"namespace-admin", "namespace-editor", "namespace-viewer"},
 			expectedClusterRoleNames: []string{"admin", "edit", "view"},
