@@ -83,7 +83,9 @@ func (r *Reconciler) reconcile(seed *kubermaticv1.Seed, client ctrlruntimeclient
 	seedCreators := []reconciling.NamedSeedCreatorGetter{
 		seedCreator(seed),
 	}
-
+	if !isValidExposeStrategy(seed.Spec.ExposeStrategy) {
+		return fmt.Errorf("failed to validate seed: invalid Seed Expose Strategy %s", seed.Spec.ExposeStrategy)
+	}
 	if err := reconciling.ReconcileSeeds(r.ctx, seedCreators, seed.Namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile seed: %v", err)
 	}
@@ -138,4 +140,8 @@ func (r *Reconciler) cleanupDeletedSeed(seedInMaster *kubermaticv1.Seed, seedCli
 	}
 
 	return nil, nil
+}
+
+func isValidExposeStrategy(es corev1.ServiceType) bool {
+	return es == "" || (es == corev1.ServiceTypeNodePort || es == corev1.ServiceTypeLoadBalancer)
 }

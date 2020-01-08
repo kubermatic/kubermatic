@@ -12,6 +12,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,6 +20,11 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+)
+
+const (
+	invalidExposeStrategy = corev1.ServiceTypeClusterIP
+	validExposeStrategy   = corev1.ServiceTypeNodePort
 )
 
 func TestReconcilingSeed(t *testing.T) {
@@ -36,7 +42,8 @@ func TestReconcilingSeed(t *testing.T) {
 					Namespace: "kubermatic",
 				},
 				Spec: kubermaticv1.SeedSpec{
-					Country: "Germany",
+					Country:        "Germany",
+					ExposeStrategy: validExposeStrategy,
 				},
 			},
 			existingSeeds: []runtime.Object{
@@ -121,5 +128,11 @@ func TestReconcilingSeed(t *testing.T) {
 				t.Fatalf("reconciling did not lead to a valid end state: %v", err)
 			}
 		})
+	}
+}
+
+func TestInvalidExposeStrategy(t *testing.T) {
+	if isValidExposeStrategy(invalidExposeStrategy) {
+		t.Fatalf("isValidExposeStrategy failed to validate invalid strategy: %s", invalidExposeStrategy)
 	}
 }

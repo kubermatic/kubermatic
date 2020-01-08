@@ -84,7 +84,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			return nil, errors.New(int(http.StatusBadRequest), "cluster.ID is read-only")
 		}
 
-		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.Body.Cluster.Spec.Cloud.DatacenterName)
+		seed, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.Body.Cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -104,7 +104,12 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		if err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
 		}
+
+		// master level ExposeStrategy is the default
 		spec.ExposeStrategy = exposeStrategy
+		if seed.Spec.ExposeStrategy != "" {
+			spec.ExposeStrategy = seed.Spec.ExposeStrategy
+		}
 
 		existingClusters, err := clusterProvider.List(project, &provider.ClusterListOptions{ClusterSpecName: spec.HumanReadableName})
 		if err != nil {
