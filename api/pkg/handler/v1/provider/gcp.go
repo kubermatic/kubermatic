@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	"google.golang.org/api/compute/v1"
+	compute "google.golang.org/api/compute/v1"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
@@ -371,4 +371,88 @@ func listGCPZones(ctx context.Context, userInfo *provider.UserInfo, sa, datacent
 	})
 
 	return zones, err
+}
+
+func GCPNetworkEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GCPCommonReq)
+		sa := req.ServiceAccount
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if len(req.Credential) > 0 {
+			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GCP; credentials != nil {
+				sa = credentials.ServiceAccount
+			}
+		}
+
+		return listGCPNetworks(ctx, sa)
+	}
+}
+
+func GCPNetworkWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(common.GetClusterReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if cluster.Spec.Cloud.GCP == nil {
+			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
+		}
+
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		sa, err := gcp.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+		return listGCPNetworks(ctx, sa)
+	}
+}
+
+func listGCPNetworks(ctx context.Context, sa string) (apiv1.GCPNetworkList, error) {
+	networks := apiv1.GCPNetworkList{}
+
+	computeService, project, err := gcp.ConnectToComputeService(sa)
+	if err != nil {
+		return networks, err
+	}
+
+	req := computeService.Networks.List(project)
+	err = req.Pages(ctx, func(page *compute.NetworkList) error {
+		for _, network := range page.Items {
+			net := apiv1.GCPNetwork{
+				ID:                    network.Id,
+				Name:                  network.Name,
+				AutoCreateSubnetworks: network.AutoCreateSubnetworks,
+				Subnetworks:           network.Subnetworks,
+				Kind:                  network.Kind,
+			}
+
+			networks = append(networks, net)
+		}
+		return nil
+	})
+
+	return networks, err
 }
