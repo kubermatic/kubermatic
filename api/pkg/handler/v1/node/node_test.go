@@ -469,7 +469,7 @@ func TestCreateNodeDeployment(t *testing.T) {
 		{
 			Name:                   "scenario 1: create a node deployment that match the given spec",
 			Body:                   `{"spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}}`,
-			ExpectedResponse:       `{"name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false},"status":{}}`,
+			ExpectedResponse:       `{"name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":false},"status":{}}`,
 			HTTPStatus:             http.StatusCreated,
 			ProjectID:              test.GenDefaultProject().Name,
 			ClusterID:              test.GenDefaultCluster().Name,
@@ -517,7 +517,7 @@ func TestCreateNodeDeployment(t *testing.T) {
 		{
 			Name:                   "scenario 5: set taints",
 			Body:                   `{"spec":{"replicas":1,"template":{"taints": [{"key":"foo","value":"bar","effect":"NoExecute"}],"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"}}}}`,
-			ExpectedResponse:       `{"name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"},"taints":[{"key":"foo","value":"bar","effect":"NoExecute"}]},"paused":false},"status":{}}`,
+			ExpectedResponse:       `{"name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"},"taints":[{"key":"foo","value":"bar","effect":"NoExecute"}]},"paused":false,"dynamicConfig":false},"status":{}}`,
 			HTTPStatus:             http.StatusCreated,
 			ProjectID:              test.GenDefaultProject().Name,
 			ClusterID:              test.GenDefaultCluster().Name,
@@ -531,6 +531,18 @@ func TestCreateNodeDeployment(t *testing.T) {
 			Body:                   `{"spec":{"replicas":1,"template":{"taints": [{"key":"foo","value":"bar","effect":"BAD_EFFECT"}],"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"}}}}`,
 			ExpectedResponse:       `{"error":{"code":400,"message":"node deployment validation failed: taint effect 'BAD_EFFECT' not allowed. Allowed: NoExecute, NoSchedule, PreferNoSchedule"}}`,
 			HTTPStatus:             http.StatusBadRequest,
+			ProjectID:              test.GenDefaultProject().Name,
+			ClusterID:              test.GenDefaultCluster().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genTestCluster(true)),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
+
+		// scenario 7
+		{
+			Name:                   "scenario 7: create a node deployment with dynamic config",
+			Body:                   `{"spec":{"replicas":1,"dynamicConfig":true,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":[]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}}}}}`,
+			ExpectedResponse:       `{"name":"%s","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"s-1vcpu-1gb","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":false}},"versions":{"kubelet":"9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":true},"status":{}}`,
+			HTTPStatus:             http.StatusCreated,
 			ProjectID:              test.GenDefaultProject().Name,
 			ClusterID:              test.GenDefaultCluster().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genTestCluster(true)),
@@ -577,6 +589,7 @@ func TestListNodeDeployments(t *testing.T) {
 	t.Parallel()
 	var replicas int32 = 1
 	var paused = false
+	var falsch = false
 	testcases := []struct {
 		Name                       string
 		ExpectedResponse           []apiv1.NodeDeployment
@@ -624,8 +637,9 @@ func TestListNodeDeployments(t *testing.T) {
 								Kubelet: "v9.9.9",
 							},
 						},
-						Replicas: replicas,
-						Paused:   &paused,
+						Replicas:      replicas,
+						Paused:        &paused,
+						DynamicConfig: &falsch,
 					},
 					Status: clusterv1alpha1.MachineDeploymentStatus{},
 				},
@@ -653,8 +667,9 @@ func TestListNodeDeployments(t *testing.T) {
 								Kubelet: "v9.9.9",
 							},
 						},
-						Replicas: replicas,
-						Paused:   &paused,
+						Replicas:      replicas,
+						Paused:        &paused,
+						DynamicConfig: &falsch,
 					},
 					Status: clusterv1alpha1.MachineDeploymentStatus{},
 				},
@@ -700,6 +715,7 @@ func TestGetNodeDeployment(t *testing.T) {
 	t.Parallel()
 	var replicas int32 = 1
 	var paused = false
+	var falsch = false
 	testcases := []struct {
 		Name                       string
 		ExpectedResponse           apiv1.NodeDeployment
@@ -745,8 +761,9 @@ func TestGetNodeDeployment(t *testing.T) {
 							Kubelet: "v9.9.9",
 						},
 					},
-					Replicas: replicas,
-					Paused:   &paused,
+					Replicas:      replicas,
+					Paused:        &paused,
+					DynamicConfig: &falsch,
 				},
 				Status: clusterv1alpha1.MachineDeploymentStatus{},
 			},
@@ -1068,7 +1085,7 @@ func TestPatchNodeDeployment(t *testing.T) {
 		{
 			Name:                       "Scenario 1: Update replicas count",
 			Body:                       fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
-			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false},"status":{}}`, replicasUpdated),
+			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":false},"status":{}}`, replicasUpdated),
 			cluster:                    "keen-snyder",
 			HTTPStatus:                 http.StatusOK,
 			project:                    test.GenDefaultProject().Name,
@@ -1081,7 +1098,7 @@ func TestPatchNodeDeployment(t *testing.T) {
 		{
 			Name:                       "Scenario 2: Update kubelet version",
 			Body:                       fmt.Sprintf(`{"spec":{"template":{"versions":{"kubelet":"%v"}}}}`, kubeletVerUpdated),
-			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"%v"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false},"status":{}}`, replicas, kubeletVerUpdated),
+			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"%v"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":false},"status":{}}`, replicas, kubeletVerUpdated),
 			cluster:                    "keen-snyder",
 			HTTPStatus:                 http.StatusOK,
 			project:                    test.GenDefaultProject().Name,
@@ -1094,7 +1111,7 @@ func TestPatchNodeDeployment(t *testing.T) {
 		{
 			Name:                       "Scenario 3: Change to paused",
 			Body:                       `{"spec":{"paused":true}}`,
-			ExpectedResponse:           `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":true},"status":{}}`,
+			ExpectedResponse:           `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":true,"dynamicConfig":false},"status":{}}`,
 			cluster:                    "keen-snyder",
 			HTTPStatus:                 http.StatusOK,
 			project:                    test.GenDefaultProject().Name,

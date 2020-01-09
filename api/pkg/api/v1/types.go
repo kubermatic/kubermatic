@@ -1189,6 +1189,8 @@ type NodeDeploymentSpec struct {
 	Template NodeSpec `json:"template"`
 	// required: false
 	Paused *bool `json:"paused,omitempty"`
+	// required: false
+	DynamicConfig *bool `json:"dynamicConfig,omitempty"`
 }
 
 // Event is a report of an event somewhere in the cluster.
