@@ -83,6 +83,64 @@ func (a *Client) ListGCPDiskTypesNoCredentials(params *ListGCPDiskTypesNoCredent
 }
 
 /*
+ListGCPNetworks Lists networks from GCP
+*/
+func (a *Client) ListGCPNetworks(params *ListGCPNetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPNetworksOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGCPNetworksParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listGCPNetworks",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/gcp/networks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGCPNetworksReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListGCPNetworksOK), nil
+
+}
+
+/*
+ListGCPNetworksNoCredentials Lists available GCP networks
+*/
+func (a *Client) ListGCPNetworksNoCredentials(params *ListGCPNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPNetworksNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGCPNetworksNoCredentialsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listGCPNetworksNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/networks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGCPNetworksNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListGCPNetworksNoCredentialsOK), nil
+
+}
+
+/*
 ListGCPSizes Lists machine sizes from GCP
 */
 func (a *Client) ListGCPSizes(params *ListGCPSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSizesOK, error) {
