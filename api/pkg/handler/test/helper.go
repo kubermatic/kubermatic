@@ -671,8 +671,19 @@ func GenTestMachine(name, rawProviderSpec string, labels map[string]string, owne
 	}
 }
 
-func GenTestMachineDeployment(name, rawProviderSpec string, selector map[string]string) *clusterv1alpha1.MachineDeployment {
+func GenTestMachineDeployment(name, rawProviderSpec string, selector map[string]string, dynamicConfig bool) *clusterv1alpha1.MachineDeployment {
 	var replicas int32 = 1
+
+	var configSource *corev1.NodeConfigSource
+	if dynamicConfig {
+		configSource = &corev1.NodeConfigSource{
+			ConfigMap: &corev1.ConfigMapNodeConfigSource{
+				Namespace:        "kube-system",
+				KubeletConfigKey: "kubelet",
+				Name:             "config-kubelet-9.9",
+			},
+		}
+	}
 	return &clusterv1alpha1.MachineDeployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -696,6 +707,7 @@ func GenTestMachineDeployment(name, rawProviderSpec string, selector map[string]
 					Versions: clusterv1alpha1.MachineVersionInfo{
 						Kubelet: "v9.9.9",
 					},
+					ConfigSource: configSource,
 				},
 			},
 		},
