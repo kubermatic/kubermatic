@@ -151,6 +151,8 @@ spec:
             centos: ""
             coreos: ""
             ubuntu: ""
+  # Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
+  expose_strategy: ""
   # A reference to the Kubeconfig of this cluster. The Kubeconfig must
   # have cluster-admin privileges. This field is mandatory for every
   # seed, even if there are no datacenters defined yet.
