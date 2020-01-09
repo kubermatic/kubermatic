@@ -8941,6 +8941,10 @@
         "template"
       ],
       "properties": {
+        "dynamicConfig": {
+          "type": "boolean",
+          "x-go-name": "DynamicConfig"
+        },
         "paused": {
           "type": "boolean",
           "x-go-name": "Paused"
