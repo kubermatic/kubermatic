@@ -171,6 +171,8 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 		}
 	}
 
+	hasDynamicConfig := md.Spec.Template.Spec.ConfigSource != nil
+
 	return &apiv1.NodeDeployment{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                md.Name,
@@ -189,7 +191,8 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 				OperatingSystem: *operatingSystemSpec,
 				Cloud:           *cloudSpec,
 			},
-			Paused: &md.Spec.Paused,
+			Paused:        &md.Spec.Paused,
+			DynamicConfig: &hasDynamicConfig,
 		},
 		Status: md.Status,
 	}, nil

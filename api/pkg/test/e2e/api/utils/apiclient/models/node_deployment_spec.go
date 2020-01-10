@@ -17,6 +17,9 @@ import (
 // swagger:model NodeDeploymentSpec
 type NodeDeploymentSpec struct {
 
+	// dynamic config
+	DynamicConfig bool `json:"dynamicConfig,omitempty"`
+
 	// paused
 	Paused bool `json:"paused,omitempty"`
 
