@@ -1,3 +1,13 @@
+### [v2.12.5]()
+
+
+- A bug that occasionally resulted in a `Error: no matches for kind &#34;MachineDeployment&#34; in version &#34;cluster.k8s.io/v1alpha1&#34; visible in the UI was fixed. [#4870](https://github.com/kubermatic/kubermatic/issues/4870) ([alvaroaleman](https://github.com/alvaroaleman))
+- A memory leak in the port-forwarding of the Kubernetes dashboard and Openshift console endpoints was fixed [#4879](https://github.com/kubermatic/kubermatic/issues/4879) ([alvaroaleman](https://github.com/alvaroaleman))
+- Enabled edit options for kubeAdm [#1873](https://github.com/kubermatic/dashboard-v2/issues/1873) ([kgroschoff](https://github.com/kgroschoff))
+
+
+
+
 ### [v2.12.4]()
 
 
