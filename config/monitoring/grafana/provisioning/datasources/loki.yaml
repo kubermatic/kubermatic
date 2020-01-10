@@ -19,4 +19,4 @@ datasources:
   url: 'http://{{ $name }}.{{ $ns }}.svc.cluster.local:{{ $port }}'
   version: 1
   editable: false
-{{ end }
+{{ end }}
