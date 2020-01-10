@@ -61,6 +61,7 @@ grafana:
 
       lokiServices:
       - loki
+      
       # read datasources from this path in the Helm chart; this is
       # evaluated during deployment, not during Grafana runtime!
       source: provisioning/datasources/*
