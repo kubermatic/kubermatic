@@ -101,6 +101,8 @@ LATEST_DASHBOARD="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
 sed -i "s/__DASHBOARD_TAG__/$LATEST_DASHBOARD/g" ./config/kubermatic/*.yaml
 sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic/*.yaml
 sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic-operator/*.yaml
+sed -i "s/__NAMESPACE__/kubermatic/g" ./config/kubermatic-operator/*.yaml
+sed -i "s/__WORKER_NAME__/kubermatic-operator/g" ./config/kubermatic-operator/*.yaml
 sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/nodeport-proxy/*.yaml
 
 echodate "Deploying ${DEPLOY_STACK} stack..."

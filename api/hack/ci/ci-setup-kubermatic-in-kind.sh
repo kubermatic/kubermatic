@@ -14,11 +14,14 @@ export KUBERMATIC_SCHEME="http"
 export KUBERMATIC_HOST="localhost:8080"
 # If set to `true`, the script will just use `latest`. Used e.G. in the UI tests.
 export KUBERMATIC_SKIP_BUILDING="${KUBERMATIC_SKIP_BUILDING:-false}"
+# If set to `true`, the script will use the Kubermatic Operator instead of the
+# Helm chart for setting up Kubermatic.
+export KUBERMATIC_USE_OPERATOR="${KUBERMATIC_USE_OPERATOR:-false}"
 # Number of UI replicas, zero by default as we do not test the UI
 export KUBERMATIC_UI_REPLICAS="${KUBERMATIC_UI_REPLICAS:-0}"
 # Defaults to `latest` so we do not test by default if the latest dashboard version
 # got successfully built and published, as that may race with the dashboard postsubmit.
-export KUBERMATIC_DASHBOARD_VERSION="${KUBERMATIC_DASHBOARD_VERSION:-latest}"
+export UIDOCKERTAG="${UIDOCKERTAG:-latest}"
 # ADDITIONAL_HELM_ARGS allows to configure extra args for helm. Used e.G. in UI and API tests.
 export ADDITIONAL_HELM_ARGS="${ADDITIONAL_HELM_ARGS:-}"
 
@@ -57,7 +60,7 @@ retry 5 vault kv get -field=values.yaml \
 echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json
 
 # Start docker daemon
-if ps xf|grep -v grep|grep -q dockerd; then
+if ps xf| grep -v grep | grep -q dockerd; then
   echodate "Docker already started"
 else
   echodate "Starting docker"
@@ -82,7 +85,7 @@ retry 5 docker stats --no-stream
 echodate "Docker became ready"
 
 # Load kind image
-if docker images|grep -q kindest; then
+if docker images | grep -q kindest; then
   echodate "Kindest image already loaded"
 else
   echodate "Loading kindest image"
@@ -90,14 +93,12 @@ else
   echodate "Loaded kindest image"
 fi
 
-
 # Prevent mtu-related timeouts
 echodate "Setting iptables rule to clamp mss to path mtu"
 iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-echodate "Set iptables rule to clamp mss to path mtu"
 
 # Make debugging a bit better
-echodate "Setting aliases in .bashrc"
+echodate "Confuguring bash"
 cat <<EOF >>~/.bashrc
 # Gets set to the CI clusters kubeconfig from a preset
 unset KUBECONFIG
@@ -112,11 +113,14 @@ kubeconfig ()
     export KUBECONFIG=\$TMP_KUBECONFIG;
     cn kube-system
 }
+# this alias makes it so that watch can be used with other aliases, like "watch k get pods"
+alias watch='watch '
 alias k=kubectl
+alias ll='ls -lh --file-type --group-directories-first'
+alias lll='ls -lahF --group-directories-first'
 source <(k completion bash )
 source <(k completion bash | sed s/kubectl/k/g)
 EOF
-echodate "Set aliases in .bashrc"
 
 # The container runtime allows us to change the content but not to change the inode
 # which is what sed -i does, so write to a tempfile and write the tempfiles content back.
@@ -129,7 +133,7 @@ sed 's/localhost/localhost dex.oauth/' /etc/hosts > $temp_hosts
 cat $temp_hosts >/etc/hosts
 echodate "Set dex.oauth alias in /etc/hosts"
 
-if kind get clusters |grep -q ${SEED_NAME}; then
+if kind get clusters | grep -q ${SEED_NAME}; then
   echodate "Kind cluster already exists"
 else
   # Create kind cluster
@@ -211,13 +215,10 @@ echodate "Creating Helm bindings"
 retry 5 kubectl apply -f $INITIAL_MANIFESTS
 
 TEST_NAME="Deploy Tiller"
-echodate "Deploying Tiller"
-
 if kubectl get deployment -n kube-system tiller-deploy &>/dev/null; then
-  echodate "Tiller already deployed"
+  echodate "Tiller is already deployed."
 else
-  echodate "Deploying tiller"
-  TEST_NAME="Deploy Tiller"
+  echodate "Deploying Tiller"
   helm init --wait --service-account=tiller
 fi
 
@@ -303,40 +304,125 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   echodate "Successfully built and loaded all images"
 fi
 
-# --force is needed in case the first attempt at installing didn't succeed
-# see https://github.com/helm/helm/pull/3597
-retry 3 helm upgrade --install --force --wait --timeout 300 \
-  --set=kubermatic.isMaster=true \
-  --set=kubermatic.imagePullSecretData=$IMAGE_PULL_SECRET_DATA \
-  --set-string=kubermatic.controller.addons.kubernetes.image.tag="$KUBERMATIC_VERSION" \
-  --set-string=kubermatic.controller.image.tag="$KUBERMATIC_VERSION" \
-  --set-string=kubermatic.controller.addons.openshift.image.tag="$KUBERMATIC_VERSION" \
-  --set-string=kubermatic.api.image.tag="$KUBERMATIC_VERSION" \
-  --set=kubermatic.controller.datacenterName=${SEED_NAME} \
-  --set=kubermatic.api.replicas=1 \
-  --set-string=kubermatic.masterController.image.tag="$KUBERMATIC_VERSION" \
-  --set-string=kubermatic.ui.image.tag=${KUBERMATIC_DASHBOARD_VERSION} \
-  --set=kubermatic.ui.replicas="${KUBERMATIC_UI_REPLICAS}" \
-  --set=kubermatic.ingressClass=non-existent \
-  --set=kubermatic.checks.crd.disable=true \
-  --set=kubermatic.datacenters='' \
-  --set=kubermatic.dynamicDatacenters=true \
-  --set=kubermatic.dynamicPresets=true \
-  --set=kubermatic.kubeconfig="$(cat $KUBECONFIG|sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./'|base64 -w0)" \
-  --set=kubermatic.auth.tokenIssuer=http://dex.oauth:5556/dex \
-  --set=kubermatic.auth.clientID=kubermatic \
-  --set=kubermatic.auth.serviceAccountKey=$SERVICE_ACCOUNT_KEY \
-  --set=kubermatic.apiserverDefaultReplicas=1 \
-  --set=kubermatic.deployVPA=false \
-  --namespace=kubermatic \
-  ${ADDITIONAL_HELM_ARGS} \
-  ${OPENSHIFT_HELM_ARGS:-} \
-  --values ${VALUES_FILE} \
-  kubermatic \
-  ./config/kubermatic/
+function check_all_deployments_ready() {
+  local namespace="$1"
+
+  # check that Deployments have been created
+  local deployments
+  deployments=$(kubectl -n $namespace get deployments -o json)
+
+  if [ $(jq '.items | length' <<< $deployments) -eq 0 ]; then
+    echodate "No Deployments created yet."
+    return 1
+  fi
+
+  # check that all Deployments are ready
+  local unready
+  unready=$(jq -r '[.items[] | select(.spec.replicas > 0) | select (.status.availableReplicas < .spec.replicas) | .metadata.name] | @tsv' <<< $deployments)
+  if [ -n "$unready" ]; then
+    echodate "Not all Deployments have finished rolling out, namely: $unready"
+    return 1
+  fi
+
+  return 0
+}
+
+if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
+  TEST_NAME="Deploy Kubermatic"
+  echodate "Deploying Kubermatic using Helm..."
+
+  # --force is needed in case the first attempt at installing didn't succeed
+  # see https://github.com/helm/helm/pull/3597
+  retry 3 helm upgrade --install --force --wait --timeout 300 \
+    --set=kubermatic.isMaster=true \
+    --set=kubermatic.imagePullSecretData=$IMAGE_PULL_SECRET_DATA \
+    --set-string=kubermatic.controller.addons.kubernetes.image.tag="$KUBERMATIC_VERSION" \
+    --set-string=kubermatic.controller.image.tag="$KUBERMATIC_VERSION" \
+    --set-string=kubermatic.controller.addons.openshift.image.tag="$KUBERMATIC_VERSION" \
+    --set-string=kubermatic.api.image.tag="$KUBERMATIC_VERSION" \
+    --set=kubermatic.controller.datacenterName=${SEED_NAME} \
+    --set=kubermatic.api.replicas=1 \
+    --set-string=kubermatic.masterController.image.tag="$KUBERMATIC_VERSION" \
+    --set-string=kubermatic.ui.image.tag=${UIDOCKERTAG} \
+    --set=kubermatic.ui.replicas="${KUBERMATIC_UI_REPLICAS}" \
+    --set=kubermatic.ingressClass=non-existent \
+    --set=kubermatic.checks.crd.disable=true \
+    --set=kubermatic.datacenters='' \
+    --set=kubermatic.dynamicDatacenters=true \
+    --set=kubermatic.dynamicPresets=true \
+    --set=kubermatic.kubeconfig="$(cat $KUBECONFIG|sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./'|base64 -w0)" \
+    --set=kubermatic.auth.tokenIssuer=http://dex.oauth:5556/dex \
+    --set=kubermatic.auth.clientID=kubermatic \
+    --set=kubermatic.auth.serviceAccountKey=$SERVICE_ACCOUNT_KEY \
+    --set=kubermatic.apiserverDefaultReplicas=1 \
+    --set=kubermatic.deployVPA=false \
+    --namespace=kubermatic \
+    ${ADDITIONAL_HELM_ARGS} \
+    ${OPENSHIFT_HELM_ARGS:-} \
+    --values ${VALUES_FILE} \
+    kubermatic \
+    ./config/kubermatic/
+else
+  # Even when it does not reconcile certificates, the operator absolutely needs the
+  # cert-manager CRDs to exist.
+  TEST_NAME="Deploy cert-manager CRDs"
+  echodate "Deploying cert-manager CRDs"
+  retry 5 kubectl apply -f config/cert-manager/templates/crd.yaml
+
+  TEST_NAME="Deploy Kubermatic"
+  echodate "Installing Kubermatic using operator..."
+
+  sed -i "s/__KUBERMATIC_TAG__/${KUBERMATIC_VERSION}/g" config/kubermatic-operator/*.yaml
+  sed -i "s/__NAMESPACE__/kubermatic/g" config/kubermatic-operator/*.yaml
+  sed -i "s/__WORKER_NAME__//g" config/kubermatic-operator/*.yaml
+  kubectl create namespace kubermatic || true
+  retry 3 kubectl apply -f config/kubermatic-operator/
+  retry 5 check_all_deployments_ready kubermatic
+  echodate "Kubermatic Operator is ready."
+
+  # reset changes in case we re-deploy another version
+  git checkout -- config/kubermatic-operator/
+
+  KUBERMATIC_CONFIG="$(mktemp)"
+  cat <<EOF >$KUBERMATIC_CONFIG
+apiVersion: operator.kubermatic.io/v1alpha1
+kind: KubermaticConfiguration
+metadata:
+  name: e2e
+  namespace: kubermatic
+spec:
+  ingress:
+    domain: ci.kubermatic.io
+    disable: true
+  imagePullSecret: |
+$(echo "$IMAGE_PULL_SECRET_DATA" | base64 -d | sed 's/^/    /')
+  userCluster:
+    apiserverReplicas: 1
+  api:
+    debugLog: true
+  ui:
+    replicas: $KUBERMATIC_UI_REPLICAS
+  # Dex integration
+  auth:
+    tokenIssuer: "http://dex.oauth:5556/dex"
+    clientID: "kubermatic"
+    issuerRedirectURL: "http://localhost:8000"
+    serviceAccountKey: "$SERVICE_ACCOUNT_KEY"
+EOF
+  echodate "Creating Kubermatic Master..."
+  retry 3 kubectl apply -f $KUBERMATIC_CONFIG
+
+  echodate "Waiting for Kubermatic Operator to deploy master components..."
+  # sleep a bit to prevent us from checking the Deployments too early, before
+  # the operator had time to reconcile
+  sleep 2
+  retry 8 check_all_deployments_ready kubermatic
+  echodate "Kubermatic Master is ready."
+fi
+
 echodate "Finished installing Kubermatic"
 
-echodate "Installing seeds"
+echodate "Installing Seed..."
 SEED_MANIFEST="$(mktemp)"
 cat <<EOF >$SEED_MANIFEST
 kind: Secret
@@ -346,6 +432,7 @@ metadata:
   namespace: kubermatic
 data:
   kubeconfig: "$(cat $KUBECONFIG|sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./'|base64 -w0)"
+
 ---
 kind: Seed
 apiVersion: kubermatic.k8s.io/v1
@@ -452,22 +539,21 @@ spec:
             minimum_vcpus: 0
           region: dbl
 EOF
-TEST_NAME="Deploy Seed Manifest"
 retry 7 kubectl apply -f $SEED_MANIFEST
-echodate "Finished installing seed"
+echodate "Finished installing Seed"
 
-if ps xf|grep -v grep|grep -q 'kubectl port-forward --address 0.0.0.0 -n oauth svc/dex'; then
-  echodate "Found existing port-forward for dex, killing"
-  kill "$(ps xf|grep -v grep|grep 'kubectl port-forward --address 0.0.0.0 -n oauth svc/dex'|awk '{print $1}')"
-else
-  echodate "No existing port-forward for dex found"
+# wait until the operator has reconciled
+if [[ "${KUBERMATIC_USE_OPERATOR}" = "true" ]]; then
+  sleep 2
+  echodate "Waiting for Kubermatic Operator to deploy seed components..."
+  retry 8 check_all_deployments_ready kubermatic
+  echodate "Kubermatic Seed is ready."
 fi
-if ps xf|grep -v grep|grep -q 'kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80'; then
-  echodate "Found existing port-forward for kubermatic api, killing"
-  kill "$(ps xf|grep -v grep|grep 'kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80'|awk '{print $1}')"
-else
-  echodate "No existing port-forward for the kubermatic api found"
-fi
+
+function kill_port_forwardings() {
+  echodate "Stopping any previous port-forwardings to port $1..."
+  ss -tlpn "sport = :$1" | (grep -oP "(?<=pid=)[0-9]+" || true) | uniq | tee | xargs -r kill
+}
 
 function cleanup_kubermatic_clusters_in_kind {
   originalRC=$?
@@ -475,7 +561,7 @@ function cleanup_kubermatic_clusters_in_kind {
   # Tolerate errors and just continue
   set +e
   # Clean up clusters
-  echodate "Cleaning up clusters"
+  echodate "Cleaning up clusters..."
   kubectl delete cluster --all --ignore-not-found=true
   echodate "Done cleaning up clusters"
 
@@ -488,17 +574,19 @@ function cleanup_kubermatic_clusters_in_kind {
 appendTrap cleanup_kubermatic_clusters_in_kind EXIT
 
 TEST_NAME="Expose Dex and Kubermatic API"
-echodate "Exposing Dex and Kubermatic API to localhost"
-kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556  &
+echodate "Exposing Dex and Kubermatic API to localhost..."
+kill_port_forwardings 5556
+kill_port_forwardings 8080
+kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556 &
 kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 &
 echodate "Finished exposing components"
 
 echodate "Waiting for Dex to be ready"
-retry 5 curl --fail http://127.0.0.1:5556/dex/healthz
+retry 5 curl -sSf  http://127.0.0.1:5556/dex/healthz
 echodate "Dex became ready"
 
 echodate "Waiting for Kubermatic API to be ready"
-retry 5 curl --fail http://127.0.0.1:8080/api/v1/healthz
+retry 5 curl -sSf  http://127.0.0.1:8080/api/v1/healthz
 echodate "API became ready"
 
 cd -
