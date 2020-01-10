@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -o errexit
 set -o nounset
@@ -13,6 +13,7 @@ make seed-controller-manager
 
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
+PPROF_PORT=${PPROF_PORT:-6600}
 
 ./_build/seed-controller-manager \
   -dynamic-datacenters=true \
@@ -38,5 +39,6 @@ KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
   -log-debug=$KUBERMATIC_DEBUG \
   -log-format=Console \
   -max-parallel-reconcile=10 \
+  -pprof-listen-address=":${PPROF_PORT}" \
   -logtostderr \
   -v=4 # Log-level for the Kube dependencies. Increase up to 9 to get request-level logs.
