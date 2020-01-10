@@ -37,7 +37,7 @@ actual_retry() {
 }
 
 echodate() {
-  echo "$(date -Is)" "$@"
+  echo "[$(date -Is)]" "$@"
 }
 
 write_junit() {
