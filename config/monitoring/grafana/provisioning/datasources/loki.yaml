@@ -1,0 +1,22 @@
+apiVersion: 1
+datasources:
+{{ range .Values.grafana.provisioning.datasources.lokiServices }}
+{{ $name := . }}
+{{ $ns := "logging" }}
+{{ $port := "3100" }}
+{{ if (contains ":" $name) }}
+{{ $port = (split ":" $name)._1 }}
+{{ $name = (split ":" $name)._0 }}
+{{ end }}
+{{ if (contains "." $name) }}
+{{ $ns = (split "." $name)._1 }}
+{{ $name = (split "." $name)._0 }}
+{{ end }}
+- name: {{ $name }}
+  type: loki
+  access: proxy
+  org_id: 1
+  url: 'http://{{ $name }}.{{ $ns }}.svc.cluster.local:{{ $port }}'
+  version: 1
+  editable: false
+{{ end }}
