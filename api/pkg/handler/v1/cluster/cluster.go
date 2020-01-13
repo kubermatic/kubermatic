@@ -454,9 +454,11 @@ func ListAllEndpoint(projectProvider provider.ProjectProvider, seedsGetter provi
 		}
 
 		for _, seed := range seeds {
+			// if a Seed is bad, do not forward that error to the user, but only log
 			clusterProvider, err := clusterProviderGetter(seed)
 			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
+				klog.Errorf("failed to create cluster provider for seed %s: %v", seed.Name, err)
+				continue
 			}
 			apiClusters, err := getClusters(clusterProvider, userInfo, projectProvider, req.ProjectID)
 			if err != nil {

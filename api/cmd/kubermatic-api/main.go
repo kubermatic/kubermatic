@@ -183,7 +183,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		for _, seed := range seeds {
 			if _, err := clusterProviderGetter(seed); err != nil {
 				kubermaticlog.Logger.Infow("failed to get clusterProvider when trying to warm up restMapper cache", zap.Error(err), "seed", seed.Name)
-				continue
 			}
 		}
 	}()
