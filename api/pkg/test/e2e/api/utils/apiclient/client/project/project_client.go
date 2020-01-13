@@ -199,38 +199,6 @@ func (a *Client) CreateNodeDeployment(params *CreateNodeDeploymentParams, authIn
 }
 
 /*
-CreateNodeForClusterLegacy deprecateds creates a node that will belong to the given cluster
-
-This endpoint is deprecated, please create a Node Deployment instead.
-Use POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments
-*/
-func (a *Client) CreateNodeForClusterLegacy(params *CreateNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeForClusterLegacyCreated, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewCreateNodeForClusterLegacyParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "createNodeForClusterLegacy",
-		Method:             "POST",
-		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &CreateNodeForClusterLegacyReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*CreateNodeForClusterLegacyCreated), nil
-
-}
-
-/*
 CreateProject creates a brand new project
 
 Note that this endpoint can be consumed by every authenticated user.
@@ -403,37 +371,6 @@ func (a *Client) DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authIn
 		return nil, err
 	}
 	return result.(*DeleteNodeDeploymentOK), nil
-
-}
-
-/*
-DeleteNodeForClusterLegacy deprecateds deletes the given node that belongs to the cluster
-
-This endpoint is deprecated, please create a Node Deployment instead.
-*/
-func (a *Client) DeleteNodeForClusterLegacy(params *DeleteNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteNodeForClusterLegacyOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewDeleteNodeForClusterLegacyParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "deleteNodeForClusterLegacy",
-		Method:             "DELETE",
-		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &DeleteNodeForClusterLegacyReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*DeleteNodeForClusterLegacyOK), nil
 
 }
 
@@ -786,37 +723,6 @@ func (a *Client) GetNodeDeployment(params *GetNodeDeploymentParams, authInfo run
 }
 
 /*
-GetNodeForClusterLegacy deprecateds gets a node that is assigned to the given cluster
-
-This endpoint is deprecated, please create a Node Deployment instead.
-*/
-func (a *Client) GetNodeForClusterLegacy(params *GetNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeForClusterLegacyOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewGetNodeForClusterLegacyParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "getNodeForClusterLegacy",
-		Method:             "GET",
-		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetNodeForClusterLegacyReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*GetNodeForClusterLegacyOK), nil
-
-}
-
-/*
 GetOidcClusterKubeconfig gets the kubeconfig for the specified cluster with oidc authentication
 */
 func (a *Client) GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeconfigOK, error) {
@@ -1163,37 +1069,6 @@ func (a *Client) ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo
 		return nil, err
 	}
 	return result.(*ListNodeDeploymentsOK), nil
-
-}
-
-/*
-ListNodesForClusterLegacy deprecateds lists nodes that belong to the given cluster
-
-This endpoint is deprecated, please create a Node Deployment instead.
-*/
-func (a *Client) ListNodesForClusterLegacy(params *ListNodesForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodesForClusterLegacyOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListNodesForClusterLegacyParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "listNodesForClusterLegacy",
-		Method:             "GET",
-		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &ListNodesForClusterLegacyReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*ListNodesForClusterLegacyOK), nil
 
 }
 
