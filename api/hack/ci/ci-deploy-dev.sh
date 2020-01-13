@@ -19,15 +19,16 @@ retry 5 vault write \
 export VAULT_TOKEN="$(cat /tmp/vault-token-response.json| jq .auth.client_token -r)"
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
+export DOCKER_CONFIG=/tmp/dockercfg
 export KUBERMATIC_CONFIG=/tmp/kubermatic.yaml
 
 # deploy to dev
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}
 vault kv get -field=values.yaml dev/seed-clusters/dev.kubermatic.io > ${VALUES_FILE}
+vault kv get -field=.dockerconfigjson dev/seed-clusters/dev.kubermatic.io > ${DOCKER_CONFIG}
 vault kv get -field=kubermatic.yaml dev/seed-clusters/dev.kubermatic.io > ${KUBERMATIC_CONFIG}
 echodate "Successfully got secrets for dev from Vault"
 
 echodate "Deploying ${DEPLOY_STACK} stack to dev"
-TILLER_NAMESPACE=kubermatic-installer \
-  DEPLOY_KUBERMATIC_OPERATOR=true ./api/hack/deploy.sh master ${VALUES_FILE}
+TILLER_NAMESPACE=kubermatic-installer ./api/hack/deploy.sh master ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to dev"
