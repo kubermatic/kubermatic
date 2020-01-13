@@ -331,10 +331,6 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
   TEST_NAME="Deploy Kubermatic"
   echodate "Deploying Kubermatic using Helm..."
 
-  # Use the chart version that comes with the particular Kubermatic version
-  # in order to avoid incompatibility
-  OLD_HEAD="$(git rev-parse HEAD)"
-  git checkout ${KUBERMATIC_VERSION}
   # --force is needed in case the first attempt at installing didn't succeed
   # see https://github.com/helm/helm/pull/3597
   retry 3 helm upgrade --install --force --wait --timeout 300 \
@@ -366,9 +362,6 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
     --values ${VALUES_FILE} \
     kubermatic \
     ./config/kubermatic/
-
-  # restore original repo state
-  git checkout ${OLD_HEAD}
 else
   # Even when it does not reconcile certificates, the operator absolutely needs the
   # cert-manager CRDs to exist.
