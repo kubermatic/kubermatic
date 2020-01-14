@@ -1,9 +1,3 @@
-## Affinity for pod assignment
-## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
-affinity: {}
-
-annotations: {}
-
 deploymentStrategy: RollingUpdate
 
 image:
@@ -11,7 +5,6 @@ image:
   tag: v1.2.0
   pullPolicy: IfNotPresent
 
-livenessProbe: {}
 
 loki:
   serviceName: "loki"  
@@ -20,28 +13,14 @@ loki:
   # user: user
   # password: pass
 
-nameOverride: promtail
 
-## Node labels for pod assignment
-## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 nodeSelector: {}
-
-pipelineStages:
-- docker: {}
-
-## Pod Labels
-podLabels: {}
+affinity: {}
 
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "http-metrics"
 
-## Assign a PriorityClassName to pods if set
-# priorityClassName:
-
-rbac:
-  create: true
-  pspEnabled: false 
 
 readinessProbe:
   failureThreshold: 5
@@ -61,23 +40,7 @@ resources:
     cpu: 50m
     memory: 64Mi
 
-# Custom scrape_configs to override the default ones in the configmap
-scrapeConfigs: []
-
-# Custom scrape_configs together with the default ones in the configmap
-extraScrapeConfigs: []
-
-securityContext:
-  readOnlyRootFilesystem: true
-  runAsGroup: 0
-  runAsUser: 0
-
-serviceAccount:
-  create: true
-  name:
-
-## Tolerations for pod assignment
-## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+ 
 tolerations:
 - key: node-role.kubernetes.io/master
   operator: Exists
@@ -129,8 +92,3 @@ config:
     # Period to resync directories being watched and files being tailed
     sync_period: 10s
 
-serviceMonitor:
-  enabled: false
-  interval: ""
-  additionalLabels: {}
-  # scrapeTimeout: 10s

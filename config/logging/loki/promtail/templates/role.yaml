@@ -1,4 +1,3 @@
-{{- if .Values.rbac.create }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -9,11 +8,3 @@ metadata:
     chart: {{ template "promtail.chart" . }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
-{{- if .Values.rbac.pspEnabled }}
-rules:
-- apiGroups:      ['extensions']
-  resources:      ['podsecuritypolicies']
-  verbs:          ['use']
-  resourceNames:  [{{ template "promtail.fullname" . }}]
-{{- end }}
-{{- end }}

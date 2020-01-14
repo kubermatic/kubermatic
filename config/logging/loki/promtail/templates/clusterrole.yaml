@@ -1,4 +1,3 @@
-{{- if .Values.rbac.create }}
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -18,4 +17,3 @@ rules:
   - endpoints
   - pods
   verbs: ["get", "watch", "list"]
-{{- end }}
