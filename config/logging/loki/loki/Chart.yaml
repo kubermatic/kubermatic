@@ -1,0 +1,17 @@
+apiVersion: "v1"
+name: loki
+version: 0.0.1
+appVersion: v1.2.0
+description: "Loki: like Prometheus, but for logs."
+keywords:
+- kubermatic
+- logging
+- grafana
+- loki
+- promtail
+home: https://grafana.com/loki
+sources:
+  - https://github.com/grafana/loki
+maintainers:
+  - name: Loodse GmbH
+    email: support@loodse.com
