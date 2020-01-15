@@ -15,7 +15,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/collectors"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/migrations"
+	seedmigrations "github.com/kubermatic/kubermatic/api/pkg/crd/migrations/seed"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
@@ -238,7 +238,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 			return leaderelection.RunAsLeader(leaderCtx, log, config, mgr.GetEventRecorderFor(controllerName), electionName, func(ctx context.Context) error {
 				log.Info("Executing migrations...")
-				if err := migrations.RunAll(ctrlCtx.mgr.GetConfig(), options.workerName); err != nil {
+				if err := seedmigrations.RunAll(ctrlCtx.mgr.GetConfig(), options.workerName); err != nil {
 					return fmt.Errorf("failed to run migrations: %v", err)
 				}
 				log.Info("Migrations executed successfully")
