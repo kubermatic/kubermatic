@@ -139,7 +139,6 @@ service:
   annotations: {}
   labels: {}
 
-
 terminationGracePeriodSeconds: 4800
 
 ## Tolerations for pod assignment
