@@ -150,19 +150,18 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 }
 
 func (r *Reconciler) updateStatefulSet(ctx context.Context, namespaceName, statefulSetName string, vpa autoscalingv1beta2.VerticalPodAutoscaler) error {
+	// TODO(xmudrii): Check which check we need.
+	// VPA recommendations are not available for recently created resources and we want to skip those resources.
+	if vpa.Status.Recommendation == nil || vpa.Status.Recommendation.ContainerRecommendations == nil {
+		return nil
+	}
+
 	statefulSet := &appsv1.StatefulSet{}
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: statefulSetName, Namespace: namespaceName}, statefulSet); err != nil {
 		return fmt.Errorf("failed to get statefulset %s/%s: %v", namespaceName, statefulSetName, err)
 	}
 
-	// var lastUpdated *time.Time
-	// if l, ok := statefulSet.ObjectMeta.Annotations[UpdatedByVPA]; ok {
-	// 	t, err := time.Parse(time.RFC3339, l)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	lastUpdated = &t
-	// }
+	// TODO(xmudrii): Reconsider this logic.
 	var lastUpdated *time.Time
 	if a, ok := statefulSet.Annotations[UpdatedByVPA]; ok {
 		req := []resources.Requirements{}
@@ -199,19 +198,18 @@ func (r *Reconciler) updateStatefulSet(ctx context.Context, namespaceName, state
 }
 
 func (r *Reconciler) updateDeployment(ctx context.Context, namespaceName, deploymentName string, vpa autoscalingv1beta2.VerticalPodAutoscaler) error {
+	// TODO(xmudrii): Check which check we need.
+	// VPA recommendations are not available for recently created resources and we want to skip those resources.
+	if vpa.Status.Recommendation == nil || vpa.Status.Recommendation.ContainerRecommendations == nil {
+		return nil
+	}
+
 	deployment := &appsv1.Deployment{}
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: namespaceName}, deployment); err != nil {
 		return fmt.Errorf("failed to get deployment %s/%s: %v", namespaceName, deploymentName, err)
 	}
 
-	// var lastUpdated *time.Time
-	// if l, ok := deployment.ObjectMeta.Annotations[UpdatedByVPA]; ok {
-	// 	t, err := time.Parse(time.RFC3339, l)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	lastUpdated = &t
-	// }
+	// TODO(xmudrii): Reconsider this logic.
 	var lastUpdated *time.Time
 	if a, ok := deployment.Annotations[UpdatedByVPA]; ok {
 		req := []resources.Requirements{}
