@@ -10,14 +10,14 @@ metadata:
     app.kubernetes.io/managed-by: helm
 data:
   promtail.yaml: |
-    {{- toYaml .Values.config | nindent 4 }}
+    {{- toYaml .Values.promtail.config | nindent 4 }}
     scrape_configs:
-    {{- if .Values.scrapeConfigs }}
-    {{- toYaml .Values.scrapeConfigs | nindent 4 }}
+    {{- if .Values.promtail.scrapeConfigs }}
+    {{- toYaml .Values.promtail.scrapeConfigs | nindent 4 }}
     {{- else }}
     - job_name: kubernetes-pods-name
       pipeline_stages:
-        {{- toYaml .Values.pipelineStages | nindent 8 }}
+        {{- toYaml .Values.promtail.pipelineStages | nindent 8 }}
       kubernetes_sd_configs:
       - role: pod
       relabel_configs:
@@ -60,7 +60,7 @@ data:
         target_label: __path__
     - job_name: kubernetes-pods-app
       pipeline_stages:
-        {{- toYaml .Values.pipelineStages | nindent 8 }}
+        {{- toYaml .Values.promtail.pipelineStages | nindent 8 }}
       kubernetes_sd_configs:
       - role: pod
       relabel_configs:
@@ -107,7 +107,7 @@ data:
         target_label: __path__
     - job_name: kubernetes-pods-direct-controllers
       pipeline_stages:
-        {{- toYaml .Values.pipelineStages | nindent 8 }}
+        {{- toYaml .Values.promtail.pipelineStages | nindent 8 }}
       kubernetes_sd_configs:
       - role: pod
       relabel_configs:
@@ -160,7 +160,7 @@ data:
         target_label: __path__
     - job_name: kubernetes-pods-indirect-controller
       pipeline_stages:
-        {{- toYaml .Values.pipelineStages | nindent 8 }}
+        {{- toYaml .Values.promtail.pipelineStages | nindent 8 }}
       kubernetes_sd_configs:
       - role: pod
       relabel_configs:
@@ -215,7 +215,7 @@ data:
         target_label: __path__
     - job_name: kubernetes-pods-static
       pipeline_stages:
-        {{- toYaml .Values.pipelineStages | nindent 8 }}
+        {{- toYaml .Values.promtail.pipelineStages | nindent 8 }}
       kubernetes_sd_configs:
       - role: pod
       relabel_configs:
@@ -262,6 +262,6 @@ data:
         - __meta_kubernetes_pod_container_name
         target_label: __path__
     {{- end }}
-    {{- if .Values.extraScrapeConfigs }}
-    {{- toYaml .Values.extraScrapeConfigs | nindent 4 }}
+    {{- if .Values.promtail.extraScrapeConfigs }}
+    {{- toYaml .Values.promtail.extraScrapeConfigs | nindent 4 }}
     {{- end }}

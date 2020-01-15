@@ -1,62 +1,63 @@
-deploymentStrategy: RollingUpdate
-
-image:
-  repository: grafana/promtail
-  tag: v1.2.0
-  pullPolicy: IfNotPresent
-
-
-loki:
-  serviceName: "loki"  
-  servicePort: 3100
-  serviceScheme: http
-
-
-nodeSelector: {}
-affinity: {}
-
-
-resources: 
-  limits:
-    cpu: 200m
-    memory: 128Mi
-  requests:
-    cpu: 50m
-    memory: 64Mi
-
- 
-tolerations:
-- key: node-role.kubernetes.io/master
-  operator: Exists
-  effect: NoSchedule
-
-
-config:
-  client:
-    # Maximum wait period before sending batch
-    batchwait: 1s
-    # Maximum batch size to accrue before sending, unit is byte
-    batchsize: 102400
-
-    # Maximum time to wait for server to respond to a request
-    timeout: 10s
-
-    backoff_config:
-      # Initial backoff time between retries
-      minbackoff: 100ms
-      # Maximum backoff time between retries
-      maxbackoff: 5s
-      # Maximum number of retries when sending batches, 0 means infinite retries
-      maxretries: 20
-
-    # The labels to add to any time series or alerts when communicating with loki
-    external_labels: {}
-
-  server:
-    http_listen_port: 3101
-  positions:
-    filename: /run/promtail/positions.yaml
-  target_config:
-    # Period to resync directories being watched and files being tailed
-    sync_period: 10s
-
+promtail:
+  deploymentStrategy: RollingUpdate
+  
+  image:
+    repository: grafana/promtail
+    tag: v1.2.0
+    pullPolicy: IfNotPresent
+  
+  
+  loki:
+    serviceName: "loki"  
+    servicePort: 3100
+    serviceScheme: http
+  
+  
+  nodeSelector: {}
+  affinity: {}
+  
+  
+  resources: 
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  
+   
+  tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+  
+  
+  config:
+    client:
+      # Maximum wait period before sending batch
+      batchwait: 1s
+      # Maximum batch size to accrue before sending, unit is byte
+      batchsize: 102400
+  
+      # Maximum time to wait for server to respond to a request
+      timeout: 10s
+  
+      backoff_config:
+        # Initial backoff time between retries
+        minbackoff: 100ms
+        # Maximum backoff time between retries
+        maxbackoff: 5s
+        # Maximum number of retries when sending batches, 0 means infinite retries
+        maxretries: 20
+  
+      # The labels to add to any time series or alerts when communicating with loki
+      external_labels: {}
+  
+    server:
+      http_listen_port: 3101
+    positions:
+      filename: /run/promtail/positions.yaml
+    target_config:
+      # Period to resync directories being watched and files being tailed
+      sync_period: 10s
+  

@@ -9,15 +9,15 @@ metadata:
     app.kubernetes.io/version: '{{ .Chart.Version }}'
     app.kubernetes.io/managed-by: helm
   annotations:
-    {{- toYaml .Values.annotations | nindent 4 }}
+    {{- toYaml .Values.promtail.annotations | nindent 4 }}
 spec:
   selector:
     matchLabels:
       app: {{ template "promtail.name" . }}
       release: {{ .Release.Name }}
   updateStrategy:
-    type: {{ .Values.deploymentStrategy }}
-  {{- if ne .Values.deploymentStrategy "RollingUpdate" }}
+    type: {{ .Values.promtail.deploymentStrategy }}
+  {{- if ne .Values.promtail.deploymentStrategy "RollingUpdate" }}
     rollingUpdate: null
   {{- end }}
   template:
@@ -25,7 +25,7 @@ spec:
       labels:
         app: {{ template "promtail.name" . }}
         release: {{ .Release.Name }}
-        {{- with .Values.podLabels }}
+        {{- with .Values.promtail.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}          
       annotations:
@@ -34,19 +34,19 @@ spec:
         prometheus.io/port: "http-metrics"
     spec:
       serviceAccountName: {{ template "promtail.serviceAccountName" . }}
-    {{- if .Values.priorityClassName }}
-      priorityClassName: {{ .Values.priorityClassName }}
+    {{- if .Values.promtail.priorityClassName }}
+      priorityClassName: {{ .Values.promtail.priorityClassName }}
     {{- end }}
       containers:
         - name: promtail
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.promtail.image.repository }}:{{ .Values.promtail.image.tag }}"
+          imagePullPolicy: {{ .Values.promtail.image.pullPolicy }}
           args:
             - "-config.file=/etc/promtail/promtail.yaml"
-            {{- if and .Values.loki.user .Values.loki.password }}
-            - "-client.url={{ .Values.loki.serviceScheme }}://{{ .Values.loki.user }}:{{ .Values.loki.password }}@{{ include "loki.serviceName" . }}:{{ .Values.loki.servicePort }}/loki/api/v1/push"
+            {{- if and .Values.promtail.loki.user .Values.promtail.loki.password }}
+            - "-client.url={{ .Values.promtail.loki.serviceScheme }}://{{ .Values.promtail.loki.user }}:{{ .Values.promtail.loki.password }}@{{ include "loki.serviceName" . }}:{{ .Values.promtail.loki.servicePort }}/loki/api/v1/push"
             {{- else }}
-            - "-client.url={{ .Values.loki.serviceScheme }}://{{ .Values.loki.serviceName }}:{{ .Values.loki.servicePort }}/loki/api/v1/push"
+            - "-client.url={{ .Values.promtail.loki.serviceScheme }}://{{ .Values.promtail.loki.serviceName }}:{{ .Values.promtail.loki.servicePort }}/loki/api/v1/push"
             {{- end }}
           volumeMounts:
             - name: config
@@ -65,13 +65,13 @@ spec:
               fieldRef:
                 fieldPath: spec.nodeName
           ports:
-            - containerPort: {{ .Values.config.server.http_listen_port }}
+            - containerPort: {{ .Values.promtail.config.server.http_listen_port }}
               name: http-metrics
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          {{- if .Values.livenessProbe }}
+            {{- toYaml .Values.promtail.securityContext | nindent 12 }}
+          {{- if .Values.promtail.livenessProbe }}
           livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
+            {{- toYaml .Values.promtail.livenessProbe | nindent 12 }}
           {{- end }}
           readinessProbe:
             failureThreshold: 5
@@ -83,13 +83,13 @@ spec:
             successThreshold: 1
             timeoutSeconds: 1
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.promtail.resources | nindent 12 }}
       nodeSelector:
-        {{- toYaml .Values.nodeSelector | nindent 8 }}
+        {{- toYaml .Values.promtail.nodeSelector | nindent 8 }}
       affinity:
-        {{- toYaml .Values.affinity | nindent 8 }}
+        {{- toYaml .Values.promtail.affinity | nindent 8 }}
       tolerations:
-        {{- toYaml .Values.tolerations | nindent 8 }}
+        {{- toYaml .Values.promtail.tolerations | nindent 8 }}
       volumes:
         - name: config
           configMap:
