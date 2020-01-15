@@ -109,12 +109,6 @@ podAnnotations:
 
 podManagementPolicy: OrderedReady
 
-## Assign a PriorityClassName to pods if set
-# priorityClassName:
-
-rbac:
-  create: true
-  pspEnabled: true
 
 readinessProbe:
   httpGet:
@@ -152,11 +146,6 @@ terminationGracePeriodSeconds: 4800
 ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 tolerations: []
 
-# The values to set in the PodDisruptionBudget spec
-# If not set then a PodDisruptionBudget will not be created
-podDisruptionBudget: {}
-# minAvailable: 1
-# maxUnavailable: 1
 
 updateStrategy:
   type: RollingUpdate
