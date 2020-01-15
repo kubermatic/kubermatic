@@ -4,10 +4,10 @@ metadata:
   name: {{ template "promtail.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ template "promtail.name" . }}
-    chart: {{ template "promtail.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "promtail.name" . }}
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/version: '{{ .Chart.Version }}'
+    app.kubernetes.io/managed-by: helm
   annotations:
     {{- toYaml .Values.annotations | nindent 4 }}
 spec:
@@ -30,9 +30,8 @@ spec:
         {{- end }}          
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        {{- with .Values.podAnnotations }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "http-metrics"
     spec:
       serviceAccountName: {{ template "promtail.serviceAccountName" . }}
     {{- if .Values.priorityClassName }}
@@ -54,9 +53,12 @@ spec:
               mountPath: /etc/promtail
             - name: run
               mountPath: /run/promtail
-            {{- with .Values.volumeMounts }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
+            - name: docker
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+            - name: pods
+              mountPath: /var/log/pods
+              readOnly: true
           env:
           - name: HOSTNAME
             valueFrom:
@@ -71,10 +73,15 @@ spec:
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           {{- end }}
-          {{- if .Values.readinessProbe }}
           readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
-          {{- end }}
+            failureThreshold: 5
+            httpGet:
+              path: /ready
+              port: http-metrics
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       nodeSelector:
@@ -90,7 +97,10 @@ spec:
         - name: run
           hostPath:
             path: /run/promtail
-        {{- with .Values.volumes }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        - name: docker
+          hostPath:
+            path: /var/lib/docker/containers
+        - name: pods
+          hostPath:
+            path: /var/log/pods
 

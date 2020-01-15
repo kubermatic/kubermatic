@@ -4,10 +4,10 @@ metadata:
   name: {{ template "promtail.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ template "promtail.name" . }}
-    chart: {{ template "promtail.chart" . }}
-    heritage: {{ .Release.Service }}
-    release: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ template "promtail.name" . }}
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/version: '{{ .Chart.Version }}'
+    app.kubernetes.io/managed-by: helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role

@@ -10,27 +10,11 @@ loki:
   serviceName: "loki"  
   servicePort: 3100
   serviceScheme: http
-  # user: user
-  # password: pass
 
 
 nodeSelector: {}
 affinity: {}
 
-podAnnotations:
-  prometheus.io/scrape: "true"
-  prometheus.io/port: "http-metrics"
-
-
-readinessProbe:
-  failureThreshold: 5
-  httpGet:
-    path: /ready
-    port: http-metrics
-  initialDelaySeconds: 10
-  periodSeconds: 10
-  successThreshold: 1
-  timeoutSeconds: 1
 
 resources: 
   limits:
@@ -46,22 +30,6 @@ tolerations:
   operator: Exists
   effect: NoSchedule
 
-# Extra volumes to scrape logs from
-volumes:
-- name: docker
-  hostPath:
-    path: /var/lib/docker/containers
-- name: pods
-  hostPath:
-    path: /var/log/pods
-
-volumeMounts:
-- name: docker
-  mountPath: /var/lib/docker/containers
-  readOnly: true
-- name: pods
-  mountPath: /var/log/pods
-  readOnly: true
 
 config:
   client:
