@@ -10,38 +10,38 @@ metadata:
     app.kubernetes.io/managed-by: helm
   annotations: {}
 spec:
-  podManagementPolicy: {{ .Values.podManagementPolicy }}
+  podManagementPolicy: OrderedReady
   replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-      app: {{ template "loki.name" . }}
-      release: {{ .Release.Name }}
-  serviceName: {{ template "loki.fullname" . }}-headless
+      app.kubernetes.io/name: {{ template "loki.name" . }}
+      app.kubernetes.io/instance: '{{ .Release.Name }}'
+  serviceName: {{ template "loki.fullname" . }}
   updateStrategy:
     {{- toYaml .Values.updateStrategy | nindent 4 }}
   template:
     metadata:
       labels:
-        app: {{ template "loki.name" . }}
-        name: {{ template "loki.name" . }}
-        release: {{ .Release.Name }}
+        app.kubernetes.io/name: {{ template "loki.name" . }}
+        app.kubernetes.io/instance: '{{ .Release.Name }}'
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
-        {{- with .Values.podAnnotations }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "http-metrics"
     spec:
       serviceAccountName: {{ template "loki.serviceAccountName" . }}
     {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
     {{- end }}
       securityContext:
-        {{- toYaml .Values.securityContext | nindent 8 }}
-      initContainers:
-        {{- toYaml .Values.initContainers | nindent 8 }}
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      initContainers: {}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -93,7 +93,7 @@ spec:
         {{- toYaml .Values.affinity | nindent 8 }}
       tolerations:
         {{- toYaml .Values.tolerations | nindent 8 }}
-      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: 4800
       volumes:
         - name: config
           secret:

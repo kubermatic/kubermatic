@@ -26,15 +26,6 @@ config:
           store: inmemory
         replication_factor: 1
 
-      ## Different ring configs can be used. E.g. Consul
-      # ring:
-      #   store: consul
-      #   replication_factor: 1
-      #   consul:
-      #     host: "consul:8500"
-      #     prefix: ""
-      #     httpclienttimeout: "20s"
-      #     consistentreads: true
   limits_config:
     enforce_metric_name: false
     reject_old_samples: true
@@ -72,7 +63,6 @@ image:
 client: {}
   # name:
 
-## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 nodeSelector: {}
 
 ## ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
@@ -88,15 +78,7 @@ persistence:
   # subPath: ""
   # existingClaim:
 
-## Pod Labels
 podLabels: {}
-
-## Pod Annotations
-podAnnotations:
-  prometheus.io/scrape: "true"
-  prometheus.io/port: "http-metrics"
-
-podManagementPolicy: OrderedReady
 
 
 replicas: 1
@@ -109,11 +91,6 @@ resources:
    cpu: 300m
    memory: 256Mi
 
-securityContext:
-  fsGroup: 10001
-  runAsGroup: 10001
-  runAsNonRoot: true
-  runAsUser: 10001
 
 service:
   type: ClusterIP
@@ -122,30 +99,10 @@ service:
   annotations: {}
   labels: {}
 
-terminationGracePeriodSeconds: 4800
 
-## Tolerations for pod assignment
-## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 tolerations: []
 
 
 updateStrategy:
   type: RollingUpdate
-
-
-extraVolumes: []
-## Additional volumes to the loki pod.
-# - name: reverse-proxy-auth-config
-#   secret:
-#     secretName: reverse-proxy-auth-config
-
-## Extra volume mounts that will be added to the loki container
-extraVolumeMounts: []
-
-extraPorts: []
-## Additional ports to the loki services. Useful to expose extra container ports.
-# - port: 11811
-#   protocol: TCP
-#   name: http
-#   targetPort: http
 
