@@ -13,6 +13,7 @@ import (
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
+	"github.com/coreos/locksmith/pkg/timeutil"
 	"k8s.io/apimachinery/pkg/api/equality"
 	utilerror "k8s.io/apimachinery/pkg/util/errors"
 )
@@ -433,6 +434,16 @@ func validateAlibabaCloudSpec(spec *kubermaticv1.AlibabaCloudSpec) error {
 	if spec.AccessKeySecret == "" {
 		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AlibabaAccessKeySecret); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+func ValidateUpdateWindow(updateWindow *kubermaticv1.UpdateWindow) error {
+	if updateWindow != nil && updateWindow.Start != "" && updateWindow.Length != "" {
+		_, err := timeutil.ParsePeriodic(updateWindow.Start, updateWindow.Length)
+		if err != nil {
+			return fmt.Errorf("error parsing update window: %s", err)
 		}
 	}
 	return nil

@@ -95,3 +95,36 @@ func TestValidateCloudSpec(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateUpdateWindow(t *testing.T) {
+	tests := []struct {
+		name         string
+		updateWindow kubermaticv1.UpdateWindow
+		err          error
+	}{
+		{
+			name: "valid update window",
+			updateWindow: kubermaticv1.UpdateWindow{
+				Start:  "04:00",
+				Length: "1h",
+			},
+			err: nil,
+		},
+		{
+			name: "invalid start date",
+			updateWindow: kubermaticv1.UpdateWindow{
+				Start:  "invalid",
+				Length: "1h",
+			},
+			err: errors.New("error parsing update window: unable to parse start: invalid time of day \"invalid\": expected integer"),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := ValidateUpdateWindow(&test.updateWindow)
+			if fmt.Sprint(err) != fmt.Sprint(test.err) {
+				t.Errorf("Extected err to be %v, got %v", test.err, err)
+			}
+		})
+	}
+}

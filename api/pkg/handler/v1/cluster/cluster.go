@@ -120,6 +120,9 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
 		}
 
+		if err = validation.ValidateUpdateWindow(spec.UpdateWindow); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 		partialCluster := &kubermaticv1.Cluster{}
 		partialCluster.Labels = req.Body.Cluster.Labels
 		partialCluster.Spec = *spec
@@ -419,6 +422,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPr
 		newInternalCluster.Spec.AdmissionPlugins = patchedCluster.Spec.AdmissionPlugins
 		newInternalCluster.Spec.AuditLogging = patchedCluster.Spec.AuditLogging
 		newInternalCluster.Spec.Openshift = patchedCluster.Spec.Openshift
+		newInternalCluster.Spec.UpdateWindow = patchedCluster.Spec.UpdateWindow
 
 		incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfoGetter, clusterProvider, newInternalCluster, req.ProjectID)
 		if err != nil {
@@ -454,6 +458,9 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPr
 		}
 		if err := validation.ValidateUpdateCluster(ctx, newInternalCluster, oldInternalCluster, dc, assertedClusterProvider); err != nil {
 			return nil, errors.NewBadRequest("invalid cluster: %v", err)
+		}
+		if err = validation.ValidateUpdateWindow(newInternalCluster.Spec.UpdateWindow); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		updatedCluster, err := updateCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, newInternalCluster)
@@ -814,6 +821,7 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, fil
 			Version:                             internalCluster.Spec.Version,
 			MachineNetworks:                     internalCluster.Spec.MachineNetworks,
 			OIDC:                                internalCluster.Spec.OIDC,
+			UpdateWindow:                        internalCluster.Spec.UpdateWindow,
 			AuditLogging:                        internalCluster.Spec.AuditLogging,
 			UsePodSecurityPolicyAdmissionPlugin: internalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
 			UsePodNodeSelectorAdmissionPlugin:   internalCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
