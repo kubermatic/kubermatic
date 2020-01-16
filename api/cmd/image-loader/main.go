@@ -164,7 +164,7 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 
 	deploymentCreators := kubernetescontroller.GetDeploymentCreators(templateData, false)
 	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(templateData)...)
-	deploymentCreators = append(deploymentCreators, containerlinux.GetDeploymentCreators("")...)
+	deploymentCreators = append(deploymentCreators, containerlinux.GetDeploymentCreators("", kubermaticv1.UpdateWindow{})...)
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
 
