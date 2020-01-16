@@ -15,6 +15,10 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "9176"
+        prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
         app: openvpn-server
@@ -48,7 +52,9 @@ spec:
         - --client-config-dir
         - /etc/openvpn/clients
         - --status
-        - /run/openvpn-status
+        - /run/openvpn/openvpn-status
+        - --status-version
+        - "3"
         - --cipher
         - AES-256-GCM
         - --auth
@@ -90,7 +96,7 @@ spec:
             command:
             - test
             - -s
-            - /run/openvpn-status
+            - /run/openvpn/openvpn-status
           failureThreshold: 3
           initialDelaySeconds: 5
           periodSeconds: 5
@@ -116,6 +122,8 @@ spec:
         - mountPath: /etc/openvpn/clients
           name: openvpn-client-configs
           readOnly: true
+        - mountPath: /run/openvpn
+          name: openvpn-status
       - args:
         - -c
         - |-
@@ -139,6 +147,26 @@ spec:
         securityContext:
           privileged: true
           procMount: Default
+      - args:
+        - -openvpn.status_paths
+        - /run/openvpn/openvpn-status
+        command:
+        - /bin/openvpn_exporter
+        image: quay.io/kubermatic/openvpn-exporter:v0.2.2
+        name: exporter
+        ports:
+        - containerPort: 9176
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 20Mi
+          requests:
+            cpu: 5m
+            memory: 5Mi
+        volumeMounts:
+        - mountPath: /run/openvpn
+          name: openvpn-status
       imagePullSecrets:
       - name: dockercfg
       initContainers:
@@ -188,4 +216,6 @@ spec:
       - configMap:
           name: openvpn-client-configs
         name: openvpn-client-configs
+      - emptyDir: {}
+        name: openvpn-status
 status: {}
