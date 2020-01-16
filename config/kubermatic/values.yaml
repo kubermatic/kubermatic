@@ -156,10 +156,10 @@ kubermatic:
     resources:
       requests:
         cpu: 100m
-        memory: 512Mi
+        memory: 128Mi
       limits:
         cpu: 250m
-        memory: 1024Mi
+        memory: 256Mi
     pprofEndpoint: ":6600"
     affinity:
       nodeAffinity:
