@@ -33,15 +33,12 @@ spec:
         prometheus.io/port: "http-metrics"
     spec:
       serviceAccountName: {{ template "loki.serviceAccountName" . }}
-    {{- if .Values.loki.priorityClassName }}
-      priorityClassName: {{ .Values.loki.priorityClassName }}
-    {{- end }}
       securityContext:
         fsGroup: 10001
         runAsGroup: 10001
         runAsNonRoot: true
         runAsUser: 10001
-      initContainers: {}
+      initContainers: [] 
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.loki.image.repository }}:{{ .Values.loki.image.tag }}"
@@ -50,14 +47,10 @@ spec:
             - "-config.file=/etc/loki/loki.yaml"
             - "log.level=error"
           volumeMounts:
-            {{- if .Values.loki.extraVolumeMounts }}
-              {{ toYaml .Values.loki.extraVolumeMounts | nindent 12}}
-            {{- end }}
             - name: config
               mountPath: /etc/loki
             - name: storage
               mountPath: "/data"
-              subPath: {{ .Values.loki.persistence.subPath }}
           ports:
             - name: http-metrics
               containerPort: {{ .Values.loki.config.server.http_listen_port }}
@@ -84,9 +77,6 @@ spec:
             - name: JAEGER_AGENT_HOST
               value: "{{ .Values.loki.tracing.jaegerAgentHost }}"
             {{- end }}
-{{- if .Values.loki.extraContainers }}
-{{ toYaml .Values.loki.extraContainers | indent 8}}
-{{- end }}
       nodeSelector:
         {{- toYaml .Values.loki.nodeSelector | nindent 8 }}
       affinity:
@@ -98,28 +88,13 @@ spec:
         - name: config
           secret:
             secretName: {{ template "loki.fullname" . }}
-{{- if .Values.loki.extraVolumes }}
-{{ toYaml .Values.loki.extraVolumes | indent 8}}
-{{- end }}
-  {{- if not .Values.loki.persistence.enabled }}
-        - name: storage
-          emptyDir: {}
-  {{- else if .Values.loki.persistence.existingClaim }}
-        - name: storage
-          persistentVolumeClaim:
-            claimName: {{ .Values.loki.persistence.existingClaim }}
-  {{- else }}
   volumeClaimTemplates:
   - metadata:
       name: storage
-      annotations:
-        {{- toYaml .Values.loki.persistence.annotations | nindent 8 }}
     spec:
       accessModes:
-        {{- toYaml .Values.loki.persistence.accessModes | nindent 8 }}
+        - ReadWriteOnce
       resources:
         requests:
           storage: {{ .Values.loki.persistence.size | quote }}
       storageClassName: {{ .Values.loki.persistence.storageClassName }}
-  {{- end }}
-

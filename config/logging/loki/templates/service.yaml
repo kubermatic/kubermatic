@@ -27,5 +27,5 @@ spec:
       nodePort: {{ .Values.loki.service.nodePort }}
 {{- end }}
   selector:
-    app: {{ template "loki.name" . }}
-    release: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ template "loki.name" . }}
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
