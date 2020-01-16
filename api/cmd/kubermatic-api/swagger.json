@@ -8445,6 +8445,9 @@
         "openshift": {
           "$ref": "#/definitions/Openshift"
         },
+        "updateWindow": {
+          "$ref": "#/definitions/UpdateWindow"
+        },
         "usePodNodeSelectorAdmissionPlugin": {
           "description": "If active the PodNodeSelector admission plugin is configured at the apiserver",
           "type": "boolean",
@@ -11729,6 +11732,20 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "UpdateWindow": {
+      "type": "object",
+      "properties": {
+        "length": {
+          "type": "string",
+          "x-go-name": "Length"
+        },
+        "start": {
+          "type": "string",
+          "x-go-name": "Start"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "User": {
       "description": "User represent an API user",

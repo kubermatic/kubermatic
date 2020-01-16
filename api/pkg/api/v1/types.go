@@ -665,6 +665,9 @@ type ClusterSpec struct {
 	// OIDC settings
 	OIDC kubermaticv1.OIDCSettings `json:"oidc,omitempty"`
 
+	// Configure cluster upgrade window, currently used for coreos node reboots
+	UpdateWindow *kubermaticv1.UpdateWindow `json:"updateWindow,omitempty"`
+
 	// If active the PodSecurityPolicy admission plugin is configured at the apiserver
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 
@@ -689,6 +692,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		MachineNetworks                     []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 		Version                             ksemver.Semver                         `json:"version"`
 		OIDC                                kubermaticv1.OIDCSettings              `json:"oidc"`
+		UpdateWindow                        *kubermaticv1.UpdateWindow             `json:"updateWindow,omitempty"`
 		UsePodSecurityPolicyAdmissionPlugin bool                                   `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 		UsePodNodeSelectorAdmissionPlugin   bool                                   `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
 		AuditLogging                        *kubermaticv1.AuditLoggingSettings     `json:"auditLogging,omitempty"`
@@ -712,6 +716,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		Version:                             cs.Version,
 		MachineNetworks:                     cs.MachineNetworks,
 		OIDC:                                cs.OIDC,
+		UpdateWindow:                        cs.UpdateWindow,
 		UsePodSecurityPolicyAdmissionPlugin: cs.UsePodSecurityPolicyAdmissionPlugin,
 		UsePodNodeSelectorAdmissionPlugin:   cs.UsePodNodeSelectorAdmissionPlugin,
 		AuditLogging:                        cs.AuditLogging,

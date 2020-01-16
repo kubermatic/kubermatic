@@ -221,6 +221,14 @@
   version = "v2.0.0"
 
 [[projects]]
+  digest = "1:00d770ba4aa7cda773e9554052073552abc04a1788d489ef8647a0d2557b2ebc"
+  name = "github.com/coreos/locksmith"
+  packages = ["pkg/timeutil"]
+  pruneopts = "NUT"
+  revision = "c1eeae7709f3204038b91ed5c8bea7ba1292fc02"
+  version = "v0.6.2"
+
+[[projects]]
   branch = "master"
   digest = "1:542a870f7cf8c7783ed1bcc0ca0ba8115a3ef8c9ab903693db2b32ad93cf7c01"
   name = "github.com/cristim/ec2-instances-info"
@@ -2165,6 +2173,7 @@
     "github.com/aws/aws-sdk-go/service/iam",
     "github.com/aws/aws-sdk-go/service/iam/iamiface",
     "github.com/coreos/go-oidc",
+    "github.com/coreos/locksmith/pkg/timeutil",
     "github.com/cristim/ec2-instances-info",
     "github.com/digitalocean/godo",
     "github.com/docker/distribution/reference",
