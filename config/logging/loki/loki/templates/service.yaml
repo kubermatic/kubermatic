@@ -8,23 +8,23 @@ metadata:
     app.kubernetes.io/instance: '{{ .Release.Name }}'
     app.kubernetes.io/version: '{{ .Chart.Version }}'
     app.kubernetes.io/managed-by: helm
-    {{- with .Values.service.labels }}
+    {{- with .Values.loki.service.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
   annotations:
-    {{- toYaml .Values.service.annotations | nindent 4 }}
+    {{- toYaml .Values.loki.service.annotations | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
-{{- if (and (eq .Values.service.type "ClusterIP") (not (empty .Values.service.clusterIP))) }}
-  clusterIP: {{ .Values.service.clusterIP }}
+  type: {{ .Values.loki.service.type }}
+{{- if (and (eq .Values.loki.service.type "ClusterIP") (not (empty .Values.loki.service.clusterIP))) }}
+  clusterIP: {{ .Values.loki.service.clusterIP }}
 {{- end }}
   ports:
-    - port: {{ .Values.service.port }}
+    - port: {{ .Values.loki.service.port }}
       protocol: TCP
       name: http-metrics
       targetPort: http-metrics
-{{- if (and (eq .Values.service.type "NodePort") (not (empty .Values.service.nodePort))) }}
-      nodePort: {{ .Values.service.nodePort }}
+{{- if (and (eq .Values.loki.service.type "NodePort") (not (empty .Values.loki.service.nodePort))) }}
+      nodePort: {{ .Values.loki.service.nodePort }}
 {{- end }}
   selector:
     app: {{ template "loki.name" . }}
