@@ -35,7 +35,7 @@ dashboard:
       pullPolicy: "IfNotPresent"
     scraper:
       repository: "docker.io/kubernetesui/metrics-scraper"
-      tag: "v1.0.1"
+      tag: "v1.0.2"
       pullPolicy: "IfNotPresent"
 
   deployment:
