@@ -7,8 +7,13 @@ cd "$(git rev-parse --show-toplevel)"
 
 GIT_HEAD_HASH="$(git rev-parse HEAD)"
 GIT_HEAD_TAG="$(git tag -l --points-at HEAD)"
-# FIXME: use `latest` only on the master branch
-TAGS="$GIT_HEAD_HASH $GIT_HEAD_TAG latest"
+TAGS="$GIT_HEAD_HASH $GIT_HEAD_TAG"
+
+# we only want to create the "latest" tag if we're building
+# the master branch and it's not a canary deployment
+if [ -z "${CANARY_DEPLOYMENT:-}" ] && [ "$(git rev-parse --abbrev-ref HEAD)" == "master" ]; then
+  TAGS="$TAGS latest"
+fi
 
 apt install time -y
 
