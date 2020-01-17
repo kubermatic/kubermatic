@@ -118,6 +118,14 @@ func TestValidateUpdateWindow(t *testing.T) {
 			},
 			err: errors.New("error parsing update window: unable to parse start: invalid time of day \"invalid\": expected integer"),
 		},
+		{
+			name: "invalid length",
+			updateWindow: kubermaticv1.UpdateWindow{
+				Start:  "Thu 04:00",
+				Length: "1",
+			},
+			err: errors.New("error parsing update window: unable to parse duration: time: missing unit in duration 1"),
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
