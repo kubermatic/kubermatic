@@ -259,9 +259,8 @@ done`,
 					},
 				},
 				{
-					Name: "exporter",
-					// FIXME: use proper image
-					Image:   data.ImageRegistry(resources.RegistryDocker) + "/melsayed/openvpn_exporter:v0.2.2",
+					Name:    "exporter",
+					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn-exporter:v0.2.2",
 					Command: []string{"/bin/openvpn_exporter"},
 					Args: []string{
 						"-openvpn.status_paths",
