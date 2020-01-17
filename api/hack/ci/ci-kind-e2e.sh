@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+set -x
+
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 source ./api/hack/lib.sh
 
