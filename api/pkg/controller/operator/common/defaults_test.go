@@ -45,7 +45,7 @@ func TestKubernetesDefaultAddonsMatchesChart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("jsonpathValueFromChart: %v", err)
 	}
-	expected := fmt.Sprintf("%v", kubernetesDefaultAddons)
+	expected := fmt.Sprintf("%v", KubernetesDefaultAddons)
 	actual := fmt.Sprintf("%v", fromChart)
 	if actual != expected {
 		t.Errorf("kubernetes default addons in the chart (%s) do not match operator defaults (%s)", actual, expected)
@@ -59,7 +59,7 @@ func TestDefaultAccessibleAddonsMatchChart(t *testing.T) {
 		t.Fatalf("jsonpathValueFromChart: %v", err)
 	}
 
-	expected := fmt.Sprintf("%v", defaultAccessibleAddons)
+	expected := fmt.Sprintf("%v", DefaultAccessibleAddons)
 	actual := fmt.Sprintf("%v", fromChart)
 	if actual != expected {
 		t.Errorf("defaultAccessibleAddons from chart (%s) do not match operator defaults (%s)", actual, expected)
@@ -72,7 +72,7 @@ func TestDefaultBackupStoreContainerMatchesChart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read backupstorecontainer from disk: %v", err)
 	}
-	if diff := getStringDiff(string(fromChart), defaultBackupStoreContainer); diff != nil {
+	if diff := getStringDiff(string(fromChart), DefaultBackupStoreContainer); diff != nil {
 		t.Errorf("backupcontainer from chart does not match default from operator, diff: %v", diff)
 	}
 }
@@ -83,7 +83,7 @@ func TestDefaultBackupCleanupContainerMatchesChart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read backupcleanupcontainer from disk: %v", err)
 	}
-	if diff := getStringDiff(string(fromChart), defaultBackupCleanupContainer); diff != nil {
+	if diff := getStringDiff(string(fromChart), DefaultBackupCleanupContainer); diff != nil {
 		t.Errorf("backupcontainer from chart does not match default from operator, diff: %v", diff)
 	}
 }
@@ -94,7 +94,7 @@ func TestDefaultUIConfigMatchesChart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("jsonpathValueFromChart: %v", err)
 	}
-	if diff := getStringDiff(fmt.Sprintf("%v", fromChart), defaultUIConfig); diff != nil {
+	if diff := getStringDiff(fmt.Sprintf("%v", fromChart), DefaultUIConfig); diff != nil {
 		t.Errorf("defaultUIConfig from chart does not match default from operator, diff: %v", err)
 	}
 }
@@ -105,7 +105,7 @@ func TestDefaultVersionsYAMLMatchesChart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read versions from disk: %v", err)
 	}
-	if diff := getStringDiff(string(fromChart), defaultVersionsYAML); diff != nil {
+	if diff := getStringDiff(string(fromChart), DefaultVersionsYAML); diff != nil {
 		t.Errorf("versions.yaml from chart does not match default from operator, diff: %v", diff)
 	}
 }
@@ -116,7 +116,7 @@ func TestDefaultUpdatesYAMLMatchesChart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read versions from disk: %v", err)
 	}
-	if diff := getStringDiff(string(fromChart), defaultUpdatesYAML); diff != nil {
+	if diff := getStringDiff(string(fromChart), DefaultUpdatesYAML); diff != nil {
 		t.Errorf("updates.yaml from chart does not match default from operator, diff: %v", diff)
 	}
 }
@@ -127,7 +127,7 @@ func TestDefaultOpenshiftAddonsMatchesChart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read versions from disk: %v", err)
 	}
-	if diff := getStringDiff(string(fromChart), defaultOpenshiftAddons); diff != nil {
+	if diff := getStringDiff(string(fromChart), DefaultOpenshiftAddons); diff != nil {
 		t.Errorf("openshift-addons.yaml from chart does not match default from operator, diff: %v", diff)
 	}
 }
