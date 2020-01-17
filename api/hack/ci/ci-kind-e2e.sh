@@ -19,7 +19,7 @@ if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
 fi
 
 echodate "Running conformance tests"
-./api/hack/ci/ci-run-conformance-tester.sh
+CHARTS_VERSION="$KUBERMATIC_VERSION" ./api/hack/ci/ci-run-conformance-tester.sh
 
 # No upgradetest, just exit
 if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
