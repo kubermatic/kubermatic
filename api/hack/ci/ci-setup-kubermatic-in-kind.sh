@@ -332,8 +332,10 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
   echodate "Deploying Kubermatic using Helm..."
 
   OLD_HEAD="$(git rev-parse HEAD)"
-  if [[ -n ${CHARTS_VERSION:-} ]]; then
-    git checkout "$CHARTS_VERSION"
+  # FIXME: The IU team are sourcing this script and setting the version to `latest`,
+  # which isn't really a version. This check prevents breaking their jobs.
+  if [[ "${KUBERMATIC_VERSION}" != "latest" ]]; then
+    git checkout "$KUBERMATIC_VERSION"
   fi
 
   # --force is needed in case the first attempt at installing didn't succeed
