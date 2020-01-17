@@ -17,20 +17,21 @@ import (
 )
 
 const (
-	defaultPProfEndpoint               = ":6600"
-	defaultNodePortRange               = "30000-32767"
-	defaultEtcdVolumeSize              = "5Gi"
-	defaultAuthClientID                = "kubermatic"
-	defaultIngressClass                = "nginx"
-	defaultAPIReplicas                 = 2
-	defaultUIReplicas                  = 1
-	defaultSeedControllerMgrReplicas   = 2
-	defaultMasterControllerMgrReplicas = 2
-	defaultAPIServerReplicas           = 2
+	DefaultPProfEndpoint               = ":6600"
+	DefaultNodePortRange               = "30000-32767"
+	DefaultEtcdVolumeSize              = "5Gi"
+	DefaultAuthClientID                = "kubermatic"
+	DefaultIngressClass                = "nginx"
+	DefaultAPIReplicas                 = 2
+	DefaultUIReplicas                  = 2
+	DefaultSeedControllerMgrReplicas   = 2
+	DefaultMasterControllerMgrReplicas = 2
+	DefaultAPIServerReplicas           = 2
+	DefaultExposeStrategy              = operatorv1alpha1.NodePortStrategy
 )
 
 var (
-	kubernetesDefaultAddons = []string{
+	KubernetesDefaultAddons = []string{
 		"canal",
 		"csi",
 		"dns",
@@ -44,11 +45,11 @@ var (
 		"logrotate",
 	}
 
-	defaultAccessibleAddons = []string{
+	DefaultAccessibleAddons = []string{
 		"node-exporter",
 	}
 
-	defaultUIResources = corev1.ResourceRequirements{
+	DefaultUIResources = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("100m"),
 			corev1.ResourceMemory: resource.MustParse("64Mi"),
@@ -59,7 +60,7 @@ var (
 		},
 	}
 
-	defaultAPIResources = corev1.ResourceRequirements{
+	DefaultAPIResources = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("100m"),
 			corev1.ResourceMemory: resource.MustParse("512Mi"),
@@ -70,7 +71,7 @@ var (
 		},
 	}
 
-	defaultMasterControllerMgrResources = corev1.ResourceRequirements{
+	DefaultMasterControllerMgrResources = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("50m"),
 			corev1.ResourceMemory: resource.MustParse("128Mi"),
@@ -81,7 +82,7 @@ var (
 		},
 	}
 
-	defaultSeedControllerMgrResources = corev1.ResourceRequirements{
+	DefaultSeedControllerMgrResources = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("200m"),
 			corev1.ResourceMemory: resource.MustParse("512Mi"),
@@ -99,82 +100,82 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	copy := config.DeepCopy()
 
 	if copy.Spec.ExposeStrategy == "" {
-		copy.Spec.ExposeStrategy = operatorv1alpha1.NodePortStrategy
+		copy.Spec.ExposeStrategy = DefaultExposeStrategy
 		logger.Debugw("Defaulting field", "field", "exposeStrategy", "value", copy.Spec.ExposeStrategy)
 	}
 
 	if copy.Spec.SeedController.BackupStoreContainer == "" {
-		copy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(defaultBackupStoreContainer)
+		copy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(DefaultBackupStoreContainer)
 		logger.Debugw("Defaulting field", "field", "seedController.backupStoreContainer")
 	}
 
 	if copy.Spec.SeedController.BackupCleanupContainer == "" {
-		copy.Spec.SeedController.BackupCleanupContainer = strings.TrimSpace(defaultBackupCleanupContainer)
+		copy.Spec.SeedController.BackupCleanupContainer = strings.TrimSpace(DefaultBackupCleanupContainer)
 		logger.Debugw("Defaulting field", "field", "seedController.backupCleanupContainer")
 	}
 
 	if copy.Spec.SeedController.Replicas == nil {
-		copy.Spec.SeedController.Replicas = pointer.Int32Ptr(defaultSeedControllerMgrReplicas)
+		copy.Spec.SeedController.Replicas = pointer.Int32Ptr(DefaultSeedControllerMgrReplicas)
 		logger.Debugw("Defaulting field", "field", "seedController.replicas", "value", *copy.Spec.SeedController.Replicas)
 	}
 
 	if copy.Spec.API.PProfEndpoint == nil {
-		copy.Spec.API.PProfEndpoint = pointer.StringPtr(defaultPProfEndpoint)
+		copy.Spec.API.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "api.pprofEndpoint", "value", *copy.Spec.API.PProfEndpoint)
 	}
 
 	if copy.Spec.SeedController.PProfEndpoint == nil {
-		copy.Spec.SeedController.PProfEndpoint = pointer.StringPtr(defaultPProfEndpoint)
+		copy.Spec.SeedController.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "seedController.pprofEndpoint", "value", *copy.Spec.SeedController.PProfEndpoint)
 	}
 
 	if copy.Spec.MasterController.PProfEndpoint == nil {
-		copy.Spec.MasterController.PProfEndpoint = pointer.StringPtr(defaultPProfEndpoint)
+		copy.Spec.MasterController.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "masterController.pprofEndpoint", "value", *copy.Spec.MasterController.PProfEndpoint)
 	}
 
 	if copy.Spec.MasterController.Replicas == nil {
-		copy.Spec.MasterController.Replicas = pointer.Int32Ptr(defaultMasterControllerMgrReplicas)
+		copy.Spec.MasterController.Replicas = pointer.Int32Ptr(DefaultMasterControllerMgrReplicas)
 		logger.Debugw("Defaulting field", "field", "masterController.replicas", "value", *copy.Spec.MasterController.Replicas)
 	}
 
 	if len(copy.Spec.UserCluster.Addons.Kubernetes.Default) == 0 && copy.Spec.UserCluster.Addons.Kubernetes.DefaultManifests == "" {
-		copy.Spec.UserCluster.Addons.Kubernetes.Default = kubernetesDefaultAddons
+		copy.Spec.UserCluster.Addons.Kubernetes.Default = KubernetesDefaultAddons
 		logger.Debugw("Defaulting field", "field", "userCluster.addons.kubernetes.default", "value", copy.Spec.UserCluster.Addons.Kubernetes.Default)
 	}
 
 	if len(copy.Spec.UserCluster.Addons.Openshift.Default) == 0 && copy.Spec.UserCluster.Addons.Openshift.DefaultManifests == "" {
-		copy.Spec.UserCluster.Addons.Openshift.DefaultManifests = strings.TrimSpace(defaultOpenshiftAddons)
+		copy.Spec.UserCluster.Addons.Openshift.DefaultManifests = strings.TrimSpace(DefaultOpenshiftAddons)
 		logger.Debugw("Defaulting field", "field", "userCluster.Addons.Openshift.DefaultManifests")
 	}
 
 	if copy.Spec.UserCluster.APIServerReplicas == nil {
-		copy.Spec.UserCluster.APIServerReplicas = pointer.Int32Ptr(defaultAPIServerReplicas)
+		copy.Spec.UserCluster.APIServerReplicas = pointer.Int32Ptr(DefaultAPIServerReplicas)
 		logger.Debugw("Defaulting field", "field", "userCluster.apiserverReplicas", "value", *copy.Spec.UserCluster.APIServerReplicas)
 	}
 
 	if len(copy.Spec.API.AccessibleAddons) == 0 {
-		copy.Spec.API.AccessibleAddons = defaultAccessibleAddons
+		copy.Spec.API.AccessibleAddons = DefaultAccessibleAddons
 		logger.Debugw("Defaulting field", "field", "api.accessibleAddons", "value", copy.Spec.API.AccessibleAddons)
 	}
 
 	if copy.Spec.API.Replicas == nil {
-		copy.Spec.API.Replicas = pointer.Int32Ptr(defaultAPIReplicas)
+		copy.Spec.API.Replicas = pointer.Int32Ptr(DefaultAPIReplicas)
 		logger.Debugw("Defaulting field", "field", "api.replicas", "value", *copy.Spec.API.Replicas)
 	}
 
 	if copy.Spec.UserCluster.NodePortRange == "" {
-		copy.Spec.UserCluster.NodePortRange = defaultNodePortRange
+		copy.Spec.UserCluster.NodePortRange = DefaultNodePortRange
 		logger.Debugw("Defaulting field", "field", "userCluster.nodePortRange", "value", copy.Spec.UserCluster.NodePortRange)
 	}
 
 	if copy.Spec.UserCluster.EtcdVolumeSize == "" {
-		copy.Spec.UserCluster.EtcdVolumeSize = defaultEtcdVolumeSize
+		copy.Spec.UserCluster.EtcdVolumeSize = DefaultEtcdVolumeSize
 		logger.Debugw("Defaulting field", "field", "userCluster.etcdVolumeSize", "value", copy.Spec.UserCluster.EtcdVolumeSize)
 	}
 
 	if copy.Spec.Ingress.ClassName == "" {
-		copy.Spec.Ingress.ClassName = defaultIngressClass
+		copy.Spec.Ingress.ClassName = DefaultIngressClass
 		logger.Debugw("Defaulting field", "field", "ingress.className", "value", copy.Spec.Ingress.ClassName)
 	}
 
@@ -187,12 +188,12 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	}
 
 	if copy.Spec.UI.Config == "" {
-		copy.Spec.UI.Config = strings.TrimSpace(defaultUIConfig)
+		copy.Spec.UI.Config = strings.TrimSpace(DefaultUIConfig)
 		logger.Debugw("Defaulting field", "field", "ui.config", "value", copy.Spec.UI.Config)
 	}
 
 	if copy.Spec.UI.Replicas == nil {
-		copy.Spec.UI.Replicas = pointer.Int32Ptr(defaultUIReplicas)
+		copy.Spec.UI.Replicas = pointer.Int32Ptr(DefaultUIReplicas)
 		logger.Debugw("Defaulting field", "field", "ui.replicas", "value", *copy.Spec.UI.Replicas)
 	}
 
@@ -201,19 +202,19 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	}
 
 	if copy.Spec.MasterFiles["versions.yaml"] == "" {
-		copy.Spec.MasterFiles["versions.yaml"] = strings.TrimSpace(defaultVersionsYAML)
+		copy.Spec.MasterFiles["versions.yaml"] = strings.TrimSpace(DefaultVersionsYAML)
 		logger.Debugw("Defaulting field", "field", "masterFiles.'versions.yaml'")
 	}
 
 	if copy.Spec.MasterFiles["updates.yaml"] == "" {
-		copy.Spec.MasterFiles["updates.yaml"] = strings.TrimSpace(defaultUpdatesYAML)
+		copy.Spec.MasterFiles["updates.yaml"] = strings.TrimSpace(DefaultUpdatesYAML)
 		logger.Debugw("Defaulting field", "field", "masterFiles.'updates.yaml'")
 	}
 
 	auth := copy.Spec.Auth
 
 	if auth.ClientID == "" {
-		auth.ClientID = defaultAuthClientID
+		auth.ClientID = DefaultAuthClientID
 		logger.Debugw("Defaulting field", "field", "auth.clientID", "value", auth.ClientID)
 	}
 
@@ -266,19 +267,19 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		return copy, err
 	}
 
-	if err := defaultResources(&copy.Spec.UI.Resources, defaultUIResources, "ui.resources", logger); err != nil {
+	if err := defaultResources(&copy.Spec.UI.Resources, DefaultUIResources, "ui.resources", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultResources(&copy.Spec.API.Resources, defaultAPIResources, "api.resources", logger); err != nil {
+	if err := defaultResources(&copy.Spec.API.Resources, DefaultAPIResources, "api.resources", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultResources(&copy.Spec.SeedController.Resources, defaultSeedControllerMgrResources, "seedController.resources", logger); err != nil {
+	if err := defaultResources(&copy.Spec.SeedController.Resources, DefaultSeedControllerMgrResources, "seedController.resources", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultResources(&copy.Spec.MasterController.Resources, defaultMasterControllerMgrResources, "masterController.resources", logger); err != nil {
+	if err := defaultResources(&copy.Spec.MasterController.Resources, DefaultMasterControllerMgrResources, "masterController.resources", logger); err != nil {
 		return copy, err
 	}
 
@@ -337,7 +338,7 @@ func defaultResourceList(list *corev1.ResourceList, defaults corev1.ResourceList
 	return nil
 }
 
-const defaultBackupStoreContainer = `
+const DefaultBackupStoreContainer = `
 name: store-container
 image: quay.io/kubermatic/s3-storer:v0.1.4
 command:
@@ -363,7 +364,7 @@ volumeMounts:
   mountPath: /backup
 `
 
-const defaultBackupCleanupContainer = `
+const DefaultBackupCleanupContainer = `
 name: cleanup-container
 image: quay.io/kubermatic/s3-storer:v0.1.4
 command:
@@ -385,12 +386,12 @@ env:
       key: SECRET_ACCESS_KEY
 `
 
-const defaultUIConfig = `
+const DefaultUIConfig = `
 {
   "share_kubeconfig": false
 }`
 
-const defaultVersionsYAML = `
+const DefaultVersionsYAML = `
 versions:
 # Kubernetes 1.14
 - version: "v1.14.8"
@@ -420,7 +421,7 @@ versions:
   type: "openshift"
 `
 
-const defaultUpdatesYAML = `
+const DefaultUpdatesYAML = `
 ### Updates file
 #
 # Contains a list of allowed updated
@@ -520,7 +521,7 @@ updates:
   type: openshift
 `
 
-const defaultOpenshiftAddons = `
+const DefaultOpenshiftAddons = `
 apiVersion: v1
 kind: List
 items:
