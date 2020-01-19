@@ -6,16 +6,13 @@ promtail:
     tag: v1.2.0
     pullPolicy: IfNotPresent
   
-  
   loki:
     serviceName: "loki"  
     servicePort: 3100
     serviceScheme: http
   
-  
   nodeSelector: {}
   affinity: {}
-  
   
   resources: 
     limits:
@@ -25,12 +22,12 @@ promtail:
       cpu: 50m
       memory: 64Mi
   
-   
+  scrapeConfigs: []
+
   tolerations:
   - key: node-role.kubernetes.io/master
     operator: Exists
     effect: NoSchedule
-  
   
   config:
     client:
