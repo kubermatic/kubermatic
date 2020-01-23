@@ -37,7 +37,7 @@ func (s *byoScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 			Type: "kubernetes",
 			Spec: &apimodels.ClusterSpec{
 				Cloud: &apimodels.CloudSpec{
-					DatacenterName: "byo-europe-west3-c",
+					DatacenterName: "byo-kubernetes",
 				},
 				Version: s.version,
 			},
