@@ -384,6 +384,36 @@ func (r *runner) CreateDOCluster(projectID, dc, name, credential, version, locat
 	return convertCluster(clusterResponse.Payload)
 }
 
+// CreateBYOCluster creates cluster for BringYourOwn provider
+func (r *runner) CreateBYOCluster(projectID, dc, location, name, version string) (*apiv1.Cluster, error) {
+	vr, err := semver.NewVersion(version)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
+	}
+
+	clusterSpec := &models.CreateClusterSpec{}
+	clusterSpec.Cluster = &models.Cluster{
+		Type: "kubernetes",
+		Name: name,
+		Spec: &models.ClusterSpec{
+			Cloud: &models.CloudSpec{
+				DatacenterName: location,
+				Bringyourown:   map[string]string{},
+			},
+			Version: vr,
+		},
+	}
+
+	params := &project.CreateClusterParams{ProjectID: projectID, Dc: dc, Body: clusterSpec}
+	params.WithTimeout(timeout)
+	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertCluster(clusterResponse.Payload)
+}
+
 // DeleteCluster delete cluster method
 func (r *runner) DeleteCluster(projectID, dc, clusterID string) error {
 
