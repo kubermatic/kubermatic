@@ -125,14 +125,6 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 }
 
 func createKubernetesController(ctrlCtx *controllerContext) error {
-	var nodeLocalDNSCacheEnabled bool
-	for _, addon := range ctrlCtx.runOptions.kubernetesAddons.Items {
-		if addon.Name == "nodelocal-dns-cache" {
-			nodeLocalDNSCacheEnabled = true
-			break
-		}
-
-	}
 
 	return kubernetescontroller.Add(
 		ctrlCtx.mgr,
@@ -152,7 +144,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		ctrlCtx.dockerPullConfigJSON,
-		nodeLocalDNSCacheEnabled,
+		ctrlCtx.runOptions.nodeLocalDNSCacheEnabled(),
 		ctrlCtx.runOptions.concurrentClusterUpdate,
 		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
@@ -270,6 +262,7 @@ func createAddonController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.kubernetesAddonsPath,
 		ctrlCtx.runOptions.openshiftAddonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
+		ctrlCtx.runOptions.nodeLocalDNSCacheEnabled(),
 		ctrlCtx.clientProvider,
 	)
 }

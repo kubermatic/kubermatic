@@ -255,6 +255,15 @@ func (o controllerRunOptions) validateCABundle() error {
 	return err
 }
 
+func (o controllerRunOptions) nodeLocalDNSCacheEnabled() bool {
+	for _, addon := range o.kubernetesAddons.Items {
+		if addon.Name == "nodelocal-dns-cache" {
+			return true
+		}
+	}
+	return false
+}
+
 // controllerContext holds all controllerRunOptions plus everything that
 // needs to be initialized first
 type controllerContext struct {
