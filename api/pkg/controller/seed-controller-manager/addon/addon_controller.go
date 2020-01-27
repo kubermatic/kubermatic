@@ -263,14 +263,13 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 	if cluster.IsOpenshift() {
 		addonDir = r.openshiftAddonDir
 	}
-	var err error
-	DNSClusterIP := machinecontroller.NodeLocalDNSCacheAddress
-	if !r.nodeLocalDNSCacheEnabled {
-
-		DNSClusterIP, err = resources.UserClusterDNSResolverIP(cluster)
-		if err != nil {
-			return nil, err
-		}
+	clusterIP, err := resources.UserClusterDNSResolverIP(cluster)
+	if err != nil {
+		return nil, err
+	}
+	dnsResolverIP := clusterIP
+	if r.nodeLocalDNSCacheEnabled {
+		dnsResolverIP = machinecontroller.NodeLocalDNSCacheAddress
 	}
 
 	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(cluster)
@@ -290,7 +289,8 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 		MajorMinorVersion: cluster.Spec.Version.MajorMinor(),
 		Addon:             addon,
 		Kubeconfig:        string(kubeconfig),
-		DNSClusterIP:      DNSClusterIP,
+		DNSClusterIP:      clusterIP,
+		DNSResolverIP:     dnsResolverIP,
 		ClusterCIDR:       cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 	}
 
