@@ -369,7 +369,9 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
     ./config/kubermatic/
 
   # Return repo to previous state if we checked out older charts before.
-  git checkout ${KUBERMATIC_VERSION}
+  if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
+    git checkout ${KUBERMATIC_VERSION}
+  fi
 else
   # Even when it does not reconcile certificates, the operator absolutely needs the
   # cert-manager CRDs to exist.
