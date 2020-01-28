@@ -145,7 +145,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			}
 			if isBYO {
 				klog.V(5).Infof("KubeAdm provider detected an initial node deployment won't be created for cluster %s", newCluster.Name)
-				return convertInternalClusterToExternal(newCluster), nil
+				return convertInternalClusterToExternal(newCluster, true), nil
 			}
 
 			go func() {
@@ -164,7 +164,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			}()
 		}
 
-		return convertInternalClusterToExternal(newCluster), nil
+		return convertInternalClusterToExternal(newCluster, true), nil
 	}
 }
 
@@ -252,7 +252,7 @@ func GetEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint {
 			return nil, err
 		}
 
-		return convertInternalClusterToExternal(cluster), nil
+		return convertInternalClusterToExternal(cluster, true), nil
 	}
 }
 
@@ -322,7 +322,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 		}
 
 		// Converting to API type as it is the type exposed externally.
-		externalCluster := convertInternalClusterToExternal(oldInternalCluster)
+		externalCluster := convertInternalClusterToExternal(oldInternalCluster, false)
 
 		// Changing the type to patchCluster as during marshalling it doesn't remove the cloud provider authentication
 		// data that is required here for validation.
@@ -387,7 +387,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalClusterToExternal(updatedCluster), nil
+		return convertInternalClusterToExternal(updatedCluster, true), nil
 	}
 }
 
@@ -631,7 +631,7 @@ func ListSSHKeysEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider
 	}
 }
 
-func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *apiv1.Cluster {
+func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, filterSystemLabels bool) *apiv1.Cluster {
 	cluster := &apiv1.Cluster{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalCluster.Name,
@@ -645,7 +645,7 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 				return nil
 			}(),
 		},
-		Labels: label.FilterLabels(label.ClusterResourceType, internalCluster.Labels),
+		Labels: internalCluster.Labels,
 		Spec: apiv1.ClusterSpec{
 			Cloud:                               internalCluster.Spec.Cloud,
 			Version:                             internalCluster.Spec.Version,
@@ -660,6 +660,9 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 		},
 		Type: apiv1.KubernetesClusterType,
 	}
+	if filterSystemLabels {
+		cluster.Labels = label.FilterLabels(label.ClusterResourceType, internalCluster.Labels)
+	}
 
 	isOpenShift, ok := internalCluster.Annotations["kubermatic.io/openshift"]
 	if ok && isOpenShift == "true" {
@@ -672,7 +675,7 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster) *ap
 func convertInternalClustersToExternal(internalClusters []kubermaticv1.Cluster) []*apiv1.Cluster {
 	apiClusters := make([]*apiv1.Cluster, len(internalClusters))
 	for index, cluster := range internalClusters {
-		apiClusters[index] = convertInternalClusterToExternal(cluster.DeepCopy())
+		apiClusters[index] = convertInternalClusterToExternal(cluster.DeepCopy(), true)
 	}
 	return apiClusters
 }
