@@ -44,6 +44,9 @@ spec:
         - --configmap=$(POD_NAMESPACE)/nginx-configuration
         - --ingress-class=nginx
         - --annotations-prefix=ingress.kubernetes.io
+        {{- if not .Values.nginx.hostNetwork }}
+        - --publish-service=$(POD_NAMESPACE)/nginx-ingress-controller
+        {{- end }}
         {{- range .Values.nginx.extraArgs }}
         - {{ . | quote }}
         {{- end }}
