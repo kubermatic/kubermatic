@@ -206,12 +206,11 @@ spec:
         automatic: false
         type: openshift
     versions.yaml: |-
+      # REMEMBER TO CHANGE BOTH:
+      # - DefaultVersionsYAML in api/pkg/controller/operator/common/defaults.go
+      # - config/kubermatic/static/master/versions.yaml
+
       versions:
-      # Kubernetes 1.14
-      - version: "v1.14.8"
-        default: false
-      - version: "v1.14.9"
-        default: false
       # Kubernetes 1.15
       - version: "v1.15.5"
         default: false
