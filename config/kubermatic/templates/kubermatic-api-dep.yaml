@@ -1,10 +1,14 @@
 {{ if .Values.kubermatic.isMaster }}
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kubermatic-api-v1
 spec:
   replicas: {{ .Values.kubermatic.api.replicas }}
+  selector:
+    matchLabels:
+      role: kubermatic-api
+      version: v1
   template:
     metadata:
       labels:

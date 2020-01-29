@@ -6,13 +6,16 @@ metadata:
   namespace: kube-system
 
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vpa-updater
   namespace: kube-system
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: vpa-updater
   template:
     metadata:
       labels:
