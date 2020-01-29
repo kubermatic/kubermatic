@@ -3,6 +3,7 @@ package openvpn
 import (
 	"fmt"
 	"net"
+	"path"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -39,11 +40,14 @@ var (
 				corev1.ResourceCPU:    resource.MustParse("10m"),
 			},
 		},
+		"openvpn-exporter": openvpnResourceRequirements.DeepCopy(),
 	}
 )
 
 const (
-	name = "openvpn-server"
+	name         = "openvpn-server"
+	statusPath   = "/run/openvpn/openvpn-status"
+	exporterPort = 9176
 )
 
 type openVPNDeploymentCreatorData interface {
@@ -88,6 +92,11 @@ func DeploymentCreator(data openVPNDeploymentCreatorData) reconciling.NamedDeplo
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 				Labels: podLabels,
+				Annotations: map[string]string{
+					"prometheus.io/path":   "/metrics",
+					"prometheus.io/port":   fmt.Sprintf("%d", exporterPort),
+					"prometheus.io/scrape": "true",
+				},
 			}
 
 			_, podNet, err := net.ParseCIDR(data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0])
@@ -164,7 +173,8 @@ iptables -A INPUT -i tun0 -j DROP
 				"--dh", "none",
 				"--duplicate-cn",
 				"--client-config-dir", "/etc/openvpn/clients",
-				"--status", "/run/openvpn-status",
+				"--status", statusPath,
+				"--status-version", "3",
 				"--cipher", "AES-256-GCM",
 				"--auth", "SHA1",
 				"--keysize", "256",
@@ -197,7 +207,7 @@ iptables -A INPUT -i tun0 -j DROP
 								Command: []string{
 									"test",
 									"-s",
-									"/run/openvpn-status",
+									statusPath,
 								},
 							},
 						},
@@ -223,6 +233,10 @@ iptables -A INPUT -i tun0 -j DROP
 							MountPath: "/etc/openvpn/clients",
 							ReadOnly:  true,
 						},
+						{
+							Name:      "openvpn-status",
+							MountPath: path.Dir(statusPath),
+						},
 					},
 				},
 				{
@@ -242,6 +256,27 @@ done`,
 					SecurityContext: &corev1.SecurityContext{
 						Privileged: resources.Bool(true),
 						ProcMount:  &procMountType,
+					},
+				},
+				{
+					Name:    "openvpn-exporter",
+					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kumina/openvpn-exporter:v0.2.2",
+					Command: []string{"/bin/openvpn_exporter"},
+					Args: []string{
+						"-openvpn.status_paths",
+						statusPath,
+					},
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: exporterPort,
+							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "openvpn-status",
+							MountPath: path.Dir(statusPath),
+						},
 					},
 				},
 			}
@@ -287,6 +322,12 @@ func getVolumes() []corev1.Volume {
 						Name: resources.OpenVPNClientConfigsConfigMapName,
 					},
 				},
+			},
+		},
+		{
+			Name: "openvpn-status",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
 	}
