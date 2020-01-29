@@ -3439,6 +3439,60 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/subnetworks": {
+      "get": {
+        "description": "Lists available GCP subnetworks",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gcp"
+        ],
+        "operationId": "listGCPSubnetworksNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Network",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GCPSubnetworkList",
+            "schema": {
+              "$ref": "#/definitions/GCPSubnetworkList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/zones": {
       "get": {
         "description": "Lists available GCP zones",
@@ -6035,6 +6089,56 @@
         }
       }
     },
+    "/api/v1/providers/gcp/{dc}/subnetworks": {
+      "get": {
+        "description": "Lists subnetworks from GCP",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "gcp"
+        ],
+        "operationId": "listGCPSubnetworks",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "ServiceAccount",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Network",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GCPSubnetworkList",
+            "schema": {
+              "$ref": "#/definitions/GCPSubnetworkList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/gcp/{dc}/zones": {
       "get": {
         "description": "Lists available GCP zones",
@@ -8302,6 +8406,58 @@
           "type": "string",
           "x-go-name": "Zone"
         }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "GCPSubnetwork": {
+      "type": "object",
+      "title": "GCPSubnetwork represents a object of GCP subnetworks.",
+      "properties": {
+        "gatewayAddress": {
+          "type": "string",
+          "x-go-name": "GatewayAddress"
+        },
+        "id": {
+          "type": "integer",
+          "format": "uint64",
+          "x-go-name": "ID"
+        },
+        "ipCidrRange": {
+          "type": "string",
+          "x-go-name": "IpCidrRange"
+        },
+        "kind": {
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "network": {
+          "type": "string",
+          "x-go-name": "Network"
+        },
+        "privateIpGoogleAccess": {
+          "type": "boolean",
+          "x-go-name": "PrivateIpGoogleAccess"
+        },
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
+        },
+        "selfLink": {
+          "type": "string",
+          "x-go-name": "SelfLink"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "GCPSubnetworkList": {
+      "type": "array",
+      "title": "GCPSubnetworkList represents an array of GCP subnetworks.",
+      "items": {
+        "$ref": "#/definitions/GCPSubnetwork"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },

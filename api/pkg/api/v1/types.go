@@ -289,6 +289,24 @@ type GCPNetwork struct {
 	Kind                  string   `json:"kind"`
 }
 
+// GCPSubnetworkList represents an array of GCP subnetworks.
+// swagger:model GCPSubnetworkList
+type GCPSubnetworkList []GCPSubnetwork
+
+// GCPSubnetwork represents a object of GCP subnetworks.
+// swagger:model GCPSubnetwork
+type GCPSubnetwork struct {
+	ID                    uint64 `json:"id"`
+	Name                  string `json:"name"`
+	Network               string `json:"network"`
+	IpCidrRange           string `json:"ipCidrRange"`
+	GatewayAddress        string `json:"gatewayAddress"`
+	Region                string `json:"region"`
+	SelfLink              string `json:"selfLink"`
+	PrivateIpGoogleAccess bool   `json:"privateIpGoogleAccess"`
+	Kind                  string `json:"kind"`
+}
+
 // DigitaloceanSizeList represents a object of digitalocean sizes.
 // swagger:model DigitaloceanSizeList
 type DigitaloceanSizeList struct {
