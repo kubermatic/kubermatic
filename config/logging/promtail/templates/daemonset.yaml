@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "promtail.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ template "promtail.name" . }}
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/version: '{{ .Chart.Version }}'
+    app.kubernetes.io/managed-by: helm
+  annotations:
+    {{- toYaml .Values.promtail.annotations | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "promtail.name" . }}
+      app.kubernetes.io/instance: '{{ .Release.Name }}'
+      app.kubernetes.io/version: '{{ .Chart.Version }}'
+      app.kubernetes.io/managed-by: helm
+  updateStrategy:
+    type: {{ .Values.promtail.deploymentStrategy }}
+  {{- if ne .Values.promtail.deploymentStrategy "RollingUpdate" }}
+    rollingUpdate: null
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "promtail.name" . }}
+        app.kubernetes.io/instance: '{{ .Release.Name }}'
+        app.kubernetes.io/version: '{{ .Chart.Version }}'
+        app.kubernetes.io/managed-by: helm
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "http-metrics"
+    spec:
+      serviceAccountName: {{ template "promtail.serviceAccountName" . }}
+    {{- if .Values.promtail.priorityClassName }}
+      priorityClassName: {{ .Values.promtail.priorityClassName }}
+    {{- end }}
+      containers:
+        - name: promtail
+          image: "{{ .Values.promtail.image.repository }}:{{ .Values.promtail.image.tag }}"
+          imagePullPolicy: {{ .Values.promtail.image.pullPolicy }}
+          args:
+            - "-config.file=/etc/promtail/promtail.yaml"
+            {{- if and .Values.promtail.loki.user .Values.promtail.loki.password }}
+            - "-client.url={{ .Values.promtail.loki.serviceScheme }}://{{ .Values.promtail.loki.user }}:{{ .Values.promtail.loki.password }}@{{ include "loki.serviceName" . }}:{{ .Values.promtail.loki.servicePort }}/loki/api/v1/push"
+            {{- else }}
+            - "-client.url={{ .Values.promtail.loki.serviceScheme }}://{{ .Values.promtail.loki.serviceName }}:{{ .Values.promtail.loki.servicePort }}/loki/api/v1/push"
+            {{- end }}
+          volumeMounts:
+          - name: config
+            mountPath: /etc/promtail
+          - name: run
+            mountPath: /run/promtail
+          - name: docker
+            mountPath: /var/lib/docker/containers
+            readOnly: true
+          - name: pods
+            mountPath: /var/log/pods
+            readOnly: true
+          env:
+          - name: HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          ports:
+            - containerPort: {{ .Values.promtail.config.server.http_listen_port }}
+              name: http-metrics
+          readinessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /ready
+              port: http-metrics
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            {{- toYaml .Values.promtail.resources | nindent 12 }}
+      nodeSelector:
+        {{- toYaml .Values.promtail.nodeSelector | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.promtail.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.promtail.tolerations | nindent 8 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ template "promtail.fullname" . }}
+        - name: run
+          hostPath:
+            path: /run/promtail
+        - name: docker
+          hostPath:
+            path: /var/lib/docker/containers
+        - name: pods
+          hostPath:
+            path: /var/log/pods
+
