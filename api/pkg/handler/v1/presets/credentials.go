@@ -34,6 +34,8 @@ type providerReq struct {
 	// in: path
 	// required: true
 	ProviderName string `json:"provider_name"`
+	// in: query
+	Datacenter string
 }
 
 // CredentialEndpoint returns custom credential list name for the provider
@@ -82,7 +84,16 @@ func CredentialEndpoint(presetsProvider provider.PresetProvider, userInfoGetter 
 
 				// append preset name if specific provider is not empty:
 				if !providerItem.IsNil() {
-					names = append(names, preset.Name)
+					var datacenterValue string
+					item := reflect.Indirect(providerItem)
+					datacenter := item.FieldByName("Datacenter")
+
+					if datacenter.Kind() == reflect.String {
+						datacenterValue = datacenter.String()
+					}
+					if datacenterValue == req.Datacenter || datacenterValue == "" {
+						names = append(names, preset.Name)
+					}
 				}
 			}
 		}
@@ -104,6 +115,7 @@ func parseProvider(p string) int {
 func DecodeProviderReq(c context.Context, r *http.Request) (interface{}, error) {
 	return providerReq{
 		ProviderName: mux.Vars(r)["provider_name"],
+		Datacenter:   r.URL.Query().Get("datacenter"),
 	}, nil
 }
 

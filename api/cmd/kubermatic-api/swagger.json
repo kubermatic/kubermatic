@@ -6417,6 +6417,11 @@
             "name": "provider_name",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "Datacenter",
+            "in": "query"
           }
         ],
         "responses": {
