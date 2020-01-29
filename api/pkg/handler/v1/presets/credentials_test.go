@@ -25,6 +25,7 @@ func TestCredentialEndpoint(t *testing.T) {
 	testcases := []struct {
 		name             string
 		provider         string
+		datacenter       string
 		credentials      []runtime.Object
 		httpStatus       int
 		expectedResponse string
@@ -76,6 +77,85 @@ func TestCredentialEndpoint(t *testing.T) {
 			},
 			httpStatus:       http.StatusOK,
 			expectedResponse: `{"names":["first", "second"]}`,
+		},
+		{
+			name:       "test list of credential names for AWS for the specific datacenter",
+			provider:   "aws",
+			datacenter: "a",
+			credentials: []runtime.Object{
+				&kubermaticv1.Preset{
+
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "first",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmailDomain: test.RequiredEmailDomain,
+						AWS: &kubermaticv1.AWS{
+							AccessKeyID: "a",
+							Datacenter:  "b",
+						},
+					},
+				},
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "second",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmailDomain: test.RequiredEmailDomain,
+						AWS: &kubermaticv1.AWS{
+							AccessKeyID: "a",
+							Datacenter:  "a",
+						},
+					},
+				},
+			},
+			httpStatus:       http.StatusOK,
+			expectedResponse: `{"names":["second"]}`,
+		},
+		{
+			name:       "test list of credential names for AWS for all and specific datacenter",
+			provider:   "aws",
+			datacenter: "a",
+			credentials: []runtime.Object{
+				&kubermaticv1.Preset{
+
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "first",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmailDomain: test.RequiredEmailDomain,
+						AWS: &kubermaticv1.AWS{
+							AccessKeyID: "a",
+							Datacenter:  "b",
+						},
+					},
+				},
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "second",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmailDomain: test.RequiredEmailDomain,
+						AWS: &kubermaticv1.AWS{
+							AccessKeyID: "a",
+							Datacenter:  "a",
+						},
+					},
+				},
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "third",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmailDomain: test.RequiredEmailDomain,
+						AWS: &kubermaticv1.AWS{
+							AccessKeyID: "a",
+						},
+					},
+				},
+			},
+			httpStatus:       http.StatusOK,
+			expectedResponse: `{"names":["second", "third"]}`,
 		},
 		{
 			name:             "test no credentials for Azure",
@@ -273,7 +353,7 @@ func TestCredentialEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/providers/%s/presets/credentials", tc.provider), strings.NewReader(""))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/providers/%s/presets/credentials?datacenter=%s", tc.provider, tc.datacenter), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
 			apiUser := test.GenDefaultAPIUser()
