@@ -69,7 +69,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{job=\"cadvisor\", namespace=\"$namespace\", pod_name=~\"$statefulset.*\", container_name!=\"\"}[3m]))",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{job=\"cadvisor\", namespace=\"$namespace\", pod=~\"$statefulset.*\", container!=\"\"}[3m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "",
@@ -152,7 +152,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(container_memory_usage_bytes{job=\"cadvisor\", namespace=\"$namespace\", pod_name=~\"$statefulset.*\", container_name!=\"\"}) / 1024^3",
+          "expr": "sum(container_memory_usage_bytes{job=\"cadvisor\", namespace=\"$namespace\", pod=~\"$statefulset.*\", container!=\"\"}) / 1024^3",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "",
@@ -235,7 +235,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(rate(container_network_transmit_bytes_total{job=\"cadvisor\", namespace=\"$namespace\", pod_name=~\"$statefulset.*\", container_name!=\"\"}[3m])) + sum(rate(container_network_receive_bytes_total{namespace=\"$namespace\",pod_name=~\"$statefulset.*\"}[3m]))",
+          "expr": "sum(rate(container_network_transmit_bytes_total{job=\"cadvisor\", namespace=\"$namespace\", pod=~\"$statefulset.*\", container!=\"\"}[3m])) + sum(rate(container_network_receive_bytes_total{namespace=\"$namespace\",pod=~\"$statefulset.*\"}[3m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "",

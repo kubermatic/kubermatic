@@ -914,7 +914,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate) by (namespace)",
+          "expr": "sum(namespace_pod_container:container_cpu_usage_seconds_total:sum_rate) by (namespace)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{namespace}}",
@@ -1131,7 +1131,7 @@
       ],
       "targets": [
         {
-          "expr": "sum(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate) by (namespace)",
+          "expr": "sum(namespace_pod_container:container_cpu_usage_seconds_total:sum_rate) by (namespace)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -1149,7 +1149,7 @@
           "step": 10
         },
         {
-          "expr": "sum(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate) by (namespace) / sum(kube_pod_container_resource_requests_cpu_cores) by (namespace)",
+          "expr": "sum(namespace_pod_container:container_cpu_usage_seconds_total:sum_rate) by (namespace) / sum(kube_pod_container_resource_requests_cpu_cores) by (namespace)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -1167,7 +1167,7 @@
           "step": 10
         },
         {
-          "expr": "sum(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate) by (namespace) / sum(kube_pod_container_resource_limits_cpu_cores) by (namespace)",
+          "expr": "sum(namespace_pod_container:container_cpu_usage_seconds_total:sum_rate) by (namespace) / sum(kube_pod_container_resource_limits_cpu_cores) by (namespace)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -1267,7 +1267,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(container_memory_rss{job=\"cadvisor\",container_name!=\"\"}) by (namespace)",
+          "expr": "sum(container_memory_rss{job=\"cadvisor\",container!=\"\"}) by (namespace)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{namespace}}",
@@ -1482,7 +1482,7 @@
       ],
       "targets": [
         {
-          "expr": "sum(container_memory_rss{job=\"cadvisor\",container_name!=\"\"}) by (namespace)",
+          "expr": "sum(container_memory_rss{job=\"cadvisor\",container!=\"\"}) by (namespace)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -1500,7 +1500,7 @@
           "step": 10
         },
         {
-          "expr": "sum(container_memory_rss{job=\"cadvisor\",container_name!=\"\"}) by (namespace) / sum(kube_pod_container_resource_requests_memory_bytes) by (namespace)",
+          "expr": "sum(container_memory_rss{job=\"cadvisor\",container!=\"\"}) by (namespace) / sum(kube_pod_container_resource_requests_memory_bytes) by (namespace)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -1518,7 +1518,7 @@
           "step": 10
         },
         {
-          "expr": "sum(container_memory_rss{job=\"cadvisor\",container_name!=\"\"}) by (namespace) / sum(kube_pod_container_resource_limits_memory_bytes) by (namespace)",
+          "expr": "sum(container_memory_rss{job=\"cadvisor\",container!=\"\"}) by (namespace) / sum(kube_pod_container_resource_limits_memory_bytes) by (namespace)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,

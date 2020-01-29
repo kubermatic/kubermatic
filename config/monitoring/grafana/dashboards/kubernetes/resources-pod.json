@@ -297,11 +297,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\", pod_name=\"$pod\", container_name!=\"POD\"}) by (container_name)",
+          "expr": "sum(namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\", pod=\"$pod\", container!=\"POD\"}) by (container)",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
-          "legendFormat": "{{ container_name }}",
+          "legendFormat": "{{ container }}",
           "legendLink": null,
           "refId": "A",
           "step": 10
@@ -513,7 +513,7 @@
       ],
       "targets": [
         {
-          "expr": "sum(label_replace(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\", pod_name=\"$pod\", container_name!=\"POD\"}, \"container\", \"$1\", \"container_name\", \"(.*)\")) by (container)",
+          "expr": "sum(namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\", pod=\"$pod\", container!=\"POD\"}) by (container)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -531,7 +531,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\", pod_name=\"$pod\"}, \"container\", \"$1\", \"container_name\", \"(.*)\")) by (container) / sum(kube_pod_container_resource_requests_cpu_cores{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
+          "expr": "sum(namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\", pod=\"$pod\"}) by (container) / sum(kube_pod_container_resource_requests_cpu_cores{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -549,7 +549,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(namespace_pod_name_container_name:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\", pod_name=\"$pod\"}, \"container\", \"$1\", \"container_name\", \"(.*)\")) by (container) / sum(kube_pod_container_resource_limits_cpu_cores{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
+          "expr": "sum(namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{namespace=\"$namespace\", pod=\"$pod\"}) by (container) / sum(kube_pod_container_resource_limits_cpu_cores{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -649,28 +649,28 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(container_memory_rss{namespace=\"$namespace\", pod_name=\"$pod\", container_name!=\"POD\", container_name!=\"\"}) by (container_name)",
+          "expr": "sum(container_memory_rss{namespace=\"$namespace\", pod=\"$pod\", container!=\"POD\", container!=\"\"}) by (container)",
           "format": "time_series",
           "intervalFactor": 2,
-          "legendFormat": "{{ container_name }} (RSS)",
+          "legendFormat": "{{ container }} (RSS)",
           "legendLink": null,
           "refId": "A",
           "step": 10
         },
         {
-          "expr": "sum(container_memory_cache{namespace=\"$namespace\", pod_name=\"$pod\", container_name!=\"POD\", container_name!=\"\"}) by (container_name)",
+          "expr": "sum(container_memory_cache{namespace=\"$namespace\", pod=\"$pod\", container!=\"POD\", container!=\"\"}) by (container)",
           "format": "time_series",
           "intervalFactor": 2,
-          "legendFormat": "{{ container_name }} (Cache)",
+          "legendFormat": "{{ container }} (Cache)",
           "legendLink": null,
           "refId": "B",
           "step": 10
         },
         {
-          "expr": "sum(container_memory_swap{namespace=\"$namespace\", pod_name=\"$pod\", container_name!=\"POD\", container_name!=\"\"}) by (container_name)",
+          "expr": "sum(container_memory_swap{namespace=\"$namespace\", pod=\"$pod\", container!=\"POD\", container!=\"\"}) by (container)",
           "format": "time_series",
           "intervalFactor": 2,
-          "legendFormat": "{{ container_name }} (Swap)",
+          "legendFormat": "{{ container }} (Swap)",
           "legendLink": null,
           "refId": "C",
           "step": 10
@@ -924,7 +924,7 @@
       ],
       "targets": [
         {
-          "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\", pod_name=\"$pod\", container_name!=\"POD\", container_name!=\"\"}, \"container\", \"$1\", \"container_name\", \"(.*)\")) by (container)",
+          "expr": "sum(container_memory_usage_bytes{namespace=\"$namespace\", pod=\"$pod\", container!=\"POD\", container!=\"\"}) by (container)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -942,7 +942,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\", pod_name=\"$pod\"}, \"container\", \"$1\", \"container_name\", \"(.*)\")) by (container) / sum(kube_pod_container_resource_requests_memory_bytes{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
+          "expr": "sum(container_memory_usage_bytes{namespace=\"$namespace\", pod=\"$pod\"}) by (container) / sum(kube_pod_container_resource_requests_memory_bytes{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -960,7 +960,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(container_memory_usage_bytes{namespace=\"$namespace\", pod_name=\"$pod\", container_name!=\"\"}, \"container\", \"$1\", \"container_name\", \"(.*)\")) by (container) / sum(kube_pod_container_resource_limits_memory_bytes{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
+          "expr": "sum(container_memory_usage_bytes{namespace=\"$namespace\", pod=\"$pod\", container!=\"\"}) by (container) / sum(kube_pod_container_resource_limits_memory_bytes{namespace=\"$namespace\", pod=\"$pod\"}) by (container)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -969,7 +969,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(container_memory_rss{namespace=\"$namespace\", pod_name=\"$pod\", container_name != \"\", container_name != \"POD\"}, \"container\", \"$1\", \"container_name\", \"(.*)\")) by (container)",
+          "expr": "sum(container_memory_rss{namespace=\"$namespace\", pod=\"$pod\", container != \"\", container != \"POD\"}) by (container)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -978,7 +978,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(container_memory_cache{namespace=\"$namespace\", pod_name=\"$pod\", container_name != \"\", container_name != \"POD\"}, \"container\", \"$1\", \"container_name\", \"(.*)\")) by (container)",
+          "expr": "sum(container_memory_cache{namespace=\"$namespace\", pod=\"$pod\", container != \"\", container != \"POD\"}) by (container)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
@@ -987,7 +987,7 @@
           "step": 10
         },
         {
-          "expr": "sum(label_replace(container_memory_swap{namespace=\"$namespace\", pod_name=\"$pod\", container_name != \"\", container_name != \"POD\"}, \"container\", \"$1\", \"container_name\", \"(.*)\")) by (container)",
+          "expr": "sum(container_memory_swap{namespace=\"$namespace\", pod=\"$pod\", container != \"\", container != \"POD\"}) by (container)",
           "format": "table",
           "instant": true,
           "intervalFactor": 2,
