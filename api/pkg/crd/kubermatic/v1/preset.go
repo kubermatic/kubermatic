@@ -48,11 +48,15 @@ type PresetSpec struct {
 type Digitalocean struct {
 	// Token is used to authenticate with the DigitalOcean API.
 	Token string `json:"token"`
+
+	Datacenter string `json:"datacenter,omitempty"`
 }
 
 type Hetzner struct {
 	// Token is used to authenticate with the Hetzner API.
 	Token string `json:"token"`
+
+	Datacenter string `json:"datacenter,omitempty"`
 }
 
 type Azure struct {
@@ -66,6 +70,8 @@ type Azure struct {
 	SubnetName     string `json:"subnet,omitempty"`
 	RouteTableName string `json:"routeTable,omitempty"`
 	SecurityGroup  string `json:"securityGroup,omitempty"`
+
+	Datacenter string `json:"datacenter,omitempty"`
 }
 
 type VSphere struct {
@@ -73,6 +79,8 @@ type VSphere struct {
 	Password string `json:"password"`
 
 	VMNetName string `json:"vmNetName,omitempty"`
+
+	Datacenter string `json:"datacenter,omitempty"`
 }
 
 type AWS struct {
@@ -84,6 +92,8 @@ type AWS struct {
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 	SecurityGroupID     string `json:"securityGroupID,omitempty"`
 	ControlPlaneRoleARN string `json:"roleARN,omitempty"`
+
+	Datacenter string `json:"datacenter,omitempty"`
 }
 
 type Openstack struct {
@@ -98,6 +108,8 @@ type Openstack struct {
 	FloatingIPPool string `json:"floatingIpPool,omitempty"`
 	RouterID       string `json:"routerID,omitempty"`
 	SubnetID       string `json:"subnetID,omitempty"`
+
+	Datacenter string `json:"datacenter,omitempty"`
 }
 
 type Packet struct {
@@ -105,6 +117,8 @@ type Packet struct {
 	ProjectID string `json:"projectId"`
 
 	BillingCycle string `json:"billingCycle,omitempty"`
+
+	Datacenter string `json:"datacenter,omitempty"`
 }
 
 type GCP struct {
@@ -112,12 +126,18 @@ type GCP struct {
 
 	Network    string `json:"network,omitempty"`
 	Subnetwork string `json:"subnetwork,omitempty"`
+
+	Datacenter string `json:"datacenter,omitempty"`
 }
 
 type Fake struct {
 	Token string `json:"token"`
+
+	Datacenter string `json:"datacenter,omitempty"`
 }
 
 type Kubevirt struct {
 	Kubeconfig string `json:"kubeconfig"`
+
+	Datacenter string `json:"datacenter,omitempty"`
 }

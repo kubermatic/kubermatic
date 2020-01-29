@@ -61,6 +61,8 @@ for the list credentials operation typically these are written to a http.Request
 */
 type ListCredentialsParams struct {
 
+	/*Datacenter*/
+	Datacenter *string
 	/*ProviderName*/
 	ProviderName string
 
@@ -102,6 +104,17 @@ func (o *ListCredentialsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithDatacenter adds the datacenter to the list credentials params
+func (o *ListCredentialsParams) WithDatacenter(datacenter *string) *ListCredentialsParams {
+	o.SetDatacenter(datacenter)
+	return o
+}
+
+// SetDatacenter adds the datacenter to the list credentials params
+func (o *ListCredentialsParams) SetDatacenter(datacenter *string) {
+	o.Datacenter = datacenter
+}
+
 // WithProviderName adds the providerName to the list credentials params
 func (o *ListCredentialsParams) WithProviderName(providerName string) *ListCredentialsParams {
 	o.SetProviderName(providerName)
@@ -120,6 +133,22 @@ func (o *ListCredentialsParams) WriteToRequest(r runtime.ClientRequest, reg strf
 		return err
 	}
 	var res []error
+
+	if o.Datacenter != nil {
+
+		// query param Datacenter
+		var qrDatacenter string
+		if o.Datacenter != nil {
+			qrDatacenter = *o.Datacenter
+		}
+		qDatacenter := qrDatacenter
+		if qDatacenter != "" {
+			if err := r.SetQueryParam("Datacenter", qDatacenter); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	// path param provider_name
 	if err := r.SetPathParam("provider_name", o.ProviderName); err != nil {
