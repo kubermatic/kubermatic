@@ -511,7 +511,7 @@ func listGCPNetworks(ctx context.Context, sa string) (apiv1.GCPNetworkList, erro
 	return networks, err
 }
 
-func GCPSubnetworkEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GCPSubnetworkEndpoint(presetsProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPSubnetworksReq)
 		sa := req.ServiceAccount
@@ -530,11 +530,11 @@ func GCPSubnetworkEndpoint(presetsProvider provider.PresetProvider, userInfoGett
 			}
 		}
 
-		return listGCPSubnetworks(ctx, req.DC, sa, req.Network)
+		return listGCPSubnetworks(ctx, userInfo, req.DC, sa, req.Network, seedsGetter)
 	}
 }
 
-func GCPSubnetworkWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GCPSubnetworkWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPSubnetworksNoCredentialReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -564,16 +564,19 @@ func GCPSubnetworkWithClusterCredentialsEndpoint(projectProvider provider.Projec
 		if err != nil {
 			return nil, err
 		}
-		return listGCPSubnetworks(ctx, req.DC, sa, req.Network)
+		return listGCPSubnetworks(ctx, userInfo, req.DC, sa, req.Network, seedsGetter)
 	}
 }
 
-func listGCPSubnetworks(ctx context.Context, datacenterName string, sa string, networkName string) (apiv1.GCPSubnetworkList, error) {
-	// datacenterName looks like e.g. "europe-west3-c", but
-	// valid regions in gcp look like e.g. "europe-west3"
-	// therefor we remove last part from the datacenterName
-	dcRegex := regexp.MustCompile("(-\\w)$")
-	region := dcRegex.ReplaceAllString(datacenterName, "")
+func listGCPSubnetworks(ctx context.Context, userInfo *provider.UserInfo, datacenterName string, sa string, networkName string, seedsGetter provider.SeedsGetter) (apiv1.GCPSubnetworkList, error) {
+	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, datacenterName)
+	if err != nil {
+		return nil, errors.NewBadRequest("%v", err)
+	}
+
+	if datacenter.Spec.GCP == nil {
+		return nil, errors.NewBadRequest("%s is not a GCP datacenter", datacenterName)
+	}
 
 	subnetworks := apiv1.GCPSubnetworkList{}
 
@@ -582,7 +585,7 @@ func listGCPSubnetworks(ctx context.Context, datacenterName string, sa string, n
 		return subnetworks, err
 	}
 
-	req := computeService.Subnetworks.List(project, region)
+	req := computeService.Subnetworks.List(project, datacenter.Spec.GCP.Region)
 	err = req.Pages(ctx, func(page *compute.SubnetworkList) error {
 		net := apiv1.GCPSubnetwork{}
 		for _, subnetwork := range page.Items {

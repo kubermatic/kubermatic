@@ -828,7 +828,7 @@ func (r Routing) listGCPSubnetworks() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GCPSubnetworkEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.GCPSubnetworkEndpoint(r.presetsProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeGCPSubnetworksReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2348,7 +2348,7 @@ func (r Routing) listGCPSubnetworksNoCredentials() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.GCPSubnetworkWithClusterCredentialsEndpoint(r.projectProvider, r.userInfoGetter)),
+		)(provider.GCPSubnetworkWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeGCPSubnetworksNoCredentialReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
