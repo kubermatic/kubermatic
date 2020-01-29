@@ -152,8 +152,8 @@ spec:
         - /run/openvpn/openvpn-status
         command:
         - /bin/openvpn_exporter
-        image: quay.io/kubermatic/openvpn-exporter:v0.2.2
-        name: exporter
+        image: docker.io/kumina/openvpn-exporter:v0.2.2
+        name: openvpn-exporter
         ports:
         - containerPort: 9176
           protocol: TCP

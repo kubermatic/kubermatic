@@ -40,7 +40,7 @@ var (
 				corev1.ResourceCPU:    resource.MustParse("10m"),
 			},
 		},
-		"exporter": openvpnResourceRequirements.DeepCopy(),
+		"openvpn-exporter": openvpnResourceRequirements.DeepCopy(),
 	}
 )
 
@@ -259,8 +259,8 @@ done`,
 					},
 				},
 				{
-					Name:    "exporter",
-					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn-exporter:v0.2.2",
+					Name:    "openvpn-exporter",
+					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kumina/openvpn-exporter:v0.2.2",
 					Command: []string{"/bin/openvpn_exporter"},
 					Args: []string{
 						"-openvpn.status_paths",
