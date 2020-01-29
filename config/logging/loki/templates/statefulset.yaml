@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "loki.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ template "loki.name" . }}
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/version: '{{ .Chart.Version }}'
+    app.kubernetes.io/managed-by: helm
+  annotations: {}
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: {{ .Values.loki.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ template "loki.name" . }}
+      app.kubernetes.io/instance: '{{ .Release.Name }}'
+  serviceName: {{ template "loki.fullname" . }}
+  updateStrategy:
+    {{- toYaml .Values.loki.updateStrategy | nindent 4 }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ template "loki.name" . }}
+        app.kubernetes.io/instance: '{{ .Release.Name }}'
+        {{- with .Values.loki.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "http-metrics"
+    spec:
+      serviceAccountName: {{ template "loki.serviceAccountName" . }}
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+      initContainers: [] 
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.loki.image.repository }}:{{ .Values.loki.image.tag }}"
+          imagePullPolicy: {{ .Values.loki.image.pullPolicy }}
+          args:
+            - "-config.file=/etc/loki/loki.yaml"
+            - "log.level=error"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/loki
+            - name: storage
+              mountPath: "/data"
+          ports:
+            - name: http-metrics
+              containerPort: {{ .Values.loki.config.server.http_listen_port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+            initialDelaySeconds: 45
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http-metrics
+            initialDelaySeconds: 45
+          resources:
+            {{- toYaml .Values.loki.resources | nindent 12 }}
+          securityContext:
+            readOnlyRootFilesystem: true
+          env:
+            {{- if .Values.loki.env }}
+              {{- toYaml .Values.loki.env | nindent 12 }}
+            {{- end }}
+            {{- if .Values.loki.tracing.jaegerAgentHost }}
+            - name: JAEGER_AGENT_HOST
+              value: "{{ .Values.loki.tracing.jaegerAgentHost }}"
+            {{- end }}
+      nodeSelector:
+        {{- toYaml .Values.loki.nodeSelector | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.loki.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.loki.tolerations | nindent 8 }}
+      terminationGracePeriodSeconds: 4800
+      volumes:
+        - name: config
+          secret:
+            secretName: {{ template "loki.fullname" . }}
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.loki.persistence.size | quote }}
+      storageClassName: {{ .Values.loki.persistence.storageClassName }}
