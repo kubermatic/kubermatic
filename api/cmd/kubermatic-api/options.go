@@ -1,17 +1,19 @@
 package main
 
 import (
+	"crypto/x509"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/features"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
-	"k8s.io/apimachinery/pkg/util/sets"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type serverRunOptions struct {
@@ -42,6 +44,7 @@ type serverRunOptions struct {
 	oidcIssuerRedirectURI          string
 	oidcIssuerCookieHashKey        string
 	oidcIssuerCookieSecureMode     bool
+	oidcCABundle                   *x509.CertPool
 	oidcSkipTLSVerify              bool
 	oidcIssuerOfflineAccessAsScope bool
 
@@ -57,6 +60,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 		rawFeatureGates     string
 		rawExposeStrategy   string
 		rawAccessibleAddons string
+		oidcCAFile          string
 	)
 
 	s.log = kubermaticlog.NewDefaultOptions()
@@ -76,6 +80,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&rawAccessibleAddons, "accessible-addons", "", "Comma-separated list of user cluster addons to expose via the API")
 	flag.StringVar(&s.oidcURL, "oidc-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.BoolVar(&s.oidcSkipTLSVerify, "oidc-skip-tls-verify", false, "Skip TLS verification for the token issuer")
+	flag.StringVar(&oidcCAFile, "oidc-ca-file", "", "The path to the certificate for the CA that signed your identity provider’s web certificate.")
 	flag.StringVar(&s.oidcAuthenticatorClientID, "oidc-authenticator-client-id", "", "Authenticator client ID")
 	flag.StringVar(&s.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.StringVar(&s.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
@@ -109,6 +114,20 @@ func newServerRunOptions() (serverRunOptions, error) {
 
 	s.accessibleAddons = sets.NewString(strings.Split(rawAccessibleAddons, ",")...)
 	s.accessibleAddons.Delete("")
+
+	if len(oidcCAFile) > 0 {
+		bytes, err := ioutil.ReadFile(oidcCAFile)
+		if err != nil {
+			return s, fmt.Errorf("failed to read OpenID CA file '%s': %v", oidcCAFile, err)
+		}
+
+		pool := x509.NewCertPool()
+		if !pool.AppendCertsFromPEM(bytes) {
+			return s, fmt.Errorf("OpenID CA file '%s' does not contain any valid PEM-encoded certificates", oidcCAFile)
+		}
+
+		s.oidcCABundle = pool
+	}
 
 	return s, nil
 }

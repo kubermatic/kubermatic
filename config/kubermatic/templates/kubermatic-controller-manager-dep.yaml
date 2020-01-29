@@ -89,7 +89,9 @@ spec:
         - -docker-pull-config-json-file=/opt/docker/.dockerconfigjson
         {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
         # the following flags enable oidc auth plugin on kube-API servers
+        {{- if .Values.kubermatic.auth.caBundle }}
         - -oidc-ca-file=/opt/dex-ca/caBundle.pem
+        {{- end }}
         - -oidc-issuer-url={{ .Values.kubermatic.auth.tokenIssuer }}
         - -oidc-issuer-client-id={{ .Values.kubermatic.auth.issuerClientID }}
         - -oidc-issuer-client-secret={{ .Values.kubermatic.auth.issuerClientSecret }}
@@ -145,7 +147,7 @@ spec:
           containerPort: 8085
           protocol: TCP
         volumeMounts:
-        {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
+        {{- if .Values.kubermatic.auth.caBundle }}
         - name: dex-ca
           mountPath: "/opt/dex-ca/"
           readOnly: true

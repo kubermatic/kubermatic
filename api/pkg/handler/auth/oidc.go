@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
@@ -72,8 +73,9 @@ type OpenIDClient struct {
 	httpClient     *http.Client
 }
 
-// NewOpenIDClient returns an authentication middleware which authenticates against an openID server
-func NewOpenIDClient(issuer, clientID, clientSecret, redirectURI string, extractor TokenExtractor, insecureSkipVerify bool) (*OpenIDClient, error) {
+// NewOpenIDClient returns an authentication middleware which authenticates against an openID server.
+// If rootCertificates is nil, the host's root CAs will be used.
+func NewOpenIDClient(issuer, clientID, clientSecret, redirectURI string, extractor TokenExtractor, insecureSkipVerify bool, rootCertificates *x509.CertPool) (*OpenIDClient, error) {
 	ctx := context.Background()
 	tr := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -86,7 +88,10 @@ func NewOpenIDClient(issuer, clientID, clientSecret, redirectURI string, extract
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
-		TLSClientConfig:       &tls.Config{InsecureSkipVerify: insecureSkipVerify},
+		TLSClientConfig: &tls.Config{
+			RootCAs:            rootCertificates,
+			InsecureSkipVerify: insecureSkipVerify,
+		},
 	}
 	client := &http.Client{Transport: tr}
 
