@@ -186,7 +186,7 @@ spec:
       imagePullSecrets:
       - name: dockercfg
       volumes:
-      {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
+      {{- if .Values.kubermatic.auth.caBundle }}
       - name: dex-ca
         secret:
           secretName: dex-ca

@@ -118,6 +118,11 @@ spec:
       imagePullSecrets:
       - name: dockercfg
       volumes:
+      {{- if .Values.kubermatic.auth.caBundle }}
+      - name: dex-ca
+        secret:
+          secretName: dex-ca
+      {{- end }}
       - name: kubeconfig
         secret:
           secretName: kubeconfig
