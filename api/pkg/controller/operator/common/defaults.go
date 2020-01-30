@@ -404,8 +404,6 @@ versions:
   default: false
 - version: "v1.15.7"
   default: false
-- version: "v1.15.8"
-  default: false
 - version: "v1.15.9"
   default: true
 # Kubernetes 1.16
@@ -415,14 +413,10 @@ versions:
   default: false
 - version: "v1.16.4"
   default: false
-- version: "v1.16.5"
-  default: false
 - version: "v1.16.6"
   default: false
 # Kubernetes 1.17
 - version: "v1.17.0"
-  default: false
-- version: "v1.17.1"
   default: false
 - version: "v1.17.2"
   default: false
@@ -452,6 +446,10 @@ const DefaultUpdatesYAML = `
 # Nodes will get updates as well. 'automaticNodeUpdate: true' sets
 # 'automatic: true' as well if not yet the case, because Nodes may not have
 # a newer version than the controlplane.
+#
+# REMEMBER TO CHANGE BOTH:
+# - DefaultUpdatesYAML in api/pkg/controller/operator/common/defaults.go
+# - config/kubermatic/static/master/updates.yaml
 #
 ####
 updates:
@@ -494,6 +492,10 @@ updates:
 - from: <= 1.15.4, >= 1.15.0
   to: 1.15.5
   automatic: true
+# Released with broken Anago
+- from: 1.15.8
+  to: 1.15.9
+  automatic: true
 # Allow to next minor release
 - from: 1.15.*
   to: 1.16.*
@@ -508,6 +510,10 @@ updates:
 - from: <= 1.16.1, >= 1.16.0
   to: 1.16.2
   automatic: true
+# Released with broken Anago
+- from: 1.16.5
+  to: 1.16.6
+  automatic: true
 # Allow to next minor release
 - from: 1.16.*
   to: 1.17.*
@@ -518,6 +524,10 @@ updates:
 - from: 1.17.*
   to: 1.17.*
   automatic: false
+# Released with broken Anago
+- from: 1.17.1
+  to: 1.17.2
+  automatic: true
 # Allow to next minor release
 - from: 1.16.*
   to: 1.18.*
