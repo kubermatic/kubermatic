@@ -8424,7 +8424,7 @@
         },
         "ipCidrRange": {
           "type": "string",
-          "x-go-name": "IpCidrRange"
+          "x-go-name": "IPCidrRange"
         },
         "kind": {
           "type": "string",
@@ -8440,7 +8440,7 @@
         },
         "privateIpGoogleAccess": {
           "type": "boolean",
-          "x-go-name": "PrivateIpGoogleAccess"
+          "x-go-name": "PrivateIPGoogleAccess"
         },
         "region": {
           "type": "string",

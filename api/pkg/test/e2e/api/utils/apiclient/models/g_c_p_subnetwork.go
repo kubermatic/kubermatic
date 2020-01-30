@@ -21,7 +21,7 @@ type GCPSubnetwork struct {
 	// ID
 	ID uint64 `json:"id,omitempty"`
 
-	// Ip cidr range
+	// IP cidr range
 	IPCidrRange string `json:"ipCidrRange,omitempty"`
 
 	// kind
@@ -33,7 +33,7 @@ type GCPSubnetwork struct {
 	// network
 	Network string `json:"network,omitempty"`
 
-	// private Ip google access
+	// private IP google access
 	PrivateIPGoogleAccess bool `json:"privateIpGoogleAccess,omitempty"`
 
 	// region

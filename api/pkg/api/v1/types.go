@@ -299,11 +299,11 @@ type GCPSubnetwork struct {
 	ID                    uint64 `json:"id"`
 	Name                  string `json:"name"`
 	Network               string `json:"network"`
-	IpCidrRange           string `json:"ipCidrRange"`
+	IPCidrRange           string `json:"ipCidrRange"`
 	GatewayAddress        string `json:"gatewayAddress"`
 	Region                string `json:"region"`
 	SelfLink              string `json:"selfLink"`
-	PrivateIpGoogleAccess bool   `json:"privateIpGoogleAccess"`
+	PrivateIPGoogleAccess bool   `json:"privateIpGoogleAccess"`
 	Kind                  string `json:"kind"`
 }
 
