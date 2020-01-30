@@ -75,6 +75,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listGCPNetworks())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/gcp/{dc}/subnetworks").
+		Handler(r.listGCPSubnetworks())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/digitalocean/sizes").
 		Handler(r.listDigitaloceanSizes())
 
@@ -412,6 +416,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/networks").
 		Handler(r.listGCPNetworksNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/subnetworks").
+		Handler(r.listGCPSubnetworksNoCredentials())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/hetzner/sizes").
@@ -800,6 +808,28 @@ func (r Routing) listGCPNetworks() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.GCPNetworkEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeGCPCommonReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/gcp/{dc}/subnetworks gcp listGCPSubnetworks
+//
+// Lists subnetworks from GCP
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GCPSubnetworkList
+func (r Routing) listGCPSubnetworks() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.GCPSubnetworkEndpoint(r.presetsProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeGCPSubnetworksReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -2297,6 +2327,29 @@ func (r Routing) listGCPNetworksNoCredentials() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.GCPNetworkWithClusterCredentialsEndpoint(r.projectProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/subnetworks gcp listGCPSubnetworksNoCredentials
+//
+// Lists available GCP subnetworks
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GCPSubnetworkList
+func (r Routing) listGCPSubnetworksNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.GCPSubnetworkWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeGCPSubnetworksNoCredentialReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

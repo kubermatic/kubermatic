@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/go-kit/kit/endpoint"
@@ -38,6 +39,18 @@ type GCPTypesReq struct {
 	Zone string
 }
 
+// GCPSubnetworksReq represent a request for GCP subnetworks.
+// swagger:parameters listGCPSubnetworks
+type GCPSubnetworksReq struct {
+	GCPCommonReq
+	// in: header
+	// name: Network
+	Network string
+	// in: path
+	// required: true
+	DC string `json:"dc"`
+}
+
 // GCPCommonReq represent a request with common parameters for GCP.
 type GCPCommonReq struct {
 	// in: header
@@ -55,6 +68,15 @@ type GCPTypesNoCredentialReq struct {
 	// in: header
 	// name: Zone
 	Zone string
+}
+
+// GCPSubnetworksNoCredentialReq represent a request for GCP subnetworks.
+// swagger:parameters listGCPSubnetworksNoCredentials
+type GCPSubnetworksNoCredentialReq struct {
+	common.GetClusterReq
+	// in: header
+	// name: Network
+	Network string
 }
 
 func DecodeGCPTypesReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -88,6 +110,25 @@ func DecodeGCPZoneReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+func DecodeGCPSubnetworksReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GCPSubnetworksReq
+
+	commonReq, err := DecodeGCPCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GCPCommonReq = commonReq.(GCPCommonReq)
+	req.Network = r.Header.Get("Network")
+
+	dc, ok := mux.Vars(r)["dc"]
+	if !ok {
+		return req, fmt.Errorf("'dc' parameter is required")
+	}
+	req.DC = dc
+
+	return req, nil
+}
+
 func DecodeGCPCommonReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req GCPCommonReq
 
@@ -106,6 +147,19 @@ func DecodeGCPTypesNoCredentialReq(c context.Context, r *http.Request) (interfac
 	}
 	req.GetClusterReq = commonReq.(common.GetClusterReq)
 	req.Zone = r.Header.Get("Zone")
+
+	return req, nil
+}
+
+func DecodeGCPSubnetworksNoCredentialReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GCPSubnetworksNoCredentialReq
+
+	commonReq, err := common.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GetClusterReq = commonReq.(common.GetClusterReq)
+	req.Network = r.Header.Get("Network")
 
 	return req, nil
 }
@@ -455,4 +509,109 @@ func listGCPNetworks(ctx context.Context, sa string) (apiv1.GCPNetworkList, erro
 	})
 
 	return networks, err
+}
+
+func GCPSubnetworkEndpoint(presetsProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GCPSubnetworksReq)
+		sa := req.ServiceAccount
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if len(req.Credential) > 0 {
+			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.GCP; credentials != nil {
+				sa = credentials.ServiceAccount
+			}
+		}
+
+		return listGCPSubnetworks(ctx, userInfo, req.DC, sa, req.Network, seedsGetter)
+	}
+}
+
+func GCPSubnetworkWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GCPSubnetworksNoCredentialReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if cluster.Spec.Cloud.GCP == nil {
+			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
+		}
+
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		sa, err := gcp.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+		return listGCPSubnetworks(ctx, userInfo, req.DC, sa, req.Network, seedsGetter)
+	}
+}
+
+func listGCPSubnetworks(ctx context.Context, userInfo *provider.UserInfo, datacenterName string, sa string, networkName string, seedsGetter provider.SeedsGetter) (apiv1.GCPSubnetworkList, error) {
+	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, datacenterName)
+	if err != nil {
+		return nil, errors.NewBadRequest("%v", err)
+	}
+
+	if datacenter.Spec.GCP == nil {
+		return nil, errors.NewBadRequest("%s is not a GCP datacenter", datacenterName)
+	}
+
+	subnetworks := apiv1.GCPSubnetworkList{}
+
+	computeService, project, err := gcp.ConnectToComputeService(sa)
+	if err != nil {
+		return subnetworks, err
+	}
+
+	req := computeService.Subnetworks.List(project, datacenter.Spec.GCP.Region)
+	err = req.Pages(ctx, func(page *compute.SubnetworkList) error {
+		for _, subnetwork := range page.Items {
+			// subnetworks.Network are a url e.g. https://www.googleapis.com/compute/v1/[...]/networks/default"
+			// we just get the name of the network, instead of the url
+			// therefor we can't use regular Filter function and need to check on our own
+			networkRegex := regexp.MustCompile(`^(.+\/networks\/)`)
+			network := networkRegex.ReplaceAllString(subnetwork.Network, "")
+			if network == networkName {
+				net := apiv1.GCPSubnetwork{
+					ID:                    subnetwork.Id,
+					Name:                  subnetwork.Name,
+					Network:               subnetwork.Network,
+					IPCidrRange:           subnetwork.IpCidrRange,
+					GatewayAddress:        subnetwork.GatewayAddress,
+					Region:                subnetwork.Region,
+					SelfLink:              subnetwork.SelfLink,
+					PrivateIPGoogleAccess: subnetwork.PrivateIpGoogleAccess,
+					Kind:                  subnetwork.Kind,
+				}
+
+				subnetworks = append(subnetworks, net)
+			}
+
+		}
+		return nil
+	})
+
+	return subnetworks, err
 }
