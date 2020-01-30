@@ -75,32 +75,7 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 				t.Fatalf("expects roles %v, got %v", tc.expectedRoleNames, roleNames)
 			}
 
-			// test if default cluster role bindings were created
-			clusterBindings, err := apiRunner.GetClusterBindings(project.ID, tc.dc, cluster.ID)
-			if err != nil {
-				t.Fatalf("can not get cluster bindings due to error: %v", err)
-			}
-			// every role should have exactly one binding
-			if len(clusterBindings) != len(roleNameList) {
-				t.Fatalf("expected number of bindings %d, got %d", len(roleNameList), len(clusterBindings))
-			}
-			namesSet = sets.NewString(tc.expectedClusterRoleNames...)
-			for _, clusterBinding := range clusterBindings {
-				if !namesSet.Has(clusterBinding.RoleRefName) {
-					t.Fatalf("expected role reference name %s in the binding", clusterBinding.RoleRefName)
-				}
-			}
-
-			for _, roleName := range roleNameList {
-				binding, err := apiRunner.BindUserToRole(project.ID, tc.dc, cluster.ID, roleName.Name, "default", "test@example.com")
-				if err != nil {
-					t.Fatalf("can not create binding due to error: %v", err)
-				}
-				if binding.RoleRefName != roleName.Name {
-					t.Fatalf("expected binding RoleRefName %s got %s", roleName.Name, binding.RoleRefName)
-				}
-			}
-
+			// test cluster roles
 			clusterRoleNameList := []v1.ClusterRoleName{}
 			// wait for controller
 			for attempt := 1; attempt <= getMaxAttempts; attempt++ {
@@ -126,6 +101,29 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			namesSet = sets.NewString(tc.expectedClusterRoleNames...)
 			if !namesSet.HasAll(clusterRoleNames...) {
 				t.Fatalf("expects cluster roles %v, got %v", tc.expectedRoleNames, roleNames)
+			}
+
+			// test if default cluster role bindings were created
+			clusterBindings, err := apiRunner.GetClusterBindings(project.ID, tc.dc, cluster.ID)
+			if err != nil {
+				t.Fatalf("can not get cluster bindings due to error: %v", err)
+			}
+
+			namesSet = sets.NewString(tc.expectedClusterRoleNames...)
+			for _, clusterBinding := range clusterBindings {
+				if !namesSet.Has(clusterBinding.RoleRefName) {
+					t.Fatalf("expected role reference name %s in the cluster binding", clusterBinding.RoleRefName)
+				}
+			}
+
+			for _, roleName := range roleNameList {
+				binding, err := apiRunner.BindUserToRole(project.ID, tc.dc, cluster.ID, roleName.Name, "default", "test@example.com")
+				if err != nil {
+					t.Fatalf("can not create binding due to error: %v", err)
+				}
+				if binding.RoleRefName != roleName.Name {
+					t.Fatalf("expected binding RoleRefName %s got %s", roleName.Name, binding.RoleRefName)
+				}
 			}
 
 			for _, clusterRoleName := range clusterRoleNameList {

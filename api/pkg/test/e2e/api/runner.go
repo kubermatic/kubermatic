@@ -910,7 +910,7 @@ func (r *runner) GetClusterBindings(projectID, dc, clusterID string) ([]apiv1.Cl
 		return nil, err
 	}
 
-	clusterRoleBindings := []apiv1.ClusterRoleBinding{}
+	var clusterRoleBindings []apiv1.ClusterRoleBinding
 
 	for _, roleBinding := range response.Payload {
 		newBinding := apiv1.ClusterRoleBinding{
