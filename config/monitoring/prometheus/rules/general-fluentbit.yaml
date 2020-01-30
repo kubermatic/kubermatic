@@ -2,16 +2,16 @@
 groups:
 - name: fluentbit
   rules:
-  - alert: FluentbitManyRetries
+  - alert: FluentbitManyFailedRetries
     annotations:
       message: Fluentbit pod `{{ $labels.pod }}` on `{{ $labels.node }}` is experiencing
-        an elevated retry rate.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-fluentbitmanyretries
+        an elevated failed retry rate.
+      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-fluentbitmanyfailedretries
     expr: |
       sum by (namespace, pod, node) (kube_pod_info) *
         on (namespace, pod)
         group_right (node)
-        rate(fluentbit_output_retries_total[1m]) > 0
+        rate(fluentbit_output_retries_failed_total[1m]) > 0
     for: 10m
     labels:
       severity: warning
