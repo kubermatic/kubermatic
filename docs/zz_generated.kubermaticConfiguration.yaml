@@ -215,14 +215,30 @@ spec:
       - version: "v1.15.5"
         default: false
       - version: "v1.15.6"
+        default: false
+      - version: "v1.15.7"
+        default: false
+      - version: "v1.15.8"
+        default: false
+      - version: "v1.15.9"
         default: true
       # Kubernetes 1.16
       - version: "v1.16.2"
         default: false
       - version: "v1.16.3"
         default: false
+      - version: "v1.16.4"
+        default: false
+      - version: "v1.16.5"
+        default: false
+      - version: "v1.16.6"
+        default: false
       # Kubernetes 1.17
       - version: "v1.17.0"
+        default: false
+      - version: "v1.17.1"
+        default: false
+      - version: "v1.17.2"
         default: false
       # OpenShift 4.1.9
       - version: "v4.1.9"
