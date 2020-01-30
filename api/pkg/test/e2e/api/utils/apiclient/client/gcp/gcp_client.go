@@ -199,6 +199,64 @@ func (a *Client) ListGCPSizesNoCredentials(params *ListGCPSizesNoCredentialsPara
 }
 
 /*
+ListGCPSubnetworks Lists subnetworks from GCP
+*/
+func (a *Client) ListGCPSubnetworks(params *ListGCPSubnetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSubnetworksOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGCPSubnetworksParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listGCPSubnetworks",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/gcp/{dc}/subnetworks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGCPSubnetworksReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListGCPSubnetworksOK), nil
+
+}
+
+/*
+ListGCPSubnetworksNoCredentials Lists available GCP subnetworks
+*/
+func (a *Client) ListGCPSubnetworksNoCredentials(params *ListGCPSubnetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSubnetworksNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGCPSubnetworksNoCredentialsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listGCPSubnetworksNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/subnetworks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGCPSubnetworksNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListGCPSubnetworksNoCredentialsOK), nil
+
+}
+
+/*
 ListGCPZones Lists available GCP zones
 */
 func (a *Client) ListGCPZones(params *ListGCPZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPZonesOK, error) {
