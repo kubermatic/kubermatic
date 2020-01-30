@@ -2,26 +2,21 @@ package master
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/crd/migrations/util"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	kubeconfigFieldPath = "kubeconfig"
 )
 
 type MigrationOptions struct {
@@ -173,21 +168,14 @@ func migrateAllDatacenterEmailRestrictions(ctx context.Context, log *zap.Sugared
 // createSeedKubeconfig creates a new Secret with a kubeconfig contains only the credentials
 // required for connecting to the given seed. If the Secret already exists, nothing happens.
 func createSeedKubeconfig(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, opt MigrationOptions) (*corev1.ObjectReference, error) {
-	kubeconfig, err := singleSeedKubeconfig(seed, opt.Kubeconfig)
+	kubeconfig, err := util.SingleSeedKubeconfig(opt.Kubeconfig, seed.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create kubeconfig: %v", err)
 	}
 
-	encoded, err := clientcmd.Write(*kubeconfig)
+	secret, err := util.CreateKubeconfigSecret(kubeconfig, "kubeconfig-"+seed.Name, seed.Namespace)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serialize kubeconfig: %v", err)
-	}
-
-	secret := &corev1.Secret{}
-	secret.Name = "kubeconfig-" + seed.Name
-	secret.Namespace = seed.Namespace
-	secret.Data = map[string][]byte{
-		kubeconfigFieldPath: encoded,
+		return nil, fmt.Errorf("failed to create kubeconfig Secret: %v", err)
 	}
 
 	key, err := ctrlruntimeclient.ObjectKeyFromObject(secret)
@@ -214,42 +202,6 @@ func createSeedKubeconfig(ctx context.Context, log *zap.SugaredLogger, client ct
 		Kind:       "Secret",
 		Name:       secret.Name,
 		Namespace:  secret.Namespace,
-		FieldPath:  kubeconfigFieldPath,
+		FieldPath:  util.KubeconfigFieldPath,
 	}, nil
-}
-
-// singleSeedKubeconfig takes a kubeconfig and returns a new kubeconfig that only has the
-// required parts to connect to the given seed. An error is returned when the given seed
-// has no valid matching context in the kubeconfig.
-func singleSeedKubeconfig(seed *kubermaticv1.Seed, kubeconfig *clientcmdapi.Config) (*clientcmdapi.Config, error) {
-	if kubeconfig == nil {
-		return nil, errors.New("no kubeconfig defined")
-	}
-
-	contextName := seed.Name
-
-	context, exists := kubeconfig.Contexts[contextName]
-	if !exists {
-		return nil, fmt.Errorf("no context named %s found in kubeconfig", contextName)
-	}
-	clusterName := context.Cluster
-	authName := context.AuthInfo
-
-	cluster, exists := kubeconfig.Clusters[clusterName]
-	if !exists {
-		return nil, fmt.Errorf("no cluster named %s found in kubeconfig", clusterName)
-	}
-
-	auth, exists := kubeconfig.AuthInfos[authName]
-	if !exists {
-		return nil, fmt.Errorf("no user named %s found in kubeconfig", authName)
-	}
-
-	config := clientcmdapi.NewConfig()
-	config.CurrentContext = contextName
-	config.Contexts[contextName] = context
-	config.Clusters[clusterName] = cluster
-	config.AuthInfos[authName] = auth
-
-	return config, nil
 }

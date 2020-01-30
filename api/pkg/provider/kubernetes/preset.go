@@ -18,28 +18,34 @@ import (
 // presetsGetter is a function to retrieve preset list
 type presetsGetter = func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error)
 
-// loadPresets loads the custom presets for supported providers
-func loadPresets(path string) (*kubermaticv1.PresetList, error) {
+// LoadPresets loads the custom presets for supported providers
+func LoadPresets(yamlContent []byte) (*kubermaticv1.PresetList, error) {
+	s := struct {
+		Presets *kubermaticv1.PresetList `json:"presets"`
+	}{}
+
+	err := yaml.UnmarshalStrict(yamlContent, &s)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.Presets, nil
+}
+
+// LoadPresetsFromFile loads the custom presets for supported providers
+func LoadPresetsFromFile(path string) (*kubermaticv1.PresetList, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
+	defer f.Close()
 
 	bytes, err := ioutil.ReadAll(bufio.NewReader(f))
 	if err != nil {
 		return nil, err
 	}
 
-	s := struct {
-		Presets *kubermaticv1.PresetList `json:"presets"`
-	}{}
-
-	err = yaml.UnmarshalStrict(bytes, &s)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.Presets, nil
+	return LoadPresets(bytes)
 }
 
 func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, presetsFile string, dynamicPresets bool) (presetsGetter, error) {
@@ -56,7 +62,7 @@ func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, 
 	var err error
 
 	if presetsFile != "" {
-		presets, err = loadPresets(presetsFile)
+		presets, err = LoadPresetsFromFile(presetsFile)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load presets from %s: %v", presetsFile, err)
 		}
