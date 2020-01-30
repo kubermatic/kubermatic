@@ -54,6 +54,9 @@ spec:
         # the following flags enable oidc kubeconfig feature/endpoint
         - -feature-gates={{ .Values.kubermatic.api.featureGates }}
         {{- if regexMatch ".*OIDCKubeCfgEndpoint=true.*" (default "" .Values.kubermatic.api.featureGates) }}
+        {{- if .Values.kubermatic.auth.caBundle }}
+        - -oidc-ca-file=/opt/dex-ca/caBundle.pem
+        {{- end }}
         - -oidc-issuer-redirect-uri={{ .Values.kubermatic.auth.issuerRedirectURL }}
         - -oidc-issuer-client-id={{ .Values.kubermatic.auth.issuerClientID }}
         - -oidc-issuer-client-secret={{ .Values.kubermatic.auth.issuerClientSecret }}
@@ -89,6 +92,11 @@ spec:
             path: /api/v1/healthz
             scheme: HTTP
         volumeMounts:
+        {{- if .Values.kubermatic.auth.caBundle }}
+        - name: dex-ca
+          mountPath: "/opt/dex-ca/"
+          readOnly: true
+        {{- end }}
         - name: kubeconfig
           mountPath: "/opt/.kube/"
           readOnly: true

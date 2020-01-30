@@ -34,7 +34,7 @@ spec:
         memory: 512Mi
   # Auth defines keys and URLs for Dex.
   auth:
-    cABundle: ""
+    caBundle: ""
     clientID: kubermatic
     issuerClientID: kubermaticIssuer
     issuerClientSecret: ""

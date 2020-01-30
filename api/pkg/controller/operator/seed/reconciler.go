@@ -289,13 +289,16 @@ func (r *Reconciler) reconcileSecrets(cfg *operatorv1alpha1.KubermaticConfigurat
 
 	creators := []reconciling.NamedSecretCreatorGetter{
 		common.DockercfgSecretCreator(cfg),
-		common.DexCASecretCreator(cfg),
 		common.SeedWebhookServingCASecretCreator(cfg),
 		common.SeedWebhookServingCertSecretCreator(cfg, client),
 	}
 
 	if len(cfg.Spec.MasterFiles) > 0 {
 		creators = append(creators, common.MasterFilesSecretCreator(cfg))
+	}
+
+	if cfg.Spec.Auth.CABundle != "" {
+		creators = append(creators, common.DexCASecretCreator(cfg))
 	}
 
 	if err := reconciling.ReconcileSecrets(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
