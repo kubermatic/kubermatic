@@ -59,6 +59,9 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				},
 			}
 
+			volumes := []corev1.Volume{}
+			volumeMounts := []corev1.VolumeMount{}
+
 			args := []string{
 				"-logtostderr",
 				"-address=0.0.0.0:8080",
@@ -92,14 +95,30 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 					fmt.Sprintf("-oidc-issuer-client-secret=%s", cfg.Spec.Auth.IssuerClientSecret),
 					fmt.Sprintf("-oidc-issuer-cookie-hash-key=%s", cfg.Spec.Auth.IssuerCookieKey),
 				)
+
+				if cfg.Spec.Auth.CABundle != "" {
+					args = append(args, "-oidc-ca-file=/opt/dex-ca/caBundle.pem")
+
+					volumes = append(volumes, corev1.Volume{
+						Name: "dex-ca",
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: common.DexCASecretName,
+							},
+						},
+					})
+
+					volumeMounts = append(volumeMounts, corev1.VolumeMount{
+						Name:      "dex-ca",
+						MountPath: "/opt/dex-ca",
+						ReadOnly:  true,
+					})
+				}
 			}
 
 			if workerName != "" {
 				args = append(args, fmt.Sprintf("-worker-name=%s", workerName))
 			}
-
-			volumes := []corev1.Volume{}
-			volumeMounts := []corev1.VolumeMount{}
 
 			if len(cfg.Spec.MasterFiles) > 0 {
 				args = append(

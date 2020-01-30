@@ -183,26 +183,29 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 
 			if cfg.Spec.FeatureGates.Has(features.OpenIDAuthPlugin) {
 				args = append(args,
-					"-oidc-ca-file=/opt/dex-ca/caBundle.pem",
 					fmt.Sprintf("-oidc-issuer-url=%s", cfg.Spec.Auth.TokenIssuer),
 					fmt.Sprintf("-oidc-issuer-client-id=%s", cfg.Spec.Auth.IssuerClientID),
 					fmt.Sprintf("-oidc-issuer-client-secret=%s", cfg.Spec.Auth.IssuerClientSecret),
 				)
 
-				volumes = append(volumes, corev1.Volume{
-					Name: "dex-ca",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: common.DexCASecretName,
-						},
-					},
-				})
+				if cfg.Spec.Auth.CABundle != "" {
+					args = append(args, "-oidc-ca-file=/opt/dex-ca/caBundle.pem")
 
-				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					Name:      "dex-ca",
-					MountPath: "/opt/dex-ca",
-					ReadOnly:  true,
-				})
+					volumes = append(volumes, corev1.Volume{
+						Name: "dex-ca",
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: common.DexCASecretName,
+							},
+						},
+					})
+
+					volumeMounts = append(volumeMounts, corev1.VolumeMount{
+						Name:      "dex-ca",
+						MountPath: "/opt/dex-ca",
+						ReadOnly:  true,
+					})
+				}
 			}
 
 			if len(cfg.Spec.UserCluster.Monitoring.CustomScrapingConfigs) > 0 {

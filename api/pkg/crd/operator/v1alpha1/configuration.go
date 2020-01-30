@@ -63,7 +63,7 @@ type KubermaticAuthConfiguration struct {
 	IssuerClientID           string `json:"issuerClientID,omitempty"`
 	IssuerClientSecret       string `json:"issuerClientSecret,omitempty"`
 	IssuerCookieKey          string `json:"issuerCookieKey,omitempty"`
-	CABundle                 string `json:"cABundle,omitempty"`
+	CABundle                 string `json:"caBundle,omitempty"`
 	ServiceAccountKey        string `json:"serviceAccountKey,omitempty"`
 	SkipTokenIssuerTLSVerify bool   `json:"skipTokenIssuerTLSVerify,omitempty"`
 }
