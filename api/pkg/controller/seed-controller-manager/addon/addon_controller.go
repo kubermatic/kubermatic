@@ -22,6 +22,7 @@ import (
 	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/machinecontroller"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -64,9 +65,9 @@ type Reconciler struct {
 	openshiftAddonDir  string
 	overwriteRegistry  string
 	ctrlruntimeclient.Client
-	recorder record.EventRecorder
-
-	KubeconfigProvider KubeconfigProvider
+	recorder                 record.EventRecorder
+	KubeconfigProvider       KubeconfigProvider
+	nodeLocalDNSCacheEnabled bool
 }
 
 // Add creates a new Addon controller that is responsible for
@@ -80,21 +81,23 @@ func Add(
 	kubernetesAddonDir,
 	openshiftAddonDir,
 	overwriteRegistey string,
+	nodeLocalDNSCacheEnabled bool,
 	kubeconfigProvider KubeconfigProvider,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
 
 	reconciler := &Reconciler{
-		log:                log,
-		addonVariables:     addonCtxVariables,
-		kubernetesAddonDir: kubernetesAddonDir,
-		openshiftAddonDir:  openshiftAddonDir,
-		KubeconfigProvider: kubeconfigProvider,
-		Client:             client,
-		workerName:         workerName,
-		recorder:           mgr.GetEventRecorderFor(ControllerName),
-		overwriteRegistry:  overwriteRegistey,
+		log:                      log,
+		addonVariables:           addonCtxVariables,
+		kubernetesAddonDir:       kubernetesAddonDir,
+		openshiftAddonDir:        openshiftAddonDir,
+		KubeconfigProvider:       kubeconfigProvider,
+		Client:                   client,
+		workerName:               workerName,
+		recorder:                 mgr.GetEventRecorderFor(ControllerName),
+		overwriteRegistry:        overwriteRegistey,
+		nodeLocalDNSCacheEnabled: nodeLocalDNSCacheEnabled,
 	}
 
 	ctrlOptions := controller.Options{
@@ -260,10 +263,13 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 	if cluster.IsOpenshift() {
 		addonDir = r.openshiftAddonDir
 	}
-
 	clusterIP, err := resources.UserClusterDNSResolverIP(cluster)
 	if err != nil {
 		return nil, err
+	}
+	dnsResolverIP := clusterIP
+	if r.nodeLocalDNSCacheEnabled {
+		dnsResolverIP = machinecontroller.NodeLocalDNSCacheAddress
 	}
 
 	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(cluster)
@@ -284,6 +290,7 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 		Addon:             addon,
 		Kubeconfig:        string(kubeconfig),
 		DNSClusterIP:      clusterIP,
+		DNSResolverIP:     dnsResolverIP,
 		ClusterCIDR:       cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 	}
 

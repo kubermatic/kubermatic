@@ -39,7 +39,7 @@ const (
 
 	tag = "v1.9.0"
 
-	nodeLocalDNSCacheAddress = "169.254.20.10"
+	NodeLocalDNSCacheAddress = "169.254.20.10"
 )
 
 type machinecontrollerData interface {
@@ -104,7 +104,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			clusterDNSIP := nodeLocalDNSCacheAddress
+			clusterDNSIP := NodeLocalDNSCacheAddress
 			if !data.NodeLocalDNSCacheEnabled() {
 				clusterDNSIP, err = resources.UserClusterDNSResolverIP(data.Cluster())
 				if err != nil {
