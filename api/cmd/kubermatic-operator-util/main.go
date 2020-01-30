@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
-	"sigs.k8s.io/yaml"
+	"k8s.io/test-infra/pkg/genyaml"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/conversion"
-	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/log"
 )
 
@@ -82,22 +82,29 @@ func convertAction(ctx *cli.Context) error {
 		return cli.NewExitError(fmt.Errorf("failed to read '%s': %v", valuesFile, err), 1)
 	}
 
-	config, err := conversion.HelmValuesFileToKubermaticConfiguration(content)
+	resources, err := conversion.HelmValuesFileToCRDs(content, "kubermatic")
 	if err != nil {
 		return cli.NewExitError(err, 1)
 	}
 
-	config.APIVersion = operatorv1alpha1.SchemeGroupVersion.String()
-	config.Kind = "KubermaticConfiguration"
-	config.Name = "kubermatic"
-	config.Namespace = "kubermatic"
+	// genyaml is smart enough to not output a creationTimestamp when marshalling as YAML
+	cm := genyaml.NewCommentMap()
 
-	output, err := yaml.Marshal(config)
-	if err != nil {
-		return cli.NewExitError(err, 1)
+	for i, resource := range resources {
+		output, err := cm.GenYaml(resource)
+		if err != nil {
+			return cli.NewExitError(fmt.Errorf("failed to create YAML: %v", err), 1)
+		}
+
+		// reduce indentation
+		output = strings.Replace(output, "    ", "  ", -1)
+
+		fmt.Print(output)
+
+		if i < len(resources)-1 {
+			fmt.Println("\n---")
+		}
 	}
-
-	fmt.Print(string(output))
 
 	return nil
 }

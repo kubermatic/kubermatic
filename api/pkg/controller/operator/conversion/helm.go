@@ -7,13 +7,20 @@ import (
 	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/crd/migrations/util"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/yaml"
 )
@@ -112,13 +119,42 @@ type kubermaticValues struct {
 	} `yaml:"clusterNamespacePrometheus"`
 }
 
-func HelmValuesFileToKubermaticConfiguration(yamlContent []byte) (*operatorv1alpha1.KubermaticConfiguration, error) {
+func HelmValuesFileToCRDs(yamlContent []byte, targetNamespace string) ([]runtime.Object, error) {
 	values := helmValues{}
 	if err := yaml.Unmarshal(yamlContent, &values); err != nil {
 		return nil, fmt.Errorf("failed to decode file: %v", err)
 	}
 
+	result := []runtime.Object{}
+
+	config, err := convertKubermaticConfiguration(&values, targetNamespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create KubermaticConfiguration: %v", err)
+	}
+	result = append(result, config)
+
+	seeds, err := convertSeeds(&values, targetNamespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Seeds: %v", err)
+	}
+	result = append(result, seeds...)
+
+	presets, err := convertPresets(&values, targetNamespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Presets: %v", err)
+	}
+	result = append(result, presets...)
+
+	return result, nil
+}
+
+func convertKubermaticConfiguration(values *helmValues, targetNamespace string) (*operatorv1alpha1.KubermaticConfiguration, error) {
 	config := operatorv1alpha1.KubermaticConfiguration{}
+	config.APIVersion = operatorv1alpha1.SchemeGroupVersion.String()
+	config.Kind = "KubermaticConfiguration"
+	config.Name = "kubermatic"
+	config.Namespace = targetNamespace
+
 	config.Spec.Ingress.Domain = values.Kubermatic.Domain
 
 	// This is not actually the default, but anyone running our current stack has the
@@ -187,6 +223,108 @@ func HelmValuesFileToKubermaticConfiguration(yamlContent []byte) (*operatorv1alp
 	config.Spec.UI = *ui
 
 	return &config, nil
+}
+
+type datacentersMeta struct {
+	Datacenters map[string]provider.DatacenterMeta `json:"datacenters"`
+}
+
+func convertSeeds(values *helmValues, targetNamespace string) ([]runtime.Object, error) {
+	if values.Kubermatic.Datacenters == "" {
+		return nil, nil
+	}
+
+	datacenters, err := base64.StdEncoding.DecodeString(values.Kubermatic.Datacenters)
+	if err != nil {
+		return nil, fmt.Errorf("datacenters are not valid base64: %v", err)
+	}
+
+	dcMetas := datacentersMeta{}
+	if err := yaml.UnmarshalStrict(datacenters, &dcMetas); err != nil {
+		return nil, fmt.Errorf("failed to parse datacenters.yaml: %v", err)
+	}
+
+	seeds, err := provider.DatacenterMetasToSeeds(dcMetas.Datacenters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert datacenters.yaml: %v", err)
+	}
+
+	result := []runtime.Object{}
+
+	// if there is a kubeconfig, try to generate Secrets per seed
+	var kubeconfig *clientcmdapi.Config
+	if values.Kubermatic.Kubeconfig != "" {
+		kubeconfigBytes, err := base64.StdEncoding.DecodeString(values.Kubermatic.Kubeconfig)
+		if err != nil {
+			return nil, fmt.Errorf("kubeconfig is not valid base64: %v", err)
+		}
+
+		kubeconfig, err = clientcmd.Load(kubeconfigBytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse the kubeconfig: %v", err)
+		}
+	}
+
+	for _, seed := range seeds {
+		seed.APIVersion = kubermaticv1.SchemeGroupVersion.String()
+		seed.Kind = "Seed"
+		seed.Namespace = targetNamespace
+
+		var seedKubeconfig *clientcmdapi.Config
+		if kubeconfig != nil {
+			seedKubeconfig, err = util.SingleSeedKubeconfig(kubeconfig, seed.Name)
+			if err != nil {
+				return nil, fmt.Errorf("kubeconfig does not contain a valid context for seed %s: %v", seed.Name, err)
+			}
+
+			secretName := fmt.Sprintf("kubeconfig-%s", seed.Name)
+
+			secret, err := util.CreateKubeconfigSecret(seedKubeconfig, secretName, targetNamespace)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create kubeconfig Secret for seed %s: %v", seed.Name, err)
+			}
+			secret.APIVersion = "v1"
+			secret.Kind = "Secret"
+
+			seed.Spec.Kubeconfig.Name = secretName
+			seed.Spec.Kubeconfig.Namespace = targetNamespace
+
+			result = append(result, secret)
+		}
+
+		result = append(result, seed)
+	}
+
+	return result, nil
+}
+
+func convertPresets(values *helmValues, targetNamespace string) ([]runtime.Object, error) {
+	if values.Kubermatic.Presets == "" {
+		return nil, nil
+	}
+
+	presetsYAML, err := base64.StdEncoding.DecodeString(values.Kubermatic.Presets)
+	if err != nil {
+		return nil, fmt.Errorf("presets are not valid base64: %v", err)
+	}
+
+	presets, err := kubernetes.LoadPresets(presetsYAML)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse presets as YAML: %v", err)
+	}
+
+	result := []runtime.Object{}
+
+	for idx := range presets.Items {
+		preset := presets.Items[idx]
+		preset.APIVersion = kubermaticv1.SchemeGroupVersion.String()
+		preset.Kind = "Preset"
+		preset.Namespace = targetNamespace
+
+		result = append(result, &preset)
+	}
+
+	return result, nil
 }
 
 func convertAuth(values *kubermaticValues) (*operatorv1alpha1.KubermaticAuthConfiguration, error) {
