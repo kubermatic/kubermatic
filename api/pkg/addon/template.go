@@ -40,6 +40,7 @@ type TemplateData struct {
 	Credentials       resources.Credentials
 	Variables         map[string]interface{}
 	DNSClusterIP      string
+	DNSResolverIP     string
 	ClusterCIDR       string
 }
 
