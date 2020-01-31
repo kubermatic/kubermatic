@@ -538,5 +538,5 @@ func (r *Reconciler) ensureRequiredResourceTypesExist(ctx context.Context, log *
 }
 
 func deleteCommand(ctx context.Context, kubeconfigFilename, manifestFilename string) *exec.Cmd {
-	return exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename, "--ignore-not-found", "true")
+	return exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename, "--ignore-not-found")
 }
