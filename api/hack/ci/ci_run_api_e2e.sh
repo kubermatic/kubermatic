@@ -46,7 +46,19 @@ spec:
   gcp:
     serviceAccount: ${GOOGLE_SERVICE_ACCOUNT}
 EOF
+cat <<EOF > preset-gcp-datacenter.yaml
+apiVersion: kubermatic.k8s.io/v1
+kind: Preset
+metadata:
+  name: e2e-gcp-datacenter
+  namespace: kubermatic
+spec:
+  gcp:
+    serviceAccount: ${GOOGLE_SERVICE_ACCOUNT}
+    datacenter: gcp-westeurope
+EOF
 retry 2 kubectl apply -f preset-gcp.yaml
+retry 2 kubectl apply -f preset-gcp-datacenter.yaml
 
 echodate "Creating UI OpenStack preset..."
 cat <<EOF > preset-openstack.yaml

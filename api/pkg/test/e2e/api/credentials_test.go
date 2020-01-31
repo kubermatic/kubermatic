@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ func TestListCredentials(t *testing.T) {
 	tests := []struct {
 		name         string
 		provider     string
+		datacenter   string
 		expectedList []string
 	}{
 		{
@@ -38,6 +40,12 @@ func TestListCredentials(t *testing.T) {
 			provider:     "gcp",
 			expectedList: []string{"e2e-gcp"},
 		},
+		{
+			name:         "test, get GCP credential names for the specific datacenter",
+			provider:     "gcp",
+			datacenter:   "gcp-westeurope",
+			expectedList: []string{"e2e-gcp", "e2e-gcp-datacenter"},
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -47,10 +55,12 @@ func TestListCredentials(t *testing.T) {
 			}
 
 			apiRunner := createRunner(masterToken, t)
-			credentialList, err := apiRunner.ListCredentials(tc.provider)
+			credentialList, err := apiRunner.ListCredentials(tc.provider, tc.datacenter)
 			if err != nil {
 				t.Fatalf("can not get credential names for provider %s: %v", tc.provider, err)
 			}
+			sort.Strings(tc.expectedList)
+			sort.Strings(credentialList)
 			if !equality.Semantic.DeepEqual(tc.expectedList, credentialList) {
 				t.Fatalf("expected: %v, got %v", tc.expectedList, credentialList)
 			}
