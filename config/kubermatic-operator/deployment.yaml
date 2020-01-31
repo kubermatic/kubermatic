@@ -21,6 +21,8 @@ spec:
         fluentbit.io/parser: json_iso
     spec:
       serviceAccountName: kubermatic-operator
+      imagePullSecrets:
+      - name: dockercfg
       containers:
       - name: operator
         image: 'quay.io/kubermatic/api:__KUBERMATIC_TAG__'
