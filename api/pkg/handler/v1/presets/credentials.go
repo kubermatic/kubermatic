@@ -35,7 +35,7 @@ type providerReq struct {
 	// required: true
 	ProviderName string `json:"provider_name"`
 	// in: query
-	Datacenter string
+	Datacenter string `json:"datacenter,omitempty"`
 }
 
 // CredentialEndpoint returns custom credential list name for the provider

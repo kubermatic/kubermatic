@@ -136,14 +136,14 @@ func (o *ListCredentialsParams) WriteToRequest(r runtime.ClientRequest, reg strf
 
 	if o.Datacenter != nil {
 
-		// query param Datacenter
+		// query param datacenter
 		var qrDatacenter string
 		if o.Datacenter != nil {
 			qrDatacenter = *o.Datacenter
 		}
 		qDatacenter := qrDatacenter
 		if qDatacenter != "" {
-			if err := r.SetQueryParam("Datacenter", qDatacenter); err != nil {
+			if err := r.SetQueryParam("datacenter", qDatacenter); err != nil {
 				return err
 			}
 		}

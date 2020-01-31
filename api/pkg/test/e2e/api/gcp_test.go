@@ -33,7 +33,7 @@ func TestGCPZones(t *testing.T) {
 			}
 
 			apiRunner := createRunner(masterToken, t)
-			credentialList, err := apiRunner.ListCredentials(tc.provider)
+			credentialList, err := apiRunner.ListCredentials(tc.provider, "")
 			if err != nil {
 				t.Fatalf("can not get credential names for provider %s: %v", tc.provider, err)
 			}
@@ -81,7 +81,7 @@ func TestGCPDiskTypes(t *testing.T) {
 			}
 
 			apiRunner := createRunner(masterToken, t)
-			credentialList, err := apiRunner.ListCredentials(tc.provider)
+			credentialList, err := apiRunner.ListCredentials(tc.provider, "")
 			if err != nil {
 				t.Fatalf("can not get credential names for provider %s: %v", tc.provider, err)
 			}
@@ -127,7 +127,7 @@ func TestGCPSizes(t *testing.T) {
 			}
 
 			apiRunner := createRunner(masterToken, t)
-			credentialList, err := apiRunner.ListCredentials(tc.provider)
+			credentialList, err := apiRunner.ListCredentials(tc.provider, "")
 			if err != nil {
 				t.Fatalf("can not get credential names for provider %s: %v", tc.provider, err)
 			}
