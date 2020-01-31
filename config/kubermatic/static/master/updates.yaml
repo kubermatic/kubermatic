@@ -38,3 +38,7 @@ updates:
 - from: <= 1.15.4, >= 1.15.0
   to: 1.15.5
   automatic: true
+# Released with broken Anago
+- from: 1.15.8
+  to: 1.15.9
+  automatic: true
