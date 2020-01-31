@@ -259,8 +259,8 @@ func convertServiceAccountToken(saToken *models.ServiceAccountToken) (*apiv1.Ser
 }
 
 // ListCredentials returns list of credential names for the provider
-func (r *runner) ListCredentials(providerName string) ([]string, error) {
-	params := &credentials.ListCredentialsParams{ProviderName: providerName}
+func (r *runner) ListCredentials(providerName, datacenter string) ([]string, error) {
+	params := &credentials.ListCredentialsParams{ProviderName: providerName, Datacenter: &datacenter}
 	params.WithTimeout(timeout)
 	credentialsResponse, err := r.client.Credentials.ListCredentials(params, r.bearerToken)
 	if err != nil {

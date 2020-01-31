@@ -6524,7 +6524,8 @@
           },
           {
             "type": "string",
-            "name": "Datacenter",
+            "x-go-name": "Datacenter",
+            "name": "datacenter",
             "in": "query"
           }
         ],
