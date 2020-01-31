@@ -55,6 +55,10 @@ updates:
 - from: <= 1.15.4, >= 1.15.0
   to: 1.15.5
   automatic: true
+# Released with broken Anago
+- from: 1.15.8
+  to: 1.15.9
+  automatic: true
 # Allow to next minor release
 - from: 1.15.*
   to: 1.16.*
@@ -68,6 +72,10 @@ updates:
 # CVE-2019-11253
 - from: <= 1.16.1, >= 1.16.0
   to: 1.16.2
+  automatic: true
+# Released with broken Anago
+- from: 1.16.5
+  to: 1.16.6
   automatic: true
 # Allow to next minor release
 - from: 1.16.*
