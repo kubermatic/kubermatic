@@ -634,6 +634,9 @@ type ClusterSpec struct {
 	// If active the PodSecurityPolicy admission plugin is configured at the apiserver
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 
+	// If active the PodNodeSelector admission plugin is configured at the apiserver
+	UsePodNodeSelectorAdmissionPlugin bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
+
 	// AuditLogging
 	AuditLogging *kubermaticv1.AuditLoggingSettings `json:"auditLogging,omitempty"`
 

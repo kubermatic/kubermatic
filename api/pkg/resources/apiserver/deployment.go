@@ -241,6 +241,9 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	if data.Cluster().Spec.UsePodSecurityPolicyAdmissionPlugin {
 		admissionPlugins = append(admissionPlugins, "PodSecurityPolicy")
 	}
+	if data.Cluster().Spec.UsePodNodeSelectorAdmissionPlugin {
+		admissionPlugins = append(admissionPlugins, "PodNodeSelector")
+	}
 
 	flags := []string{
 		"--advertise-address", data.Cluster().Address.IP,

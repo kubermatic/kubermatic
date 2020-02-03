@@ -7730,6 +7730,11 @@
         "openshift": {
           "$ref": "#/definitions/Openshift"
         },
+        "usePodNodeSelectorAdmissionPlugin": {
+          "description": "If active the PodNodeSelector admission plugin is configured at the apiserver",
+          "type": "boolean",
+          "x-go-name": "UsePodNodeSelectorAdmissionPlugin"
+        },
         "usePodSecurityPolicyAdmissionPlugin": {
           "description": "If active the PodSecurityPolicy admission plugin is configured at the apiserver",
           "type": "boolean",
