@@ -388,6 +388,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 		newInternalCluster.Spec.Version = patchedCluster.Spec.Version
 		newInternalCluster.Spec.OIDC = patchedCluster.Spec.OIDC
 		newInternalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = patchedCluster.Spec.UsePodSecurityPolicyAdmissionPlugin
+		newInternalCluster.Spec.UsePodNodeSelectorAdmissionPlugin = patchedCluster.Spec.UsePodNodeSelectorAdmissionPlugin
 		newInternalCluster.Spec.AuditLogging = patchedCluster.Spec.AuditLogging
 		newInternalCluster.Spec.Openshift = patchedCluster.Spec.Openshift
 
@@ -707,6 +708,7 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, fil
 			OIDC:                                internalCluster.Spec.OIDC,
 			AuditLogging:                        internalCluster.Spec.AuditLogging,
 			UsePodSecurityPolicyAdmissionPlugin: internalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
+			UsePodNodeSelectorAdmissionPlugin:   internalCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
 		},
 		Status: apiv1.ClusterStatus{
 			Version: internalCluster.Spec.Version,

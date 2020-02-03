@@ -21,6 +21,7 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter
 		OIDC:                                apiCluster.Spec.OIDC,
 		Version:                             apiCluster.Spec.Version,
 		UsePodSecurityPolicyAdmissionPlugin: apiCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
+		UsePodNodeSelectorAdmissionPlugin:   apiCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
 		AuditLogging:                        apiCluster.Spec.AuditLogging,
 		Openshift:                           apiCluster.Spec.Openshift,
 	}
