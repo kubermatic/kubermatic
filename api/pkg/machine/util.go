@@ -11,14 +11,11 @@ var userNameMap = map[string]string{
 	"Digitalocean:Ubuntu":         "root",
 	"Digitalocean:ContainerLinux": "core",
 	"Digitalocean:CentOS":         "root",
-	"Digitalocean:SLES":           "",
 	"Hetzner:Ubuntu":              "root",
 	"Hetzner:CentOS":              "root",
-	"Hetzner:SLES":                "",
 	"Azure:Ubuntu":                "ubuntu",
 	"Azure:ContainerLinux":        "core",
 	"Azure:CentOS":                "centos",
-	"Azure:SLES":                  "",
 	"VSphere:Ubuntu":              "ubuntu",
 	"VSphere:ContainerLinux":      "core",
 	"VSphere:CentOS":              "centos",
@@ -32,10 +29,8 @@ var userNameMap = map[string]string{
 	"Packet:Ubuntu":               "root",
 	"Packet:ContainerLinux":       "core",
 	"Packet:CentOS":               "root",
-	"Packet:SLES":                 "",
 	"GCP:Ubuntu":                  "ubuntu",
 	"GCP:ContainerLinux":          "core",
-	"GCP:SLES":                    "",
 }
 
 // GetSSHUserName returns SSH login name for the provider and distribution
