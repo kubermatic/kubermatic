@@ -287,7 +287,7 @@ write_files:
 
 - path: "/etc/systemd/system/kubelet.service"
   content: |
-{{ kubeletSystemdUnit .KubeletVersion .CloudProviderName .MachineSpec.Name .DNSIPs .ExternalCloudProvider .PauseImage | indent 4 }}
+{{ kubeletSystemdUnit .KubeletVersion .CloudProviderName .MachineSpec.Name .DNSIPs .ExternalCloudProvider .PauseImage .MachineSpec.Taints | indent 4 }}
 
 - path: "/etc/systemd/system/kubelet.service.d/extras.conf"
   content: |

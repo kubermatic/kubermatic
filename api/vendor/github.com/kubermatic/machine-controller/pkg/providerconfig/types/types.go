@@ -35,6 +35,7 @@ const (
 	OperatingSystemCoreos OperatingSystem = "coreos"
 	OperatingSystemUbuntu OperatingSystem = "ubuntu"
 	OperatingSystemCentOS OperatingSystem = "centos"
+	OperatingSystemSLES   OperatingSystem = "sles"
 )
 
 type CloudProvider string
@@ -62,6 +63,7 @@ var (
 		OperatingSystemCoreos,
 		OperatingSystemUbuntu,
 		OperatingSystemCentOS,
+		OperatingSystemSLES,
 	}
 
 	// AllCloudProviders is a slice containing all supported cloud providers.

@@ -50,6 +50,7 @@ spec:
           images:
             centos: ""
             coreos: ""
+            sles: ""
             ubuntu: ""
           # The AWS region to use, e.g. "us-east-1". For a list of available regions, see
           # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
@@ -97,6 +98,7 @@ spec:
           images:
             centos: ""
             coreos: ""
+            sles: ""
             ubuntu: ""
           # Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
           # See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
@@ -150,6 +152,7 @@ spec:
           templates:
             centos: ""
             coreos: ""
+            sles: ""
             ubuntu: ""
   # Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
   expose_strategy: ""
