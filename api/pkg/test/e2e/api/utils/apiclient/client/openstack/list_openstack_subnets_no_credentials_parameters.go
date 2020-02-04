@@ -61,12 +61,12 @@ for the list openstack subnets no credentials operation typically these are writ
 */
 type ListOpenstackSubnetsNoCredentialsParams struct {
 
-	/*NetworkID*/
-	NetworkID *string
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
 	Dc string
+	/*NetworkID*/
+	NetworkID *string
 	/*ProjectID*/
 	ProjectID string
 
@@ -108,17 +108,6 @@ func (o *ListOpenstackSubnetsNoCredentialsParams) SetHTTPClient(client *http.Cli
 	o.HTTPClient = client
 }
 
-// WithNetworkID adds the networkID to the list openstack subnets no credentials params
-func (o *ListOpenstackSubnetsNoCredentialsParams) WithNetworkID(networkID *string) *ListOpenstackSubnetsNoCredentialsParams {
-	o.SetNetworkID(networkID)
-	return o
-}
-
-// SetNetworkID adds the networkId to the list openstack subnets no credentials params
-func (o *ListOpenstackSubnetsNoCredentialsParams) SetNetworkID(networkID *string) {
-	o.NetworkID = networkID
-}
-
 // WithClusterID adds the clusterID to the list openstack subnets no credentials params
 func (o *ListOpenstackSubnetsNoCredentialsParams) WithClusterID(clusterID string) *ListOpenstackSubnetsNoCredentialsParams {
 	o.SetClusterID(clusterID)
@@ -141,6 +130,17 @@ func (o *ListOpenstackSubnetsNoCredentialsParams) SetDc(dc string) {
 	o.Dc = dc
 }
 
+// WithNetworkID adds the networkID to the list openstack subnets no credentials params
+func (o *ListOpenstackSubnetsNoCredentialsParams) WithNetworkID(networkID *string) *ListOpenstackSubnetsNoCredentialsParams {
+	o.SetNetworkID(networkID)
+	return o
+}
+
+// SetNetworkID adds the networkId to the list openstack subnets no credentials params
+func (o *ListOpenstackSubnetsNoCredentialsParams) SetNetworkID(networkID *string) {
+	o.NetworkID = networkID
+}
+
 // WithProjectID adds the projectID to the list openstack subnets no credentials params
 func (o *ListOpenstackSubnetsNoCredentialsParams) WithProjectID(projectID string) *ListOpenstackSubnetsNoCredentialsParams {
 	o.SetProjectID(projectID)
@@ -160,22 +160,6 @@ func (o *ListOpenstackSubnetsNoCredentialsParams) WriteToRequest(r runtime.Clien
 	}
 	var res []error
 
-	if o.NetworkID != nil {
-
-		// query param NetworkID
-		var qrNetworkID string
-		if o.NetworkID != nil {
-			qrNetworkID = *o.NetworkID
-		}
-		qNetworkID := qrNetworkID
-		if qNetworkID != "" {
-			if err := r.SetQueryParam("NetworkID", qNetworkID); err != nil {
-				return err
-			}
-		}
-
-	}
-
 	// path param cluster_id
 	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
 		return err
@@ -184,6 +168,22 @@ func (o *ListOpenstackSubnetsNoCredentialsParams) WriteToRequest(r runtime.Clien
 	// path param dc
 	if err := r.SetPathParam("dc", o.Dc); err != nil {
 		return err
+	}
+
+	if o.NetworkID != nil {
+
+		// query param network_id
+		var qrNetworkID string
+		if o.NetworkID != nil {
+			qrNetworkID = *o.NetworkID
+		}
+		qNetworkID := qrNetworkID
+		if qNetworkID != "" {
+			if err := r.SetQueryParam("network_id", qNetworkID); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	// path param project_id

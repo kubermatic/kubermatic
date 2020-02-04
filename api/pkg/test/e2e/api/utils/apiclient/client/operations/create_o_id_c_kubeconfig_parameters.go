@@ -162,14 +162,14 @@ func (o *CreateOIDCKubeconfigParams) WriteToRequest(r runtime.ClientRequest, reg
 
 	if o.ClusterID != nil {
 
-		// query param ClusterID
+		// query param cluster_id
 		var qrClusterID string
 		if o.ClusterID != nil {
 			qrClusterID = *o.ClusterID
 		}
 		qClusterID := qrClusterID
 		if qClusterID != "" {
-			if err := r.SetQueryParam("ClusterID", qClusterID); err != nil {
+			if err := r.SetQueryParam("cluster_id", qClusterID); err != nil {
 				return err
 			}
 		}
@@ -178,14 +178,14 @@ func (o *CreateOIDCKubeconfigParams) WriteToRequest(r runtime.ClientRequest, reg
 
 	if o.Datacenter != nil {
 
-		// query param Datacenter
+		// query param datacenter
 		var qrDatacenter string
 		if o.Datacenter != nil {
 			qrDatacenter = *o.Datacenter
 		}
 		qDatacenter := qrDatacenter
 		if qDatacenter != "" {
-			if err := r.SetQueryParam("Datacenter", qDatacenter); err != nil {
+			if err := r.SetQueryParam("datacenter", qDatacenter); err != nil {
 				return err
 			}
 		}
@@ -194,14 +194,14 @@ func (o *CreateOIDCKubeconfigParams) WriteToRequest(r runtime.ClientRequest, reg
 
 	if o.ProjectID != nil {
 
-		// query param ProjectID
+		// query param project_id
 		var qrProjectID string
 		if o.ProjectID != nil {
 			qrProjectID = *o.ProjectID
 		}
 		qProjectID := qrProjectID
 		if qProjectID != "" {
-			if err := r.SetQueryParam("ProjectID", qProjectID); err != nil {
+			if err := r.SetQueryParam("project_id", qProjectID); err != nil {
 				return err
 			}
 		}
@@ -210,14 +210,14 @@ func (o *CreateOIDCKubeconfigParams) WriteToRequest(r runtime.ClientRequest, reg
 
 	if o.UserID != nil {
 
-		// query param UserID
+		// query param user_id
 		var qrUserID string
 		if o.UserID != nil {
 			qrUserID = *o.UserID
 		}
 		qUserID := qrUserID
 		if qUserID != "" {
-			if err := r.SetQueryParam("UserID", qUserID); err != nil {
+			if err := r.SetQueryParam("user_id", qUserID); err != nil {
 				return err
 			}
 		}

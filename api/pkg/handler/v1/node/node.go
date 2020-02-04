@@ -817,7 +817,7 @@ const (
 type nodeDeploymentNodesEventsReq struct {
 	common.GetClusterReq
 	// in: query
-	Type string
+	Type string `json:"type,omitempty"`
 
 	// in: path
 	NodeDeploymentID string `json:"nodedeployment_id"`

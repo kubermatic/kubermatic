@@ -466,7 +466,7 @@ func DecodeOpenstackNoCredentialsReq(c context.Context, r *http.Request) (interf
 type OpenstackSubnetReq struct {
 	OpenstackReq
 	// in: query
-	NetworkID string
+	NetworkID string `json:"network_id,omitempty"`
 }
 
 func DecodeOpenstackSubnetReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -490,7 +490,7 @@ func DecodeOpenstackSubnetReq(c context.Context, r *http.Request) (interface{}, 
 type OpenstackSubnetNoCredentialsReq struct {
 	OpenstackNoCredentialsReq
 	// in: query
-	NetworkID string
+	NetworkID string `json:"network_id,omitempty"`
 }
 
 func DecodeOpenstackSubnetNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
