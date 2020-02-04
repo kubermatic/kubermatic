@@ -23,7 +23,7 @@ type OperatingSystemSpec struct {
 	ContainerLinux *ContainerLinuxSpec `json:"containerLinux,omitempty"`
 
 	// sles
-	Sles *SLESSpec `json:"sles,omitempty"`
+	SLES *SLESSpec `json:"sles,omitempty"`
 
 	// ubuntu
 	Ubuntu *UbuntuSpec `json:"ubuntu,omitempty"`
@@ -93,12 +93,12 @@ func (m *OperatingSystemSpec) validateContainerLinux(formats strfmt.Registry) er
 
 func (m *OperatingSystemSpec) validateSles(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.Sles) { // not required
+	if swag.IsZero(m.SLES) { // not required
 		return nil
 	}
 
-	if m.Sles != nil {
-		if err := m.Sles.Validate(formats); err != nil {
+	if m.SLES != nil {
+		if err := m.SLES.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("sles")
 			}
