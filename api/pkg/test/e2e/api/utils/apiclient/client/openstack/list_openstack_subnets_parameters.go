@@ -67,8 +67,6 @@ type ListOpenstackSubnetsParams struct {
 	DatacenterName *string
 	/*Domain*/
 	Domain *string
-	/*NetworkID*/
-	NetworkID *string
 	/*Password*/
 	Password *string
 	/*Tenant*/
@@ -77,6 +75,8 @@ type ListOpenstackSubnetsParams struct {
 	TenantID *string
 	/*Username*/
 	Username *string
+	/*NetworkID*/
+	NetworkID *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -149,17 +149,6 @@ func (o *ListOpenstackSubnetsParams) SetDomain(domain *string) {
 	o.Domain = domain
 }
 
-// WithNetworkID adds the networkID to the list openstack subnets params
-func (o *ListOpenstackSubnetsParams) WithNetworkID(networkID *string) *ListOpenstackSubnetsParams {
-	o.SetNetworkID(networkID)
-	return o
-}
-
-// SetNetworkID adds the networkId to the list openstack subnets params
-func (o *ListOpenstackSubnetsParams) SetNetworkID(networkID *string) {
-	o.NetworkID = networkID
-}
-
 // WithPassword adds the password to the list openstack subnets params
 func (o *ListOpenstackSubnetsParams) WithPassword(password *string) *ListOpenstackSubnetsParams {
 	o.SetPassword(password)
@@ -202,6 +191,17 @@ func (o *ListOpenstackSubnetsParams) WithUsername(username *string) *ListOpensta
 // SetUsername adds the username to the list openstack subnets params
 func (o *ListOpenstackSubnetsParams) SetUsername(username *string) {
 	o.Username = username
+}
+
+// WithNetworkID adds the networkID to the list openstack subnets params
+func (o *ListOpenstackSubnetsParams) WithNetworkID(networkID *string) *ListOpenstackSubnetsParams {
+	o.SetNetworkID(networkID)
+	return o
+}
+
+// SetNetworkID adds the networkId to the list openstack subnets params
+func (o *ListOpenstackSubnetsParams) SetNetworkID(networkID *string) {
+	o.NetworkID = networkID
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -254,22 +254,6 @@ func (o *ListOpenstackSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg
 		qDomain := qrDomain
 		if qDomain != "" {
 			if err := r.SetQueryParam("Domain", qDomain); err != nil {
-				return err
-			}
-		}
-
-	}
-
-	if o.NetworkID != nil {
-
-		// query param NetworkID
-		var qrNetworkID string
-		if o.NetworkID != nil {
-			qrNetworkID = *o.NetworkID
-		}
-		qNetworkID := qrNetworkID
-		if qNetworkID != "" {
-			if err := r.SetQueryParam("NetworkID", qNetworkID); err != nil {
 				return err
 			}
 		}
@@ -334,6 +318,22 @@ func (o *ListOpenstackSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg
 		qUsername := qrUsername
 		if qUsername != "" {
 			if err := r.SetQueryParam("Username", qUsername); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	if o.NetworkID != nil {
+
+		// query param network_id
+		var qrNetworkID string
+		if o.NetworkID != nil {
+			qrNetworkID = *o.NetworkID
+		}
+		qNetworkID := qrNetworkID
+		if qNetworkID != "" {
+			if err := r.SetQueryParam("network_id", qNetworkID); err != nil {
 				return err
 			}
 		}

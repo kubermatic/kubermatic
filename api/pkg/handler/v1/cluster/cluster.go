@@ -1210,7 +1210,7 @@ type EventsReq struct {
 	common.GetClusterReq
 
 	// in: query
-	Type string
+	Type string `json:"type,omitempty"`
 }
 
 func DecodeGetClusterEvents(c context.Context, r *http.Request) (interface{}, error) {

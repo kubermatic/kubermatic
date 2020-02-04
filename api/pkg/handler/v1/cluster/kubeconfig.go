@@ -343,10 +343,10 @@ type OIDCState struct {
 // swagger:parameters createOIDCKubeconfig
 type CreateOIDCKubeconfigReq struct {
 	// in: query
-	ClusterID  string
-	ProjectID  string
-	UserID     string
-	Datacenter string
+	ClusterID  string `json:"cluster_id,omitempty"`
+	ProjectID  string `json:"project_id,omitempty"`
+	UserID     string `json:"user_id,omitempty"`
+	Datacenter string `json:"datacenter,omitempty"`
 
 	// not exported so that they don't leak to swagger spec.
 	code             string

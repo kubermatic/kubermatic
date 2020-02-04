@@ -330,22 +330,26 @@
         "parameters": [
           {
             "type": "string",
-            "name": "ClusterID",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
             "in": "query"
           },
           {
             "type": "string",
-            "name": "ProjectID",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
             "in": "query"
           },
           {
             "type": "string",
-            "name": "UserID",
+            "x-go-name": "UserID",
+            "name": "user_id",
             "in": "query"
           },
           {
             "type": "string",
-            "name": "Datacenter",
+            "x-go-name": "Datacenter",
+            "name": "datacenter",
             "in": "query"
           }
         ],
@@ -1940,7 +1944,8 @@
           },
           {
             "type": "string",
-            "name": "Type",
+            "x-go-name": "Type",
+            "name": "type",
             "in": "query"
           }
         ],
@@ -2612,7 +2617,8 @@
           },
           {
             "type": "string",
-            "name": "Type",
+            "x-go-name": "Type",
+            "name": "type",
             "in": "query"
           },
           {
@@ -3781,7 +3787,8 @@
           },
           {
             "type": "string",
-            "name": "NetworkID",
+            "x-go-name": "NetworkID",
+            "name": "network_id",
             "in": "query"
           }
         ],
@@ -6345,7 +6352,8 @@
           },
           {
             "type": "string",
-            "name": "NetworkID",
+            "x-go-name": "NetworkID",
+            "name": "network_id",
             "in": "query"
           }
         ],
@@ -6593,7 +6601,8 @@
           },
           {
             "type": "string",
-            "name": "ControlPlaneVersion",
+            "x-go-name": "ControlPlaneVersion",
+            "name": "control_plane_version",
             "in": "query"
           }
         ],
