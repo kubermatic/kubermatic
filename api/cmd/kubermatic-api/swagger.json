@@ -8528,7 +8528,7 @@
           "$ref": "#/definitions/UID"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+      "x-go-package": "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
     },
     "GlobalSecretKeySelector": {
       "$ref": "#/definitions/GlobalObjectKeySelector"
@@ -8865,7 +8865,7 @@
           "x-go-name": "UpdatedReplicas"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+      "x-go-package": "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
     },
     "MachineNetworkingConfig": {
       "type": "object",
@@ -9653,6 +9653,9 @@
         "containerLinux": {
           "$ref": "#/definitions/ContainerLinuxSpec"
         },
+        "sles": {
+          "$ref": "#/definitions/SLESSpec"
+        },
         "ubuntu": {
           "$ref": "#/definitions/UbuntuSpec"
         }
@@ -10074,7 +10077,7 @@
           }
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/runtime"
+      "x-go-package": "github.com/kubermatic/machine-controller/vendor/k8s.io/apimachinery/pkg/runtime"
     },
     "ResourceLabelMap": {
       "title": "ResourceLabelMap defines list of labels grouped by specific resource types.",
@@ -10177,6 +10180,18 @@
         "userEmail": {
           "type": "string",
           "x-go-name": "UserEmail"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "SLESSpec": {
+      "description": "SLESSpec contains SLES specific settings",
+      "type": "object",
+      "properties": {
+        "distUpgradeOnBoot": {
+          "description": "do a dist-upgrade on boot and reboot it required afterwards",
+          "type": "boolean",
+          "x-go-name": "DistUpgradeOnBoot"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

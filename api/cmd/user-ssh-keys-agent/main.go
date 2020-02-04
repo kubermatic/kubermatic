@@ -60,7 +60,7 @@ func main() {
 
 func availableUsersPaths() ([]string, error) {
 	var paths []string
-	for _, user := range []string{"root", "core", "ubuntu", "centos"} {
+	for _, user := range []string{"root", "core", "ubuntu", "centos", "sles"} {
 		path := fmt.Sprintf("/%v", user)
 		if user != "root" {
 			path = fmt.Sprintf("/home%v", path)

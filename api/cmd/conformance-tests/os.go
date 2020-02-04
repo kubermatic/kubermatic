@@ -14,6 +14,9 @@ func getOSNameFromSpec(spec apimodels.OperatingSystemSpec) string {
 	if spec.Ubuntu != nil {
 		return "ubuntu"
 	}
+	if spec.SLES != nil {
+		return "sles"
+	}
 
 	return ""
 }
