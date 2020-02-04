@@ -653,6 +653,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		Version                             ksemver.Semver                         `json:"version"`
 		OIDC                                kubermaticv1.OIDCSettings              `json:"oidc"`
 		UsePodSecurityPolicyAdmissionPlugin bool                                   `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
+		UsePodNodeSelectorAdmissionPlugin   bool                                   `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
 		AuditLogging                        *kubermaticv1.AuditLoggingSettings     `json:"auditLogging,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
@@ -673,6 +674,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		MachineNetworks:                     cs.MachineNetworks,
 		OIDC:                                cs.OIDC,
 		UsePodSecurityPolicyAdmissionPlugin: cs.UsePodSecurityPolicyAdmissionPlugin,
+		UsePodNodeSelectorAdmissionPlugin:   cs.UsePodNodeSelectorAdmissionPlugin,
 		AuditLogging:                        cs.AuditLogging,
 	})
 
