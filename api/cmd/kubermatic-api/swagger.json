@@ -8528,7 +8528,7 @@
           "$ref": "#/definitions/UID"
         }
       },
-      "x-go-package": "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/providerconfig/types"
     },
     "GlobalSecretKeySelector": {
       "$ref": "#/definitions/GlobalObjectKeySelector"
@@ -8865,7 +8865,7 @@
           "x-go-name": "UpdatedReplicas"
         }
       },
-      "x-go-package": "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
     },
     "MachineNetworkingConfig": {
       "type": "object",
@@ -10077,7 +10077,7 @@
           }
         }
       },
-      "x-go-package": "github.com/kubermatic/machine-controller/vendor/k8s.io/apimachinery/pkg/runtime"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/runtime"
     },
     "ResourceLabelMap": {
       "title": "ResourceLabelMap defines list of labels grouped by specific resource types.",
@@ -10419,7 +10419,7 @@
     "UID": {
       "description": "UID is a type that holds unique ID values, including UUIDs.  Because we\ndon't ONLY use UUIDs, this is an alias to string.  Being a type captures\nintent and helps make sure that UIDs and names do not get conflated.",
       "type": "string",
-      "x-go-package": "github.com/kubermatic/machine-controller/vendor/k8s.io/apimachinery/pkg/types"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/types"
     },
     "UbuntuSpec": {
       "description": "UbuntuSpec ubuntu specific settings",
