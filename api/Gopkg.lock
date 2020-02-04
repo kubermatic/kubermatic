@@ -820,7 +820,7 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:f8eecc6b87e8a7addb2d1672a3b50488faf0b36a66547485f3ae76008d7dd87b"
+  digest = "1:f78aaa704565065f2bfa92cdc4b5ff1c1f0a7fc001e365d969d8d3e5daba52e7"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/cluster/common",
@@ -845,8 +845,8 @@
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "a2f278c9e8072a6b9c34ca0e739a2118b5ddd64b"
-  version = "v1.8.0"
+  revision = "b2f1d492d9717528bf3414af77140cbb019145f7"
+  version = "v1.9.0"
 
 [[projects]]
   digest = "1:0dbba7d4d4f3eeb01acd81af338ff4a3c4b0bb814d87368ea536e616f383240d"
@@ -1998,7 +1998,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:dd5150268c07fe9a2374db6edc35b09af88591184328bccade10f6153a975261"
+  digest = "1:9e2a86035f11ea63712aca515c4e28b40182491460d83d107bc52f50b5654cc6"
   name = "k8s.io/test-infra"
   packages = ["pkg/genyaml"]
   pruneopts = "NUT"
