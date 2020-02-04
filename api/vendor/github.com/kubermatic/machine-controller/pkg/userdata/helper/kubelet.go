@@ -20,7 +20,10 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"strings"
 	"text/template"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -48,6 +51,7 @@ const (
 --hostname-override={{ .Hostname }} \
 {{- end }}
 --read-only-port=0 \
+--dynamic-config-dir /etc/kubernetes/dynamic-config-dir \
 --exit-on-lock-contention \
 --lock-file=/tmp/kubelet.lock \
 --anonymous-auth=false \
@@ -56,6 +60,9 @@ const (
 --cluster-domain=cluster.local \
 {{- if .PauseImage }}
 --pod-infra-container-image={{ .PauseImage }} \
+{{- end }}
+{{- if .InitialTaints }}
+--register-with-taints={{- .InitialTaints }} \
 {{- end }}
 --kube-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi \
 --system-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi \
@@ -80,7 +87,7 @@ EnvironmentFile=-/etc/environment
 
 ExecStartPre=/bin/bash /opt/load-kernel-modules.sh
 ExecStart=/opt/bin/kubelet $KUBELET_EXTRA_ARGS \
-{{ kubeletFlags .KubeletVersion .CloudProvider .Hostname .ClusterDNSIPs .IsExternal .PauseImage | indent 2 }}
+{{ kubeletFlags .KubeletVersion .CloudProvider .Hostname .ClusterDNSIPs .IsExternal .PauseImage .InitialTaints | indent 2 }}
 
 [Install]
 WantedBy=multi-user.target`
@@ -102,7 +109,7 @@ func CloudProviderFlags(cpName string, external bool) (string, error) {
 }
 
 // KubeletSystemdUnit returns the systemd unit for the kubelet
-func KubeletSystemdUnit(kubeletVersion, cloudProvider, hostname string, dnsIPs []net.IP, external bool, pauseImage string) (string, error) {
+func KubeletSystemdUnit(kubeletVersion, cloudProvider, hostname string, dnsIPs []net.IP, external bool, pauseImage string, initialTaints []corev1.Taint) (string, error) {
 	tmpl, err := template.New("kubelet-systemd-unit").Funcs(TxtFuncMap()).Parse(kubeletSystemdUnitTpl)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse kubelet-systemd-unit template: %v", err)
@@ -115,6 +122,7 @@ func KubeletSystemdUnit(kubeletVersion, cloudProvider, hostname string, dnsIPs [
 		ClusterDNSIPs  []net.IP
 		IsExternal     bool
 		PauseImage     string
+		InitialTaints  []corev1.Taint
 	}{
 		KubeletVersion: kubeletVersion,
 		CloudProvider:  cloudProvider,
@@ -122,6 +130,7 @@ func KubeletSystemdUnit(kubeletVersion, cloudProvider, hostname string, dnsIPs [
 		ClusterDNSIPs:  dnsIPs,
 		IsExternal:     external,
 		PauseImage:     pauseImage,
+		InitialTaints:  initialTaints,
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -133,10 +142,15 @@ func KubeletSystemdUnit(kubeletVersion, cloudProvider, hostname string, dnsIPs [
 }
 
 // KubeletFlags returns the kubelet flags
-func KubeletFlags(version, cloudProvider, hostname string, dnsIPs []net.IP, external bool, pauseImage string) (string, error) {
+func KubeletFlags(version, cloudProvider, hostname string, dnsIPs []net.IP, external bool, pauseImage string, initialTaints []corev1.Taint) (string, error) {
 	tmpl, err := template.New("kubelet-flags").Funcs(TxtFuncMap()).Parse(kubeletFlagsTpl)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse kubelet-flags template: %v", err)
+	}
+
+	initialTaintsArgs := []string{}
+	for _, taint := range initialTaints {
+		initialTaintsArgs = append(initialTaintsArgs, fmt.Sprintf("%s=%s:%s", taint.Key, taint.Value, taint.Effect))
 	}
 
 	data := struct {
@@ -146,6 +160,7 @@ func KubeletFlags(version, cloudProvider, hostname string, dnsIPs []net.IP, exte
 		KubeletVersion string
 		IsExternal     bool
 		PauseImage     string
+		InitialTaints  string
 	}{
 		CloudProvider:  cloudProvider,
 		Hostname:       hostname,
@@ -153,6 +168,7 @@ func KubeletFlags(version, cloudProvider, hostname string, dnsIPs []net.IP, exte
 		KubeletVersion: version,
 		IsExternal:     external,
 		PauseImage:     pauseImage,
+		InitialTaints:  strings.Join(initialTaintsArgs, ","),
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
