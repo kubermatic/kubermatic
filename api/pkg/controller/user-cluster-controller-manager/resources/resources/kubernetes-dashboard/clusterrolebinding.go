@@ -20,8 +20,9 @@ func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGette
 				Kind:     "ClusterRole",
 			}
 			crb.Subjects = []rbacv1.Subject{{
-				Kind: rbacv1.ServiceAccountKind,
-				Name: resources.MetricsScraperServiceAccountUsername,
+				Kind:      rbacv1.ServiceAccountKind,
+				Name:      resources.MetricsScraperServiceAccountUsername,
+				Namespace: Namespace,
 			}}
 			return crb, nil
 		}
