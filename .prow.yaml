@@ -1122,6 +1122,8 @@ presubmits:
     #   yaml.UnmarshalStrict
     run_if_changed: "(api/hack|config/kubermatic|api/pkg/crd/kubermatic/v1)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    branches:
+    - ^master$
     labels:
       preset-docker-push: "true"
       preset-vault: "true"
