@@ -16,9 +16,9 @@ fi
 HELM_EXTRA_ARGS=${@:3}
 VALUES_FILE=$(realpath ${2})
 if [[ "${1}" = "master" ]]; then
-  MASTER_FLAG="--set=kubermatic.isMaster=true"
+  MASTER_FLAG="--set=kubermatic.isMaster=true --set=prometheus.isMaster=true"
 else
-  MASTER_FLAG="--set=kubermatic.isMaster=false"
+  MASTER_FLAG="--set=kubermatic.isMaster=false --set=prometheus.isMaster=false"
 fi
 DEPLOY_NODEPORT_PROXY=${DEPLOY_NODEPORT_PROXY:-true}
 DEPLOY_ALERTMANAGER=${DEPLOY_ALERTMANAGER:-true}
