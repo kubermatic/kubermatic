@@ -61,8 +61,6 @@ for the list node deployment nodes events operation typically these are written 
 */
 type ListNodeDeploymentNodesEventsParams struct {
 
-	/*Type*/
-	Type *string
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
@@ -71,6 +69,8 @@ type ListNodeDeploymentNodesEventsParams struct {
 	NodedeploymentID string
 	/*ProjectID*/
 	ProjectID string
+	/*Type*/
+	Type *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -108,17 +108,6 @@ func (o *ListNodeDeploymentNodesEventsParams) WithHTTPClient(client *http.Client
 // SetHTTPClient adds the HTTPClient to the list node deployment nodes events params
 func (o *ListNodeDeploymentNodesEventsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
-}
-
-// WithType adds the typeVar to the list node deployment nodes events params
-func (o *ListNodeDeploymentNodesEventsParams) WithType(typeVar *string) *ListNodeDeploymentNodesEventsParams {
-	o.SetType(typeVar)
-	return o
-}
-
-// SetType adds the type to the list node deployment nodes events params
-func (o *ListNodeDeploymentNodesEventsParams) SetType(typeVar *string) {
-	o.Type = typeVar
 }
 
 // WithClusterID adds the clusterID to the list node deployment nodes events params
@@ -165,6 +154,17 @@ func (o *ListNodeDeploymentNodesEventsParams) SetProjectID(projectID string) {
 	o.ProjectID = projectID
 }
 
+// WithType adds the typeVar to the list node deployment nodes events params
+func (o *ListNodeDeploymentNodesEventsParams) WithType(typeVar *string) *ListNodeDeploymentNodesEventsParams {
+	o.SetType(typeVar)
+	return o
+}
+
+// SetType adds the type to the list node deployment nodes events params
+func (o *ListNodeDeploymentNodesEventsParams) SetType(typeVar *string) {
+	o.Type = typeVar
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListNodeDeploymentNodesEventsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -172,22 +172,6 @@ func (o *ListNodeDeploymentNodesEventsParams) WriteToRequest(r runtime.ClientReq
 		return err
 	}
 	var res []error
-
-	if o.Type != nil {
-
-		// query param Type
-		var qrType string
-		if o.Type != nil {
-			qrType = *o.Type
-		}
-		qType := qrType
-		if qType != "" {
-			if err := r.SetQueryParam("Type", qType); err != nil {
-				return err
-			}
-		}
-
-	}
 
 	// path param cluster_id
 	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
@@ -207,6 +191,22 @@ func (o *ListNodeDeploymentNodesEventsParams) WriteToRequest(r runtime.ClientReq
 	// path param project_id
 	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
 		return err
+	}
+
+	if o.Type != nil {
+
+		// query param type
+		var qrType string
+		if o.Type != nil {
+			qrType = *o.Type
+		}
+		qType := qrType
+		if qType != "" {
+			if err := r.SetQueryParam("type", qType); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	if len(res) > 0 {

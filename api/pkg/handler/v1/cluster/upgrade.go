@@ -108,7 +108,7 @@ func isRestrictedByKubeletVersions(controlPlaneVersion *version.Version, mds []c
 type NodeUpgradesReq struct {
 	TypeReq
 	// in: query
-	ControlPlaneVersion string
+	ControlPlaneVersion string `json:"control_plane_version,omitempty"`
 }
 
 func DecodeNodeUpgradesReq(c context.Context, r *http.Request) (interface{}, error) {
