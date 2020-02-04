@@ -476,7 +476,7 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 				filteredScenarios = append(filteredScenarios, scenario)
 			}
 		}
-		if osspec.SLES != nil {
+		if osspec.Sles != nil {
 			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemSLES] {
 				filteredScenarios = append(filteredScenarios, scenario)
 			}
