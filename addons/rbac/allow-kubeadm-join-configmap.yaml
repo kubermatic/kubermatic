@@ -13,6 +13,7 @@ rules:
   - kubelet-config-1.14
   - kubelet-config-1.15
   - kubelet-config-1.16
+  - kubelet-config-1.17
   - kube-proxy
   - kubeadm-config
   resources:
