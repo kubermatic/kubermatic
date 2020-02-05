@@ -66,6 +66,9 @@ spec:
           # Datacenter location, e.g. "ams3". A list of existing datacenters can be found
           # at https://www.digitalocean.com/docs/platform/availability-matrix/
           region: ""
+        # EnforceAuditLogging enforces audit logging on every cluster within the DC,
+        # ignoring cluster-specific settings.
+        enforceAuditLogging: false
         gcp:
           # Region to use, for example "europe-west3", for a full list of regions see
           # https://cloud.google.com/compute/docs/regions-zones/

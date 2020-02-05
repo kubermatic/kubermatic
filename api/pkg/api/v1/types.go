@@ -123,6 +123,10 @@ type DatacenterSpec struct {
 	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
 	RequiredEmailDomain  string   `json:"requiredEmailDomain,omitempty"`
 	RequiredEmailDomains []string `json:"requiredEmailDomains,omitempty"`
+
+	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
+	// ignoring cluster-specific settings.
+	EnforceAuditLogging bool `json:"enforceAuditLogging"`
 }
 
 // DatacenterList represents a list of datacenters
