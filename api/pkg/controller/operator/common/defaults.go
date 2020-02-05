@@ -529,7 +529,7 @@ updates:
   to: 1.17.2
   automatic: true
 # Allow to next minor release
-- from: 1.16.*
+- from: 1.17.*
   to: 1.18.*
   automatic: false
 
