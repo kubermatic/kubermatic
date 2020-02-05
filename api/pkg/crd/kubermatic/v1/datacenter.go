@@ -108,6 +108,10 @@ type DatacenterSpec struct {
 	// RequiredEmailDomain is deprecated. Automatically migrated to the RequiredEmailDomains field.
 	RequiredEmailDomain  string   `json:"requiredEmailDomain,omitempty"`
 	RequiredEmailDomains []string `json:"requiredEmailDomains,omitempty"`
+
+	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
+	// ignoring cluster-specific settings.
+	EnforceAuditLogging bool `json:"enforceAuditLogging"`
 }
 
 // ImageList defines a map of operating system and the image to use

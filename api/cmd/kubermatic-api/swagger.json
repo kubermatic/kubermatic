@@ -7913,6 +7913,11 @@
         "digitalocean": {
           "$ref": "#/definitions/DigitialoceanDatacenterSpec"
         },
+        "enforceAuditLogging": {
+          "description": "EnforceAuditLogging enforces audit logging on every cluster within the DC,\nignoring cluster-specific settings.",
+          "type": "boolean",
+          "x-go-name": "EnforceAuditLogging"
+        },
         "gcp": {
           "$ref": "#/definitions/GCPDatacenterSpec"
         },

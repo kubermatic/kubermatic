@@ -356,6 +356,14 @@ func buildSeeds() provider.SeedsGetter {
 								Fake: &kubermaticv1.DatacenterSpecFake{},
 							},
 						},
+						"audited-dc": {
+							Location: "Finanzamt Castle",
+							Country:  "Germany",
+							Spec: kubermaticv1.DatacenterSpec{
+								Fake:                &kubermaticv1.DatacenterSpecFake{},
+								EnforceAuditLogging: true,
+							},
+						},
 					},
 				},
 			},
