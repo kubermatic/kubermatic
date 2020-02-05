@@ -567,6 +567,11 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 		*out = new(Openshift)
 		**out = **in
 	}
+	if in.AdmissionPlugins != nil {
+		in, out := &in.AdmissionPlugins, &out.AdmissionPlugins
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.AuditLogging != nil {
 		in, out := &in.AuditLogging, &out.AuditLogging
 		*out = new(AuditLoggingSettings)

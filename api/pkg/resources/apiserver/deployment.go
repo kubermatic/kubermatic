@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 var (
@@ -243,6 +244,14 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	}
 	if data.Cluster().Spec.UsePodNodeSelectorAdmissionPlugin {
 		admissionPlugins = append(admissionPlugins, "PodNodeSelector")
+	}
+	if data.Cluster().Spec.AdmissionPlugins != nil {
+		admissionPluginSet := sets.NewString(admissionPlugins...)
+		for _, plugin := range data.Cluster().Spec.AdmissionPlugins {
+			if !admissionPluginSet.Has(plugin) {
+				admissionPlugins = append(admissionPlugins, plugin)
+			}
+		}
 	}
 
 	flags := []string{

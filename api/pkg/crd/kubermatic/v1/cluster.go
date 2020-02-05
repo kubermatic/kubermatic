@@ -101,8 +101,9 @@ type ClusterSpec struct {
 	// Openshift holds all openshift-specific settings
 	Openshift *Openshift `json:"openshift,omitempty"`
 
-	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
-	UsePodNodeSelectorAdmissionPlugin   bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
+	UsePodSecurityPolicyAdmissionPlugin bool     `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
+	UsePodNodeSelectorAdmissionPlugin   bool     `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
+	AdmissionPlugins                    []string `json:"admissionPlugins,omitempty"`
 
 	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 }

@@ -7719,6 +7719,14 @@
       "description": "ClusterSpec defines the cluster specification",
       "type": "object",
       "properties": {
+        "admissionPlugins": {
+          "description": "Additional Admission Controller plugins",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "AdmissionPlugins"
+        },
         "auditLogging": {
           "$ref": "#/definitions/AuditLoggingSettings"
         },
