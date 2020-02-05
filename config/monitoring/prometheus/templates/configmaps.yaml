@@ -1,4 +1,3 @@
-{{- $isMaster := .Values.prometheus.isMaster }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -13,15 +12,8 @@ metadata:
   name: '{{ template "name" . }}-rules'
 data:
 {{- range $name, $content := .Files.Glob "rules/*.yaml" }}
-{{- if hasPrefix "rules/kubermatic-master-" $name }}
-{{- if $isMaster}}
   {{ replace "rules/" "" $name }}: |
 {{ $content | toString | indent 4 }}
-{{- end }}
-{{- else }}
-  {{ replace "rules/" "" $name }}: |
-{{ $content | toString | indent 4 }}
-{{- end }}
 {{- end -}}
 {{- if .Values.prometheus.rules }}
   _customrules.yaml: |

@@ -1,4 +1,3 @@
-{{- $isMaster := .Values.prometheus.isMaster }}
 global:
   scrape_interval: 30s
   scrape_timeout: 10s
@@ -17,15 +16,7 @@ global:
 {{- if (or .Values.prometheus.ruleFiles .Values.prometheus.rules) }}
 rule_files:
 {{- if .Values.prometheus.ruleFiles }}
-{{- range .Values.prometheus.ruleFiles}}
-{{- if hasPrefix "/etc/prometheus/rules/kubermatic-master-" . }}
-{{- if $isMaster}}
-- {{ . }}
-{{- end }}
-{{- else }}
-- {{ . }}
-{{- end }}
-{{- end }}
+{{- toYaml .Values.prometheus.ruleFiles | nindent 2 }}
 {{- end }}
 {{- if .Values.prometheus.rules }}
 - /etc/prometheus/rules/_customrules.yaml
