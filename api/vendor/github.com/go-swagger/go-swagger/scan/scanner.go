@@ -1,3 +1,5 @@
+// +build !go1.11
+
 // Copyright 2015 go-swagger maintainers
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -469,6 +471,7 @@ type swaggerTypable interface {
 	Typed(string, string)
 	SetRef(spec.Ref)
 	Items() swaggerTypable
+	WithEnum(...interface{})
 	Schema() *spec.Schema
 	Level() int
 }
@@ -768,7 +771,7 @@ func (sp *yamlSpecScanner) UnmarshalSpec(u func([]byte) error) (err error) {
 		return errors.New("yaml spec has to start with `---`")
 	}
 
-	// remove indention
+	// remove indentation
 	spec = removeIndent(spec)
 
 	// 1. parse yaml lines

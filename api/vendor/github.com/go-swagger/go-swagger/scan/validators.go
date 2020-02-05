@@ -1,3 +1,5 @@
+// +build !go1.11
+
 // Copyright 2015 go-swagger maintainers
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -311,9 +313,17 @@ func parseValueFromSchema(s string, schema *spec.SimpleSchema) (interface{}, err
 		case "object":
 			var obj map[string]interface{}
 			if err := json.Unmarshal([]byte(s), &obj); err != nil {
-				return nil, err
+				// If we can't parse it, just return the string.
+				return s, nil
 			}
 			return obj, nil
+		case "array":
+			var slice []interface{}
+			if err := json.Unmarshal([]byte(s), &slice); err != nil {
+				// If we can't parse it, just return the string.
+				return s, nil
+			}
+			return slice, nil
 		default:
 			return s, nil
 		}
@@ -761,11 +771,10 @@ func (ss *setOpResponses) Parse(lines []string) error {
 				return err
 			}
 
-			var resp spec.Response
+			// description should used on anyway.
+			resp := spec.Response{ResponseProps: spec.ResponseProps{Description: description}}
 
-			if !isDefinitionRef {
-				resp.Ref = ref
-			} else {
+			if isDefinitionRef {
 				resp.Schema = new(spec.Schema)
 				resp.Description = description
 				if arrays == 0 {
@@ -780,6 +789,9 @@ func (ss *setOpResponses) Parse(lines []string) error {
 					}
 					cs.Ref = ref
 				}
+				// ref. could be empty while use description tag
+			} else if len(refTarget) > 0 {
+				resp.Ref = ref
 			}
 
 			if strings.EqualFold("default", key) {
@@ -798,4 +810,19 @@ func (ss *setOpResponses) Parse(lines []string) error {
 	}
 	ss.set(def, scr)
 	return nil
+}
+
+func parseEnum(val string, s *spec.SimpleSchema) []interface{} {
+	list := strings.Split(val, ",")
+	interfaceSlice := make([]interface{}, len(list))
+	for i, d := range list {
+		v, err := parseValueFromSchema(d, s)
+		if err != nil {
+			interfaceSlice[i] = d
+			continue
+		}
+
+		interfaceSlice[i] = v
+	}
+	return interfaceSlice
 }

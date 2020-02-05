@@ -1,3 +1,5 @@
+// +build !go1.11
+
 // Copyright 2015 go-swagger maintainers
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,6 +36,10 @@ func (ht responseTypable) Level() int { return 0 }
 
 func (ht responseTypable) Typed(tpe, format string) {
 	ht.header.Typed(tpe, format)
+}
+
+func (ht responseTypable) WithEnum(values ...interface{}) {
+	ht.header.WithEnum(values)
 }
 
 func bodyTypable(in string, schema *spec.Schema) (swaggerTypable, *spec.Schema) {
@@ -83,6 +89,7 @@ func (ht responseTypable) Schema() *spec.Schema {
 func (ht responseTypable) SetSchema(schema *spec.Schema) {
 	ht.response.Schema = schema
 }
+
 func (ht responseTypable) CollectionOf(items *spec.Items, format string) {
 	ht.header.CollectionOf(items, format)
 }
@@ -108,12 +115,7 @@ func (sv headerValidations) SetPattern(val string)          { sv.current.Pattern
 func (sv headerValidations) SetUnique(val bool)             { sv.current.UniqueItems = val }
 func (sv headerValidations) SetCollectionFormat(val string) { sv.current.CollectionFormat = val }
 func (sv headerValidations) SetEnum(val string) {
-	list := strings.Split(val, ",")
-	interfaceSlice := make([]interface{}, len(list))
-	for i, d := range list {
-		interfaceSlice[i] = d
-	}
-	sv.current.Enum = interfaceSlice
+	sv.current.Enum = parseEnum(val, &spec.SimpleSchema{Type: sv.current.Type, Format: sv.current.Format})
 }
 func (sv headerValidations) SetDefault(val interface{}) { sv.current.Default = val }
 func (sv headerValidations) SetExample(val interface{}) { sv.current.Example = val }
@@ -328,7 +330,14 @@ func (rp *responseParser) parseStructType(gofile *ast.File, response *spec.Respo
 				}
 
 				ps := response.Headers[nm]
-				if err := rp.scp.parseNamedType(gofile, fld.Type, responseTypable{in, &ps, response}); err != nil {
+
+				// support swagger:file for response
+				// An API operation can return a file, such as an image or PDF. In this case,
+				// define the response schema with type: file and specify the appropriate MIME types in the produces section.
+				if fld.Doc != nil && fileParam(fld.Doc) {
+					response.Schema = &spec.Schema{}
+					response.Schema.Typed("file", "")
+				} else if err := rp.scp.parseNamedType(gofile, fld.Type, responseTypable{in, &ps, response}); err != nil {
 					return err
 				}
 
