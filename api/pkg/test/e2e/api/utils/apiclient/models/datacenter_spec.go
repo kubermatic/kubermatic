@@ -19,6 +19,10 @@ type DatacenterSpec struct {
 	// country
 	Country string `json:"country,omitempty"`
 
+	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
+	// ignoring cluster-specific settings.
+	EnforceAuditLogging bool `json:"enforceAuditLogging,omitempty"`
+
 	// location
 	Location string `json:"location,omitempty"`
 

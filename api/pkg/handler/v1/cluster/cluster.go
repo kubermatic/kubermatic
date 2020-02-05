@@ -131,6 +131,14 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 				"kubermatic.io/openshift": "true",
 			}
 		}
+
+		// Enforce audit logging
+		if dc.Spec.EnforceAuditLogging {
+			partialCluster.Spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
+				Enabled: true,
+			}
+		}
+
 		// generate the name here so that it can be used in the secretName below
 		partialCluster.Name = rand.String(10)
 
@@ -403,6 +411,13 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, newInternalCluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
+		}
+
+		// Enforce audit logging
+		if dc.Spec.EnforceAuditLogging {
+			newInternalCluster.Spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
+				Enabled: true,
+			}
 		}
 
 		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
