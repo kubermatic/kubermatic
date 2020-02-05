@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	openshiftAPIServerConfigMapName     = "openshift-config-apiserver"
-	openshiftKubeAPIServerConfigMapName = "openshift-config-kube-apiserver"
+	OpenshiftAPIServerConfigMapName     = "openshift-config-apiserver"
+	OpenshiftKubeAPIServerConfigMapName = "openshift-config-kube-apiserver"
 	openshiftContolPlaneConfigKeyName   = "master-config.yaml"
 )
 
@@ -38,7 +38,7 @@ type openshiftAPIServerCreatorData interface {
 
 func OpenshiftAPIServerConfigMapCreator(data openshiftAPIServerCreatorData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
-		return openshiftAPIServerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+		return OpenshiftAPIServerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
@@ -59,7 +59,7 @@ func OpenshiftAPIServerConfigMapCreator(data openshiftAPIServerCreatorData) reco
 
 func OpenshiftKubeAPIServerConfigMapCreator(data masterConfigData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
-		return openshiftKubeAPIServerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+		return OpenshiftKubeAPIServerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}

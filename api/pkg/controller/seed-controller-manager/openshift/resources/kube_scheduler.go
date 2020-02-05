@@ -33,7 +33,7 @@ var (
 
 const (
 	name                               = "scheduler"
-	kubeSchedulerConfigConfigMapName   = "kube-scheduler-config"
+	KubeSchedulerConfigConfigMapName   = "kube-scheduler-config"
 	kubeSchedulerServingCertSecretName = "kube-scheduler-serving-cert"
 	kubeSchedulerConfig                = `
 apiVersion: kubescheduler.config.k8s.io/v1alpha1
@@ -48,7 +48,7 @@ leaderElection:
 )
 
 func KubeSchedulerConfigMapCreator() (string, reconciling.ConfigMapCreator) {
-	return kubeSchedulerConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+	return KubeSchedulerConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 		if cm.Data == nil {
 			cm.Data = map[string]string{}
 		}
@@ -151,7 +151,7 @@ func KubeSchedulerDeploymentCreator(data openshiftData) reconciling.NamedDeploym
 							ReadOnly:  true,
 						},
 						{
-							Name:      kubeSchedulerConfigConfigMapName,
+							Name:      KubeSchedulerConfigConfigMapName,
 							MountPath: "/etc/openshift/config",
 							ReadOnly:  true,
 						},
@@ -243,10 +243,10 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: kubeSchedulerConfigConfigMapName,
+			Name: KubeSchedulerConfigConfigMapName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: kubeSchedulerConfigConfigMapName},
+					LocalObjectReference: corev1.LocalObjectReference{Name: KubeSchedulerConfigConfigMapName},
 				},
 			},
 		},

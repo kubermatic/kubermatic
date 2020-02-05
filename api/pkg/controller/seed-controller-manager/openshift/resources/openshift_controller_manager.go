@@ -38,7 +38,7 @@ var (
 
 const (
 	OpenshiftControllerManagerDeploymentName        = "openshift-controller-manager"
-	openshiftControllerManagerConfigMapName         = "openshift-controller-manager-config"
+	OpenshiftControllerManagerConfigMapName         = "openshift-controller-manager-config"
 	openshiftControllerManagerServingCertSecretName = "openshift-controller-manager-serving-cert"
 	openshiftControllerManagerConfigMapKey          = "config.yaml"
 	openshiftControllerManagerConfigTemplateRaw     = `
@@ -64,7 +64,7 @@ servingInfo:
 func OpenshiftControllerManagerConfigMapCreator(data openshiftData) reconciling.NamedConfigMapCreatorGetter {
 	openshiftVersion := data.Cluster().Spec.Version.String()
 	return func() (string, reconciling.ConfigMapCreator) {
-		return openshiftControllerManagerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+		return OpenshiftControllerManagerConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
@@ -174,7 +174,7 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 							ReadOnly:  true,
 						},
 						{
-							Name:      openshiftControllerManagerConfigMapName,
+							Name:      OpenshiftControllerManagerConfigMapName,
 							MountPath: "/etc/origin/master",
 						},
 						{
@@ -243,10 +243,10 @@ func getControllerManagerVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: openshiftControllerManagerConfigMapName,
+			Name: OpenshiftControllerManagerConfigMapName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: openshiftControllerManagerConfigMapName},
+					LocalObjectReference: corev1.LocalObjectReference{Name: OpenshiftControllerManagerConfigMapName},
 				},
 			},
 		},

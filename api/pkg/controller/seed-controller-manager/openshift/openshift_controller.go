@@ -352,7 +352,7 @@ func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster,
 	return r.Patch(ctx, c, client.MergeFrom(oldCluster))
 }
 
-func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedSecretCreatorGetter {
+func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *OpenshiftData) []reconciling.NamedSecretCreatorGetter {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		certificates.RootCACreator(osData),
 		openvpn.CACreator(),
@@ -400,7 +400,7 @@ func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshift
 	return creators
 }
 
-func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
+func (r *Reconciler) secrets(ctx context.Context, osData *OpenshiftData) error {
 	ns := osData.Cluster().Status.NamespaceName
 	if err := reconciling.ReconcileSecrets(ctx, r.getAllSecretCreators(ctx, osData), ns, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets: %v", err)
@@ -409,18 +409,18 @@ func (r *Reconciler) secrets(ctx context.Context, osData *openshiftData) error {
 	return nil
 }
 
-func GetStatefulSetCreators(osData *openshiftData, enableDataCorruptionChecks bool) []reconciling.NamedStatefulSetCreatorGetter {
+func GetStatefulSetCreators(osData *OpenshiftData, enableDataCorruptionChecks bool) []reconciling.NamedStatefulSetCreatorGetter {
 	return []reconciling.NamedStatefulSetCreatorGetter{
 		etcd.StatefulSetCreator(osData, enableDataCorruptionChecks),
 	}
 }
 
-func (r *Reconciler) statefulSets(ctx context.Context, osData *openshiftData) error {
+func (r *Reconciler) statefulSets(ctx context.Context, osData *OpenshiftData) error {
 	creators := GetStatefulSetCreators(osData, r.features.EtcdDataCorruptionChecks)
 	return reconciling.ReconcileStatefulSets(ctx, creators, osData.Cluster().Status.NamespaceName, r.Client)
 }
 
-func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedConfigMapCreatorGetter {
+func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *OpenshiftData) []reconciling.NamedConfigMapCreatorGetter {
 	return []reconciling.NamedConfigMapCreatorGetter{
 		openshiftresources.APIServerOauthMetadataConfigMapCreator(osData),
 		openshiftresources.OpenshiftAPIServerConfigMapCreator(osData),
@@ -438,14 +438,14 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 	}
 }
 
-func (r *Reconciler) configMaps(ctx context.Context, osData *openshiftData) error {
+func (r *Reconciler) configMaps(ctx context.Context, osData *OpenshiftData) error {
 	creators := r.getAllConfigmapCreators(ctx, osData)
 	return reconciling.ReconcileConfigMaps(ctx, creators, osData.Cluster().Status.NamespaceName, r.Client)
 }
 
-func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedDeploymentCreatorGetter {
+func GetDeploymentCreators(ctx context.Context, osData *OpenshiftData) []reconciling.NamedDeploymentCreatorGetter{
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		openshiftresources.OpenshiftAPIServerDeploymentCreator(ctx, osData),
+		openshiftresources.OpenshiftAPIServerDeploymentCreator(osData),
 		openshiftresources.APIDeploymentCreator(ctx, osData),
 		openshiftresources.KubeControllerManagerDeploymentCreatorFactory(osData),
 		openshiftresources.OpenshiftControllerManagerDeploymentCreator(ctx, osData),
@@ -471,17 +471,17 @@ func (r *Reconciler) getAllDeploymentCreators(ctx context.Context, osData *opens
 	return creators
 }
 
-func (r *Reconciler) deployments(ctx context.Context, osData *openshiftData) error {
-	return reconciling.ReconcileDeployments(ctx, r.getAllDeploymentCreators(ctx, osData), osData.Cluster().Status.NamespaceName, r.Client)
+func (r *Reconciler) deployments(ctx context.Context, osData *OpenshiftData) error {
+	return reconciling.ReconcileDeployments(ctx, GetDeploymentCreators(ctx, osData), osData.Cluster().Status.NamespaceName, r.Client)
 }
 
-func GetCronJobCreators(osData *openshiftData) []reconciling.NamedCronJobCreatorGetter {
+func GetCronJobCreators(osData *OpenshiftData) []reconciling.NamedCronJobCreatorGetter {
 	return []reconciling.NamedCronJobCreatorGetter{
 		etcd.CronJobCreator(osData),
 	}
 }
 
-func (r *Reconciler) cronJobs(ctx context.Context, osData *openshiftData) error {
+func (r *Reconciler) cronJobs(ctx context.Context, osData *OpenshiftData) error {
 	creators := GetCronJobCreators(osData)
 	if err := reconciling.ReconcileCronJobs(ctx, creators, osData.Cluster().Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure that the CronJobs exists: %v", err)
@@ -489,7 +489,7 @@ func (r *Reconciler) cronJobs(ctx context.Context, osData *openshiftData) error 
 	return nil
 }
 
-func GetPodDisruptionBudgetCreators(osData *openshiftData) []reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func GetPodDisruptionBudgetCreators(osData *OpenshiftData) []reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return []reconciling.NamedPodDisruptionBudgetCreatorGetter{
 		etcd.PodDisruptionBudgetCreator(osData),
 		apiserver.PodDisruptionBudgetCreator(),
@@ -498,7 +498,7 @@ func GetPodDisruptionBudgetCreators(osData *openshiftData) []reconciling.NamedPo
 	}
 }
 
-func (r *Reconciler) podDisruptionBudgets(ctx context.Context, osData *openshiftData) error {
+func (r *Reconciler) podDisruptionBudgets(ctx context.Context, osData *OpenshiftData) error {
 	for _, podDisruptionBudgetCreator := range GetPodDisruptionBudgetCreators(osData) {
 		pdbName, pdbCreator := podDisruptionBudgetCreator()
 		if err := reconciling.EnsureNamedObject(ctx,
@@ -513,7 +513,7 @@ func (r *Reconciler) podDisruptionBudgets(ctx context.Context, osData *openshift
 	return nil
 }
 
-func (r *Reconciler) verticalPodAutoscalers(ctx context.Context, osData *openshiftData) error {
+func (r *Reconciler) verticalPodAutoscalers(ctx context.Context, osData *OpenshiftData) error {
 	controlPlaneDeploymentNames := []string{
 		resources.DNSResolverDeploymentName,
 		resources.MachineControllerDeploymentName,
@@ -619,7 +619,7 @@ func (r *Reconciler) networkDefaults(ctx context.Context, cluster *kubermaticv1.
 }
 
 // GetServiceCreators returns all service creators that are currently in use
-func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCreatorGetter {
+func getAllServiceCreators(osData *OpenshiftData) []reconciling.NamedServiceCreatorGetter {
 	creators := []reconciling.NamedServiceCreatorGetter{
 		apiserver.InternalServiceCreator(),
 		apiserver.ExternalServiceCreator(osData.Cluster().Spec.ExposeStrategy),
@@ -639,7 +639,7 @@ func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCrea
 	return creators
 }
 
-func (r *Reconciler) services(ctx context.Context, osData *openshiftData) error {
+func (r *Reconciler) services(ctx context.Context, osData *OpenshiftData) error {
 	for _, namedServiceCreator := range getAllServiceCreators(osData) {
 		serviceName, serviceCreator := namedServiceCreator()
 		if err := reconciling.EnsureNamedObject(ctx,

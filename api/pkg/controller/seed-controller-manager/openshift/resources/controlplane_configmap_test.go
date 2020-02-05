@@ -36,8 +36,8 @@ func TestOpenshiftAPIServerConfigMapCreator(t *testing.T) {
 			data := &openshiftAPIServerCreatorDataFake{cluster: &kubermaticv1.Cluster{}}
 			creatorGetter := OpenshiftAPIServerConfigMapCreator(data)
 			name, creator := creatorGetter()
-			if name != openshiftAPIServerConfigMapName {
-				t.Errorf("expected name to be %q was %q", openshiftAPIServerConfigMapName, name)
+			if name != OpenshiftAPIServerConfigMapName {
+				t.Errorf("expected name to be %q was %q", OpenshiftAPIServerConfigMapName, name)
 			}
 
 			configMap, err := creator(&corev1.ConfigMap{})

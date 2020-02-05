@@ -11,7 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (r *Reconciler) getOSData(ctx context.Context, cluster *kubermaticv1.Cluster) (*openshiftData, error) {
+func (r *Reconciler) getOSData(ctx context.Context, cluster *kubermaticv1.Cluster) (*OpenshiftData, error) {
 	seed, err := r.seedGetter()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get seed: %v", err)
@@ -27,7 +27,7 @@ func (r *Reconciler) getOSData(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, err
 	}
 
-	return &openshiftData{
+	return &OpenshiftData{
 		cluster:                               cluster,
 		client:                                r.Client,
 		dc:                                    &datacenter,

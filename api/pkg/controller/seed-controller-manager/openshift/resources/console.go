@@ -26,7 +26,7 @@ var (
 const (
 	ConsoleOAuthSecretName       = "openshift-console-oauth-client-secret"
 	consoleServingCertSecretName = "openshift-console-serving-cert"
-	consoleConfigMapName         = "openshift-console-config"
+	ConsoleConfigMapName         = "openshift-console-config"
 	consoleConfigMapKey          = "console-config.yaml"
 	consoleDeploymentName        = "openshift-console"
 	// ConsoleAdminPasswordSecretName is the name of the secret that contains
@@ -98,7 +98,7 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 						MountPath: "/var/oauth-config",
 					},
 					{
-						Name:      consoleConfigMapName,
+						Name:      ConsoleConfigMapName,
 						MountPath: "/etc/console-config",
 					},
 					{
@@ -142,10 +142,10 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 					},
 				},
 				{
-					Name: consoleConfigMapName,
+					Name: ConsoleConfigMapName,
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{Name: consoleConfigMapName},
+							LocalObjectReference: corev1.LocalObjectReference{Name: ConsoleConfigMapName},
 						},
 					},
 				},
@@ -177,7 +177,7 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 
 func ConsoleConfigCreator(data openshiftData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
-		return consoleConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+		return ConsoleConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 
 			data := struct {
 				APIServerURL string

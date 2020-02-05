@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -54,7 +53,7 @@ func OpenshiftAPIServiceCreator() (string, reconciling.ServiceCreator) {
 // This can not be part of the openshift-kube-apiserver pod, because the openshift-apiserver needs some CRD
 // definitions to work and get ready, however we can not talk to the API until at least one pod is ready, preventing
 // us from creating those CRDs
-func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData) reconciling.NamedDeploymentCreatorGetter {
+func OpenshiftAPIServerDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return OpenshiftAPIServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			var err error
@@ -141,10 +140,10 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 					},
 				},
 				{
-					Name: openshiftAPIServerConfigMapName,
+					Name: OpenshiftAPIServerConfigMapName,
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{Name: openshiftAPIServerConfigMapName},
+							LocalObjectReference: corev1.LocalObjectReference{Name: OpenshiftAPIServerConfigMapName},
 						},
 					},
 				},
@@ -231,7 +230,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 							ReadOnly:  true,
 						},
 						{
-							Name:      openshiftAPIServerConfigMapName,
+							Name:      OpenshiftAPIServerConfigMapName,
 							MountPath: "/etc/origin/master",
 							ReadOnly:  true,
 						},

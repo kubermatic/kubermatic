@@ -30,7 +30,7 @@ var (
 )
 
 const (
-	kubeControllerManagerOpenshiftConfigConfigmapName = "openshift-kube-controller-manager-config"
+	KubeControllerManagerOpenshiftConfigConfigmapName = "openshift-kube-controller-manager-config"
 	kubeControllerManagerOpenshiftConfigConfigMapKey  = "config.yaml"
 	kubeControllerManagerConfigTemplateRaw            = `
 apiVersion: kubecontrolplane.config.openshift.io/v1
@@ -124,7 +124,7 @@ type kubeControllerManagerConfigData interface {
 
 func KubeControllerManagerConfigMapCreatorFactory(data kubeControllerManagerConfigData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
-		return kubeControllerManagerOpenshiftConfigConfigmapName,
+		return KubeControllerManagerOpenshiftConfigConfigmapName,
 			func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 
 				if cm.Data == nil {
@@ -214,7 +214,7 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 						ReadOnly:  true,
 					},
 					{
-						Name:      kubeControllerManagerOpenshiftConfigConfigmapName,
+						Name:      KubeControllerManagerOpenshiftConfigConfigmapName,
 						MountPath: "/etc/origin",
 						ReadOnly:  true,
 					},
@@ -369,11 +369,11 @@ func kubeControllerManagerVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: kubeControllerManagerOpenshiftConfigConfigmapName,
+			Name: KubeControllerManagerOpenshiftConfigConfigmapName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: kubeControllerManagerOpenshiftConfigConfigmapName,
+						Name: KubeControllerManagerOpenshiftConfigConfigmapName,
 					},
 					DefaultMode: resources.Int32(resources.DefaultOwnerReadOnlyMode),
 				},

@@ -25,9 +25,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// openshiftData implements the openshiftData interface which is
+// OpenshiftData implements the OpenshiftData interface which is
 // passed into all creator funcs and contains all data they need
-type openshiftData struct {
+type OpenshiftData struct {
 	cluster                               *kubermaticv1.Cluster
 	client                                client.Client
 	dc                                    *kubermaticv1.Datacenter
@@ -42,15 +42,43 @@ type openshiftData struct {
 	seed                                  *kubermaticv1.Seed
 }
 
-func (od *openshiftData) DC() *kubermaticv1.Datacenter {
+func NewOpenshiftData(
+	cluster *kubermaticv1.Cluster,
+	client client.Client,
+	dc *kubermaticv1.Datacenter,
+	overwriteRegistry string,
+	nodeAccessNetwork string,
+	oidc OIDCConfig,
+	etcdDiskSize resource.Quantity,
+	kubermaticImage string,
+	dnatControllerImage string,
+	supportsFailureDomainZoneAntiAffinity bool,
+	externalURL string,
+	seed *kubermaticv1.Seed) *OpenshiftData {
+	return &OpenshiftData{
+		cluster:                               cluster,
+		client:                                client,
+		dc:                                    dc,
+		overwriteRegistry:                     overwriteRegistry,
+		nodeAccessNetwork:                     nodeAccessNetwork,
+		oidc:                                  oidc,
+		etcdDiskSize:                          etcdDiskSize,
+		kubermaticImage:                       kubermaticImage,
+		dnatControllerImage:                   dnatControllerImage,
+		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
+		externalURL:                           externalURL,
+		seed:                                  seed,
+	}
+}
+func (od *OpenshiftData) DC() *kubermaticv1.Datacenter {
 	return od.dc
 }
 
-func (od *openshiftData) GetOpenVPNCA() (*kubernetesresources.ECDSAKeyPair, error) {
+func (od *OpenshiftData) GetOpenVPNCA() (*kubernetesresources.ECDSAKeyPair, error) {
 	return od.GetOpenVPNCAWithContext(context.TODO())
 }
 
-func (od *openshiftData) GetOpenVPNCAWithContext(ctx context.Context) (*kubernetesresources.ECDSAKeyPair, error) {
+func (od *OpenshiftData) GetOpenVPNCAWithContext(ctx context.Context) (*kubernetesresources.ECDSAKeyPair, error) {
 	caCertSecret := &corev1.Secret{}
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.OpenVPNCASecretName), caCertSecret); err != nil {
 		return nil, fmt.Errorf("failed to get OpenVPN CA: %v", err)
@@ -76,11 +104,11 @@ func (od *openshiftData) GetOpenVPNCAWithContext(ctx context.Context) (*kubernet
 	return &kubernetesresources.ECDSAKeyPair{Cert: certs[0], Key: ecdsaKey}, nil
 }
 
-func (od *openshiftData) GetRootCA() (*triple.KeyPair, error) {
+func (od *OpenshiftData) GetRootCA() (*triple.KeyPair, error) {
 	return od.GetRootCAWithContext(context.Background())
 }
 
-func (od *openshiftData) GetRootCAWithContext(ctx context.Context) (*triple.KeyPair, error) {
+func (od *OpenshiftData) GetRootCAWithContext(ctx context.Context) (*triple.KeyPair, error) {
 	secret := &corev1.Secret{}
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.CASecretName), secret); err != nil {
 		return nil, fmt.Errorf("failed to get cluster ca: %v", err)
@@ -89,11 +117,11 @@ func (od *openshiftData) GetRootCAWithContext(ctx context.Context) (*triple.KeyP
 		secret.Data[kubernetesresources.CAKeySecretKey])
 }
 
-func (od *openshiftData) GetFrontProxyCA() (*triple.KeyPair, error) {
+func (od *OpenshiftData) GetFrontProxyCA() (*triple.KeyPair, error) {
 	return od.GetFrontProxyCAWithContext(context.TODO())
 }
 
-func (od *openshiftData) GetFrontProxyCAWithContext(ctx context.Context) (*triple.KeyPair, error) {
+func (od *OpenshiftData) GetFrontProxyCAWithContext(ctx context.Context) (*triple.KeyPair, error) {
 	secret := &corev1.Secret{}
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.FrontProxyCASecretName), secret); err != nil {
 		return nil, fmt.Errorf("failed to get FrontProxy CA: %v", err)
@@ -102,26 +130,26 @@ func (od *openshiftData) GetFrontProxyCAWithContext(ctx context.Context) (*tripl
 		secret.Data[kubernetesresources.CAKeySecretKey])
 }
 
-func (od *openshiftData) ImageRegistry(registry string) string {
+func (od *OpenshiftData) ImageRegistry(registry string) string {
 	if od.overwriteRegistry != "" {
 		return od.overwriteRegistry
 	}
 	return registry
 }
 
-func (od *openshiftData) NodeAccessNetwork() string {
+func (od *OpenshiftData) NodeAccessNetwork() string {
 	if od.nodeAccessNetwork != "" {
 		return od.nodeAccessNetwork
 	}
 	return "10.254.0.0/16"
 }
 
-func (od *openshiftData) GetClusterRef() metav1.OwnerReference {
+func (od *OpenshiftData) GetClusterRef() metav1.OwnerReference {
 	gv := kubermaticv1.SchemeGroupVersion
 	return *metav1.NewControllerRef(od.cluster, gv.WithKind("Cluster"))
 }
 
-func (od *openshiftData) ClusterIPByServiceName(name string) (string, error) {
+func (od *OpenshiftData) ClusterIPByServiceName(name string) (string, error) {
 	service := &corev1.Service{}
 	if err := od.client.Get(context.TODO(), nn(od.cluster.Status.NamespaceName, name), service); err != nil {
 		return "", fmt.Errorf("failed to get service %s: %v", name, err)
@@ -129,7 +157,7 @@ func (od *openshiftData) ClusterIPByServiceName(name string) (string, error) {
 	return service.Spec.ClusterIP, nil
 }
 
-func (od *openshiftData) secretRevision(ctx context.Context, name string) (string, error) {
+func (od *OpenshiftData) secretRevision(ctx context.Context, name string) (string, error) {
 	secret := &corev1.Secret{}
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, name), secret); err != nil {
 		if kerrors.IsNotFound(err) {
@@ -141,7 +169,7 @@ func (od *openshiftData) secretRevision(ctx context.Context, name string) (strin
 	return secret.ResourceVersion, nil
 }
 
-func (od *openshiftData) configmapRevision(ctx context.Context, name string) (string, error) {
+func (od *OpenshiftData) configmapRevision(ctx context.Context, name string) (string, error) {
 	configMap := &corev1.ConfigMap{}
 	if err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, name), configMap); err != nil {
 		return "", fmt.Errorf("failed to get configmap %s: %v", name, err)
@@ -149,15 +177,15 @@ func (od *openshiftData) configmapRevision(ctx context.Context, name string) (st
 	return configMap.ResourceVersion, nil
 }
 
-func (od *openshiftData) Cluster() *kubermaticv1.Cluster {
+func (od *OpenshiftData) Cluster() *kubermaticv1.Cluster {
 	return od.cluster
 }
 
-func (od *openshiftData) GetPodTemplateLabels(appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
+func (od *OpenshiftData) GetPodTemplateLabels(appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
 	return od.GetPodTemplateLabelsWithContext(context.TODO(), appName, volumes, additionalLabels)
 }
 
-func (od *openshiftData) GetPodTemplateLabelsWithContext(ctx context.Context, appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
+func (od *OpenshiftData) GetPodTemplateLabelsWithContext(ctx context.Context, appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
 	podLabels := kubernetesresources.AppClusterLabels(appName, od.cluster.Name, additionalLabels)
 	for _, v := range volumes {
 		if v.VolumeSource.Secret != nil {
@@ -179,7 +207,7 @@ func (od *openshiftData) GetPodTemplateLabelsWithContext(ctx context.Context, ap
 	return podLabels, nil
 }
 
-func (od *openshiftData) GetApiserverExternalNodePort(ctx context.Context) (int32, error) {
+func (od *OpenshiftData) GetApiserverExternalNodePort(ctx context.Context) (int32, error) {
 	service := &corev1.Service{}
 	err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.ApiserverExternalServiceName), service)
 	if err != nil {
@@ -193,12 +221,12 @@ func (od *openshiftData) GetApiserverExternalNodePort(ctx context.Context) (int3
 	return service.Spec.Ports[0].NodePort, nil
 }
 
-func (od *openshiftData) NodePortRange(_ context.Context) string {
+func (od *OpenshiftData) NodePortRange(_ context.Context) string {
 	//TODO: softcode this
 	return "30000-32767"
 }
 
-func (od *openshiftData) GetOpenVPNServerPort() (int32, error) {
+func (od *OpenshiftData) GetOpenVPNServerPort() (int32, error) {
 	ctx := context.Background()
 	service := &corev1.Service{}
 	err := od.client.Get(ctx, nn(od.cluster.Status.NamespaceName, kubernetesresources.OpenVPNServerServiceName), service)
@@ -213,7 +241,7 @@ func (od *openshiftData) GetOpenVPNServerPort() (int32, error) {
 }
 
 // GetDexCA returns the chain of public certificates of the Dex
-func (od *openshiftData) GetDexCA() ([]*x509.Certificate, error) {
+func (od *OpenshiftData) GetDexCA() ([]*x509.Certificate, error) {
 	return kubernetesresources.GetDexCAFromFile(od.oidc.CAFile)
 }
 
@@ -221,20 +249,20 @@ func (od *openshiftData) GetDexCA() ([]*x509.Certificate, error) {
 // we can safely assume it doesn't exist
 // We must keep this in the etcd creators data for eternity thought, thats
 // why its implemented here
-func (od *openshiftData) HasEtcdOperatorService() (bool, error) {
+func (od *OpenshiftData) HasEtcdOperatorService() (bool, error) {
 	return false, nil
 }
 
-func (od *openshiftData) EtcdDiskSize() resource.Quantity {
+func (od *OpenshiftData) EtcdDiskSize() resource.Quantity {
 	return od.etcdDiskSize
 }
 
 // Openshift has its own DNS cache, so this is always false
-func (od *openshiftData) NodeLocalDNSCacheEnabled() bool {
+func (od *OpenshiftData) NodeLocalDNSCacheEnabled() bool {
 	return false
 }
 
-func (od *openshiftData) KubermaticAPIImage() string {
+func (od *OpenshiftData) KubermaticAPIImage() string {
 	apiImageSplit := strings.Split(od.kubermaticImage, "/")
 	var registry, imageWithoutRegistry string
 	if len(apiImageSplit) != 3 {
@@ -247,11 +275,11 @@ func (od *openshiftData) KubermaticAPIImage() string {
 	return od.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }
 
-func (od *openshiftData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+func (od *OpenshiftData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
 	return provider.SecretKeySelectorValueFuncFactory(context.Background(), od.client)(configVar, key)
 }
 
-func (od *openshiftData) DNATControllerImage() string {
+func (od *OpenshiftData) DNATControllerImage() string {
 	dnatControllerImageSplit := strings.Split(od.dnatControllerImage, "/")
 	var registry, imageWithoutRegistry string
 	if len(dnatControllerImageSplit) != 3 {
@@ -264,11 +292,11 @@ func (od *openshiftData) DNATControllerImage() string {
 	return od.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }
 
-func (od *openshiftData) SupportsFailureDomainZoneAntiAffinity() bool {
+func (od *OpenshiftData) SupportsFailureDomainZoneAntiAffinity() bool {
 	return od.supportsFailureDomainZoneAntiAffinity
 }
 
-func (od *openshiftData) GetOauthExternalNodePort() (int32, error) {
+func (od *OpenshiftData) GetOauthExternalNodePort() (int32, error) {
 	svc := &corev1.Service{}
 	name := types.NamespacedName{Namespace: od.cluster.Status.NamespaceName, Name: resources.OauthName}
 	if err := od.client.Get(context.Background(), name, svc); err != nil {
@@ -280,15 +308,15 @@ func (od *openshiftData) GetOauthExternalNodePort() (int32, error) {
 	return svc.Spec.Ports[0].NodePort, nil
 }
 
-func (od *openshiftData) ExternalURL() string {
+func (od *OpenshiftData) ExternalURL() string {
 	return od.externalURL
 }
 
-func (od *openshiftData) GetKubernetesCloudProviderName() string {
+func (od *OpenshiftData) GetKubernetesCloudProviderName() string {
 	return kubernetesresources.GetKubernetesCloudProviderName(od.Cluster())
 }
 
-func (od *openshiftData) CloudCredentialSecretTemplate() ([]byte, error) {
+func (od *OpenshiftData) CloudCredentialSecretTemplate() ([]byte, error) {
 	// TODO: Support more providers than just AWS :)
 	if od.Cluster().Spec.Cloud.AWS == nil {
 		return nil, nil
@@ -316,6 +344,6 @@ func (od *openshiftData) CloudCredentialSecretTemplate() ([]byte, error) {
 	return serializedSecret, nil
 }
 
-func (od *openshiftData) Seed() *kubermaticv1.Seed {
+func (od *OpenshiftData) Seed() *kubermaticv1.Seed {
 	return od.seed
 }

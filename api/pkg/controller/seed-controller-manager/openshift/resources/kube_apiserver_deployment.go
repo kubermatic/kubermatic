@@ -35,13 +35,13 @@ var (
 
 const (
 	legacyAppLabelValue                 = "apiserver"
-	apiServerOauthMetadataConfigMapName = "openshift-oauth-metadata"
+	APIServerOauthMetadataConfigMapName = "openshift-oauth-metadata"
 	apiServerOauthMetadataConfigMapKey  = "oauthMetadata"
 )
 
 func APIServerOauthMetadataConfigMapCreator(data openshiftData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
-		return apiServerOauthMetadataConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+		return APIServerOauthMetadataConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			oauthPort, err := data.GetOauthExternalNodePort()
 			if err != nil {
 				return nil, fmt.Errorf("failed to get external port for oauth service: %v", err)
@@ -272,7 +272,7 @@ func getVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 		{
-			Name:      openshiftKubeAPIServerConfigMapName,
+			Name:      OpenshiftKubeAPIServerConfigMapName,
 			MountPath: "/etc/origin/master",
 		},
 		{
@@ -284,7 +284,7 @@ func getVolumeMounts() []corev1.VolumeMount {
 			MountPath: "/etc/origin/master/service-signer-ca",
 		},
 		{
-			Name:      apiServerOauthMetadataConfigMapName,
+			Name:      APIServerOauthMetadataConfigMapName,
 			MountPath: "/etc/kubernetes/oauth-metadata",
 		},
 	}
@@ -383,10 +383,10 @@ func getAPIServerVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: openshiftKubeAPIServerConfigMapName,
+			Name: OpenshiftKubeAPIServerConfigMapName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{Name: openshiftKubeAPIServerConfigMapName},
+					LocalObjectReference: corev1.LocalObjectReference{Name: OpenshiftKubeAPIServerConfigMapName},
 				},
 			},
 		},
@@ -408,9 +408,9 @@ func getAPIServerVolumes() []corev1.Volume {
 		},
 		{
 
-			Name: apiServerOauthMetadataConfigMapName,
+			Name: APIServerOauthMetadataConfigMapName,
 			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: apiServerOauthMetadataConfigMapName}},
+				ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: APIServerOauthMetadataConfigMapName}},
 			},
 		},
 	}
