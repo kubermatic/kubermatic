@@ -24,7 +24,7 @@ required = [
 
 [[constraint]]
   name = "github.com/go-swagger/go-swagger"
-  branch = "master"
+  version = "v0.22.0"
 
 [[constraint]]
   name = "github.com/Masterminds/semver"

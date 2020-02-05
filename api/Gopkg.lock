@@ -423,12 +423,12 @@
   revision = "aadb2cc7b8862fdab251bf60a8b9d2a951c9746c"
 
 [[projects]]
-  branch = "master"
-  digest = "1:0010c361f8c5635414029860275f565d6712821146af4e87aeae5c6e32aa62fe"
+  digest = "1:da2ad0356c603997317f60dfa8c571df6c60411b4359846b8b9ed735b62e913f"
   name = "github.com/go-openapi/spec"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "c3754ea506f554c8ec5572f3c776075eb69a23c6"
+  revision = "dce82e4362c708e636da7feb0831bd29efb5cd97"
+  version = "v0.19.6"
 
 [[projects]]
   branch = "master"
@@ -439,12 +439,12 @@
   revision = "e471370ae57ac74eaf0afe816a66e4ddd7f1b027"
 
 [[projects]]
-  branch = "master"
-  digest = "1:dc0f590770e5a6c70ea086232324f7b7dc4857c60eca63ab8ff78e0a5cfcdbf3"
+  digest = "1:2233a452b32ea89d54ed31bb1357a23b35e5fcc55f25880bcdccc1aa0872c891"
   name = "github.com/go-openapi/swag"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "1d29f06aebd59ccdf11ae04aa0334ded96e2d909"
+  revision = "6a1eb9830f1c6b090dcd01cee6c3983604a2306f"
+  version = "v0.19.7"
 
 [[projects]]
   branch = "master"
@@ -455,19 +455,21 @@
   revision = "d2eab7d93009e9215fc85b2faa2c2f2a98c2af48"
 
 [[projects]]
-  branch = "master"
-  digest = "1:fb784576858196ef20069730f3b4053d7e34d864e77322d23aed2eacc731da52"
+  digest = "1:57822b42440a3a8d920be6ead4dbef02498373fa14c301c886d4a2f9f75c508c"
   name = "github.com/go-swagger/go-swagger"
   packages = [
     "cmd/swagger",
     "cmd/swagger/commands",
+    "cmd/swagger/commands/diff",
     "cmd/swagger/commands/generate",
     "cmd/swagger/commands/initcmd",
+    "codescan",
     "generator",
     "scan",
   ]
   pruneopts = "NUT"
-  revision = "33c899c9784eb11b1a7a113dfa4cdeedce30d6ef"
+  revision = "5773cbe63c3f459b23ed73ad8b482389ddf46cb4"
+  version = "v0.22.0"
 
 [[projects]]
   digest = "1:3c04690dd1d3fad9a36c492c32863fad91bcf822fd95d5c4cae97be1e9abc361"
@@ -1413,19 +1415,28 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:48b383c3a6ee2df352763f63974a2c04a0a6117c1f9f3989faac3cb6b656be19"
+  digest = "1:150ed8eb1fd835559f22690f7dc069d4d9c04c06ec1af00a1977402269d07246"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
     "go/buildutil",
+    "go/gcexportdata",
     "go/internal/cgo",
+    "go/internal/gcimporter",
+    "go/internal/packagesdriver",
     "go/loader",
+    "go/packages",
+    "go/types/typeutil",
     "imports",
     "internal/fastwalk",
     "internal/gopathwalk",
+    "internal/imports",
+    "internal/module",
+    "internal/packagesinternal",
+    "internal/semver",
   ]
   pruneopts = "NUT"
-  revision = "1c3d964395ce8f04f3b03b30aaed0b096c08c3c6"
+  revision = "67a4523381ef904fe70f6cc4b54cf1baad90d21a"
 
 [[projects]]
   branch = "master"
