@@ -22,7 +22,7 @@ var userNameMap = map[string]string{
 	"AWS:Ubuntu":                  "ubuntu",
 	"AWS:ContainerLinux":          "core",
 	"AWS:CentOS":                  "centos",
-	"AWS:SLES":                    "",
+	"AWS:SLES":                    "ec2-user",
 	"Openstack:Ubuntu":            "ubuntu",
 	"Openstack:ContainerLinux":    "core",
 	"Openstack:CentOS":            "centos",
