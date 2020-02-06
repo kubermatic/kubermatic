@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListHetznerSizesNoCredentialsReader is a Reader for the ListHetznerSizesNoCredentials structure.
@@ -24,14 +24,12 @@ type ListHetznerSizesNoCredentialsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListHetznerSizesNoCredentialsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListHetznerSizesNoCredentialsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListHetznerSizesNoCredentialsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListHetznerSizesNoCredentialsOK struct {
 
 func (o *ListHetznerSizesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/hetzner/sizes][%d] listHetznerSizesNoCredentialsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListHetznerSizesNoCredentialsOK) GetPayload() *models.HetznerSizeList {
+	return o.Payload
 }
 
 func (o *ListHetznerSizesNoCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +99,10 @@ func (o *ListHetznerSizesNoCredentialsDefault) Code() int {
 
 func (o *ListHetznerSizesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/hetzner/sizes][%d] listHetznerSizesNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListHetznerSizesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListHetznerSizesNoCredentialsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

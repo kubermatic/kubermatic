@@ -64,7 +64,7 @@ type ListAWSSubnetsNoCredentialsParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -117,15 +117,15 @@ func (o *ListAWSSubnetsNoCredentialsParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the list a w s subnets no credentials params
-func (o *ListAWSSubnetsNoCredentialsParams) WithDc(dc string) *ListAWSSubnetsNoCredentialsParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list a w s subnets no credentials params
+func (o *ListAWSSubnetsNoCredentialsParams) WithDC(dc string) *ListAWSSubnetsNoCredentialsParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list a w s subnets no credentials params
-func (o *ListAWSSubnetsNoCredentialsParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list a w s subnets no credentials params
+func (o *ListAWSSubnetsNoCredentialsParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the list a w s subnets no credentials params
@@ -153,7 +153,7 @@ func (o *ListAWSSubnetsNoCredentialsParams) WriteToRequest(r runtime.ClientReque
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

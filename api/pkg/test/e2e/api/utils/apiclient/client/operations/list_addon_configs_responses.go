@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListAddonConfigsReader is a Reader for the ListAddonConfigs structure.
@@ -24,21 +24,18 @@ type ListAddonConfigsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListAddonConfigsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListAddonConfigsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewListAddonConfigsUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewListAddonConfigsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +63,10 @@ type ListAddonConfigsOK struct {
 
 func (o *ListAddonConfigsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/addonconfigs][%d] listAddonConfigsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListAddonConfigsOK) GetPayload() []*models.AddonConfig {
+	return o.Payload
 }
 
 func (o *ListAddonConfigsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -123,6 +124,10 @@ func (o *ListAddonConfigsDefault) Code() int {
 
 func (o *ListAddonConfigsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/addonconfigs][%d] listAddonConfigs default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListAddonConfigsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListAddonConfigsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

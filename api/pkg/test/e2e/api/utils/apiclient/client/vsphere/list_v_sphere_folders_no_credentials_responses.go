@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListVSphereFoldersNoCredentialsReader is a Reader for the ListVSphereFoldersNoCredentials structure.
@@ -24,14 +24,12 @@ type ListVSphereFoldersNoCredentialsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListVSphereFoldersNoCredentialsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListVSphereFoldersNoCredentialsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListVSphereFoldersNoCredentialsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListVSphereFoldersNoCredentialsOK struct {
 
 func (o *ListVSphereFoldersNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/folders][%d] listVSphereFoldersNoCredentialsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListVSphereFoldersNoCredentialsOK) GetPayload() []*models.VSphereFolder {
+	return o.Payload
 }
 
 func (o *ListVSphereFoldersNoCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListVSphereFoldersNoCredentialsDefault) Code() int {
 
 func (o *ListVSphereFoldersNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/folders][%d] listVSphereFoldersNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListVSphereFoldersNoCredentialsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListVSphereFoldersNoCredentialsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // NewAddTokenToServiceAccountParams creates a new AddTokenToServiceAccountParams object
@@ -68,7 +68,7 @@ type AddTokenToServiceAccountParams struct {
 	/*ProjectID*/
 	ProjectID string
 	/*ServiceaccountID*/
-	ServiceaccountID string
+	ServiceAccountID string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -130,15 +130,15 @@ func (o *AddTokenToServiceAccountParams) SetProjectID(projectID string) {
 	o.ProjectID = projectID
 }
 
-// WithServiceaccountID adds the serviceaccountID to the add token to service account params
-func (o *AddTokenToServiceAccountParams) WithServiceaccountID(serviceaccountID string) *AddTokenToServiceAccountParams {
-	o.SetServiceaccountID(serviceaccountID)
+// WithServiceAccountID adds the serviceaccountID to the add token to service account params
+func (o *AddTokenToServiceAccountParams) WithServiceAccountID(serviceaccountID string) *AddTokenToServiceAccountParams {
+	o.SetServiceAccountID(serviceaccountID)
 	return o
 }
 
-// SetServiceaccountID adds the serviceaccountId to the add token to service account params
-func (o *AddTokenToServiceAccountParams) SetServiceaccountID(serviceaccountID string) {
-	o.ServiceaccountID = serviceaccountID
+// SetServiceAccountID adds the serviceaccountId to the add token to service account params
+func (o *AddTokenToServiceAccountParams) SetServiceAccountID(serviceaccountID string) {
+	o.ServiceAccountID = serviceaccountID
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -161,7 +161,7 @@ func (o *AddTokenToServiceAccountParams) WriteToRequest(r runtime.ClientRequest,
 	}
 
 	// path param serviceaccount_id
-	if err := r.SetPathParam("serviceaccount_id", o.ServiceaccountID); err != nil {
+	if err := r.SetPathParam("serviceaccount_id", o.ServiceAccountID); err != nil {
 		return err
 	}
 

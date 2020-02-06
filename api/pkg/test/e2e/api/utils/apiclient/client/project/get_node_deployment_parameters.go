@@ -64,9 +64,9 @@ type GetNodeDeploymentParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*NodedeploymentID*/
-	NodedeploymentID string
+	NodeDeploymentID string
 	/*ProjectID*/
 	ProjectID string
 
@@ -119,26 +119,26 @@ func (o *GetNodeDeploymentParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the get node deployment params
-func (o *GetNodeDeploymentParams) WithDc(dc string) *GetNodeDeploymentParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the get node deployment params
+func (o *GetNodeDeploymentParams) WithDC(dc string) *GetNodeDeploymentParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the get node deployment params
-func (o *GetNodeDeploymentParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the get node deployment params
+func (o *GetNodeDeploymentParams) SetDC(dc string) {
+	o.DC = dc
 }
 
-// WithNodedeploymentID adds the nodedeploymentID to the get node deployment params
-func (o *GetNodeDeploymentParams) WithNodedeploymentID(nodedeploymentID string) *GetNodeDeploymentParams {
-	o.SetNodedeploymentID(nodedeploymentID)
+// WithNodeDeploymentID adds the nodedeploymentID to the get node deployment params
+func (o *GetNodeDeploymentParams) WithNodeDeploymentID(nodedeploymentID string) *GetNodeDeploymentParams {
+	o.SetNodeDeploymentID(nodedeploymentID)
 	return o
 }
 
-// SetNodedeploymentID adds the nodedeploymentId to the get node deployment params
-func (o *GetNodeDeploymentParams) SetNodedeploymentID(nodedeploymentID string) {
-	o.NodedeploymentID = nodedeploymentID
+// SetNodeDeploymentID adds the nodedeploymentId to the get node deployment params
+func (o *GetNodeDeploymentParams) SetNodeDeploymentID(nodedeploymentID string) {
+	o.NodeDeploymentID = nodedeploymentID
 }
 
 // WithProjectID adds the projectID to the get node deployment params
@@ -166,12 +166,12 @@ func (o *GetNodeDeploymentParams) WriteToRequest(r runtime.ClientRequest, reg st
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 
 	// path param nodedeployment_id
-	if err := r.SetPathParam("nodedeployment_id", o.NodedeploymentID); err != nil {
+	if err := r.SetPathParam("nodedeployment_id", o.NodeDeploymentID); err != nil {
 		return err
 	}
 

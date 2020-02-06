@@ -64,7 +64,7 @@ type ListOpenstackSizesNoCredentialsParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -117,15 +117,15 @@ func (o *ListOpenstackSizesNoCredentialsParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the list openstack sizes no credentials params
-func (o *ListOpenstackSizesNoCredentialsParams) WithDc(dc string) *ListOpenstackSizesNoCredentialsParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list openstack sizes no credentials params
+func (o *ListOpenstackSizesNoCredentialsParams) WithDC(dc string) *ListOpenstackSizesNoCredentialsParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list openstack sizes no credentials params
-func (o *ListOpenstackSizesNoCredentialsParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list openstack sizes no credentials params
+func (o *ListOpenstackSizesNoCredentialsParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the list openstack sizes no credentials params
@@ -153,7 +153,7 @@ func (o *ListOpenstackSizesNoCredentialsParams) WriteToRequest(r runtime.ClientR
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

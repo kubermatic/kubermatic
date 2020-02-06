@@ -64,7 +64,7 @@ type ListServiceAccountTokensParams struct {
 	/*ProjectID*/
 	ProjectID string
 	/*ServiceaccountID*/
-	ServiceaccountID string
+	ServiceAccountID string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -115,15 +115,15 @@ func (o *ListServiceAccountTokensParams) SetProjectID(projectID string) {
 	o.ProjectID = projectID
 }
 
-// WithServiceaccountID adds the serviceaccountID to the list service account tokens params
-func (o *ListServiceAccountTokensParams) WithServiceaccountID(serviceaccountID string) *ListServiceAccountTokensParams {
-	o.SetServiceaccountID(serviceaccountID)
+// WithServiceAccountID adds the serviceaccountID to the list service account tokens params
+func (o *ListServiceAccountTokensParams) WithServiceAccountID(serviceaccountID string) *ListServiceAccountTokensParams {
+	o.SetServiceAccountID(serviceaccountID)
 	return o
 }
 
-// SetServiceaccountID adds the serviceaccountId to the list service account tokens params
-func (o *ListServiceAccountTokensParams) SetServiceaccountID(serviceaccountID string) {
-	o.ServiceaccountID = serviceaccountID
+// SetServiceAccountID adds the serviceaccountId to the list service account tokens params
+func (o *ListServiceAccountTokensParams) SetServiceAccountID(serviceaccountID string) {
+	o.ServiceAccountID = serviceaccountID
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -140,7 +140,7 @@ func (o *ListServiceAccountTokensParams) WriteToRequest(r runtime.ClientRequest,
 	}
 
 	// path param serviceaccount_id
-	if err := r.SetPathParam("serviceaccount_id", o.ServiceaccountID); err != nil {
+	if err := r.SetPathParam("serviceaccount_id", o.ServiceAccountID); err != nil {
 		return err
 	}
 

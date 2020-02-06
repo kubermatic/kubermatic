@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListGCPNetworksNoCredentialsReader is a Reader for the ListGCPNetworksNoCredentials structure.
@@ -24,14 +24,12 @@ type ListGCPNetworksNoCredentialsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListGCPNetworksNoCredentialsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListGCPNetworksNoCredentialsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListGCPNetworksNoCredentialsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListGCPNetworksNoCredentialsOK struct {
 
 func (o *ListGCPNetworksNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/networks][%d] listGCPNetworksNoCredentialsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListGCPNetworksNoCredentialsOK) GetPayload() models.GCPNetworkList {
+	return o.Payload
 }
 
 func (o *ListGCPNetworksNoCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListGCPNetworksNoCredentialsDefault) Code() int {
 
 func (o *ListGCPNetworksNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/networks][%d] listGCPNetworksNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListGCPNetworksNoCredentialsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListGCPNetworksNoCredentialsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

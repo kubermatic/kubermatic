@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // PatchCurrentUserSettingsReader is a Reader for the PatchCurrentUserSettings structure.
@@ -24,21 +24,18 @@ type PatchCurrentUserSettingsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *PatchCurrentUserSettingsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewPatchCurrentUserSettingsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewPatchCurrentUserSettingsUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewPatchCurrentUserSettingsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +63,10 @@ type PatchCurrentUserSettingsOK struct {
 
 func (o *PatchCurrentUserSettingsOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/me/settings][%d] patchCurrentUserSettingsOK  %+v", 200, o.Payload)
+}
+
+func (o *PatchCurrentUserSettingsOK) GetPayload() *models.UserSettings {
+	return o.Payload
 }
 
 func (o *PatchCurrentUserSettingsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -125,6 +126,10 @@ func (o *PatchCurrentUserSettingsDefault) Code() int {
 
 func (o *PatchCurrentUserSettingsDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/me/settings][%d] patchCurrentUserSettings default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *PatchCurrentUserSettingsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *PatchCurrentUserSettingsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

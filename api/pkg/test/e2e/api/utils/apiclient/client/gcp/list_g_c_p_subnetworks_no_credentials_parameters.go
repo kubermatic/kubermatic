@@ -66,7 +66,7 @@ type ListGCPSubnetworksNoCredentialsParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -130,15 +130,15 @@ func (o *ListGCPSubnetworksNoCredentialsParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the list g c p subnetworks no credentials params
-func (o *ListGCPSubnetworksNoCredentialsParams) WithDc(dc string) *ListGCPSubnetworksNoCredentialsParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list g c p subnetworks no credentials params
+func (o *ListGCPSubnetworksNoCredentialsParams) WithDC(dc string) *ListGCPSubnetworksNoCredentialsParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list g c p subnetworks no credentials params
-func (o *ListGCPSubnetworksNoCredentialsParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list g c p subnetworks no credentials params
+func (o *ListGCPSubnetworksNoCredentialsParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the list g c p subnetworks no credentials params
@@ -175,7 +175,7 @@ func (o *ListGCPSubnetworksNoCredentialsParams) WriteToRequest(r runtime.ClientR
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

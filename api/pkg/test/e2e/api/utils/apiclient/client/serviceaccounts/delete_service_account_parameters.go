@@ -64,7 +64,7 @@ type DeleteServiceAccountParams struct {
 	/*ProjectID*/
 	ProjectID string
 	/*ServiceaccountID*/
-	ServiceaccountID string
+	ServiceAccountID string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -115,15 +115,15 @@ func (o *DeleteServiceAccountParams) SetProjectID(projectID string) {
 	o.ProjectID = projectID
 }
 
-// WithServiceaccountID adds the serviceaccountID to the delete service account params
-func (o *DeleteServiceAccountParams) WithServiceaccountID(serviceaccountID string) *DeleteServiceAccountParams {
-	o.SetServiceaccountID(serviceaccountID)
+// WithServiceAccountID adds the serviceaccountID to the delete service account params
+func (o *DeleteServiceAccountParams) WithServiceAccountID(serviceaccountID string) *DeleteServiceAccountParams {
+	o.SetServiceAccountID(serviceaccountID)
 	return o
 }
 
-// SetServiceaccountID adds the serviceaccountId to the delete service account params
-func (o *DeleteServiceAccountParams) SetServiceaccountID(serviceaccountID string) {
-	o.ServiceaccountID = serviceaccountID
+// SetServiceAccountID adds the serviceaccountId to the delete service account params
+func (o *DeleteServiceAccountParams) SetServiceAccountID(serviceaccountID string) {
+	o.ServiceAccountID = serviceaccountID
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -140,7 +140,7 @@ func (o *DeleteServiceAccountParams) WriteToRequest(r runtime.ClientRequest, reg
 	}
 
 	// path param serviceaccount_id
-	if err := r.SetPathParam("serviceaccount_id", o.ServiceaccountID); err != nil {
+	if err := r.SetPathParam("serviceaccount_id", o.ServiceAccountID); err != nil {
 		return err
 	}
 

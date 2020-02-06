@@ -62,7 +62,7 @@ for the patch kubermatic settings operation typically these are written to a htt
 type PatchKubermaticSettingsParams struct {
 
 	/*Patch*/
-	Patch []uint8
+	Patch interface{}
 
 	timeout    time.Duration
 	Context    context.Context
@@ -103,13 +103,13 @@ func (o *PatchKubermaticSettingsParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithPatch adds the patch to the patch kubermatic settings params
-func (o *PatchKubermaticSettingsParams) WithPatch(patch []uint8) *PatchKubermaticSettingsParams {
+func (o *PatchKubermaticSettingsParams) WithPatch(patch interface{}) *PatchKubermaticSettingsParams {
 	o.SetPatch(patch)
 	return o
 }
 
 // SetPatch adds the patch to the patch kubermatic settings params
-func (o *PatchKubermaticSettingsParams) SetPatch(patch []uint8) {
+func (o *PatchKubermaticSettingsParams) SetPatch(patch interface{}) {
 	o.Patch = patch
 }
 

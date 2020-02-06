@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // NewBindUserToClusterRoleParams creates a new BindUserToClusterRoleParams object
@@ -68,7 +68,7 @@ type BindUserToClusterRoleParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 	/*RoleID*/
@@ -134,15 +134,15 @@ func (o *BindUserToClusterRoleParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the bind user to cluster role params
-func (o *BindUserToClusterRoleParams) WithDc(dc string) *BindUserToClusterRoleParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the bind user to cluster role params
+func (o *BindUserToClusterRoleParams) WithDC(dc string) *BindUserToClusterRoleParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the bind user to cluster role params
-func (o *BindUserToClusterRoleParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the bind user to cluster role params
+func (o *BindUserToClusterRoleParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the bind user to cluster role params
@@ -187,7 +187,7 @@ func (o *BindUserToClusterRoleParams) WriteToRequest(r runtime.ClientRequest, re
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

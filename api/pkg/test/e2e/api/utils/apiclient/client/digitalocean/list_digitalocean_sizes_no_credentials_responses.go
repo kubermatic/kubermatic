@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListDigitaloceanSizesNoCredentialsReader is a Reader for the ListDigitaloceanSizesNoCredentials structure.
@@ -24,14 +24,12 @@ type ListDigitaloceanSizesNoCredentialsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListDigitaloceanSizesNoCredentialsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListDigitaloceanSizesNoCredentialsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListDigitaloceanSizesNoCredentialsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListDigitaloceanSizesNoCredentialsOK struct {
 
 func (o *ListDigitaloceanSizesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/digitalocean/sizes][%d] listDigitaloceanSizesNoCredentialsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListDigitaloceanSizesNoCredentialsOK) GetPayload() *models.DigitaloceanSizeList {
+	return o.Payload
 }
 
 func (o *ListDigitaloceanSizesNoCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +99,10 @@ func (o *ListDigitaloceanSizesNoCredentialsDefault) Code() int {
 
 func (o *ListDigitaloceanSizesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/digitalocean/sizes][%d] listDigitaloceanSizesNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListDigitaloceanSizesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListDigitaloceanSizesNoCredentialsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

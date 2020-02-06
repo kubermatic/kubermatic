@@ -7,12 +7,11 @@ package settings
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new settings API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,17 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	GetCurrentUserSettings(params *GetCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetCurrentUserSettingsOK, error)
+
+	PatchCurrentUserSettings(params *PatchCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*PatchCurrentUserSettingsOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-GetCurrentUserSettings returns settings of the current user
+  GetCurrentUserSettings returns settings of the current user
 */
 func (a *Client) GetCurrentUserSettings(params *GetCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetCurrentUserSettingsOK, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +57,17 @@ func (a *Client) GetCurrentUserSettings(params *GetCurrentUserSettingsParams, au
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetCurrentUserSettingsOK), nil
-
+	success, ok := result.(*GetCurrentUserSettingsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetCurrentUserSettingsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-PatchCurrentUserSettings updates settings of the current user
+  PatchCurrentUserSettings updates settings of the current user
 */
 func (a *Client) PatchCurrentUserSettings(params *PatchCurrentUserSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*PatchCurrentUserSettingsOK, error) {
 	// TODO: Validate the params before sending
@@ -78,8 +91,13 @@ func (a *Client) PatchCurrentUserSettings(params *PatchCurrentUserSettingsParams
 	if err != nil {
 		return nil, err
 	}
-	return result.(*PatchCurrentUserSettingsOK), nil
-
+	success, ok := result.(*PatchCurrentUserSettingsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchCurrentUserSettingsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

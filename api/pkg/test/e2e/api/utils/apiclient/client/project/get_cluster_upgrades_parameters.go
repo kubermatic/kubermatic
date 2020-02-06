@@ -64,7 +64,7 @@ type GetClusterUpgradesParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -117,15 +117,15 @@ func (o *GetClusterUpgradesParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the get cluster upgrades params
-func (o *GetClusterUpgradesParams) WithDc(dc string) *GetClusterUpgradesParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the get cluster upgrades params
+func (o *GetClusterUpgradesParams) WithDC(dc string) *GetClusterUpgradesParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the get cluster upgrades params
-func (o *GetClusterUpgradesParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the get cluster upgrades params
+func (o *GetClusterUpgradesParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the get cluster upgrades params
@@ -153,7 +153,7 @@ func (o *GetClusterUpgradesParams) WriteToRequest(r runtime.ClientRequest, reg s
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

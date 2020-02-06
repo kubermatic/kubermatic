@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // UpdateServiceAccountTokenReader is a Reader for the UpdateServiceAccountToken structure.
@@ -24,28 +24,24 @@ type UpdateServiceAccountTokenReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UpdateServiceAccountTokenReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewUpdateServiceAccountTokenOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewUpdateServiceAccountTokenUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewUpdateServiceAccountTokenForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewUpdateServiceAccountTokenDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type UpdateServiceAccountTokenOK struct {
 
 func (o *UpdateServiceAccountTokenOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] updateServiceAccountTokenOK  %+v", 200, o.Payload)
+}
+
+func (o *UpdateServiceAccountTokenOK) GetPayload() *models.ServiceAccountToken {
+	return o.Payload
 }
 
 func (o *UpdateServiceAccountTokenOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *UpdateServiceAccountTokenDefault) Code() int {
 
 func (o *UpdateServiceAccountTokenDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] updateServiceAccountToken default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *UpdateServiceAccountTokenDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *UpdateServiceAccountTokenDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

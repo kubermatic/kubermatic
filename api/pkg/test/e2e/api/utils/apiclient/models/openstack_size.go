@@ -7,7 +7,6 @@ package models
 
 import (
 	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/swag"
 )
 
@@ -34,7 +33,7 @@ type OpenstackSize struct {
 	Swap int64 `json:"swap,omitempty"`
 
 	// VCPUs indicates how many (virtual) CPUs are available for this flavor
-	VCpus int64 `json:"vcpus,omitempty"`
+	VCPUs int64 `json:"vcpus,omitempty"`
 }
 
 // Validate validates this openstack size

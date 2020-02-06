@@ -13,9 +13,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// Kubeconfig Kubeconfig is a clusters kubeconfig
-// swagger:model Kubeconfig
-type Kubeconfig struct {
+// Config Config holds the information needed to build connect to remote kubernetes clusters as a given user
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// swagger:model Config
+type Config struct {
 
 	// Legacy field from pkg/api/types.go TypeMeta.
 	// TODO(jlowdermilk): remove this after eliminating downstream dependencies.
@@ -47,8 +48,8 @@ type Kubeconfig struct {
 	Preferences *Preferences `json:"preferences,omitempty"`
 }
 
-// Validate validates this kubeconfig
-func (m *Kubeconfig) Validate(formats strfmt.Registry) error {
+// Validate validates this config
+func (m *Config) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateAuthInfos(formats); err != nil {
@@ -77,7 +78,7 @@ func (m *Kubeconfig) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Kubeconfig) validateAuthInfos(formats strfmt.Registry) error {
+func (m *Config) validateAuthInfos(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.AuthInfos) { // not required
 		return nil
@@ -102,7 +103,7 @@ func (m *Kubeconfig) validateAuthInfos(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Kubeconfig) validateClusters(formats strfmt.Registry) error {
+func (m *Config) validateClusters(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Clusters) { // not required
 		return nil
@@ -127,7 +128,7 @@ func (m *Kubeconfig) validateClusters(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Kubeconfig) validateContexts(formats strfmt.Registry) error {
+func (m *Config) validateContexts(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Contexts) { // not required
 		return nil
@@ -152,7 +153,7 @@ func (m *Kubeconfig) validateContexts(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Kubeconfig) validateExtensions(formats strfmt.Registry) error {
+func (m *Config) validateExtensions(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Extensions) { // not required
 		return nil
@@ -177,7 +178,7 @@ func (m *Kubeconfig) validateExtensions(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Kubeconfig) validatePreferences(formats strfmt.Registry) error {
+func (m *Config) validatePreferences(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Preferences) { // not required
 		return nil
@@ -196,7 +197,7 @@ func (m *Kubeconfig) validatePreferences(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *Kubeconfig) MarshalBinary() ([]byte, error) {
+func (m *Config) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -204,8 +205,8 @@ func (m *Kubeconfig) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *Kubeconfig) UnmarshalBinary(b []byte) error {
-	var res Kubeconfig
+func (m *Config) UnmarshalBinary(b []byte) error {
+	var res Config
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

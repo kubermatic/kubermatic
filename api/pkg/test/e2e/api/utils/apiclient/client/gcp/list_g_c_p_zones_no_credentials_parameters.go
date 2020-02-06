@@ -64,7 +64,7 @@ type ListGCPZonesNoCredentialsParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -117,15 +117,15 @@ func (o *ListGCPZonesNoCredentialsParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the list g c p zones no credentials params
-func (o *ListGCPZonesNoCredentialsParams) WithDc(dc string) *ListGCPZonesNoCredentialsParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list g c p zones no credentials params
+func (o *ListGCPZonesNoCredentialsParams) WithDC(dc string) *ListGCPZonesNoCredentialsParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list g c p zones no credentials params
-func (o *ListGCPZonesNoCredentialsParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list g c p zones no credentials params
+func (o *ListGCPZonesNoCredentialsParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the list g c p zones no credentials params
@@ -153,7 +153,7 @@ func (o *ListGCPZonesNoCredentialsParams) WriteToRequest(r runtime.ClientRequest
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

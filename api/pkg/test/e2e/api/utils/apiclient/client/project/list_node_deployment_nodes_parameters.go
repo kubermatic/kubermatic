@@ -65,11 +65,11 @@ type ListNodeDeploymentNodesParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*HideInitialConditions*/
 	HideInitialConditions *bool
 	/*NodedeploymentID*/
-	NodedeploymentID string
+	NodeDeploymentID string
 	/*ProjectID*/
 	ProjectID string
 
@@ -122,15 +122,15 @@ func (o *ListNodeDeploymentNodesParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the list node deployment nodes params
-func (o *ListNodeDeploymentNodesParams) WithDc(dc string) *ListNodeDeploymentNodesParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list node deployment nodes params
+func (o *ListNodeDeploymentNodesParams) WithDC(dc string) *ListNodeDeploymentNodesParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list node deployment nodes params
-func (o *ListNodeDeploymentNodesParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list node deployment nodes params
+func (o *ListNodeDeploymentNodesParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithHideInitialConditions adds the hideInitialConditions to the list node deployment nodes params
@@ -144,15 +144,15 @@ func (o *ListNodeDeploymentNodesParams) SetHideInitialConditions(hideInitialCond
 	o.HideInitialConditions = hideInitialConditions
 }
 
-// WithNodedeploymentID adds the nodedeploymentID to the list node deployment nodes params
-func (o *ListNodeDeploymentNodesParams) WithNodedeploymentID(nodedeploymentID string) *ListNodeDeploymentNodesParams {
-	o.SetNodedeploymentID(nodedeploymentID)
+// WithNodeDeploymentID adds the nodedeploymentID to the list node deployment nodes params
+func (o *ListNodeDeploymentNodesParams) WithNodeDeploymentID(nodedeploymentID string) *ListNodeDeploymentNodesParams {
+	o.SetNodeDeploymentID(nodedeploymentID)
 	return o
 }
 
-// SetNodedeploymentID adds the nodedeploymentId to the list node deployment nodes params
-func (o *ListNodeDeploymentNodesParams) SetNodedeploymentID(nodedeploymentID string) {
-	o.NodedeploymentID = nodedeploymentID
+// SetNodeDeploymentID adds the nodedeploymentId to the list node deployment nodes params
+func (o *ListNodeDeploymentNodesParams) SetNodeDeploymentID(nodedeploymentID string) {
+	o.NodeDeploymentID = nodedeploymentID
 }
 
 // WithProjectID adds the projectID to the list node deployment nodes params
@@ -180,7 +180,7 @@ func (o *ListNodeDeploymentNodesParams) WriteToRequest(r runtime.ClientRequest, 
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 
@@ -201,7 +201,7 @@ func (o *ListNodeDeploymentNodesParams) WriteToRequest(r runtime.ClientRequest, 
 	}
 
 	// path param nodedeployment_id
-	if err := r.SetPathParam("nodedeployment_id", o.NodedeploymentID); err != nil {
+	if err := r.SetPathParam("nodedeployment_id", o.NodeDeploymentID); err != nil {
 		return err
 	}
 

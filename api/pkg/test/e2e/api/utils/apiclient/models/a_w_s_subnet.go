@@ -8,9 +8,8 @@ package models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	strfmt "github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
@@ -33,10 +32,10 @@ type AWSSubnet struct {
 	// ID
 	ID string `json:"id,omitempty"`
 
-	// ipv4 c ID r
+	// IPv4 c ID r
 	IPV4CIDR string `json:"ipv4cidr,omitempty"`
 
-	// ipv6 c ID r
+	// IPv6 c ID r
 	IPV6CIDR string `json:"ipv6cidr,omitempty"`
 
 	// is default subnet

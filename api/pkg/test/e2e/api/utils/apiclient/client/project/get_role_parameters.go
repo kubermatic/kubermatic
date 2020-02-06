@@ -64,7 +64,7 @@ type GetRoleParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*Namespace*/
 	Namespace string
 	/*ProjectID*/
@@ -121,15 +121,15 @@ func (o *GetRoleParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the get role params
-func (o *GetRoleParams) WithDc(dc string) *GetRoleParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the get role params
+func (o *GetRoleParams) WithDC(dc string) *GetRoleParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the get role params
-func (o *GetRoleParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the get role params
+func (o *GetRoleParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithNamespace adds the namespace to the get role params
@@ -179,7 +179,7 @@ func (o *GetRoleParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regis
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

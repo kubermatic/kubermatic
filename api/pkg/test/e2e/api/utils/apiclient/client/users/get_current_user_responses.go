@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // GetCurrentUserReader is a Reader for the GetCurrentUser structure.
@@ -24,21 +24,18 @@ type GetCurrentUserReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetCurrentUserReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetCurrentUserOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewGetCurrentUserUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewGetCurrentUserDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +63,10 @@ type GetCurrentUserOK struct {
 
 func (o *GetCurrentUserOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/me][%d] getCurrentUserOK  %+v", 200, o.Payload)
+}
+
+func (o *GetCurrentUserOK) GetPayload() *models.User {
+	return o.Payload
 }
 
 func (o *GetCurrentUserOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -125,6 +126,10 @@ func (o *GetCurrentUserDefault) Code() int {
 
 func (o *GetCurrentUserDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/me][%d] getCurrentUser default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetCurrentUserDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *GetCurrentUserDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

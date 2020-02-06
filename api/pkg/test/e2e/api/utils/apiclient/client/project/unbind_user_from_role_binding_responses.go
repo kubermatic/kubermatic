@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // UnbindUserFromRoleBindingReader is a Reader for the UnbindUserFromRoleBinding structure.
@@ -24,28 +24,24 @@ type UnbindUserFromRoleBindingReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UnbindUserFromRoleBindingReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewUnbindUserFromRoleBindingOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewUnbindUserFromRoleBindingUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewUnbindUserFromRoleBindingForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewUnbindUserFromRoleBindingDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type UnbindUserFromRoleBindingOK struct {
 
 func (o *UnbindUserFromRoleBindingOK) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBindingOK  %+v", 200, o.Payload)
+}
+
+func (o *UnbindUserFromRoleBindingOK) GetPayload() *models.RoleBinding {
+	return o.Payload
 }
 
 func (o *UnbindUserFromRoleBindingOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *UnbindUserFromRoleBindingDefault) Code() int {
 
 func (o *UnbindUserFromRoleBindingDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBinding default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *UnbindUserFromRoleBindingDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *UnbindUserFromRoleBindingDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

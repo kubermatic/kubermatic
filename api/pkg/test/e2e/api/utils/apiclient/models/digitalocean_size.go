@@ -7,7 +7,6 @@ package models
 
 import (
 	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/swag"
 )
 
@@ -39,8 +38,8 @@ type DigitaloceanSize struct {
 	// transfer
 	Transfer float64 `json:"transfer,omitempty"`
 
-	// v cpus
-	VCpus int64 `json:"vcpus,omitempty"`
+	// v c p us
+	VCPUs int64 `json:"vcpus,omitempty"`
 }
 
 // Validate validates this digitalocean size

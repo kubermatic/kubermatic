@@ -7,7 +7,6 @@ package models
 
 import (
 	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/swag"
 )
 
@@ -27,8 +26,8 @@ type AWSSize struct {
 	// price
 	Price float64 `json:"price,omitempty"`
 
-	// v cpus
-	VCpus int64 `json:"vcpus,omitempty"`
+	// v c p us
+	VCPUs int64 `json:"vcpus,omitempty"`
 }
 
 // Validate validates this a w s size

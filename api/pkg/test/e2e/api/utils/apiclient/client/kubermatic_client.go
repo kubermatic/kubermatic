@@ -6,10 +6,10 @@ package client
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/addon"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/admin"
@@ -75,47 +75,26 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 
 	cli := new(Kubermatic)
 	cli.Transport = transport
-
 	cli.Addon = addon.New(transport, formats)
-
 	cli.Admin = admin.New(transport, formats)
-
 	cli.Aws = aws.New(transport, formats)
-
 	cli.Azure = azure.New(transport, formats)
-
 	cli.Credentials = credentials.New(transport, formats)
-
 	cli.Datacenter = datacenter.New(transport, formats)
-
 	cli.Digitalocean = digitalocean.New(transport, formats)
-
 	cli.Gcp = gcp.New(transport, formats)
-
 	cli.Hetzner = hetzner.New(transport, formats)
-
 	cli.Metric = metric.New(transport, formats)
-
 	cli.Openstack = openstack.New(transport, formats)
-
 	cli.Operations = operations.New(transport, formats)
-
 	cli.Packet = packet.New(transport, formats)
-
 	cli.Project = project.New(transport, formats)
-
 	cli.Serviceaccounts = serviceaccounts.New(transport, formats)
-
 	cli.Settings = settings.New(transport, formats)
-
 	cli.Tokens = tokens.New(transport, formats)
-
 	cli.Users = users.New(transport, formats)
-
 	cli.Versions = versions.New(transport, formats)
-
 	cli.Vsphere = vsphere.New(transport, formats)
-
 	return cli
 }
 
@@ -160,45 +139,45 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 
 // Kubermatic is a client for kubermatic
 type Kubermatic struct {
-	Addon *addon.Client
+	Addon addon.ClientService
 
-	Admin *admin.Client
+	Admin admin.ClientService
 
-	Aws *aws.Client
+	Aws aws.ClientService
 
-	Azure *azure.Client
+	Azure azure.ClientService
 
-	Credentials *credentials.Client
+	Credentials credentials.ClientService
 
-	Datacenter *datacenter.Client
+	Datacenter datacenter.ClientService
 
-	Digitalocean *digitalocean.Client
+	Digitalocean digitalocean.ClientService
 
-	Gcp *gcp.Client
+	Gcp gcp.ClientService
 
-	Hetzner *hetzner.Client
+	Hetzner hetzner.ClientService
 
-	Metric *metric.Client
+	Metric metric.ClientService
 
-	Openstack *openstack.Client
+	Openstack openstack.ClientService
 
-	Operations *operations.Client
+	Operations operations.ClientService
 
-	Packet *packet.Client
+	Packet packet.ClientService
 
-	Project *project.Client
+	Project project.ClientService
 
-	Serviceaccounts *serviceaccounts.Client
+	Serviceaccounts serviceaccounts.ClientService
 
-	Settings *settings.Client
+	Settings settings.ClientService
 
-	Tokens *tokens.Client
+	Tokens tokens.ClientService
 
-	Users *users.Client
+	Users users.ClientService
 
-	Versions *versions.Client
+	Versions versions.ClientService
 
-	Vsphere *vsphere.Client
+	Vsphere vsphere.ClientService
 
 	Transport runtime.ClientTransport
 }
@@ -206,45 +185,24 @@ type Kubermatic struct {
 // SetTransport changes the transport on the client and all its subresources
 func (c *Kubermatic) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
-
 	c.Addon.SetTransport(transport)
-
 	c.Admin.SetTransport(transport)
-
 	c.Aws.SetTransport(transport)
-
 	c.Azure.SetTransport(transport)
-
 	c.Credentials.SetTransport(transport)
-
 	c.Datacenter.SetTransport(transport)
-
 	c.Digitalocean.SetTransport(transport)
-
 	c.Gcp.SetTransport(transport)
-
 	c.Hetzner.SetTransport(transport)
-
 	c.Metric.SetTransport(transport)
-
 	c.Openstack.SetTransport(transport)
-
 	c.Operations.SetTransport(transport)
-
 	c.Packet.SetTransport(transport)
-
 	c.Project.SetTransport(transport)
-
 	c.Serviceaccounts.SetTransport(transport)
-
 	c.Settings.SetTransport(transport)
-
 	c.Tokens.SetTransport(transport)
-
 	c.Users.SetTransport(transport)
-
 	c.Versions.SetTransport(transport)
-
 	c.Vsphere.SetTransport(transport)
-
 }

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListOpenstackNetworksReader is a Reader for the ListOpenstackNetworks structure.
@@ -24,14 +24,12 @@ type ListOpenstackNetworksReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListOpenstackNetworksReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListOpenstackNetworksOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListOpenstackNetworksDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListOpenstackNetworksOK struct {
 
 func (o *ListOpenstackNetworksOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/networks][%d] listOpenstackNetworksOK  %+v", 200, o.Payload)
+}
+
+func (o *ListOpenstackNetworksOK) GetPayload() []*models.OpenstackNetwork {
+	return o.Payload
 }
 
 func (o *ListOpenstackNetworksOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListOpenstackNetworksDefault) Code() int {
 
 func (o *ListOpenstackNetworksDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/networks][%d] listOpenstackNetworks default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListOpenstackNetworksDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListOpenstackNetworksDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

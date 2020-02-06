@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // UnbindUserFromClusterRoleBindingReader is a Reader for the UnbindUserFromClusterRoleBinding structure.
@@ -24,28 +24,24 @@ type UnbindUserFromClusterRoleBindingReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UnbindUserFromClusterRoleBindingReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewUnbindUserFromClusterRoleBindingOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewUnbindUserFromClusterRoleBindingUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewUnbindUserFromClusterRoleBindingForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewUnbindUserFromClusterRoleBindingDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type UnbindUserFromClusterRoleBindingOK struct {
 
 func (o *UnbindUserFromClusterRoleBindingOK) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] unbindUserFromClusterRoleBindingOK  %+v", 200, o.Payload)
+}
+
+func (o *UnbindUserFromClusterRoleBindingOK) GetPayload() *models.ClusterRoleBinding {
+	return o.Payload
 }
 
 func (o *UnbindUserFromClusterRoleBindingOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *UnbindUserFromClusterRoleBindingDefault) Code() int {
 
 func (o *UnbindUserFromClusterRoleBindingDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] unbindUserFromClusterRoleBinding default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *UnbindUserFromClusterRoleBindingDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *UnbindUserFromClusterRoleBindingDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

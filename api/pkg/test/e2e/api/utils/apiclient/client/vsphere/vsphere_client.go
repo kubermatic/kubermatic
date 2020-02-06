@@ -7,12 +7,11 @@ package vsphere
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new vsphere API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,21 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	ListVSphereFolders(params *ListVSphereFoldersParams, authInfo runtime.ClientAuthInfoWriter) (*ListVSphereFoldersOK, error)
+
+	ListVSphereFoldersNoCredentials(params *ListVSphereFoldersNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListVSphereFoldersNoCredentialsOK, error)
+
+	ListVSphereNetworks(params *ListVSphereNetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListVSphereNetworksOK, error)
+
+	ListVSphereNetworksNoCredentials(params *ListVSphereNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListVSphereNetworksNoCredentialsOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-ListVSphereFolders Lists folders from vsphere datacenter
+  ListVSphereFolders Lists folders from vsphere datacenter
 */
 func (a *Client) ListVSphereFolders(params *ListVSphereFoldersParams, authInfo runtime.ClientAuthInfoWriter) (*ListVSphereFoldersOK, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +61,17 @@ func (a *Client) ListVSphereFolders(params *ListVSphereFoldersParams, authInfo r
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListVSphereFoldersOK), nil
-
+	success, ok := result.(*ListVSphereFoldersOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListVSphereFoldersDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListVSphereFoldersNoCredentials Lists folders from vsphere datacenter
+  ListVSphereFoldersNoCredentials Lists folders from vsphere datacenter
 */
 func (a *Client) ListVSphereFoldersNoCredentials(params *ListVSphereFoldersNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListVSphereFoldersNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -78,12 +95,17 @@ func (a *Client) ListVSphereFoldersNoCredentials(params *ListVSphereFoldersNoCre
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListVSphereFoldersNoCredentialsOK), nil
-
+	success, ok := result.(*ListVSphereFoldersNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListVSphereFoldersNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListVSphereNetworks Lists networks from vsphere datacenter
+  ListVSphereNetworks Lists networks from vsphere datacenter
 */
 func (a *Client) ListVSphereNetworks(params *ListVSphereNetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListVSphereNetworksOK, error) {
 	// TODO: Validate the params before sending
@@ -107,12 +129,17 @@ func (a *Client) ListVSphereNetworks(params *ListVSphereNetworksParams, authInfo
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListVSphereNetworksOK), nil
-
+	success, ok := result.(*ListVSphereNetworksOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListVSphereNetworksDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListVSphereNetworksNoCredentials Lists networks from vsphere datacenter
+  ListVSphereNetworksNoCredentials Lists networks from vsphere datacenter
 */
 func (a *Client) ListVSphereNetworksNoCredentials(params *ListVSphereNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListVSphereNetworksNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -136,8 +163,13 @@ func (a *Client) ListVSphereNetworksNoCredentials(params *ListVSphereNetworksNoC
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListVSphereNetworksNoCredentialsOK), nil
-
+	success, ok := result.(*ListVSphereNetworksNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListVSphereNetworksNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

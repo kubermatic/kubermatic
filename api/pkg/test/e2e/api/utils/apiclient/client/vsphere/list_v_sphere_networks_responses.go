@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListVSphereNetworksReader is a Reader for the ListVSphereNetworks structure.
@@ -24,14 +24,12 @@ type ListVSphereNetworksReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListVSphereNetworksReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListVSphereNetworksOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListVSphereNetworksDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListVSphereNetworksOK struct {
 
 func (o *ListVSphereNetworksOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/vsphere/networks][%d] listVSphereNetworksOK  %+v", 200, o.Payload)
+}
+
+func (o *ListVSphereNetworksOK) GetPayload() []*models.VSphereNetwork {
+	return o.Payload
 }
 
 func (o *ListVSphereNetworksOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListVSphereNetworksDefault) Code() int {
 
 func (o *ListVSphereNetworksDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/vsphere/networks][%d] listVSphereNetworks default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListVSphereNetworksDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListVSphereNetworksDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

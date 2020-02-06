@@ -285,6 +285,8 @@ func (r *runner) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKe
 	volumeSize := int64(25)
 	volumeType := "standard"
 	clusterSpec := &models.CreateClusterSpec{}
+
+
 	clusterSpec.Cluster = &models.Cluster{
 		Type: "kubernetes",
 		Name: name,

@@ -62,13 +62,13 @@ for the patch node deployment operation typically these are written to a http.Re
 type PatchNodeDeploymentParams struct {
 
 	/*Patch*/
-	Patch []uint8
+	Patch interface{}
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*NodedeploymentID*/
-	NodedeploymentID string
+	NodeDeploymentID string
 	/*ProjectID*/
 	ProjectID string
 
@@ -111,13 +111,13 @@ func (o *PatchNodeDeploymentParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithPatch adds the patch to the patch node deployment params
-func (o *PatchNodeDeploymentParams) WithPatch(patch []uint8) *PatchNodeDeploymentParams {
+func (o *PatchNodeDeploymentParams) WithPatch(patch interface{}) *PatchNodeDeploymentParams {
 	o.SetPatch(patch)
 	return o
 }
 
 // SetPatch adds the patch to the patch node deployment params
-func (o *PatchNodeDeploymentParams) SetPatch(patch []uint8) {
+func (o *PatchNodeDeploymentParams) SetPatch(patch interface{}) {
 	o.Patch = patch
 }
 
@@ -132,26 +132,26 @@ func (o *PatchNodeDeploymentParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the patch node deployment params
-func (o *PatchNodeDeploymentParams) WithDc(dc string) *PatchNodeDeploymentParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the patch node deployment params
+func (o *PatchNodeDeploymentParams) WithDC(dc string) *PatchNodeDeploymentParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the patch node deployment params
-func (o *PatchNodeDeploymentParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the patch node deployment params
+func (o *PatchNodeDeploymentParams) SetDC(dc string) {
+	o.DC = dc
 }
 
-// WithNodedeploymentID adds the nodedeploymentID to the patch node deployment params
-func (o *PatchNodeDeploymentParams) WithNodedeploymentID(nodedeploymentID string) *PatchNodeDeploymentParams {
-	o.SetNodedeploymentID(nodedeploymentID)
+// WithNodeDeploymentID adds the nodedeploymentID to the patch node deployment params
+func (o *PatchNodeDeploymentParams) WithNodeDeploymentID(nodedeploymentID string) *PatchNodeDeploymentParams {
+	o.SetNodeDeploymentID(nodedeploymentID)
 	return o
 }
 
-// SetNodedeploymentID adds the nodedeploymentId to the patch node deployment params
-func (o *PatchNodeDeploymentParams) SetNodedeploymentID(nodedeploymentID string) {
-	o.NodedeploymentID = nodedeploymentID
+// SetNodeDeploymentID adds the nodedeploymentId to the patch node deployment params
+func (o *PatchNodeDeploymentParams) SetNodeDeploymentID(nodedeploymentID string) {
+	o.NodeDeploymentID = nodedeploymentID
 }
 
 // WithProjectID adds the projectID to the patch node deployment params
@@ -185,12 +185,12 @@ func (o *PatchNodeDeploymentParams) WriteToRequest(r runtime.ClientRequest, reg 
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 
 	// path param nodedeployment_id
-	if err := r.SetPathParam("nodedeployment_id", o.NodedeploymentID); err != nil {
+	if err := r.SetPathParam("nodedeployment_id", o.NodeDeploymentID); err != nil {
 		return err
 	}
 

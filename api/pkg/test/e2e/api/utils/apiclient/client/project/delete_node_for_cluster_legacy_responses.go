@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // DeleteNodeForClusterLegacyReader is a Reader for the DeleteNodeForClusterLegacy structure.
@@ -24,28 +24,24 @@ type DeleteNodeForClusterLegacyReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *DeleteNodeForClusterLegacyReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewDeleteNodeForClusterLegacyOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewDeleteNodeForClusterLegacyUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewDeleteNodeForClusterLegacyForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewDeleteNodeForClusterLegacyDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -145,6 +141,10 @@ func (o *DeleteNodeForClusterLegacyDefault) Code() int {
 
 func (o *DeleteNodeForClusterLegacyDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}][%d] deleteNodeForClusterLegacy default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *DeleteNodeForClusterLegacyDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *DeleteNodeForClusterLegacyDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

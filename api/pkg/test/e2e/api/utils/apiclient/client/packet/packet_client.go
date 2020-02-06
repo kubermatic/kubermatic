@@ -7,12 +7,11 @@ package packet
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new packet API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,17 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	ListPacketSizes(params *ListPacketSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesOK, error)
+
+	ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesNoCredentialsOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-ListPacketSizes Lists sizes from packet
+  ListPacketSizes Lists sizes from packet
 */
 func (a *Client) ListPacketSizes(params *ListPacketSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +57,17 @@ func (a *Client) ListPacketSizes(params *ListPacketSizesParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListPacketSizesOK), nil
-
+	success, ok := result.(*ListPacketSizesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListPacketSizesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListPacketSizesNoCredentials Lists sizes from packet
+  ListPacketSizesNoCredentials Lists sizes from packet
 */
 func (a *Client) ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -78,8 +91,13 @@ func (a *Client) ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentia
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListPacketSizesNoCredentialsOK), nil
-
+	success, ok := result.(*ListPacketSizesNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListPacketSizesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

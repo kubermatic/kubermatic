@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // CreateOIDCKubeconfigReader is a Reader for the CreateOIDCKubeconfig structure.
@@ -24,14 +24,12 @@ type CreateOIDCKubeconfigReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *CreateOIDCKubeconfigReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewCreateOIDCKubeconfigOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewCreateOIDCKubeconfigDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type CreateOIDCKubeconfigOK struct {
 
 func (o *CreateOIDCKubeconfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/kubeconfig][%d] createOIdCKubeconfigOK  %+v", 200, o.Payload)
+}
+
+func (o *CreateOIDCKubeconfigOK) GetPayload() *models.Kubeconfig {
+	return o.Payload
 }
 
 func (o *CreateOIDCKubeconfigOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +99,10 @@ func (o *CreateOIDCKubeconfigDefault) Code() int {
 
 func (o *CreateOIDCKubeconfigDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/kubeconfig][%d] createOIDCKubeconfig default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *CreateOIDCKubeconfigDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *CreateOIDCKubeconfigDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

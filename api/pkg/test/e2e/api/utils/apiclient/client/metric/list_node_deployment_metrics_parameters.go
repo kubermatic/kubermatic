@@ -64,9 +64,9 @@ type ListNodeDeploymentMetricsParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*NodedeploymentID*/
-	NodedeploymentID string
+	NodeDeploymentID string
 	/*ProjectID*/
 	ProjectID string
 
@@ -119,26 +119,26 @@ func (o *ListNodeDeploymentMetricsParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the list node deployment metrics params
-func (o *ListNodeDeploymentMetricsParams) WithDc(dc string) *ListNodeDeploymentMetricsParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list node deployment metrics params
+func (o *ListNodeDeploymentMetricsParams) WithDC(dc string) *ListNodeDeploymentMetricsParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list node deployment metrics params
-func (o *ListNodeDeploymentMetricsParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list node deployment metrics params
+func (o *ListNodeDeploymentMetricsParams) SetDC(dc string) {
+	o.DC = dc
 }
 
-// WithNodedeploymentID adds the nodedeploymentID to the list node deployment metrics params
-func (o *ListNodeDeploymentMetricsParams) WithNodedeploymentID(nodedeploymentID string) *ListNodeDeploymentMetricsParams {
-	o.SetNodedeploymentID(nodedeploymentID)
+// WithNodeDeploymentID adds the nodedeploymentID to the list node deployment metrics params
+func (o *ListNodeDeploymentMetricsParams) WithNodeDeploymentID(nodedeploymentID string) *ListNodeDeploymentMetricsParams {
+	o.SetNodeDeploymentID(nodedeploymentID)
 	return o
 }
 
-// SetNodedeploymentID adds the nodedeploymentId to the list node deployment metrics params
-func (o *ListNodeDeploymentMetricsParams) SetNodedeploymentID(nodedeploymentID string) {
-	o.NodedeploymentID = nodedeploymentID
+// SetNodeDeploymentID adds the nodedeploymentId to the list node deployment metrics params
+func (o *ListNodeDeploymentMetricsParams) SetNodeDeploymentID(nodedeploymentID string) {
+	o.NodeDeploymentID = nodedeploymentID
 }
 
 // WithProjectID adds the projectID to the list node deployment metrics params
@@ -166,12 +166,12 @@ func (o *ListNodeDeploymentMetricsParams) WriteToRequest(r runtime.ClientRequest
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 
 	// path param nodedeployment_id
-	if err := r.SetPathParam("nodedeployment_id", o.NodedeploymentID); err != nil {
+	if err := r.SetPathParam("nodedeployment_id", o.NodeDeploymentID); err != nil {
 		return err
 	}
 

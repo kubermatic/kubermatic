@@ -62,7 +62,7 @@ for the list clusters operation typically these are written to a http.Request
 type ListClustersParams struct {
 
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -104,15 +104,15 @@ func (o *ListClustersParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithDc adds the dc to the list clusters params
-func (o *ListClustersParams) WithDc(dc string) *ListClustersParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list clusters params
+func (o *ListClustersParams) WithDC(dc string) *ListClustersParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list clusters params
-func (o *ListClustersParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list clusters params
+func (o *ListClustersParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the list clusters params
@@ -135,7 +135,7 @@ func (o *ListClustersParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 	var res []error
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

@@ -7,12 +7,11 @@ package addon
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new addon API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,23 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	CreateAddon(params *CreateAddonParams, authInfo runtime.ClientAuthInfoWriter) (*CreateAddonCreated, error)
+
+	DeleteAddon(params *DeleteAddonParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteAddonOK, error)
+
+	GetAddon(params *GetAddonParams, authInfo runtime.ClientAuthInfoWriter) (*GetAddonOK, error)
+
+	ListAddons(params *ListAddonsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAddonsOK, error)
+
+	PatchAddon(params *PatchAddonParams, authInfo runtime.ClientAuthInfoWriter) (*PatchAddonOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-CreateAddon Creates an addon that will belong to the given cluster
+  CreateAddon Creates an addon that will belong to the given cluster
 */
 func (a *Client) CreateAddon(params *CreateAddonParams, authInfo runtime.ClientAuthInfoWriter) (*CreateAddonCreated, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +63,17 @@ func (a *Client) CreateAddon(params *CreateAddonParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	return result.(*CreateAddonCreated), nil
-
+	success, ok := result.(*CreateAddonCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateAddonDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-DeleteAddon deletes the given addon that belongs to the cluster
+  DeleteAddon deletes the given addon that belongs to the cluster
 */
 func (a *Client) DeleteAddon(params *DeleteAddonParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteAddonOK, error) {
 	// TODO: Validate the params before sending
@@ -78,12 +97,17 @@ func (a *Client) DeleteAddon(params *DeleteAddonParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteAddonOK), nil
-
+	success, ok := result.(*DeleteAddonOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteAddonDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetAddon gets an addon that is assigned to the given cluster
+  GetAddon gets an addon that is assigned to the given cluster
 */
 func (a *Client) GetAddon(params *GetAddonParams, authInfo runtime.ClientAuthInfoWriter) (*GetAddonOK, error) {
 	// TODO: Validate the params before sending
@@ -107,12 +131,17 @@ func (a *Client) GetAddon(params *GetAddonParams, authInfo runtime.ClientAuthInf
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetAddonOK), nil
-
+	success, ok := result.(*GetAddonOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetAddonDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListAddons Lists addons that belong to the given cluster
+  ListAddons Lists addons that belong to the given cluster
 */
 func (a *Client) ListAddons(params *ListAddonsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAddonsOK, error) {
 	// TODO: Validate the params before sending
@@ -136,12 +165,17 @@ func (a *Client) ListAddons(params *ListAddonsParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListAddonsOK), nil
-
+	success, ok := result.(*ListAddonsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAddonsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-PatchAddon patches an addon that is assigned to the given cluster
+  PatchAddon patches an addon that is assigned to the given cluster
 */
 func (a *Client) PatchAddon(params *PatchAddonParams, authInfo runtime.ClientAuthInfoWriter) (*PatchAddonOK, error) {
 	// TODO: Validate the params before sending
@@ -165,8 +199,13 @@ func (a *Client) PatchAddon(params *PatchAddonParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*PatchAddonOK), nil
-
+	success, ok := result.(*PatchAddonOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchAddonDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

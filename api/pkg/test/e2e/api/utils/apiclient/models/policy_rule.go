@@ -7,7 +7,6 @@ package models
 
 import (
 	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/swag"
 )
 
@@ -25,7 +24,7 @@ type PolicyRule struct {
 	// Since non-resource URLs are not namespaced, this field is only applicable for ClusterRoles referenced from a ClusterRoleBinding.
 	// Rules can either apply to API resources (such as "pods" or "secrets") or non-resource URL paths (such as "/api"),  but not both.
 	// +optional
-	NonResourceUrls []string `json:"nonResourceURLs"`
+	NonResourceURLs []string `json:"nonResourceURLs"`
 
 	// ResourceNames is an optional white list of names that the rule applies to.  An empty set means that everything is allowed.
 	// +optional

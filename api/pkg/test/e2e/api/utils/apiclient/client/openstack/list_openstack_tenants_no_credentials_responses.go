@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListOpenstackTenantsNoCredentialsReader is a Reader for the ListOpenstackTenantsNoCredentials structure.
@@ -24,14 +24,12 @@ type ListOpenstackTenantsNoCredentialsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListOpenstackTenantsNoCredentialsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListOpenstackTenantsNoCredentialsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListOpenstackTenantsNoCredentialsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListOpenstackTenantsNoCredentialsOK struct {
 
 func (o *ListOpenstackTenantsNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/tenants][%d] listOpenstackTenantsNoCredentialsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListOpenstackTenantsNoCredentialsOK) GetPayload() []*models.OpenstackTenant {
+	return o.Payload
 }
 
 func (o *ListOpenstackTenantsNoCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListOpenstackTenantsNoCredentialsDefault) Code() int {
 
 func (o *ListOpenstackTenantsNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/tenants][%d] listOpenstackTenantsNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListOpenstackTenantsNoCredentialsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListOpenstackTenantsNoCredentialsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -64,7 +64,7 @@ type ListNamespaceParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -117,15 +117,15 @@ func (o *ListNamespaceParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the list namespace params
-func (o *ListNamespaceParams) WithDc(dc string) *ListNamespaceParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list namespace params
+func (o *ListNamespaceParams) WithDC(dc string) *ListNamespaceParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list namespace params
-func (o *ListNamespaceParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list namespace params
+func (o *ListNamespaceParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the list namespace params
@@ -153,7 +153,7 @@ func (o *ListNamespaceParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

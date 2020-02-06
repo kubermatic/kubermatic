@@ -64,7 +64,7 @@ type GetOidcClusterKubeconfigParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -117,15 +117,15 @@ func (o *GetOidcClusterKubeconfigParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the get oidc cluster kubeconfig params
-func (o *GetOidcClusterKubeconfigParams) WithDc(dc string) *GetOidcClusterKubeconfigParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the get oidc cluster kubeconfig params
+func (o *GetOidcClusterKubeconfigParams) WithDC(dc string) *GetOidcClusterKubeconfigParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the get oidc cluster kubeconfig params
-func (o *GetOidcClusterKubeconfigParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the get oidc cluster kubeconfig params
+func (o *GetOidcClusterKubeconfigParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the get oidc cluster kubeconfig params
@@ -153,7 +153,7 @@ func (o *GetOidcClusterKubeconfigParams) WriteToRequest(r runtime.ClientRequest,
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

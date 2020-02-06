@@ -7,12 +7,11 @@ package versions
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new versions API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,19 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	GetKubermaticVersion(params *GetKubermaticVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetKubermaticVersionOK, error)
+
+	GetMasterVersions(params *GetMasterVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetMasterVersionsOK, error)
+
+	GetNodeUpgrades(params *GetNodeUpgradesParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeUpgradesOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-GetKubermaticVersion gets versions of running kubermatic components
+  GetKubermaticVersion gets versions of running kubermatic components
 */
 func (a *Client) GetKubermaticVersion(params *GetKubermaticVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetKubermaticVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +59,17 @@ func (a *Client) GetKubermaticVersion(params *GetKubermaticVersionParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetKubermaticVersionOK), nil
-
+	success, ok := result.(*GetKubermaticVersionOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetKubermaticVersionDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetMasterVersions Lists all versions which don't result in automatic updates
+  GetMasterVersions Lists all versions which don't result in automatic updates
 */
 func (a *Client) GetMasterVersions(params *GetMasterVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetMasterVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -78,12 +93,17 @@ func (a *Client) GetMasterVersions(params *GetMasterVersionsParams, authInfo run
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetMasterVersionsOK), nil
-
+	success, ok := result.(*GetMasterVersionsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetMasterVersionsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetNodeUpgrades Gets possible node upgrades for a specific control plane version
+  GetNodeUpgrades Gets possible node upgrades for a specific control plane version
 */
 func (a *Client) GetNodeUpgrades(params *GetNodeUpgradesParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeUpgradesOK, error) {
 	// TODO: Validate the params before sending
@@ -107,8 +127,13 @@ func (a *Client) GetNodeUpgrades(params *GetNodeUpgradesParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetNodeUpgradesOK), nil
-
+	success, ok := result.(*GetNodeUpgradesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetNodeUpgradesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

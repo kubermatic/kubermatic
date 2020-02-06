@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListAWSVPCSReader is a Reader for the ListAWSVPCS structure.
@@ -24,14 +24,12 @@ type ListAWSVPCSReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListAWSVPCSReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListAWSVPCSOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListAWSVPCSDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListAWSVPCSOK struct {
 
 func (o *ListAWSVPCSOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/aws/{dc}/vpcs][%d] listAWSVPCSOK  %+v", 200, o.Payload)
+}
+
+func (o *ListAWSVPCSOK) GetPayload() models.AWSVPCList {
+	return o.Payload
 }
 
 func (o *ListAWSVPCSOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListAWSVPCSDefault) Code() int {
 
 func (o *ListAWSVPCSDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/aws/{dc}/vpcs][%d] listAWSVPCS default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListAWSVPCSDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListAWSVPCSDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
