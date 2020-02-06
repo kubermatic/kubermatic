@@ -820,7 +820,7 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:f78aaa704565065f2bfa92cdc4b5ff1c1f0a7fc001e365d969d8d3e5daba52e7"
+  digest = "1:faf7ab15e0658eb6cf4034928af99d9e837155d7f5da010b4ab5e77b13222d00"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/cluster/common",
@@ -842,6 +842,7 @@
     "pkg/userdata/coreos",
     "pkg/userdata/helper",
     "pkg/userdata/plugin",
+    "pkg/userdata/sles",
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
@@ -2172,6 +2173,7 @@
     "github.com/kubermatic/machine-controller/pkg/userdata/coreos",
     "github.com/kubermatic/machine-controller/pkg/userdata/helper",
     "github.com/kubermatic/machine-controller/pkg/userdata/plugin",
+    "github.com/kubermatic/machine-controller/pkg/userdata/sles",
     "github.com/kubermatic/machine-controller/pkg/userdata/ubuntu",
     "github.com/minio/minio-go",
     "github.com/oklog/run",

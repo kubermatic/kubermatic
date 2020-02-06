@@ -177,6 +177,7 @@ func TestLoadFiles(t *testing.T) {
 					providerconfig.OperatingSystemUbuntu: "ubuntu-ami",
 					providerconfig.OperatingSystemCentOS: "centos-ami",
 					providerconfig.OperatingSystemCoreos: "coreos-ami",
+					providerconfig.OperatingSystemSLES:   "sles-ami",
 				},
 				Region: "us-central1",
 			},
