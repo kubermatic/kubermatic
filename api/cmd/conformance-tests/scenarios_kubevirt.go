@@ -86,7 +86,7 @@ func (s *kubevirtScenario) NodeDeployments(num int, _ secrets) ([]apimodels.Node
 							SourceURL:        utilpointer.StringPtr(sourceURL),
 							StorageClassName: utilpointer.StringPtr("kubermatic-fast"),
 							PVCSize:          utilpointer.StringPtr("10Gi"),
-							Cpus:             utilpointer.StringPtr("1"),
+							CPUs:             utilpointer.StringPtr("1"),
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{

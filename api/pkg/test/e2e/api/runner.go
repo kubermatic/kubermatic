@@ -233,7 +233,7 @@ func convertServiceAccount(sa *models.ServiceAccount) (*apiv1.ServiceAccount, er
 
 // AddTokenToServiceAccount creates a new token for service account
 func (r *runner) AddTokenToServiceAccount(name, saID, projectID string) (*apiv1.ServiceAccountToken, error) {
-	params := &tokens.AddTokenToServiceAccountParams{ProjectID: projectID, ServiceaccountID: saID, Body: &models.ServiceAccountToken{Name: name}}
+	params := &tokens.AddTokenToServiceAccountParams{ProjectID: projectID, ServiceAccountID: saID, Body: &models.ServiceAccountToken{Name: name}}
 	params.WithTimeout(timeout)
 	token, err := r.client.Tokens.AddTokenToServiceAccount(params, r.bearerToken)
 	if err != nil {
@@ -286,7 +286,6 @@ func (r *runner) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKe
 	volumeType := "standard"
 	clusterSpec := &models.CreateClusterSpec{}
 
-
 	clusterSpec.Cluster = &models.Cluster{
 		Type: "kubernetes",
 		Name: name,
@@ -322,7 +321,7 @@ func (r *runner) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKe
 		},
 	}
 
-	params := &project.CreateClusterParams{ProjectID: projectID, Dc: dc, Body: clusterSpec}
+	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
 	params.WithTimeout(timeout)
 	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
 	if err != nil {
@@ -376,7 +375,7 @@ func (r *runner) CreateDOCluster(projectID, dc, name, credential, version, locat
 		},
 	}
 
-	params := &project.CreateClusterParams{ProjectID: projectID, Dc: dc, Body: clusterSpec}
+	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
 	params.WithTimeout(timeout * 2)
 	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
 	if err != nil {
@@ -389,7 +388,7 @@ func (r *runner) CreateDOCluster(projectID, dc, name, credential, version, locat
 // DeleteCluster delete cluster method
 func (r *runner) DeleteCluster(projectID, dc, clusterID string) error {
 
-	params := &project.DeleteClusterParams{ProjectID: projectID, Dc: dc, ClusterID: clusterID}
+	params := &project.DeleteClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 
 	if _, err := r.client.Project.DeleteCluster(params, r.bearerToken); err != nil {
@@ -401,7 +400,7 @@ func (r *runner) DeleteCluster(projectID, dc, clusterID string) error {
 // GetCluster cluster getter
 func (r *runner) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster, error) {
 
-	params := &project.GetClusterParams{ProjectID: projectID, Dc: dc, ClusterID: clusterID}
+	params := &project.GetClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 
 	cluster, err := r.client.Project.GetCluster(params, r.bearerToken)
@@ -413,7 +412,7 @@ func (r *runner) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster, er
 
 // GetClusterEvents returns the cluster events
 func (r *runner) GetClusterEvents(projectID, dc, clusterID string) ([]*models.Event, error) {
-	params := &project.GetClusterEventsParams{ProjectID: projectID, Dc: dc, ClusterID: clusterID}
+	params := &project.GetClusterEventsParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 
 	events, err := r.client.Project.GetClusterEvents(params, r.bearerToken)
@@ -439,7 +438,7 @@ func (r *runner) PrintClusterEvents(projectID, dc, clusterID string) error {
 
 // GetClusterHealthStatus gets the cluster status
 func (r *runner) GetClusterHealthStatus(projectID, dc, clusterID string) (*apiv1.ClusterHealth, error) {
-	params := &project.GetClusterHealthParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
+	params := &project.GetClusterHealthParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 
 	var err error
@@ -479,7 +478,7 @@ func convertHealthStatus(status models.HealthStatus) kubermaticv1.HealthStatus {
 
 // GetClusterNodeDeployment returns the cluster node deployments
 func (r *runner) GetClusterNodeDeployment(projectID, dc, clusterID string) ([]apiv1.NodeDeployment, error) {
-	params := &project.ListNodeDeploymentsParams{ClusterID: clusterID, ProjectID: projectID, Dc: dc}
+	params := &project.ListNodeDeploymentsParams{ClusterID: clusterID, ProjectID: projectID, DC: dc}
 	params.WithTimeout(timeout * 2)
 
 	var err error
@@ -527,7 +526,7 @@ func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
 
 // ListGCPZones returns list of GCP zones
 func (r *runner) ListGCPZones(credential, dc string) ([]string, error) {
-	params := &gcp.ListGCPZonesParams{Credential: &credential, Dc: dc}
+	params := &gcp.ListGCPZonesParams{Credential: &credential, DC: dc}
 	params.WithTimeout(timeout)
 	zonesResponse, err := r.client.Gcp.ListGCPZones(params, r.bearerToken)
 	if err != nil {
@@ -571,7 +570,7 @@ func (r *runner) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSize, 
 			Name:        machineType.Name,
 			Description: machineType.Description,
 			Memory:      machineType.Memory,
-			VCPUs:       machineType.VCpus,
+			VCPUs:       machineType.VCPUs,
 		}
 		sizes = append(sizes, mt)
 	}
@@ -779,7 +778,7 @@ func (r *runner) SetAdmin(email string, isAdmin bool) error {
 
 // GetRoles
 func (r *runner) GetRoles(projectID, dc, clusterID string) ([]apiv1.RoleName, error) {
-	params := &project.ListRoleNamesParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
+	params := &project.ListRoleNamesParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 
 	var err error
@@ -812,7 +811,7 @@ func (r *runner) BindUserToRole(projectID, dc, clusterID, roleName, namespace, u
 	params := &project.BindUserToRoleParams{
 		Body:      &models.RoleUser{UserEmail: user},
 		ClusterID: clusterID,
-		Dc:        dc,
+		DC:        dc,
 		Namespace: namespace,
 		ProjectID: projectID,
 		RoleID:    roleName,
@@ -839,7 +838,7 @@ func (r *runner) BindUserToRole(projectID, dc, clusterID, roleName, namespace, u
 }
 
 func (r *runner) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.ClusterRoleName, error) {
-	params := &project.ListClusterRoleNamesParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
+	params := &project.ListClusterRoleNamesParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 
 	var err error
@@ -871,7 +870,7 @@ func (r *runner) BindUserToClusterRole(projectID, dc, clusterID, roleName, user 
 	params := &project.BindUserToClusterRoleParams{
 		Body:      &models.ClusterRoleUser{UserEmail: user},
 		ClusterID: clusterID,
-		Dc:        dc,
+		DC:        dc,
 		ProjectID: projectID,
 		RoleID:    roleName,
 	}
@@ -896,7 +895,7 @@ func (r *runner) BindUserToClusterRole(projectID, dc, clusterID, roleName, user 
 }
 
 func (r *runner) GetClusterBindings(projectID, dc, clusterID string) ([]apiv1.ClusterRoleBinding, error) {
-	params := &project.ListClusterRoleBindingParams{Dc: dc, ProjectID: projectID, ClusterID: clusterID}
+	params := &project.ListClusterRoleBindingParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
 	params.WithTimeout(timeout)
 
 	var err error
