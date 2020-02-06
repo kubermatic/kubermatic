@@ -150,7 +150,7 @@ spec:
         - --storage-backend
         - etcd3
         - --enable-admission-plugins
-        - NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,Priority,ResourceQuota
+        - DefaultStorageClass,DefaultTolerationSeconds,LimitRanger,MutatingAdmissionWebhook,NamespaceLifecycle,Priority,ResourceQuota,ServiceAccount,ValidatingAdmissionWebhook
         - --authorization-mode
         - Node,RBAC
         - --external-hostname

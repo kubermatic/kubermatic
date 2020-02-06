@@ -641,6 +641,9 @@ type ClusterSpec struct {
 	// If active the PodNodeSelector admission plugin is configured at the apiserver
 	UsePodNodeSelectorAdmissionPlugin bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
 
+	// Additional Admission Controller plugins
+	AdmissionPlugins []string `json:"admissionPlugins,omitempty"`
+
 	// AuditLogging
 	AuditLogging *kubermaticv1.AuditLoggingSettings `json:"auditLogging,omitempty"`
 
@@ -659,6 +662,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		UsePodSecurityPolicyAdmissionPlugin bool                                   `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 		UsePodNodeSelectorAdmissionPlugin   bool                                   `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
 		AuditLogging                        *kubermaticv1.AuditLoggingSettings     `json:"auditLogging,omitempty"`
+		AdmissionPlugins                    []string                               `json:"admissionPlugins,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
@@ -680,6 +684,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		UsePodSecurityPolicyAdmissionPlugin: cs.UsePodSecurityPolicyAdmissionPlugin,
 		UsePodNodeSelectorAdmissionPlugin:   cs.UsePodNodeSelectorAdmissionPlugin,
 		AuditLogging:                        cs.AuditLogging,
+		AdmissionPlugins:                    cs.AdmissionPlugins,
 	})
 
 	return ret, err

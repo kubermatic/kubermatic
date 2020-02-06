@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 var (
@@ -227,7 +228,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		nodePortRange = defaultNodePortRange
 	}
 
-	admissionPlugins := []string{
+	admissionPlugins := sets.NewString(
 		"NamespaceLifecycle",
 		"LimitRanger",
 		"ServiceAccount",
@@ -237,13 +238,15 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"ValidatingAdmissionWebhook",
 		"Priority",
 		"ResourceQuota",
-	}
+	)
 	if data.Cluster().Spec.UsePodSecurityPolicyAdmissionPlugin {
-		admissionPlugins = append(admissionPlugins, "PodSecurityPolicy")
+		admissionPlugins.Insert("PodSecurityPolicy")
 	}
 	if data.Cluster().Spec.UsePodNodeSelectorAdmissionPlugin {
-		admissionPlugins = append(admissionPlugins, "PodNodeSelector")
+		admissionPlugins.Insert("PodNodeSelector")
 	}
+
+	admissionPlugins.Insert(data.Cluster().Spec.AdmissionPlugins...)
 
 	flags := []string{
 		"--advertise-address", data.Cluster().Address.IP,
@@ -254,7 +257,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--etcd-certfile", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
 		"--etcd-keyfile", "/etc/etcd/pki/client/apiserver-etcd-client.key",
 		"--storage-backend", "etcd3",
-		"--enable-admission-plugins", strings.Join(admissionPlugins, ","),
+		"--enable-admission-plugins", strings.Join(admissionPlugins.List(), ","),
 		"--authorization-mode", "Node,RBAC",
 		"--external-hostname", data.Cluster().Address.ExternalName,
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
