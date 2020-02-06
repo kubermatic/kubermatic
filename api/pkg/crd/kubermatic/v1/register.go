@@ -55,6 +55,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&AddonConfigList{},
 		&Preset{},
 		&PresetList{},
+		&AdmissionPlugin{},
+		&AdmissionPluginList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
