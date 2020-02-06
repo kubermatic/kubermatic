@@ -1,3 +1,5 @@
+// +build !go1.11
+
 // Copyright 2015 go-swagger maintainers
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,6 +38,10 @@ func (pt paramTypable) Level() int { return 0 }
 
 func (pt paramTypable) Typed(tpe, format string) {
 	pt.param.Typed(tpe, format)
+}
+
+func (pt paramTypable) WithEnum(values ...interface{}) {
+	pt.param.WithEnum(values...)
 }
 
 func (pt paramTypable) SetRef(ref spec.Ref) {
@@ -81,6 +87,10 @@ func (pt itemsTypable) SetRef(ref spec.Ref) {
 	pt.items.Ref = ref
 }
 
+func (pt itemsTypable) WithEnum(values ...interface{}) {
+	pt.items.WithEnum(values...)
+}
+
 func (pt itemsTypable) Schema() *spec.Schema {
 	return nil
 }
@@ -114,12 +124,7 @@ func (sv paramValidations) SetPattern(val string)          { sv.current.Pattern 
 func (sv paramValidations) SetUnique(val bool)             { sv.current.UniqueItems = val }
 func (sv paramValidations) SetCollectionFormat(val string) { sv.current.CollectionFormat = val }
 func (sv paramValidations) SetEnum(val string) {
-	list := strings.Split(val, ",")
-	interfaceSlice := make([]interface{}, len(list))
-	for i, d := range list {
-		interfaceSlice[i] = d
-	}
-	sv.current.Enum = interfaceSlice
+	sv.current.Enum = parseEnum(val, &spec.SimpleSchema{Type: sv.current.Type, Format: sv.current.Format})
 }
 func (sv paramValidations) SetDefault(val interface{}) { sv.current.Default = val }
 func (sv paramValidations) SetExample(val interface{}) { sv.current.Example = val }
@@ -145,12 +150,7 @@ func (sv itemsValidations) SetPattern(val string)          { sv.current.Pattern 
 func (sv itemsValidations) SetUnique(val bool)             { sv.current.UniqueItems = val }
 func (sv itemsValidations) SetCollectionFormat(val string) { sv.current.CollectionFormat = val }
 func (sv itemsValidations) SetEnum(val string) {
-	list := strings.Split(val, ",")
-	interfaceSlice := make([]interface{}, len(list))
-	for i, d := range list {
-		interfaceSlice[i] = d
-	}
-	sv.current.Enum = interfaceSlice
+	sv.current.Enum = parseEnum(val, &spec.SimpleSchema{Type: sv.current.Type, Format: sv.current.Format})
 }
 func (sv itemsValidations) SetDefault(val interface{}) { sv.current.Default = val }
 func (sv itemsValidations) SetExample(val interface{}) { sv.current.Example = val }
