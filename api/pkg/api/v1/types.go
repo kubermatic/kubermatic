@@ -497,9 +497,10 @@ type Project struct {
 }
 
 // Kubeconfig is a clusters kubeconfig
-// swagger:model Kubeconfig
+// swagger:response Kubeconfig
 type Kubeconfig struct {
-	cmdv1.Config
+	// in: body
+	Config cmdv1.Config
 }
 
 // OpenstackSize is the object representing openstack's sizes.
@@ -610,7 +611,7 @@ const (
 // Cluster has a custom MarshalJSON method defined
 // and thus the output may vary
 //
-// swagger:model ClusterResource
+// swagger:model Cluster
 type Cluster struct {
 	ObjectMeta      `json:",inline"`
 	Labels          map[string]string `json:"labels,omitempty"`

@@ -61,23 +61,23 @@ func NewGetOidcClusterKubeconfigOK() *GetOidcClusterKubeconfigOK {
 
 /*GetOidcClusterKubeconfigOK handles this case with default header values.
 
-Kubeconfig
+Kubeconfig is a clusters kubeconfig
 */
 type GetOidcClusterKubeconfigOK struct {
-	Payload *models.Kubeconfig
+	Payload *models.Config
 }
 
 func (o *GetOidcClusterKubeconfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig][%d] getOidcClusterKubeconfigOK  %+v", 200, o.Payload)
 }
 
-func (o *GetOidcClusterKubeconfigOK) GetPayload() *models.Kubeconfig {
+func (o *GetOidcClusterKubeconfigOK) GetPayload() *models.Config {
 	return o.Payload
 }
 
 func (o *GetOidcClusterKubeconfigOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Kubeconfig)
+	o.Payload = new(models.Config)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

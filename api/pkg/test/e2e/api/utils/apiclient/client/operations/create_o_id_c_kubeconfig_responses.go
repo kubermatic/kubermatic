@@ -49,23 +49,23 @@ func NewCreateOIDCKubeconfigOK() *CreateOIDCKubeconfigOK {
 
 /*CreateOIDCKubeconfigOK handles this case with default header values.
 
-Kubeconfig
+Kubeconfig is a clusters kubeconfig
 */
 type CreateOIDCKubeconfigOK struct {
-	Payload *models.Kubeconfig
+	Payload *models.Config
 }
 
 func (o *CreateOIDCKubeconfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/kubeconfig][%d] createOIdCKubeconfigOK  %+v", 200, o.Payload)
 }
 
-func (o *CreateOIDCKubeconfigOK) GetPayload() *models.Kubeconfig {
+func (o *CreateOIDCKubeconfigOK) GetPayload() *models.Config {
 	return o.Payload
 }
 
 func (o *CreateOIDCKubeconfigOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Kubeconfig)
+	o.Payload = new(models.Config)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

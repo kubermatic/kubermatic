@@ -39,6 +39,8 @@ type ClientService interface {
 
 	SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInfoWriter) (*SetAdminOK, error)
 
+	UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAdmissionPluginOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -281,7 +283,7 @@ func (a *Client) SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-UpdateAdmissionPlugin updates the admission plugin
+  UpdateAdmissionPlugin updates the admission plugin
 */
 func (a *Client) UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAdmissionPluginOK, error) {
 	// TODO: Validate the params before sending
@@ -305,8 +307,13 @@ func (a *Client) UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, auth
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UpdateAdmissionPluginOK), nil
-
+	success, ok := result.(*UpdateAdmissionPluginOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpdateAdmissionPluginDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

@@ -547,10 +547,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Kubeconfig",
-            "schema": {
-              "$ref": "#/definitions/Kubeconfig"
-            }
+            "$ref": "#/responses/Kubeconfig"
           },
           "default": {
             "description": "errorResponse",
@@ -2244,10 +2241,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Kubeconfig",
-            "schema": {
-              "$ref": "#/definitions/Kubeconfig"
-            }
+            "$ref": "#/responses/Kubeconfig"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -3248,10 +3242,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Kubeconfig",
-            "schema": {
-              "$ref": "#/definitions/Kubeconfig"
-            }
+            "$ref": "#/responses/Kubeconfig"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -7728,98 +7719,6 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "Cluster": {
-      "description": "Cluster contains information about how to communicate with a kubernetes cluster",
-      "type": "object",
-      "properties": {
-        "certificate-authority": {
-          "description": "CertificateAuthority is the path to a cert file for the certificate authority.\n+optional",
-          "type": "string",
-          "x-go-name": "CertificateAuthority"
-        },
-        "certificate-authority-data": {
-          "description": "CertificateAuthorityData contains PEM-encoded certificate authority certificates. Overrides CertificateAuthority\n+optional",
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "format": "uint8"
-          },
-          "x-go-name": "CertificateAuthorityData"
-        },
-        "extensions": {
-          "description": "Extensions holds additional information. This is useful for extenders so that reads and writes don't clobber unknown fields\n+optional",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/NamedExtension"
-          },
-          "x-go-name": "Extensions"
-        },
-        "insecure-skip-tls-verify": {
-          "description": "InsecureSkipTLSVerify skips the validity check for the server's certificate. This will make your HTTPS connections insecure.\n+optional",
-          "type": "boolean",
-          "x-go-name": "InsecureSkipTLSVerify"
-        },
-        "server": {
-          "description": "Server is the address of the kubernetes cluster (https://hostname:port).",
-          "type": "string",
-          "x-go-name": "Server"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
-    },
-    "ClusterHealth": {
-      "type": "object",
-      "title": "ClusterHealth stores health information about the cluster's components.",
-      "properties": {
-        "apiserver": {
-          "$ref": "#/definitions/HealthStatus"
-        },
-        "cloudProviderInfrastructure": {
-          "$ref": "#/definitions/HealthStatus"
-        },
-        "controller": {
-          "$ref": "#/definitions/HealthStatus"
-        },
-        "etcd": {
-          "$ref": "#/definitions/HealthStatus"
-        },
-        "machineController": {
-          "$ref": "#/definitions/HealthStatus"
-        },
-        "scheduler": {
-          "$ref": "#/definitions/HealthStatus"
-        },
-        "userClusterControllerManager": {
-          "$ref": "#/definitions/HealthStatus"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "ClusterList": {
-      "description": "ClusterList represents a list of clusters",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/ClusterResource"
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "ClusterMetrics": {
-      "description": "ClusterMetrics defines a metric for the given cluster",
-      "type": "object",
-      "properties": {
-        "controlPlane": {
-          "$ref": "#/definitions/ControlPlaneMetrics"
-        },
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "nodes": {
-          "$ref": "#/definitions/NodesMetric"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "ClusterResource": {
       "description": "Note:\nCluster has a custom MarshalJSON method defined\nand thus the output may vary",
       "type": "object",
       "title": "Cluster defines the cluster resource",
@@ -7875,7 +7774,59 @@
           "x-go-name": "Type"
         }
       },
-      "x-go-name": "Cluster",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ClusterHealth": {
+      "type": "object",
+      "title": "ClusterHealth stores health information about the cluster's components.",
+      "properties": {
+        "apiserver": {
+          "$ref": "#/definitions/HealthStatus"
+        },
+        "cloudProviderInfrastructure": {
+          "$ref": "#/definitions/HealthStatus"
+        },
+        "controller": {
+          "$ref": "#/definitions/HealthStatus"
+        },
+        "etcd": {
+          "$ref": "#/definitions/HealthStatus"
+        },
+        "machineController": {
+          "$ref": "#/definitions/HealthStatus"
+        },
+        "scheduler": {
+          "$ref": "#/definitions/HealthStatus"
+        },
+        "userClusterControllerManager": {
+          "$ref": "#/definitions/HealthStatus"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ClusterList": {
+      "description": "ClusterList represents a list of clusters",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Cluster"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ClusterMetrics": {
+      "description": "ClusterMetrics defines a metric for the given cluster",
+      "type": "object",
+      "properties": {
+        "controlPlane": {
+          "$ref": "#/definitions/ControlPlaneMetrics"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "nodes": {
+          "$ref": "#/definitions/NodesMetric"
+        }
+      },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "ClusterRole": {
@@ -8143,7 +8094,7 @@
       "type": "object",
       "properties": {
         "cluster": {
-          "$ref": "#/definitions/ClusterResource"
+          "$ref": "#/definitions/Cluster"
         },
         "nodeDeployment": {
           "$ref": "#/definitions/NodeDeployment"
@@ -8982,63 +8933,6 @@
       "type": "object",
       "additionalProperties": {
         "type": "string"
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "Kubeconfig": {
-      "description": "Kubeconfig is a clusters kubeconfig",
-      "type": "object",
-      "properties": {
-        "apiVersion": {
-          "description": "Legacy field from pkg/api/types.go TypeMeta.\nTODO(jlowdermilk): remove this after eliminating downstream dependencies.\n+optional",
-          "type": "string",
-          "x-go-name": "APIVersion"
-        },
-        "clusters": {
-          "description": "Clusters is a map of referencable names to cluster configs",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/NamedCluster"
-          },
-          "x-go-name": "Clusters"
-        },
-        "contexts": {
-          "description": "Contexts is a map of referencable names to context configs",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/NamedContext"
-          },
-          "x-go-name": "Contexts"
-        },
-        "current-context": {
-          "description": "CurrentContext is the name of the context that you would like to use by default",
-          "type": "string",
-          "x-go-name": "CurrentContext"
-        },
-        "extensions": {
-          "description": "Extensions holds additional information. This is useful for extenders so that reads and writes don't clobber unknown fields\n+optional",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/NamedExtension"
-          },
-          "x-go-name": "Extensions"
-        },
-        "kind": {
-          "description": "Legacy field from pkg/api/types.go TypeMeta.\nTODO(jlowdermilk): remove this after eliminating downstream dependencies.\n+optional",
-          "type": "string",
-          "x-go-name": "Kind"
-        },
-        "preferences": {
-          "$ref": "#/definitions/Preferences"
-        },
-        "users": {
-          "description": "AuthInfos is a map of referencable names to user configs",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/NamedAuthInfo"
-          },
-          "x-go-name": "AuthInfos"
-        }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
@@ -11070,6 +10964,12 @@
     }
   },
   "responses": {
+    "Kubeconfig": {
+      "description": "Kubeconfig is a clusters kubeconfig",
+      "schema": {
+        "$ref": "#/definitions/Config"
+      }
+    },
     "empty": {
       "description": "EmptyResponse is a empty response"
     }
