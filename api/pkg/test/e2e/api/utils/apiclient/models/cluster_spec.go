@@ -18,6 +18,9 @@ import (
 // swagger:model ClusterSpec
 type ClusterSpec struct {
 
+	// Additional Admission Controller plugins
+	AdmissionPlugins []string `json:"admissionPlugins"`
+
 	// MachineNetworks optionally specifies the parameters for IPAM.
 	MachineNetworks []*MachineNetworkingConfig `json:"machineNetworks"`
 
