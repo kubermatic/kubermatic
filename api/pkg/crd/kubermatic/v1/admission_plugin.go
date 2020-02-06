@@ -31,9 +31,9 @@ type AdmissionPlugin struct {
 }
 
 // AdmissionPluginSpec specifies admission plugin name and from which k8s version is supported.
-// The FromVersion flag can be empty. It means the plugin fit to all k8s versions
 type AdmissionPluginSpec struct {
 	PluginName string `json:"pluginName"`
 
+	// The FromVersion flag can be empty. It means the plugin fit to all k8s versions
 	FromVersion *semver.Semver `json:"fromVersion,omitempty"`
 }
