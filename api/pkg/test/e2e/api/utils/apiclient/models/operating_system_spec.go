@@ -22,6 +22,9 @@ type OperatingSystemSpec struct {
 	// container linux
 	ContainerLinux *ContainerLinuxSpec `json:"containerLinux,omitempty"`
 
+	// sles
+	Sles *SLESSpec `json:"sles,omitempty"`
+
 	// ubuntu
 	Ubuntu *UbuntuSpec `json:"ubuntu,omitempty"`
 }
@@ -35,6 +38,10 @@ func (m *OperatingSystemSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateContainerLinux(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSles(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -76,6 +83,24 @@ func (m *OperatingSystemSpec) validateContainerLinux(formats strfmt.Registry) er
 		if err := m.ContainerLinux.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("containerLinux")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *OperatingSystemSpec) validateSles(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Sles) { // not required
+		return nil
+	}
+
+	if m.Sles != nil {
+		if err := m.Sles.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("sles")
 			}
 			return err
 		}

@@ -234,6 +234,12 @@ func getProviderOS(config *providerconfig.Config, nd *apiv1.NodeDeployment) erro
 		if err != nil {
 			return err
 		}
+	case nd.Spec.Template.OperatingSystem.SLES != nil:
+		config.OperatingSystem = providerconfig.OperatingSystemSLES
+		osExt, err = getSLESOperatingSystemSpec(nd.Spec.Template)
+		if err != nil {
+			return err
+		}
 	default:
 		return errors.New("no machine os was provided")
 	}

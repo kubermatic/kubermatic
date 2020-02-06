@@ -44,6 +44,6 @@ docker run --rm -it \
         -azure-tenant-id="$(vault kv get -field=tenantID dev/e2e-azure)" \
         -azure-subscription-id="$(vault kv get -field=subscriptionID dev/e2e-azure)" \
         -exclude-kubernetes-versions="9,10,11" \
-        -exclude-distributions="ubuntu,centos"
+        -exclude-distributions="ubuntu,centos,sles"
 
 rm ./conformance-tests

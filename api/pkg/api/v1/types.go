@@ -927,12 +927,20 @@ type ContainerLinuxSpec struct {
 	DisableAutoUpdate bool `json:"disableAutoUpdate"`
 }
 
+// SLESSpec contains SLES specific settings
+// swagger:model SLESSpec
+type SLESSpec struct {
+	// do a dist-upgrade on boot and reboot it required afterwards
+	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
+}
+
 // OperatingSystemSpec represents the collection of os specific settings. Only one must be set at a time.
 // swagger:model OperatingSystemSpec
 type OperatingSystemSpec struct {
 	Ubuntu         *UbuntuSpec         `json:"ubuntu,omitempty"`
 	ContainerLinux *ContainerLinuxSpec `json:"containerLinux,omitempty"`
 	CentOS         *CentOSSpec         `json:"centos,omitempty"`
+	SLES           *SLESSpec           `json:"sles,omitempty"`
 }
 
 // NodeVersionInfo node version information

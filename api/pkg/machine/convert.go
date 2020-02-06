@@ -17,6 +17,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
+	"github.com/kubermatic/machine-controller/pkg/userdata/sles"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
 
 	"k8s.io/apimachinery/pkg/util/json"
@@ -56,6 +57,15 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 			return nil, fmt.Errorf("failed to parse centos config: %v", err)
 		}
 		operatingSystemSpec.CentOS = &apiv1.CentOSSpec{
+			DistUpgradeOnBoot: config.DistUpgradeOnBoot,
+		}
+
+	case providerconfig.OperatingSystemSLES:
+		config := &sles.Config{}
+		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse sles config: %v", err)
+		}
+		operatingSystemSpec.SLES = &apiv1.SLESSpec{
 			DistUpgradeOnBoot: config.DistUpgradeOnBoot,
 		}
 	}
