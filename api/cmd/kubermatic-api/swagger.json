@@ -261,6 +261,41 @@
         }
       }
     },
+    "/api/v1/admission/plugins/{version}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Returns specified addon config.",
+        "operationId": "getAdmissionPlugins",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Version",
+            "name": "version",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AdmissionPluginList",
+            "schema": {
+              "$ref": "#/definitions/AdmissionPluginList"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/dc": {
       "get": {
         "produces": [
@@ -370,7 +405,7 @@
       }
     },
     "/api/v1/labels/system": {
-      "patch": {
+      "get": {
         "description": "List restricted system labels",
         "produces": [
           "application/json"
@@ -7186,6 +7221,14 @@
           "type": "string",
           "x-go-name": "Name"
         }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AdmissionPluginList": {
+      "description": "AdmissionPluginList represents a list of admission plugins",
+      "type": "array",
+      "items": {
+        "type": "string"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
