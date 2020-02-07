@@ -100,7 +100,7 @@ Supported Kubernetes versions:
 - Added migration for cluster user labels [#4744](https://github.com/kubermatic/kubermatic/issues/4744) ([zreigz](https://github.com/zreigz))
 - Fixed seed-proxy controller not working in namespaces other than `kubermatic`. [#4775](https://github.com/kubermatic/kubermatic/issues/4775) ([xrstf](https://github.com/xrstf))
 - The docker logs on the nodes now get rotated via the new `logrotate` addon [#4813](https://github.com/kubermatic/kubermatic/issues/4813) ([moadqassem](https://github.com/moadqassem))
-- Made node-exporter optional addon. [#4832](https://github.com/kubermatic/kubermatic/issues/4832) ([maciaszczykm](https://github.com/maciaszczykm))
+- Made node-exporter an optional addon. [#4832](https://github.com/kubermatic/kubermatic/issues/4832) ([maciaszczykm](https://github.com/maciaszczykm))
 - Added parent cluster readable name to default worker names. [#4839](https://github.com/kubermatic/kubermatic/issues/4839) ([maciaszczykm](https://github.com/maciaszczykm))
 - The QPS settings of Kubeletes can now be configured per-cluster using addon Variables [#4854](https://github.com/kubermatic/kubermatic/issues/4854) ([kdomanski](https://github.com/kdomanski))
 - Access to Kubernetes Dashboard can be now enabled/disabled by the global settings. [#4889](https://github.com/kubermatic/kubermatic/issues/4889) ([floreks](https://github.com/floreks))
