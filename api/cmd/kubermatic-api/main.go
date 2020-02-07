@@ -173,6 +173,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	if err != nil {
 		return providers{}, err
 	}
+	admissionPluginProvider := kubernetesprovider.NewAdmissionPluginsProvider(context.Background(), mgr.GetClient())
 	// Warm up the restMapper cache. Log but ignore errors encountered here, maybe there are stale seeds
 	go func() {
 		seeds, err := seedsGetter()
@@ -243,7 +244,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		userInfoGetter:                        userInfoGetter,
 		settingsProvider:                      settingsProvider,
 		adminProvider:                         adminProvider,
-		presetProvider:                        presetsProvider}, nil
+		presetProvider:                        presetsProvider,
+		admissionPluginProvider:               admissionPluginProvider}, nil
 }
 
 func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error) {
@@ -336,6 +338,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.userInfoGetter,
 		prov.settingsProvider,
 		prov.adminProvider,
+		prov.admissionPluginProvider,
 	)
 
 	registerMetrics()

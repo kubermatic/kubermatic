@@ -1,6 +1,7 @@
 package handler
 
 import (
+	admissionplugin "github.com/kubermatic/kubermatic/api/pkg/handler/v1/admission-plugin"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -559,6 +560,12 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/labels/system").
 		Handler(r.listSystemLabels())
+
+	//
+	// Defines an endpoint to retrieve information about admission plugins
+	mux.Methods(http.MethodGet).
+		Path("/admission/plugins/{version}").
+		Handler(r.getAdmissionPlugins())
 }
 
 // swagger:route GET /api/v1/projects/{project_id}/sshkeys project listSSHKeys
@@ -3583,7 +3590,7 @@ func (r Routing) listClusterRoleBinding() http.Handler {
 	)
 }
 
-// swagger:route PATCH /api/v1/labels/system listSystemLabels
+// swagger:route GET /api/v1/labels/system listSystemLabels
 //
 //    List restricted system labels
 //
@@ -3648,6 +3655,29 @@ func (r Routing) listAddonConfigs() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(addon.ListAddonConfigsEndpoint(r.addonConfigProvider)),
 		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/admission/plugins/{version} getAdmissionPlugins
+//
+//     Returns specified addon config.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AdmissionPluginList
+//       401: empty
+func (r Routing) getAdmissionPlugins() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(admissionplugin.GetAdmissionPluginEndpoint(r.admissionPluginProvider)),
+		admissionplugin.DecodeGetAdmissionPlugin,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
