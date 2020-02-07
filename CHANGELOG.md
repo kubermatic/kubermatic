@@ -73,7 +73,6 @@ Supported Kubernetes versions:
 - Added forms for addon variables. [#1846](https://github.com/kubermatic/dashboard-v2/issues/1846) ([maciaszczykm](https://github.com/maciaszczykm))
 
 **Misc:**
-- ACTION REQUIRED: Fixed missing nginx-ingress-controller permissions. Removed default publishing of services in nginx-ingress-controller. [#4688](https://github.com/kubermatic/kubermatic/issues/4688) ([xrstf](https://github.com/xrstf))
 - ACTION REQUIRED: Updated cert-manager to 0.12.0. This requires a full reinstall of the chart. See https://cert-manager.io/docs/installation/upgrading/upgrading-0.10-0.11/ [#4857](https://github.com/kubermatic/kubermatic/issues/4857) ([xrstf](https://github.com/xrstf))
 - Updated Alertmanager to 0.20.0 [#4864](https://github.com/kubermatic/kubermatic/issues/4864) ([xrstf](https://github.com/xrstf))
 - Update Kubernetes Dashboard to v2.0.0-rc3 [#5015](https://github.com/kubermatic/kubermatic/issues/5015) ([floreks](https://github.com/floreks))
