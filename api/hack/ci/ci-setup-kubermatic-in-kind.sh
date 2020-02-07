@@ -31,6 +31,20 @@ export PATH=$PATH:/usr/local/go/bin
 # This is just used as a const
 export SEED_NAME=prow-build-cluster
 
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  key="$1"
+
+  case $key in
+    --kubermatic-version)
+      KUBERMATIC_VERSION="$2"
+      shift
+    ;;
+  esac
+
+  shift
+done
+
 if [[ -z ${JOB_NAME} ]]; then
 	echo "This script should only be running in a CI environment."
 	exit 1

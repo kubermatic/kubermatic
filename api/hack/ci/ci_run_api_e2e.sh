@@ -4,7 +4,7 @@ set -euo pipefail
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 source ./api/hack/lib.sh
 
-source ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
+. ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
 
 echodate "Creating UI Azure preset..."
 cat <<EOF > preset-azure.yaml
