@@ -28,7 +28,7 @@ Supported Kubernetes versions:
 - Openstack: A bug that caused cluster reconciliation to fail if the controller crashed at the wrong time was fixed [#4754](https://github.com/kubermatic/kubermatic/issues/4754) ([alvaroaleman](https://github.com/alvaroaleman))
 - Openstack: New Kubernetes 1.16&#43; clusters use the external Cloud Controller Manager and CSI by default [#4756](https://github.com/kubermatic/kubermatic/issues/4756) ([alvaroaleman](https://github.com/alvaroaleman))
 - vSphere: Fixed a bug that resulted in a faulty cloud config when using a non-default port [#4562](https://github.com/kubermatic/kubermatic/issues/4562) ([alvaroaleman](https://github.com/alvaroaleman))
-- vSphere: fixed a bug which cased custom VM folder paths not to be put in cloud-configs [#4737](https://github.com/kubermatic/kubermatic/issues/4737) ([kdomanski](https://github.com/kdomanski))
+- vSphere: Fixed a bug which cased custom VM folder paths not to be put in cloud-configs [#4737](https://github.com/kubermatic/kubermatic/issues/4737) ([kdomanski](https://github.com/kdomanski))
 - vSphere: The robustness of machine reconciliation has been improved. [#4651](https://github.com/kubermatic/kubermatic/issues/4651) ([alvaroaleman](https://github.com/alvaroaleman))
 - vSphere: Added support for datastore clusters (#671)
 - Azure: Node sizes are displayed in size dropdown when creating/updating a node deployment [#1908](https://github.com/kubermatic/dashboard-v2/issues/1908) ([bashofmann](https://github.com/bashofmann))
