@@ -44,7 +44,7 @@ Supported Kubernetes versions:
 - A panic that could occur on clusters that lack both credentials and a credentialsSecret was fixed. [#4742](https://github.com/kubermatic/kubermatic/issues/4742) ([alvaroaleman](https://github.com/alvaroaleman))
 - A bug that occasionally resulted in a `Error: no matches for kind "MachineDeployment" in version "cluster.k8s.io/v1alpha1"` visible in the UI was fixed. [#4870](https://github.com/kubermatic/kubermatic/issues/4870) ([alvaroaleman](https://github.com/alvaroaleman))
 - A memory leak in the port-forwarding of the Kubernetes dashboard and Openshift console endpoints was fixed [#4879](https://github.com/kubermatic/kubermatic/issues/4879) ([alvaroaleman](https://github.com/alvaroaleman))
-- Fixed a bug that could result to 403 errors during cluster creation when using the BringYourOwn provider [#4892](https://github.com/kubermatic/kubermatic/issues/4892) ([alvaroaleman](https://github.com/alvaroaleman))
+- Fixed a bug that could result in 403 errors during cluster creation when using the BringYourOwn provider [#4892](https://github.com/kubermatic/kubermatic/issues/4892) ([alvaroaleman](https://github.com/alvaroaleman))
 - Fixed a bug that prevented clusters in working seeds from being listed in the dashboard if any other seed was unreachable. [#4961](https://github.com/kubermatic/kubermatic/issues/4961) ([xrstf](https://github.com/xrstf))
 - Prevented removing system labels during cluster edit [#4986](https://github.com/kubermatic/kubermatic/issues/4986) ([zreigz](https://github.com/zreigz))
 - Fixed FluentbitManyRetries Prometheus alert being too sensitive to harmless backpressure. [#5011](https://github.com/kubermatic/kubermatic/issues/5011) ([xrstf](https://github.com/xrstf))
