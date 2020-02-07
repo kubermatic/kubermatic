@@ -107,7 +107,6 @@ Supported Kubernetes versions:
 - Access to Kubernetes Dashboard can be now enabled/disabled by the global settings. [#4889](https://github.com/kubermatic/kubermatic/issues/4889) ([floreks](https://github.com/floreks))
 - Added support for dynamic presets [#4903](https://github.com/kubermatic/kubermatic/issues/4903) ([zreigz](https://github.com/zreigz))
 - Presets can now be filtered by datacenter [#4991](https://github.com/kubermatic/kubermatic/issues/4991) ([zreigz](https://github.com/zreigz))
-- Restored nginx-ingress-controller --publish-service functionality. [#4990](https://github.com/kubermatic/kubermatic/issues/4990) ([xrstf](https://github.com/xrstf))
 - Revoking the viewer token is possible via UI now. [#1708](https://github.com/kubermatic/dashboard-v2/issues/1708) ([kgroschoff](https://github.com/kgroschoff))
 
 
