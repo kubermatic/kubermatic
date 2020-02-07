@@ -14,7 +14,8 @@ Supported Kubernetes versions:
 - `1.17.2`
 - Openshift `v4.1.18`
 
-**Major new features:**
+**Major changes:**
+- End-of-Life Kubernetes v1.14 is no longer supported. [#4987](https://github.com/kubermatic/kubermatic/issues/4987) ([kdomanski](https://github.com/kdomanski))
 - The `authorized_keys` files on nodes are now updated whenever the SSH keys for a cluster are changed [#4531](https://github.com/kubermatic/kubermatic/issues/4531) ([moadqassem](https://github.com/moadqassem))
 - Added support for custom CA for OpenID provider in Kubermatic API. [#4994](https://github.com/kubermatic/kubermatic/issues/4994) ([xrstf](https://github.com/xrstf))
 - Added user settings panel. [#1738](https://github.com/kubermatic/dashboard-v2/issues/1738) ([maciaszczykm](https://github.com/maciaszczykm))
@@ -106,7 +107,6 @@ Supported Kubernetes versions:
 - Access to Kubernetes Dashboard can be now enabled/disabled by the global settings. [#4889](https://github.com/kubermatic/kubermatic/issues/4889) ([floreks](https://github.com/floreks))
 - Added support for dynamic presets [#4903](https://github.com/kubermatic/kubermatic/issues/4903) ([zreigz](https://github.com/zreigz))
 - Presets can now be filtered by datacenter [#4991](https://github.com/kubermatic/kubermatic/issues/4991) ([zreigz](https://github.com/zreigz))
-- End-of-Life Kubernetes v1.14 is no longer supported. [#4987](https://github.com/kubermatic/kubermatic/issues/4987) ([kdomanski](https://github.com/kdomanski))
 - Restored nginx-ingress-controller --publish-service functionality. [#4990](https://github.com/kubermatic/kubermatic/issues/4990) ([xrstf](https://github.com/xrstf))
 - Revoking the viewer token is possible via UI now. [#1708](https://github.com/kubermatic/dashboard-v2/issues/1708) ([kgroschoff](https://github.com/kgroschoff))
 
