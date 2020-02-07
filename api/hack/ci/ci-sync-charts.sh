@@ -9,7 +9,7 @@ git fetch --tags
 
 # we only synchronize charts for tags
 if ! git tag -l | grep -q "^$PULL_BASE_REF\$"; then
-  echo "Base ref $PULL_BASE_REF is not a tag! Exitting..."
+  echo "Base ref $PULL_BASE_REF is not a tag! Exiting..."
   exit 1
 fi
 
@@ -20,7 +20,7 @@ if grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+.*' <<< "$PULL_BASE_REF"; then
 elif grep -E '^weekly-[0-9]{4}-.*' <<< "$PULL_BASE_REF"; then
   INSTALLER_BRANCH="weekly"
 else
-  echo "I don't know to which installer branch the tag '$PULL_BASE_REF' belongs to. Exitting..."
+  echo "I don't know to which installer branch the tag '$PULL_BASE_REF' belongs to. Exiting..."
   exit 1
 fi
 
@@ -145,6 +145,33 @@ while IFS= read LINE; do
 done < ${TARGET_VALUES_FILE} > ${TARGET_DIR}/values.example.tmp.yaml
 
 mv ${TARGET_DIR}/values.example.{tmp.,}yaml
+
+# assemble static manifests to make installing the Kubermatic Operator easier
+mkdir ${TARGET_DIR}/manifests
+
+CRDS_MANIFEST=${TARGET_DIR}/manifests/kubermatic-crds.yaml
+cat << EOF > ${CRDS_MANIFEST}
+# Kubermatic $PULL_BASE_REF CRDs
+
+EOF
+
+sed -s '$a\\n---' ${CHARTS_DIR}/kubermatic/crd/*.yaml >> ${CRDS_MANIFEST}
+
+OPERATOR_MANIFEST=${TARGET_DIR}/manifests/kubermatic-operator.yaml
+cat << EOF > ${OPERATOR_MANIFEST}
+# These manifests will install the Kubermatic Operator $PULL_BASE_REF into the 'kubermatic' namespace.
+# Please ensure to manually create a dockerconfigjson Secret in the same namespace,
+# named 'dockercfg' that contains the credentials for quay.io.
+# You also need to create the Kubermatic CRDs by applying the kubermatic-crds.yaml.
+
+EOF
+
+sed -s '$a\\n---' ${CHARTS_DIR}/kubermatic-operator/serviceaccount.yaml >> ${OPERATOR_MANIFEST}
+sed -s '$a\\n---' ${CHARTS_DIR}/kubermatic-operator/rbac.yaml >> ${OPERATOR_MANIFEST}
+cat ${CHARTS_DIR}/kubermatic-operator/deployment.yaml >> ${OPERATOR_MANIFEST}
+
+sed -i "s/__NAMESPACE__/kubermatic/g" ${OPERATOR_MANIFEST}
+sed -i "s/__WORKER_NAME__//g" ${OPERATOR_MANIFEST}
 
 # commit and push
 cd ${TARGET_DIR}
