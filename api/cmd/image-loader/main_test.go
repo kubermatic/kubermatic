@@ -15,6 +15,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 	masterResources := "../../../config/kubermatic/static/master/versions.yaml"
 	addonPath := "../../../addons"
+	openshiftAddonsPath := "../../../openshift_addons"
 
 	versions, err := version.LoadVersions(masterResources)
 	if err != nil {
@@ -26,7 +27,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 
 	imageSet := sets.NewString()
 	for _, v := range versions {
-		images, err := getImagesForVersion(log.Desugar(), v, addonPath)
+		images, err := getImagesForVersion(log.Desugar(), v, addonPath, openshiftAddonsPath)
 		if err != nil {
 			t.Errorf("Error calling getImagesForVersion: %v", err)
 		}

@@ -9,11 +9,14 @@ import (
 
 	"github.com/Masterminds/semver"
 	"go.uber.org/zap"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	addonutil "github.com/kubermatic/kubermatic/api/pkg/addon"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubernetescontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/monitoring"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift"
+	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift/resources"
 	containerlinux "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/container-linux"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/docker"
@@ -49,11 +52,12 @@ var (
 )
 
 type opts struct {
-	versionsFile  string
-	versionFilter string
-	registry      string
-	dryRun        bool
-	addonsPath    string
+	versionsFile        string
+	versionFilter       string
+	registry            string
+	dryRun              bool
+	addonsPath          string
+	openshiftAddonsPath string
 }
 
 func main() {
@@ -68,6 +72,7 @@ func main() {
 	flag.StringVar(&o.registry, "registry", "registry.corp.local", "Address of the registry to push to")
 	flag.BoolVar(&o.dryRun, "dry-run", false, "Only print the names of found images")
 	flag.StringVar(&o.addonsPath, "addons-path", "", "Path to the folder containing the addons")
+	flag.StringVar(&o.openshiftAddonsPath, "openshift-addons-path", "", "Path to the folder containing Openshift specific addons")
 	flag.Parse()
 
 	log := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -101,13 +106,8 @@ func main() {
 			zap.String("version", version.Version.String()),
 			zap.String("cluster-type", version.Type),
 		)
-		if version.Type != "" && version.Type != apiv1.KubernetesClusterType {
-			// TODO: Implement. https://github.com/kubermatic/kubermatic/issues/3623
-			versionLog.Warn("Skipping version because its not for Kubernetes. We only support Kubernetes at the moment")
-			continue
-		}
 		versionLog.Info("Collecting images...")
-		images, err := getImagesForVersion(log, version, o.addonsPath)
+		images, err := getImagesForVersion(log, version, o.addonsPath, o.openshiftAddonsPath)
 		if err != nil {
 			versionLog.Fatal("failed to get images", zap.Error(err))
 		}
@@ -135,15 +135,22 @@ func processImages(ctx context.Context, log *zap.Logger, dryRun bool, images []s
 	return nil
 }
 
-func getImagesForVersion(log *zap.Logger, version *kubermaticversion.Version, addonsPath string) (images []string, err error) {
+func getImagesForVersion(log *zap.Logger, version *kubermaticversion.Version, addonsPath, osAddonPath string) (images []string, err error) {
+	if version.Type != "" && version.Type != apiv1.KubernetesClusterType {
+		return getImagesForOpenshiftVersion(log, version, osAddonPath)
+	}
+	return getImagesForKubernetesVersion(log, version, addonsPath)
+}
+
+func getImagesForKubernetesVersion(log *zap.Logger, version *kubermaticversion.Version, addonsPath string) (images []string, err error) {
 	templateData, err := getTemplateData(version)
 	if err != nil {
 		return nil, err
 	}
 
-	creatorImages, err := getImagesFromCreators(templateData)
+	creatorImages, err := getImagesFromKubernetesCreators(templateData)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get images from internal creator functions: %v", err)
+		return nil, fmt.Errorf("failed to get images from internal Kubernetes creator functions: %v", err)
 	}
 	images = append(images, creatorImages...)
 
@@ -158,7 +165,28 @@ func getImagesForVersion(log *zap.Logger, version *kubermaticversion.Version, ad
 	return images, nil
 }
 
-func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
+func getImagesForOpenshiftVersion(log *zap.Logger, version *kubermaticversion.Version, osAddonPath string) (images []string, err error) {
+	osData, err := getOpenshiftData(version)
+	if err != nil {
+		return nil, err
+	}
+	creatorImages, err := getImagesFromOpenshiftCreators(osData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get images from internal Openshift creator functions: %v", err)
+	}
+	images = append(images, creatorImages...)
+
+	if osAddonPath != "" {
+		addonImages, err := getImagesFromAddons(log, osAddonPath, osData.Cluster())
+		if err != nil {
+			return nil, fmt.Errorf("failed to get images from addons: %v", err)
+		}
+		images = append(images, addonImages...)
+	}
+	return images, nil
+}
+
+func getImagesFromKubernetesCreators(templateData *resources.TemplateData) (images []string, err error) {
 	statefulsetCreators := kubernetescontroller.GetStatefulSetCreators(templateData, false)
 	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators(templateData)...)
 
@@ -170,6 +198,14 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 
 	daemonSetCreators := containerlinux.GetDaemonSetCreators("")
 
+	for _, creatorGetter := range statefulsetCreators {
+		_, creator := creatorGetter()
+		statefulset, err := creator(&appsv1.StatefulSet{})
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, getImagesFromPodSpec(statefulset.Spec.Template.Spec)...)
+	}
 	for _, creatorGetter := range statefulsetCreators {
 		_, creator := creatorGetter()
 		statefulset, err := creator(&appsv1.StatefulSet{})
@@ -209,6 +245,48 @@ func getImagesFromCreators(templateData *resources.TemplateData) (images []strin
 	return images, nil
 }
 
+func getImagesFromOpenshiftCreators(osData *openshift.OpenshiftData) (images []string, err error) {
+	statefulsetCreators := openshift.GetStatefulSetCreators(osData, false)
+	deploymentCreators := openshift.GetDeploymentCreators(context.Background(), osData)
+
+	cronjobCreators := openshift.GetCronJobCreators(osData)
+	for _, creatorGetter := range statefulsetCreators {
+		_, creator := creatorGetter()
+		statefulset, err := creator(&appsv1.StatefulSet{})
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, getImagesFromPodSpec(statefulset.Spec.Template.Spec)...)
+	}
+	for _, creatorGetter := range statefulsetCreators {
+		_, creator := creatorGetter()
+		statefulset, err := creator(&appsv1.StatefulSet{})
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, getImagesFromPodSpec(statefulset.Spec.Template.Spec)...)
+	}
+
+	for _, createFunc := range deploymentCreators {
+		_, creator := createFunc()
+		deployment, err := creator(&appsv1.Deployment{})
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, getImagesFromPodSpec(deployment.Spec.Template.Spec)...)
+	}
+
+	for _, createFunc := range cronjobCreators {
+		_, creator := createFunc()
+		cronJob, err := creator(&batchv1beta1.CronJob{})
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, getImagesFromPodSpec(cronJob.Spec.JobTemplate.Spec.Template.Spec)...)
+	}
+	return images, nil
+}
+
 func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	for _, initContainer := range spec.InitContainers {
 		images = append(images, initContainer.Image)
@@ -221,8 +299,56 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateData, error) {
+func getFakeDynamicClient() client.Client {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
+	openshiftAPIServerConfigMapName := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      openshiftresources.OpenshiftAPIServerConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
+	openshiftKubeAPIServerConfigMapName := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      openshiftresources.OpenshiftKubeAPIServerConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
+	apiServerOauthMetadataConfigMapName := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      openshiftresources.APIServerOauthMetadataConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
+	kubeControllerManagerOpenshiftConfigConfigmapName := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      openshiftresources.KubeControllerManagerOpenshiftConfigConfigmapName,
+			Namespace: mockNamespaceName,
+		},
+	}
+	kubeSchedulerConfigConfigMapName := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      openshiftresources.KubeSchedulerConfigConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
+	openshiftControllerManagerConfigMapName := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      openshiftresources.OpenshiftControllerManagerConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
+	oauthName := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      openshiftresources.OauthName,
+			Namespace: mockNamespaceName,
+		},
+	}
+	consoleConfigMapName := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      openshiftresources.ConsoleConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.CloudConfigConfigMapName,
@@ -254,7 +380,7 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 		},
 	}
 	configMapList := &corev1.ConfigMapList{
-		Items: []corev1.ConfigMap{cloudConfigConfigMap, prometheusConfigMap, dnsResolverConfigMap, openvpnClientConfigsConfigMap, auditConfigMap},
+		Items: []corev1.ConfigMap{cloudConfigConfigMap, prometheusConfigMap, dnsResolverConfigMap, openvpnClientConfigsConfigMap, auditConfigMap, openshiftAPIServerConfigMapName, openshiftKubeAPIServerConfigMapName, apiServerOauthMetadataConfigMapName, kubeControllerManagerOpenshiftConfigConfigmapName, kubeSchedulerConfigConfigMapName, openshiftControllerManagerConfigMapName, oauthName, consoleConfigMapName},
 	}
 	apiServerExternalService := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -333,7 +459,10 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 		resources.UserSSHKeys,
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
+	return fake.NewFakeClient(objects...)
+}
 
+func getFakeCluster(version *kubermaticversion.Version) (*kubermaticv1.Cluster, error) {
 	clusterVersion, err := ksemver.NewSemver(version.Version.String())
 	if err != nil {
 		return nil, err
@@ -345,12 +474,20 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
 	fakeCluster.Status.NamespaceName = mockNamespaceName
+	if version.Type == apiv1.OpenShiftClusterType {
+		fakeCluster.Spec.Openshift = &kubermaticv1.Openshift{ImagePullSecret: ""}
+	}
+	return fakeCluster, nil
+}
 
-	fakeDynamicClient := fake.NewFakeClient(objects...)
-
+func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateData, error) {
+	fakeCluster, err := getFakeCluster(version)
+	if err != nil {
+		return nil, err
+	}
 	return resources.NewTemplateData(
 		context.Background(),
-		fakeDynamicClient,
+		getFakeDynamicClient(),
 		fakeCluster,
 		&kubermaticv1.Datacenter{},
 		&kubermaticv1.Seed{},
@@ -374,6 +511,26 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 	), nil
 }
 
+func getOpenshiftData(version *kubermaticversion.Version) (*openshift.OpenshiftData, error) {
+	fakeCluster, err := getFakeCluster(version)
+	if err != nil {
+		return nil, err
+	}
+	return openshift.NewOpenshiftData(
+		fakeCluster,
+		getFakeDynamicClient(),
+		&kubermaticv1.Datacenter{},
+		"",
+		"192.0.2.0/24",
+		openshift.OIDCConfig{},
+		resource.Quantity{},
+		resources.DefaultKubermaticImage,
+		resources.DefaultDNATControllerImage,
+		false,
+		"",
+		&kubermaticv1.Seed{},
+	), nil
+}
 func createNamedSecrets(secretNames []string) *corev1.SecretList {
 	secretList := corev1.SecretList{}
 	for _, secretName := range secretNames {
