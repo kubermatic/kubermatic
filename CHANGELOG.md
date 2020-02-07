@@ -66,7 +66,7 @@ Supported Kubernetes versions:
 - Added separate save indicators for custom links in the admin panel. [#1862](https://github.com/kubermatic/dashboard-v2/issues/1862) ([maciaszczykm](https://github.com/maciaszczykm))
 
 **Addons:**
-- The dashboard addon was removed as its now deployed in the seed and can be used via its proxy endpoint [#4567](https://github.com/kubermatic/kubermatic/issues/4567) ([alvaroaleman](https://github.com/alvaroaleman))
+- The dashboard addon was removed as it's now deployed in the seed and can be used via its proxy endpoint [#4567](https://github.com/kubermatic/kubermatic/issues/4567) ([alvaroaleman](https://github.com/alvaroaleman))
 - Added default namespace/cluster roles for addons [#4695](https://github.com/kubermatic/kubermatic/issues/4695) ([zreigz](https://github.com/zreigz))
 - Introduced addon configurations. [#4702](https://github.com/kubermatic/kubermatic/issues/4702) ([maciaszczykm](https://github.com/maciaszczykm))
 - Fixed addon config get and list endpoints. [#4734](https://github.com/kubermatic/kubermatic/issues/4734) ([maciaszczykm](https://github.com/maciaszczykm))
