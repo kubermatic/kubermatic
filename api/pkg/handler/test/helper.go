@@ -139,7 +139,8 @@ type newRoutingFunc func(
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
-	presetsProvider provider.PresetProvider) http.Handler
+	presetsProvider provider.PresetProvider,
+	admissionPluginProvider provider.AdmissionPluginsProvider) http.Handler
 
 func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	if seedsGetter == nil {
@@ -252,6 +253,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	if err != nil {
 		return nil, nil, err
 	}
+	admissionPluginProvider := kubernetes.NewAdmissionPluginsProvider(context.Background(), fakeClient)
 
 	kubernetesInformerFactory.Start(wait.NeverStop)
 	kubernetesInformerFactory.WaitForCacheSync(wait.NeverStop)
@@ -288,6 +290,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		tokenGenerator,
 		eventRecorderProvider,
 		credentialsManager,
+		admissionPluginProvider,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

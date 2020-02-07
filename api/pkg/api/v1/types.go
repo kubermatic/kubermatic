@@ -1373,6 +1373,10 @@ type ResourceLabelMap map[ResourceType]LabelKeyList
 // swagger:model GlobalSettings
 type GlobalSettings kubermaticv1.SettingSpec
 
+// AdmissionPluginList represents a list of admission plugins
+// swagger:model AdmissionPluginList
+type AdmissionPluginList []string
+
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup
 	NodeDeletionFinalizer = "kubermatic.io/delete-nodes"
