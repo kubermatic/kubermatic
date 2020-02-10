@@ -13,11 +13,13 @@ var KUBERMATICDOCKERTAG string
 type Versions struct {
 	Kubermatic string
 	UI         string
+	VPA        string
 }
 
 func NewDefaultVersions() Versions {
 	return Versions{
 		Kubermatic: KUBERMATICDOCKERTAG,
 		UI:         UIDOCKERTAG,
+		VPA:        "0.5.0",
 	}
 }

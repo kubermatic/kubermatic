@@ -105,21 +105,30 @@ func Add(
 		}}
 	})
 
-	typesToWatch := []runtime.Object{
+	namespacedTypesToWatch := []runtime.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
 		&extensionsv1beta1.Ingress{},
-		&rbacv1.ClusterRoleBinding{},
 		&policyv1beta1.PodDisruptionBudget{},
-		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
 		&certmanagerv1alpha2.Certificate{},
 	}
 
-	for _, t := range typesToWatch {
+	for _, t := range namespacedTypesToWatch {
 		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
+			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
+		}
+	}
+
+	globalTypesToWatch := []runtime.Object{
+		&rbacv1.ClusterRoleBinding{},
+		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
+	}
+
+	for _, t := range globalTypesToWatch {
+		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}
