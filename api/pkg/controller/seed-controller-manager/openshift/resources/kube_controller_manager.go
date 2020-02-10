@@ -241,7 +241,7 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 					volumeMounts = append(volumeMounts, fakeVMWareUUIDMount)
 				}
 
-				image, err := hyperkubeImage(data.Cluster().Spec.Version.String())
+				image, err := hyperkubeImage(data.Cluster().Spec.Version.String(), data.ImageRegistry(""))
 				if err != nil {
 					return nil, err
 				}
