@@ -33,7 +33,7 @@ spec:
         - --objstore.config-file=/etc/thanos/objstore.yaml
         ports:
         - name: http
-          containerPort: 8080
+          containerPort: 10902
         volumeMounts:
         - name: thanos
           mountPath: /etc/thanos
