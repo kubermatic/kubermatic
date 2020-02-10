@@ -83,6 +83,35 @@ func (a *Client) GetKubermaticSettings(params *GetKubermaticSettingsParams, auth
 }
 
 /*
+ListAdmissionPlugins returns all admission plugins from the c r ds
+*/
+func (a *Client) ListAdmissionPlugins(params *ListAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAdmissionPluginsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAdmissionPluginsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAdmissionPlugins",
+		Method:             "GET",
+		PathPattern:        "/api/v1/admin/admission/plugins",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAdmissionPluginsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ListAdmissionPluginsOK), nil
+
+}
+
+/*
 PatchKubermaticSettings patches the global settings
 */
 func (a *Client) PatchKubermaticSettings(params *PatchKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*PatchKubermaticSettingsOK, error) {

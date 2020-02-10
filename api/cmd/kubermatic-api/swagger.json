@@ -186,6 +186,41 @@
         }
       }
     },
+    "/api/v1/admin/admission/plugins": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Returns all admission plugins from the CRDs.",
+        "operationId": "listAdmissionPlugins",
+        "responses": {
+          "200": {
+            "description": "AdmissionPlugin",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AdmissionPlugin"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/settings": {
       "get": {
         "produces": [
@@ -7220,6 +7255,24 @@
           "description": "Name of the admin user",
           "type": "string",
           "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AdmissionPlugin": {
+      "description": "AdmissionPlugin represents an admission plugin",
+      "type": "object",
+      "properties": {
+        "fromVersion": {
+          "$ref": "#/definitions/Semver"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "plugin": {
+          "type": "string",
+          "x-go-name": "Plugin"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

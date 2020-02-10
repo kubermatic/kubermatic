@@ -30,6 +30,11 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodPatch).
 		Path("/admin/settings").
 		Handler(r.patchKubermaticSettings())
+
+	// Defines a set of HTTP endpoints for the admission plugins
+	mux.Methods(http.MethodGet).
+		Path("/admin/admission/plugins").
+		Handler(r.listAdmissionPlugins())
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
@@ -127,6 +132,30 @@ func (r Routing) setAdmin() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.SetAdminEndpoint(r.userInfoGetter, r.adminProvider)),
 		admin.DecodeSetAdminReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/admin/admission/plugins admin listAdmissionPlugins
+//
+//     Returns all admission plugins from the CRDs.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []AdmissionPlugin
+//       401: empty
+//       403: empty
+func (r Routing) listAdmissionPlugins() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(admin.ListAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
+		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
