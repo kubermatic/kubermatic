@@ -47,11 +47,11 @@ import (
 
 {{- range $componentName, $componentTagMapping := .Components }}
 
-func {{ $componentName }}Image(openshiftVersion string)(string, error){
+func {{ $componentName }}Image(openshiftVersion, registry string)(string, error){
 	switch openshiftVersion {
 {{- range $openshiftVersion, $componentTag := $componentTagMapping }}
 		case openshiftVersion{{ $openshiftVersion }}:
-			return openshiftImage + "@{{ $componentTag }}", nil
+			return OpenshiftImageWithRegistry(openshiftImage + "@{{ $componentTag }}", registry)
 {{- end }}
 		default:
 			return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
