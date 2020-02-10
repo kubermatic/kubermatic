@@ -514,5 +514,6 @@ type PresetProvider interface {
 
 // AdmissionPluginsProvider declares the set of methods for interacting with admission plugins
 type AdmissionPluginsProvider interface {
-	GetAdmissionPlugins(fromVersion string) ([]string, error)
+	List(userInfo *UserInfo) ([]kubermaticv1.AdmissionPlugin, error)
+	ListPluginNamesFromVersion(fromVersion string) ([]string, error)
 }

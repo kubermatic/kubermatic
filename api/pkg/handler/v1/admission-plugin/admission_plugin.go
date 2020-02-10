@@ -17,7 +17,7 @@ import (
 func GetAdmissionPluginEndpoint(admissionPluginProvider provider.AdmissionPluginsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(admissionPluginReq)
-		pluginResponse, err := admissionPluginProvider.GetAdmissionPlugins(req.Version)
+		pluginResponse, err := admissionPluginProvider.ListPluginNamesFromVersion(req.Version)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
