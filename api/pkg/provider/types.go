@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"k8s.io/apimachinery/pkg/watch"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -497,6 +497,7 @@ type AddonConfigProvider interface {
 type SettingsProvider interface {
 	GetGlobalSettings() (*kubermaticv1.KubermaticSetting, error)
 	UpdateGlobalSettings(userInfo *UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error)
+	WatchGlobalSettings() (watch.Interface, error)
 }
 
 // AdminProvider declares the set of methods for interacting with admin
