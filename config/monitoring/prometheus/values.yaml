@@ -121,7 +121,7 @@ prometheus:
     enabled: false
     image:
       repository: quay.io/thanos/thanos
-      tag: v0.8.1
+      tag: v0.10.1
 
     store:
       replicas: 2
@@ -245,7 +245,13 @@ prometheus:
           cpu: 300m
           memory: 1Gi
     thanosStore:
-      resources: {}
+      resources:
+        requests:
+          cpu: 250m
+          memory: 1536Mi
+        limits:
+          cpu: 1
+          memory: 3Gi
     thanosQuery:
       resources:
         requests:
@@ -258,10 +264,10 @@ prometheus:
       resources:
         requests:
           cpu: 500m
-          memory: 4Gi
+          memory: 2Gi
         limits:
           cpu: 2
-          memory: 8Gi
+          memory: 4Gi
     thanosUI:
       resources:
         requests:
