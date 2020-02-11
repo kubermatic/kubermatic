@@ -107,7 +107,7 @@ func main() {
 			zap.String("cluster-type", version.Type),
 		)
 		versionLog.Info("Collecting images...")
-		images, err := getImagesForVersion(log, version, o.addonsPath, o.openshiftAddonsPath)
+		images, err := getImagesForVersion(log, version, o.addonsPath, o.openshiftAddonsPath, o.registry)
 		if err != nil {
 			versionLog.Fatal("failed to get images", zap.Error(err))
 		}
@@ -135,9 +135,9 @@ func processImages(ctx context.Context, log *zap.Logger, dryRun bool, images []s
 	return nil
 }
 
-func getImagesForVersion(log *zap.Logger, version *kubermaticversion.Version, addonsPath, osAddonPath string) (images []string, err error) {
+func getImagesForVersion(log *zap.Logger, version *kubermaticversion.Version, addonsPath, osAddonPath, registry string) (images []string, err error) {
 	if version.Type != "" && version.Type != apiv1.KubernetesClusterType {
-		return getImagesForOpenshiftVersion(log, version, osAddonPath)
+		return getImagesForOpenshiftVersion(log, version, osAddonPath, registry)
 	}
 	return getImagesForKubernetesVersion(log, version, addonsPath)
 }
@@ -165,8 +165,8 @@ func getImagesForKubernetesVersion(log *zap.Logger, version *kubermaticversion.V
 	return images, nil
 }
 
-func getImagesForOpenshiftVersion(log *zap.Logger, version *kubermaticversion.Version, osAddonPath string) (images []string, err error) {
-	osData, err := getOpenshiftData(version)
+func getImagesForOpenshiftVersion(log *zap.Logger, version *kubermaticversion.Version, osAddonPath, registry string) (images []string, err error) {
+	osData, err := getOpenshiftData(version, registry)
 	if err != nil {
 		return nil, err
 	}
@@ -511,7 +511,7 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 	), nil
 }
 
-func getOpenshiftData(version *kubermaticversion.Version) (*openshift.OpenshiftData, error) {
+func getOpenshiftData(version *kubermaticversion.Version, registry string) (*openshift.OpenshiftData, error) {
 	fakeCluster, err := getFakeCluster(version)
 	if err != nil {
 		return nil, err
@@ -520,7 +520,7 @@ func getOpenshiftData(version *kubermaticversion.Version) (*openshift.OpenshiftD
 		fakeCluster,
 		getFakeDynamicClient(),
 		&kubermaticv1.Datacenter{},
-		"",
+		registry,
 		"192.0.2.0/24",
 		openshift.OIDCConfig{},
 		resource.Quantity{},

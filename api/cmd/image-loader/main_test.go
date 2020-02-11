@@ -16,6 +16,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 	masterResources := "../../../config/kubermatic/static/master/versions.yaml"
 	addonPath := "../../../addons"
 	openshiftAddonsPath := "../../../openshift_addons"
+	registry := "test-registry:5000"
 
 	versions, err := version.LoadVersions(masterResources)
 	if err != nil {
@@ -27,14 +28,14 @@ func TestRetagImageForAllVersions(t *testing.T) {
 
 	imageSet := sets.NewString()
 	for _, v := range versions {
-		images, err := getImagesForVersion(log.Desugar(), v, addonPath, openshiftAddonsPath)
+		images, err := getImagesForVersion(log.Desugar(), v, addonPath, openshiftAddonsPath, registry)
 		if err != nil {
 			t.Errorf("Error calling getImagesForVersion: %v", err)
 		}
 		imageSet.Insert(images...)
 	}
 
-	if err := processImages(context.Background(), log.Desugar(), true, imageSet.List(), "test-registry:5000"); err != nil {
+	if err := processImages(context.Background(), log.Desugar(), true, imageSet.List(), registry); err != nil {
 		t.Errorf("Error calling processImages: %v", err)
 	}
 }
