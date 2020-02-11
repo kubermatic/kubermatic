@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// OperatingSystem defines the host operating system.
 type OperatingSystem string
 
 const (
@@ -36,6 +37,7 @@ const (
 	OperatingSystemUbuntu OperatingSystem = "ubuntu"
 	OperatingSystemCentOS OperatingSystem = "centos"
 	OperatingSystemSLES   OperatingSystem = "sles"
+	OperatingSystemRHEL   OperatingSystem = "rhel"
 )
 
 type CloudProvider string
@@ -64,6 +66,7 @@ var (
 		OperatingSystemUbuntu,
 		OperatingSystemCentOS,
 		OperatingSystemSLES,
+		OperatingSystemRHEL,
 	}
 
 	// AllCloudProviders is a slice containing all supported cloud providers.
@@ -132,7 +135,7 @@ type ConfigVarString struct {
 // causing a recursion
 type configVarStringWithoutUnmarshaller ConfigVarString
 
-// MarshalJSON converts a configVarString to its JSON form, ompitting empty strings.
+// MarshalJSON converts a configVarString to its JSON form, omitting empty strings.
 // This is done to not have the json object cluttered with empty strings
 // This will eventually hopefully be resolved within golang itself
 // https://github.com/golang/go/issues/11939

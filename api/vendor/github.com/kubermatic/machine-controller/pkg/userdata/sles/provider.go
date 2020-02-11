@@ -228,6 +228,34 @@ write_files:
     EnvironmentFile=-/etc/environment
     ExecStart=/opt/bin/supervise.sh /opt/bin/setup
 
+- path: "/etc/kubernetes/kubelet.conf"
+  content: |
+    kind: KubeletConfiguration
+    apiVersion: kubelet.config.k8s.io/v1beta1
+    cgroupDriver: systemd
+    clusterDomain: cluster.local
+    clusterDNS:
+    {{- range .DNSIPs }}
+      - "{{ . }}"
+    {{- end }}
+    rotateCertificates: true
+    podManifestPath: /etc/kubernetes/manifests
+    readOnlyPort: 0
+    featureGates:
+      RotateKubeletServerCertificate: true
+    serverTLSBootstrap: true
+    rotateCertificates: true
+    authorization:
+      mode: Webhook
+    authentication:
+      x509:
+        clientCAFile: /etc/kubernetes/pki/ca.crt
+      webhook:
+        enabled: true
+      anonymous:
+        enabled: false
+    protectKernelDefaults: true
+
 - path: "/etc/profile.d/opt-bin-path.sh"
   permissions: "0644"
   content: |

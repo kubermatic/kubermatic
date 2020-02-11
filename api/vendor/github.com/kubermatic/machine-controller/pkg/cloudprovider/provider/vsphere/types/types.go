@@ -20,18 +20,24 @@ import (
 	providerconfigtypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 )
 
+// RawConfig represents vsphere specific configuration.
 type RawConfig struct {
 	TemplateVMName providerconfigtypes.ConfigVarString `json:"templateVMName"`
-	VMNetName      providerconfigtypes.ConfigVarString `json:"vmNetName,omitempty"`
-	Username       providerconfigtypes.ConfigVarString `json:"username,omitempty"`
-	Password       providerconfigtypes.ConfigVarString `json:"password,omitempty"`
-	VSphereURL     providerconfigtypes.ConfigVarString `json:"vsphereURL,omitempty"`
+	VMNetName      providerconfigtypes.ConfigVarString `json:"vmNetName"`
+	Username       providerconfigtypes.ConfigVarString `json:"username"`
+	Password       providerconfigtypes.ConfigVarString `json:"password"`
+	VSphereURL     providerconfigtypes.ConfigVarString `json:"vsphereURL"`
 	Datacenter     providerconfigtypes.ConfigVarString `json:"datacenter"`
 	Cluster        providerconfigtypes.ConfigVarString `json:"cluster"`
-	Folder         providerconfigtypes.ConfigVarString `json:"folder,omitempty"`
-	Datastore      providerconfigtypes.ConfigVarString `json:"datastore"`
-	CPUs           int32                               `json:"cpus"`
-	MemoryMB       int64                               `json:"memoryMB"`
-	DiskSizeGB     *int64                              `json:"diskSizeGB,omitempty"`
-	AllowInsecure  providerconfigtypes.ConfigVarBool   `json:"allowInsecure"`
+	Folder         providerconfigtypes.ConfigVarString `json:"folder"`
+
+	// Either Datastore or DatastoreCluster have to be provided.
+	DatastoreCluster providerconfigtypes.ConfigVarString `json:"datastoreCluster"`
+	Datastore        providerconfigtypes.ConfigVarString `json:"datastore"`
+
+	CPUs             int32                               `json:"cpus"`
+	MemoryMB         int64                               `json:"memoryMB"`
+	DiskSizeGB       *int64                              `json:"diskSizeGB,omitempty"`
+	AllowInsecure    providerconfigtypes.ConfigVarBool   `json:"allowInsecure"`
+	RHSMOfflineToken providerconfigtypes.ConfigVarString `json:"rhsmOfflineToken"`
 }

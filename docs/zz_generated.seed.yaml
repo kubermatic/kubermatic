@@ -50,6 +50,7 @@ spec:
           images:
             centos: ""
             coreos: ""
+            rhel: ""
             sles: ""
             ubuntu: ""
           # The AWS region to use, e.g. "us-east-1". For a list of available regions, see
@@ -101,6 +102,7 @@ spec:
           images:
             centos: ""
             coreos: ""
+            rhel: ""
             sles: ""
             ubuntu: ""
           # Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
@@ -155,6 +157,7 @@ spec:
           templates:
             centos: ""
             coreos: ""
+            rhel: ""
             sles: ""
             ubuntu: ""
   # Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
