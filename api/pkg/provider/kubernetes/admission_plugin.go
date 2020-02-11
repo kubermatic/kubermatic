@@ -20,6 +20,8 @@ type admissionPluginsGetter = func() ([]kubermaticv1.AdmissionPlugin, error)
 // AdmissionPluginsProvider is a object to handle admission plugins
 type AdmissionPluginsProvider struct {
 	admissionPluginsGetter admissionPluginsGetter
+	client                 ctrlruntimeclient.Client
+	ctx                    context.Context
 }
 
 func NewAdmissionPluginsProvider(ctx context.Context, client ctrlruntimeclient.Client) *AdmissionPluginsProvider {
@@ -31,7 +33,7 @@ func NewAdmissionPluginsProvider(ctx context.Context, client ctrlruntimeclient.C
 		return admissionPluginList.Items, nil
 	}
 
-	return &AdmissionPluginsProvider{admissionPluginsGetter: admissionPluginsGetter}
+	return &AdmissionPluginsProvider{admissionPluginsGetter: admissionPluginsGetter, client: client, ctx: ctx}
 }
 
 func (p *AdmissionPluginsProvider) ListPluginNamesFromVersion(fromVersion string) ([]string, error) {
@@ -72,4 +74,32 @@ func (p *AdmissionPluginsProvider) List(userInfo *provider.UserInfo) ([]kubermat
 		return nil, err
 	}
 	return admissionPluginList, nil
+}
+
+func (p *AdmissionPluginsProvider) Get(userInfo *provider.UserInfo, name string) (*kubermaticv1.AdmissionPlugin, error) {
+	if !userInfo.IsAdmin {
+		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
+	}
+	admissionPluginList, err := p.admissionPluginsGetter()
+	if err != nil {
+		return nil, err
+	}
+	for _, plugin := range admissionPluginList {
+		if plugin.Name == name {
+			return &plugin, nil
+		}
+	}
+	return nil, kerrors.NewNotFound(schema.GroupResource{}, name)
+}
+
+func (p *AdmissionPluginsProvider) Delete(userInfo *provider.UserInfo, name string) error {
+
+	plugin, err := p.Get(userInfo, name)
+	if err != nil {
+		return err
+	}
+	if err := p.client.Delete(p.ctx, plugin); err != nil {
+		return fmt.Errorf("failed to delete admission plugins %v", err)
+	}
+	return nil
 }
