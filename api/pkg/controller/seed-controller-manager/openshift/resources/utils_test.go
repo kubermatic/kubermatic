@@ -4,6 +4,12 @@ import (
 	"testing"
 )
 
+const (
+	componentName = "cli"
+	version       = "4.1.18"
+	digestImage   = openshiftImage + "@sha256:528f2ead3d1605bdf818579976d97df5dd86df0a2a5d80df9aa8209c82333a86"
+)
+
 func TestOpenshiftImageWithRegistry(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -13,9 +19,9 @@ func TestOpenshiftImageWithRegistry(t *testing.T) {
 	}{
 		{
 			name:          "Image with digest",
-			image:         openshiftImage + "@sha256:528f2ead3d1605bdf818579976d97df5dd86df0a2a5d80df9aa8209c82333a86",
+			image:         digestImage,
 			registry:      "localhost:5000",
-			expectedImage: "localhost:5000/openshift-release-dev/ocp-v4.0-art-dev:528f2ead3d1605bdf818579976d97df5dd86df0a2a5d80df9aa8209c82333a86",
+			expectedImage: "localhost:5000/openshift-release-dev/ocp-v4.0-art-dev:4.1.18-cli",
 		},
 		{
 			name:          "Image with normal tag",
@@ -25,19 +31,19 @@ func TestOpenshiftImageWithRegistry(t *testing.T) {
 		},
 		{
 			name:          "Same registry",
-			image:         openshiftImage + "@sha256:528f2ead3d1605bdf818579976d97df5dd86df0a2a5d80df9aa8209c82333a86",
+			image:         digestImage,
 			registry:      "quay.io",
-			expectedImage: openshiftImage + "@sha256:528f2ead3d1605bdf818579976d97df5dd86df0a2a5d80df9aa8209c82333a86",
+			expectedImage: digestImage,
 		},
 		{
 			name:          "Empty registry",
-			image:         openshiftImage + "@sha256:528f2ead3d1605bdf818579976d97df5dd86df0a2a5d80df9aa8209c82333a86",
+			image:         digestImage,
 			registry:      "",
-			expectedImage: openshiftImage + "@sha256:528f2ead3d1605bdf818579976d97df5dd86df0a2a5d80df9aa8209c82333a86",
+			expectedImage: digestImage,
 		},
 	}
 	for _, test := range tests {
-		image, err := OpenshiftImageWithRegistry(test.image, test.registry)
+		image, err := OpenshiftImageWithRegistry(test.image, componentName, version, test.registry)
 		if err != nil {
 			t.Fatalf("failed to run OpenshiftImageWithRegistry: %v", err)
 		}
