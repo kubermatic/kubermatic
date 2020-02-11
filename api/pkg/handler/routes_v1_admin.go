@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	v12 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"k8s.io/apimachinery/pkg/watch"
 	"net/http"
@@ -48,7 +50,21 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 }
 
 // TODO: Auth (middleware) is missing!
+// todo: only one watch, multiple websockets
 func (r Routing) getKubermaticSettingsWebsocket(w http.ResponseWriter, req *http.Request) {
+	x := auth.NewHeaderBearerTokenExtractor("Authorization")
+	token, err := x.Extract(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	_, err = r.tokenVerifiers.Verify(context.TODO(), token)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	ws, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
 		if _, ok := err.(websocket.HandshakeError); !ok {
@@ -62,23 +78,8 @@ func (r Routing) getKubermaticSettingsWebsocket(w http.ResponseWriter, req *http
 }
 
 func writer(ws *websocket.Conn, pr provider.SettingsProvider) {
-	gs, err := pr.GetGlobalSettings() // Initial query.
-	if err != nil {
-		ws.Close()
-		return
-	}
-
-	js, err := json.Marshal(gs)
-	if err != nil {
-		ws.Close()
-		return
-	}
-
-	if err = ws.WriteMessage(websocket.TextMessage, js); err != nil {
-		return
-	}
-
-	watcher, err := pr.WatchGlobalSettings()
+	watcher, err := pr.WatchGlobalSettings() //main
+	// subscribe notify pattern
 
 	go func() {
 		fmt.Println("starting watch")
