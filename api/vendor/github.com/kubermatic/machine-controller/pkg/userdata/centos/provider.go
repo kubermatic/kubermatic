@@ -219,7 +219,7 @@ write_files:
 
 - path: "/etc/systemd/system/kubelet.service"
   content: |
-{{ kubeletSystemdUnit .KubeletVersion .CloudProviderName .MachineSpec.Name .DNSIPs .ExternalCloudProvider .PauseImage | indent 4 }}
+{{ kubeletSystemdUnit .KubeletVersion .CloudProviderName .MachineSpec.Name .DNSIPs .ExternalCloudProvider .PauseImage .MachineSpec.Taints | indent 4 }}
 
 - path: "/etc/kubernetes/cloud-config"
   permissions: "0600"
@@ -230,6 +230,34 @@ write_files:
   permissions: "0600"
   content: |
 {{ .Kubeconfig | indent 4 }}
+
+- path: "/etc/kubernetes/kubelet.conf"
+  content: |
+    kind: KubeletConfiguration
+    apiVersion: kubelet.config.k8s.io/v1beta1
+    cgroupDriver: systemd
+    clusterDomain: cluster.local
+    clusterDNS:
+    {{- range .DNSIPs }}
+      - "{{ . }}"
+    {{- end }}
+    rotateCertificates: true
+    podManifestPath: /etc/kubernetes/manifests
+    readOnlyPort: 0
+    featureGates:
+      RotateKubeletServerCertificate: true
+    serverTLSBootstrap: true
+    rotateCertificates: true
+    authorization:
+      mode: Webhook
+    authentication:
+      x509:
+        clientCAFile: /etc/kubernetes/pki/ca.crt
+      webhook:
+        enabled: true
+      anonymous:
+        enabled: false
+    protectKernelDefaults: true
 
 - path: "/etc/kubernetes/pki/ca.crt"
   content: |
