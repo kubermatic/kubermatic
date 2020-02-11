@@ -25,6 +25,35 @@ type Client struct {
 }
 
 /*
+DeleteAdmissionPlugin deletes the admission plugin
+*/
+func (a *Client) DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteAdmissionPluginOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteAdmissionPluginParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteAdmissionPlugin",
+		Method:             "DELETE",
+		PathPattern:        "/api/v1/admin/admission/plugins/{name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteAdmissionPluginReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*DeleteAdmissionPluginOK), nil
+
+}
+
+/*
 GetAdmins returns list of admin users
 */
 func (a *Client) GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdminsOK, error) {
@@ -50,6 +79,35 @@ func (a *Client) GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthI
 		return nil, err
 	}
 	return result.(*GetAdminsOK), nil
+
+}
+
+/*
+GetAdmissionPlugin gets the admission plugin
+*/
+func (a *Client) GetAdmissionPlugin(params *GetAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdmissionPluginOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetAdmissionPluginParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getAdmissionPlugin",
+		Method:             "GET",
+		PathPattern:        "/api/v1/admin/admission/plugins/{name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAdmissionPluginReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetAdmissionPluginOK), nil
 
 }
 
