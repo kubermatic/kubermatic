@@ -144,6 +144,12 @@ write_files:
   content: |
 {{ kernelSettings | indent 4 }}
 
+- path: "/etc/default/grub.d/60-swap-accounting.cfg"
+  content: |
+    # Added by kubermatic machine-controller
+    # Enable cgroups memory and swap accounting
+    GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1"
+
 - path: "/etc/apt/sources.list.d/docker.list"
   permissions: "0644"
   content: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
@@ -265,6 +271,13 @@ write_files:
     {{- if .OSConfig.DistUpgradeOnBoot }}
     DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade -y
     {{- end }}
+
+    # Update grub to include kernel command options to enable swap accounting.
+    if grep -v -q swapaccount=1 /proc/cmdline
+    then
+      update-grub
+      touch /var/run/reboot-required
+    fi
     if [[ -e /var/run/reboot-required ]]; then
       reboot
     fi
@@ -328,6 +341,34 @@ write_files:
   permissions: "0644"
   content: |
     export PATH="/opt/bin:$PATH"
+
+- path: "/etc/kubernetes/kubelet.conf"
+  content: |
+    kind: KubeletConfiguration
+    apiVersion: kubelet.config.k8s.io/v1beta1
+    cgroupDriver: systemd
+    clusterDomain: cluster.local
+    clusterDNS:
+    {{- range .DNSIPs }}
+      - "{{ . }}"
+    {{- end }}
+    rotateCertificates: true
+    podManifestPath: /etc/kubernetes/manifests
+    readOnlyPort: 0
+    featureGates:
+      RotateKubeletServerCertificate: true
+    serverTLSBootstrap: true
+    rotateCertificates: true
+    authorization:
+      mode: Webhook
+    authentication:
+      x509:
+        clientCAFile: /etc/kubernetes/pki/ca.crt
+      webhook:
+        enabled: true
+      anonymous:
+        enabled: false
+    protectKernelDefaults: true
 
 - path: /etc/docker/daemon.json
   permissions: "0644"

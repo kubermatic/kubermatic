@@ -28,4 +28,5 @@ type RawConfig struct {
 	SourceURL        providerconfigtypes.ConfigVarString `json:"sourceURL,omitempty"`
 	PVCSize          providerconfigtypes.ConfigVarString `json:"pvcSize,omitempty"`
 	StorageClassName providerconfigtypes.ConfigVarString `json:"storageClassName,omitempty"`
+	RHSMOfflineToken providerconfigtypes.ConfigVarString `json:"rhsmOfflineToken,omitempty"`
 }

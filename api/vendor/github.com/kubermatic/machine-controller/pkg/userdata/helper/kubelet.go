@@ -28,36 +28,27 @@ import (
 
 const (
 	kubeletFlagsTpl = `--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf \
---kubeconfig=/etc/kubernetes/kubelet.conf \
---pod-manifest-path=/etc/kubernetes/manifests \
+--kubeconfig=/var/lib/kubelet/kubeconfig \
+--config=/etc/kubernetes/kubelet.conf \
 {{- if semverCompare "<1.15.0-0" .KubeletVersion }}
 --allow-privileged=true \
 {{- end }}
 --network-plugin=cni \
 --cni-conf-dir=/etc/cni/net.d \
 --cni-bin-dir=/opt/cni/bin \
---authorization-mode=Webhook \
---client-ca-file=/etc/kubernetes/pki/ca.crt \
 {{- if semverCompare "<1.12.0-0" .KubeletVersion }}
 --cadvisor-port=0 \
 {{- end }}
---rotate-certificates=true \
 --cert-dir=/etc/kubernetes/pki \
---authentication-token-webhook=true \
 {{- if or (.CloudProvider) (.IsExternal) }}
 {{ cloudProviderFlags .CloudProvider .IsExternal }} \
 {{- end }}
 {{- if and (.Hostname) (ne .CloudProvider "aws") }}
 --hostname-override={{ .Hostname }} \
 {{- end }}
---read-only-port=0 \
 --dynamic-config-dir /etc/kubernetes/dynamic-config-dir \
 --exit-on-lock-contention \
 --lock-file=/tmp/kubelet.lock \
---anonymous-auth=false \
---protect-kernel-defaults=true \
---cluster-dns={{ .ClusterDNSIPs | join "," }} \
---cluster-domain=cluster.local \
 {{- if .PauseImage }}
 --pod-infra-container-image={{ .PauseImage }} \
 {{- end }}
@@ -65,8 +56,7 @@ const (
 --register-with-taints={{- .InitialTaints }} \
 {{- end }}
 --kube-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi \
---system-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi \
---cgroup-driver=systemd`
+--system-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi`
 
 	kubeletSystemdUnitTpl = `[Unit]
 After=docker.service
