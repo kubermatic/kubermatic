@@ -35,6 +35,14 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodGet).
 		Path("/admin/admission/plugins").
 		Handler(r.listAdmissionPlugins())
+
+	mux.Methods(http.MethodGet).
+		Path("/admin/admission/plugins/{name}").
+		Handler(r.getAdmissionPlugin())
+
+	mux.Methods(http.MethodDelete).
+		Path("/admin/admission/plugins/{name}").
+		Handler(r.deleteAdmissionPlugin())
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
@@ -156,6 +164,54 @@ func (r Routing) listAdmissionPlugins() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.ListAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
 		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/admin/admission/plugins/{name} admin getAdmissionPlugin
+//
+//     Gets the admission plugin.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AdmissionPlugin
+//       401: empty
+//       403: empty
+func (r Routing) getAdmissionPlugin() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(admin.GetAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
+		admin.DecodeAdmissionPluginReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/admin/admission/plugins/{name} admin deleteAdmissionPlugin
+//
+//     Deletes the admission plugin.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteAdmissionPlugin() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(admin.DeleteAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
+		admin.DecodeAdmissionPluginReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
