@@ -10,6 +10,17 @@
   version = "v0.36.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:aa0906b8d19e4198c50ab488dc68db2ecff0e32080ea2775a30967e2ead6bc63"
+  name = "code.cloudfoundry.org/go-pubsub"
+  packages = [
+    ".",
+    "internal/node",
+  ]
+  pruneopts = "NUT"
+  revision = "becd51dc37cb4cc4264c78311afbdd91b8fa3eb9"
+
+[[projects]]
   digest = "1:3fb854fc35fafced21615a93db3c0e324c8cb1d5a89f39dd1e72db0c4200345a"
   name = "contrib.go.opencensus.io/exporter/ocagent"
   packages = ["."]
@@ -2095,6 +2106,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "code.cloudfoundry.org/go-pubsub",
     "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-06-01/compute",
     "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-06-01/network",
     "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-02-01/resources",

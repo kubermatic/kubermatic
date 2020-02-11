@@ -49,8 +49,6 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.HandleFunc("/admin/settings/ws", r.getKubermaticSettingsWebsocket)
 }
 
-// TODO: Auth (middleware) is missing!
-// todo: only one watch, multiple websockets
 func (r Routing) getKubermaticSettingsWebsocket(w http.ResponseWriter, req *http.Request) {
 	x := auth.NewHeaderBearerTokenExtractor("Authorization")
 	token, err := x.Extract(req)
@@ -68,37 +66,27 @@ func (r Routing) getKubermaticSettingsWebsocket(w http.ResponseWriter, req *http
 	ws, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
 		if _, ok := err.(websocket.HandshakeError); !ok {
-			kubermaticlog.Logger.Error(err) // TODO: How to log errors like this?
+			kubermaticlog.Logger.Error(err)
 		}
 		return
 	}
 
-	go writer(ws, r.settingsProvider)
+	go writer(ws, r.resourceWatcher)
 	reader(ws)
 }
 
-func writer(ws *websocket.Conn, pr provider.SettingsProvider) {
-	watcher, err := pr.WatchGlobalSettings() //main
-	// subscribe notify pattern
+func writer(ws *websocket.Conn, pr provider.ResourceWatcher) {
 
-	go func() {
-		fmt.Println("starting watch")
-		defer watcher.Stop()
-		//defer close(self.errChan)
-		for {
-			select {
-			case ev, ok := <-watcher.ResultChan():
-				if !ok {
-					fmt.Println("watch ended with timeout")
-					return
-				}
+	//rn initial request is missing
 
-				if err = ws.WriteMessage(websocket.TextMessage, handleEvent(ev)); err != nil {
-					return
-				}
-			}
-		}
-	}()
+	pr.WatchKubermaticSettings(func(data interface{}) {
+		fmt.Println(data)
+
+		//if err := ws.WriteMessage(websocket.TextMessage, handleEvent(ev)); err != nil {
+		//	return
+		//}
+
+	})
 }
 
 func handleEvent(event watch.Event) []byte {

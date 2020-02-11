@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"code.cloudfoundry.org/go-pubsub"
 	"context"
 	"errors"
 	"fmt"
@@ -511,4 +512,8 @@ type PresetProvider interface {
 	GetPresets(userInfo *UserInfo) ([]kubermaticv1.Preset, error)
 	GetPreset(userInfo *UserInfo, name string) (*kubermaticv1.Preset, error)
 	SetCloudCredentials(userInfo *UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error)
+}
+
+type ResourceWatcher interface {
+	WatchKubermaticSettings(subscription pubsub.Subscription)
 }

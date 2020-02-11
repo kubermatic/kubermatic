@@ -194,6 +194,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().AddonConfigs().Lister())
 	adminProvider := kubernetesprovider.NewAdminProvider(kubermaticMasterClient, userMasterLister)
 
+	resourceWatcher, err := kubernetesprovider.NewResourceWatcher(settingsProvider)
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create resource watcher due to %v", err)
+	}
+
 	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, kubeMasterInformerFactory.Core().V1().Secrets().Lister())
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create service account token provider due to %v", err)
@@ -243,7 +248,9 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		userInfoGetter:                        userInfoGetter,
 		settingsProvider:                      settingsProvider,
 		adminProvider:                         adminProvider,
-		presetProvider:                        presetsProvider}, nil
+		presetProvider:                        presetsProvider,
+		resourceWatcher:                       resourceWatcher,
+	}, nil
 }
 
 func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error) {
@@ -336,6 +343,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.userInfoGetter,
 		prov.settingsProvider,
 		prov.adminProvider,
+		prov.resourceWatcher,
 	)
 
 	registerMetrics()
