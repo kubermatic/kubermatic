@@ -27,7 +27,7 @@ import (
 
 // OpenshiftData implements the OpenshiftData interface which is
 // passed into all creator funcs and contains all data they need
-type OpenshiftData struct {
+type OpenshiftData struct { // nolint
 	cluster                               *kubermaticv1.Cluster
 	client                                client.Client
 	dc                                    *kubermaticv1.Datacenter

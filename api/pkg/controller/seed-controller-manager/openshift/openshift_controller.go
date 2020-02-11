@@ -443,7 +443,7 @@ func (r *Reconciler) configMaps(ctx context.Context, osData *OpenshiftData) erro
 	return reconciling.ReconcileConfigMaps(ctx, creators, osData.Cluster().Status.NamespaceName, r.Client)
 }
 
-func GetDeploymentCreators(ctx context.Context, osData *OpenshiftData) []reconciling.NamedDeploymentCreatorGetter{
+func GetDeploymentCreators(ctx context.Context, osData *OpenshiftData) []reconciling.NamedDeploymentCreatorGetter {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		openshiftresources.OpenshiftAPIServerDeploymentCreator(osData),
 		openshiftresources.APIDeploymentCreator(ctx, osData),
