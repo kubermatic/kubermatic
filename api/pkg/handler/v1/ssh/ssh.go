@@ -155,8 +155,8 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 // swagger:parameters createSSHKey
 type CreateReq struct {
 	common.ProjectReq
-	// swagger:ignore
-	Key apiv1.SSHKey `json:"-"`
+	// in: body
+	Key apiv1.SSHKey
 }
 
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
