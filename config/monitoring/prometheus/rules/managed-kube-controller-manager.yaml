@@ -12,7 +12,7 @@ groups:
   - alert: KubeControllerManagerDown
     annotations:
       message: No healthy controller-manager pods exist inside the cluster.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubecontrollermanagerdown
+      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubecontrollermanagerdown
     expr: absent(:ready_kube_controller_managers:sum) or :ready_kube_controller_managers:sum
       == 0
     for: 10m
