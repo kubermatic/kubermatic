@@ -11,32 +11,32 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-// ResourceWatcher watches resources and notifies its subscribers about any changes.
-type ResourceWatcher struct {
-	settingsProvider  provider.SettingsProvider
-	settingsWatcher   watch.Interface
-	settingsPublisher *pubsub.PubSub
+// SettingsWatcher watches settings and notifies its subscribers about any changes.
+type SettingsWatcher struct {
+	provider  provider.SettingsProvider
+	watcher   watch.Interface
+	publisher *pubsub.PubSub
 }
 
-// ResourceWatcher returns a new resource watcher.
-func NewResourceWatcher(settingsProvider provider.SettingsProvider) (*ResourceWatcher, error) {
-	settingsWatcher, err := settingsProvider.WatchGlobalSettings()
+// SettingsWatcher returns a new resource watcher.
+func NewSettingsWatcher(provider provider.SettingsProvider) (*SettingsWatcher, error) {
+	watcher, err := provider.WatchGlobalSettings()
 	if err != nil {
 		return nil, err
 	}
 
-	settingsPublisher := pubsub.New()
-	go watchSettings(settingsWatcher, settingsPublisher)
+	publisher := pubsub.New()
+	go run(watcher, publisher)
 
-	return &ResourceWatcher{
-		settingsProvider:  settingsProvider,
-		settingsWatcher:   settingsWatcher,
-		settingsPublisher: settingsPublisher,
+	return &SettingsWatcher{
+		provider:  provider,
+		watcher:   watcher,
+		publisher: publisher,
 	}, nil
 }
 
-// watchSettings runs in the background and publishes information about settings updates.
-func watchSettings(input watch.Interface, settingsPublisher *pubsub.PubSub) {
+// run and publish information about settings updates.
+func run(input watch.Interface, settingsPublisher *pubsub.PubSub) {
 	defer input.Stop()
 
 	for {
@@ -63,7 +63,7 @@ func watchSettings(input watch.Interface, settingsPublisher *pubsub.PubSub) {
 	}
 }
 
-// SubscribeSettings allows to register subscription handler which will be invoked on each settings change.
-func (watcher *ResourceWatcher) SubscribeSettings(subscription pubsub.Subscription) {
-	watcher.settingsPublisher.Subscribe(subscription)
+// Subscribe allows to register subscription handler which will be invoked on each settings change.
+func (watcher *SettingsWatcher) Subscribe(subscription pubsub.Subscription) {
+	watcher.publisher.Subscribe(subscription)
 }

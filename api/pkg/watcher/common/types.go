@@ -4,6 +4,6 @@ import (
 	"code.cloudfoundry.org/go-pubsub"
 )
 
-type ResourceWatcher interface {
-	SubscribeSettings(subscription pubsub.Subscription)
+type SettingsWatcher interface {
+	Subscribe(subscription pubsub.Subscription)
 }

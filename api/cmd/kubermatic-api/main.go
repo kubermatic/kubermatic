@@ -195,7 +195,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().AddonConfigs().Lister())
 	adminProvider := kubernetesprovider.NewAdminProvider(kubermaticMasterClient, userMasterLister)
 
-	resourceWatcher, err := watcher.NewResourceWatcher(settingsProvider)
+	settingsWatcher, err := watcher.NewSettingsWatcher(settingsProvider)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create resource watcher due to %v", err)
 	}
@@ -250,7 +250,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		settingsProvider:                      settingsProvider,
 		adminProvider:                         adminProvider,
 		presetProvider:                        presetsProvider,
-		resourceWatcher:                       resourceWatcher,
+		settingsWatcher:                       settingsWatcher,
 	}, nil
 }
 
@@ -344,7 +344,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.userInfoGetter,
 		prov.settingsProvider,
 		prov.adminProvider,
-		prov.resourceWatcher,
+		prov.settingsWatcher,
 	)
 
 	registerMetrics()
@@ -366,6 +366,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		},
 		mainRouter)
 	r.RegisterV1Admin(v1Router)
+	r.RegisterV1Websocket(v1Router)
 
 	mainRouter.Methods(http.MethodGet).
 		Path("/api/swagger.json").

@@ -179,5 +179,5 @@ type providers struct {
 	settingsProvider                      provider.SettingsProvider
 	adminProvider                         provider.AdminProvider
 	presetProvider                        provider.PresetProvider
-	resourceWatcher                       common.ResourceWatcher
+	settingsWatcher                       common.SettingsWatcher
 }

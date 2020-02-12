@@ -1,28 +1,14 @@
 package handler
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/watcher/common"
 	"net/http"
-	"time"
 
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/admin"
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 )
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
 
 //RegisterV1Admin declares all router paths for the admin users
 func (r Routing) RegisterV1Admin(mux *mux.Router) {
@@ -43,87 +29,6 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodPatch).
 		Path("/admin/settings").
 		Handler(r.patchKubermaticSettings())
-
-	mux.HandleFunc("/admin/settings/ws", r.getKubermaticSettingsWebsocket)
-}
-
-func (r Routing) getKubermaticSettingsWebsocket(w http.ResponseWriter, req *http.Request) {
-	x := auth.NewHeaderBearerTokenExtractor("Authorization")
-	token, err := x.Extract(req)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	_, err = r.tokenVerifiers.Verify(context.TODO(), token)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	ws, err := upgrader.Upgrade(w, req, nil)
-	if err != nil {
-		if _, ok := err.(websocket.HandshakeError); !ok {
-			kubermaticlog.Logger.Error(err)
-		}
-		return
-	}
-
-	go writer(ws, r.resourceWatcher, r.settingsProvider)
-	reader(ws)
-}
-
-func writer(ws *websocket.Conn, watcher common.ResourceWatcher, provider provider.SettingsProvider) {
-	initialSettings, err := provider.GetGlobalSettings()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	initialResponse, err := json.Marshal(initialSettings)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	if err := ws.WriteMessage(websocket.TextMessage, initialResponse); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	watcher.SubscribeSettings(func(data interface{}) {
-		fmt.Println(data)
-
-		//var res []byte
-		//if obj != nil {
-		//	js, err := json.Marshal(obj)
-		//	if err != nil {
-		//		res = js
-		//	}
-		//}
-
-		//if err := ws.WriteMessage(websocket.TextMessage, data); err != nil {
-		//	return
-		//}
-
-	})
-}
-
-func reader(ws *websocket.Conn) {
-	defer ws.Close()
-	ws.SetReadLimit(512)
-	_ = ws.SetReadDeadline(time.Now().Add(time.Minute))
-	ws.SetPongHandler(func(string) error {
-		_ = ws.SetReadDeadline(time.Now().Add(time.Minute))
-		return nil
-	})
-	for {
-		_, p, err := ws.ReadMessage()
-		if err != nil {
-			break
-		}
-		fmt.Println(p)
-	}
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
