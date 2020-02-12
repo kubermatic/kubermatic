@@ -1,4 +1,4 @@
-### [v2.13.0-rc.1]()
+### [v2.13.0]()
 
 
 Supported Kubernetes versions:
@@ -21,6 +21,8 @@ Supported Kubernetes versions:
 - Added cluster addon UI
 - MachineDeployments can now be configured to enable dynamic kubelet config [#4946](https://github.com/kubermatic/kubermatic/issues/4946) ([kdomanski](https://github.com/kdomanski))
 - Added RBAC management functionality to UI [#1815](https://github.com/kubermatic/dashboard-v2/issues/1815) ([kgroschoff](https://github.com/kgroschoff))
+- Added RedHat Enterprise Linux as an OS option (#669)
+- Added SUSE Linux Enterprise Server as an OS option (#659)
 
 **Cloud providers:**
 - Openstack: A bug that caused cluster reconciliation to fail if the controller crashed at the wrong time was fixed [#4754](https://github.com/kubermatic/kubermatic/issues/4754) ([alvaroaleman](https://github.com/alvaroaleman))
@@ -28,6 +30,7 @@ Supported Kubernetes versions:
 - vSphere: Fixed a bug that resulted in a faulty cloud config when using a non-default port [#4562](https://github.com/kubermatic/kubermatic/issues/4562) ([alvaroaleman](https://github.com/alvaroaleman))
 - vSphere: fixed a bug which cased custom VM folder paths not to be put in cloud-configs [#4737](https://github.com/kubermatic/kubermatic/issues/4737) ([kdomanski](https://github.com/kdomanski))
 - vSphere: The robustness of machine reconciliation has been improved. [#4651](https://github.com/kubermatic/kubermatic/issues/4651) ([alvaroaleman](https://github.com/alvaroaleman))
+- vSphere: Sdded support for datastore clusters (#671)
 - Azure: Node sizes are displayed in size dropdown when creating/updating a node deployment [#1908](https://github.com/kubermatic/dashboard-v2/issues/1908) ([bashofmann](https://github.com/bashofmann))
 - GCP: Networks are fetched from API now [#1913](https://github.com/kubermatic/dashboard-v2/issues/1913) ([kgroschoff](https://github.com/kgroschoff))
 
@@ -82,8 +85,10 @@ Supported Kubernetes versions:
 - Updated kube-state-metrics to 1.8.0 [#4860](https://github.com/kubermatic/kubermatic/issues/4860) ([xrstf](https://github.com/xrstf))
 - Updated machine-controller to v1.9.0 [#4939](https://github.com/kubermatic/kubermatic/issues/4939) ([kron4eg](https://github.com/kron4eg))
   - Added support for EBS volume encryption (#663)
-  - Added suse linux enterprise server as an OS option (#659)
   - kubelet sets intial machine taints via --register-with-taints (#664)
+- Updated machine-controller to v1.10.0 [#5070](https://github.com/kubermatic/kubermatic/issues/5070) ([kdomanski](https://github.com/kdomanski))
+  - Moved deprecated kubelet flags into config file (#667)
+  - Enabled swap accounting for Ubuntu deployments (#666)
 - Updated nginx-ingress-controller to v0.28.0 [#4999](https://github.com/kubermatic/kubermatic/issues/4999) ([kdomanski](https://github.com/kdomanski))
 - Updated Minio to RELEASE.2019-10-12T01-39-57Z [#4868](https://github.com/kubermatic/kubermatic/issues/4868) ([xrstf](https://github.com/xrstf))
 - Updated Prometheus to 2.14 in Seed and User clusters [#4684](https://github.com/kubermatic/kubermatic/issues/4684) ([xrstf](https://github.com/xrstf))
