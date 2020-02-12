@@ -50,12 +50,12 @@
   version = "v12.3.0"
 
 [[projects]]
-  digest = "1:a26f8da48b22e6176c1c6a2459904bb30bd0c49ada04b2963c2c3a203e81a620"
+  digest = "1:9919cde53f3e7aeb0c4bc3e34fd188e9614b573d629935e4babf0b5b1758488e"
   name = "github.com/Masterminds/semver"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "c7af12943936e8c39859482e61f0574c2fd7fc75"
-  version = "v1.4.2"
+  revision = "910aa146bd66780c2815d652b92a7fc5331e533c"
+  version = "v3.0.3"
 
 [[projects]]
   digest = "1:1e1e762ac4dd13e354773be80fbd59cc99cf44fbff5865ea73776f2a0e109f8b"

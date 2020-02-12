@@ -28,7 +28,7 @@ required = [
 
 [[constraint]]
   name = "github.com/Masterminds/semver"
-  version = "v1.4.2"
+  version = "v3.0.3"
 
 [[constraint]]
   name = "github.com/Masterminds/sprig"
