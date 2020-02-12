@@ -26,7 +26,7 @@ groups:
   - alert: KubernetesApiserverDown
     annotations:
       message: KubernetesApiserver has disappeared from Prometheus target discovery.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubernetesapiserverdown
+      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubernetesapiserverdown
     expr: absent(up{job="apiserver"} == 1)
     for: 15m
     labels:
@@ -37,7 +37,7 @@ groups:
       message:
         The API server has a 99th percentile latency of {{ $value }} seconds
         for {{ $labels.verb }} {{ $labels.resource }}.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapilatencyhigh
+      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeapilatencyhigh
     expr: cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 1
     for: 10m
     labels:
@@ -48,7 +48,7 @@ groups:
       message:
         The API server has a 99th percentile latency of {{ $value }} seconds
         for {{ $labels.verb }} {{ $labels.resource }}.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapilatencyhigh
+      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeapilatencyhigh
     expr: cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 4
     for: 10m
     labels:
@@ -57,7 +57,7 @@ groups:
   - alert: KubeAPIErrorsHigh
     annotations:
       message: API server is returning errors for {{ $value }}% of requests.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapierrorshigh
+      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeapierrorshigh
     expr: |
       sum(rate(apiserver_request_count{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
         /
@@ -69,7 +69,7 @@ groups:
   - alert: KubeAPIErrorsHigh
     annotations:
       message: API server is returning errors for {{ $value }}% of requests.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeapierrorshigh
+      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeapierrorshigh
     expr: |
       sum(rate(apiserver_request_count{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
         /
@@ -81,7 +81,7 @@ groups:
   - alert: KubeClientCertificateExpiration
     annotations:
       message: A client certificate used to authenticate to the apiserver is expiring in less than 7 days.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclientcertificateexpiration
+      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeclientcertificateexpiration
     expr: |
       apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
       and
@@ -97,7 +97,7 @@ groups:
   - alert: KubeClientCertificateExpiration
     annotations:
       message: A client certificate used to authenticate to the apiserver is expiring in less than 24 hours.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubeclientcertificateexpiration
+      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeclientcertificateexpiration
     expr: |
       apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
       and

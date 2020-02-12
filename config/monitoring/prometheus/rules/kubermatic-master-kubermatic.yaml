@@ -5,7 +5,7 @@ groups:
   - alert: KubermaticAPIDown
     annotations:
       message: KubermaticAPI has disappeared from Prometheus target discovery.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticapidown
+      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubermaticapidown
     expr: absent(up{job="pods",namespace="kubermatic",role="kubermatic-api"} == 1)
     for: 15m
     labels:
@@ -13,7 +13,7 @@ groups:
   - alert: KubermaticAPITooManyErrors
     annotations:
       message: Kubermatic API is returning a high rate of HTTP 5xx responses.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-kubermaticapitoomanyerrors
+      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubermaticapitoomanyerrors
     expr: sum(rate(http_requests_total{role="kubermatic-api",code=~"5.."}[5m])) >
       0.1
     for: 15m

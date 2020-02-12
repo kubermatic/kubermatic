@@ -72,7 +72,7 @@ type ListSystemLabelsOK struct {
 }
 
 func (o *ListSystemLabelsOK) Error() string {
-	return fmt.Sprintf("[PATCH /api/v1/labels/system][%d] listSystemLabelsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabelsOK  %+v", 200, o.Payload)
 }
 
 func (o *ListSystemLabelsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -98,7 +98,7 @@ type ListSystemLabelsUnauthorized struct {
 }
 
 func (o *ListSystemLabelsUnauthorized) Error() string {
-	return fmt.Sprintf("[PATCH /api/v1/labels/system][%d] listSystemLabelsUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabelsUnauthorized ", 401)
 }
 
 func (o *ListSystemLabelsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -119,7 +119,7 @@ type ListSystemLabelsForbidden struct {
 }
 
 func (o *ListSystemLabelsForbidden) Error() string {
-	return fmt.Sprintf("[PATCH /api/v1/labels/system][%d] listSystemLabelsForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabelsForbidden ", 403)
 }
 
 func (o *ListSystemLabelsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -150,7 +150,7 @@ func (o *ListSystemLabelsDefault) Code() int {
 }
 
 func (o *ListSystemLabelsDefault) Error() string {
-	return fmt.Sprintf("[PATCH /api/v1/labels/system][%d] listSystemLabels default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabels default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *ListSystemLabelsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

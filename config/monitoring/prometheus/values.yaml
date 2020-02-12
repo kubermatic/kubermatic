@@ -71,8 +71,10 @@ prometheus:
   # effectively disable the stock recordings and alerts.
   ruleFiles:
   - /etc/prometheus/rules/general-*.yaml
-  - /etc/prometheus/rules/kubermatic-master-*.yaml
   - /etc/prometheus/rules/kubermatic-seed-*.yaml
+  # I you are running a non-master cluster, you should comment the
+  # following line to disable master components alerts.
+  - /etc/prometheus/rules/kubermatic-master-*.yaml
   # If you run in an environment where access to Kubernetes
   # scheduler and controller-manager is not possible (like GKE),
   # disable the expression below to not create false alerts
@@ -119,7 +121,7 @@ prometheus:
     enabled: false
     image:
       repository: quay.io/thanos/thanos
-      tag: v0.8.1
+      tag: v0.10.1
 
     store:
       replicas: 2
@@ -243,7 +245,13 @@ prometheus:
           cpu: 300m
           memory: 1Gi
     thanosStore:
-      resources: {}
+      resources:
+        requests:
+          cpu: 250m
+          memory: 1536Mi
+        limits:
+          cpu: 1
+          memory: 3Gi
     thanosQuery:
       resources:
         requests:
@@ -256,10 +264,10 @@ prometheus:
       resources:
         requests:
           cpu: 500m
-          memory: 4Gi
+          memory: 2Gi
         limits:
           cpu: 2
-          memory: 8Gi
+          memory: 4Gi
     thanosUI:
       resources:
         requests:

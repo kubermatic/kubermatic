@@ -47,7 +47,8 @@ func NewTestRouting(
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
-	presetsProvider provider.PresetProvider) http.Handler {
+	presetsProvider provider.PresetProvider,
+	admissionPluginProvider provider.AdmissionPluginsProvider) http.Handler {
 
 	updateManager := version.New(versions, updates)
 	r := handler.NewRouting(
@@ -78,6 +79,7 @@ func NewTestRouting(
 		userInfoGetter,
 		settingsProvider,
 		adminProvider,
+		admissionPluginProvider,
 	)
 
 	mainRouter := mux.NewRouter()

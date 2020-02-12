@@ -24,7 +24,7 @@ export KUBERMATIC_CONFIG=/tmp/kubermatic.yaml
 
 # deploy to dev
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}
-vault kv get -field=values.yaml dev/seed-clusters/dev.kubermatic.io > ${VALUES_FILE}
+vault kv get -field=europe-west3-c-values.yaml dev/seed-clusters/dev.kubermatic.io > ${VALUES_FILE}
 vault kv get -field=.dockerconfigjson dev/seed-clusters/dev.kubermatic.io > ${DOCKER_CONFIG}
 vault kv get -field=kubermatic.yaml dev/seed-clusters/dev.kubermatic.io > ${KUBERMATIC_CONFIG}
 echodate "Successfully got secrets for dev from Vault"

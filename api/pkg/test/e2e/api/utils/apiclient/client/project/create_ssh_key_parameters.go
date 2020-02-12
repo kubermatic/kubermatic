@@ -15,6 +15,8 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 
 	strfmt "github.com/go-openapi/strfmt"
+
+	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // NewCreateSSHKeyParams creates a new CreateSSHKeyParams object
@@ -61,6 +63,8 @@ for the create SSH key operation typically these are written to a http.Request
 */
 type CreateSSHKeyParams struct {
 
+	/*Key*/
+	Key *models.SSHKey
 	/*ProjectID*/
 	ProjectID string
 
@@ -102,6 +106,17 @@ func (o *CreateSSHKeyParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithKey adds the key to the create SSH key params
+func (o *CreateSSHKeyParams) WithKey(key *models.SSHKey) *CreateSSHKeyParams {
+	o.SetKey(key)
+	return o
+}
+
+// SetKey adds the key to the create SSH key params
+func (o *CreateSSHKeyParams) SetKey(key *models.SSHKey) {
+	o.Key = key
+}
+
 // WithProjectID adds the projectID to the create SSH key params
 func (o *CreateSSHKeyParams) WithProjectID(projectID string) *CreateSSHKeyParams {
 	o.SetProjectID(projectID)
@@ -120,6 +135,12 @@ func (o *CreateSSHKeyParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 	var res []error
+
+	if o.Key != nil {
+		if err := r.SetBodyParam(o.Key); err != nil {
+			return err
+		}
+	}
 
 	// path param project_id
 	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {

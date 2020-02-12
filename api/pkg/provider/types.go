@@ -513,3 +513,11 @@ type PresetProvider interface {
 	GetPreset(userInfo *UserInfo, name string) (*kubermaticv1.Preset, error)
 	SetCloudCredentials(userInfo *UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error)
 }
+
+// AdmissionPluginsProvider declares the set of methods for interacting with admission plugins
+type AdmissionPluginsProvider interface {
+	List(userInfo *UserInfo) ([]kubermaticv1.AdmissionPlugin, error)
+	Get(userInfo *UserInfo, name string) (*kubermaticv1.AdmissionPlugin, error)
+	Delete(userInfo *UserInfo, name string) error
+	ListPluginNamesFromVersion(fromVersion string) ([]string, error)
+}

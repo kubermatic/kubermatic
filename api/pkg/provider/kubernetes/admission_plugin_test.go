@@ -15,7 +15,7 @@ import (
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestAdmissionPlugins(t *testing.T) {
+func TestListAdmissionPluginsFromVersion(t *testing.T) {
 	t.Parallel()
 
 	version113, err := semver.NewSemver("v1.13")
@@ -205,7 +205,7 @@ func TestAdmissionPlugins(t *testing.T) {
 			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.plugins...)
 			provider := kubernetes.NewAdmissionPluginsProvider(context.Background(), fakeClient)
 
-			result, err := provider.GetAdmissionPlugins(tc.fromVersion)
+			result, err := provider.ListPluginNamesFromVersion(tc.fromVersion)
 
 			if len(tc.expectedError) > 0 {
 				if err == nil {

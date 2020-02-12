@@ -113,6 +113,35 @@ func (a *Client) GetAddonConfig(params *GetAddonConfigParams, authInfo runtime.C
 }
 
 /*
+GetAdmissionPlugins returns specified addon config
+*/
+func (a *Client) GetAdmissionPlugins(params *GetAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdmissionPluginsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetAdmissionPluginsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getAdmissionPlugins",
+		Method:             "GET",
+		PathPattern:        "/api/v1/admission/plugins/{version}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAdmissionPluginsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetAdmissionPluginsOK), nil
+
+}
+
+/*
 ListAddonConfigs returns all available addon configs
 */
 func (a *Client) ListAddonConfigs(params *ListAddonConfigsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAddonConfigsOK, error) {
@@ -152,7 +181,7 @@ func (a *Client) ListSystemLabels(params *ListSystemLabelsParams, authInfo runti
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "listSystemLabels",
-		Method:             "PATCH",
+		Method:             "GET",
 		PathPattern:        "/api/v1/labels/system",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},

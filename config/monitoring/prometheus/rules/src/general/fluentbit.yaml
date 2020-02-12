@@ -4,7 +4,7 @@ groups:
   - alert: FluentbitManyFailedRetries
     annotations:
       message: Fluentbit pod `{{ $labels.pod }}` on `{{ $labels.node }}` is experiencing an elevated failed retry rate.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-fluentbitmanyfailedretries
+      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-fluentbitmanyfailedretries
     expr: |
       sum by (namespace, pod, node) (kube_pod_info) *
         on (namespace, pod)
@@ -23,7 +23,7 @@ groups:
   - alert: FluentbitManyOutputErrors
     annotations:
       message: Fluentbit pod `{{ $labels.pod }}` on `{{ $labels.node }}` is experiencing an elevated output error rate.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-fluentbitmanyoutputerrors
+      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-fluentbitmanyoutputerrors
     expr: |
       sum by (namespace, pod, node) (kube_pod_info) *
         on (namespace, pod)
@@ -42,7 +42,7 @@ groups:
   - alert: FluentbitNotProcessingNewLogs
     annotations:
       message: Fluentbit pod `{{ $labels.pod }}` on `{{ $labels.node }}` has not processed any new logs for the last 30 minutes.
-      runbook_url: https://docs.kubermatic.io/monitoring/runbook/#alert-fluentbitnotprocessingnewlogs
+      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-fluentbitnotprocessingnewlogs
     expr: |
       sum by (namespace, pod, node) (kube_pod_info) *
         on (namespace, pod)

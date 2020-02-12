@@ -186,6 +186,118 @@
         }
       }
     },
+    "/api/v1/admin/admission/plugins": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Returns all admission plugins from the CRDs.",
+        "operationId": "listAdmissionPlugins",
+        "responses": {
+          "200": {
+            "description": "AdmissionPlugin",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AdmissionPlugin"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/admission/plugins/{name}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Gets the admission plugin.",
+        "operationId": "getAdmissionPlugin",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AdmissionPlugin",
+            "schema": {
+              "$ref": "#/definitions/AdmissionPlugin"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Deletes the admission plugin.",
+        "operationId": "deleteAdmissionPlugin",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/settings": {
       "get": {
         "produces": [
@@ -250,6 +362,41 @@
             "$ref": "#/responses/empty"
           },
           "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admission/plugins/{version}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Returns specified addon config.",
+        "operationId": "getAdmissionPlugins",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Version",
+            "name": "version",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AdmissionPluginList",
+            "schema": {
+              "$ref": "#/definitions/AdmissionPluginList"
+            }
+          },
+          "401": {
             "$ref": "#/responses/empty"
           },
           "default": {
@@ -370,7 +517,7 @@
       }
     },
     "/api/v1/labels/system": {
-      "patch": {
+      "get": {
         "description": "List restricted system labels",
         "produces": [
           "application/json"
@@ -5521,6 +5668,13 @@
             "name": "project_id",
             "in": "path",
             "required": true
+          },
+          {
+            "name": "Key",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/SSHKey"
+            }
           }
         ],
         "responses": {
@@ -7186,6 +7340,32 @@
           "type": "string",
           "x-go-name": "Name"
         }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AdmissionPlugin": {
+      "description": "AdmissionPlugin represents an admission plugin",
+      "type": "object",
+      "properties": {
+        "fromVersion": {
+          "$ref": "#/definitions/Semver"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "plugin": {
+          "type": "string",
+          "x-go-name": "Plugin"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AdmissionPluginList": {
+      "description": "AdmissionPluginList represents a list of admission plugins",
+      "type": "array",
+      "items": {
+        "type": "string"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
@@ -10509,6 +10689,10 @@
       "description": "UserSettings represent an user settings",
       "type": "object",
       "properties": {
+        "collapseSidenav": {
+          "type": "boolean",
+          "x-go-name": "CollapseSidenav"
+        },
         "itemsPerPage": {
           "type": "integer",
           "format": "int8",

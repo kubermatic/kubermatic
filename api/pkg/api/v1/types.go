@@ -1373,6 +1373,19 @@ type ResourceLabelMap map[ResourceType]LabelKeyList
 // swagger:model GlobalSettings
 type GlobalSettings kubermaticv1.SettingSpec
 
+// AdmissionPluginList represents a list of admission plugins
+// swagger:model AdmissionPluginList
+type AdmissionPluginList []string
+
+// AdmissionPlugin represents an admission plugin
+// swagger:model AdmissionPlugin
+type AdmissionPlugin struct {
+	Name   string `json:"name"`
+	Plugin string `json:"plugin"`
+	// FromVersion flag can be empty. It means the plugin fit to all k8s versions
+	FromVersion *ksemver.Semver `json:"fromVersion,omitempty"`
+}
+
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup
 	NodeDeletionFinalizer = "kubermatic.io/delete-nodes"
