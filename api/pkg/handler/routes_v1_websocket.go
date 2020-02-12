@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
-	wshandler "github.com/kubermatic/kubermatic/api/pkg/handler/websocket"
+	wsh "github.com/kubermatic/kubermatic/api/pkg/handler/websocket"
+	"github.com/kubermatic/kubermatic/api/pkg/log"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"go.uber.org/zap"
 )
 
 var upgrader = websocket.Upgrader{
@@ -24,20 +24,20 @@ func (r Routing) RegisterV1Websocket(mux *mux.Router) {
 func (r Routing) getKubermaticSettingsWebsocket(w http.ResponseWriter, req *http.Request) {
 	err := verifyAuthorizationToken(req, r.tokenVerifiers)
 	if err != nil {
-		r.log.Error(err)
+		log.Logger.Debug(err)
 		return
 	}
 
 	ws, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
 		if _, ok := err.(websocket.HandshakeError); !ok {
-			r.log.Error(err)
+			log.Logger.Debug(err)
 		}
 		return
 	}
 
-	go wshandler.WriteSettings(ws, r.settingsWatcher, r.settingsProvider)
-	requestLoggingReader(ws, r.log)
+	go wsh.WriteSettings(ws, r.settingsWatcher, r.settingsProvider)
+	requestLoggingReader(ws)
 }
 
 func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifier) error {
@@ -51,11 +51,11 @@ func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifie
 	return err
 }
 
-func requestLoggingReader(websocket *websocket.Conn, logger *zap.SugaredLogger) {
+func requestLoggingReader(websocket *websocket.Conn) {
 	defer func() {
 		err := websocket.Close()
 		if err != nil {
-			logger.Error(err)
+			log.Logger.Debug(err)
 		}
 	}()
 
@@ -67,6 +67,6 @@ func requestLoggingReader(websocket *websocket.Conn, logger *zap.SugaredLogger) 
 			break
 		}
 
-		logger.Debug(message)
+		log.Logger.Debug(message)
 	}
 }

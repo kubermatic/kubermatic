@@ -1,10 +1,10 @@
 package kubernetes
 
 import (
-	"fmt"
 	"reflect"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	"code.cloudfoundry.org/go-pubsub"
@@ -43,16 +43,16 @@ func run(input watch.Interface, settingsPublisher *pubsub.PubSub) {
 		select {
 		case event, ok := <-input.ResultChan():
 			if !ok {
-				fmt.Printf("settings watch ended with timeout")
+				log.Logger.Debugf("settings watch ended with timeout")
 				return
 			}
 
-			settings, ok := event.Object.(*kubermaticv1.KubermaticSetting)
+			settings, ok := event.Object.(*v1.KubermaticSetting)
 			if !ok {
-				fmt.Printf("expected settings got %s", reflect.TypeOf(event.Object))
+				log.Logger.Debugf("expected settings got %s", reflect.TypeOf(event.Object))
 			}
 
-			if settings.Name == kubermaticv1.GlobalSettingsName {
+			if settings != nil && settings.Name == v1.GlobalSettingsName {
 				if event.Type == watch.Added || event.Type == watch.Modified {
 					settingsPublisher.Publish(settings, pubsub.LinearTreeTraverser([]uint64{}))
 				} else if event.Type == watch.Deleted {
