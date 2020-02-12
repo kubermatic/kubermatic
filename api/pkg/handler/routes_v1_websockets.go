@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/watcher/common"
 
@@ -26,23 +25,16 @@ func (r Routing) RegisterV1Websocket(mux *mux.Router) {
 }
 
 func (r Routing) getKubermaticSettingsWebsocket(w http.ResponseWriter, req *http.Request) {
-	x := auth.NewHeaderBearerTokenExtractor("Authorization")
-	token, err := x.Extract(req)
+	err := verifyToken(req, r.tokenVerifiers)
 	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	_, err = r.tokenVerifiers.Verify(context.TODO(), token)
-	if err != nil {
-		fmt.Println(err)
+		r.log.Error(err)
 		return
 	}
 
 	ws, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
 		if _, ok := err.(websocket.HandshakeError); !ok {
-			kubermaticlog.Logger.Error(err)
+			r.log.Error(err)
 		}
 		return
 	}
@@ -69,22 +61,31 @@ func writer(ws *websocket.Conn, watcher common.SettingsWatcher, provider provide
 		return
 	}
 
-	watcher.Subscribe(func(data interface{}) {
-		fmt.Println(data)
+	watcher.Subscribe(func(settings interface{}) {
+		fmt.Println(settings) // TODO: Check "nil" case.
 
-		//var res []byte
-		//if obj != nil {
-		//	js, err := json.Marshal(obj)
-		//	if err != nil {
-		//		res = js
-		//	}
-		//}
+		response, err := json.Marshal(settings)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
-		//if err := ws.WriteMessage(websocket.TextMessage, data); err != nil {
-		//	return
-		//}
-
+		if err := ws.WriteMessage(websocket.TextMessage, response); err != nil {
+			fmt.Println(err)
+			return
+		}
 	})
+}
+
+func verifyToken(req *http.Request, tokenVerifier auth.TokenVerifier) error {
+	tokenExtractor := auth.NewHeaderBearerTokenExtractor("Authorization")
+	token, err := tokenExtractor.Extract(req)
+	if err != nil {
+		return err
+	}
+
+	_, err = tokenVerifier.Verify(context.TODO(), token) // TODO: Change context?
+	return err
 }
 
 func requestLoggingReader(websocket *websocket.Conn, logger *zap.SugaredLogger) {

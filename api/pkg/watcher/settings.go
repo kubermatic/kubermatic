@@ -54,9 +54,9 @@ func run(input watch.Interface, settingsPublisher *pubsub.PubSub) {
 
 			if settings.Name == kubermaticv1.GlobalSettingsName {
 				if event.Type == watch.Added || event.Type == watch.Modified {
-					settingsPublisher.Publish(settings, pubsub.LinearTreeTraverser([]uint64{1}))
+					settingsPublisher.Publish(settings, pubsub.LinearTreeTraverser([]uint64{}))
 				} else if event.Type == watch.Deleted {
-					settingsPublisher.Publish(nil, pubsub.LinearTreeTraverser([]uint64{1}))
+					settingsPublisher.Publish(nil, pubsub.LinearTreeTraverser([]uint64{}))
 				}
 			}
 		}
