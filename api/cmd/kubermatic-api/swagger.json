@@ -392,11 +392,7 @@
             "name": "Patch",
             "in": "body",
             "schema": {
-              "type": "array",
-              "items": {
-                "type": "integer",
-                "format": "uint8"
-              }
+              "type": "object"
             }
           }
         ],
@@ -551,10 +547,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Kubeconfig",
-            "schema": {
-              "$ref": "#/definitions/Kubeconfig"
-            }
+            "$ref": "#/responses/Kubeconfig"
           },
           "default": {
             "description": "errorResponse",
@@ -668,11 +661,7 @@
             "name": "Patch",
             "in": "body",
             "schema": {
-              "type": "array",
-              "items": {
-                "type": "integer",
-                "format": "uint8"
-              }
+              "type": "object"
             }
           }
         ],
@@ -1199,11 +1188,7 @@
             "name": "Patch",
             "in": "body",
             "schema": {
-              "type": "array",
-              "items": {
-                "type": "integer",
-                "format": "uint8"
-              }
+              "type": "object"
             }
           }
         ],
@@ -1934,11 +1919,7 @@
             "name": "Patch",
             "in": "body",
             "schema": {
-              "type": "array",
-              "items": {
-                "type": "integer",
-                "format": "uint8"
-              }
+              "type": "object"
             }
           }
         ],
@@ -2260,10 +2241,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Kubeconfig",
-            "schema": {
-              "$ref": "#/definitions/Kubeconfig"
-            }
+            "$ref": "#/responses/Kubeconfig"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -2677,11 +2655,7 @@
             "name": "Patch",
             "in": "body",
             "schema": {
-              "type": "array",
-              "items": {
-                "type": "integer",
-                "format": "uint8"
-              }
+              "type": "object"
             }
           }
         ],
@@ -3268,10 +3242,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Kubeconfig",
-            "schema": {
-              "$ref": "#/definitions/Kubeconfig"
-            }
+            "$ref": "#/responses/Kubeconfig"
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -4575,11 +4546,7 @@
             "name": "Patch",
             "in": "body",
             "schema": {
-              "type": "array",
-              "items": {
-                "type": "integer",
-                "format": "uint8"
-              }
+              "type": "object"
             }
           }
         ],
@@ -7846,23 +7813,20 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "ClusterMetrics": {
-      "description": "ControlPlaneMetrics defines a metric for the user cluster control plane resources",
+      "description": "ClusterMetrics defines a metric for the given cluster",
       "type": "object",
       "properties": {
-        "cpuTotalMillicores": {
-          "description": "CPUTotalMillicores in m cores",
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "CPUTotalMillicores"
+        "controlPlane": {
+          "$ref": "#/definitions/ControlPlaneMetrics"
         },
-        "memoryTotalBytes": {
-          "description": "MemoryTotalBytes in bytes",
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "MemoryTotalBytes"
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "nodes": {
+          "$ref": "#/definitions/NodesMetric"
         }
       },
-      "x-go-name": "ControlPlaneMetrics",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "ClusterRole": {
@@ -8007,6 +7971,63 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "Config": {
+      "description": "Config holds the information needed to build connect to remote kubernetes clusters as a given user\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "Legacy field from pkg/api/types.go TypeMeta.\nTODO(jlowdermilk): remove this after eliminating downstream dependencies.\n+optional",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "clusters": {
+          "description": "Clusters is a map of referencable names to cluster configs",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NamedCluster"
+          },
+          "x-go-name": "Clusters"
+        },
+        "contexts": {
+          "description": "Contexts is a map of referencable names to context configs",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NamedContext"
+          },
+          "x-go-name": "Contexts"
+        },
+        "current-context": {
+          "description": "CurrentContext is the name of the context that you would like to use by default",
+          "type": "string",
+          "x-go-name": "CurrentContext"
+        },
+        "extensions": {
+          "description": "Extensions holds additional information. This is useful for extenders so that reads and writes don't clobber unknown fields\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NamedExtension"
+          },
+          "x-go-name": "Extensions"
+        },
+        "kind": {
+          "description": "Legacy field from pkg/api/types.go TypeMeta.\nTODO(jlowdermilk): remove this after eliminating downstream dependencies.\n+optional",
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "preferences": {
+          "$ref": "#/definitions/Preferences"
+        },
+        "users": {
+          "description": "AuthInfos is a map of referencable names to user configs",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NamedAuthInfo"
+          },
+          "x-go-name": "AuthInfos"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
     "ContainerLinuxSpec": {
       "description": "ContainerLinuxSpec ubuntu linux specific settings",
       "type": "object",
@@ -8048,6 +8069,25 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "ControlPlaneMetrics": {
+      "description": "ControlPlaneMetrics defines a metric for the user cluster control plane resources",
+      "type": "object",
+      "properties": {
+        "cpuTotalMillicores": {
+          "description": "CPUTotalMillicores in m cores",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUTotalMillicores"
+        },
+        "memoryTotalBytes": {
+          "description": "MemoryTotalBytes in bytes",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryTotalBytes"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "CreateClusterSpec": {
       "description": "CreateClusterSpec is the structure that is used to create cluster with its initial node deployment",
@@ -8335,11 +8375,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "EmptyResponse": {
-      "description": "EmptyResponse is a empty response",
-      "type": "object",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
     "ErrorDetails": {
       "description": "ErrorDetails contains details about the error",
@@ -8901,63 +8936,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "Kubeconfig": {
-      "description": "Kubeconfig is a clusters kubeconfig",
-      "type": "object",
-      "properties": {
-        "apiVersion": {
-          "description": "Legacy field from pkg/api/types.go TypeMeta.\nTODO(jlowdermilk): remove this after eliminating downstream dependencies.\n+optional",
-          "type": "string",
-          "x-go-name": "APIVersion"
-        },
-        "clusters": {
-          "description": "Clusters is a map of referencable names to cluster configs",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/NamedCluster"
-          },
-          "x-go-name": "Clusters"
-        },
-        "contexts": {
-          "description": "Contexts is a map of referencable names to context configs",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/NamedContext"
-          },
-          "x-go-name": "Contexts"
-        },
-        "current-context": {
-          "description": "CurrentContext is the name of the context that you would like to use by default",
-          "type": "string",
-          "x-go-name": "CurrentContext"
-        },
-        "extensions": {
-          "description": "Extensions holds additional information. This is useful for extenders so that reads and writes don't clobber unknown fields\n+optional",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/NamedExtension"
-          },
-          "x-go-name": "Extensions"
-        },
-        "kind": {
-          "description": "Legacy field from pkg/api/types.go TypeMeta.\nTODO(jlowdermilk): remove this after eliminating downstream dependencies.\n+optional",
-          "type": "string",
-          "x-go-name": "Kind"
-        },
-        "preferences": {
-          "$ref": "#/definitions/Preferences"
-        },
-        "users": {
-          "description": "AuthInfos is a map of referencable names to user configs",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/NamedAuthInfo"
-          },
-          "x-go-name": "AuthInfos"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "KubermaticVersions": {
       "type": "object",
       "title": "KubermaticVersions describes the versions of running Kubermatic components.",
@@ -9422,7 +9400,6 @@
           "x-go-name": "Name"
         }
       },
-      "x-go-name": "NodesMetric",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "NodeResources": {
@@ -9562,6 +9539,48 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "NodesMetric": {
+      "description": "NodesMetric defines a metric for a group of nodes",
+      "type": "object",
+      "properties": {
+        "cpuAvailableMillicores": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUAvailableMillicores"
+        },
+        "cpuTotalMillicores": {
+          "description": "CPUTotalMillicores in m cores",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUTotalMillicores"
+        },
+        "cpuUsedPercentage": {
+          "description": "CPUUsedPercentage in percentage",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUUsedPercentage"
+        },
+        "memoryAvailableBytes": {
+          "description": "MemoryAvailableBytes available memory for node",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryAvailableBytes"
+        },
+        "memoryTotalBytes": {
+          "description": "MemoryTotalBytes current memory usage in bytes",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryTotalBytes"
+        },
+        "memoryUsedPercentage": {
+          "description": "MemoryUsedPercentage in percentage",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MemoryUsedPercentage"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "OIDCSettings": {
       "type": "object",
       "properties": {
@@ -9626,9 +9645,25 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "ObjectReference": {
+      "description": "+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
       "type": "object",
-      "title": "ObjectReference contains basic information about referred object.",
+      "title": "ObjectReference contains enough information to let you inspect or modify the referred object.",
       "properties": {
+        "apiVersion": {
+          "description": "API version of the referent.\n+optional",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "fieldPath": {
+          "description": "If referring to a piece of an object instead of an entire object, this string\nshould contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].\nFor example, if the object reference is to a container within a pod, this would take on a value like:\n\"spec.containers{name}\" (where \"name\" refers to the name of the container that triggered\nthe event) or if no container name is specified \"spec.containers[2]\" (container with\nindex 2 in this pod). This syntax is chosen only to have some well-defined way of\nreferencing a part of an object.\nTODO: this design is not final and this field is subject to change in the future.\n+optional",
+          "type": "string",
+          "x-go-name": "FieldPath"
+        },
+        "kind": {
+          "description": "Kind of the referent.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds\n+optional",
+          "type": "string",
+          "x-go-name": "Kind"
+        },
         "name": {
           "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\n+optional",
           "type": "string",
@@ -9639,13 +9674,16 @@
           "type": "string",
           "x-go-name": "Namespace"
         },
-        "type": {
-          "description": "Type of the referent.",
+        "resourceVersion": {
+          "description": "Specific resourceVersion to which this reference is made, if any.\nMore info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency\n+optional",
           "type": "string",
-          "x-go-name": "Type"
+          "x-go-name": "ResourceVersion"
+        },
+        "uid": {
+          "$ref": "#/definitions/UID"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
     },
     "Openshift": {
       "type": "object",
@@ -10331,7 +10369,11 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/runtime"
     },
     "ResourceLabelMap": {
+      "type": "object",
       "title": "ResourceLabelMap defines list of labels grouped by specific resource types.",
+      "additionalProperties": {
+        "$ref": "#/definitions/LabelKeyList"
+      },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "ResourceType": {
@@ -10621,17 +10663,17 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "Subject": {
-      "description": "Right now we support \"User\" as a API group.",
+      "description": "or a value for non-objects such as user and group names.",
       "type": "object",
-      "title": "Subject contains a reference to the object or user identities a role binding applies to.",
+      "title": "Subject contains a reference to the object or user identities a role binding applies to.  This can either hold a direct API object reference,",
       "properties": {
         "apiGroup": {
-          "description": "APIGroup holds the API group of the referenced subject.\nDefaults to \"rbac.authorization.k8s.io\" for User and Group subjects.",
+          "description": "APIGroup holds the API group of the referenced subject.\nDefaults to \"\" for ServiceAccount subjects.\nDefaults to \"rbac.authorization.k8s.io\" for User and Group subjects.\n+optional",
           "type": "string",
           "x-go-name": "APIGroup"
         },
         "kind": {
-          "description": "Kind of object being referenced. Values defined by this API group are \"User\" and \"Group\".\nIf the Authorizer does not recognized the kind value, the Authorizer should report an error.",
+          "description": "Kind of object being referenced. Values defined by this API group are \"User\", \"Group\", and \"ServiceAccount\".\nIf the Authorizer does not recognized the kind value, the Authorizer should report an error.",
           "type": "string",
           "x-go-name": "Kind"
         },
@@ -10639,9 +10681,14 @@
           "description": "Name of the object being referenced.",
           "type": "string",
           "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Namespace of the referenced object.  If the object kind is non-namespace, such as \"User\" or \"Group\", and this value is not empty\nthe Authorizer should report an error.\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/rbac/v1"
     },
     "TaintSpec": {
       "description": "TaintSpec defines a node taint",
@@ -10663,8 +10710,10 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "Time": {
-      "description": "Time is a wrapper around time.Time which supports correct\nmarshaling JSON.  Wrappers are provided for many\nof the factory methods that the time package offers.",
-      "type": "object",
+      "description": "Programs using times should typically store and pass them as values,\nnot pointers. That is, time variables and struct fields should be of\ntype time.Time, not *time.Time.\n\nA Time value can be used by multiple goroutines simultaneously except\nthat the methods GobDecode, UnmarshalBinary, UnmarshalJSON and\nUnmarshalText are not concurrency-safe.\n\nTime instants can be compared using the Before, After, and Equal methods.\nThe Sub method subtracts two instants, producing a Duration.\nThe Add method adds a Time and a Duration, producing a Time.\n\nThe zero value of type Time is January 1, year 1, 00:00:00.000000000 UTC.\nAs this time is unlikely to come up in practice, the IsZero method gives\na simple way of detecting a time that has not been initialized explicitly.\n\nEach Time has associated with it a Location, consulted when computing the\npresentation form of the time, such as in the Format, Hour, and Year methods.\nThe methods Local, UTC, and In return a Time with a specific location.\nChanging the location in this way changes only the presentation; it does not\nchange the instant in time being denoted and therefore does not affect the\ncomputations described in earlier paragraphs.\n\nRepresentations of a Time value saved by the GobEncode, MarshalBinary,\nMarshalJSON, and MarshalText methods store the Time.Location's offset, but not\nthe location name. They therefore lose information about Daylight Saving Time.\n\nIn addition to the required “wall clock” reading, a Time may contain an optional\nreading of the current process's monotonic clock, to provide additional precision\nfor comparison or subtraction.\nSee the “Monotonic Clocks” section in the package documentation for details.\n\nNote that the Go == operator compares not just the time instant but also the\nLocation and the monotonic clock reading. Therefore, Time values should not\nbe used as map or database keys without first guaranteeing that the\nidentical Location has been set for all values, which can be achieved\nthrough use of the UTC or Local method, and that the monotonic clock reading\nhas been stripped by setting t = t.Round(0). In general, prefer t.Equal(u)\nto t == u, since t.Equal uses the most accurate comparison available and\ncorrectly handles the case when only one of its arguments has a monotonic\nclock reading.",
+      "type": "string",
+      "format": "date-time",
+      "title": "A Time represents an instant in time with nanosecond precision.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "UID": {
@@ -10915,6 +10964,12 @@
     }
   },
   "responses": {
+    "Kubeconfig": {
+      "description": "Kubeconfig is a clusters kubeconfig",
+      "schema": {
+        "$ref": "#/definitions/Config"
+      }
+    },
     "empty": {
       "description": "EmptyResponse is a empty response"
     }

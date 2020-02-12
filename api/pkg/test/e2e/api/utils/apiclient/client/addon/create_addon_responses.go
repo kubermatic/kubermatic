@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // CreateAddonReader is a Reader for the CreateAddon structure.
@@ -24,28 +24,24 @@ type CreateAddonReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *CreateAddonReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewCreateAddonCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewCreateAddonUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewCreateAddonForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewCreateAddonDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type CreateAddonCreated struct {
 
 func (o *CreateAddonCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons][%d] createAddonCreated  %+v", 201, o.Payload)
+}
+
+func (o *CreateAddonCreated) GetPayload() *models.Addon {
+	return o.Payload
 }
 
 func (o *CreateAddonCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *CreateAddonDefault) Code() int {
 
 func (o *CreateAddonDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons][%d] createAddon default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *CreateAddonDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *CreateAddonDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

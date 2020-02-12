@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // GetRoleReader is a Reader for the GetRole structure.
@@ -24,28 +24,24 @@ type GetRoleReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetRoleReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetRoleOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewGetRoleUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewGetRoleForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewGetRoleDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type GetRoleOK struct {
 
 func (o *GetRoleOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}][%d] getRoleOK  %+v", 200, o.Payload)
+}
+
+func (o *GetRoleOK) GetPayload() *models.Role {
+	return o.Payload
 }
 
 func (o *GetRoleOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *GetRoleDefault) Code() int {
 
 func (o *GetRoleDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}][%d] getRole default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetRoleDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *GetRoleDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

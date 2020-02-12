@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // GetKubermaticSettingsReader is a Reader for the GetKubermaticSettings structure.
@@ -24,28 +24,24 @@ type GetKubermaticSettingsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetKubermaticSettingsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetKubermaticSettingsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewGetKubermaticSettingsUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewGetKubermaticSettingsForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewGetKubermaticSettingsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type GetKubermaticSettingsOK struct {
 
 func (o *GetKubermaticSettingsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] getKubermaticSettingsOK  %+v", 200, o.Payload)
+}
+
+func (o *GetKubermaticSettingsOK) GetPayload() *models.GlobalSettings {
+	return o.Payload
 }
 
 func (o *GetKubermaticSettingsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *GetKubermaticSettingsDefault) Code() int {
 
 func (o *GetKubermaticSettingsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] getKubermaticSettings default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetKubermaticSettingsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *GetKubermaticSettingsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

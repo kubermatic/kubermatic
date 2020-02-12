@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // CreateNodeForClusterLegacyReader is a Reader for the CreateNodeForClusterLegacy structure.
@@ -24,28 +24,24 @@ type CreateNodeForClusterLegacyReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *CreateNodeForClusterLegacyReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewCreateNodeForClusterLegacyCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewCreateNodeForClusterLegacyUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewCreateNodeForClusterLegacyForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewCreateNodeForClusterLegacyDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type CreateNodeForClusterLegacyCreated struct {
 
 func (o *CreateNodeForClusterLegacyCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes][%d] createNodeForClusterLegacyCreated  %+v", 201, o.Payload)
+}
+
+func (o *CreateNodeForClusterLegacyCreated) GetPayload() *models.Node {
+	return o.Payload
 }
 
 func (o *CreateNodeForClusterLegacyCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *CreateNodeForClusterLegacyDefault) Code() int {
 
 func (o *CreateNodeForClusterLegacyDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes][%d] createNodeForClusterLegacy default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *CreateNodeForClusterLegacyDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *CreateNodeForClusterLegacyDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

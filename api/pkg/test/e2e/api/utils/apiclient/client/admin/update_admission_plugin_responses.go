@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // UpdateAdmissionPluginReader is a Reader for the UpdateAdmissionPlugin structure.
@@ -24,28 +24,24 @@ type UpdateAdmissionPluginReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UpdateAdmissionPluginReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewUpdateAdmissionPluginOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewUpdateAdmissionPluginUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewUpdateAdmissionPluginForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewUpdateAdmissionPluginDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type UpdateAdmissionPluginOK struct {
 
 func (o *UpdateAdmissionPluginOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/admission/plugins/{name}][%d] updateAdmissionPluginOK  %+v", 200, o.Payload)
+}
+
+func (o *UpdateAdmissionPluginOK) GetPayload() *models.AdmissionPlugin {
+	return o.Payload
 }
 
 func (o *UpdateAdmissionPluginOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *UpdateAdmissionPluginDefault) Code() int {
 
 func (o *UpdateAdmissionPluginDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/admission/plugins/{name}][%d] updateAdmissionPlugin default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *UpdateAdmissionPluginDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *UpdateAdmissionPluginDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

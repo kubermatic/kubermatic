@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListVSphereNetworksNoCredentialsReader is a Reader for the ListVSphereNetworksNoCredentials structure.
@@ -24,14 +24,12 @@ type ListVSphereNetworksNoCredentialsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListVSphereNetworksNoCredentialsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListVSphereNetworksNoCredentialsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListVSphereNetworksNoCredentialsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListVSphereNetworksNoCredentialsOK struct {
 
 func (o *ListVSphereNetworksNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks][%d] listVSphereNetworksNoCredentialsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListVSphereNetworksNoCredentialsOK) GetPayload() []*models.VSphereNetwork {
+	return o.Payload
 }
 
 func (o *ListVSphereNetworksNoCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListVSphereNetworksNoCredentialsDefault) Code() int {
 
 func (o *ListVSphereNetworksNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks][%d] listVSphereNetworksNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListVSphereNetworksNoCredentialsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListVSphereNetworksNoCredentialsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

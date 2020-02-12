@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // BindUserToClusterRoleReader is a Reader for the BindUserToClusterRole structure.
@@ -24,28 +24,24 @@ type BindUserToClusterRoleReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *BindUserToClusterRoleReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewBindUserToClusterRoleOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewBindUserToClusterRoleUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewBindUserToClusterRoleForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewBindUserToClusterRoleDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type BindUserToClusterRoleOK struct {
 
 func (o *BindUserToClusterRoleOK) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleOK  %+v", 200, o.Payload)
+}
+
+func (o *BindUserToClusterRoleOK) GetPayload() *models.ClusterRoleBinding {
+	return o.Payload
 }
 
 func (o *BindUserToClusterRoleOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *BindUserToClusterRoleDefault) Code() int {
 
 func (o *BindUserToClusterRoleDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRole default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *BindUserToClusterRoleDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *BindUserToClusterRoleDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

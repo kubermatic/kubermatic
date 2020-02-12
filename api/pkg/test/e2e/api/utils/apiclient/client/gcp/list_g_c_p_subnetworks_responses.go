@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListGCPSubnetworksReader is a Reader for the ListGCPSubnetworks structure.
@@ -24,14 +24,12 @@ type ListGCPSubnetworksReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListGCPSubnetworksReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListGCPSubnetworksOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListGCPSubnetworksDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListGCPSubnetworksOK struct {
 
 func (o *ListGCPSubnetworksOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/{dc}/subnetworks][%d] listGCPSubnetworksOK  %+v", 200, o.Payload)
+}
+
+func (o *ListGCPSubnetworksOK) GetPayload() models.GCPSubnetworkList {
+	return o.Payload
 }
 
 func (o *ListGCPSubnetworksOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListGCPSubnetworksDefault) Code() int {
 
 func (o *ListGCPSubnetworksDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/{dc}/subnetworks][%d] listGCPSubnetworks default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListGCPSubnetworksDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListGCPSubnetworksDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

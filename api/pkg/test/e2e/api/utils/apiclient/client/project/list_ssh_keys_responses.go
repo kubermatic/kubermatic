@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListSSHKeysReader is a Reader for the ListSSHKeys structure.
@@ -24,28 +24,24 @@ type ListSSHKeysReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListSSHKeysReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListSSHKeysOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewListSSHKeysUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewListSSHKeysForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewListSSHKeysDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type ListSSHKeysOK struct {
 
 func (o *ListSSHKeysOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/sshkeys][%d] listSshKeysOK  %+v", 200, o.Payload)
+}
+
+func (o *ListSSHKeysOK) GetPayload() []*models.SSHKey {
+	return o.Payload
 }
 
 func (o *ListSSHKeysOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,6 +151,10 @@ func (o *ListSSHKeysDefault) Code() int {
 
 func (o *ListSSHKeysDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/sshkeys][%d] listSSHKeys default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListSSHKeysDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListSSHKeysDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

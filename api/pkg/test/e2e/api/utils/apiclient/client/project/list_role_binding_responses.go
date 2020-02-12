@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListRoleBindingReader is a Reader for the ListRoleBinding structure.
@@ -24,28 +24,24 @@ type ListRoleBindingReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListRoleBindingReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListRoleBindingOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewListRoleBindingUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewListRoleBindingForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewListRoleBindingDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type ListRoleBindingOK struct {
 
 func (o *ListRoleBindingOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBindingOK  %+v", 200, o.Payload)
+}
+
+func (o *ListRoleBindingOK) GetPayload() []*models.RoleBinding {
+	return o.Payload
 }
 
 func (o *ListRoleBindingOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,6 +151,10 @@ func (o *ListRoleBindingDefault) Code() int {
 
 func (o *ListRoleBindingDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/bindings][%d] listRoleBinding default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListRoleBindingDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListRoleBindingDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

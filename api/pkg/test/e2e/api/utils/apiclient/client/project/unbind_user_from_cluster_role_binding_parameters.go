@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // NewUnbindUserFromClusterRoleBindingParams creates a new UnbindUserFromClusterRoleBindingParams object
@@ -68,7 +68,7 @@ type UnbindUserFromClusterRoleBindingParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 	/*RoleID*/
@@ -134,15 +134,15 @@ func (o *UnbindUserFromClusterRoleBindingParams) SetClusterID(clusterID string) 
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the unbind user from cluster role binding params
-func (o *UnbindUserFromClusterRoleBindingParams) WithDc(dc string) *UnbindUserFromClusterRoleBindingParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the unbind user from cluster role binding params
+func (o *UnbindUserFromClusterRoleBindingParams) WithDC(dc string) *UnbindUserFromClusterRoleBindingParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the unbind user from cluster role binding params
-func (o *UnbindUserFromClusterRoleBindingParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the unbind user from cluster role binding params
+func (o *UnbindUserFromClusterRoleBindingParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the unbind user from cluster role binding params
@@ -187,7 +187,7 @@ func (o *UnbindUserFromClusterRoleBindingParams) WriteToRequest(r runtime.Client
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

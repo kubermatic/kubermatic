@@ -64,7 +64,7 @@ type DeleteServiceAccountTokenParams struct {
 	/*ProjectID*/
 	ProjectID string
 	/*ServiceaccountID*/
-	ServiceaccountID string
+	ServiceAccountID string
 	/*TokenID*/
 	TokenID string
 
@@ -117,15 +117,15 @@ func (o *DeleteServiceAccountTokenParams) SetProjectID(projectID string) {
 	o.ProjectID = projectID
 }
 
-// WithServiceaccountID adds the serviceaccountID to the delete service account token params
-func (o *DeleteServiceAccountTokenParams) WithServiceaccountID(serviceaccountID string) *DeleteServiceAccountTokenParams {
-	o.SetServiceaccountID(serviceaccountID)
+// WithServiceAccountID adds the serviceaccountID to the delete service account token params
+func (o *DeleteServiceAccountTokenParams) WithServiceAccountID(serviceaccountID string) *DeleteServiceAccountTokenParams {
+	o.SetServiceAccountID(serviceaccountID)
 	return o
 }
 
-// SetServiceaccountID adds the serviceaccountId to the delete service account token params
-func (o *DeleteServiceAccountTokenParams) SetServiceaccountID(serviceaccountID string) {
-	o.ServiceaccountID = serviceaccountID
+// SetServiceAccountID adds the serviceaccountId to the delete service account token params
+func (o *DeleteServiceAccountTokenParams) SetServiceAccountID(serviceaccountID string) {
+	o.ServiceAccountID = serviceaccountID
 }
 
 // WithTokenID adds the tokenID to the delete service account token params
@@ -153,7 +153,7 @@ func (o *DeleteServiceAccountTokenParams) WriteToRequest(r runtime.ClientRequest
 	}
 
 	// path param serviceaccount_id
-	if err := r.SetPathParam("serviceaccount_id", o.ServiceaccountID); err != nil {
+	if err := r.SetPathParam("serviceaccount_id", o.ServiceAccountID); err != nil {
 		return err
 	}
 

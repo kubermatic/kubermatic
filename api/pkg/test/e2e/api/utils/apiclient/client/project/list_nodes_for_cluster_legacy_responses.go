@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListNodesForClusterLegacyReader is a Reader for the ListNodesForClusterLegacy structure.
@@ -24,28 +24,24 @@ type ListNodesForClusterLegacyReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListNodesForClusterLegacyReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListNodesForClusterLegacyOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewListNodesForClusterLegacyUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewListNodesForClusterLegacyForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewListNodesForClusterLegacyDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type ListNodesForClusterLegacyOK struct {
 
 func (o *ListNodesForClusterLegacyOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes][%d] listNodesForClusterLegacyOK  %+v", 200, o.Payload)
+}
+
+func (o *ListNodesForClusterLegacyOK) GetPayload() []*models.Node {
+	return o.Payload
 }
 
 func (o *ListNodesForClusterLegacyOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,6 +151,10 @@ func (o *ListNodesForClusterLegacyDefault) Code() int {
 
 func (o *ListNodesForClusterLegacyDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes][%d] listNodesForClusterLegacy default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListNodesForClusterLegacyDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListNodesForClusterLegacyDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

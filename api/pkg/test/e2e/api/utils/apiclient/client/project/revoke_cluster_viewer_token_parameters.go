@@ -64,7 +64,7 @@ type RevokeClusterViewerTokenParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -117,15 +117,15 @@ func (o *RevokeClusterViewerTokenParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the revoke cluster viewer token params
-func (o *RevokeClusterViewerTokenParams) WithDc(dc string) *RevokeClusterViewerTokenParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the revoke cluster viewer token params
+func (o *RevokeClusterViewerTokenParams) WithDC(dc string) *RevokeClusterViewerTokenParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the revoke cluster viewer token params
-func (o *RevokeClusterViewerTokenParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the revoke cluster viewer token params
+func (o *RevokeClusterViewerTokenParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the revoke cluster viewer token params
@@ -153,7 +153,7 @@ func (o *RevokeClusterViewerTokenParams) WriteToRequest(r runtime.ClientRequest,
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // CreateNodeDeploymentReader is a Reader for the CreateNodeDeployment structure.
@@ -24,28 +24,24 @@ type CreateNodeDeploymentReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *CreateNodeDeploymentReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewCreateNodeDeploymentCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewCreateNodeDeploymentUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewCreateNodeDeploymentForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewCreateNodeDeploymentDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type CreateNodeDeploymentCreated struct {
 
 func (o *CreateNodeDeploymentCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] createNodeDeploymentCreated  %+v", 201, o.Payload)
+}
+
+func (o *CreateNodeDeploymentCreated) GetPayload() *models.NodeDeployment {
+	return o.Payload
 }
 
 func (o *CreateNodeDeploymentCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *CreateNodeDeploymentDefault) Code() int {
 
 func (o *CreateNodeDeploymentDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] createNodeDeployment default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *CreateNodeDeploymentDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *CreateNodeDeploymentDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

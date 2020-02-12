@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListNodeDeploymentNodesReader is a Reader for the ListNodeDeploymentNodes structure.
@@ -24,28 +24,24 @@ type ListNodeDeploymentNodesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListNodeDeploymentNodesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListNodeDeploymentNodesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewListNodeDeploymentNodesUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewListNodeDeploymentNodesForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewListNodeDeploymentNodesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type ListNodeDeploymentNodesOK struct {
 
 func (o *ListNodeDeploymentNodesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes][%d] listNodeDeploymentNodesOK  %+v", 200, o.Payload)
+}
+
+func (o *ListNodeDeploymentNodesOK) GetPayload() []*models.Node {
+	return o.Payload
 }
 
 func (o *ListNodeDeploymentNodesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,6 +151,10 @@ func (o *ListNodeDeploymentNodesDefault) Code() int {
 
 func (o *ListNodeDeploymentNodesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}/nodes][%d] listNodeDeploymentNodes default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListNodeDeploymentNodesDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListNodeDeploymentNodesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

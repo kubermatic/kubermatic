@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListDigitaloceanSizesReader is a Reader for the ListDigitaloceanSizes structure.
@@ -24,14 +24,12 @@ type ListDigitaloceanSizesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListDigitaloceanSizesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListDigitaloceanSizesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListDigitaloceanSizesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListDigitaloceanSizesOK struct {
 
 func (o *ListDigitaloceanSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/digitalocean/sizes][%d] listDigitaloceanSizesOK  %+v", 200, o.Payload)
+}
+
+func (o *ListDigitaloceanSizesOK) GetPayload() *models.DigitaloceanSizeList {
+	return o.Payload
 }
 
 func (o *ListDigitaloceanSizesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +99,10 @@ func (o *ListDigitaloceanSizesDefault) Code() int {
 
 func (o *ListDigitaloceanSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/digitalocean/sizes][%d] listDigitaloceanSizes default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListDigitaloceanSizesDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListDigitaloceanSizesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

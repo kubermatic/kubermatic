@@ -7,12 +7,11 @@ package digitalocean
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new digitalocean API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,17 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	ListDigitaloceanSizes(params *ListDigitaloceanSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListDigitaloceanSizesOK, error)
+
+	ListDigitaloceanSizesNoCredentials(params *ListDigitaloceanSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListDigitaloceanSizesNoCredentialsOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-ListDigitaloceanSizes Lists sizes from digitalocean
+  ListDigitaloceanSizes Lists sizes from digitalocean
 */
 func (a *Client) ListDigitaloceanSizes(params *ListDigitaloceanSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListDigitaloceanSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +57,17 @@ func (a *Client) ListDigitaloceanSizes(params *ListDigitaloceanSizesParams, auth
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListDigitaloceanSizesOK), nil
-
+	success, ok := result.(*ListDigitaloceanSizesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListDigitaloceanSizesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListDigitaloceanSizesNoCredentials Lists sizes from digitalocean
+  ListDigitaloceanSizesNoCredentials Lists sizes from digitalocean
 */
 func (a *Client) ListDigitaloceanSizesNoCredentials(params *ListDigitaloceanSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListDigitaloceanSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -78,8 +91,13 @@ func (a *Client) ListDigitaloceanSizesNoCredentials(params *ListDigitaloceanSize
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListDigitaloceanSizesNoCredentialsOK), nil
-
+	success, ok := result.(*ListDigitaloceanSizesNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListDigitaloceanSizesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // DeleteSSHKeyReader is a Reader for the DeleteSSHKey structure.
@@ -24,28 +24,24 @@ type DeleteSSHKeyReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *DeleteSSHKeyReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewDeleteSSHKeyOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewDeleteSSHKeyUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewDeleteSSHKeyForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewDeleteSSHKeyDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -145,6 +141,10 @@ func (o *DeleteSSHKeyDefault) Code() int {
 
 func (o *DeleteSSHKeyDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/sshkeys/{key_id}][%d] deleteSSHKey default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *DeleteSSHKeyDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *DeleteSSHKeyDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

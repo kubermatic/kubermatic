@@ -1016,7 +1016,7 @@ type PatchReq struct {
 	common.GetClusterReq
 
 	// in: body
-	Patch []byte
+	Patch json.RawMessage
 }
 
 func DecodePatchReq(c context.Context, r *http.Request) (interface{}, error) {

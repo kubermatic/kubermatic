@@ -7,12 +7,11 @@ package credentials
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new credentials API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,15 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	ListCredentials(params *ListCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListCredentialsOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-ListCredentials Lists credential names for the provider
+  ListCredentials Lists credential names for the provider
 */
 func (a *Client) ListCredentials(params *ListCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -49,8 +55,13 @@ func (a *Client) ListCredentials(params *ListCredentialsParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListCredentialsOK), nil
-
+	success, ok := result.(*ListCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

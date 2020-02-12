@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // AddTokenToServiceAccountReader is a Reader for the AddTokenToServiceAccount structure.
@@ -24,28 +24,24 @@ type AddTokenToServiceAccountReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddTokenToServiceAccountReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewAddTokenToServiceAccountCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewAddTokenToServiceAccountUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewAddTokenToServiceAccountForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAddTokenToServiceAccountDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type AddTokenToServiceAccountCreated struct {
 
 func (o *AddTokenToServiceAccountCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] addTokenToServiceAccountCreated  %+v", 201, o.Payload)
+}
+
+func (o *AddTokenToServiceAccountCreated) GetPayload() *models.ServiceAccountToken {
+	return o.Payload
 }
 
 func (o *AddTokenToServiceAccountCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *AddTokenToServiceAccountDefault) Code() int {
 
 func (o *AddTokenToServiceAccountDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] addTokenToServiceAccount default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AddTokenToServiceAccountDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *AddTokenToServiceAccountDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

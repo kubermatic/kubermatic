@@ -7,12 +7,11 @@ package serviceaccounts
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new serviceaccounts API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,21 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	AddServiceAccountToProject(params *AddServiceAccountToProjectParams, authInfo runtime.ClientAuthInfoWriter) (*AddServiceAccountToProjectCreated, error)
+
+	DeleteServiceAccount(params *DeleteServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteServiceAccountOK, error)
+
+	ListServiceAccounts(params *ListServiceAccountsParams, authInfo runtime.ClientAuthInfoWriter) (*ListServiceAccountsOK, error)
+
+	UpdateServiceAccount(params *UpdateServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateServiceAccountOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-AddServiceAccountToProject Adds the given service account to the given project
+  AddServiceAccountToProject Adds the given service account to the given project
 */
 func (a *Client) AddServiceAccountToProject(params *AddServiceAccountToProjectParams, authInfo runtime.ClientAuthInfoWriter) (*AddServiceAccountToProjectCreated, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +61,17 @@ func (a *Client) AddServiceAccountToProject(params *AddServiceAccountToProjectPa
 	if err != nil {
 		return nil, err
 	}
-	return result.(*AddServiceAccountToProjectCreated), nil
-
+	success, ok := result.(*AddServiceAccountToProjectCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*AddServiceAccountToProjectDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-DeleteServiceAccount Deletes service account for the given project
+  DeleteServiceAccount Deletes service account for the given project
 */
 func (a *Client) DeleteServiceAccount(params *DeleteServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteServiceAccountOK, error) {
 	// TODO: Validate the params before sending
@@ -78,12 +95,17 @@ func (a *Client) DeleteServiceAccount(params *DeleteServiceAccountParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteServiceAccountOK), nil
-
+	success, ok := result.(*DeleteServiceAccountOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteServiceAccountDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListServiceAccounts List Service Accounts for the given project
+  ListServiceAccounts List Service Accounts for the given project
 */
 func (a *Client) ListServiceAccounts(params *ListServiceAccountsParams, authInfo runtime.ClientAuthInfoWriter) (*ListServiceAccountsOK, error) {
 	// TODO: Validate the params before sending
@@ -107,12 +129,17 @@ func (a *Client) ListServiceAccounts(params *ListServiceAccountsParams, authInfo
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListServiceAccountsOK), nil
-
+	success, ok := result.(*ListServiceAccountsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListServiceAccountsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-UpdateServiceAccount Updates service account for the given project
+  UpdateServiceAccount Updates service account for the given project
 */
 func (a *Client) UpdateServiceAccount(params *UpdateServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateServiceAccountOK, error) {
 	// TODO: Validate the params before sending
@@ -136,8 +163,13 @@ func (a *Client) UpdateServiceAccount(params *UpdateServiceAccountParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UpdateServiceAccountOK), nil
-
+	success, ok := result.(*UpdateServiceAccountOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpdateServiceAccountDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

@@ -7,12 +7,11 @@ package operations
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new operations API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,25 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	Addon(params *AddonParams, authInfo runtime.ClientAuthInfoWriter) (*AddonOK, error)
+
+	CreateOIDCKubeconfig(params *CreateOIDCKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*CreateOIDCKubeconfigOK, error)
+
+	GetAddonConfig(params *GetAddonConfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetAddonConfigOK, error)
+
+	GetAdmissionPlugins(params *GetAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdmissionPluginsOK, error)
+
+	ListAddonConfigs(params *ListAddonConfigsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAddonConfigsOK, error)
+
+	ListSystemLabels(params *ListSystemLabelsParams, authInfo runtime.ClientAuthInfoWriter) (*ListSystemLabelsOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-Addon Lists names of addons that can be configured inside the user clusters
+  Addon Lists names of addons that can be configured inside the user clusters
 */
 func (a *Client) Addon(params *AddonParams, authInfo runtime.ClientAuthInfoWriter) (*AddonOK, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +65,17 @@ func (a *Client) Addon(params *AddonParams, authInfo runtime.ClientAuthInfoWrite
 	if err != nil {
 		return nil, err
 	}
-	return result.(*AddonOK), nil
-
+	success, ok := result.(*AddonOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*AddonDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-CreateOIDCKubeconfig Starts OIDC flow and generates kubeconfig, the generated config
+  CreateOIDCKubeconfig Starts OIDC flow and generates kubeconfig, the generated config
 contains OIDC provider authentication info
 */
 func (a *Client) CreateOIDCKubeconfig(params *CreateOIDCKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*CreateOIDCKubeconfigOK, error) {
@@ -79,12 +100,17 @@ func (a *Client) CreateOIDCKubeconfig(params *CreateOIDCKubeconfigParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	return result.(*CreateOIDCKubeconfigOK), nil
-
+	success, ok := result.(*CreateOIDCKubeconfigOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateOIDCKubeconfigDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetAddonConfig returns specified addon config
+  GetAddonConfig returns specified addon config
 */
 func (a *Client) GetAddonConfig(params *GetAddonConfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetAddonConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -108,12 +134,17 @@ func (a *Client) GetAddonConfig(params *GetAddonConfigParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetAddonConfigOK), nil
-
+	success, ok := result.(*GetAddonConfigOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetAddonConfigDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetAdmissionPlugins returns specified addon config
+  GetAdmissionPlugins returns specified addon config
 */
 func (a *Client) GetAdmissionPlugins(params *GetAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdmissionPluginsOK, error) {
 	// TODO: Validate the params before sending
@@ -137,12 +168,17 @@ func (a *Client) GetAdmissionPlugins(params *GetAdmissionPluginsParams, authInfo
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetAdmissionPluginsOK), nil
-
+	success, ok := result.(*GetAdmissionPluginsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetAdmissionPluginsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListAddonConfigs returns all available addon configs
+  ListAddonConfigs returns all available addon configs
 */
 func (a *Client) ListAddonConfigs(params *ListAddonConfigsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAddonConfigsOK, error) {
 	// TODO: Validate the params before sending
@@ -166,12 +202,17 @@ func (a *Client) ListAddonConfigs(params *ListAddonConfigsParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListAddonConfigsOK), nil
-
+	success, ok := result.(*ListAddonConfigsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAddonConfigsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListSystemLabels List restricted system labels
+  ListSystemLabels List restricted system labels
 */
 func (a *Client) ListSystemLabels(params *ListSystemLabelsParams, authInfo runtime.ClientAuthInfoWriter) (*ListSystemLabelsOK, error) {
 	// TODO: Validate the params before sending
@@ -195,8 +236,13 @@ func (a *Client) ListSystemLabels(params *ListSystemLabelsParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListSystemLabelsOK), nil
-
+	success, ok := result.(*ListSystemLabelsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListSystemLabelsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

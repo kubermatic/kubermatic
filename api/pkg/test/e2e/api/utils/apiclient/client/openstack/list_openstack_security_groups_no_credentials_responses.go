@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListOpenstackSecurityGroupsNoCredentialsReader is a Reader for the ListOpenstackSecurityGroupsNoCredentials structure.
@@ -24,14 +24,12 @@ type ListOpenstackSecurityGroupsNoCredentialsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListOpenstackSecurityGroupsNoCredentialsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListOpenstackSecurityGroupsNoCredentialsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListOpenstackSecurityGroupsNoCredentialsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListOpenstackSecurityGroupsNoCredentialsOK struct {
 
 func (o *ListOpenstackSecurityGroupsNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/securitygroups][%d] listOpenstackSecurityGroupsNoCredentialsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListOpenstackSecurityGroupsNoCredentialsOK) GetPayload() []*models.OpenstackSecurityGroup {
+	return o.Payload
 }
 
 func (o *ListOpenstackSecurityGroupsNoCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) Code() int {
 
 func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/securitygroups][%d] listOpenstackSecurityGroupsNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListOpenstackSecurityGroupsNoCredentialsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

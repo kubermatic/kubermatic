@@ -7,12 +7,11 @@ package tokens
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new tokens API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,23 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	AddTokenToServiceAccount(params *AddTokenToServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*AddTokenToServiceAccountCreated, error)
+
+	DeleteServiceAccountToken(params *DeleteServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteServiceAccountTokenOK, error)
+
+	ListServiceAccountTokens(params *ListServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListServiceAccountTokensOK, error)
+
+	PatchServiceAccountToken(params *PatchServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*PatchServiceAccountTokenOK, error)
+
+	UpdateServiceAccountToken(params *UpdateServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateServiceAccountTokenOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-AddTokenToServiceAccount Generates a token for the given service account
+  AddTokenToServiceAccount Generates a token for the given service account
 */
 func (a *Client) AddTokenToServiceAccount(params *AddTokenToServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*AddTokenToServiceAccountCreated, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +63,17 @@ func (a *Client) AddTokenToServiceAccount(params *AddTokenToServiceAccountParams
 	if err != nil {
 		return nil, err
 	}
-	return result.(*AddTokenToServiceAccountCreated), nil
-
+	success, ok := result.(*AddTokenToServiceAccountCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*AddTokenToServiceAccountDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-DeleteServiceAccountToken Deletes the token
+  DeleteServiceAccountToken Deletes the token
 */
 func (a *Client) DeleteServiceAccountToken(params *DeleteServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteServiceAccountTokenOK, error) {
 	// TODO: Validate the params before sending
@@ -78,12 +97,17 @@ func (a *Client) DeleteServiceAccountToken(params *DeleteServiceAccountTokenPara
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteServiceAccountTokenOK), nil
-
+	success, ok := result.(*DeleteServiceAccountTokenOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteServiceAccountTokenDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListServiceAccountTokens List tokens for the given service account
+  ListServiceAccountTokens List tokens for the given service account
 */
 func (a *Client) ListServiceAccountTokens(params *ListServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListServiceAccountTokensOK, error) {
 	// TODO: Validate the params before sending
@@ -107,12 +131,17 @@ func (a *Client) ListServiceAccountTokens(params *ListServiceAccountTokensParams
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListServiceAccountTokensOK), nil
-
+	success, ok := result.(*ListServiceAccountTokensOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListServiceAccountTokensDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-PatchServiceAccountToken Patches the token name
+  PatchServiceAccountToken Patches the token name
 */
 func (a *Client) PatchServiceAccountToken(params *PatchServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*PatchServiceAccountTokenOK, error) {
 	// TODO: Validate the params before sending
@@ -136,12 +165,17 @@ func (a *Client) PatchServiceAccountToken(params *PatchServiceAccountTokenParams
 	if err != nil {
 		return nil, err
 	}
-	return result.(*PatchServiceAccountTokenOK), nil
-
+	success, ok := result.(*PatchServiceAccountTokenOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchServiceAccountTokenDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-UpdateServiceAccountToken Updates and regenerates the token
+  UpdateServiceAccountToken Updates and regenerates the token
 */
 func (a *Client) UpdateServiceAccountToken(params *UpdateServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateServiceAccountTokenOK, error) {
 	// TODO: Validate the params before sending
@@ -165,8 +199,13 @@ func (a *Client) UpdateServiceAccountToken(params *UpdateServiceAccountTokenPara
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UpdateServiceAccountTokenOK), nil
-
+	success, ok := result.(*UpdateServiceAccountTokenOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpdateServiceAccountTokenDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

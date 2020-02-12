@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // NewCreateClusterParams creates a new CreateClusterParams object
@@ -66,7 +66,7 @@ type CreateClusterParams struct {
 	/*Body*/
 	Body *models.CreateClusterSpec
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -119,15 +119,15 @@ func (o *CreateClusterParams) SetBody(body *models.CreateClusterSpec) {
 	o.Body = body
 }
 
-// WithDc adds the dc to the create cluster params
-func (o *CreateClusterParams) WithDc(dc string) *CreateClusterParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the create cluster params
+func (o *CreateClusterParams) WithDC(dc string) *CreateClusterParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the create cluster params
-func (o *CreateClusterParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the create cluster params
+func (o *CreateClusterParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the create cluster params
@@ -156,7 +156,7 @@ func (o *CreateClusterParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

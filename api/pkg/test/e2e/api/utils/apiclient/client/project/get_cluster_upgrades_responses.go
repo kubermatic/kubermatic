@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // GetClusterUpgradesReader is a Reader for the GetClusterUpgrades structure.
@@ -24,28 +24,24 @@ type GetClusterUpgradesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetClusterUpgradesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetClusterUpgradesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewGetClusterUpgradesUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewGetClusterUpgradesForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewGetClusterUpgradesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type GetClusterUpgradesOK struct {
 
 func (o *GetClusterUpgradesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/upgrades][%d] getClusterUpgradesOK  %+v", 200, o.Payload)
+}
+
+func (o *GetClusterUpgradesOK) GetPayload() []*models.MasterVersion {
+	return o.Payload
 }
 
 func (o *GetClusterUpgradesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,6 +151,10 @@ func (o *GetClusterUpgradesDefault) Code() int {
 
 func (o *GetClusterUpgradesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/upgrades][%d] getClusterUpgrades default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetClusterUpgradesDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *GetClusterUpgradesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

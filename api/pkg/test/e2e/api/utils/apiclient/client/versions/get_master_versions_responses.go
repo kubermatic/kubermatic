@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // GetMasterVersionsReader is a Reader for the GetMasterVersions structure.
@@ -24,14 +24,12 @@ type GetMasterVersionsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetMasterVersionsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetMasterVersionsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewGetMasterVersionsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type GetMasterVersionsOK struct {
 
 func (o *GetMasterVersionsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/upgrades/cluster][%d] getMasterVersionsOK  %+v", 200, o.Payload)
+}
+
+func (o *GetMasterVersionsOK) GetPayload() []*models.MasterVersion {
+	return o.Payload
 }
 
 func (o *GetMasterVersionsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *GetMasterVersionsDefault) Code() int {
 
 func (o *GetMasterVersionsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/upgrades/cluster][%d] getMasterVersions default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetMasterVersionsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *GetMasterVersionsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

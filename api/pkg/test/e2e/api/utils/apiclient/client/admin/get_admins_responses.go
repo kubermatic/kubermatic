@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // GetAdminsReader is a Reader for the GetAdmins structure.
@@ -24,28 +24,24 @@ type GetAdminsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetAdminsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetAdminsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewGetAdminsUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewGetAdminsForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewGetAdminsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type GetAdminsOK struct {
 
 func (o *GetAdminsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin][%d] getAdminsOK  %+v", 200, o.Payload)
+}
+
+func (o *GetAdminsOK) GetPayload() []*models.Admin {
+	return o.Payload
 }
 
 func (o *GetAdminsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,6 +151,10 @@ func (o *GetAdminsDefault) Code() int {
 
 func (o *GetAdminsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin][%d] getAdmins default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetAdminsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *GetAdminsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

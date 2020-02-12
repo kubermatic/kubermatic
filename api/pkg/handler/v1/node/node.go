@@ -617,7 +617,7 @@ type patchNodeDeploymentReq struct {
 	nodeDeploymentReq
 
 	// in: body
-	Patch []byte
+	Patch json.RawMessage
 }
 
 func DecodePatchNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {

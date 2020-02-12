@@ -66,7 +66,7 @@ type ListGCPDiskTypesNoCredentialsParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -130,15 +130,15 @@ func (o *ListGCPDiskTypesNoCredentialsParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the list g c p disk types no credentials params
-func (o *ListGCPDiskTypesNoCredentialsParams) WithDc(dc string) *ListGCPDiskTypesNoCredentialsParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list g c p disk types no credentials params
+func (o *ListGCPDiskTypesNoCredentialsParams) WithDC(dc string) *ListGCPDiskTypesNoCredentialsParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list g c p disk types no credentials params
-func (o *ListGCPDiskTypesNoCredentialsParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list g c p disk types no credentials params
+func (o *ListGCPDiskTypesNoCredentialsParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the list g c p disk types no credentials params
@@ -175,7 +175,7 @@ func (o *ListGCPDiskTypesNoCredentialsParams) WriteToRequest(r runtime.ClientReq
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

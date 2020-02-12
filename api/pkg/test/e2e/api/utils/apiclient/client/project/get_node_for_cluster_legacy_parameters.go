@@ -65,7 +65,7 @@ type GetNodeForClusterLegacyParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*HideInitialConditions*/
 	HideInitialConditions *bool
 	/*NodeID*/
@@ -122,15 +122,15 @@ func (o *GetNodeForClusterLegacyParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the get node for cluster legacy params
-func (o *GetNodeForClusterLegacyParams) WithDc(dc string) *GetNodeForClusterLegacyParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the get node for cluster legacy params
+func (o *GetNodeForClusterLegacyParams) WithDC(dc string) *GetNodeForClusterLegacyParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the get node for cluster legacy params
-func (o *GetNodeForClusterLegacyParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the get node for cluster legacy params
+func (o *GetNodeForClusterLegacyParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithHideInitialConditions adds the hideInitialConditions to the get node for cluster legacy params
@@ -180,7 +180,7 @@ func (o *GetNodeForClusterLegacyParams) WriteToRequest(r runtime.ClientRequest, 
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

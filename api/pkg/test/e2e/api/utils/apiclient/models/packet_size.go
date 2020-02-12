@@ -8,9 +8,8 @@ package models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	strfmt "github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
@@ -18,8 +17,8 @@ import (
 // swagger:model PacketSize
 type PacketSize struct {
 
-	// cpus
-	Cpus []*PacketCPU `json:"cpus"`
+	// c p us
+	CPUs []*PacketCPU `json:"cpus"`
 
 	// drives
 	Drives []*PacketDrive `json:"drives"`
@@ -35,7 +34,7 @@ type PacketSize struct {
 func (m *PacketSize) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateCpus(formats); err != nil {
+	if err := m.validateCPUs(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -49,19 +48,19 @@ func (m *PacketSize) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *PacketSize) validateCpus(formats strfmt.Registry) error {
+func (m *PacketSize) validateCPUs(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.Cpus) { // not required
+	if swag.IsZero(m.CPUs) { // not required
 		return nil
 	}
 
-	for i := 0; i < len(m.Cpus); i++ {
-		if swag.IsZero(m.Cpus[i]) { // not required
+	for i := 0; i < len(m.CPUs); i++ {
+		if swag.IsZero(m.CPUs[i]) { // not required
 			continue
 		}
 
-		if m.Cpus[i] != nil {
-			if err := m.Cpus[i].Validate(formats); err != nil {
+		if m.CPUs[i] != nil {
+			if err := m.CPUs[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("cpus" + "." + strconv.Itoa(i))
 				}

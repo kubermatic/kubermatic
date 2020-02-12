@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListGCPDiskTypesReader is a Reader for the ListGCPDiskTypes structure.
@@ -24,14 +24,12 @@ type ListGCPDiskTypesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListGCPDiskTypesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListGCPDiskTypesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListGCPDiskTypesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListGCPDiskTypesOK struct {
 
 func (o *ListGCPDiskTypesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/disktypes][%d] listGCPDiskTypesOK  %+v", 200, o.Payload)
+}
+
+func (o *ListGCPDiskTypesOK) GetPayload() models.GCPDiskTypeList {
+	return o.Payload
 }
 
 func (o *ListGCPDiskTypesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListGCPDiskTypesDefault) Code() int {
 
 func (o *ListGCPDiskTypesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/disktypes][%d] listGCPDiskTypes default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListGCPDiskTypesDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListGCPDiskTypesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

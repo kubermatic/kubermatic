@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListGCPZonesReader is a Reader for the ListGCPZones structure.
@@ -24,14 +24,12 @@ type ListGCPZonesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListGCPZonesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListGCPZonesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListGCPZonesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListGCPZonesOK struct {
 
 func (o *ListGCPZonesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/{dc}/zones][%d] listGCPZonesOK  %+v", 200, o.Payload)
+}
+
+func (o *ListGCPZonesOK) GetPayload() models.GCPZoneList {
+	return o.Payload
 }
 
 func (o *ListGCPZonesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListGCPZonesDefault) Code() int {
 
 func (o *ListGCPZonesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/{dc}/zones][%d] listGCPZones default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListGCPZonesDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListGCPZonesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // DeleteNodeDeploymentReader is a Reader for the DeleteNodeDeployment structure.
@@ -24,28 +24,24 @@ type DeleteNodeDeploymentReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *DeleteNodeDeploymentReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewDeleteNodeDeploymentOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewDeleteNodeDeploymentUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewDeleteNodeDeploymentForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewDeleteNodeDeploymentDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -145,6 +141,10 @@ func (o *DeleteNodeDeploymentDefault) Code() int {
 
 func (o *DeleteNodeDeploymentDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] deleteNodeDeployment default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *DeleteNodeDeploymentDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *DeleteNodeDeploymentDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

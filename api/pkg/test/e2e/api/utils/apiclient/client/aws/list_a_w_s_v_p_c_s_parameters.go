@@ -68,7 +68,7 @@ type ListAWSVPCSParams struct {
 	/*SecretAccessKey*/
 	SecretAccessKey *string
 	/*Dc*/
-	Dc string
+	DC string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -141,15 +141,15 @@ func (o *ListAWSVPCSParams) SetSecretAccessKey(secretAccessKey *string) {
 	o.SecretAccessKey = secretAccessKey
 }
 
-// WithDc adds the dc to the list a w s v p c s params
-func (o *ListAWSVPCSParams) WithDc(dc string) *ListAWSVPCSParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list a w s v p c s params
+func (o *ListAWSVPCSParams) WithDC(dc string) *ListAWSVPCSParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list a w s v p c s params
-func (o *ListAWSVPCSParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list a w s v p c s params
+func (o *ListAWSVPCSParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -188,7 +188,7 @@ func (o *ListAWSVPCSParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

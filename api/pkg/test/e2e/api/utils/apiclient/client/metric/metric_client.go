@@ -7,12 +7,11 @@ package metric
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new metric API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,15 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	ListNodeDeploymentMetrics(params *ListNodeDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentMetricsOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-ListNodeDeploymentMetrics lists metrics that belong to the given node deployment
+  ListNodeDeploymentMetrics lists metrics that belong to the given node deployment
 */
 func (a *Client) ListNodeDeploymentMetrics(params *ListNodeDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentMetricsOK, error) {
 	// TODO: Validate the params before sending
@@ -49,8 +55,13 @@ func (a *Client) ListNodeDeploymentMetrics(params *ListNodeDeploymentMetricsPara
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListNodeDeploymentMetricsOK), nil
-
+	success, ok := result.(*ListNodeDeploymentMetricsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListNodeDeploymentMetricsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

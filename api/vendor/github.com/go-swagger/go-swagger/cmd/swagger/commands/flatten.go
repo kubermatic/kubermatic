@@ -13,16 +13,16 @@ import (
 // which will expand the remote references in a spec and move inline schemas to definitions
 // after flattening there are no complex inlined anymore
 type FlattenSpec struct {
-	Compact bool           `long:"compact" description:"applies to JSON formated specs. When present, doesn't prettify the json"`
+	Compact bool           `long:"compact" description:"applies to JSON formatted specs. When present, doesn't prettify the json"`
 	Output  flags.Filename `long:"output" short:"o" description:"the file to write to"`
 	Format  string         `long:"format" description:"the format for the spec document" default:"json" choice:"yaml" choice:"json"`
 	generate.FlattenCmdOptions
 }
 
-// Execute expands the spec
+// Execute flattens the spec
 func (c *FlattenSpec) Execute(args []string) error {
-	if len(args) == 0 {
-		return errors.New("The validate command requires the swagger document url to be specified")
+	if len(args) != 1 {
+		return errors.New("flatten command requires the single swagger document url to be specified")
 	}
 
 	swaggerDoc := args[0]

@@ -7,12 +7,11 @@ package datacenter
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new datacenter API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,17 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	GetDatacenter(params *GetDatacenterParams, authInfo runtime.ClientAuthInfoWriter) (*GetDatacenterOK, error)
+
+	ListDatacenters(params *ListDatacentersParams, authInfo runtime.ClientAuthInfoWriter) (*ListDatacentersOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-GetDatacenter get datacenter API
+  GetDatacenter get datacenter API
 */
 func (a *Client) GetDatacenter(params *GetDatacenterParams, authInfo runtime.ClientAuthInfoWriter) (*GetDatacenterOK, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +57,17 @@ func (a *Client) GetDatacenter(params *GetDatacenterParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetDatacenterOK), nil
-
+	success, ok := result.(*GetDatacenterOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetDatacenterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListDatacenters list datacenters API
+  ListDatacenters list datacenters API
 */
 func (a *Client) ListDatacenters(params *ListDatacentersParams, authInfo runtime.ClientAuthInfoWriter) (*ListDatacentersOK, error) {
 	// TODO: Validate the params before sending
@@ -78,8 +91,13 @@ func (a *Client) ListDatacenters(params *ListDatacentersParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListDatacentersOK), nil
-
+	success, ok := result.(*ListDatacentersOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListDatacentersDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

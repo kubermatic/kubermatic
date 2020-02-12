@@ -62,11 +62,11 @@ for the patch role operation typically these are written to a http.Request
 type PatchRoleParams struct {
 
 	/*Patch*/
-	Patch []uint8
+	Patch interface{}
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*Namespace*/
 	Namespace string
 	/*ProjectID*/
@@ -113,13 +113,13 @@ func (o *PatchRoleParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithPatch adds the patch to the patch role params
-func (o *PatchRoleParams) WithPatch(patch []uint8) *PatchRoleParams {
+func (o *PatchRoleParams) WithPatch(patch interface{}) *PatchRoleParams {
 	o.SetPatch(patch)
 	return o
 }
 
 // SetPatch adds the patch to the patch role params
-func (o *PatchRoleParams) SetPatch(patch []uint8) {
+func (o *PatchRoleParams) SetPatch(patch interface{}) {
 	o.Patch = patch
 }
 
@@ -134,15 +134,15 @@ func (o *PatchRoleParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the patch role params
-func (o *PatchRoleParams) WithDc(dc string) *PatchRoleParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the patch role params
+func (o *PatchRoleParams) WithDC(dc string) *PatchRoleParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the patch role params
-func (o *PatchRoleParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the patch role params
+func (o *PatchRoleParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithNamespace adds the namespace to the patch role params
@@ -198,7 +198,7 @@ func (o *PatchRoleParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Reg
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

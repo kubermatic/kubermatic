@@ -64,7 +64,7 @@ type DeleteClusterParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -117,15 +117,15 @@ func (o *DeleteClusterParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the delete cluster params
-func (o *DeleteClusterParams) WithDc(dc string) *DeleteClusterParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the delete cluster params
+func (o *DeleteClusterParams) WithDC(dc string) *DeleteClusterParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the delete cluster params
-func (o *DeleteClusterParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the delete cluster params
+func (o *DeleteClusterParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the delete cluster params
@@ -153,7 +153,7 @@ func (o *DeleteClusterParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

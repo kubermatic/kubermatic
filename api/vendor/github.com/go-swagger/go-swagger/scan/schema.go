@@ -1,3 +1,5 @@
+// +build !go1.11
+
 // Copyright 2015 go-swagger maintainers
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +17,7 @@
 package scan
 
 import (
+	"encoding/json"
 	"fmt"
 	"go/ast"
 	"log"
@@ -78,7 +81,12 @@ func (st schemaTypable) AdditionalProperties() swaggerTypable {
 	st.schema.Typed("object", "")
 	return schemaTypable{st.schema.AdditionalProperties.Schema, st.level + 1}
 }
+
 func (st schemaTypable) Level() int { return st.level }
+
+func (st schemaTypable) WithEnum(values ...interface{}) {
+	st.schema.WithEnum(values...)
+}
 
 type schemaValidations struct {
 	current *spec.Schema
@@ -102,12 +110,7 @@ func (sv schemaValidations) SetUnique(val bool)         { sv.current.UniqueItems
 func (sv schemaValidations) SetDefault(val interface{}) { sv.current.Default = val }
 func (sv schemaValidations) SetExample(val interface{}) { sv.current.Example = val }
 func (sv schemaValidations) SetEnum(val string) {
-	list := strings.Split(val, ",")
-	interfaceSlice := make([]interface{}, len(list))
-	for i, d := range list {
-		interfaceSlice[i] = d
-	}
-	sv.current.Enum = interfaceSlice
+	sv.current.Enum = parseEnum(val, &spec.SimpleSchema{Format: sv.current.Format, Type: sv.current.Type[0]})
 }
 
 type schemaDecl struct {
@@ -248,6 +251,18 @@ func (scp *schemaParser) parseDecl(definitions map[string]spec.Schema, decl *sch
 		} else {
 			if err := scp.parseNamedType(decl.File, tpe, prop); err != nil {
 				return err
+			}
+		}
+		if enumName, ok := enumName(decl.Decl.Doc); ok {
+			var enumValues = getEnumValues(decl.File, enumName)
+			if len(enumValues) > 0 {
+				var typeName = reflect.TypeOf(enumValues[0]).String()
+				prop.WithEnum(enumValues...)
+
+				err := swaggerSchemaForType(typeName, prop)
+				if err != nil {
+					return fmt.Errorf("file %s, error is: %v", decl.File.Name, err)
+				}
 			}
 		}
 	case *ast.SelectorExpr:
@@ -728,6 +743,23 @@ func (scp *schemaParser) parseStructType(gofile *ast.File, bschema *spec.Schema,
 	return nil
 }
 
+func schemaVendorExtensibleSetter(meta *spec.Schema) func(json.RawMessage) error {
+	return func(jsonValue json.RawMessage) error {
+		var jsonData spec.Extensions
+		err := json.Unmarshal(jsonValue, &jsonData)
+		if err != nil {
+			return err
+		}
+		for k := range jsonData {
+			if !rxAllowedExtensions.MatchString(k) {
+				return fmt.Errorf("invalid schema extension name, should start from `x-`: %s", k)
+			}
+		}
+		meta.Extensions = jsonData
+		return nil
+	}
+}
+
 func (scp *schemaParser) createParser(nm string, schema, ps *spec.Schema, fld *ast.Field) *sectionedParser {
 	sp := new(sectionedParser)
 
@@ -755,6 +787,7 @@ func (scp *schemaParser) createParser(nm string, schema, ps *spec.Schema, fld *a
 			newSingleLineTagParser("required", &setRequiredSchema{schema, nm}),
 			newSingleLineTagParser("readOnly", &setReadOnlySchema{ps}),
 			newSingleLineTagParser("discriminator", &setDiscriminator{schema, nm}),
+			newMultiLineTagParser("YAMLExtensionsBlock", newYamlParser(rxExtensions, schemaVendorExtensibleSetter(ps)), true),
 		}
 
 		itemsTaggers := func(items *spec.Schema, level int) []tagParser {
@@ -1009,8 +1042,15 @@ func (scp *schemaParser) parseIdentProperty(pkg *loader.PackageInfo, expr *ast.I
 	}
 
 	if enumName, ok := enumName(gd.Doc); ok {
-		log.Println(enumName)
-		return nil
+		var enumValues = getEnumValues(file, enumName)
+		if len(enumValues) > 0 {
+			prop.WithEnum(enumValues...)
+			var typeName = reflect.TypeOf(enumValues[0]).String()
+			err := swaggerSchemaForType(typeName, prop)
+			if err != nil {
+				return fmt.Errorf("file %s, error is: %v", file.Name, err)
+			}
+		}
 	}
 
 	if defaultName, ok := defaultName(gd.Doc); ok {
@@ -1287,17 +1327,7 @@ func parseJSONTag(field *ast.Field) (name string, ignore bool, isString bool, er
 			jsonName := jsonParts[0]
 
 			if len(jsonParts) > 1 && jsonParts[1] == "string" {
-				// Need to check if the field type is a scalar. Otherwise, the
-				// ",string" directive doesn't apply.
-				ident, ok := field.Type.(*ast.Ident)
-				if ok {
-					switch ident.Name {
-					case "int", "int8", "int16", "int32", "int64",
-						"uint", "uint8", "uint16", "uint32", "uint64",
-						"float64", "string", "bool":
-						isString = true
-					}
-				}
+				isString = isFieldStringable(field.Type)
 			}
 
 			if jsonName == "-" {
@@ -1308,4 +1338,23 @@ func parseJSONTag(field *ast.Field) (name string, ignore bool, isString bool, er
 		}
 	}
 	return name, false, false, nil
+}
+
+// isFieldStringable check if the field type is a scalar. If the field type is
+// *ast.StarExpr and is pointer type, check if it refers to a scalar.
+// Otherwise, the ",string" directive doesn't apply.
+func isFieldStringable(tpe ast.Expr) bool {
+	if ident, ok := tpe.(*ast.Ident); ok {
+		switch ident.Name {
+		case "int", "int8", "int16", "int32", "int64",
+			"uint", "uint8", "uint16", "uint32", "uint64",
+			"float64", "string", "bool":
+			return true
+		}
+	} else if starExpr, ok := tpe.(*ast.StarExpr); ok {
+		return isFieldStringable(starExpr.X)
+	} else {
+		return false
+	}
+	return false
 }

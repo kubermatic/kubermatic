@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListPacketSizesReader is a Reader for the ListPacketSizes structure.
@@ -24,14 +24,12 @@ type ListPacketSizesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListPacketSizesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListPacketSizesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListPacketSizesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListPacketSizesOK struct {
 
 func (o *ListPacketSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/packet/sizes][%d] listPacketSizesOK  %+v", 200, o.Payload)
+}
+
+func (o *ListPacketSizesOK) GetPayload() []models.PacketSizeList {
+	return o.Payload
 }
 
 func (o *ListPacketSizesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListPacketSizesDefault) Code() int {
 
 func (o *ListPacketSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/packet/sizes][%d] listPacketSizes default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListPacketSizesDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListPacketSizesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

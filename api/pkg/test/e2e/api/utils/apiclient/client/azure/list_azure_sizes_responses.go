@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListAzureSizesReader is a Reader for the ListAzureSizes structure.
@@ -24,14 +24,12 @@ type ListAzureSizesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListAzureSizesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListAzureSizesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListAzureSizesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListAzureSizesOK struct {
 
 func (o *ListAzureSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/azure/sizes][%d] listAzureSizesOK  %+v", 200, o.Payload)
+}
+
+func (o *ListAzureSizesOK) GetPayload() models.AzureSizeList {
+	return o.Payload
 }
 
 func (o *ListAzureSizesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListAzureSizesDefault) Code() int {
 
 func (o *ListAzureSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/azure/sizes][%d] listAzureSizes default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListAzureSizesDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListAzureSizesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -7,12 +7,11 @@ package azure
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new azure API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,17 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesOK, error)
+
+	ListAzureSizesNoCredentials(params *ListAzureSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesNoCredentialsOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-ListAzureSizes Lists available VM sizes in an Azure region
+  ListAzureSizes Lists available VM sizes in an Azure region
 */
 func (a *Client) ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +57,17 @@ func (a *Client) ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListAzureSizesOK), nil
-
+	success, ok := result.(*ListAzureSizesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAzureSizesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListAzureSizesNoCredentials Lists available VM sizes in an Azure region
+  ListAzureSizesNoCredentials Lists available VM sizes in an Azure region
 */
 func (a *Client) ListAzureSizesNoCredentials(params *ListAzureSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -78,8 +91,13 @@ func (a *Client) ListAzureSizesNoCredentials(params *ListAzureSizesNoCredentials
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListAzureSizesNoCredentialsOK), nil
-
+	success, ok := result.(*ListAzureSizesNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAzureSizesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

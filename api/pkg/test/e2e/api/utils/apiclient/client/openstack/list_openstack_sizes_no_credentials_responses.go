@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListOpenstackSizesNoCredentialsReader is a Reader for the ListOpenstackSizesNoCredentials structure.
@@ -24,14 +24,12 @@ type ListOpenstackSizesNoCredentialsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListOpenstackSizesNoCredentialsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListOpenstackSizesNoCredentialsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListOpenstackSizesNoCredentialsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListOpenstackSizesNoCredentialsOK struct {
 
 func (o *ListOpenstackSizesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/sizes][%d] listOpenstackSizesNoCredentialsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListOpenstackSizesNoCredentialsOK) GetPayload() []*models.OpenstackSize {
+	return o.Payload
 }
 
 func (o *ListOpenstackSizesNoCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListOpenstackSizesNoCredentialsDefault) Code() int {
 
 func (o *ListOpenstackSizesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/sizes][%d] listOpenstackSizesNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListOpenstackSizesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListOpenstackSizesNoCredentialsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

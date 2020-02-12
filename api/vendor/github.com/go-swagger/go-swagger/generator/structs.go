@@ -28,7 +28,7 @@ type GenDefinition struct {
 	GenSchema
 	Package        string
 	Imports        map[string]string
-	DefaultImports []string
+	DefaultImports map[string]string
 	ExtraSchemas   GenSchemaList
 	DependsOn      []string
 	External       bool
@@ -53,55 +53,68 @@ type GenSchemaList []GenSchema
 type GenSchema struct {
 	resolvedType
 	sharedValidations
-	Example                 string
-	OriginalName            string
-	Name                    string
-	Suffix                  string
-	Path                    string
-	ValueExpression         string
-	IndexVar                string
-	KeyVar                  string
-	Title                   string
-	Description             string
-	Location                string
-	ReceiverName            string
-	Items                   *GenSchema
-	AllowsAdditionalItems   bool
-	HasAdditionalItems      bool
-	AdditionalItems         *GenSchema
-	Object                  *GenSchema
-	XMLName                 string
-	CustomTag               string
-	Properties              GenSchemaList
-	AllOf                   GenSchemaList
-	HasAdditionalProperties bool
-	IsAdditionalProperties  bool
-	AdditionalProperties    *GenSchema
-	ReadOnly                bool
-	IsVirtual               bool
-	IsBaseType              bool
-	HasBaseType             bool
-	IsSubType               bool
-	IsExported              bool
-	DiscriminatorField      string
-	DiscriminatorValue      string
-	Discriminates           map[string]string
-	Parents                 []string
-	IncludeValidator        bool
-	IncludeModel            bool
-	Default                 interface{}
+	Example                    string
+	OriginalName               string
+	Name                       string
+	Suffix                     string
+	Path                       string
+	ValueExpression            string
+	IndexVar                   string
+	KeyVar                     string
+	Title                      string
+	Description                string
+	Location                   string
+	ReceiverName               string
+	Items                      *GenSchema
+	AllowsAdditionalItems      bool
+	HasAdditionalItems         bool
+	AdditionalItems            *GenSchema
+	Object                     *GenSchema
+	XMLName                    string
+	CustomTag                  string
+	Properties                 GenSchemaList
+	AllOf                      GenSchemaList
+	HasAdditionalProperties    bool
+	IsAdditionalProperties     bool
+	AdditionalProperties       *GenSchema
+	StrictAdditionalProperties bool
+	ReadOnly                   bool
+	IsVirtual                  bool
+	IsBaseType                 bool
+	HasBaseType                bool
+	IsSubType                  bool
+	IsExported                 bool
+	DiscriminatorField         string
+	DiscriminatorValue         string
+	Discriminates              map[string]string
+	Parents                    []string
+	IncludeValidator           bool
+	IncludeModel               bool
+	Default                    interface{}
 }
 
 func (g GenSchemaList) Len() int      { return len(g) }
 func (g GenSchemaList) Swap(i, j int) { g[i], g[j] = g[j], g[i] }
 func (g GenSchemaList) Less(i, j int) bool {
-	a, ok := g[i].Extensions[xOrder].(float64)
-	if ok {
-		b, ok := g[j].Extensions[xOrder].(float64)
-		if ok {
-			return a < b
-		}
+	a, okA := g[i].Extensions[xOrder].(float64)
+	b, okB := g[j].Extensions[xOrder].(float64)
+
+	// If both properties have x-order defined, then the one with lower x-order is smaller
+	if okA && okB {
+		return a < b
 	}
+
+	// If only the first property has x-order defined, then it is smaller
+	if okA {
+		return true
+	}
+
+	// If only the second property has x-order defined, then it is smaller
+	if okB {
+		return false
+	}
+
+	// If neither property has x-order defined, then the one with lower lexicographic name is smaller
 	return g[i].Name < g[j].Name
 }
 
@@ -154,7 +167,7 @@ type GenResponse struct {
 	AllowsForStreaming bool
 
 	Imports        map[string]string
-	DefaultImports []string
+	DefaultImports map[string]string
 
 	Extensions map[string]interface{}
 }
@@ -342,6 +355,8 @@ type GenItems struct {
 
 	// instructs generator to skip the splitting and parsing from CollectionFormat
 	SkipParse bool
+	// instructs generator that some nested structure needs an higher level loop index
+	NeedsIndex bool
 }
 
 // ItemsDepth returns a string "items.items..." with as many items as the level of nesting of the array.
@@ -365,9 +380,10 @@ type GenOperationGroup struct {
 	Summary        string
 	Description    string
 	Imports        map[string]string
-	DefaultImports []string
+	DefaultImports map[string]string
 	RootPackage    string
 	GenOpts        *GenOpts
+	PackageAlias   string
 }
 
 // GenOperationGroups is a sorted collection of operation groups
@@ -433,11 +449,13 @@ type GenOperation struct {
 	Path         string
 	BasePath     string
 	Tags         []string
+	UseTags      bool
 	RootPackage  string
 
 	Imports        map[string]string
-	DefaultImports []string
+	DefaultImports map[string]string
 	ExtraSchemas   GenSchemaList
+	PackageAlias   string
 
 	Authorized          bool
 	Security            []GenSecurityRequirements
@@ -496,7 +514,7 @@ type GenApp struct {
 	Info                *spec.Info
 	ExternalDocs        *spec.ExternalDocumentation
 	Imports             map[string]string
-	DefaultImports      []string
+	DefaultImports      map[string]string
 	Schemes             []string
 	ExtraSchemes        []string
 	Consumes            GenSerGroups
@@ -508,7 +526,7 @@ type GenApp struct {
 	SwaggerJSON         string
 	// Embedded specs: this is important for when the generated server adds routes.
 	// NOTE: there is a distinct advantage to having this in runtime rather than generated code.
-	// We are noti ever going to generate the router.
+	// We are not ever going to generate the router.
 	// If embedding spec is an issue (e.g. memory usage), this can be excluded with the --exclude-spec
 	// generation option. Alternative methods to serve spec (e.g. from disk, ...) may be implemented by
 	// adding a middleware to the generated API.
@@ -530,6 +548,11 @@ func (g *GenApp) UsePFlags() bool {
 	return g.GenOpts != nil && strings.HasPrefix(g.GenOpts.FlagStrategy, "pflag")
 }
 
+// UseFlags returns true when the flag strategy is set to flag
+func (g *GenApp) UseFlags() bool {
+	return g.GenOpts != nil && strings.HasPrefix(g.GenOpts.FlagStrategy, "flag")
+}
+
 // UseIntermediateMode for https://wiki.mozilla.org/Security/Server_Side_TLS#Intermediate_compatibility_.28default.29
 func (g *GenApp) UseIntermediateMode() bool {
 	return g.GenOpts != nil && g.GenOpts.CompatibilityMode == "intermediate"
@@ -545,16 +568,14 @@ type GenSerGroups []GenSerGroup
 
 func (g GenSerGroups) Len() int           { return len(g) }
 func (g GenSerGroups) Swap(i, j int)      { g[i], g[j] = g[j], g[i] }
-func (g GenSerGroups) Less(i, j int) bool { return g[i].MediaType < g[j].MediaType }
+func (g GenSerGroups) Less(i, j int) bool { return g[i].Name < g[j].Name }
 
-// GenSerGroup represents a group of serializers, most likely this is a media type to a list of
-// prioritized serializers.
+// GenSerGroup represents a group of serializers: this links a serializer to a list of
+// prioritized media types (mime).
 type GenSerGroup struct {
-	ReceiverName   string
-	AppName        string
-	Name           string
-	MediaType      string
-	Implementation string
+	GenSerializer
+
+	// All media types for this serializer. The redundant representation allows for easier use in templates
 	AllSerializers GenSerializers
 }
 
@@ -567,11 +588,12 @@ func (g GenSerializers) Less(i, j int) bool { return g[i].MediaType < g[j].Media
 
 // GenSerializer represents a single serializer for a particular media type
 type GenSerializer struct {
+	AppName        string // Application name
 	ReceiverName   string
-	AppName        string
-	Name           string
-	MediaType      string
-	Implementation string
+	Name           string   // Name of the Producer/Consumer (e.g. json, yaml, txt, bin)
+	MediaType      string   // mime
+	Implementation string   // func implementing the Producer/Consumer
+	Parameters     []string // parameters supported by this serializer
 }
 
 // GenSecurityScheme represents a security scheme for code generation

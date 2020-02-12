@@ -68,9 +68,9 @@ type ListAWSSubnetsParams struct {
 	/*SecretAccessKey*/
 	SecretAccessKey *string
 	/*Dc*/
-	Dc string
+	DC string
 	/*Vpc*/
-	Vpc *string
+	VPC *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -143,26 +143,26 @@ func (o *ListAWSSubnetsParams) SetSecretAccessKey(secretAccessKey *string) {
 	o.SecretAccessKey = secretAccessKey
 }
 
-// WithDc adds the dc to the list a w s subnets params
-func (o *ListAWSSubnetsParams) WithDc(dc string) *ListAWSSubnetsParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list a w s subnets params
+func (o *ListAWSSubnetsParams) WithDC(dc string) *ListAWSSubnetsParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list a w s subnets params
-func (o *ListAWSSubnetsParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list a w s subnets params
+func (o *ListAWSSubnetsParams) SetDC(dc string) {
+	o.DC = dc
 }
 
-// WithVpc adds the vpc to the list a w s subnets params
-func (o *ListAWSSubnetsParams) WithVpc(vpc *string) *ListAWSSubnetsParams {
-	o.SetVpc(vpc)
+// WithVPC adds the vpc to the list a w s subnets params
+func (o *ListAWSSubnetsParams) WithVPC(vpc *string) *ListAWSSubnetsParams {
+	o.SetVPC(vpc)
 	return o
 }
 
-// SetVpc adds the vpc to the list a w s subnets params
-func (o *ListAWSSubnetsParams) SetVpc(vpc *string) {
-	o.Vpc = vpc
+// SetVPC adds the vpc to the list a w s subnets params
+func (o *ListAWSSubnetsParams) SetVPC(vpc *string) {
+	o.VPC = vpc
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -201,14 +201,14 @@ func (o *ListAWSSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 
-	if o.Vpc != nil {
+	if o.VPC != nil {
 
 		// header param vpc
-		if err := r.SetHeaderParam("vpc", *o.Vpc); err != nil {
+		if err := r.SetHeaderParam("vpc", *o.VPC); err != nil {
 			return err
 		}
 

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // PatchClusterReader is a Reader for the PatchCluster structure.
@@ -24,28 +24,24 @@ type PatchClusterReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *PatchClusterReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewPatchClusterOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewPatchClusterUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewPatchClusterForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewPatchClusterDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type PatchClusterOK struct {
 
 func (o *PatchClusterOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}][%d] patchClusterOK  %+v", 200, o.Payload)
+}
+
+func (o *PatchClusterOK) GetPayload() *models.Cluster {
+	return o.Payload
 }
 
 func (o *PatchClusterOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *PatchClusterDefault) Code() int {
 
 func (o *PatchClusterDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}][%d] patchCluster default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *PatchClusterDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *PatchClusterDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

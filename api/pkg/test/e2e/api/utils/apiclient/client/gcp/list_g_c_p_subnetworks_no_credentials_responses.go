@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListGCPSubnetworksNoCredentialsReader is a Reader for the ListGCPSubnetworksNoCredentials structure.
@@ -24,14 +24,12 @@ type ListGCPSubnetworksNoCredentialsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListGCPSubnetworksNoCredentialsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListGCPSubnetworksNoCredentialsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListGCPSubnetworksNoCredentialsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListGCPSubnetworksNoCredentialsOK struct {
 
 func (o *ListGCPSubnetworksNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/subnetworks][%d] listGCPSubnetworksNoCredentialsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListGCPSubnetworksNoCredentialsOK) GetPayload() models.GCPSubnetworkList {
+	return o.Payload
 }
 
 func (o *ListGCPSubnetworksNoCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListGCPSubnetworksNoCredentialsDefault) Code() int {
 
 func (o *ListGCPSubnetworksNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/subnetworks][%d] listGCPSubnetworksNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListGCPSubnetworksNoCredentialsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListGCPSubnetworksNoCredentialsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

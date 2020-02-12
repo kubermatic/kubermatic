@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // CreateClusterRoleReader is a Reader for the CreateClusterRole structure.
@@ -24,28 +24,24 @@ type CreateClusterRoleReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *CreateClusterRoleReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewCreateClusterRoleCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewCreateClusterRoleUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewCreateClusterRoleForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewCreateClusterRoleDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type CreateClusterRoleCreated struct {
 
 func (o *CreateClusterRoleCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRoleCreated  %+v", 201, o.Payload)
+}
+
+func (o *CreateClusterRoleCreated) GetPayload() *models.ClusterRole {
+	return o.Payload
 }
 
 func (o *CreateClusterRoleCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *CreateClusterRoleDefault) Code() int {
 
 func (o *CreateClusterRoleDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRole default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *CreateClusterRoleDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *CreateClusterRoleDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

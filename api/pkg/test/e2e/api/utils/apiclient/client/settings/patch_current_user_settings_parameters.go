@@ -62,7 +62,7 @@ for the patch current user settings operation typically these are written to a h
 type PatchCurrentUserSettingsParams struct {
 
 	/*Patch*/
-	Patch []uint8
+	Patch interface{}
 
 	timeout    time.Duration
 	Context    context.Context
@@ -103,13 +103,13 @@ func (o *PatchCurrentUserSettingsParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithPatch adds the patch to the patch current user settings params
-func (o *PatchCurrentUserSettingsParams) WithPatch(patch []uint8) *PatchCurrentUserSettingsParams {
+func (o *PatchCurrentUserSettingsParams) WithPatch(patch interface{}) *PatchCurrentUserSettingsParams {
 	o.SetPatch(patch)
 	return o
 }
 
 // SetPatch adds the patch to the patch current user settings params
-func (o *PatchCurrentUserSettingsParams) SetPatch(patch []uint8) {
+func (o *PatchCurrentUserSettingsParams) SetPatch(patch interface{}) {
 	o.Patch = patch
 }
 

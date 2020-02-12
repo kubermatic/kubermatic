@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // DetachSSHKeyFromClusterReader is a Reader for the DetachSSHKeyFromCluster structure.
@@ -24,28 +24,24 @@ type DetachSSHKeyFromClusterReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *DetachSSHKeyFromClusterReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewDetachSSHKeyFromClusterOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewDetachSSHKeyFromClusterUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewDetachSSHKeyFromClusterForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewDetachSSHKeyFromClusterDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -145,6 +141,10 @@ func (o *DetachSSHKeyFromClusterDefault) Code() int {
 
 func (o *DetachSSHKeyFromClusterDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] detachSSHKeyFromCluster default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *DetachSSHKeyFromClusterDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *DetachSSHKeyFromClusterDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
