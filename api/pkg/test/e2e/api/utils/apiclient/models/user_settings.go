@@ -15,6 +15,9 @@ import (
 // swagger:model UserSettings
 type UserSettings struct {
 
+	// collapse sidenav
+	CollapseSidenav bool `json:"collapseSidenav,omitempty"`
+
 	// items per page
 	ItemsPerPage int8 `json:"itemsPerPage,omitempty"`
 
