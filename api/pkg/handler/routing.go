@@ -1,6 +1,7 @@
 package handler
 
 import (
+	common2 "github.com/kubermatic/kubermatic/api/pkg/watcher/common"
 	"os"
 
 	"github.com/go-kit/kit/log"
@@ -13,7 +14,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -48,7 +48,7 @@ type Routing struct {
 	userInfoGetter              provider.UserInfoGetter
 	settingsProvider            provider.SettingsProvider
 	adminProvider               provider.AdminProvider
-	resourceWatcher             provider.ResourceWatcher
+	resourceWatcher             common2.ResourceWatcher
 }
 
 // NewRouting creates a new Routing.
@@ -80,7 +80,7 @@ func NewRouting(
 	userInfoGetter provider.UserInfoGetter,
 	settingsProvider provider.SettingsProvider,
 	adminProvider provider.AdminProvider,
-	resourceWatcher provider.ResourceWatcher,
+	resourceWatcher common2.ResourceWatcher,
 ) Routing {
 	return Routing{
 		log:                         logger,

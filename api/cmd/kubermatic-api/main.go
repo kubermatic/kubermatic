@@ -48,6 +48,7 @@ import (
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	"github.com/kubermatic/kubermatic/api/pkg/watcher"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -194,7 +195,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().AddonConfigs().Lister())
 	adminProvider := kubernetesprovider.NewAdminProvider(kubermaticMasterClient, userMasterLister)
 
-	resourceWatcher, err := kubernetesprovider.NewResourceWatcher(settingsProvider)
+	resourceWatcher, err := watcher.NewResourceWatcher(settingsProvider)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create resource watcher due to %v", err)
 	}

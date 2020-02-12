@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	v12 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"k8s.io/apimachinery/pkg/watch"
+	"github.com/kubermatic/kubermatic/api/pkg/watcher/common"
 	"net/http"
-	"reflect"
 	"time"
 
 	"github.com/go-kit/kit/endpoint"
@@ -71,60 +69,44 @@ func (r Routing) getKubermaticSettingsWebsocket(w http.ResponseWriter, req *http
 		return
 	}
 
-	go writer(ws, r.resourceWatcher)
+	go writer(ws, r.resourceWatcher, r.settingsProvider)
 	reader(ws)
 }
 
-func writer(ws *websocket.Conn, pr provider.ResourceWatcher) {
+func writer(ws *websocket.Conn, watcher common.ResourceWatcher, provider provider.SettingsProvider) {
+	initialSettings, err := provider.GetGlobalSettings()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	//rn initial request is missing
+	initialResponse, err := json.Marshal(initialSettings)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	pr.WatchKubermaticSettings(func(data interface{}) {
+	if err := ws.WriteMessage(websocket.TextMessage, initialResponse); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	watcher.SubscribeSettings(func(data interface{}) {
 		fmt.Println(data)
 
-		//if err := ws.WriteMessage(websocket.TextMessage, handleEvent(ev)); err != nil {
+		//var res []byte
+		//if obj != nil {
+		//	js, err := json.Marshal(obj)
+		//	if err != nil {
+		//		res = js
+		//	}
+		//}
+
+		//if err := ws.WriteMessage(websocket.TextMessage, data); err != nil {
 		//	return
 		//}
 
 	})
-}
-
-func handleEvent(event watch.Event) []byte {
-	var obj *v12.KubermaticSetting
-
-	fmt.Println("handleevent")
-	fmt.Println(event.Type)
-
-	switch event.Type {
-	case watch.Added:
-		secret, ok := event.Object.(*v12.KubermaticSetting)
-		if !ok {
-			fmt.Printf("expected settings got %s", reflect.TypeOf(event.Object))
-		} else {
-			obj = secret
-		}
-	case watch.Modified:
-		secret, ok := event.Object.(*v12.KubermaticSetting)
-		if !ok {
-			fmt.Printf("expected settings got %s", reflect.TypeOf(event.Object))
-		} else {
-			obj = secret
-		}
-	case watch.Deleted:
-		obj = nil
-	case watch.Error:
-		fmt.Println("error")
-	}
-
-	var res []byte
-	if obj != nil {
-		js, err := json.Marshal(obj)
-		if err != nil {
-			res = js
-		}
-	}
-
-	return res
 }
 
 func reader(ws *websocket.Conn) {
