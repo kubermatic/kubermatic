@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // PatchServiceAccountTokenReader is a Reader for the PatchServiceAccountToken structure.
@@ -24,28 +24,24 @@ type PatchServiceAccountTokenReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *PatchServiceAccountTokenReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewPatchServiceAccountTokenOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewPatchServiceAccountTokenUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewPatchServiceAccountTokenForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewPatchServiceAccountTokenDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type PatchServiceAccountTokenOK struct {
 
 func (o *PatchServiceAccountTokenOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] patchServiceAccountTokenOK  %+v", 200, o.Payload)
+}
+
+func (o *PatchServiceAccountTokenOK) GetPayload() *models.PublicServiceAccountToken {
+	return o.Payload
 }
 
 func (o *PatchServiceAccountTokenOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *PatchServiceAccountTokenDefault) Code() int {
 
 func (o *PatchServiceAccountTokenDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] patchServiceAccountToken default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *PatchServiceAccountTokenDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *PatchServiceAccountTokenDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

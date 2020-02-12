@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // GetNodeUpgradesReader is a Reader for the GetNodeUpgrades structure.
@@ -24,28 +24,24 @@ type GetNodeUpgradesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetNodeUpgradesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetNodeUpgradesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewGetNodeUpgradesUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewGetNodeUpgradesForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewGetNodeUpgradesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type GetNodeUpgradesOK struct {
 
 func (o *GetNodeUpgradesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/upgrades/node][%d] getNodeUpgradesOK  %+v", 200, o.Payload)
+}
+
+func (o *GetNodeUpgradesOK) GetPayload() []*models.MasterVersion {
+	return o.Payload
 }
 
 func (o *GetNodeUpgradesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,6 +151,10 @@ func (o *GetNodeUpgradesDefault) Code() int {
 
 func (o *GetNodeUpgradesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/upgrades/node][%d] getNodeUpgrades default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetNodeUpgradesDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *GetNodeUpgradesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

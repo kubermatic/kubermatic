@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // NewUpdateServiceAccountTokenParams creates a new UpdateServiceAccountTokenParams object
@@ -68,7 +68,7 @@ type UpdateServiceAccountTokenParams struct {
 	/*ProjectID*/
 	ProjectID string
 	/*ServiceaccountID*/
-	ServiceaccountID string
+	ServiceAccountID string
 	/*TokenID*/
 	TokenID string
 
@@ -132,15 +132,15 @@ func (o *UpdateServiceAccountTokenParams) SetProjectID(projectID string) {
 	o.ProjectID = projectID
 }
 
-// WithServiceaccountID adds the serviceaccountID to the update service account token params
-func (o *UpdateServiceAccountTokenParams) WithServiceaccountID(serviceaccountID string) *UpdateServiceAccountTokenParams {
-	o.SetServiceaccountID(serviceaccountID)
+// WithServiceAccountID adds the serviceaccountID to the update service account token params
+func (o *UpdateServiceAccountTokenParams) WithServiceAccountID(serviceaccountID string) *UpdateServiceAccountTokenParams {
+	o.SetServiceAccountID(serviceaccountID)
 	return o
 }
 
-// SetServiceaccountID adds the serviceaccountId to the update service account token params
-func (o *UpdateServiceAccountTokenParams) SetServiceaccountID(serviceaccountID string) {
-	o.ServiceaccountID = serviceaccountID
+// SetServiceAccountID adds the serviceaccountId to the update service account token params
+func (o *UpdateServiceAccountTokenParams) SetServiceAccountID(serviceaccountID string) {
+	o.ServiceAccountID = serviceaccountID
 }
 
 // WithTokenID adds the tokenID to the update service account token params
@@ -174,7 +174,7 @@ func (o *UpdateServiceAccountTokenParams) WriteToRequest(r runtime.ClientRequest
 	}
 
 	// path param serviceaccount_id
-	if err := r.SetPathParam("serviceaccount_id", o.ServiceaccountID); err != nil {
+	if err := r.SetPathParam("serviceaccount_id", o.ServiceAccountID); err != nil {
 		return err
 	}
 

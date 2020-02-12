@@ -64,7 +64,7 @@ type GetClusterHealthParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -117,15 +117,15 @@ func (o *GetClusterHealthParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the get cluster health params
-func (o *GetClusterHealthParams) WithDc(dc string) *GetClusterHealthParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the get cluster health params
+func (o *GetClusterHealthParams) WithDC(dc string) *GetClusterHealthParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the get cluster health params
-func (o *GetClusterHealthParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the get cluster health params
+func (o *GetClusterHealthParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the get cluster health params
@@ -153,7 +153,7 @@ func (o *GetClusterHealthParams) WriteToRequest(r runtime.ClientRequest, reg str
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

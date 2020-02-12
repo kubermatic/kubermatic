@@ -470,7 +470,7 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 // swagger:parameters patchCurrentUserSettings
 type PatchSettingsReq struct {
 	// in: body
-	Patch []byte
+	Patch json.RawMessage
 }
 
 // DecodePatchSettingsReq  decodes an HTTP request into PatchSettingsReq

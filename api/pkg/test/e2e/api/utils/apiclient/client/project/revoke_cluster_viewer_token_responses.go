@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // RevokeClusterViewerTokenReader is a Reader for the RevokeClusterViewerToken structure.
@@ -24,28 +24,24 @@ type RevokeClusterViewerTokenReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *RevokeClusterViewerTokenReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewRevokeClusterViewerTokenOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewRevokeClusterViewerTokenUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewRevokeClusterViewerTokenForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewRevokeClusterViewerTokenDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -145,6 +141,10 @@ func (o *RevokeClusterViewerTokenDefault) Code() int {
 
 func (o *RevokeClusterViewerTokenDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/viewertoken][%d] revokeClusterViewerToken default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *RevokeClusterViewerTokenDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *RevokeClusterViewerTokenDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

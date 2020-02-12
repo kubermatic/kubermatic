@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // GetUsersForProjectReader is a Reader for the GetUsersForProject structure.
@@ -24,28 +24,24 @@ type GetUsersForProjectReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetUsersForProjectReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetUsersForProjectOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewGetUsersForProjectUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewGetUsersForProjectForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewGetUsersForProjectDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type GetUsersForProjectOK struct {
 
 func (o *GetUsersForProjectOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/users][%d] getUsersForProjectOK  %+v", 200, o.Payload)
+}
+
+func (o *GetUsersForProjectOK) GetPayload() []*models.User {
+	return o.Payload
 }
 
 func (o *GetUsersForProjectOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,6 +151,10 @@ func (o *GetUsersForProjectDefault) Code() int {
 
 func (o *GetUsersForProjectDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/users][%d] getUsersForProject default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetUsersForProjectDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *GetUsersForProjectDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

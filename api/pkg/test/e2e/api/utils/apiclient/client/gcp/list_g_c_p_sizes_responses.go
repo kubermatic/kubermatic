@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListGCPSizesReader is a Reader for the ListGCPSizes structure.
@@ -24,14 +24,12 @@ type ListGCPSizesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListGCPSizesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListGCPSizesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListGCPSizesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListGCPSizesOK struct {
 
 func (o *ListGCPSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/sizes][%d] listGCPSizesOK  %+v", 200, o.Payload)
+}
+
+func (o *ListGCPSizesOK) GetPayload() models.GCPMachineSizeList {
+	return o.Payload
 }
 
 func (o *ListGCPSizesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListGCPSizesDefault) Code() int {
 
 func (o *ListGCPSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/sizes][%d] listGCPSizes default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListGCPSizesDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListGCPSizesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

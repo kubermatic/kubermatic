@@ -7,12 +7,11 @@ package users
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new users API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,23 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	AddUserToProject(params *AddUserToProjectParams, authInfo runtime.ClientAuthInfoWriter) (*AddUserToProjectCreated, error)
+
+	DeleteUserFromProject(params *DeleteUserFromProjectParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteUserFromProjectOK, error)
+
+	EditUserInProject(params *EditUserInProjectParams, authInfo runtime.ClientAuthInfoWriter) (*EditUserInProjectOK, error)
+
+	GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter) (*GetCurrentUserOK, error)
+
+	GetUsersForProject(params *GetUsersForProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetUsersForProjectOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-AddUserToProject Adds the given user to the given project
+  AddUserToProject Adds the given user to the given project
 */
 func (a *Client) AddUserToProject(params *AddUserToProjectParams, authInfo runtime.ClientAuthInfoWriter) (*AddUserToProjectCreated, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +63,17 @@ func (a *Client) AddUserToProject(params *AddUserToProjectParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*AddUserToProjectCreated), nil
-
+	success, ok := result.(*AddUserToProjectCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*AddUserToProjectDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-DeleteUserFromProject Removes the given member from the project
+  DeleteUserFromProject Removes the given member from the project
 */
 func (a *Client) DeleteUserFromProject(params *DeleteUserFromProjectParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteUserFromProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -78,12 +97,17 @@ func (a *Client) DeleteUserFromProject(params *DeleteUserFromProjectParams, auth
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteUserFromProjectOK), nil
-
+	success, ok := result.(*DeleteUserFromProjectOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteUserFromProjectDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-EditUserInProject Changes membership of the given user for the given project
+  EditUserInProject Changes membership of the given user for the given project
 */
 func (a *Client) EditUserInProject(params *EditUserInProjectParams, authInfo runtime.ClientAuthInfoWriter) (*EditUserInProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -107,12 +131,17 @@ func (a *Client) EditUserInProject(params *EditUserInProjectParams, authInfo run
 	if err != nil {
 		return nil, err
 	}
-	return result.(*EditUserInProjectOK), nil
-
+	success, ok := result.(*EditUserInProjectOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*EditUserInProjectDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetCurrentUser returns information about the current user
+  GetCurrentUser returns information about the current user
 */
 func (a *Client) GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter) (*GetCurrentUserOK, error) {
 	// TODO: Validate the params before sending
@@ -136,12 +165,17 @@ func (a *Client) GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetCurrentUserOK), nil
-
+	success, ok := result.(*GetCurrentUserOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetCurrentUserDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetUsersForProject Get list of users for the given project
+  GetUsersForProject Get list of users for the given project
 */
 func (a *Client) GetUsersForProject(params *GetUsersForProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetUsersForProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -165,8 +199,13 @@ func (a *Client) GetUsersForProject(params *GetUsersForProjectParams, authInfo r
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetUsersForProjectOK), nil
-
+	success, ok := result.(*GetUsersForProjectOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetUsersForProjectDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

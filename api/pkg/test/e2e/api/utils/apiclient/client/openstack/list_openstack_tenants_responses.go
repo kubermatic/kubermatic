@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListOpenstackTenantsReader is a Reader for the ListOpenstackTenants structure.
@@ -24,14 +24,12 @@ type ListOpenstackTenantsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListOpenstackTenantsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListOpenstackTenantsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListOpenstackTenantsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListOpenstackTenantsOK struct {
 
 func (o *ListOpenstackTenantsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/tenants][%d] listOpenstackTenantsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListOpenstackTenantsOK) GetPayload() []*models.OpenstackTenant {
+	return o.Payload
 }
 
 func (o *ListOpenstackTenantsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListOpenstackTenantsDefault) Code() int {
 
 func (o *ListOpenstackTenantsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/tenants][%d] listOpenstackTenants default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListOpenstackTenantsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListOpenstackTenantsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

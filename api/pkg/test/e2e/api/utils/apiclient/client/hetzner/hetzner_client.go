@@ -7,12 +7,11 @@ package hetzner
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new hetzner API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,17 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	ListHetznerSizes(params *ListHetznerSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListHetznerSizesOK, error)
+
+	ListHetznerSizesNoCredentials(params *ListHetznerSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListHetznerSizesNoCredentialsOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-ListHetznerSizes Lists sizes from hetzner
+  ListHetznerSizes Lists sizes from hetzner
 */
 func (a *Client) ListHetznerSizes(params *ListHetznerSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListHetznerSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +57,17 @@ func (a *Client) ListHetznerSizes(params *ListHetznerSizesParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListHetznerSizesOK), nil
-
+	success, ok := result.(*ListHetznerSizesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListHetznerSizesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListHetznerSizesNoCredentials Lists sizes from hetzner
+  ListHetznerSizesNoCredentials Lists sizes from hetzner
 */
 func (a *Client) ListHetznerSizesNoCredentials(params *ListHetznerSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListHetznerSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -78,8 +91,13 @@ func (a *Client) ListHetznerSizesNoCredentials(params *ListHetznerSizesNoCredent
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListHetznerSizesNoCredentialsOK), nil
-
+	success, ok := result.(*ListHetznerSizesNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListHetznerSizesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

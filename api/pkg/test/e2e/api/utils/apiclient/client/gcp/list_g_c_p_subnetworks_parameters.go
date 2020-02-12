@@ -68,7 +68,7 @@ type ListGCPSubnetworksParams struct {
 	/*ServiceAccount*/
 	ServiceAccount *string
 	/*Dc*/
-	Dc string
+	DC string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -141,15 +141,15 @@ func (o *ListGCPSubnetworksParams) SetServiceAccount(serviceAccount *string) {
 	o.ServiceAccount = serviceAccount
 }
 
-// WithDc adds the dc to the list g c p subnetworks params
-func (o *ListGCPSubnetworksParams) WithDc(dc string) *ListGCPSubnetworksParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list g c p subnetworks params
+func (o *ListGCPSubnetworksParams) WithDC(dc string) *ListGCPSubnetworksParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list g c p subnetworks params
-func (o *ListGCPSubnetworksParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list g c p subnetworks params
+func (o *ListGCPSubnetworksParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -188,7 +188,7 @@ func (o *ListGCPSubnetworksParams) WriteToRequest(r runtime.ClientRequest, reg s
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

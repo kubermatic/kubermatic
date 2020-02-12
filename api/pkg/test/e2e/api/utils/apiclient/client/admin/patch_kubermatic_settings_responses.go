@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // PatchKubermaticSettingsReader is a Reader for the PatchKubermaticSettings structure.
@@ -24,28 +24,24 @@ type PatchKubermaticSettingsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *PatchKubermaticSettingsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewPatchKubermaticSettingsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewPatchKubermaticSettingsUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewPatchKubermaticSettingsForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewPatchKubermaticSettingsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type PatchKubermaticSettingsOK struct {
 
 func (o *PatchKubermaticSettingsOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/settings][%d] patchKubermaticSettingsOK  %+v", 200, o.Payload)
+}
+
+func (o *PatchKubermaticSettingsOK) GetPayload() *models.GlobalSettings {
+	return o.Payload
 }
 
 func (o *PatchKubermaticSettingsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *PatchKubermaticSettingsDefault) Code() int {
 
 func (o *PatchKubermaticSettingsDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/settings][%d] patchKubermaticSettings default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *PatchKubermaticSettingsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *PatchKubermaticSettingsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

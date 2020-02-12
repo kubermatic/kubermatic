@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // NewBindUserToRoleParams creates a new BindUserToRoleParams object
@@ -68,7 +68,7 @@ type BindUserToRoleParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*Namespace*/
 	Namespace string
 	/*ProjectID*/
@@ -136,15 +136,15 @@ func (o *BindUserToRoleParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the bind user to role params
-func (o *BindUserToRoleParams) WithDc(dc string) *BindUserToRoleParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the bind user to role params
+func (o *BindUserToRoleParams) WithDC(dc string) *BindUserToRoleParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the bind user to role params
-func (o *BindUserToRoleParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the bind user to role params
+func (o *BindUserToRoleParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithNamespace adds the namespace to the bind user to role params
@@ -200,7 +200,7 @@ func (o *BindUserToRoleParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

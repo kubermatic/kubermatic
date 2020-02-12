@@ -62,7 +62,7 @@ for the delete SSH key operation typically these are written to a http.Request
 type DeleteSSHKeyParams struct {
 
 	/*KeyID*/
-	KeyID string
+	SSHKeyID string
 	/*ProjectID*/
 	ProjectID string
 
@@ -104,15 +104,15 @@ func (o *DeleteSSHKeyParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithKeyID adds the keyID to the delete SSH key params
-func (o *DeleteSSHKeyParams) WithKeyID(keyID string) *DeleteSSHKeyParams {
-	o.SetKeyID(keyID)
+// WithSSHKeyID adds the keyID to the delete SSH key params
+func (o *DeleteSSHKeyParams) WithSSHKeyID(keyID string) *DeleteSSHKeyParams {
+	o.SetSSHKeyID(keyID)
 	return o
 }
 
-// SetKeyID adds the keyId to the delete SSH key params
-func (o *DeleteSSHKeyParams) SetKeyID(keyID string) {
-	o.KeyID = keyID
+// SetSSHKeyID adds the keyId to the delete SSH key params
+func (o *DeleteSSHKeyParams) SetSSHKeyID(keyID string) {
+	o.SSHKeyID = keyID
 }
 
 // WithProjectID adds the projectID to the delete SSH key params
@@ -135,7 +135,7 @@ func (o *DeleteSSHKeyParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 	var res []error
 
 	// path param key_id
-	if err := r.SetPathParam("key_id", o.KeyID); err != nil {
+	if err := r.SetPathParam("key_id", o.SSHKeyID); err != nil {
 		return err
 	}
 

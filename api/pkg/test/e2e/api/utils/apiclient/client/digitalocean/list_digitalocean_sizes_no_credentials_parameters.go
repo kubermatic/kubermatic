@@ -64,7 +64,7 @@ type ListDigitaloceanSizesNoCredentialsParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -117,15 +117,15 @@ func (o *ListDigitaloceanSizesNoCredentialsParams) SetClusterID(clusterID string
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the list digitalocean sizes no credentials params
-func (o *ListDigitaloceanSizesNoCredentialsParams) WithDc(dc string) *ListDigitaloceanSizesNoCredentialsParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list digitalocean sizes no credentials params
+func (o *ListDigitaloceanSizesNoCredentialsParams) WithDC(dc string) *ListDigitaloceanSizesNoCredentialsParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list digitalocean sizes no credentials params
-func (o *ListDigitaloceanSizesNoCredentialsParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list digitalocean sizes no credentials params
+func (o *ListDigitaloceanSizesNoCredentialsParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the list digitalocean sizes no credentials params
@@ -153,7 +153,7 @@ func (o *ListDigitaloceanSizesNoCredentialsParams) WriteToRequest(r runtime.Clie
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

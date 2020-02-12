@@ -7,12 +7,11 @@ package project
 
 import (
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new project API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +23,125 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, authInfo runtime.ClientAuthInfoWriter) (*AssignSSHKeyToClusterCreated, error)
+
+	BindUserToClusterRole(params *BindUserToClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToClusterRoleOK, error)
+
+	BindUserToRole(params *BindUserToRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleOK, error)
+
+	CreateCluster(params *CreateClusterParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterCreated, error)
+
+	CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterRoleCreated, error)
+
+	CreateNodeDeployment(params *CreateNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeDeploymentCreated, error)
+
+	CreateNodeForClusterLegacy(params *CreateNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeForClusterLegacyCreated, error)
+
+	CreateProject(params *CreateProjectParams, authInfo runtime.ClientAuthInfoWriter) (*CreateProjectCreated, error)
+
+	CreateRole(params *CreateRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateRoleCreated, error)
+
+	CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.ClientAuthInfoWriter) (*CreateSSHKeyOK, error)
+
+	DeleteCluster(params *DeleteClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterOK, error)
+
+	DeleteClusterRole(params *DeleteClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterRoleOK, error)
+
+	DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteNodeDeploymentOK, error)
+
+	DeleteNodeForClusterLegacy(params *DeleteNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteNodeForClusterLegacyOK, error)
+
+	DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteProjectOK, error)
+
+	DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteRoleOK, error)
+
+	DeleteSSHKey(params *DeleteSSHKeyParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteSSHKeyOK, error)
+
+	DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DetachSSHKeyFromClusterOK, error)
+
+	GetCluster(params *GetClusterParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterOK, error)
+
+	GetClusterEvents(params *GetClusterEventsParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterEventsOK, error)
+
+	GetClusterHealth(params *GetClusterHealthParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterHealthOK, error)
+
+	GetClusterKubeconfig(params *GetClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterKubeconfigOK, error)
+
+	GetClusterMetrics(params *GetClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterMetricsOK, error)
+
+	GetClusterRole(params *GetClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterRoleOK, error)
+
+	GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterUpgradesOK, error)
+
+	GetNodeDeployment(params *GetNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeDeploymentOK, error)
+
+	GetNodeForClusterLegacy(params *GetNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeForClusterLegacyOK, error)
+
+	GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeconfigOK, error)
+
+	GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetProjectOK, error)
+
+	GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter) (*GetRoleOK, error)
+
+	ListClusterRole(params *ListClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleOK, error)
+
+	ListClusterRoleBinding(params *ListClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleBindingOK, error)
+
+	ListClusterRoleNames(params *ListClusterRoleNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleNamesOK, error)
+
+	ListClusters(params *ListClustersParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersOK, error)
+
+	ListClustersForProject(params *ListClustersForProjectParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersForProjectOK, error)
+
+	ListNamespace(params *ListNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*ListNamespaceOK, error)
+
+	ListNodeDeploymentNodes(params *ListNodeDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentNodesOK, error)
+
+	ListNodeDeploymentNodesEvents(params *ListNodeDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentNodesEventsOK, error)
+
+	ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentsOK, error)
+
+	ListNodesForClusterLegacy(params *ListNodesForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodesForClusterLegacyOK, error)
+
+	ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter) (*ListProjectsOK, error)
+
+	ListRole(params *ListRoleParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleOK, error)
+
+	ListRoleBinding(params *ListRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleBindingOK, error)
+
+	ListRoleNames(params *ListRoleNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleNamesOK, error)
+
+	ListSSHKeys(params *ListSSHKeysParams, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysOK, error)
+
+	ListSSHKeysAssignedToCluster(params *ListSSHKeysAssignedToClusterParams, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysAssignedToClusterOK, error)
+
+	PatchCluster(params *PatchClusterParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterOK, error)
+
+	PatchClusterRole(params *PatchClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterRoleOK, error)
+
+	PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*PatchNodeDeploymentOK, error)
+
+	PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchRoleOK, error)
+
+	RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterAdminTokenOK, error)
+
+	RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterViewerTokenOK, error)
+
+	UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromClusterRoleBindingOK, error)
+
+	UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingOK, error)
+
+	UpdateProject(params *UpdateProjectParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateProjectOK, error)
+
+	UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*UpgradeClusterNodeDeploymentsOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-AssignSSHKeyToCluster Assigns an existing ssh key to the given cluster
+  AssignSSHKeyToCluster Assigns an existing ssh key to the given cluster
 */
 func (a *Client) AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, authInfo runtime.ClientAuthInfoWriter) (*AssignSSHKeyToClusterCreated, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +165,17 @@ func (a *Client) AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, auth
 	if err != nil {
 		return nil, err
 	}
-	return result.(*AssignSSHKeyToClusterCreated), nil
-
+	success, ok := result.(*AssignSSHKeyToClusterCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*AssignSSHKeyToClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-BindUserToClusterRole Binds user to cluster role
+  BindUserToClusterRole Binds user to cluster role
 */
 func (a *Client) BindUserToClusterRole(params *BindUserToClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToClusterRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -78,12 +199,17 @@ func (a *Client) BindUserToClusterRole(params *BindUserToClusterRoleParams, auth
 	if err != nil {
 		return nil, err
 	}
-	return result.(*BindUserToClusterRoleOK), nil
-
+	success, ok := result.(*BindUserToClusterRoleOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*BindUserToClusterRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-BindUserToRole Binds user to the role
+  BindUserToRole Binds user to the role
 */
 func (a *Client) BindUserToRole(params *BindUserToRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -107,12 +233,17 @@ func (a *Client) BindUserToRole(params *BindUserToRoleParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	return result.(*BindUserToRoleOK), nil
-
+	success, ok := result.(*BindUserToRoleOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*BindUserToRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-CreateCluster creates a cluster for the given project
+  CreateCluster creates a cluster for the given project
 */
 func (a *Client) CreateCluster(params *CreateClusterParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterCreated, error) {
 	// TODO: Validate the params before sending
@@ -136,12 +267,17 @@ func (a *Client) CreateCluster(params *CreateClusterParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	return result.(*CreateClusterCreated), nil
-
+	success, ok := result.(*CreateClusterCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-CreateClusterRole Creates cluster role
+  CreateClusterRole Creates cluster role
 */
 func (a *Client) CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterRoleCreated, error) {
 	// TODO: Validate the params before sending
@@ -165,12 +301,17 @@ func (a *Client) CreateClusterRole(params *CreateClusterRoleParams, authInfo run
 	if err != nil {
 		return nil, err
 	}
-	return result.(*CreateClusterRoleCreated), nil
-
+	success, ok := result.(*CreateClusterRoleCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateClusterRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-CreateNodeDeployment Creates a node deployment that will belong to the given cluster
+  CreateNodeDeployment Creates a node deployment that will belong to the given cluster
 */
 func (a *Client) CreateNodeDeployment(params *CreateNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeDeploymentCreated, error) {
 	// TODO: Validate the params before sending
@@ -194,14 +335,19 @@ func (a *Client) CreateNodeDeployment(params *CreateNodeDeploymentParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	return result.(*CreateNodeDeploymentCreated), nil
-
+	success, ok := result.(*CreateNodeDeploymentCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateNodeDeploymentDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-CreateNodeForClusterLegacy deprecateds creates a node that will belong to the given cluster
+  CreateNodeForClusterLegacy deprecateds creates a node that will belong to the given cluster
 
-This endpoint is deprecated, please create a Node Deployment instead.
+  This endpoint is deprecated, please create a Node Deployment instead.
 Use POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments
 */
 func (a *Client) CreateNodeForClusterLegacy(params *CreateNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeForClusterLegacyCreated, error) {
@@ -226,14 +372,19 @@ func (a *Client) CreateNodeForClusterLegacy(params *CreateNodeForClusterLegacyPa
 	if err != nil {
 		return nil, err
 	}
-	return result.(*CreateNodeForClusterLegacyCreated), nil
-
+	success, ok := result.(*CreateNodeForClusterLegacyCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateNodeForClusterLegacyDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-CreateProject creates a brand new project
+  CreateProject creates a brand new project
 
-Note that this endpoint can be consumed by every authenticated user.
+  Note that this endpoint can be consumed by every authenticated user.
 */
 func (a *Client) CreateProject(params *CreateProjectParams, authInfo runtime.ClientAuthInfoWriter) (*CreateProjectCreated, error) {
 	// TODO: Validate the params before sending
@@ -257,12 +408,17 @@ func (a *Client) CreateProject(params *CreateProjectParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	return result.(*CreateProjectCreated), nil
-
+	success, ok := result.(*CreateProjectCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateProjectDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-CreateRole Creates cluster role
+  CreateRole Creates cluster role
 */
 func (a *Client) CreateRole(params *CreateRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateRoleCreated, error) {
 	// TODO: Validate the params before sending
@@ -286,12 +442,17 @@ func (a *Client) CreateRole(params *CreateRoleParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*CreateRoleCreated), nil
-
+	success, ok := result.(*CreateRoleCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-CreateSSHKey adds the given SSH key to the specified project
+  CreateSSHKey adds the given SSH key to the specified project
 */
 func (a *Client) CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.ClientAuthInfoWriter) (*CreateSSHKeyOK, error) {
 	// TODO: Validate the params before sending
@@ -315,12 +476,17 @@ func (a *Client) CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	return result.(*CreateSSHKeyOK), nil
-
+	success, ok := result.(*CreateSSHKeyOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateSSHKeyDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-DeleteCluster Deletes the specified cluster
+  DeleteCluster Deletes the specified cluster
 */
 func (a *Client) DeleteCluster(params *DeleteClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -344,12 +510,17 @@ func (a *Client) DeleteCluster(params *DeleteClusterParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteClusterOK), nil
-
+	success, ok := result.(*DeleteClusterOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-DeleteClusterRole Delete the cluster role with the given name
+  DeleteClusterRole Delete the cluster role with the given name
 */
 func (a *Client) DeleteClusterRole(params *DeleteClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -373,12 +544,17 @@ func (a *Client) DeleteClusterRole(params *DeleteClusterRoleParams, authInfo run
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteClusterRoleOK), nil
-
+	success, ok := result.(*DeleteClusterRoleOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteClusterRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-DeleteNodeDeployment deletes the given node deployment that belongs to the cluster
+  DeleteNodeDeployment deletes the given node deployment that belongs to the cluster
 */
 func (a *Client) DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteNodeDeploymentOK, error) {
 	// TODO: Validate the params before sending
@@ -402,14 +578,19 @@ func (a *Client) DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteNodeDeploymentOK), nil
-
+	success, ok := result.(*DeleteNodeDeploymentOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteNodeDeploymentDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-DeleteNodeForClusterLegacy deprecateds deletes the given node that belongs to the cluster
+  DeleteNodeForClusterLegacy deprecateds deletes the given node that belongs to the cluster
 
-This endpoint is deprecated, please create a Node Deployment instead.
+  This endpoint is deprecated, please create a Node Deployment instead.
 */
 func (a *Client) DeleteNodeForClusterLegacy(params *DeleteNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteNodeForClusterLegacyOK, error) {
 	// TODO: Validate the params before sending
@@ -433,12 +614,17 @@ func (a *Client) DeleteNodeForClusterLegacy(params *DeleteNodeForClusterLegacyPa
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteNodeForClusterLegacyOK), nil
-
+	success, ok := result.(*DeleteNodeForClusterLegacyOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteNodeForClusterLegacyDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-DeleteProject deletes the project with the given ID
+  DeleteProject deletes the project with the given ID
 */
 func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -462,12 +648,17 @@ func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteProjectOK), nil
-
+	success, ok := result.(*DeleteProjectOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteProjectDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-DeleteRole Delete the cluster role with the given name
+  DeleteRole Delete the cluster role with the given name
 */
 func (a *Client) DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -491,12 +682,17 @@ func (a *Client) DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteRoleOK), nil
-
+	success, ok := result.(*DeleteRoleOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-DeleteSSHKey removes the given SSH key from the system
+  DeleteSSHKey removes the given SSH key from the system
 */
 func (a *Client) DeleteSSHKey(params *DeleteSSHKeyParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteSSHKeyOK, error) {
 	// TODO: Validate the params before sending
@@ -520,12 +716,17 @@ func (a *Client) DeleteSSHKey(params *DeleteSSHKeyParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteSSHKeyOK), nil
-
+	success, ok := result.(*DeleteSSHKeyOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteSSHKeyDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-DetachSSHKeyFromCluster Unassignes an ssh key from the given cluster
+  DetachSSHKeyFromCluster Unassignes an ssh key from the given cluster
 */
 func (a *Client) DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DetachSSHKeyFromClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -549,12 +750,17 @@ func (a *Client) DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, 
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DetachSSHKeyFromClusterOK), nil
-
+	success, ok := result.(*DetachSSHKeyFromClusterOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DetachSSHKeyFromClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetCluster Gets the cluster with the given name
+  GetCluster Gets the cluster with the given name
 */
 func (a *Client) GetCluster(params *GetClusterParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -578,12 +784,17 @@ func (a *Client) GetCluster(params *GetClusterParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetClusterOK), nil
-
+	success, ok := result.(*GetClusterOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetClusterEvents gets the events related to the specified cluster
+  GetClusterEvents gets the events related to the specified cluster
 */
 func (a *Client) GetClusterEvents(params *GetClusterEventsParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterEventsOK, error) {
 	// TODO: Validate the params before sending
@@ -607,12 +818,17 @@ func (a *Client) GetClusterEvents(params *GetClusterEventsParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetClusterEventsOK), nil
-
+	success, ok := result.(*GetClusterEventsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetClusterEventsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetClusterHealth Returns the cluster's component health status
+  GetClusterHealth Returns the cluster's component health status
 */
 func (a *Client) GetClusterHealth(params *GetClusterHealthParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterHealthOK, error) {
 	// TODO: Validate the params before sending
@@ -636,12 +852,17 @@ func (a *Client) GetClusterHealth(params *GetClusterHealthParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetClusterHealthOK), nil
-
+	success, ok := result.(*GetClusterHealthOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetClusterHealthDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetClusterKubeconfig gets the kubeconfig for the specified cluster
+  GetClusterKubeconfig gets the kubeconfig for the specified cluster
 */
 func (a *Client) GetClusterKubeconfig(params *GetClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterKubeconfigOK, error) {
 	// TODO: Validate the params before sending
@@ -665,12 +886,17 @@ func (a *Client) GetClusterKubeconfig(params *GetClusterKubeconfigParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetClusterKubeconfigOK), nil
-
+	success, ok := result.(*GetClusterKubeconfigOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetClusterKubeconfigDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetClusterMetrics Gets cluster metrics
+  GetClusterMetrics Gets cluster metrics
 */
 func (a *Client) GetClusterMetrics(params *GetClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterMetricsOK, error) {
 	// TODO: Validate the params before sending
@@ -694,12 +920,17 @@ func (a *Client) GetClusterMetrics(params *GetClusterMetricsParams, authInfo run
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetClusterMetricsOK), nil
-
+	success, ok := result.(*GetClusterMetricsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetClusterMetricsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetClusterRole Gets the cluster role with the given name
+  GetClusterRole Gets the cluster role with the given name
 */
 func (a *Client) GetClusterRole(params *GetClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -723,12 +954,17 @@ func (a *Client) GetClusterRole(params *GetClusterRoleParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetClusterRoleOK), nil
-
+	success, ok := result.(*GetClusterRoleOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetClusterRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetClusterUpgrades Gets possible cluster upgrades
+  GetClusterUpgrades Gets possible cluster upgrades
 */
 func (a *Client) GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterUpgradesOK, error) {
 	// TODO: Validate the params before sending
@@ -752,12 +988,17 @@ func (a *Client) GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo r
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetClusterUpgradesOK), nil
-
+	success, ok := result.(*GetClusterUpgradesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetClusterUpgradesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetNodeDeployment gets a node deployment that is assigned to the given cluster
+  GetNodeDeployment gets a node deployment that is assigned to the given cluster
 */
 func (a *Client) GetNodeDeployment(params *GetNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeDeploymentOK, error) {
 	// TODO: Validate the params before sending
@@ -781,14 +1022,19 @@ func (a *Client) GetNodeDeployment(params *GetNodeDeploymentParams, authInfo run
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetNodeDeploymentOK), nil
-
+	success, ok := result.(*GetNodeDeploymentOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetNodeDeploymentDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetNodeForClusterLegacy deprecateds gets a node that is assigned to the given cluster
+  GetNodeForClusterLegacy deprecateds gets a node that is assigned to the given cluster
 
-This endpoint is deprecated, please create a Node Deployment instead.
+  This endpoint is deprecated, please create a Node Deployment instead.
 */
 func (a *Client) GetNodeForClusterLegacy(params *GetNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeForClusterLegacyOK, error) {
 	// TODO: Validate the params before sending
@@ -812,12 +1058,17 @@ func (a *Client) GetNodeForClusterLegacy(params *GetNodeForClusterLegacyParams, 
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetNodeForClusterLegacyOK), nil
-
+	success, ok := result.(*GetNodeForClusterLegacyOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetNodeForClusterLegacyDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetOidcClusterKubeconfig gets the kubeconfig for the specified cluster with oidc authentication
+  GetOidcClusterKubeconfig gets the kubeconfig for the specified cluster with oidc authentication
 */
 func (a *Client) GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeconfigOK, error) {
 	// TODO: Validate the params before sending
@@ -841,12 +1092,17 @@ func (a *Client) GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetOidcClusterKubeconfigOK), nil
-
+	success, ok := result.(*GetOidcClusterKubeconfigOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetOidcClusterKubeconfigDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetProject Gets the project with the given ID
+  GetProject Gets the project with the given ID
 */
 func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -870,12 +1126,17 @@ func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetProjectOK), nil
-
+	success, ok := result.(*GetProjectOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetProjectDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-GetRole Gets the role with the given name
+  GetRole Gets the role with the given name
 */
 func (a *Client) GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter) (*GetRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -899,12 +1160,17 @@ func (a *Client) GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoW
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetRoleOK), nil
-
+	success, ok := result.(*GetRoleOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListClusterRole Lists all ClusterRoles
+  ListClusterRole Lists all ClusterRoles
 */
 func (a *Client) ListClusterRole(params *ListClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -928,12 +1194,17 @@ func (a *Client) ListClusterRole(params *ListClusterRoleParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListClusterRoleOK), nil
-
+	success, ok := result.(*ListClusterRoleOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListClusterRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListClusterRoleBinding List cluster role binding
+  ListClusterRoleBinding List cluster role binding
 */
 func (a *Client) ListClusterRoleBinding(params *ListClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleBindingOK, error) {
 	// TODO: Validate the params before sending
@@ -957,12 +1228,17 @@ func (a *Client) ListClusterRoleBinding(params *ListClusterRoleBindingParams, au
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListClusterRoleBindingOK), nil
-
+	success, ok := result.(*ListClusterRoleBindingOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListClusterRoleBindingDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListClusterRoleNames Lists all ClusterRoles
+  ListClusterRoleNames Lists all ClusterRoles
 */
 func (a *Client) ListClusterRoleNames(params *ListClusterRoleNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleNamesOK, error) {
 	// TODO: Validate the params before sending
@@ -986,12 +1262,17 @@ func (a *Client) ListClusterRoleNames(params *ListClusterRoleNamesParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListClusterRoleNamesOK), nil
-
+	success, ok := result.(*ListClusterRoleNamesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListClusterRoleNamesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListClusters lists clusters for the specified project and data center
+  ListClusters lists clusters for the specified project and data center
 */
 func (a *Client) ListClusters(params *ListClustersParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersOK, error) {
 	// TODO: Validate the params before sending
@@ -1015,12 +1296,17 @@ func (a *Client) ListClusters(params *ListClustersParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListClustersOK), nil
-
+	success, ok := result.(*ListClustersOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListClustersDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListClustersForProject lists clusters for the specified project
+  ListClustersForProject lists clusters for the specified project
 */
 func (a *Client) ListClustersForProject(params *ListClustersForProjectParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersForProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -1044,12 +1330,17 @@ func (a *Client) ListClustersForProject(params *ListClustersForProjectParams, au
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListClustersForProjectOK), nil
-
+	success, ok := result.(*ListClustersForProjectOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListClustersForProjectDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListNamespace Lists all namespaces in the cluster
+  ListNamespace Lists all namespaces in the cluster
 */
 func (a *Client) ListNamespace(params *ListNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*ListNamespaceOK, error) {
 	// TODO: Validate the params before sending
@@ -1073,12 +1364,17 @@ func (a *Client) ListNamespace(params *ListNamespaceParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListNamespaceOK), nil
-
+	success, ok := result.(*ListNamespaceOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListNamespaceDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListNodeDeploymentNodes lists nodes that belong to the given node deployment
+  ListNodeDeploymentNodes lists nodes that belong to the given node deployment
 */
 func (a *Client) ListNodeDeploymentNodes(params *ListNodeDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentNodesOK, error) {
 	// TODO: Validate the params before sending
@@ -1102,14 +1398,19 @@ func (a *Client) ListNodeDeploymentNodes(params *ListNodeDeploymentNodesParams, 
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListNodeDeploymentNodesOK), nil
-
+	success, ok := result.(*ListNodeDeploymentNodesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListNodeDeploymentNodesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListNodeDeploymentNodesEvents lists node deployment events if query parameter type is set to warning then only warning events are retrieved
+  ListNodeDeploymentNodesEvents lists node deployment events if query parameter type is set to warning then only warning events are retrieved
 
-If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.
+  If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.
 */
 func (a *Client) ListNodeDeploymentNodesEvents(params *ListNodeDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentNodesEventsOK, error) {
 	// TODO: Validate the params before sending
@@ -1133,12 +1434,17 @@ func (a *Client) ListNodeDeploymentNodesEvents(params *ListNodeDeploymentNodesEv
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListNodeDeploymentNodesEventsOK), nil
-
+	success, ok := result.(*ListNodeDeploymentNodesEventsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListNodeDeploymentNodesEventsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListNodeDeployments Lists node deployments that belong to the given cluster
+  ListNodeDeployments Lists node deployments that belong to the given cluster
 */
 func (a *Client) ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentsOK, error) {
 	// TODO: Validate the params before sending
@@ -1162,14 +1468,19 @@ func (a *Client) ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListNodeDeploymentsOK), nil
-
+	success, ok := result.(*ListNodeDeploymentsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListNodeDeploymentsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListNodesForClusterLegacy deprecateds lists nodes that belong to the given cluster
+  ListNodesForClusterLegacy deprecateds lists nodes that belong to the given cluster
 
-This endpoint is deprecated, please create a Node Deployment instead.
+  This endpoint is deprecated, please create a Node Deployment instead.
 */
 func (a *Client) ListNodesForClusterLegacy(params *ListNodesForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodesForClusterLegacyOK, error) {
 	// TODO: Validate the params before sending
@@ -1193,12 +1504,17 @@ func (a *Client) ListNodesForClusterLegacy(params *ListNodesForClusterLegacyPara
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListNodesForClusterLegacyOK), nil
-
+	success, ok := result.(*ListNodesForClusterLegacyOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListNodesForClusterLegacyDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListProjects lists projects that an authenticated user is a member of
+  ListProjects lists projects that an authenticated user is a member of
 */
 func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter) (*ListProjectsOK, error) {
 	// TODO: Validate the params before sending
@@ -1222,12 +1538,17 @@ func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListProjectsOK), nil
-
+	success, ok := result.(*ListProjectsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListRole Lists all Roles
+  ListRole Lists all Roles
 */
 func (a *Client) ListRole(params *ListRoleParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -1251,12 +1572,17 @@ func (a *Client) ListRole(params *ListRoleParams, authInfo runtime.ClientAuthInf
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListRoleOK), nil
-
+	success, ok := result.(*ListRoleOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListRoleBinding List role binding
+  ListRoleBinding List role binding
 */
 func (a *Client) ListRoleBinding(params *ListRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleBindingOK, error) {
 	// TODO: Validate the params before sending
@@ -1280,12 +1606,17 @@ func (a *Client) ListRoleBinding(params *ListRoleBindingParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListRoleBindingOK), nil
-
+	success, ok := result.(*ListRoleBindingOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListRoleBindingDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListRoleNames Lists all Role names with namespaces
+  ListRoleNames Lists all Role names with namespaces
 */
 func (a *Client) ListRoleNames(params *ListRoleNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleNamesOK, error) {
 	// TODO: Validate the params before sending
@@ -1309,14 +1640,19 @@ func (a *Client) ListRoleNames(params *ListRoleNamesParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListRoleNamesOK), nil
-
+	success, ok := result.(*ListRoleNamesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListRoleNamesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListSSHKeys lists SSH keys that belong to the given project
+  ListSSHKeys lists SSH keys that belong to the given project
 
-The returned collection is sorted by creation timestamp.
+  The returned collection is sorted by creation timestamp.
 */
 func (a *Client) ListSSHKeys(params *ListSSHKeysParams, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysOK, error) {
 	// TODO: Validate the params before sending
@@ -1340,12 +1676,17 @@ func (a *Client) ListSSHKeys(params *ListSSHKeysParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListSSHKeysOK), nil
-
+	success, ok := result.(*ListSSHKeysOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListSSHKeysDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-ListSSHKeysAssignedToCluster Lists ssh keys that are assigned to the cluster
+  ListSSHKeysAssignedToCluster Lists ssh keys that are assigned to the cluster
 The returned collection is sorted by creation timestamp.
 */
 func (a *Client) ListSSHKeysAssignedToCluster(params *ListSSHKeysAssignedToClusterParams, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysAssignedToClusterOK, error) {
@@ -1370,12 +1711,17 @@ func (a *Client) ListSSHKeysAssignedToCluster(params *ListSSHKeysAssignedToClust
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListSSHKeysAssignedToClusterOK), nil
-
+	success, ok := result.(*ListSSHKeysAssignedToClusterOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListSSHKeysAssignedToClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-PatchCluster patches the given cluster using JSON merge patch method https tools ietf org html rfc7396
+  PatchCluster patches the given cluster using JSON merge patch method https tools ietf org html rfc7396
 */
 func (a *Client) PatchCluster(params *PatchClusterParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -1399,12 +1745,17 @@ func (a *Client) PatchCluster(params *PatchClusterParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	return result.(*PatchClusterOK), nil
-
+	success, ok := result.(*PatchClusterOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-PatchClusterRole Patch the cluster role with the given name
+  PatchClusterRole Patch the cluster role with the given name
 */
 func (a *Client) PatchClusterRole(params *PatchClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -1428,12 +1779,17 @@ func (a *Client) PatchClusterRole(params *PatchClusterRoleParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*PatchClusterRoleOK), nil
-
+	success, ok := result.(*PatchClusterRoleOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchClusterRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-PatchNodeDeployment Patches a node deployment that is assigned to the given cluster. Please note that at the moment only
+  PatchNodeDeployment Patches a node deployment that is assigned to the given cluster. Please note that at the moment only
 node deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.
 */
 func (a *Client) PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*PatchNodeDeploymentOK, error) {
@@ -1458,12 +1814,17 @@ func (a *Client) PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo
 	if err != nil {
 		return nil, err
 	}
-	return result.(*PatchNodeDeploymentOK), nil
-
+	success, ok := result.(*PatchNodeDeploymentOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchNodeDeploymentDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-PatchRole Patch the role with the given name
+  PatchRole Patch the role with the given name
 */
 func (a *Client) PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -1487,12 +1848,17 @@ func (a *Client) PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthI
 	if err != nil {
 		return nil, err
 	}
-	return result.(*PatchRoleOK), nil
-
+	success, ok := result.(*PatchRoleOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-RevokeClusterAdminToken Revokes the current admin token
+  RevokeClusterAdminToken Revokes the current admin token
 */
 func (a *Client) RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterAdminTokenOK, error) {
 	// TODO: Validate the params before sending
@@ -1516,12 +1882,17 @@ func (a *Client) RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, 
 	if err != nil {
 		return nil, err
 	}
-	return result.(*RevokeClusterAdminTokenOK), nil
-
+	success, ok := result.(*RevokeClusterAdminTokenOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*RevokeClusterAdminTokenDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-RevokeClusterViewerToken Revokes the current viewer token
+  RevokeClusterViewerToken Revokes the current viewer token
 */
 func (a *Client) RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterViewerTokenOK, error) {
 	// TODO: Validate the params before sending
@@ -1545,12 +1916,17 @@ func (a *Client) RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams
 	if err != nil {
 		return nil, err
 	}
-	return result.(*RevokeClusterViewerTokenOK), nil
-
+	success, ok := result.(*RevokeClusterViewerTokenOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*RevokeClusterViewerTokenDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-UnbindUserFromClusterRoleBinding Unbinds user from cluster role binding
+  UnbindUserFromClusterRoleBinding Unbinds user from cluster role binding
 */
 func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromClusterRoleBindingOK, error) {
 	// TODO: Validate the params before sending
@@ -1574,12 +1950,17 @@ func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterR
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UnbindUserFromClusterRoleBindingOK), nil
-
+	success, ok := result.(*UnbindUserFromClusterRoleBindingOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UnbindUserFromClusterRoleBindingDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-UnbindUserFromRoleBinding Unbinds user from the role binding
+  UnbindUserFromRoleBinding Unbinds user from the role binding
 */
 func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingOK, error) {
 	// TODO: Validate the params before sending
@@ -1603,12 +1984,17 @@ func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingPara
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UnbindUserFromRoleBindingOK), nil
-
+	success, ok := result.(*UnbindUserFromRoleBindingOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UnbindUserFromRoleBindingDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-UpdateProject Updates the given project
+  UpdateProject Updates the given project
 */
 func (a *Client) UpdateProject(params *UpdateProjectParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -1632,12 +2018,17 @@ func (a *Client) UpdateProject(params *UpdateProjectParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UpdateProjectOK), nil
-
+	success, ok := result.(*UpdateProjectOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpdateProjectDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-UpgradeClusterNodeDeployments Upgrades node deployments in a cluster
+  UpgradeClusterNodeDeployments Upgrades node deployments in a cluster
 */
 func (a *Client) UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*UpgradeClusterNodeDeploymentsOK, error) {
 	// TODO: Validate the params before sending
@@ -1661,8 +2052,13 @@ func (a *Client) UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploym
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UpgradeClusterNodeDeploymentsOK), nil
-
+	success, ok := result.(*UpgradeClusterNodeDeploymentsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpgradeClusterNodeDeploymentsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 // SetTransport changes the transport on the client

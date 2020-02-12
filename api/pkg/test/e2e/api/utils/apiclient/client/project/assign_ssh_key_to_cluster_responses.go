@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // AssignSSHKeyToClusterReader is a Reader for the AssignSSHKeyToCluster structure.
@@ -24,28 +24,24 @@ type AssignSSHKeyToClusterReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AssignSSHKeyToClusterReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 201:
 		result := NewAssignSSHKeyToClusterCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewAssignSSHKeyToClusterUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewAssignSSHKeyToClusterForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewAssignSSHKeyToClusterDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type AssignSSHKeyToClusterCreated struct {
 
 func (o *AssignSSHKeyToClusterCreated) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] assignSshKeyToClusterCreated  %+v", 201, o.Payload)
+}
+
+func (o *AssignSSHKeyToClusterCreated) GetPayload() *models.SSHKey {
+	return o.Payload
 }
 
 func (o *AssignSSHKeyToClusterCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -153,6 +153,10 @@ func (o *AssignSSHKeyToClusterDefault) Code() int {
 
 func (o *AssignSSHKeyToClusterDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] assignSSHKeyToCluster default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *AssignSSHKeyToClusterDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *AssignSSHKeyToClusterDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

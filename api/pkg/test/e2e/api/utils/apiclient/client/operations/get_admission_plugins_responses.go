@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // GetAdmissionPluginsReader is a Reader for the GetAdmissionPlugins structure.
@@ -24,21 +24,18 @@ type GetAdmissionPluginsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetAdmissionPluginsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetAdmissionPluginsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewGetAdmissionPluginsUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewGetAdmissionPluginsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +63,10 @@ type GetAdmissionPluginsOK struct {
 
 func (o *GetAdmissionPluginsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admission/plugins/{version}][%d] getAdmissionPluginsOK  %+v", 200, o.Payload)
+}
+
+func (o *GetAdmissionPluginsOK) GetPayload() models.AdmissionPluginList {
+	return o.Payload
 }
 
 func (o *GetAdmissionPluginsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -123,6 +124,10 @@ func (o *GetAdmissionPluginsDefault) Code() int {
 
 func (o *GetAdmissionPluginsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admission/plugins/{version}][%d] getAdmissionPlugins default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetAdmissionPluginsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *GetAdmissionPluginsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

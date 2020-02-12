@@ -64,7 +64,7 @@ type DeleteNodeForClusterLegacyParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*NodeID*/
 	NodeID string
 	/*ProjectID*/
@@ -119,15 +119,15 @@ func (o *DeleteNodeForClusterLegacyParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the delete node for cluster legacy params
-func (o *DeleteNodeForClusterLegacyParams) WithDc(dc string) *DeleteNodeForClusterLegacyParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the delete node for cluster legacy params
+func (o *DeleteNodeForClusterLegacyParams) WithDC(dc string) *DeleteNodeForClusterLegacyParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the delete node for cluster legacy params
-func (o *DeleteNodeForClusterLegacyParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the delete node for cluster legacy params
+func (o *DeleteNodeForClusterLegacyParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithNodeID adds the nodeID to the delete node for cluster legacy params
@@ -166,7 +166,7 @@ func (o *DeleteNodeForClusterLegacyParams) WriteToRequest(r runtime.ClientReques
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

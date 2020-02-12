@@ -64,7 +64,7 @@ type ListClusterRoleParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -117,15 +117,15 @@ func (o *ListClusterRoleParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the list cluster role params
-func (o *ListClusterRoleParams) WithDc(dc string) *ListClusterRoleParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list cluster role params
+func (o *ListClusterRoleParams) WithDC(dc string) *ListClusterRoleParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list cluster role params
-func (o *ListClusterRoleParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list cluster role params
+func (o *ListClusterRoleParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the list cluster role params
@@ -153,7 +153,7 @@ func (o *ListClusterRoleParams) WriteToRequest(r runtime.ClientRequest, reg strf
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

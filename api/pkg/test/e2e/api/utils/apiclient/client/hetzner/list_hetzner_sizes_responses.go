@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListHetznerSizesReader is a Reader for the ListHetznerSizes structure.
@@ -24,14 +24,12 @@ type ListHetznerSizesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListHetznerSizesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListHetznerSizesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListHetznerSizesDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListHetznerSizesOK struct {
 
 func (o *ListHetznerSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/hetzner/sizes][%d] listHetznerSizesOK  %+v", 200, o.Payload)
+}
+
+func (o *ListHetznerSizesOK) GetPayload() *models.HetznerSizeList {
+	return o.Payload
 }
 
 func (o *ListHetznerSizesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +99,10 @@ func (o *ListHetznerSizesDefault) Code() int {
 
 func (o *ListHetznerSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/hetzner/sizes][%d] listHetznerSizes default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListHetznerSizesDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListHetznerSizesDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

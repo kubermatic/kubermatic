@@ -81,7 +81,7 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.Nod
 	listVPCParams := &awsapiclient.ListAWSVPCSParams{
 		AccessKeyID:     utilpointer.StringPtr(secrets.AWS.AccessKeyID),
 		SecretAccessKey: utilpointer.StringPtr(secrets.AWS.SecretAccessKey),
-		Dc:              awsDC,
+		DC:              awsDC,
 	}
 	listVPCParams.SetTimeout(15 * time.Second)
 	vpcResponse, err := secrets.kubermaticClient.Aws.ListAWSVPCS(listVPCParams, secrets.kubermaticAuthenticator)
@@ -102,8 +102,8 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.Nod
 	listSubnetParams := &awsapiclient.ListAWSSubnetsParams{
 		AccessKeyID:     utilpointer.StringPtr(secrets.AWS.AccessKeyID),
 		SecretAccessKey: utilpointer.StringPtr(secrets.AWS.SecretAccessKey),
-		Dc:              awsDC,
-		Vpc:             utilpointer.StringPtr(vpcID),
+		DC:              awsDC,
+		VPC:             utilpointer.StringPtr(vpcID),
 	}
 	listSubnetParams.SetTimeout(15 * time.Second)
 	subnetResponse, err := secrets.kubermaticClient.Aws.ListAWSSubnets(listSubnetParams, secrets.kubermaticAuthenticator)

@@ -6,9 +6,8 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	strfmt "github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -19,7 +18,7 @@ type KubevirtNodeSpec struct {
 
 	// CPUs states how many cpus the kubevirt node will have.
 	// Required: true
-	Cpus *string `json:"cpus"`
+	CPUs *string `json:"cpus"`
 
 	// Memory states the memory that kubevirt node will have.
 	// Required: true
@@ -46,7 +45,7 @@ type KubevirtNodeSpec struct {
 func (m *KubevirtNodeSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateCpus(formats); err != nil {
+	if err := m.validateCPUs(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -76,9 +75,9 @@ func (m *KubevirtNodeSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *KubevirtNodeSpec) validateCpus(formats strfmt.Registry) error {
+func (m *KubevirtNodeSpec) validateCPUs(formats strfmt.Registry) error {
 
-	if err := validate.Required("cpus", "body", m.Cpus); err != nil {
+	if err := validate.Required("cpus", "body", m.CPUs); err != nil {
 		return err
 	}
 

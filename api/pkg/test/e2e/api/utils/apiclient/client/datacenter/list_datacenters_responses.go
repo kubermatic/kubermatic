@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListDatacentersReader is a Reader for the ListDatacenters structure.
@@ -24,14 +24,12 @@ type ListDatacentersReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListDatacentersReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListDatacentersOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListDatacentersDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListDatacentersOK struct {
 
 func (o *ListDatacentersOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/dc][%d] listDatacentersOK  %+v", 200, o.Payload)
+}
+
+func (o *ListDatacentersOK) GetPayload() models.DatacenterList {
+	return o.Payload
 }
 
 func (o *ListDatacentersOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListDatacentersDefault) Code() int {
 
 func (o *ListDatacentersDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/dc][%d] listDatacenters default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListDatacentersDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListDatacentersDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

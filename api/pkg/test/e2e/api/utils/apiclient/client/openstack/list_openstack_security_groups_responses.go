@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListOpenstackSecurityGroupsReader is a Reader for the ListOpenstackSecurityGroups structure.
@@ -24,14 +24,12 @@ type ListOpenstackSecurityGroupsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListOpenstackSecurityGroupsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListOpenstackSecurityGroupsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListOpenstackSecurityGroupsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListOpenstackSecurityGroupsOK struct {
 
 func (o *ListOpenstackSecurityGroupsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/securitygroups][%d] listOpenstackSecurityGroupsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListOpenstackSecurityGroupsOK) GetPayload() []*models.OpenstackSecurityGroup {
+	return o.Payload
 }
 
 func (o *ListOpenstackSecurityGroupsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListOpenstackSecurityGroupsDefault) Code() int {
 
 func (o *ListOpenstackSecurityGroupsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/securitygroups][%d] listOpenstackSecurityGroups default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListOpenstackSecurityGroupsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListOpenstackSecurityGroupsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

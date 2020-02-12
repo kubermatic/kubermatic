@@ -64,7 +64,7 @@ type GetClusterParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -117,15 +117,15 @@ func (o *GetClusterParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the get cluster params
-func (o *GetClusterParams) WithDc(dc string) *GetClusterParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the get cluster params
+func (o *GetClusterParams) WithDC(dc string) *GetClusterParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the get cluster params
-func (o *GetClusterParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the get cluster params
+func (o *GetClusterParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the get cluster params
@@ -153,7 +153,7 @@ func (o *GetClusterParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Re
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

@@ -64,7 +64,7 @@ type ListSSHKeysAssignedToClusterParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -117,15 +117,15 @@ func (o *ListSSHKeysAssignedToClusterParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the list SSH keys assigned to cluster params
-func (o *ListSSHKeysAssignedToClusterParams) WithDc(dc string) *ListSSHKeysAssignedToClusterParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list SSH keys assigned to cluster params
+func (o *ListSSHKeysAssignedToClusterParams) WithDC(dc string) *ListSSHKeysAssignedToClusterParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list SSH keys assigned to cluster params
-func (o *ListSSHKeysAssignedToClusterParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list SSH keys assigned to cluster params
+func (o *ListSSHKeysAssignedToClusterParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the list SSH keys assigned to cluster params
@@ -153,7 +153,7 @@ func (o *ListSSHKeysAssignedToClusterParams) WriteToRequest(r runtime.ClientRequ
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListServiceAccountTokensReader is a Reader for the ListServiceAccountTokens structure.
@@ -24,28 +24,24 @@ type ListServiceAccountTokensReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListServiceAccountTokensReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListServiceAccountTokensOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewListServiceAccountTokensUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewListServiceAccountTokensForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewListServiceAccountTokensDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type ListServiceAccountTokensOK struct {
 
 func (o *ListServiceAccountTokensOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] listServiceAccountTokensOK  %+v", 200, o.Payload)
+}
+
+func (o *ListServiceAccountTokensOK) GetPayload() []*models.PublicServiceAccountToken {
+	return o.Payload
 }
 
 func (o *ListServiceAccountTokensOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,6 +151,10 @@ func (o *ListServiceAccountTokensDefault) Code() int {
 
 func (o *ListServiceAccountTokensDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] listServiceAccountTokens default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListServiceAccountTokensDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListServiceAccountTokensDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

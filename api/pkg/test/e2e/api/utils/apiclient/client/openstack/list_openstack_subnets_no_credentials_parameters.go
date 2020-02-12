@@ -64,7 +64,7 @@ type ListOpenstackSubnetsNoCredentialsParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*NetworkID*/
 	NetworkID *string
 	/*ProjectID*/
@@ -119,15 +119,15 @@ func (o *ListOpenstackSubnetsNoCredentialsParams) SetClusterID(clusterID string)
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the list openstack subnets no credentials params
-func (o *ListOpenstackSubnetsNoCredentialsParams) WithDc(dc string) *ListOpenstackSubnetsNoCredentialsParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list openstack subnets no credentials params
+func (o *ListOpenstackSubnetsNoCredentialsParams) WithDC(dc string) *ListOpenstackSubnetsNoCredentialsParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list openstack subnets no credentials params
-func (o *ListOpenstackSubnetsNoCredentialsParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list openstack subnets no credentials params
+func (o *ListOpenstackSubnetsNoCredentialsParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithNetworkID adds the networkID to the list openstack subnets no credentials params
@@ -166,7 +166,7 @@ func (o *ListOpenstackSubnetsNoCredentialsParams) WriteToRequest(r runtime.Clien
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

@@ -62,7 +62,7 @@ for the get datacenter operation typically these are written to a http.Request
 type GetDatacenterParams struct {
 
 	/*Dc*/
-	Dc string
+	DC string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -102,15 +102,15 @@ func (o *GetDatacenterParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithDc adds the dc to the get datacenter params
-func (o *GetDatacenterParams) WithDc(dc string) *GetDatacenterParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the get datacenter params
+func (o *GetDatacenterParams) WithDC(dc string) *GetDatacenterParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the get datacenter params
-func (o *GetDatacenterParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the get datacenter params
+func (o *GetDatacenterParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -122,7 +122,7 @@ func (o *GetDatacenterParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 	var res []error
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

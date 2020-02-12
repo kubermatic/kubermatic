@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListGCPNetworksReader is a Reader for the ListGCPNetworks structure.
@@ -24,14 +24,12 @@ type ListGCPNetworksReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListGCPNetworksReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListGCPNetworksOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListGCPNetworksDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListGCPNetworksOK struct {
 
 func (o *ListGCPNetworksOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/networks][%d] listGCPNetworksOK  %+v", 200, o.Payload)
+}
+
+func (o *ListGCPNetworksOK) GetPayload() models.GCPNetworkList {
+	return o.Payload
 }
 
 func (o *ListGCPNetworksOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListGCPNetworksDefault) Code() int {
 
 func (o *ListGCPNetworksDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/networks][%d] listGCPNetworks default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListGCPNetworksDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListGCPNetworksDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

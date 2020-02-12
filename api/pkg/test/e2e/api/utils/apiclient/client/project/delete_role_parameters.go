@@ -64,7 +64,7 @@ type DeleteRoleParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*Namespace*/
 	Namespace string
 	/*ProjectID*/
@@ -121,15 +121,15 @@ func (o *DeleteRoleParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the delete role params
-func (o *DeleteRoleParams) WithDc(dc string) *DeleteRoleParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the delete role params
+func (o *DeleteRoleParams) WithDC(dc string) *DeleteRoleParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the delete role params
-func (o *DeleteRoleParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the delete role params
+func (o *DeleteRoleParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithNamespace adds the namespace to the delete role params
@@ -179,7 +179,7 @@ func (o *DeleteRoleParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Re
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

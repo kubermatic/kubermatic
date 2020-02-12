@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListSystemLabelsReader is a Reader for the ListSystemLabels structure.
@@ -24,28 +24,24 @@ type ListSystemLabelsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListSystemLabelsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListSystemLabelsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewListSystemLabelsUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewListSystemLabelsForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewListSystemLabelsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type ListSystemLabelsOK struct {
 
 func (o *ListSystemLabelsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabelsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListSystemLabelsOK) GetPayload() models.ResourceLabelMap {
+	return o.Payload
 }
 
 func (o *ListSystemLabelsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,6 +151,10 @@ func (o *ListSystemLabelsDefault) Code() int {
 
 func (o *ListSystemLabelsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/labels/system][%d] listSystemLabels default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListSystemLabelsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListSystemLabelsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

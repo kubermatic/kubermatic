@@ -66,7 +66,7 @@ type PatchServiceAccountTokenParams struct {
 	/*ProjectID*/
 	ProjectID string
 	/*ServiceaccountID*/
-	ServiceaccountID string
+	ServiceAccountID string
 	/*TokenID*/
 	TokenID string
 
@@ -130,15 +130,15 @@ func (o *PatchServiceAccountTokenParams) SetProjectID(projectID string) {
 	o.ProjectID = projectID
 }
 
-// WithServiceaccountID adds the serviceaccountID to the patch service account token params
-func (o *PatchServiceAccountTokenParams) WithServiceaccountID(serviceaccountID string) *PatchServiceAccountTokenParams {
-	o.SetServiceaccountID(serviceaccountID)
+// WithServiceAccountID adds the serviceaccountID to the patch service account token params
+func (o *PatchServiceAccountTokenParams) WithServiceAccountID(serviceaccountID string) *PatchServiceAccountTokenParams {
+	o.SetServiceAccountID(serviceaccountID)
 	return o
 }
 
-// SetServiceaccountID adds the serviceaccountId to the patch service account token params
-func (o *PatchServiceAccountTokenParams) SetServiceaccountID(serviceaccountID string) {
-	o.ServiceaccountID = serviceaccountID
+// SetServiceAccountID adds the serviceaccountId to the patch service account token params
+func (o *PatchServiceAccountTokenParams) SetServiceAccountID(serviceaccountID string) {
+	o.ServiceAccountID = serviceaccountID
 }
 
 // WithTokenID adds the tokenID to the patch service account token params
@@ -172,7 +172,7 @@ func (o *PatchServiceAccountTokenParams) WriteToRequest(r runtime.ClientRequest,
 	}
 
 	// path param serviceaccount_id
-	if err := r.SetPathParam("serviceaccount_id", o.ServiceaccountID); err != nil {
+	if err := r.SetPathParam("serviceaccount_id", o.ServiceAccountID); err != nil {
 		return err
 	}
 

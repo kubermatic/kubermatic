@@ -7,7 +7,6 @@ package models
 
 import (
 	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/swag"
 )
 
@@ -28,7 +27,7 @@ type AWSVpcIPV6CidrBlockAssociation struct {
 	StatusMessage string `json:"statusMessage,omitempty"`
 }
 
-// Validate validates this a w s vpc ipv6 cidr block association
+// Validate validates this a w s vpc Ipv6 cidr block association
 func (m *AWSVpcIPV6CidrBlockAssociation) Validate(formats strfmt.Registry) error {
 	return nil
 }

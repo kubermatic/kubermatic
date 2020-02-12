@@ -62,11 +62,11 @@ for the patch cluster operation typically these are written to a http.Request
 type PatchClusterParams struct {
 
 	/*Patch*/
-	Patch []uint8
+	Patch interface{}
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*ProjectID*/
 	ProjectID string
 
@@ -109,13 +109,13 @@ func (o *PatchClusterParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithPatch adds the patch to the patch cluster params
-func (o *PatchClusterParams) WithPatch(patch []uint8) *PatchClusterParams {
+func (o *PatchClusterParams) WithPatch(patch interface{}) *PatchClusterParams {
 	o.SetPatch(patch)
 	return o
 }
 
 // SetPatch adds the patch to the patch cluster params
-func (o *PatchClusterParams) SetPatch(patch []uint8) {
+func (o *PatchClusterParams) SetPatch(patch interface{}) {
 	o.Patch = patch
 }
 
@@ -130,15 +130,15 @@ func (o *PatchClusterParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the patch cluster params
-func (o *PatchClusterParams) WithDc(dc string) *PatchClusterParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the patch cluster params
+func (o *PatchClusterParams) WithDC(dc string) *PatchClusterParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the patch cluster params
-func (o *PatchClusterParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the patch cluster params
+func (o *PatchClusterParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithProjectID adds the projectID to the patch cluster params
@@ -172,7 +172,7 @@ func (o *PatchClusterParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 

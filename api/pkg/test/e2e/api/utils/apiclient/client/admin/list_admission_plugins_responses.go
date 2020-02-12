@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListAdmissionPluginsReader is a Reader for the ListAdmissionPlugins structure.
@@ -24,28 +24,24 @@ type ListAdmissionPluginsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListAdmissionPluginsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListAdmissionPluginsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewListAdmissionPluginsUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewListAdmissionPluginsForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewListAdmissionPluginsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +69,10 @@ type ListAdmissionPluginsOK struct {
 
 func (o *ListAdmissionPluginsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/admission/plugins][%d] listAdmissionPluginsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListAdmissionPluginsOK) GetPayload() []*models.AdmissionPlugin {
+	return o.Payload
 }
 
 func (o *ListAdmissionPluginsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,6 +151,10 @@ func (o *ListAdmissionPluginsDefault) Code() int {
 
 func (o *ListAdmissionPluginsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/admission/plugins][%d] listAdmissionPlugins default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListAdmissionPluginsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListAdmissionPluginsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

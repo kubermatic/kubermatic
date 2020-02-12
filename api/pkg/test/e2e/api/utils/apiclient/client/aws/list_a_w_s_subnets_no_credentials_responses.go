@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListAWSSubnetsNoCredentialsReader is a Reader for the ListAWSSubnetsNoCredentials structure.
@@ -24,14 +24,12 @@ type ListAWSSubnetsNoCredentialsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListAWSSubnetsNoCredentialsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListAWSSubnetsNoCredentialsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListAWSSubnetsNoCredentialsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListAWSSubnetsNoCredentialsOK struct {
 
 func (o *ListAWSSubnetsNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets][%d] listAWSSubnetsNoCredentialsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListAWSSubnetsNoCredentialsOK) GetPayload() models.AWSSubnetList {
+	return o.Payload
 }
 
 func (o *ListAWSSubnetsNoCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListAWSSubnetsNoCredentialsDefault) Code() int {
 
 func (o *ListAWSSubnetsNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets][%d] listAWSSubnetsNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListAWSSubnetsNoCredentialsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListAWSSubnetsNoCredentialsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListGCPZonesNoCredentialsReader is a Reader for the ListGCPZonesNoCredentials structure.
@@ -24,14 +24,12 @@ type ListGCPZonesNoCredentialsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListGCPZonesNoCredentialsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListGCPZonesNoCredentialsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	default:
 		result := NewListGCPZonesNoCredentialsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -59,6 +57,10 @@ type ListGCPZonesNoCredentialsOK struct {
 
 func (o *ListGCPZonesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/zones][%d] listGCPZonesNoCredentialsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListGCPZonesNoCredentialsOK) GetPayload() models.GCPZoneList {
+	return o.Payload
 }
 
 func (o *ListGCPZonesNoCredentialsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -95,6 +97,10 @@ func (o *ListGCPZonesNoCredentialsDefault) Code() int {
 
 func (o *ListGCPZonesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/zones][%d] listGCPZonesNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *ListGCPZonesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *ListGCPZonesNoCredentialsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

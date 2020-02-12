@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // GetCurrentUserSettingsReader is a Reader for the GetCurrentUserSettings structure.
@@ -24,21 +24,18 @@ type GetCurrentUserSettingsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetCurrentUserSettingsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetCurrentUserSettingsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewGetCurrentUserSettingsUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		result := NewGetCurrentUserSettingsDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +63,10 @@ type GetCurrentUserSettingsOK struct {
 
 func (o *GetCurrentUserSettingsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/me/settings][%d] getCurrentUserSettingsOK  %+v", 200, o.Payload)
+}
+
+func (o *GetCurrentUserSettingsOK) GetPayload() *models.UserSettings {
+	return o.Payload
 }
 
 func (o *GetCurrentUserSettingsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -125,6 +126,10 @@ func (o *GetCurrentUserSettingsDefault) Code() int {
 
 func (o *GetCurrentUserSettingsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/me/settings][%d] getCurrentUserSettings default  %+v", o._statusCode, o.Payload)
+}
+
+func (o *GetCurrentUserSettingsDefault) GetPayload() *models.ErrorResponse {
+	return o.Payload
 }
 
 func (o *GetCurrentUserSettingsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -64,9 +64,9 @@ type ListNodeDeploymentNodesEventsParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*NodedeploymentID*/
-	NodedeploymentID string
+	NodeDeploymentID string
 	/*ProjectID*/
 	ProjectID string
 	/*Type*/
@@ -121,26 +121,26 @@ func (o *ListNodeDeploymentNodesEventsParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the list node deployment nodes events params
-func (o *ListNodeDeploymentNodesEventsParams) WithDc(dc string) *ListNodeDeploymentNodesEventsParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the list node deployment nodes events params
+func (o *ListNodeDeploymentNodesEventsParams) WithDC(dc string) *ListNodeDeploymentNodesEventsParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the list node deployment nodes events params
-func (o *ListNodeDeploymentNodesEventsParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the list node deployment nodes events params
+func (o *ListNodeDeploymentNodesEventsParams) SetDC(dc string) {
+	o.DC = dc
 }
 
-// WithNodedeploymentID adds the nodedeploymentID to the list node deployment nodes events params
-func (o *ListNodeDeploymentNodesEventsParams) WithNodedeploymentID(nodedeploymentID string) *ListNodeDeploymentNodesEventsParams {
-	o.SetNodedeploymentID(nodedeploymentID)
+// WithNodeDeploymentID adds the nodedeploymentID to the list node deployment nodes events params
+func (o *ListNodeDeploymentNodesEventsParams) WithNodeDeploymentID(nodedeploymentID string) *ListNodeDeploymentNodesEventsParams {
+	o.SetNodeDeploymentID(nodedeploymentID)
 	return o
 }
 
-// SetNodedeploymentID adds the nodedeploymentId to the list node deployment nodes events params
-func (o *ListNodeDeploymentNodesEventsParams) SetNodedeploymentID(nodedeploymentID string) {
-	o.NodedeploymentID = nodedeploymentID
+// SetNodeDeploymentID adds the nodedeploymentId to the list node deployment nodes events params
+func (o *ListNodeDeploymentNodesEventsParams) SetNodeDeploymentID(nodedeploymentID string) {
+	o.NodeDeploymentID = nodedeploymentID
 }
 
 // WithProjectID adds the projectID to the list node deployment nodes events params
@@ -179,12 +179,12 @@ func (o *ListNodeDeploymentNodesEventsParams) WriteToRequest(r runtime.ClientReq
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 
 	// path param nodedeployment_id
-	if err := r.SetPathParam("nodedeployment_id", o.NodedeploymentID); err != nil {
+	if err := r.SetPathParam("nodedeployment_id", o.NodeDeploymentID); err != nil {
 		return err
 	}
 

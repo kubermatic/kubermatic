@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // NewUnbindUserFromRoleBindingParams creates a new UnbindUserFromRoleBindingParams object
@@ -68,7 +68,7 @@ type UnbindUserFromRoleBindingParams struct {
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
-	Dc string
+	DC string
 	/*Namespace*/
 	Namespace string
 	/*ProjectID*/
@@ -136,15 +136,15 @@ func (o *UnbindUserFromRoleBindingParams) SetClusterID(clusterID string) {
 	o.ClusterID = clusterID
 }
 
-// WithDc adds the dc to the unbind user from role binding params
-func (o *UnbindUserFromRoleBindingParams) WithDc(dc string) *UnbindUserFromRoleBindingParams {
-	o.SetDc(dc)
+// WithDC adds the dc to the unbind user from role binding params
+func (o *UnbindUserFromRoleBindingParams) WithDC(dc string) *UnbindUserFromRoleBindingParams {
+	o.SetDC(dc)
 	return o
 }
 
-// SetDc adds the dc to the unbind user from role binding params
-func (o *UnbindUserFromRoleBindingParams) SetDc(dc string) {
-	o.Dc = dc
+// SetDC adds the dc to the unbind user from role binding params
+func (o *UnbindUserFromRoleBindingParams) SetDC(dc string) {
+	o.DC = dc
 }
 
 // WithNamespace adds the namespace to the unbind user from role binding params
@@ -200,7 +200,7 @@ func (o *UnbindUserFromRoleBindingParams) WriteToRequest(r runtime.ClientRequest
 	}
 
 	// path param dc
-	if err := r.SetPathParam("dc", o.Dc); err != nil {
+	if err := r.SetPathParam("dc", o.DC); err != nil {
 		return err
 	}
 
