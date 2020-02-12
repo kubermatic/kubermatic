@@ -43,6 +43,10 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodDelete).
 		Path("/admin/admission/plugins/{name}").
 		Handler(r.deleteAdmissionPlugin())
+
+	mux.Methods(http.MethodPatch).
+		Path("/admin/admission/plugins/{name}").
+		Handler(r.updateAdmissionPlugin())
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
@@ -212,6 +216,33 @@ func (r Routing) deleteAdmissionPlugin() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.DeleteAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
 		admin.DecodeAdmissionPluginReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v1/admin/admission/plugins/{name} admin updateAdmissionPlugin
+//
+//     Updates the admission plugin.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AdmissionPlugin
+//       401: empty
+//       403: empty
+func (r Routing) updateAdmissionPlugin() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(admin.UpdateAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
+		admin.DecodeUpdateAdmissionPluginReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
