@@ -3,15 +3,14 @@ package websocket
 import (
 	"encoding/json"
 
+	"github.com/kubermatic/kubermatic/api/pkg/handler"
 	"github.com/kubermatic/kubermatic/api/pkg/log"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/watcher"
 
 	"github.com/gorilla/websocket"
 )
 
-func WriteSettings(ws *websocket.Conn, watcher watcher.SettingsWatcher, provider provider.SettingsProvider) {
-	initialSettings, err := provider.GetGlobalSettings()
+func WriteSettings(providers handler.Providers, ws *websocket.Conn) {
+	initialSettings, err := providers.SettingsProvider.GetGlobalSettings()
 	if err != nil {
 		log.Logger.Debug(err)
 		return
@@ -28,7 +27,7 @@ func WriteSettings(ws *websocket.Conn, watcher watcher.SettingsWatcher, provider
 		return
 	}
 
-	watcher.Subscribe(func(settings interface{}) {
+	providers.SettingsWatcher.Subscribe(func(settings interface{}) {
 		response, err := json.Marshal(settings)
 		if err != nil {
 			log.Logger.Debug(err)
