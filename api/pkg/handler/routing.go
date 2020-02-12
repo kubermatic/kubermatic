@@ -1,7 +1,6 @@
 package handler
 
 import (
-	common2 "github.com/kubermatic/kubermatic/api/pkg/watcher/common"
 	"os"
 
 	"github.com/go-kit/kit/log"
@@ -14,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
+	common2 "github.com/kubermatic/kubermatic/api/pkg/watcher/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )

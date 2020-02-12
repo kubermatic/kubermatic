@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"go.uber.org/zap"
 )
 
 var upgrader = websocket.Upgrader{
@@ -25,7 +25,7 @@ func (r Routing) RegisterV1Websocket(mux *mux.Router) {
 }
 
 func (r Routing) getKubermaticSettingsWebsocket(w http.ResponseWriter, req *http.Request) {
-	err := verifyToken(req, r.tokenVerifiers)
+	err := verifyAuthorizationToken(req, r.tokenVerifiers)
 	if err != nil {
 		r.log.Error(err)
 		return
@@ -77,14 +77,14 @@ func writer(ws *websocket.Conn, watcher common.SettingsWatcher, provider provide
 	})
 }
 
-func verifyToken(req *http.Request, tokenVerifier auth.TokenVerifier) error {
+func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifier) error {
 	tokenExtractor := auth.NewHeaderBearerTokenExtractor("Authorization")
 	token, err := tokenExtractor.Extract(req)
 	if err != nil {
 		return err
 	}
 
-	_, err = tokenVerifier.Verify(context.TODO(), token) // TODO: Change context?
+	_, err = tokenVerifier.Verify(context.TODO(), token)
 	return err
 }
 

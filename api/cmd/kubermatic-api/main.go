@@ -195,11 +195,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().AddonConfigs().Lister())
 	adminProvider := kubernetesprovider.NewAdminProvider(kubermaticMasterClient, userMasterLister)
 
-	settingsWatcher, err := watcher.NewSettingsWatcher(settingsProvider)
-	if err != nil {
-		return providers{}, fmt.Errorf("failed to create resource watcher due to %v", err)
-	}
-
 	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultKubernetesImpersonationClient.CreateImpersonatedKubernetesClientSet, kubeMasterInformerFactory.Core().V1().Secrets().Lister())
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create service account token provider due to %v", err)
@@ -230,6 +225,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	eventRecorderProvider := kubernetesprovider.NewEventRecorder()
 
 	addonProviderGetter := kubernetesprovider.AddonProviderFactory(seedKubeconfigGetter, options.accessibleAddons)
+
+	settingsWatcher, err := watcher.NewSettingsWatcher(settingsProvider)
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create settings watcher due to %v", err)
+	}
 
 	return providers{
 		sshKey:                                sshKeyProvider,
