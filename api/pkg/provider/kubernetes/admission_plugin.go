@@ -103,3 +103,19 @@ func (p *AdmissionPluginsProvider) Delete(userInfo *provider.UserInfo, name stri
 	}
 	return nil
 }
+
+func (p *AdmissionPluginsProvider) Update(userInfo *provider.UserInfo, admissionPlugin *kubermaticv1.AdmissionPlugin) (*kubermaticv1.AdmissionPlugin, error) {
+	if admissionPlugin == nil {
+		return nil, fmt.Errorf("the admissionPlugin can not be nil")
+	}
+
+	oldAdmissionPlugin, err := p.Get(userInfo, admissionPlugin.Name)
+	if err != nil {
+		return nil, err
+	}
+	if err := p.client.Patch(p.ctx, admissionPlugin, ctrlruntimeclient.MergeFrom(oldAdmissionPlugin)); err != nil {
+		return nil, fmt.Errorf("failed to update AdmissionPlugin: %v", err)
+	}
+
+	return admissionPlugin, nil
+}

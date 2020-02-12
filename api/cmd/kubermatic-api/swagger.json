@@ -296,6 +296,55 @@
             }
           }
         }
+      },
+      "patch": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Updates the admission plugin.",
+        "operationId": "updateAdmissionPlugin",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/AdmissionPlugin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AdmissionPlugin",
+            "schema": {
+              "$ref": "#/definitions/AdmissionPlugin"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     },
     "/api/v1/admin/settings": {
