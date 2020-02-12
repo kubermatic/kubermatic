@@ -1,3 +1,5 @@
+# This file has been generated using hack/update-kubermatic-chart.sh, do not edit.
+
 ### Updates file
 #
 # Contains a list of allowed updated
@@ -14,11 +16,8 @@
 # 'automatic: true' as well if not yet the case, because Nodes may not have
 # a newer version than the controlplane.
 #
-# REMEMBER TO CHANGE BOTH:
-# - DefaultUpdatesYAML in api/pkg/controller/operator/common/defaults.go
-# - config/kubermatic/static/master/updates.yaml
-#
 ####
+
 updates:
 # ======= 1.12 =======
 # Allow to next minor release

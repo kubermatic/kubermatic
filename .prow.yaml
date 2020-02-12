@@ -79,6 +79,23 @@ presubmits:
             memory: 256Mi
             cpu: 250m
 
+  - name: pre-kubermatic-verify-kubermatic-chart
+    run_if_changed: "^(api|config)/"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    spec:
+      containers:
+      - image: quay.io/kubermatic/go-docker:12.12-1806-3
+        command:
+        - "./api/hack/verify-kubermatic-chart.sh"
+        resources:
+          requests:
+            memory: 512Mi
+            cpu: 250m
+          limits:
+            memory: 1Gi
+            cpu: 1
+
   - name: pre-kubermatic-verify-grafana-dashboards
     run_if_changed: "^config/monitoring/grafana/"
     decorate: true

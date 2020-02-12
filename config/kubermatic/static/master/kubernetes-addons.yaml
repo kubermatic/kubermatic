@@ -6,24 +6,19 @@ items:
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
-    name: crd
+    name: canal
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
-    name: default-storage-class
+    name: csi
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
-    name: logrotate
+    name: dns
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
-    name: network
-  spec:
-    requiredResourceTypes:
-    - Group: config.openshift.io
-      Kind: Network
-      Version: v1
+    name: kube-proxy
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
@@ -35,9 +30,20 @@ items:
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
-    name: registry
-  spec:
-    requiredResourceTypes:
-    - Group: cloudcredential.openshift.io
-      Kind: CredentialsRequest
-      Version: v1
+    name: kubelet-configmap
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: default-storage-class
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: nodelocal-dns-cache
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: pod-security-policy
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: logrotate
