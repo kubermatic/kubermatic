@@ -517,5 +517,6 @@ type AdmissionPluginsProvider interface {
 	List(userInfo *UserInfo) ([]kubermaticv1.AdmissionPlugin, error)
 	Get(userInfo *UserInfo, name string) (*kubermaticv1.AdmissionPlugin, error)
 	Delete(userInfo *UserInfo, name string) error
+	Update(userInfo *UserInfo, admissionPlugin *kubermaticv1.AdmissionPlugin) (*kubermaticv1.AdmissionPlugin, error)
 	ListPluginNamesFromVersion(fromVersion string) ([]string, error)
 }

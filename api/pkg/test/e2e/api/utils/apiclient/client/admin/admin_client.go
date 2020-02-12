@@ -227,6 +227,35 @@ func (a *Client) SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInf
 
 }
 
+/*
+UpdateAdmissionPlugin updates the admission plugin
+*/
+func (a *Client) UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAdmissionPluginOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdateAdmissionPluginParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "updateAdmissionPlugin",
+		Method:             "PATCH",
+		PathPattern:        "/api/v1/admin/admission/plugins/{name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateAdmissionPluginReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*UpdateAdmissionPluginOK), nil
+
+}
+
 // SetTransport changes the transport on the client
 func (a *Client) SetTransport(transport runtime.ClientTransport) {
 	a.transport = transport
