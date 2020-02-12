@@ -7,7 +7,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	wsh "github.com/kubermatic/kubermatic/api/pkg/handler/websocket"
 	"github.com/kubermatic/kubermatic/api/pkg/log"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/watcher"
 
 	"github.com/gorilla/mux"
@@ -19,29 +18,24 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-type WebsocketWriter func(providers Providers, ws *websocket.Conn)
-
-type Providers struct {
-	SettingsProvider provider.SettingsProvider
-	SettingsWatcher  watcher.SettingsWatcher
-}
+type WebsocketWriter func(providers watcher.Providers, ws *websocket.Conn)
 
 func (r Routing) RegisterV1Websocket(mux *mux.Router) {
 	providers := getProviders(r)
 
-	mux.HandleFunc("/ws/admin/settings/", getHandler(wsh.WriteSettings, providers))
+	mux.HandleFunc("/ws/admin/settings/", getHandler(wsh.WriteSettings, providers, r))
 }
 
-func getProviders(r Routing) Providers {
-	return Providers{
+func getProviders(r Routing) watcher.Providers {
+	return watcher.Providers{
 		SettingsProvider: r.settingsProvider,
 		SettingsWatcher:  r.settingsWatcher,
 	}
 }
 
-func getHandler(writer WebsocketWriter, providers Providers) func(w http.ResponseWriter, req *http.Request) {
+func getHandler(writer WebsocketWriter, providers watcher.Providers, routing Routing) func(w http.ResponseWriter, req *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
-		err := verifyAuthorizationToken(req, r.tokenVerifiers)
+		err := verifyAuthorizationToken(req, routing.tokenVerifiers)
 		if err != nil {
 			log.Logger.Debug(err)
 			return
