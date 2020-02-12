@@ -237,7 +237,8 @@ systemd:
         ExecStartPre=-/bin/rm -rf /var/lib/rkt/cas/tmp/
         ExecStartPre=/bin/bash /opt/load-kernel-modules.sh
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
-{{ kubeletFlags .KubeletVersion .CloudProviderName .MachineSpec.Name .DNSIPs .ExternalCloudProvider .PauseImage | indent 10 }}
+{{ if semverCompare ">=1.17.0" .KubeletVersion }}{{ print "          kubelet \\\n" }}{{ end -}}
+{{ kubeletFlags .KubeletVersion .CloudProviderName .MachineSpec.Name .DNSIPs .ExternalCloudProvider .PauseImage .MachineSpec.Taints | indent 10 }}
         ExecStop=-/usr/bin/rkt stop --uuid-file=/var/cache/kubelet-pod.uuid
         Restart=always
         RestartSec=10
@@ -269,6 +270,37 @@ storage:
       contents:
         inline: |
 {{ journalDConfig | indent 10 }}
+    
+    - path: "/etc/kubernetes/kubelet.conf"
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          kind: KubeletConfiguration
+          apiVersion: kubelet.config.k8s.io/v1beta1
+          cgroupDriver: systemd
+          clusterDomain: cluster.local
+          clusterDNS:
+          {{- range .DNSIPs }}
+            - "{{ . }}"
+          {{- end }}
+          rotateCertificates: true
+          podManifestPath: /etc/kubernetes/manifests
+          readOnlyPort: 0
+          featureGates:
+            RotateKubeletServerCertificate: true
+          serverTLSBootstrap: true
+          rotateCertificates: true
+          authorization:
+            mode: Webhook
+          authentication:
+            x509:
+              clientCAFile: /etc/kubernetes/pki/ca.crt
+            webhook:
+              enabled: true
+            anonymous:
+              enabled: false
+          protectKernelDefaults: true
 
     - path: /opt/load-kernel-modules.sh
       filesystem: root
