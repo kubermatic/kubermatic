@@ -4,8 +4,6 @@ import (
 	"crypto/x509"
 	"flag"
 	"fmt"
-	"github.com/kubermatic/kubermatic/api/pkg/watcher/common"
-
 	"io/ioutil"
 	"strings"
 
@@ -13,6 +11,8 @@ import (
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
+	"github.com/kubermatic/kubermatic/api/pkg/watcher/common"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
