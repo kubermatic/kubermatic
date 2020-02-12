@@ -2,13 +2,10 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/watcher"
+	wshandler "github.com/kubermatic/kubermatic/api/pkg/handler/websocket"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -39,42 +36,8 @@ func (r Routing) getKubermaticSettingsWebsocket(w http.ResponseWriter, req *http
 		return
 	}
 
-	go writer(ws, r.settingsWatcher, r.settingsProvider)
+	go wshandler.WriteSettings(ws, r.settingsWatcher, r.settingsProvider)
 	requestLoggingReader(ws, r.log)
-}
-
-func writer(ws *websocket.Conn, watcher watcher.SettingsWatcher, provider provider.SettingsProvider) {
-	initialSettings, err := provider.GetGlobalSettings()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	initialResponse, err := json.Marshal(initialSettings)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	if err := ws.WriteMessage(websocket.TextMessage, initialResponse); err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	watcher.Subscribe(func(settings interface{}) {
-		fmt.Println(settings) // TODO: Check "nil" case.
-
-		response, err := json.Marshal(settings)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		if err := ws.WriteMessage(websocket.TextMessage, response); err != nil {
-			fmt.Println(err)
-			return
-		}
-	})
 }
 
 func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifier) error {
