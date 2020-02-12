@@ -39,6 +39,7 @@ type UserSettings struct {
 	ItemsPerPage           int8   `json:"itemsPerPage,omitempty"`
 	SelectedProjectID      string `json:"selectedProjectId,omitempty"`
 	SelectProjectTableView bool   `json:"selectProjectTableView,omitempty"`
+	CollapseSidenav        bool   `json:"collapseSidenav,omitempty"`
 }
 
 // UserList is a list of users

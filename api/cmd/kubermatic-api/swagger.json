@@ -10689,6 +10689,10 @@
       "description": "UserSettings represent an user settings",
       "type": "object",
       "properties": {
+        "collapseSidenav": {
+          "type": "boolean",
+          "x-go-name": "CollapseSidenav"
+        },
         "itemsPerPage": {
           "type": "integer",
           "format": "int8",
