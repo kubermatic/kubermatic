@@ -8,7 +8,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/watcher/common"
+	"github.com/kubermatic/kubermatic/api/pkg/watcher"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -43,7 +43,7 @@ func (r Routing) getKubermaticSettingsWebsocket(w http.ResponseWriter, req *http
 	requestLoggingReader(ws, r.log)
 }
 
-func writer(ws *websocket.Conn, watcher common.SettingsWatcher, provider provider.SettingsProvider) {
+func writer(ws *websocket.Conn, watcher watcher.SettingsWatcher, provider provider.SettingsProvider) {
 	initialSettings, err := provider.GetGlobalSettings()
 	if err != nil {
 		fmt.Println(err)

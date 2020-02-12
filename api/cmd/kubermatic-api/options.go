@@ -11,7 +11,7 @@ import (
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
-	"github.com/kubermatic/kubermatic/api/pkg/watcher/common"
+	"github.com/kubermatic/kubermatic/api/pkg/watcher"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -179,5 +179,5 @@ type providers struct {
 	settingsProvider                      provider.SettingsProvider
 	adminProvider                         provider.AdminProvider
 	presetProvider                        provider.PresetProvider
-	settingsWatcher                       common.SettingsWatcher
+	settingsWatcher                       watcher.SettingsWatcher
 }

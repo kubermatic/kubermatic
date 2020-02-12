@@ -1,4 +1,4 @@
-package common
+package watcher
 
 import (
 	"code.cloudfoundry.org/go-pubsub"
