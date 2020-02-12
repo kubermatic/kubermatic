@@ -30,7 +30,7 @@ Supported Kubernetes versions:
 - vSphere: Fixed a bug that resulted in a faulty cloud config when using a non-default port [#4562](https://github.com/kubermatic/kubermatic/issues/4562) ([alvaroaleman](https://github.com/alvaroaleman))
 - vSphere: fixed a bug which cased custom VM folder paths not to be put in cloud-configs [#4737](https://github.com/kubermatic/kubermatic/issues/4737) ([kdomanski](https://github.com/kdomanski))
 - vSphere: The robustness of machine reconciliation has been improved. [#4651](https://github.com/kubermatic/kubermatic/issues/4651) ([alvaroaleman](https://github.com/alvaroaleman))
-- vSphere: Sdded support for datastore clusters (#671)
+- vSphere: Added support for datastore clusters (#671)
 - Azure: Node sizes are displayed in size dropdown when creating/updating a node deployment [#1908](https://github.com/kubermatic/dashboard-v2/issues/1908) ([bashofmann](https://github.com/bashofmann))
 - GCP: Networks are fetched from API now [#1913](https://github.com/kubermatic/dashboard-v2/issues/1913) ([kgroschoff](https://github.com/kgroschoff))
 
