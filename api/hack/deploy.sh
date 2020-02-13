@@ -172,10 +172,11 @@ case "${DEPLOY_STACK}" in
 
     # Kubermatic
     if [[ "${USE_KUBERMATIC_OPERATOR}" = true ]]; then
-      echodate "Deploying Kubermatic Operator..."
+      if [[ "${1}" = "master" ]]; then
+        echodate "Deploying Kubermatic Operator..."
 
-      DOCKER_CONFIG_SECRET="$(mktemp)"
-      cat <<EOF >$DOCKER_CONFIG_SECRET
+        DOCKER_CONFIG_SECRET="$(mktemp)"
+        cat <<EOF >$DOCKER_CONFIG_SECRET
 apiVersion: v1
 kind: Secret
 metadata:
@@ -185,14 +186,17 @@ type: kubernetes.io/dockerconfigjson
 data:
   .dockerconfigjson: "$(cat "$DOCKER_CONFIG" | base64 -w0)"
 EOF
-      retry 3 kubectl apply -f $DOCKER_CONFIG_SECRET
-      retry 3 kubectl apply -f ./config/kubermatic-operator/
+        retry 3 kubectl apply -f $DOCKER_CONFIG_SECRET
+        retry 3 kubectl apply -f ./config/kubermatic-operator/
 
-      # only deploy KubermaticConfigurations on masters, on seed clusters
-      # the relevant Seed CR is copied by Kubermatic itself
-      if [ -n "${KUBERMATIC_CONFIG:-}" ]; then
-        echodate "Deploying KubermaticConfiguration..."
-        retry 3 kubectl apply -f $KUBERMATIC_CONFIG
+        # only deploy KubermaticConfigurations on masters, on seed clusters
+        # the relevant Seed CR is copied by Kubermatic itself
+        if [ -n "${KUBERMATIC_CONFIG:-}" ]; then
+          echodate "Deploying KubermaticConfiguration..."
+          retry 3 kubectl apply -f $KUBERMATIC_CONFIG
+        fi
+      else
+        echodate "Not deploying Kubermatic, as this is not a master cluster."
       fi
     else
       deploy "kubermatic" "kubermatic" ./config/kubermatic/
