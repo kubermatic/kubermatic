@@ -50,9 +50,13 @@ spec:
         - -kubeconfig=/opt/.kube/kubeconfig
         - -master-resources=/opt/master-files
         - -service-account-signing-key={{ .Values.kubermatic.auth.serviceAccountKey }}
+        {{- if kindIs "slice" .Values.kubermatic.api.accessibleAddons }}
         - -accessible-addons={{ join "," .Values.kubermatic.api.accessibleAddons }}
-        # the following flags enable oidc kubeconfig feature/endpoint
+        {{- else }}
+        - -accessible-addons={{- (.Files.Get "static/master/accessible-addons.yaml" | fromYaml).addons | join "," }}
+        {{- end }}
         - -feature-gates={{ .Values.kubermatic.api.featureGates }}
+        # the following flags enable oidc kubeconfig feature/endpoint
         {{- if regexMatch ".*OIDCKubeCfgEndpoint=true.*" (default "" .Values.kubermatic.api.featureGates) }}
         {{- if .Values.kubermatic.auth.caBundle }}
         - -oidc-ca-file=/opt/dex-ca/caBundle.pem

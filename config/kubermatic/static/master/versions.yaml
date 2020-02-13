@@ -1,6 +1,4 @@
-# REMEMBER TO CHANGE BOTH:
-# - DefaultVersionsYAML in api/pkg/controller/operator/common/defaults.go
-# - config/kubermatic/static/master/versions.yaml
+# This file has been generated using hack/update-kubermatic-chart.sh, do not edit.
 
 versions:
 # Kubernetes 1.15

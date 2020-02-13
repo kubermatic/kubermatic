@@ -1,0 +1,4 @@
+# This file has been generated using hack/update-kubermatic-chart.sh, do not edit.
+
+addons:
+- node-exporter

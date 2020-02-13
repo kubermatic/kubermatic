@@ -31,20 +31,6 @@ const (
 )
 
 var (
-	KubernetesDefaultAddons = []string{
-		"canal",
-		"csi",
-		"dns",
-		"kube-proxy",
-		"openvpn",
-		"rbac",
-		"kubelet-configmap",
-		"default-storage-class",
-		"nodelocal-dns-cache",
-		"pod-security-policy",
-		"logrotate",
-	}
-
 	DefaultAccessibleAddons = []string{
 		"node-exporter",
 	}
@@ -140,13 +126,13 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	}
 
 	if len(copy.Spec.UserCluster.Addons.Kubernetes.Default) == 0 && copy.Spec.UserCluster.Addons.Kubernetes.DefaultManifests == "" {
-		copy.Spec.UserCluster.Addons.Kubernetes.Default = KubernetesDefaultAddons
-		logger.Debugw("Defaulting field", "field", "userCluster.addons.kubernetes.default", "value", copy.Spec.UserCluster.Addons.Kubernetes.Default)
+		copy.Spec.UserCluster.Addons.Kubernetes.DefaultManifests = strings.TrimSpace(DefaultKubernetesAddons)
+		logger.Debugw("Defaulting field", "field", "userCluster.addons.kubernetes.defaultManifests")
 	}
 
 	if len(copy.Spec.UserCluster.Addons.Openshift.Default) == 0 && copy.Spec.UserCluster.Addons.Openshift.DefaultManifests == "" {
 		copy.Spec.UserCluster.Addons.Openshift.DefaultManifests = strings.TrimSpace(DefaultOpenshiftAddons)
-		logger.Debugw("Defaulting field", "field", "userCluster.Addons.Openshift.DefaultManifests")
+		logger.Debugw("Defaulting field", "field", "userCluster.addons.openshift.defaultManifests")
 	}
 
 	if copy.Spec.UserCluster.APIServerReplicas == nil {
@@ -392,10 +378,6 @@ const DefaultUIConfig = `
 }`
 
 const DefaultVersionsYAML = `
-# REMEMBER TO CHANGE BOTH:
-# - DefaultVersionsYAML in api/pkg/controller/operator/common/defaults.go
-# - config/kubermatic/static/master/versions.yaml
-
 versions:
 # Kubernetes 1.15
 - version: "v1.15.5"
@@ -447,11 +429,8 @@ const DefaultUpdatesYAML = `
 # 'automatic: true' as well if not yet the case, because Nodes may not have
 # a newer version than the controlplane.
 #
-# REMEMBER TO CHANGE BOTH:
-# - DefaultUpdatesYAML in api/pkg/controller/operator/common/defaults.go
-# - config/kubermatic/static/master/updates.yaml
-#
 ####
+
 updates:
 # ======= 1.12 =======
 # Allow to next minor release
@@ -544,6 +523,56 @@ updates:
   to: 2.2.*
   automatic: false
   type: openshift
+`
+
+const DefaultKubernetesAddons = `
+apiVersion: v1
+kind: List
+items:
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: canal
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: csi
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: dns
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: kube-proxy
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: openvpn
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: rbac
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: kubelet-configmap
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: default-storage-class
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: nodelocal-dns-cache
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: pod-security-policy
+- apiVersion: kubermatic.k8s.io/v1
+  kind: Addon
+  metadata:
+    name: logrotate
 `
 
 const DefaultOpenshiftAddons = `
