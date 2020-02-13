@@ -8,8 +8,9 @@ import (
 	"log"
 	"strings"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	"gopkg.in/yaml.v2"
+
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 )
 
 func main() {
