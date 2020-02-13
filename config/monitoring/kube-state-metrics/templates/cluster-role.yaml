@@ -52,8 +52,18 @@ rules:
 - apiGroups: ["storage.k8s.io"]
   resources:
   - storageclasses
+  - volumeattachments
   verbs: ["list", "watch"]
 - apiGroups: ["autoscaling.k8s.io"]
   resources:
   - verticalpodautoscalers
+  verbs: ["list", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources:
+  - networkpolicies
+  verbs: ["list", "watch"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources:
+  - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
   verbs: ["list", "watch"]
