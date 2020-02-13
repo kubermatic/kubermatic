@@ -45,7 +45,7 @@ func ConvertInternalEventToExternal(event corev1.Event) apiv1.Event {
 		},
 		Message: event.Message,
 		Type:    event.Type,
-		InvolvedObject: apiv1.ObjectReference{
+		InvolvedObject: apiv1.ObjectReferenceResource{
 			Name:      event.InvolvedObject.Name,
 			Namespace: event.InvolvedObject.Namespace,
 			Type:      event.InvolvedObject.Kind,
