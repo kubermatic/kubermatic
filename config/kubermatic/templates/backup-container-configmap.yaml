@@ -4,6 +4,15 @@ metadata:
   name: backup-container
 data:
   store-container.yaml: |
-{{ .Values.kubermatic.storeContainer |indent 4 }}
+{{- if .Values.kubermatic.storeContainer }}
+{{ .Values.kubermatic.storeContainer | indent 4 }}
+{{- else }}
+{{ .Files.Get "static/store-container.yaml" | indent 4 }}
+{{- end }}
+
   cleanup-container.yaml: |
-{{ .Values.kubermatic.cleanupContainer |indent 4 }}
+{{- if .Values.kubermatic.cleanupContainer }}
+{{ .Values.kubermatic.cleanupContainer | indent 4 }}
+{{- else }}
+{{ .Files.Get "static/cleanup-container.yaml" | indent 4 }}
+{{- end }}

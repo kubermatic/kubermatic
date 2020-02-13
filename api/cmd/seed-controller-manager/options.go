@@ -78,10 +78,6 @@ type controllerRunOptions struct {
 	featureGates features.FeatureGate
 }
 
-const (
-	defaultKubernetesAddons = "canal,csi,dns,kube-proxy,openvpn,rbac,kubelet-configmap,default-storage-class,node-exporter,nodelocal-dns-cache,logrotate"
-)
-
 func newControllerRunOptions() (controllerRunOptions, error) {
 	c := controllerRunOptions{}
 	var rawFeatureGates string
@@ -106,7 +102,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.nodeAccessNetwork, "node-access-network", kubermaticv1.DefaultNodeAccessNetwork, "A network which allows direct access to nodes via VPN. Uses CIDR notation.")
 	flag.StringVar(&c.kubernetesAddonsPath, "kubernetes-addons-path", "/opt/addons/kubernetes", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&c.openshiftAddonsPath, "openshift-addons-path", "/opt/addons/openshift", "Path to addon manifests. Should contain sub-folders for each addon")
-	flag.StringVar(&defaultKubernetesAddonsList, "kubernetes-addons-list", defaultKubernetesAddons, "Comma separated list of Addons to install into every user-cluster. Mutually exclusive with `--kubernetes-addons-file`")
+	flag.StringVar(&defaultKubernetesAddonsList, "kubernetes-addons-list", "", "Comma separated list of Addons to install into every user-cluster. Mutually exclusive with `--kubernetes-addons-file`")
 	flag.StringVar(&defaultKubernetesAddonsFile, "kubernetes-addons-file", "", "File that contains a list of default kubernetes addons. Mutually exclusive with `--kubernetes-addons-list`")
 	flag.StringVar(&defaultOpenshiftAddonList, "openshift-addons-list", "", "Comma separated list of addons to install into every openshift user cluster. Mutually exclusive with `--openshift-addons-file`")
 	flag.StringVar(&defaultOpenshiftAddonsFile, "openshift-addons-file", "", "File that contains a list of default openshift addons. Mutually exclusive with `--openshift-addons-list`")

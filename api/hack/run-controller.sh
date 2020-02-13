@@ -23,6 +23,7 @@ PPROF_PORT=${PPROF_PORT:-6600}
   -versions=../config/kubermatic/static/master/versions.yaml \
   -updates=../config/kubermatic/static/master/updates.yaml \
   -kubernetes-addons-path=../addons \
+  -kubernetes-addons-file=../config/kubermatic/static/master/kubernetes-addons.yaml \
   -openshift-addons-path=../openshift_addons \
   -openshift-addons-file=../config/kubermatic/static/master/openshift-addons.yaml \
   -feature-gates=OpenIDAuthPlugin=true \

@@ -1223,14 +1223,6 @@
   version = "v0.19.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:74acf022cfa09181a78f4990eafa26c24d3e7318e2fc9147343c98179bf01dce"
-  name = "github.com/yalp/jsonpath"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "5cc68e5049a040829faef3a44c00ec4332f6dec7"
-
-[[projects]]
   digest = "1:58f2854b50ff8862eb6a347f20dedaac83e1166f4040472e17bc37736841a12f"
   name = "go.opencensus.io"
   packages = [
@@ -2206,7 +2198,6 @@
     "github.com/vmware/govmomi/find",
     "github.com/vmware/govmomi/object",
     "github.com/vmware/govmomi/simulator",
-    "github.com/yalp/jsonpath",
     "go.uber.org/zap",
     "go.uber.org/zap/zapcore",
     "go.uber.org/zap/zaptest",

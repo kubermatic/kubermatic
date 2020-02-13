@@ -4,4 +4,8 @@ metadata:
   name: ui-config
 data:
   config.json: |
-{{ .Values.kubermatic.ui.config |indent 4}}
+{{- if .Values.kubermatic.ui.config }}
+{{ .Values.kubermatic.ui.config | indent 4 }}
+{{- else }}
+{{ .Files.Get "static/master/ui-config.json" | indent 4 }}
+{{- end }}
