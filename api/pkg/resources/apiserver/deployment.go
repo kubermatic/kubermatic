@@ -55,7 +55,7 @@ rules:
 }
 
 // DeploymentCreator returns the function to create and update the API server deployment
-func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.ApiserverDeploymentName
@@ -72,9 +72,15 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 			volumes := getVolumes()
+			volumeMounts := getVolumeMounts()
 
-			if len(data.OIDCCAFile()) > 0 {
+			if enableOIDCAuthentication && len(data.OIDCCAFile()) > 0 {
 				volumes = append(volumes, getDexCASecretVolume())
+				volumeMounts = append(volumeMounts, corev1.VolumeMount{
+					Name:      resources.DexCASecretName,
+					MountPath: "/etc/kubernetes/dex/ca",
+					ReadOnly:  true,
+				})
 			}
 
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
@@ -121,7 +127,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 			if data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled != nil {
 				endpointReconcilingDisabled = *data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled
 			}
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableDexCA, auditLogEnabled, endpointReconcilingDisabled)
+			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, endpointReconcilingDisabled)
 			if err != nil {
 				return nil, err
 			}
@@ -173,7 +179,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 						SuccessThreshold:    1,
 						TimeoutSeconds:      15,
 					},
-					VolumeMounts: getVolumeMounts(enableDexCA),
+					VolumeMounts: volumeMounts,
 				},
 			}
 
@@ -222,7 +228,7 @@ func DeploymentCreator(data *resources.TemplateData, enableDexCA bool) reconcili
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableDexCA, auditLogEnabled, endpointReconcilingDisabled bool) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled, endpointReconcilingDisabled bool) ([]string, error) {
 	nodePortRange := data.NodePortRange()
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
@@ -327,7 +333,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		if data.Cluster().Spec.OIDC.RequiredClaim != "" {
 			flags = append(flags, "--oidc-required-claim", data.Cluster().Spec.OIDC.RequiredClaim)
 		}
-	} else if enableDexCA {
+	} else if enableOIDCAuthentication {
 		flags = append(flags,
 			"--oidc-issuer-url", data.OIDCIssuerURL(),
 			"--oidc-client-id", data.OIDCIssuerClientID(),
@@ -343,8 +349,8 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	return flags, nil
 }
 
-func getVolumeMounts(enableDexCA bool) []corev1.VolumeMount {
-	volumesMounts := []corev1.VolumeMount{
+func getVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
 		{
 			MountPath: "/etc/kubernetes/tls",
 			Name:      resources.ApiserverTLSSecretName,
@@ -401,16 +407,6 @@ func getVolumeMounts(enableDexCA bool) []corev1.VolumeMount {
 			ReadOnly:  false,
 		},
 	}
-
-	if enableDexCA {
-		volumesMounts = append(volumesMounts, corev1.VolumeMount{
-			Name:      resources.DexCASecretName,
-			MountPath: "/etc/kubernetes/dex/ca",
-			ReadOnly:  true,
-		})
-	}
-
-	return volumesMounts
 }
 
 func getVolumes() []corev1.Volume {
