@@ -54,7 +54,7 @@ loki:
   
   image:
     repository: docker.io/grafana/loki
-    tag: v1.2.0
+    tag: v1.3.0
     pullPolicy: IfNotPresent
   
   ## The app name of loki clients
