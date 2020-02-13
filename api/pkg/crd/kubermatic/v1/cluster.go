@@ -353,6 +353,7 @@ type CloudSpec struct {
 	GCP          *GCPCloudSpec          `json:"gcp,omitempty"`
 	Kubevirt     *KubevirtCloudSpec     `json:"kubevirt,omitempty"`
 	Alibaba      *AlibabaCloudSpec      `json:"alibaba,omitempty"`
+	Kubeone      *KubeoneCloudSpec      `json:"kubeone,omitempty"`
 }
 
 // KeyCert is a pair of key and cert.
@@ -504,6 +505,10 @@ type AlibabaCloudSpec struct {
 
 	AccessKeyID     string `json:"accessKeyId,omitempty"`
 	AccessKeySecret string `json:"accessKeySecret,omitempty"`
+}
+
+type KubeoneCloudSpec struct {
+	Edge bool `json:"edge"`
 }
 
 type HealthStatus int
