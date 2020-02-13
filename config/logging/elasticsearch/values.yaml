@@ -2,7 +2,7 @@ logging:
   elasticsearch:
     image:
       repository: docker.elastic.co/elasticsearch/elasticsearch-oss
-      tag: "6.7.1"
+      tag: "6.8.5"
       pullPolicy: IfNotPresent
 
     cluster:
