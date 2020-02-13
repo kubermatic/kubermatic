@@ -4,9 +4,12 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	wsh "github.com/kubermatic/kubermatic/api/pkg/handler/websocket"
 	"github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"github.com/kubermatic/kubermatic/api/pkg/util/hash"
 	"github.com/kubermatic/kubermatic/api/pkg/watcher"
 
 	"github.com/gorilla/mux"
@@ -35,7 +38,7 @@ func getProviders(r Routing) watcher.Providers {
 
 func getHandler(writer WebsocketWriter, providers watcher.Providers, routing Routing) func(w http.ResponseWriter, req *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
-		err := verifyAuthorizationToken(req, routing.tokenVerifiers)
+		_, err := verifyAuthorizationToken(req, routing.tokenVerifiers)
 		if err != nil {
 			log.Logger.Debug(err)
 			return
@@ -54,15 +57,40 @@ func getHandler(writer WebsocketWriter, providers watcher.Providers, routing Rou
 	}
 }
 
-func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifier) error {
+func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifier) (*v1.User, error) {
 	tokenExtractor := auth.NewHeaderBearerTokenExtractor("Authorization")
 	token, err := tokenExtractor.Extract(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = tokenVerifier.Verify(context.TODO(), token)
-	return err
+	claims, err := tokenVerifier.Verify(context.TODO(), token)
+	if err != nil {
+		return nil, err
+	}
+
+	if claims.Subject == "" {
+		return nil, errors.NewNotAuthorized()
+	}
+
+	id, err := hash.GetUserID(claims.Subject)
+	if err != nil {
+		return nil, errors.NewNotAuthorized()
+	}
+
+	user := &v1.User{
+		ObjectMeta: v1.ObjectMeta{
+			ID:   id,
+			Name: claims.Name,
+		},
+		Email: claims.Email,
+	}
+
+	if user.ID == "" {
+		return nil, errors.NewNotAuthorized()
+	}
+
+	return user, nil
 }
 
 func requestLoggingReader(websocket *websocket.Conn) {
