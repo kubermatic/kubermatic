@@ -622,6 +622,10 @@ func (cluster *Cluster) IsOpenshift() bool {
 	return cluster.Annotations["kubermatic.io/openshift"] != ""
 }
 
+func (cluster *Cluster) IsKubeOne() bool {
+	return cluster.Annotations["kubermatic.io/kubeone-edge"] != ""
+}
+
 func (cluster *Cluster) IsKubernetes() bool {
-	return !cluster.IsOpenshift()
+	return !cluster.IsOpenshift() && !cluster.IsKubeOne()
 }
