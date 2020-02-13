@@ -39,25 +39,17 @@ func NewSettingsWatcher(provider provider.SettingsProvider) (*SettingsWatcher, e
 func run(input watch.Interface, settingsPublisher *pubsub.PubSub) {
 	defer input.Stop()
 
-	for {
-		select {
-		case event, ok := <-input.ResultChan():
-			if !ok {
-				log.Logger.Debugf("settings watch ended with timeout")
-				return
-			}
+	for event := range input.ResultChan() {
+		settings, ok := event.Object.(*v1.KubermaticSetting)
+		if !ok {
+			log.Logger.Debugf("expected settings got %s", reflect.TypeOf(event.Object))
+		}
 
-			settings, ok := event.Object.(*v1.KubermaticSetting)
-			if !ok {
-				log.Logger.Debugf("expected settings got %s", reflect.TypeOf(event.Object))
-			}
-
-			if settings != nil && settings.Name == v1.GlobalSettingsName {
-				if event.Type == watch.Added || event.Type == watch.Modified {
-					settingsPublisher.Publish(settings, pubsub.LinearTreeTraverser([]uint64{}))
-				} else if event.Type == watch.Deleted {
-					settingsPublisher.Publish(nil, pubsub.LinearTreeTraverser([]uint64{}))
-				}
+		if settings != nil && settings.Name == v1.GlobalSettingsName {
+			if event.Type == watch.Added || event.Type == watch.Modified {
+				settingsPublisher.Publish(settings, pubsub.LinearTreeTraverser([]uint64{}))
+			} else if event.Type == watch.Deleted {
+				settingsPublisher.Publish(nil, pubsub.LinearTreeTraverser([]uint64{}))
 			}
 		}
 	}
