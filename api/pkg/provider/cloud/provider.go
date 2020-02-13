@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/fake"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/gcp"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/hetzner"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/kubeone"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/kubevirt"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/packet"
@@ -56,5 +57,9 @@ func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	if datacenter.Spec.Alibaba != nil {
 		return alibaba.NewCloudProvider(datacenter, secretKeyGetter)
 	}
+	if datacenter.Spec.Kubeone != nil {
+		return kubeone.NewCloudProvider(), nil
+	}
+
 	return nil, errors.New("no cloudprovider found")
 }
