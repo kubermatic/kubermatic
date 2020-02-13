@@ -252,7 +252,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		adminProvider:                         adminProvider,
 		presetProvider:                        presetsProvider,
 		admissionPluginProvider:               admissionPluginProvider,
-	    settingsWatcher:                       settingsWatcher,
+		settingsWatcher:                       settingsWatcher,
 	}, nil
 }
 
