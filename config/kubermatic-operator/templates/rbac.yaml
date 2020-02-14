@@ -1,7 +1,7 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: kubermatic-operator
+  name: kubermatic-operator-{{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: kubermatic-operator
 roleRef:
@@ -11,4 +11,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: kubermatic-operator
-  namespace: '__NAMESPACE__'
+  namespace: '{{ .Release.Namespace }}'

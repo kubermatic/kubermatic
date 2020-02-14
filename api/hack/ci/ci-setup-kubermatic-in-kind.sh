@@ -382,16 +382,17 @@ else
   TEST_NAME="Deploy Kubermatic"
   echodate "Installing Kubermatic using operator..."
 
-  sed -i "s/__KUBERMATIC_TAG__/${KUBERMATIC_VERSION}/g" config/kubermatic-operator/*.yaml
-  sed -i "s/__NAMESPACE__/kubermatic/g" config/kubermatic-operator/*.yaml
-  sed -i "s/__WORKER_NAME__//g" config/kubermatic-operator/*.yaml
-  kubectl create namespace kubermatic || true
-  retry 3 kubectl apply -f config/kubermatic-operator/
-  retry 5 check_all_deployments_ready kubermatic
-  echodate "Kubermatic Operator is ready."
+  # --force is needed in case the first attempt at installing didn't succeed
+  # see https://github.com/helm/helm/pull/3597
+  retry 3 helm upgrade --install --force --wait --timeout 300 \
+    --set-file "kubermaticOperator.imagePullSecret=/config.json" \
+    --set-string "kubermaticOperator.image.tag=$KUBERMATIC_VERSION" \
+    --namespace kubermatic \
+    --values ${VALUES_FILE} \
+    kubermatic-operator \
+    ./config/kubermatic-operator/
 
-  # reset changes in case we re-deploy another version
-  git checkout -- config/kubermatic-operator/
+  echodate "Kubermatic Operator is ready."
 
   KUBERMATIC_CONFIG="$(mktemp)"
   cat <<EOF >$KUBERMATIC_CONFIG

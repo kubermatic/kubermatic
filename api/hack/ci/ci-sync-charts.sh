@@ -157,22 +157,6 @@ EOF
 
 sed -s '$a\\n---' ${CHARTS_DIR}/kubermatic/crd/*.yaml >> ${CRDS_MANIFEST}
 
-OPERATOR_MANIFEST=${TARGET_DIR}/manifests/kubermatic-operator.yaml
-cat << EOF > ${OPERATOR_MANIFEST}
-# These manifests will install the Kubermatic Operator $PULL_BASE_REF into the 'kubermatic' namespace.
-# Please ensure to manually create a dockerconfigjson Secret in the same namespace,
-# named 'dockercfg' that contains the credentials for quay.io.
-# You also need to create the Kubermatic CRDs by applying the kubermatic-crds.yaml.
-
-EOF
-
-sed -s '$a\\n---' ${CHARTS_DIR}/kubermatic-operator/serviceaccount.yaml >> ${OPERATOR_MANIFEST}
-sed -s '$a\\n---' ${CHARTS_DIR}/kubermatic-operator/rbac.yaml >> ${OPERATOR_MANIFEST}
-cat ${CHARTS_DIR}/kubermatic-operator/deployment.yaml >> ${OPERATOR_MANIFEST}
-
-sed -i "s/__NAMESPACE__/kubermatic/g" ${OPERATOR_MANIFEST}
-sed -i "s/__WORKER_NAME__//g" ${OPERATOR_MANIFEST}
-
 # commit and push
 cd ${TARGET_DIR}
 git add .
