@@ -48,6 +48,7 @@ import (
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	kuberneteswatcher "github.com/kubermatic/kubermatic/api/pkg/watcher/kubernetes"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -226,6 +227,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 	addonProviderGetter := kubernetesprovider.AddonProviderFactory(seedKubeconfigGetter, options.accessibleAddons)
 
+	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create settings watcher due to %v", err)
+	}
+
 	return providers{
 		sshKey:                                sshKeyProvider,
 		user:                                  userProvider,
@@ -245,7 +251,9 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		settingsProvider:                      settingsProvider,
 		adminProvider:                         adminProvider,
 		presetProvider:                        presetsProvider,
-		admissionPluginProvider:               admissionPluginProvider}, nil
+		admissionPluginProvider:               admissionPluginProvider,
+		settingsWatcher:                       settingsWatcher,
+	}, nil
 }
 
 func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error) {
@@ -339,6 +347,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.settingsProvider,
 		prov.adminProvider,
 		prov.admissionPluginProvider,
+		prov.settingsWatcher,
 	)
 
 	registerMetrics()
@@ -360,6 +369,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		},
 		mainRouter)
 	r.RegisterV1Admin(v1Router)
+	r.RegisterV1Websocket(v1Router)
 
 	mainRouter.Methods(http.MethodGet).
 		Path("/api/swagger.json").

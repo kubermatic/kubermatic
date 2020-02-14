@@ -16,6 +16,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	"github.com/kubermatic/kubermatic/api/pkg/watcher"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -48,7 +49,8 @@ func NewTestRouting(
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
 	presetsProvider provider.PresetProvider,
-	admissionPluginProvider provider.AdmissionPluginsProvider) http.Handler {
+	admissionPluginProvider provider.AdmissionPluginsProvider,
+	settingsWatcher watcher.SettingsWatcher) http.Handler {
 
 	updateManager := version.New(versions, updates)
 	r := handler.NewRouting(
@@ -80,6 +82,7 @@ func NewTestRouting(
 		settingsProvider,
 		adminProvider,
 		admissionPluginProvider,
+		settingsWatcher,
 	)
 
 	mainRouter := mux.NewRouter()

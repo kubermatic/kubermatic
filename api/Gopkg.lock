@@ -10,6 +10,17 @@
   version = "v0.36.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:aa0906b8d19e4198c50ab488dc68db2ecff0e32080ea2775a30967e2ead6bc63"
+  name = "code.cloudfoundry.org/go-pubsub"
+  packages = [
+    ".",
+    "internal/node",
+  ]
+  pruneopts = "NUT"
+  revision = "becd51dc37cb4cc4264c78311afbdd91b8fa3eb9"
+
+[[projects]]
   digest = "1:3fb854fc35fafced21615a93db3c0e324c8cb1d5a89f39dd1e72db0c4200345a"
   name = "contrib.go.opencensus.io/exporter/ocagent"
   packages = ["."]
@@ -643,6 +654,14 @@
   pruneopts = "NUT"
   revision = "e59506cc896acb7f7bf732d4fdf5e25f7ccd8983"
   version = "v1.1.1"
+
+[[projects]]
+  digest = "1:d5344bb08f1d8dc55f9a513ac4f971a9c8baeb73690b7cde56f4fe8a9143ef62"
+  name = "github.com/gorilla/websocket"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "c3e18be99d19e6b3e8f1559eea2c161a665c4b6b"
+  version = "v1.4.1"
 
 [[projects]]
   digest = "1:3107a6ef51bb9f3bc7cf235af0d92303b39afaa841f02dfc87f1d0a5d05a3fca"
@@ -2090,6 +2109,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "code.cloudfoundry.org/go-pubsub",
     "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-06-01/compute",
     "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-06-01/network",
     "github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-02-01/resources",
@@ -2155,6 +2175,7 @@
     "github.com/gorilla/handlers",
     "github.com/gorilla/mux",
     "github.com/gorilla/securecookie",
+    "github.com/gorilla/websocket",
     "github.com/heptiolabs/healthcheck",
     "github.com/hetznercloud/hcloud-go/hcloud",
     "github.com/iancoleman/strcase",

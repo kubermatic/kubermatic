@@ -13,6 +13,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
+	"github.com/kubermatic/kubermatic/api/pkg/watcher"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -49,6 +50,7 @@ type Routing struct {
 	settingsProvider            provider.SettingsProvider
 	adminProvider               provider.AdminProvider
 	admissionPluginProvider     provider.AdmissionPluginsProvider
+	settingsWatcher             watcher.SettingsWatcher
 }
 
 // NewRouting creates a new Routing.
@@ -81,6 +83,7 @@ func NewRouting(
 	settingsProvider provider.SettingsProvider,
 	adminProvider provider.AdminProvider,
 	admissionPluginProvider provider.AdmissionPluginsProvider,
+	settingsWatcher watcher.SettingsWatcher,
 ) Routing {
 	return Routing{
 		log:                         logger,
@@ -112,6 +115,7 @@ func NewRouting(
 		settingsProvider:            settingsProvider,
 		adminProvider:               adminProvider,
 		admissionPluginProvider:     admissionPluginProvider,
+		settingsWatcher:             settingsWatcher,
 	}
 }
 
