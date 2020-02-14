@@ -1,0 +1,18 @@
+kubermaticOperator:
+  image:
+    repository: "quay.io/kubermatic/api"
+    tag: "__KUBERMATIC_TAG__"
+
+  imagePullSecret: |
+    {
+      "quay.io": {}
+    }
+
+  debug: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
