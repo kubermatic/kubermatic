@@ -2,10 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kubermatic-operator
-  namespace: '__NAMESPACE__'
   labels:
     app.kubernetes.io/name: kubermatic-operator
-    app.kubernetes.io/version: '__KUBERMATIC_TAG__'
+    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
 spec:
   replicas: 1
   selector:
@@ -25,17 +24,21 @@ spec:
       - name: dockercfg
       containers:
       - name: operator
-        image: 'quay.io/kubermatic/api:__KUBERMATIC_TAG__'
+        image: '{{ .Values.kubermaticOperator.image.repository }}:{{ .Values.kubermaticOperator.image.tag | default .Chart.AppVersion }}'
         imagePullPolicy: IfNotPresent
         command:
         - kubermatic-operator
         args:
         - -internal-address=0.0.0.0:8085
         - -namespace=$(POD_NAMESPACE)
-        - -worker-name=__WORKER_NAME__
+        {{- with .Values.kubermaticOperator.workerName }}
+        - -worker-name={{ . }}
+        {{- end }}
         - -log-format=json
+        {{- if .Values.kubermaticOperator.debug }}
         - -log-debug=true
         - -v=8
+        {{- end }}
         env:
         - name: POD_NAMESPACE
           valueFrom:
@@ -46,9 +49,4 @@ spec:
           containerPort: 8085
           protocol: TCP
         resources:
-          requests:
-            cpu: 200m
-            memory: 256Mi
-          limits:
-            cpu: 500m
-            memory: 512Mi
+{{ .Values.kubermaticOperator.resources | toYaml | indent 10 }}

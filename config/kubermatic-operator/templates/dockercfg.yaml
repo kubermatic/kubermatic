@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dockercfg
+  labels:
+    app.kubernetes.io/name: kubermatic-operator
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: {{ .Values.kubermaticOperator.imagePullSecret | b64enc | quote }}
