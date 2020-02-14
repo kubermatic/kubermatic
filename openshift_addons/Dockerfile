@@ -1,5 +1,4 @@
-FROM alpine:3.9
-
-LABEL maintainer "alvaro@loodse.com"
+FROM alpine:3.10
+LABEL maintainer="support@loodse.com"
 
 ADD ./ /addons/
