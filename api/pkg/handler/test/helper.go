@@ -30,6 +30,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
+	"github.com/kubermatic/kubermatic/api/pkg/watcher"
+	kuberneteswatcher "github.com/kubermatic/kubermatic/api/pkg/watcher/kubernetes"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -140,7 +142,8 @@ type newRoutingFunc func(
 	saTokenGenerator serviceaccount.TokenGenerator,
 	eventRecorderProvider provider.EventRecorderProvider,
 	presetsProvider provider.PresetProvider,
-	admissionPluginProvider provider.AdmissionPluginsProvider) http.Handler
+	admissionPluginProvider provider.AdmissionPluginsProvider,
+	settingsWatcher watcher.SettingsWatcher) http.Handler
 
 func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	if seedsGetter == nil {
@@ -262,6 +265,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
+	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// Disable the metrics endpoint in tests
 	var prometheusClient prometheusapi.Client
 
@@ -291,6 +299,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		eventRecorderProvider,
 		credentialsManager,
 		admissionPluginProvider,
+		settingsWatcher,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/watch"
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -36,6 +37,10 @@ func (s *SettingsProvider) GetGlobalSettings() (*kubermaticv1.KubermaticSetting,
 		return nil, err
 	}
 	return settings, nil
+}
+
+func (s *SettingsProvider) WatchGlobalSettings() (watch.Interface, error) {
+	return s.client.KubermaticV1().KubermaticSettings().Watch(v1.ListOptions{})
 }
 
 func (s *SettingsProvider) UpdateGlobalSettings(userInfo *provider.UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error) {
