@@ -2,7 +2,8 @@ FROM alpine:3.10
 
 ENV MC_VERSION=RELEASE.2019-09-20T00-09-55Z \
     KUBECTL_VERSION=v1.16.2 \
-    HELM_VERSION=v2.16.1 \
+    HELM2_VERSION=v2.16.1 \
+    HELM3_VERSION=v3.1.0 \
     VAULT_VERSION=1.2.3 \
     YQ_VERSION=2.4.0
 
@@ -33,10 +34,16 @@ RUN curl -Lo /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/
     chmod +x /usr/bin/kubectl && \
     kubectl version --short --client
 
-RUN curl -L https://storage.googleapis.com/kubernetes-helm/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar -xvz && \
-    mv linux-amd64/helm /usr/bin/helm && \
+RUN curl -L https://get.helm.sh/helm-${HELM2_VERSION}-linux-amd64.tar.gz | tar -xvz && \
+    mv linux-amd64/helm /usr/bin/helm2 && \
+    ln -s /usr/bin/helm2 /usr/bin/helm && \
     rm -rf linux-amd64 && \
-    helm version --client --short
+    helm2 version --short --client
+
+RUN curl -L https://get.helm.sh/helm-${HELM3_VERSION}-linux-amd64.tar.gz | tar -xvz && \
+    mv linux-amd64/helm /usr/bin/helm3 && \
+    rm -rf linux-amd64 && \
+    helm3 version --short
 
 RUN curl -Lo vault.zip https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip && \
     unzip vault.zip && \

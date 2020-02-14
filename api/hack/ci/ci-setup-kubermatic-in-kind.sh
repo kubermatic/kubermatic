@@ -180,8 +180,8 @@ iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -
 # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
 echodate "Successfully set up iptables rules for nodeports"
 
-echodate "Creating kubermatic-fast storageclass"
 TEST_NAME="Create kubermatic-fast storageclass"
+echodate "Creating kubermatic-fast storageclass"
 retry 5 kubectl get storageclasses.storage.k8s.io standard -o json \
   |jq 'del(.metadata)|.metadata.name = "kubermatic-fast"'\
   |kubectl apply -f -
@@ -227,7 +227,7 @@ echodate "Deploying Dex"
 
 export KUBERMATIC_DEX_VALUES_FILE=$(realpath api/hack/ci/testdata/oauth_values.yaml)
 
-if kubectl get namespace oauth; then
+if kubectl get namespace oauth >/dev/null 2>&1; then
   echodate "Dex already deployed"
 else
   retry 5 helm install --wait --timeout 180 \

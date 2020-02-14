@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SUFFIX=""
-VERSION=1.3.2
+VERSION=1.3.3
 
 set -euox pipefail
 

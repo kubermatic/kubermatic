@@ -25,6 +25,7 @@ DEPLOY_ALERTMANAGER=${DEPLOY_ALERTMANAGER:-true}
 DEPLOY_MINIO=${DEPLOY_MINIO:-true}
 DEPLOY_LOKI=${DEPLOY_LOKI:-false}
 USE_KUBERMATIC_OPERATOR=${USE_KUBERMATIC_OPERATOR:-false}
+USE_HELM3=${USE_HELM3:-false}
 DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 TILLER_NAMESPACE=${TILLER_NAMESPACE:-kubermatic}
 HELM_INIT_ARGS=${HELM_INIT_ARGS:-""}
@@ -60,7 +61,13 @@ function deploy {
   local name=$1
   local namespace=$2
   local path=$3
-  local timeout=${4:-300}
+  local timeout=${4:-5}
+
+  if [[ "${USE_HELM3}" = true ]]; then
+    timeout="${timeout}m"
+  else
+    timeout=$(($timeout * 60))
+  fi
 
   TEST_NAME="[Helm] Deploy chart ${name}"
 
@@ -70,29 +77,45 @@ function deploy {
     return 0
   fi
 
-  inital_revision="$(retry 5 helm list --tiller-namespace=${TILLER_NAMESPACE} ${name} --output=json|jq '.Releases[0].Revision')"
-
   echodate "Upgrading ${name}..."
-  retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --atomic --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
+  if ! kubectl get namespace ${namespace} >/dev/null 2>&1; then
+    retry 3 kubectl create namespace ${namespace}
+  fi
+
+  local inital_revision
+  if [[ "${USE_HELM3}" = true ]]; then
+    inital_revision="$(retry 5 helm --namespace ${namespace} list --filter '^${name}$' --output json | jq -r '.[0].revision')"
+    retry 5 helm3 upgrade --install --atomic --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
+  else
+    inital_revision="$(retry 5 helm list --tiller-namespace=${TILLER_NAMESPACE} ${name} --output=json|jq '.Releases[0].Revision')"
+    retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --atomic --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
+  fi
 
   if [ "${CANARY_DEPLOYMENT:-}" = "true" ]; then
     TEST_NAME="[Helm] Rollback chart ${name}"
     echodate "Rolling back ${name} to revision ${inital_revision} as this was only a canary deployment"
-    retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} rollback --wait --timeout $timeout ${name} ${inital_revision}
+
+    if [[ "${USE_HELM3}" = true ]]; then
+      retry 5 helm3 rollback --namespace ${namespace} --wait --timeout $timeout ${name} ${inital_revision}
+    else
+      retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} rollback --wait --timeout $timeout ${name} ${inital_revision}
+    fi
   fi
 
   unset TEST_NAME
 }
 
 function initTiller() {
-  TEST_NAME="[Helm] Init Tiller"
-  echodate "Initializing Tiller in namespace ${TILLER_NAMESPACE}"
-  helm version --client
-  kubectl create serviceaccount -n ${TILLER_NAMESPACE} tiller-sa --dry-run -oyaml|kubectl apply -f -
-  kubectl create clusterrolebinding tiller-cluster-role --clusterrole=cluster-admin --serviceaccount=${TILLER_NAMESPACE}:tiller-sa  --dry-run -oyaml|kubectl apply -f -
-  retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} init --service-account tiller-sa --replicas 3 --history-max 10 --upgrade --force-upgrade --wait ${HELM_INIT_ARGS}
-  echodate "Tiller initialized successfully"
-  unset TEST_NAME
+  if [[ "${USE_HELM3}" = false ]]; then
+    TEST_NAME="[Helm] Init Tiller"
+    echodate "Initializing Tiller in namespace ${TILLER_NAMESPACE}"
+    helm version --client
+    kubectl create serviceaccount -n ${TILLER_NAMESPACE} tiller-sa --dry-run -oyaml|kubectl apply -f -
+    kubectl create clusterrolebinding tiller-cluster-role --clusterrole=cluster-admin --serviceaccount=${TILLER_NAMESPACE}:tiller-sa  --dry-run -oyaml|kubectl apply -f -
+    retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} init --service-account tiller-sa --replicas 3 --history-max 10 --upgrade --force-upgrade --wait ${HELM_INIT_ARGS}
+    echodate "Tiller initialized successfully"
+    unset TEST_NAME
+  fi
 }
 
 # PULL_BASE_REF is the name of the current branch in case of a post-submit
@@ -122,7 +145,7 @@ case "${DEPLOY_STACK}" in
 
     # Prometheus can take a long time to become ready, depending on the WAL size.
     # We try to accomodate by waiting for 15 instead of 5 minutes.
-    deploy "prometheus" "monitoring" ./config/monitoring/prometheus/ 900
+    deploy "prometheus" "monitoring" ./config/monitoring/prometheus/ 15
     ;;
 
   logging)

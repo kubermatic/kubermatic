@@ -13,7 +13,7 @@ groups:
       severity: warning
     runbook:
       steps:
-      - Check the installed Helm releases via `helm --tiller-namespace kubermtic-installer ls`.
+      - Check the installed Helm releases via `helm --all-namespaces ls` (Helm 3) or `helm --tiller-namespace kubermatic-installer ls` (Helm 2).
       - If all releases are status `DEPLOYED`, make sure the helme-exporter is looking at the correct Tiller by checking
         the `values.yaml` flag `helmExporter.tillerNamespace`.
       - If Helm cannot repair the chart automatically, delete/purge the chart (`helm delete --purge [RELEASE]`) and
