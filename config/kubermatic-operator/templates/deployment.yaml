@@ -4,7 +4,7 @@ metadata:
   name: kubermatic-operator
   labels:
     app.kubernetes.io/name: kubermatic-operator
-    app.kubernetes.io/version: '{{ .Chart.AppVersion }}'
+    app.kubernetes.io/version: '{{ .Values.kubermaticOperator.image.tag | default .Chart.AppVersion }}'
 spec:
   replicas: 1
   selector:
