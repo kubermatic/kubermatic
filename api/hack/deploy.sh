@@ -174,7 +174,7 @@ case "${DEPLOY_STACK}" in
         echodate "Deploying Kubermatic Operator..."
 
         retry 3 helm upgrade --install --force --wait --timeout 300 \
-          --set-string "kubermaticOperator.imagePullSecret=$DOCKER_CONFIG" \
+          --set-file "kubermaticOperator.imagePullSecret=$DOCKER_CONFIG" \
           --namespace kubermatic \
           --values ${VALUES_FILE} \
           kubermatic-operator \
