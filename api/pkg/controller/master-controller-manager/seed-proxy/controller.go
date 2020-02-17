@@ -6,12 +6,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
+	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -106,6 +106,16 @@ func Add(
 		return err
 	}
 
+	// watch seeds themselves
+	namespacePredicate := predicateutil.ByNamespace(namespace)
+	ownedPredicate := predicateutil.ByLabel(ManagedByLabel, ControllerName)
+
+	seed := &kubermaticv1.Seed{}
+	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate); err != nil {
+		return fmt.Errorf("failed to create watcher for %T: %v", seed, err)
+	}
+
+	// watch related resources
 	eventHandler := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
@@ -123,10 +133,6 @@ func Add(
 		return requests
 	})}
 
-	ownedByController := predicate.Factory(func(meta metav1.Object, _ runtime.Object) bool {
-		return meta.GetLabels()[ManagedByLabel] == ControllerName
-	})
-
 	typesToWatch := []runtime.Object{
 		&appsv1.Deployment{},
 		&corev1.Service{},
@@ -135,7 +141,7 @@ func Add(
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, eventHandler, ownedByController); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, eventHandler, namespacePredicate, ownedPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}
