@@ -5514,6 +5514,13 @@
             "name": "project_id",
             "in": "path",
             "required": true
+          },
+          {
+            "name": "Key",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/SSHKey"
+            }
           }
         ],
         "responses": {
