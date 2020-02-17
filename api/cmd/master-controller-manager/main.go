@@ -166,7 +166,8 @@ func main() {
 	}
 
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "",
+		// disable default metrics server. We start ours later.
+		MetricsBindAddress: "0",
 		// inject the handcrafted cache into the manager
 		NewCache: func(config *rest.Config, opts ctrlruntimecache.Options) (ctrlruntimecache.Cache, error) {
 			return &unstartableCache{cache}, nil
