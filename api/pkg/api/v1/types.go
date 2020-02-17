@@ -1043,6 +1043,9 @@ type OpenstackNodeSpec struct {
 	// if set, the rootDisk will be a volume. If not, the rootDisk will be on ephemeral storage and its size will be derived from the flavor
 	// required: false
 	RootDiskSizeGB *int `json:"diskSize"`
+	// if not set, the default AZ from the Datacenter spec will be used
+	// required: false
+	AvailabilityZone string `json:"availabilityZone"`
 }
 
 // AWSNodeSpec aws specific node settings

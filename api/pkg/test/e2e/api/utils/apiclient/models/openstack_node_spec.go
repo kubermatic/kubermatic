@@ -16,6 +16,9 @@ import (
 // swagger:model OpenstackNodeSpec
 type OpenstackNodeSpec struct {
 
+	// if not set, the default AZ from the Datacenter spec will be used
+	AvailabilityZone string `json:"availabilityZone,omitempty"`
+
 	// instance flavor
 	// Required: true
 	Flavor *string `json:"flavor"`
