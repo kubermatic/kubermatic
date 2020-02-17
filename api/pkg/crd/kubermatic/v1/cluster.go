@@ -118,7 +118,7 @@ const (
 	// It will deploy a Rancher Server Managegment plane on the seed cluster and import the user cluster into it.
 	ClusterFeatureRancherIntegration = "rancherIntegration"
 
-	// ClusterFeatureOpenstackMultiAZ enables OpenStack multiple availability zones zupport
+	// ClusterFeatureOpenstackMultiAZ enables OpenStack multiple availability zones support
 	ClusterFeatureOpenstackMultiAZ = "openstackMultiAZ"
 )
 
