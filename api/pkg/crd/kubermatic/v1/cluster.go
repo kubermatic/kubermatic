@@ -117,6 +117,9 @@ const (
 	// ClusterFeatureRancherIntegration enables the rancher server integration feature.
 	// It will deploy a Rancher Server Managegment plane on the seed cluster and import the user cluster into it.
 	ClusterFeatureRancherIntegration = "rancherIntegration"
+
+	// ClusterFeatureOpenstackMultiAZ enables OpenStack multiple availability zones zupport
+	ClusterFeatureOpenstackMultiAZ = "openstackMultiAZ"
 )
 
 // ClusterConditionType is used to indicate the type of a cluster condition. For all condition
