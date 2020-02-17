@@ -347,6 +347,140 @@
         }
       }
     },
+    "/api/v1/admin/seeds": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Returns all seeds from the CRDs.",
+        "operationId": "listSeeds",
+        "responses": {
+          "200": {
+            "description": "Seed",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Seed"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/seeds/{seed_name}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Returns the seed object.",
+        "operationId": "getSeed",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Seed",
+            "schema": {
+              "$ref": "#/definitions/Seed"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Updates the seed.",
+        "operationId": "updateSeed",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "x-go-name": "Name"
+                },
+                "spec": {
+                  "$ref": "#/definitions/SeedSpec"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Seed",
+            "schema": {
+              "$ref": "#/definitions/Seed"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/settings": {
       "get": {
         "produces": [
@@ -8240,6 +8374,219 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "DatacenterSpecAWS": {
+      "description": "DatacenterSpecAWS describes an AWS datacenter",
+      "type": "object",
+      "properties": {
+        "images": {
+          "$ref": "#/definitions/ImageList"
+        },
+        "region": {
+          "description": "The AWS region to use, e.g. \"us-east-1\". For a list of available regions, see\nhttps://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html",
+          "type": "string",
+          "x-go-name": "Region"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "DatacenterSpecAzure": {
+      "description": "DatacenterSpecAzure describes an Azure cloud datacenter",
+      "type": "object",
+      "properties": {
+        "location": {
+          "description": "Region to use, for example \"westeurope\". A list of available regions can be\nfound at https://azure.microsoft.com/en-us/global-infrastructure/locations/",
+          "type": "string",
+          "x-go-name": "Location"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "DatacenterSpecBringYourOwn": {
+      "description": "DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes",
+      "type": "object",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "DatacenterSpecDigitalocean": {
+      "description": "DatacenterSpecDigitalocean describes a DigitalOcean datacenter",
+      "type": "object",
+      "properties": {
+        "region": {
+          "description": "Datacenter location, e.g. \"ams3\". A list of existing datacenters can be found\nat https://www.digitalocean.com/docs/platform/availability-matrix/",
+          "type": "string",
+          "x-go-name": "Region"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "DatacenterSpecFake": {
+      "description": "DatacenterSpecFake describes a fake datacenter",
+      "type": "object",
+      "properties": {
+        "fake_property": {
+          "type": "string",
+          "x-go-name": "FakeProperty"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "DatacenterSpecGCP": {
+      "description": "DatacenterSpecGCP describes a GCP datacenter",
+      "type": "object",
+      "properties": {
+        "region": {
+          "description": "Region to use, for example \"europe-west3\", for a full list of regions see\nhttps://cloud.google.com/compute/docs/regions-zones/",
+          "type": "string",
+          "x-go-name": "Region"
+        },
+        "regional": {
+          "description": "Optional: Regional clusters spread their resources across multiple availability zones.\nRefer to the official documentation for more details on this:\nhttps://cloud.google.com/kubernetes-engine/docs/concepts/regional-clusters",
+          "type": "boolean",
+          "x-go-name": "Regional"
+        },
+        "zone_suffixes": {
+          "description": "List of enabled zones, for example [a, c]. See the link above for the available\nzones in your chosen region.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "ZoneSuffixes"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "DatacenterSpecHetzner": {
+      "description": "DatacenterSpecHetzner describes a Hetzner cloud datacenter",
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "description": "Datacenter location, e.g. \"nbg1-dc3\". A list of existing datacenters can be found\nat https://wiki.hetzner.de/index.php/Rechenzentren_und_Anbindung/en",
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "location": {
+          "description": "Optional: Detailed location of the datacenter, like \"Hamburg\" or \"Datacenter 7\".\nFor informational purposes only.",
+          "type": "string",
+          "x-go-name": "Location"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "DatacenterSpecKubevirt": {
+      "type": "object",
+      "title": "DatacenterSpecKubevirt describes a kubevirt datacenter.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "DatacenterSpecOpenstack": {
+      "description": "DatacenterSpecOpenstack describes an OpenStack datacenter",
+      "type": "object",
+      "properties": {
+        "auth_url": {
+          "type": "string",
+          "x-go-name": "AuthURL"
+        },
+        "availability_zone": {
+          "type": "string",
+          "x-go-name": "AvailabilityZone"
+        },
+        "dns_servers": {
+          "description": "Used for automatic network creation",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "DNSServers"
+        },
+        "enforce_floating_ip": {
+          "description": "Optional",
+          "type": "boolean",
+          "x-go-name": "EnforceFloatingIP"
+        },
+        "ignore_volume_az": {
+          "description": "Optional",
+          "type": "boolean",
+          "x-go-name": "IgnoreVolumeAZ"
+        },
+        "images": {
+          "$ref": "#/definitions/ImageList"
+        },
+        "manage_security_groups": {
+          "description": "Optional: Gets mapped to the \"manage-security-groups\" setting in the cloud config.\nSee https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer\nThis setting defaults to true.",
+          "type": "boolean",
+          "x-go-name": "ManageSecurityGroups"
+        },
+        "node_size_requirements": {
+          "$ref": "#/definitions/OpenstackNodeSizeRequirements"
+        },
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
+        },
+        "trust_device_path": {
+          "description": "Optional: Gets mapped to the \"trust-device-path\" setting in the cloud config.\nSee https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage\nThis setting defaults to false.",
+          "type": "boolean",
+          "x-go-name": "TrustDevicePath"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "DatacenterSpecPacket": {
+      "description": "DatacenterSpecPacket describes a Packet datacenter",
+      "type": "object",
+      "properties": {
+        "facilities": {
+          "description": "The list of enabled facilities, for example \"ams1\", for a full list of available\nfacilities see https://support.packet.com/kb/articles/data-centers",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Facilities"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "DatacenterSpecVSphere": {
+      "description": "DatacenterSpecVSphere describes a vSphere datacenter",
+      "type": "object",
+      "properties": {
+        "allow_insecure": {
+          "description": "If set to true, disables the TLS certificate check against the endpoint.",
+          "type": "boolean",
+          "x-go-name": "AllowInsecure"
+        },
+        "cluster": {
+          "description": "The name of the Kubernetes cluster to use.",
+          "type": "string",
+          "x-go-name": "Cluster"
+        },
+        "datacenter": {
+          "description": "The name of the datacenter to use.",
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "datastore": {
+          "description": "The name of the datastore to use.",
+          "type": "string",
+          "x-go-name": "Datastore"
+        },
+        "endpoint": {
+          "description": "Endpoint URL to use, including protocol, for example \"https://vcenter.example.com\".",
+          "type": "string",
+          "x-go-name": "Endpoint"
+        },
+        "infra_management_user": {
+          "$ref": "#/definitions/VSphereCredentials"
+        },
+        "root_path": {
+          "description": "Optional: The root path for cluster specific VM folders. Each cluster gets its own\nfolder below the root folder. Must be the FQDN (for example\n\"/datacenter-1/vm/all-kubermatic-vms-in-here\") and defaults to the root VM\nfolder: \"/datacenter-1/vm\"",
+          "type": "string",
+          "x-go-name": "RootPath"
+        },
+        "templates": {
+          "$ref": "#/definitions/ImageList"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "DigitaloceanCloudSpec": {
       "type": "object",
       "title": "DigitaloceanCloudSpec specifies access data to DigitalOcean.",
@@ -8434,7 +8781,7 @@
           "x-go-name": "ID"
         },
         "involvedObject": {
-          "$ref": "#/definitions/ObjectReference"
+          "$ref": "#/definitions/ObjectReferenceResource"
         },
         "lastTimestamp": {
           "description": "The time at which the most recent occurrence of this event was recorded.",
@@ -8934,7 +9281,7 @@
       "additionalProperties": {
         "type": "string"
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "KubermaticVersions": {
       "type": "object",
@@ -9417,6 +9764,37 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "NodeSettings": {
+      "description": "NodeSettings are node specific flags which can be configured on datacenter level",
+      "type": "object",
+      "properties": {
+        "http_proxy": {
+          "$ref": "#/definitions/ProxyValue"
+        },
+        "hyperkube_image": {
+          "description": "Optional: The hyperkube image to use. Currently only Container Linux\nmakes use of this option.",
+          "type": "string",
+          "x-go-name": "HyperkubeImage"
+        },
+        "insecure_registries": {
+          "description": "Optional: These image registries will be configured as insecure\non the container runtime.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "InsecureRegistries"
+        },
+        "no_proxy": {
+          "$ref": "#/definitions/ProxyValue"
+        },
+        "pause_image": {
+          "description": "Optional: Translates to --pod-infra-container-image on the kubelet.\nIf not set, the kubelet will default it.",
+          "type": "string",
+          "x-go-name": "PauseImage"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "NodeSpec": {
       "description": "NodeSpec node specification",
       "type": "object",
@@ -9685,6 +10063,28 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
     },
+    "ObjectReferenceResource": {
+      "type": "object",
+      "title": "ObjectReferenceResource contains basic information about referred object.",
+      "properties": {
+        "name": {
+          "description": "Name of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names\n+optional",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Namespace of the referent.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
+        "type": {
+          "description": "Type of the referent.",
+          "type": "string",
+          "x-go-name": "Type"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "Openshift": {
       "type": "object",
       "properties": {
@@ -9794,6 +10194,24 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "OpenstackNodeSizeRequirements": {
+      "type": "object",
+      "properties": {
+        "minimum_memory": {
+          "description": "MinimumMemory is the minimum required amount of memory, measured in MB",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MinimumMemory"
+        },
+        "minimum_vcpus": {
+          "description": "VCPUs is the minimum required amount of (virtual) CPUs",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MinimumVCPUs"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "OpenstackNodeSpec": {
       "description": "OpenstackNodeSpec openstack node settings",
@@ -10212,6 +10630,23 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "ProxySettings": {
+      "description": "ProxySettings allow configuring a HTTP proxy for the controlplanes\nand nodes",
+      "type": "object",
+      "properties": {
+        "http_proxy": {
+          "$ref": "#/definitions/ProxyValue"
+        },
+        "no_proxy": {
+          "$ref": "#/definitions/ProxyValue"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "ProxyValue": {
+      "type": "string",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "PublicAWSCloudSpec": {
       "type": "object",
       "title": "PublicAWSCloudSpec is a public counterpart of apiv1.AWSCloudSpec.",
@@ -10536,6 +10971,168 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "Seed": {
+      "description": "Seed represents a seed object",
+      "type": "object",
+      "properties": {
+        "country": {
+          "description": "Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.\nFor informational purposes in the Kubermatic dashboard only.",
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "datacenters": {
+          "description": "Datacenters contains a map of the possible datacenters (DCs) in this seed.\nEach DC must have a globally unique identifier (i.e. names must be unique\nacross all seeds).",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/SeedDatacenter"
+          },
+          "x-go-name": "SeedDatacenters"
+        },
+        "expose_strategy": {
+          "$ref": "#/definitions/ServiceType"
+        },
+        "kubeconfig": {
+          "$ref": "#/definitions/ObjectReference"
+        },
+        "location": {
+          "description": "Optional: Detailed location of the cluster, like \"Hamburg\" or \"Datacenter 7\".\nFor informational purposes in the Kubermatic dashboard only.",
+          "type": "string",
+          "x-go-name": "Location"
+        },
+        "name": {
+          "description": "Name represents human readable name for the resource",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "proxy_settings": {
+          "$ref": "#/definitions/ProxySettings"
+        },
+        "seed_dns_overwrite": {
+          "description": "Optional: This can be used to override the DNS name used for this seed.\nBy default the seed name is used.",
+          "type": "string",
+          "x-go-name": "SeedDNSOverwrite"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "SeedDatacenter": {
+      "type": "object",
+      "properties": {
+        "country": {
+          "description": "Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.\nFor informational purposes in the Kubermatic dashboard only.",
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "location": {
+          "description": "Optional: Detailed location of the cluster, like \"Hamburg\" or \"Datacenter 7\".\nFor informational purposes in the Kubermatic dashboard only.",
+          "type": "string",
+          "x-go-name": "Location"
+        },
+        "node": {
+          "$ref": "#/definitions/NodeSettings"
+        },
+        "spec": {
+          "$ref": "#/definitions/SeedDatacenterSpec"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "SeedDatacenterSpec": {
+      "description": "SeedDatacenterSpec mutually points to provider datacenter spec",
+      "type": "object",
+      "properties": {
+        "aws": {
+          "$ref": "#/definitions/DatacenterSpecAWS"
+        },
+        "azure": {
+          "$ref": "#/definitions/DatacenterSpecAzure"
+        },
+        "bringyourown": {
+          "$ref": "#/definitions/DatacenterSpecBringYourOwn"
+        },
+        "digitalocean": {
+          "$ref": "#/definitions/DatacenterSpecDigitalocean"
+        },
+        "enforceAuditLogging": {
+          "description": "EnforceAuditLogging enforces audit logging on every cluster within the DC,\nignoring cluster-specific settings.",
+          "type": "boolean",
+          "x-go-name": "EnforceAuditLogging"
+        },
+        "fake": {
+          "$ref": "#/definitions/DatacenterSpecFake"
+        },
+        "gcp": {
+          "$ref": "#/definitions/DatacenterSpecGCP"
+        },
+        "hetzner": {
+          "$ref": "#/definitions/DatacenterSpecHetzner"
+        },
+        "kubevirt": {
+          "$ref": "#/definitions/DatacenterSpecKubevirt"
+        },
+        "openstack": {
+          "$ref": "#/definitions/DatacenterSpecOpenstack"
+        },
+        "packet": {
+          "$ref": "#/definitions/DatacenterSpecPacket"
+        },
+        "requiredEmailDomain": {
+          "description": "Optional: When defined, only users with an e-mail address on the\ngiven domains can make use of this datacenter. You can define multiple\ndomains, e.g. \"example.com\", one of which must match the email domain\nexactly (i.e. \"example.com\" will not match \"user@test.example.com\").\nRequiredEmailDomain is deprecated. Automatically migrated to the RequiredEmailDomains field.",
+          "type": "string",
+          "x-go-name": "RequiredEmailDomain"
+        },
+        "requiredEmailDomains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "RequiredEmailDomains"
+        },
+        "vsphere": {
+          "$ref": "#/definitions/DatacenterSpecVSphere"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "SeedSpec": {
+      "description": "The spec for a seed data",
+      "type": "object",
+      "properties": {
+        "country": {
+          "description": "Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.\nFor informational purposes in the Kubermatic dashboard only.",
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "datacenters": {
+          "description": "Datacenters contains a map of the possible datacenters (DCs) in this seed.\nEach DC must have a globally unique identifier (i.e. names must be unique\nacross all seeds).",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/SeedDatacenter"
+          },
+          "x-go-name": "SeedDatacenters"
+        },
+        "expose_strategy": {
+          "$ref": "#/definitions/ServiceType"
+        },
+        "kubeconfig": {
+          "$ref": "#/definitions/ObjectReference"
+        },
+        "location": {
+          "description": "Optional: Detailed location of the cluster, like \"Hamburg\" or \"Datacenter 7\".\nFor informational purposes in the Kubermatic dashboard only.",
+          "type": "string",
+          "x-go-name": "Location"
+        },
+        "proxy_settings": {
+          "$ref": "#/definitions/ProxySettings"
+        },
+        "seed_dns_overwrite": {
+          "description": "Optional: This can be used to override the DNS name used for this seed.\nBy default the seed name is used.",
+          "type": "string",
+          "x-go-name": "SeedDNSOverwrite"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "Semver": {
       "description": "Semver is struct that encapsulates semver.Semver struct so we can use it in API\n+k8s:deepcopy-gen=true",
       "type": "object",
@@ -10619,6 +11216,11 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "ServiceType": {
+      "description": "Service Type string describes ingress methods for a service",
+      "type": "string",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
     },
     "SettingSpec": {
       "type": "object",

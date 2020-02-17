@@ -122,6 +122,7 @@ type newRoutingFunc func(
 	settingsProvider provider.SettingsProvider,
 	userInfoGetter provider.UserInfoGetter,
 	seedsGetter provider.SeedsGetter,
+	seedClientGetter provider.SeedClientGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
 	addonConfigProvider provider.AddonConfigProvider,
@@ -258,6 +259,10 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	}
 	admissionPluginProvider := kubernetes.NewAdmissionPluginsProvider(context.Background(), fakeClient)
 
+	seedClientGetter := func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+		return fakeClient, nil
+	}
+
 	kubernetesInformerFactory.Start(wait.NeverStop)
 	kubernetesInformerFactory.WaitForCacheSync(wait.NeverStop)
 	kubermaticInformerFactory.Start(wait.NeverStop)
@@ -278,6 +283,8 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		settingsProvider,
 		userInfoGetter,
 		seedsGetter,
+		seedClientGetter,
+
 		clusterProviderGetter,
 		addonProviderGetter,
 		addonConfigProvider,
@@ -316,70 +323,73 @@ func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 	return router, err
 }
 
-func buildSeeds() provider.SeedsGetter {
-	return func() (map[string]*kubermaticv1.Seed, error) {
-		return map[string]*kubermaticv1.Seed{
-			"us-central1": {
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "us-central1",
-				},
-				Spec: kubermaticv1.SeedSpec{
-					Location: "us-central",
-					Country:  "US",
-					Datacenters: map[string]kubermaticv1.Datacenter{
-						"private-do1": {
-							Country:  "NL",
-							Location: "US ",
-							Spec: kubermaticv1.DatacenterSpec{
-								Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-									Region: "ams2",
-								},
-							},
-						},
-						"regular-do1": {
-							Country:  "NL",
-							Location: "Amsterdam",
-							Spec: kubermaticv1.DatacenterSpec{
-								Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-									Region: "ams2",
-								},
-							},
-						},
-						"restricted-fake-dc": {
-							Country:  "NL",
-							Location: "Amsterdam",
-							Spec: kubermaticv1.DatacenterSpec{
-								Fake:                &kubermaticv1.DatacenterSpecFake{},
-								RequiredEmailDomain: "example.com",
-							},
-						},
-						"restricted-fake-dc2": {
-							Country:  "NL",
-							Location: "Amsterdam",
-							Spec: kubermaticv1.DatacenterSpec{
-								Fake:                 &kubermaticv1.DatacenterSpecFake{},
-								RequiredEmailDomains: []string{"23f67weuc.com", "example.com", "12noifsdsd.org"},
-							},
-						},
-						"fake-dc": {
-							Location: "Henriks basement",
-							Country:  "Germany",
-							Spec: kubermaticv1.DatacenterSpec{
-								Fake: &kubermaticv1.DatacenterSpecFake{},
-							},
-						},
-						"audited-dc": {
-							Location: "Finanzamt Castle",
-							Country:  "Germany",
-							Spec: kubermaticv1.DatacenterSpec{
-								Fake:                &kubermaticv1.DatacenterSpecFake{},
-								EnforceAuditLogging: true,
-							},
+func GenTestSeed() *kubermaticv1.Seed {
+	return &kubermaticv1.Seed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "us-central1",
+		},
+		Spec: kubermaticv1.SeedSpec{
+			Location: "us-central",
+			Country:  "US",
+			Datacenters: map[string]kubermaticv1.Datacenter{
+				"private-do1": {
+					Country:  "NL",
+					Location: "US ",
+					Spec: kubermaticv1.DatacenterSpec{
+						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
+							Region: "ams2",
 						},
 					},
 				},
+				"regular-do1": {
+					Country:  "NL",
+					Location: "Amsterdam",
+					Spec: kubermaticv1.DatacenterSpec{
+						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
+							Region: "ams2",
+						},
+					},
+				},
+				"restricted-fake-dc": {
+					Country:  "NL",
+					Location: "Amsterdam",
+					Spec: kubermaticv1.DatacenterSpec{
+						Fake:                &kubermaticv1.DatacenterSpecFake{},
+						RequiredEmailDomain: "example.com",
+					},
+				},
+				"restricted-fake-dc2": {
+					Country:  "NL",
+					Location: "Amsterdam",
+					Spec: kubermaticv1.DatacenterSpec{
+						Fake:                 &kubermaticv1.DatacenterSpecFake{},
+						RequiredEmailDomains: []string{"23f67weuc.com", "example.com", "12noifsdsd.org"},
+					},
+				},
+				"fake-dc": {
+					Location: "Henriks basement",
+					Country:  "Germany",
+					Spec: kubermaticv1.DatacenterSpec{
+						Fake: &kubermaticv1.DatacenterSpecFake{},
+					},
+				},
+				"audited-dc": {
+					Location: "Finanzamt Castle",
+					Country:  "Germany",
+					Spec: kubermaticv1.DatacenterSpec{
+						Fake:                &kubermaticv1.DatacenterSpecFake{},
+						EnforceAuditLogging: true,
+					},
+				},
 			},
-		}, nil
+		}}
+}
+
+func buildSeeds() provider.SeedsGetter {
+	return func() (map[string]*kubermaticv1.Seed, error) {
+		seeds := make(map[string]*kubermaticv1.Seed)
+		seeds["us-central1"] = GenTestSeed()
+		return seeds, nil
 	}
 }
 

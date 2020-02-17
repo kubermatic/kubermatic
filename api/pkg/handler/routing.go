@@ -24,6 +24,7 @@ type Routing struct {
 	log                         *zap.SugaredLogger
 	presetsProvider             provider.PresetProvider
 	seedsGetter                 provider.SeedsGetter
+	seedsClientGetter           provider.SeedClientGetter
 	sshKeyProvider              provider.SSHKeyProvider
 	userProvider                provider.UserProvider
 	serviceAccountProvider      provider.ServiceAccountProvider
@@ -58,6 +59,7 @@ func NewRouting(
 	logger *zap.SugaredLogger,
 	presetsProvider provider.PresetProvider,
 	seedsGetter provider.SeedsGetter,
+	seedsClientGetter provider.SeedClientGetter,
 	clusterProviderGetter provider.ClusterProviderGetter,
 	addonProviderGetter provider.AddonProviderGetter,
 	addonConfigProvider provider.AddonConfigProvider,
@@ -89,6 +91,7 @@ func NewRouting(
 		log:                         logger,
 		presetsProvider:             presetsProvider,
 		seedsGetter:                 seedsGetter,
+		seedsClientGetter:           seedsClientGetter,
 		clusterProviderGetter:       clusterProviderGetter,
 		addonProviderGetter:         addonProviderGetter,
 		addonConfigProvider:         addonConfigProvider,

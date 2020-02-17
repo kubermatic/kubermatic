@@ -44,7 +44,7 @@ type Event struct {
 	Type string `json:"type,omitempty"`
 
 	// involved object
-	InvolvedObject *ObjectReference `json:"involvedObject,omitempty"`
+	InvolvedObject *ObjectReferenceResource `json:"involvedObject,omitempty"`
 }
 
 // Validate validates this event
