@@ -33,13 +33,19 @@ type ClientService interface {
 
 	GetKubermaticSettings(params *GetKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetKubermaticSettingsOK, error)
 
+	GetSeed(params *GetSeedParams, authInfo runtime.ClientAuthInfoWriter) (*GetSeedOK, error)
+
 	ListAdmissionPlugins(params *ListAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAdmissionPluginsOK, error)
+
+	ListSeeds(params *ListSeedsParams, authInfo runtime.ClientAuthInfoWriter) (*ListSeedsOK, error)
 
 	PatchKubermaticSettings(params *PatchKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*PatchKubermaticSettingsOK, error)
 
 	SetAdmin(params *SetAdminParams, authInfo runtime.ClientAuthInfoWriter) (*SetAdminOK, error)
 
 	UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAdmissionPluginOK, error)
+
+	UpdateSeed(params *UpdateSeedParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateSeedOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -181,6 +187,40 @@ func (a *Client) GetKubermaticSettings(params *GetKubermaticSettingsParams, auth
 }
 
 /*
+  GetSeed returns the seed object
+*/
+func (a *Client) GetSeed(params *GetSeedParams, authInfo runtime.ClientAuthInfoWriter) (*GetSeedOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetSeedParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getSeed",
+		Method:             "GET",
+		PathPattern:        "/api/v1/admin/seeds/{seed_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetSeedReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetSeedOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetSeedDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListAdmissionPlugins returns all admission plugins from the c r ds
 */
 func (a *Client) ListAdmissionPlugins(params *ListAdmissionPluginsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAdmissionPluginsOK, error) {
@@ -211,6 +251,40 @@ func (a *Client) ListAdmissionPlugins(params *ListAdmissionPluginsParams, authIn
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListAdmissionPluginsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListSeeds returns all seeds from the c r ds
+*/
+func (a *Client) ListSeeds(params *ListSeedsParams, authInfo runtime.ClientAuthInfoWriter) (*ListSeedsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListSeedsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listSeeds",
+		Method:             "GET",
+		PathPattern:        "/api/v1/admin/seeds",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListSeedsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListSeedsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListSeedsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -313,6 +387,40 @@ func (a *Client) UpdateAdmissionPlugin(params *UpdateAdmissionPluginParams, auth
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*UpdateAdmissionPluginDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  UpdateSeed updates the seed
+*/
+func (a *Client) UpdateSeed(params *UpdateSeedParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateSeedOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdateSeedParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "updateSeed",
+		Method:             "PATCH",
+		PathPattern:        "/api/v1/admin/seeds/{seed_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateSeedReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*UpdateSeedOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpdateSeedDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
