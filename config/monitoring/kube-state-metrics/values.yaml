@@ -13,7 +13,7 @@ kubeStateMetrics:
   resizer:
     image:
       repository: gcr.io/google_containers/addon-resizer
-      tag: '1.8.4' # is still the recommended version
+      tag: '1.8.8' # needed for K8s >= 1.16 because of https://github.com/kubernetes/autoscaler/issues/2803
     resources:
       requests:
         cpu: 50m
