@@ -426,7 +426,7 @@ func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *opensh
 		openshiftresources.OpenshiftAPIServerConfigMapCreator(osData),
 		openshiftresources.OpenshiftKubeAPIServerConfigMapCreator(osData),
 		openshiftresources.KubeControllerManagerConfigMapCreatorFactory(osData),
-		openshiftresources.OpenshiftControllerManagerConfigMapCreator(osData.Cluster().Spec.Version.String()),
+		openshiftresources.OpenshiftControllerManagerConfigMapCreator(osData),
 		openvpn.ServerClientConfigsConfigMapCreator(osData),
 		openshiftresources.KubeSchedulerConfigMapCreator,
 		dns.ConfigMapCreator(osData),
