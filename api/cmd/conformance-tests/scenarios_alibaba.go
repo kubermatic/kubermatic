@@ -70,7 +70,7 @@ func (s *alibabaScenario) NodeDeployments(num int, secrets secrets) ([]apimodels
 							DiskType:                 "cloud_efficiency",
 							VSwitchID:                "",
 							InternaalMaxBandwidthOut: 10,
-							ZoneID: alibabaDC,
+							ZoneID:                   alibabaDC,
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
