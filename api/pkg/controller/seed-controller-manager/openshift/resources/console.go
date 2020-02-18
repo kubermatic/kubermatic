@@ -65,7 +65,7 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabel(consoleDeploymentName, nil),
 			}
-			image, err := consoleImage(data.Cluster().Spec.Version.String())
+			image, err := consoleImage(data.Cluster().Spec.Version.String(), data.ImageRegistry(""))
 			if err != nil {
 				return nil, err
 			}

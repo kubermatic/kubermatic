@@ -310,7 +310,7 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 				{Name: openshiftImagePullSecretName},
 			}
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = utilpointer.BoolPtr(false)
-			image, err := hypershiftImage(data.Cluster().Spec.Version.String())
+			image, err := hypershiftImage(data.Cluster().Spec.Version.String(), data.ImageRegistry(""))
 			if err != nil {
 				return nil, err
 			}

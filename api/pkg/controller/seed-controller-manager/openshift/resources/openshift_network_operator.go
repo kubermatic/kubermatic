@@ -36,11 +36,11 @@ const openshiftNetworkOperatorDeploymentName = "openshift-network-operator"
 func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return openshiftNetworkOperatorDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			image, err := clusterNetworkOperatorImage(data.Cluster().Spec.Version.String())
+			image, err := clusterNetworkOperatorImage(data.Cluster().Spec.Version.String(), data.ImageRegistry(""))
 			if err != nil {
 				return nil, err
 			}
-			env, err := openshiftNetworkOperatorEnv(data.Cluster().Spec.Version.String())
+			env, err := openshiftNetworkOperatorEnv(data)
 			if err != nil {
 				return nil, err
 			}
@@ -115,36 +115,37 @@ func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.Name
 	}
 }
 
-func openshiftNetworkOperatorEnv(openshiftVersion string) ([]corev1.EnvVar, error) {
-	nodeImageValue, err := nodeImage(openshiftVersion)
+func openshiftNetworkOperatorEnv(data openshiftData) ([]corev1.EnvVar, error) {
+	openshiftVersion := data.Cluster().Spec.Version.String()
+	nodeImageValue, err := nodeImage(openshiftVersion, data.ImageRegistry(""))
 	if err != nil {
 		return nil, err
 	}
-	hypershiftImageValue, err := hypershiftImage(openshiftVersion)
+	hypershiftImageValue, err := hypershiftImage(openshiftVersion, data.ImageRegistry(""))
 	if err != nil {
 		return nil, err
 	}
-	multusCniImageValue, err := multusCniImage(openshiftVersion)
+	multusCniImageValue, err := multusCniImage(openshiftVersion, data.ImageRegistry(""))
 	if err != nil {
 		return nil, err
 	}
-	containerNetworkingPluginsSupportedImageValue, err := containerNetworkingPluginsSupportedImage(openshiftVersion)
+	containerNetworkingPluginsSupportedImageValue, err := containerNetworkingPluginsSupportedImage(openshiftVersion, data.ImageRegistry(""))
 	if err != nil {
 		return nil, err
 	}
-	containerNetworkingPluginsUnsupportedImageValue, err := containerNetworkingPluginsUnsupportedImage(openshiftVersion)
+	containerNetworkingPluginsUnsupportedImageValue, err := containerNetworkingPluginsUnsupportedImage(openshiftVersion, data.ImageRegistry(""))
 	if err != nil {
 		return nil, err
 	}
-	sriovCniImageValue, err := sriovCniImage(openshiftVersion)
+	sriovCniImageValue, err := sriovCniImage(openshiftVersion, data.ImageRegistry(""))
 	if err != nil {
 		return nil, err
 	}
-	sriovNetworkDevicePluginImageValue, err := sriovNetworkDevicePluginImage(openshiftVersion)
+	sriovNetworkDevicePluginImageValue, err := sriovNetworkDevicePluginImage(openshiftVersion, data.ImageRegistry(""))
 	if err != nil {
 		return nil, err
 	}
-	ovnKubernetesImageValue, err := ovnKubernetesImage(openshiftVersion)
+	ovnKubernetesImageValue, err := ovnKubernetesImage(openshiftVersion, data.ImageRegistry(""))
 	if err != nil {
 		return nil, err
 	}

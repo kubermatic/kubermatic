@@ -47,11 +47,11 @@ import (
 
 {{- range $componentName, $componentTagMapping := .Components }}
 
-func {{ $componentName }}Image(openshiftVersion string)(string, error){
+func {{ $componentName }}Image(openshiftVersion, registry string)(string, error){
 	switch openshiftVersion {
 {{- range $openshiftVersion, $componentTag := $componentTagMapping }}
 		case openshiftVersion{{ $openshiftVersion }}:
-			return openshiftImage + "@{{ $componentTag }}", nil
+			return OpenshiftImageWithRegistry(openshiftImage + "@{{ $componentTag }}", openshiftVersion, "{{index $.ImageNames $componentName }}", registry)
 {{- end }}
 		default:
 			return "", fmt.Errorf("no tag for openshiftVersion %q available", openshiftVersion)
@@ -94,6 +94,7 @@ func osDockerResolver(version string) (string, error) {
 func generateImageTagGetters(openshiftVersions []string, resolver func(string) (string, error)) ([]byte, error) {
 	// All tags contains a map of: componentName -> openshiftVerion -> DockerTag
 	allTags := map[string]map[string]string{}
+	imageNames := map[string]string{}
 	for _, openshiftVersion := range openshiftVersions {
 		rawOut, err := resolver(openshiftVersion)
 		if err != nil {
@@ -109,6 +110,7 @@ func generateImageTagGetters(openshiftVersions []string, resolver func(string) (
 			camelCasedComponentName := strcase.ToLowerCamel(component)
 			if _, ok := allTags[camelCasedComponentName]; !ok {
 				allTags[camelCasedComponentName] = map[string]string{}
+				imageNames[camelCasedComponentName] = component
 			}
 			allTags[camelCasedComponentName][sanitizeOpenshiftVersion(openshiftVersion)] = tag
 		}
@@ -116,8 +118,10 @@ func generateImageTagGetters(openshiftVersions []string, resolver func(string) (
 
 	data := struct {
 		Components map[string]map[string]string
+		ImageNames map[string]string
 	}{
 		Components: allTags,
+		ImageNames: imageNames,
 	}
 
 	buffer := bytes.NewBuffer([]byte{})

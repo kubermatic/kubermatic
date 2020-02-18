@@ -112,7 +112,7 @@ func KubeSchedulerDeploymentCreator(data openshiftData) reconciling.NamedDeploym
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			image, err := hyperkubeImage(data.Cluster().Spec.Version.String())
+			image, err := hyperkubeImage(data.Cluster().Spec.Version.String(), data.ImageRegistry(""))
 			if err != nil {
 				return nil, err
 			}

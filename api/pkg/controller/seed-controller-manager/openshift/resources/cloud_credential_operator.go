@@ -22,7 +22,7 @@ func CloudCredentialOperator(data openshiftData) reconciling.NamedDeploymentCrea
 	return func() (string, reconciling.DeploymentCreator) {
 		return cloudCredentialOperatorDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 
-			image, err := cloudCredentialOperatorImage(data.Cluster().Spec.Version.String())
+			image, err := cloudCredentialOperatorImage(data.Cluster().Spec.Version.String(), data.ImageRegistry(""))
 			if err != nil {
 				return nil, err
 			}

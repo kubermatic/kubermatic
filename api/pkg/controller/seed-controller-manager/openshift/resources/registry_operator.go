@@ -23,11 +23,11 @@ const (
 func RegistryOperatorFactory(data openshiftData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return openshiftRegistryOperatorName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			image, err := clusterImageRegistryOperatorImage(data.Cluster().Spec.Version.String())
+			image, err := clusterImageRegistryOperatorImage(data.Cluster().Spec.Version.String(), data.ImageRegistry(""))
 			if err != nil {
 				return nil, err
 			}
-			env, err := registryOperatorEnv(data.Cluster().Spec.Version.String())
+			env, err := registryOperatorEnv(data)
 			if err != nil {
 				return nil, err
 			}
@@ -83,8 +83,9 @@ func RegistryOperatorFactory(data openshiftData) reconciling.NamedDeploymentCrea
 	}
 }
 
-func registryOperatorEnv(openshiftVersion string) ([]corev1.EnvVar, error) {
-	image, err := dockerRegistryImage(openshiftVersion)
+func registryOperatorEnv(data openshiftData) ([]corev1.EnvVar, error) {
+	openshiftVersion := data.Cluster().Spec.Version.String()
+	image, err := dockerRegistryImage(openshiftVersion, data.ImageRegistry(""))
 	if err != nil {
 		return nil, err
 	}
