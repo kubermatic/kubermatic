@@ -1,6 +1,8 @@
 package v1alpha1
 
 import (
+	"github.com/Masterminds/semver"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -53,6 +55,8 @@ type KubermaticConfigurationSpec struct {
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
 	// Ingress contains settings for making the API and UI accessible remotely.
 	Ingress KubermaticIngressConfiguration `json:"ingress,omitempty"`
+	// Versions configures the available and default Kubernetes/Openshift versions and updates.
+	Versions KubermaticVersionsConfiguration `json:"versions,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
@@ -224,6 +228,47 @@ type KubermaticMasterControllerConfiguration struct {
 type KubermaticProjectsMigratorConfiguration struct {
 	// DryRun makes the migrator only log the actions it would take.
 	DryRun bool `json:"dryRun,omitempty"`
+}
+
+// KubermaticVersionsConfiguration configures the available and default Kubernetes/Openshift versions.
+type KubermaticVersionsConfiguration struct {
+	// Kubernetes configures the Kubernetes versions and updates.
+	Kubernetes KubermaticVersioningConfiguration `json:"kubernetes,omitempty"`
+	// Openshift configures the Openshift versions and updates.
+	Openshift KubermaticVersioningConfiguration `json:"openshift,omitempty"`
+}
+
+// KubermaticVersioningConfiguration configures the available and default Kubernetes/Openshift versions.
+type KubermaticVersioningConfiguration struct {
+	// Versions lists the available versions.
+	Versions []*semver.Version `json:"versions,omitempty"`
+	// Default is the default version to offer users.
+	Default *semver.Version `json:"default,omitempty"`
+
+	// Updates is a list of available and automatic upgrades.
+	// All 'to' versions must be configured in the version list for this orchestrator.
+	// Each update may optionally be configured to be 'automatic: true', in which case the
+	// controlplane of all clusters whose version matches the 'from' directive will get
+	// updated to the 'to' version. If automatic is enabled, the 'to' version must be a
+	// version and not a version range.
+	// Also, updates may set 'automaticNodeUpdate: true', in which case Nodes will get
+	// updates as well. 'automaticNodeUpdate: true' implies 'automatic: true' as well,
+	// because Nodes may not have a newer version than the controlplane.
+	Updates []Update `json:"updates,omitempty"`
+}
+
+// Update represents an update option for a user cluster.
+type Update struct {
+	// From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.12.*".
+	From string `json:"from,omitempty"`
+	// From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.13.*".
+	To string `json:"to,omitempty"`
+	// Automatic controls whether this update is executed automatically
+	// for the control plane of all matching user clusters.
+	Automatic *bool `json:"automatic,omitempty,omitgenyaml"`
+	// Automatic controls whether this update is executed automatically
+	// for the worker nodes of all matching user clusters.
+	AutomaticNodeUpdate *bool `json:"automaticNodeUpdate,omitempty,omitgenyaml"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

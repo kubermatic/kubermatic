@@ -1,14 +1,19 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/docker/distribution/reference"
+	"github.com/ghodss/yaml"
 	"go.uber.org/zap"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/version"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
@@ -76,6 +81,156 @@ var (
 		Limits: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("500m"),
 			corev1.ResourceMemory: resource.MustParse("1Gi"),
+		},
+	}
+
+	DefaultKubernetesVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
+		Default: semver.MustParse("v1.15.10"),
+		Versions: []*semver.Version{
+			// Kubernetes 1.15
+			semver.MustParse("v1.15.5"),
+			semver.MustParse("v1.15.6"),
+			semver.MustParse("v1.15.7"),
+			semver.MustParse("v1.15.9"),
+			semver.MustParse("v1.15.10"),
+			// Kubernetes 1.16
+			semver.MustParse("v1.16.2"),
+			semver.MustParse("v1.16.3"),
+			semver.MustParse("v1.16.4"),
+			semver.MustParse("v1.16.6"),
+			semver.MustParse("v1.16.7"),
+			// Kubernetes 1.17
+			semver.MustParse("v1.17.0"),
+			semver.MustParse("v1.17.2"),
+			semver.MustParse("v1.17.3"),
+		},
+		Updates: []operatorv1alpha1.Update{
+			// ======= 1.12 =======
+			{
+				// Allow to next minor release
+				From: "1.12.*",
+				To:   "1.13.*",
+			},
+
+			// ======= 1.13 =======
+			{
+				// CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514
+				From:      "<= 1.13.9, >= 1.13.0",
+				To:        "1.13.10",
+				Automatic: pointer.BoolPtr(true),
+			},
+			{
+				// Allow to next minor release
+				From: "1.13.*",
+				To:   "1.14.*",
+			},
+
+			// ======= 1.14 =======
+			{
+				// Allow to change to any patch version
+				From: "1.14.*",
+				To:   "1.14.*",
+			},
+			{
+				// CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
+				From:      "<= 1.14.7, >= 1.14.0",
+				To:        "1.14.8",
+				Automatic: pointer.BoolPtr(true),
+			},
+			{
+				// Allow to next minor release
+				From: "1.14.*",
+				To:   "1.15.*",
+			},
+
+			// ======= 1.15 =======
+			{
+				// Allow to change to any patch version
+				From: "1.15.*",
+				To:   "1.15.*",
+			},
+			{
+				// CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
+				From:      "<= 1.15.4, >= 1.15.0",
+				To:        "1.15.5",
+				Automatic: pointer.BoolPtr(true),
+			},
+			{
+				// Released with broken Anago
+				From:      "1.15.8",
+				To:        "1.15.9",
+				Automatic: pointer.BoolPtr(true),
+			},
+			{
+				// Allow to next minor release
+				From: "1.15.*",
+				To:   "1.16.*",
+			},
+
+			// ======= 1.16 =======
+			{
+				// Allow to change to any patch version
+				From: "1.16.*",
+				To:   "1.16.*",
+			},
+			{
+				// CVE-2019-11253
+				From:      "<= 1.16.1, >= 1.16.0",
+				To:        "1.16.2",
+				Automatic: pointer.BoolPtr(true),
+			},
+			{
+				// Released with broken Anago
+				From:      "1.16.5",
+				To:        "1.16.6",
+				Automatic: pointer.BoolPtr(true),
+			},
+			{
+				// Allow to next minor release
+				From: "1.16.*",
+				To:   "1.17.*",
+			},
+
+			// ======= 1.17 =======
+			{
+				// Allow to change to any patch version
+				From: "1.17.*",
+				To:   "1.17.*",
+			},
+			{
+				// Released with broken Anago
+				From:      "1.17.1",
+				To:        "1.17.2",
+				Automatic: pointer.BoolPtr(true),
+			},
+			{
+				// Allow to next minor release
+				From: "1.17.*",
+				To:   "1.18.*",
+			},
+		},
+	}
+
+	DefaultOpenshiftVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
+		Default: semver.MustParse("v4.1.18"),
+		Versions: []*semver.Version{
+			// Openshift 4.1.9
+			semver.MustParse("v4.1.9"),
+			// Openshift 4.1.18
+			semver.MustParse("v4.1.18"),
+		},
+		Updates: []operatorv1alpha1.Update{
+			// ======= Openshift 4.1 =======
+			{
+				// Allow to change to any patch version
+				From: "4.1.*",
+				To:   "4.1.*",
+			},
+			{
+				// Allow to next minor release
+				From: "4.1.*",
+				To:   "2.2.*",
+			},
 		},
 	}
 )
@@ -187,14 +342,12 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		copy.Spec.MasterFiles = map[string]string{}
 	}
 
-	if copy.Spec.MasterFiles["versions.yaml"] == "" {
-		copy.Spec.MasterFiles["versions.yaml"] = strings.TrimSpace(DefaultVersionsYAML)
-		logger.Debugw("Defaulting field", "field", "masterFiles.'versions.yaml'")
+	if err := defaultVersioning(&copy.Spec.Versions.Kubernetes, DefaultKubernetesVersioning, "versions.kubernetes", logger); err != nil {
+		return copy, err
 	}
 
-	if copy.Spec.MasterFiles["updates.yaml"] == "" {
-		copy.Spec.MasterFiles["updates.yaml"] = strings.TrimSpace(DefaultUpdatesYAML)
-		logger.Debugw("Defaulting field", "field", "masterFiles.'updates.yaml'")
+	if err := defaultVersioning(&copy.Spec.Versions.Openshift, DefaultOpenshiftVersioning, "versions.openshift", logger); err != nil {
+		return copy, err
 	}
 
 	auth := copy.Spec.Auth
@@ -324,6 +477,27 @@ func defaultResourceList(list *corev1.ResourceList, defaults corev1.ResourceList
 	return nil
 }
 
+func defaultVersioning(settings *operatorv1alpha1.KubermaticVersioningConfiguration, defaults operatorv1alpha1.KubermaticVersioningConfiguration, key string, logger *zap.SugaredLogger) error {
+	// this should never happen as the resources are not pointers in a KubermaticConfiguration
+	if settings == nil {
+		return nil
+	}
+
+	if len(settings.Versions) == 0 {
+		settings.Versions = defaults.Versions
+	}
+
+	if settings.Default == nil {
+		settings.Default = defaults.Default
+	}
+
+	if len(settings.Updates) == 0 {
+		settings.Updates = defaults.Updates
+	}
+
+	return nil
+}
+
 const DefaultBackupStoreContainer = `
 name: store-container
 image: quay.io/kubermatic/s3-storer:v0.1.4
@@ -376,160 +550,6 @@ const DefaultUIConfig = `
 {
   "share_kubeconfig": false
 }`
-
-const DefaultVersionsYAML = `
-versions:
-# Kubernetes 1.15
-- version: "v1.15.5"
-  default: false
-- version: "v1.15.6"
-  default: false
-- version: "v1.15.7"
-  default: false
-- version: "v1.15.9"
-  default: true
-- version: "v1.15.10"
-  default: true
-# Kubernetes 1.16
-- version: "v1.16.2"
-  default: false
-- version: "v1.16.3"
-  default: false
-- version: "v1.16.4"
-  default: false
-- version: "v1.16.6"
-  default: false
-- version: "v1.16.7"
-  default: false
-# Kubernetes 1.17
-- version: "v1.17.0"
-  default: false
-- version: "v1.17.2"
-  default: false
-- version: "v1.17.3"
-  default: false
-# OpenShift 4.1.9
-- version: "v4.1.9"
-  default: false
-  type: "openshift"
-# OpenShift 4.1.18
-- version: "v4.1.18"
-  default: true
-  type: "openshift"
-`
-
-const DefaultUpdatesYAML = `
-### Updates file
-#
-# Contains a list of allowed updated
-#
-# Each update may optionally contain 'automatic: true' in which case the
-# controlplane of all clusters whose version matches the 'from' directive
-# will get updated to the 'to' version. If 'automatic: true' is set, the
-# 'to' version must be a version and not a version range.
-#
-# All 'to' versions must be configured in the 'versions.yaml'.
-#
-# Also, updates may contan 'automaticNodeUpdate: true', in which case
-# Nodes will get updates as well. 'automaticNodeUpdate: true' sets
-# 'automatic: true' as well if not yet the case, because Nodes may not have
-# a newer version than the controlplane.
-#
-####
-
-updates:
-# ======= 1.12 =======
-# Allow to next minor release
-- from: 1.12.*
-  to: 1.13.*
-  automatic: false
-
-# ======= 1.13 =======
-# CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514
-- from: <= 1.13.9, >= 1.13.0
-  to: 1.13.10
-  automatic: true
-# Allow to next minor release
-- from: 1.13.*
-  to: 1.14.*
-  automatic: false
-
-# ======= 1.14 =======
-# Allow to change to any patch version
-- from: 1.14.*
-  to: 1.14.*
-  automatic: false
-# CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
-- from: <= 1.14.7, >= 1.14.0
-  to: 1.14.8
-  automatic: true
-# Allow to next minor release
-- from: 1.14.*
-  to: 1.15.*
-  automatic: false
-
-# ======= 1.15 =======
-# Allow to change to any patch version
-- from: 1.15.*
-  to: 1.15.*
-  automatic: false
-# CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
-- from: <= 1.15.4, >= 1.15.0
-  to: 1.15.5
-  automatic: true
-# Released with broken Anago
-- from: 1.15.8
-  to: 1.15.9
-  automatic: true
-# Allow to next minor release
-- from: 1.15.*
-  to: 1.16.*
-  automatic: false
-
-# ======= 1.16 =======
-# Allow to change to any patch version
-- from: 1.16.*
-  to: 1.16.*
-  automatic: false
-# CVE-2019-11253
-- from: <= 1.16.1, >= 1.16.0
-  to: 1.16.2
-  automatic: true
-# Released with broken Anago
-- from: 1.16.5
-  to: 1.16.6
-  automatic: true
-# Allow to next minor release
-- from: 1.16.*
-  to: 1.17.*
-  automatic: false
-
-# ======= 1.17 =======
-# Allow to change to any patch version
-- from: 1.17.*
-  to: 1.17.*
-  automatic: false
-# Released with broken Anago
-- from: 1.17.1
-  to: 1.17.2
-  automatic: true
-# Allow to next minor release
-- from: 1.17.*
-  to: 1.18.*
-  automatic: false
-
-# ======= Openshift 4.1 =======
-# Allow to change to any patch version
-- from: 4.1.*
-  to: 4.1.*
-  automatic: false
-  type: openshift
-# Allow to next minor release
-- from: 4.1.*
-  to: 2.2.*
-  automatic: false
-  type: openshift
-`
 
 const DefaultKubernetesAddons = `
 apiVersion: v1
@@ -624,3 +644,74 @@ items:
       Kind: CredentialsRequest
       Version: v1
 `
+
+type versionsYAML struct {
+	Versions []*version.Version `json:"versions"`
+}
+
+func CreateVersionsYAML(config *operatorv1alpha1.KubermaticVersionsConfiguration) (string, error) {
+	output := versionsYAML{
+		Versions: make([]*version.Version, 0),
+	}
+
+	appendOrchestrator := func(cfg *operatorv1alpha1.KubermaticVersioningConfiguration, kind string) {
+		for _, v := range cfg.Versions {
+			output.Versions = append(output.Versions, &version.Version{
+				Version: v,
+				Default: v.Equal(cfg.Default),
+				Type:    kind,
+			})
+		}
+	}
+
+	appendOrchestrator(&config.Kubernetes, kubermaticv1.KubernetesClusterType)
+	appendOrchestrator(&config.Openshift, kubermaticv1.OpenShiftClusterType)
+
+	return toYAML(output)
+}
+
+type updatesYAML struct {
+	Updates []*version.Update `json:"updates"`
+}
+
+func CreateUpdatesYAML(config *operatorv1alpha1.KubermaticVersionsConfiguration) (string, error) {
+	output := updatesYAML{
+		Updates: make([]*version.Update, 0),
+	}
+
+	appendOrchestrator := func(cfg *operatorv1alpha1.KubermaticVersioningConfiguration, kind string) {
+		for _, u := range cfg.Updates {
+			// AutomaticNodeUpdate implies automatic update, because nodes
+			// must not have a newer version than the control plane
+			automaticNodeUpdate := (u.AutomaticNodeUpdate != nil && *u.AutomaticNodeUpdate)
+			automatic := (u.Automatic != nil && *u.Automatic) || automaticNodeUpdate
+
+			output.Updates = append(output.Updates, &version.Update{
+				From:                u.From,
+				To:                  u.To,
+				Automatic:           automatic,
+				AutomaticNodeUpdate: automaticNodeUpdate,
+				Type:                kind,
+			})
+		}
+	}
+
+	appendOrchestrator(&config.Kubernetes, kubermaticv1.KubernetesClusterType)
+	appendOrchestrator(&config.Openshift, kubermaticv1.OpenShiftClusterType)
+
+	return toYAML(output)
+}
+
+func toYAML(data interface{}) (string, error) {
+	tmp, err := json.Marshal(data)
+	if err != nil {
+		return "", fmt.Errorf("failed to encode as JSON: %v", err)
+	}
+
+	res, err := yaml.JSONToYAML(tmp)
+	if err != nil {
+		return "", fmt.Errorf("failed to encode as YAML: %v", err)
+	}
+
+	return string(res), nil
+}

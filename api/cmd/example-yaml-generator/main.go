@@ -175,6 +175,23 @@ func createExampleKubermaticConfiguration() *operatorv1alpha1.KubermaticConfigur
 		log.Fatalf("Failed to default KubermaticConfiguration: %v", err)
 	}
 
+	// ensure that all fields for updates are documented, even though we explicitly
+	// omit them in all but the first array item
+	setUpdateDefaults := func(cfg *operatorv1alpha1.KubermaticVersioningConfiguration) {
+		if len(cfg.Updates) > 0 {
+			if cfg.Updates[0].Automatic == nil {
+				cfg.Updates[0].Automatic = pointer.BoolPtr(false)
+			}
+
+			if cfg.Updates[0].AutomaticNodeUpdate == nil {
+				cfg.Updates[0].AutomaticNodeUpdate = pointer.BoolPtr(false)
+			}
+		}
+	}
+
+	setUpdateDefaults(&defaulted.Spec.Versions.Kubernetes)
+	setUpdateDefaults(&defaulted.Spec.Versions.Openshift)
+
 	return defaulted
 }
 
