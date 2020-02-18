@@ -465,7 +465,7 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 	}
 	if opts.providers.Has("alibaba") {
 		log.Info("Adding Alibaba scenarios")
-		scenarios = append(scenarios, getAlibabaScenarios(opts.versions, log)...)
+		scenarios = append(scenarios, getAlibabaScenarios(opts.versions)...)
 	}
 
 	var filteredScenarios []testScenario

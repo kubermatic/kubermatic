@@ -66,10 +66,10 @@ func (s *alibabaScenario) NodeDeployments(num int, secrets secrets) ([]apimodels
 					Cloud: &apimodels.NodeCloudSpec{
 						Alibaba: &apimodels.AlibabaNodeSpec{
 							InstanceType:            "ecs.c6.xsmall",
-							DiskSize:                40,
+							DiskSize:                "40",
 							DiskType:                "cloud_efficiency",
 							VSwitchID:               "",
-							InternalMaxBandwidthOut: 10,
+							InternetMaxBandwidthOut: "10",
 							ZoneID:                  alibabaDC,
 						},
 					},

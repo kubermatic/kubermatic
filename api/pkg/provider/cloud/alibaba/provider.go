@@ -9,26 +9,26 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 )
 
-type alibaba struct {
+type Alibaba struct {
 	dc                *kubermaticv1.DatacenterSpecAlibaba
 	secretKeySelector provider.SecretKeySelectorValueFunc
 }
 
-func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*alibaba, error) {
+func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*Alibaba, error) {
 	if dc.Spec.Alibaba == nil {
 		return nil, errors.New("datacenter is not an Alibaba datacenter")
 	}
-	return &alibaba{
+	return &Alibaba{
 		dc:                dc.Spec.Alibaba,
 		secretKeySelector: secretKeyGetter,
 	}, nil
 }
 
-func (k *alibaba) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (a *Alibaba) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (g *alibaba) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+func (a *Alibaba) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	if spec.Alibaba.AccessKeyID == "" {
 		return fmt.Errorf("accessKeyID cannot be empty")
 	}
@@ -38,15 +38,15 @@ func (g *alibaba) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-func (k *alibaba) InitializeCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (a *Alibaba) InitializeCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return c, nil
 }
 
-func (k *alibaba) CleanUpCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (a *Alibaba) CleanUpCloudProvider(c *kubermaticv1.Cluster, p provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return c, nil
 }
 
-func (k *alibaba) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (a *Alibaba) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
