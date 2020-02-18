@@ -42,6 +42,10 @@ spec:
       # Spec describes the cloud provider settings used to manage resources
       # in this datacenter. Exactly one cloud provider must be defined.
       spec:
+        alibaba:
+          # Region to use, for a full list of regions see
+          # https://www.alibabacloud.com/help/doc-detail/40654.htm
+          region: ""
         aws:
           # List of AMIs to use for a given operating system.
           # This gets defaulted by querying for the latest AMI for the given distribution
