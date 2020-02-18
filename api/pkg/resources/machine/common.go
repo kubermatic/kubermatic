@@ -8,6 +8,7 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	alibaba "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	digitalocean "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
@@ -331,6 +332,36 @@ func getKubevirtProviderSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, er
 		SourceURL:        providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.SourceURL},
 		Namespace:        providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.Namespace},
 		Memory:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.Memory},
+	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getAlibabaProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	osName, err := getOsName(nodeSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	config := alibaba.RawConfig{
+		InstanceType:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.InstanceType},
+		DiskSize:               providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.DiskSize},
+		VSwitchID:              []providerconfig.ConfigVarString{{Value: nodeSpec.Cloud.Alibaba.VSwitchID}},
+		Region:                 providerconfig.ConfigVarString{Value: dc.Spec.Alibaba.Region},
+		InternetMaxBandwithOut: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.InternetMaxBandwithOut},
+		ZoneID:                 providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.ZoneID},
+	}
+
+	config.Labels = map[string]string{}
+	for key, value := range nodeSpec.Cloud.Alibaba.Labels {
+		config.Labels[key] = value
 	}
 
 	ext := &runtime.RawExtension{}

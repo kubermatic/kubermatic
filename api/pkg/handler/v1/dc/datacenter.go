@@ -227,6 +227,10 @@ func apiSpec(dc *kubermaticv1.Datacenter) (*apiv1.DatacenterSpec, error) {
 		}
 	case dc.Spec.Kubevirt != nil:
 		spec.Kubevirt = &apiv1.KubevirtDatacenterSpec{}
+	case dc.Spec.Alibaba != nil:
+		spec.Alibaba = &apiv1.AlibabaDatacenterSpec{
+			Region: dc.Spec.Alibaba.Region,
+		}
 	}
 
 	spec.RequiredEmailDomain = dc.Spec.RequiredEmailDomain

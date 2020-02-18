@@ -54,6 +54,9 @@ elif [[ $provider == "vsphere" ]]; then
     -vsphere-password=${VSPHERE_E2E_PASSWORD}"
 elif [[ $provider == "kubevirt" ]]; then
   EXTRA_ARGS="-kubevirt-kubeconfig=${KUBEVIRT_E2E_TESTS_KUBECONFIG}"
+elif [[ $provider == "alibaba" ]]; then
+  EXTRA_ARGS="-alibaba-access-key-id=${ALIBABA_E2E_TESTS_KEY_ID}
+     -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}"
 fi
 
 # TODO(2.13): Remove after 2.13 release, only needed for upgrade tests

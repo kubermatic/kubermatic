@@ -124,6 +124,10 @@ type secrets struct {
 	Kubevirt struct {
 		Kubeconfig string
 	}
+	Alibaba struct {
+		AccessKeyID     string
+		AccessKeySecret string
+	}
 	kubermaticClient        *apiclient.Kubermatic
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
@@ -212,6 +216,8 @@ func main() {
 	flag.StringVar(&opts.secrets.GCP.Network, "gcp-network", "", "GCP: Network")
 	flag.StringVar(&opts.secrets.GCP.Subnetwork, "gcp-subnetwork", "", "GCP: Subnetwork")
 	flag.StringVar(&opts.secrets.Kubevirt.Kubeconfig, "kubevirt-kubeconfig", "", "Kubevirt: Cluster Kubeconfig")
+	flag.StringVar(&opts.secrets.Alibaba.AccessKeyID, "alibaba-access-key-id", "", "Alibaba: AccessKeyID")
+	flag.StringVar(&opts.secrets.Alibaba.SecretAccessKey, "alibaba-access-key-secret", "", "Alibaba: AccessKeySecret")
 	flag.Parse()
 
 	defaultTimeout = time.Duration(defaultTimeoutMinutes) * time.Minute
@@ -456,6 +462,10 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 	if opts.providers.Has("kubevirt") {
 		log.Info("Adding Kubevirt scenarios")
 		scenarios = append(scenarios, getKubevirtScenarios(opts.versions, log)...)
+	}
+	if opts.providers.Has("alibaba") {
+		log.Info("Adding Alibaba scenarios")
+		scenarios = append(scenarios, getAlibabaScenarios(opts.versions, log)...)
 	}
 
 	var filteredScenarios []testScenario

@@ -70,6 +70,11 @@ type VSphereDatacenterSpec struct {
 type KubevirtDatacenterSpec struct {
 }
 
+// AlibabaDatacenterSpec specifies a datacenter of Alibaba.
+type AlibabaDatacenterSpec struct {
+	Region string `json:"region"`
+}
+
 // BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
 type BringYourOwnDatacenterSpec struct{}
 
@@ -120,6 +125,7 @@ type DatacenterSpec struct {
 	Hetzner      *HetznerDatacenterSpec       `json:"hetzner,omitempty"`
 	VSphere      *VSphereDatacenterSpec       `json:"vsphere,omitempty"`
 	Kubevirt     *KubevirtDatacenterSpec      `json:"kubevirt,omitempty"`
+	Alibaba      *AlibabaDatacenterSpec       `json:"alibaba,omitempty"`
 
 	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
 	RequiredEmailDomain  string   `json:"requiredEmailDomain,omitempty"`
@@ -679,6 +685,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			VSphere:        newPublicVSphereCloudSpec(cs.Cloud.VSphere),
 			GCP:            newPublicGCPCloudSpec(cs.Cloud.GCP),
 			Kubevirt:       newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
+			Alibaba:        newPublicAlibabaCloudSpec(cs.Cloud.Alibaba),
 		},
 		Version:                             cs.Version,
 		MachineNetworks:                     cs.MachineNetworks,
@@ -707,6 +714,7 @@ type PublicCloudSpec struct {
 	VSphere        *PublicVSphereCloudSpec      `json:"vsphere,omitempty"`
 	GCP            *PublicGCPCloudSpec          `json:"gcp,omitempty"`
 	Kubevirt       *PublicKubevirtCloudSpec     `json:"kubevirt,omitempty"`
+	Alibaba        *PublicAlibabaCloudSpec      `json:"alibaba,omitempty"`
 }
 
 // PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.
@@ -834,6 +842,17 @@ func newPublicKubevirtCloudSpec(internal *kubermaticv1.KubevirtCloudSpec) (publi
 	return &PublicKubevirtCloudSpec{}
 }
 
+// PublicAlibabaCloudSpec is a public counterpart of apiv1.AlibabaCloudSpec.
+type PublicAlibabaCloudSpec struct{}
+
+func newPublicAlibabaCloudSpec(internal *kubermaticv1.AlibabaCloudSpec) (public *PublicAlibabaCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicAlibabaCloudSpec{}
+}
+
 // ClusterStatus defines the cluster status
 type ClusterStatus struct {
 	// Version actual version of the kubernetes master components
@@ -908,6 +927,7 @@ type NodeCloudSpec struct {
 	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
 	GCP          *GCPNodeSpec          `json:"gcp,omitempty"`
 	Kubevirt     *KubevirtNodeSpec     `json:"kubevirt,omitempty"`
+	Alibaba      *AlibabaNodeSpec      `json:"alibaba,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -1118,6 +1138,17 @@ type KubevirtNodeSpec struct {
 	// PVCSize states the size of the provisioned pvc per node.
 	// required: true
 	PVCSize string `json:"pvcSize"`
+}
+
+// AlibabaNodeSpec alibaba specific node settings
+// swagger:model AlibabaNodeSpec
+type AlibabaNodeSpec struct {
+	InstanceType            string            `json:"instanceType"`
+	DiskSize                string            `json:"diskSize"`
+	VSwitchID               string            `json:"vswitchID"`
+	InternetMaxBandwidthOut string            `json:"internetMaxBandwidthOut"`
+	Labels                  map[string]string `json:"labels"`
+	ZoneID                  string            `json:"zoneID"`
 }
 
 // NodeResources cpu and memory of a node

@@ -41,6 +41,9 @@ func CreateCredentialSecretForCluster(ctx context.Context, seedClient ctrlruntim
 	if cluster.Spec.Cloud.VSphere != nil {
 		return createVSphereSecret(ctx, seedClient, cluster, projectID)
 	}
+	if cluster.Spec.Cloud.Alibaba != nil {
+		return createAlibabaSecret(ctx, seedClient, cluster, projectID)
+	}
 	return nil
 }
 
@@ -383,6 +386,44 @@ func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 	cluster.Spec.Cloud.VSphere.Password = ""
 	cluster.Spec.Cloud.VSphere.InfraManagementUser.Username = ""
 	cluster.Spec.Cloud.VSphere.InfraManagementUser.Password = ""
+
+	return nil
+}
+
+func createAlibabaSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
+	// create secret for storing credentials
+	name := cluster.GetSecretName()
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: resources.KubermaticNamespace,
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: projectID,
+				"name":                         name,
+			},
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			resources.AlibabaAccessKeyID:     []byte(cluster.Spec.Cloud.Alibaba.AccessKeyID),
+			resources.AlibabaAccessKeySecret: []byte(cluster.Spec.Cloud.Alibaba.AccessKeySecret),
+		},
+	}
+
+	if err := seedClient.Create(ctx, secret); err != nil {
+		return err
+	}
+
+	// add secret key selectors to cluster object
+	cluster.Spec.Cloud.Alibaba.CredentialsReference = &providerconfig.GlobalSecretKeySelector{
+		ObjectReference: corev1.ObjectReference{
+			Name:      secret.Name,
+			Namespace: secret.Namespace,
+		},
+	}
+
+	// remove credentials from cluster object
+	cluster.Spec.Cloud.Alibaba.AccessKeyID = ""
+	cluster.Spec.Cloud.Alibaba.AccessKeySecret = ""
 
 	return nil
 }

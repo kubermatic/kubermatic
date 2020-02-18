@@ -99,6 +99,7 @@ type DatacenterSpec struct {
 	VSphere      *DatacenterSpecVSphere      `json:"vsphere,omitempty"`
 	GCP          *DatacenterSpecGCP          `json:"gcp,omitempty"`
 	Kubevirt     *DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
+	Alibaba      *DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
 	Fake         *DatacenterSpecFake         `json:"fake,omitempty,omitgenyaml"` // omitgenyaml is used by the example-yaml-generator
 
 	// Optional: When defined, only users with an e-mail address on the
@@ -245,6 +246,13 @@ type DatacenterSpecFake struct {
 
 // DatacenterSpecKubevirt describes a kubevirt datacenter.
 type DatacenterSpecKubevirt struct {
+}
+
+// DatacenterSpecAlibaba describes a alibaba datacenter.
+type DatacenterSpecAlibaba struct {
+	// Region to use, for example "europe-west3", for a full list of regions see
+	// https://www.alibabacloud.com/help/doc-detail/40654.htm
+	Region string `json:"region"`
 }
 
 type ProxyValue string

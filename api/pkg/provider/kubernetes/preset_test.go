@@ -630,6 +630,27 @@ func TestCredentialEndpoint(t *testing.T) {
 			cloudSpec:     kubermaticv1.CloudSpec{Azure: &kubermaticv1.AzureCloudSpec{}},
 			expectedError: "missing preset 'test' for the user 'test@example.com'",
 		},
+		{
+			name:       "test 14: set credentials for Alibaba provider",
+			presetName: "test",
+			userInfo:   provider.UserInfo{Email: "test@example.com"},
+			presets: []runtime.Object{
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmailDomain: "example.com",
+						Alibaba: &kubermaticv1.Alibaba{
+							AccessKeySecret: "secret", AccessKeyID: "key",
+						},
+					},
+				},
+			},
+
+			cloudSpec:         kubermaticv1.CloudSpec{Alibaba: &kubermaticv1.AlibabaCloudSpec{}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{Alibaba: &kubermaticv1.AlibabaCloudSpec{AccessKeyID: "key", AccessKeySecret: "secret"}},
+		},
 	}
 
 	for _, tc := range testcases {

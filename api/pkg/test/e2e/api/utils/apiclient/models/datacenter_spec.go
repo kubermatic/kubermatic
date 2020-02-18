@@ -37,6 +37,9 @@ type DatacenterSpec struct {
 	// seed
 	Seed string `json:"seed,omitempty"`
 
+	// alibaba
+	Alibaba *AlibabaDatacenterSpec `json:"alibaba,omitempty"`
+
 	// aws
 	Aws *AWSDatacenterSpec `json:"aws,omitempty"`
 
