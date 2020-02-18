@@ -203,6 +203,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 		cloudSpec.Alibaba = &apiv1.AlibabaNodeSpec{
 			InstanceType:            config.InstanceType.Value,
 			DiskSize:                config.DiskSize.Value,
+			DiskType:                config.DiskType.Value,
 			VSwitchID:               config.VSwitchID.Value,
 			InternetMaxBandwidthOut: config.InternetMaxBandwidthOut.Value,
 			Labels:                  config.Labels,

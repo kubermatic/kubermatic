@@ -841,12 +841,13 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:0340a3bd3802e750715519fc9076396c8632a6a1555ea0e1de2e04fb197a858f"
+  digest = "1:bba62c1cab7a8fd6c2afd2c7f8c859a4fc1cbb478597e3e904b203c7ca37c15e"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/cluster/common",
     "pkg/apis/cluster/v1alpha1",
     "pkg/apis/plugin",
+    "pkg/cloudprovider/provider/alibaba/types",
     "pkg/cloudprovider/provider/aws/types",
     "pkg/cloudprovider/provider/azure/types",
     "pkg/cloudprovider/provider/digitalocean/types",
@@ -2182,6 +2183,7 @@
     "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2",
     "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1",
     "github.com/kubermatic/machine-controller/pkg/apis/plugin",
+    "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types",

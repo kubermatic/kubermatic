@@ -687,9 +687,9 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			Kubevirt:       newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
 			Alibaba:        newPublicAlibabaCloudSpec(cs.Cloud.Alibaba),
 		},
-		Version:                             cs.Version,
-		MachineNetworks:                     cs.MachineNetworks,
-		OIDC:                                cs.OIDC,
+		Version:         cs.Version,
+		MachineNetworks: cs.MachineNetworks,
+		OIDC:            cs.OIDC,
 		UsePodSecurityPolicyAdmissionPlugin: cs.UsePodSecurityPolicyAdmissionPlugin,
 		UsePodNodeSelectorAdmissionPlugin:   cs.UsePodNodeSelectorAdmissionPlugin,
 		AuditLogging:                        cs.AuditLogging,
@@ -1145,6 +1145,7 @@ type KubevirtNodeSpec struct {
 type AlibabaNodeSpec struct {
 	InstanceType            string            `json:"instanceType"`
 	DiskSize                string            `json:"diskSize"`
+	DiskType                string            `json:"diskType"`
 	VSwitchID               string            `json:"vswitchID"`
 	InternetMaxBandwidthOut string            `json:"internetMaxBandwidthOut"`
 	Labels                  map[string]string `json:"labels"`

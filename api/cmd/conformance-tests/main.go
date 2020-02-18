@@ -217,7 +217,7 @@ func main() {
 	flag.StringVar(&opts.secrets.GCP.Subnetwork, "gcp-subnetwork", "", "GCP: Subnetwork")
 	flag.StringVar(&opts.secrets.Kubevirt.Kubeconfig, "kubevirt-kubeconfig", "", "Kubevirt: Cluster Kubeconfig")
 	flag.StringVar(&opts.secrets.Alibaba.AccessKeyID, "alibaba-access-key-id", "", "Alibaba: AccessKeyID")
-	flag.StringVar(&opts.secrets.Alibaba.SecretAccessKey, "alibaba-access-key-secret", "", "Alibaba: AccessKeySecret")
+	flag.StringVar(&opts.secrets.Alibaba.AccessKeySecret, "alibaba-access-key-secret", "", "Alibaba: AccessKeySecret")
 	flag.Parse()
 
 	defaultTimeout = time.Duration(defaultTimeoutMinutes) * time.Minute

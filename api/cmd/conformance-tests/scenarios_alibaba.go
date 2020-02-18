@@ -59,16 +59,15 @@ func (s *alibabaScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 }
 
 func (s *alibabaScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
-	instanceType := "ecs.t1.xsmall"
-
 	nds := []apimodels.NodeDeployment{
 		{
 			Spec: &apimodels.NodeDeploymentSpec{
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Alibaba: &apimodels.AlibabaNodeSpec{
-							InstanceType:             &instanceType,
-							DiskSize:                 500,
+							InstanceType:             "ecs.c6.xsmall",
+							DiskSize:                 40,
+							DiskType:                 "cloud_efficiency",
 							VSwitchID:                "",
 							InternaalMaxBandwidthOut: 10,
 							ZoneID: alibabaDC,

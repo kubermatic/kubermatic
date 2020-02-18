@@ -345,18 +345,14 @@ func getKubevirtProviderSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, er
 }
 
 func getAlibabaProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	osName, err := getOsName(nodeSpec)
-	if err != nil {
-		return nil, err
-	}
-
 	config := alibaba.RawConfig{
-		InstanceType:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.InstanceType},
-		DiskSize:               providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.DiskSize},
-		VSwitchID:              []providerconfig.ConfigVarString{{Value: nodeSpec.Cloud.Alibaba.VSwitchID}},
-		Region:                 providerconfig.ConfigVarString{Value: dc.Spec.Alibaba.Region},
-		InternetMaxBandwithOut: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.InternetMaxBandwithOut},
-		ZoneID:                 providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.ZoneID},
+		InstanceType:            providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.InstanceType},
+		DiskSize:                providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.DiskSize},
+		DiskType:                providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.DiskType},
+		VSwitchID:               providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.VSwitchID},
+		RegionID:                providerconfig.ConfigVarString{Value: dc.Spec.Alibaba.Region},
+		InternetMaxBandwidthOut: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.InternetMaxBandwidthOut},
+		ZoneID:                  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.ZoneID},
 	}
 
 	config.Labels = map[string]string{}

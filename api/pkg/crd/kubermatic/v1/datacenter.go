@@ -250,7 +250,7 @@ type DatacenterSpecKubevirt struct {
 
 // DatacenterSpecAlibaba describes a alibaba datacenter.
 type DatacenterSpecAlibaba struct {
-	// Region to use, for example "europe-west3", for a full list of regions see
+	// Region to use, for a full list of regions see
 	// https://www.alibabacloud.com/help/doc-detail/40654.htm
 	Region string `json:"region"`
 }

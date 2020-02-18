@@ -608,7 +608,7 @@ func (cluster *Cluster) GetSecretName() string {
 		return fmt.Sprintf("%s-vsphere-%s", CredentialPrefix, cluster.Name)
 	}
 	if cluster.Spec.Cloud.Alibaba != nil {
-		return fmt.Sprintf("%s-Alibaba-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-alibaba-%s", CredentialPrefix, cluster.Name)
 	}
 	return ""
 }
