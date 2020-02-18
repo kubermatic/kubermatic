@@ -15,6 +15,9 @@ import (
 // swagger:model NodeCloudSpec
 type NodeCloudSpec struct {
 
+	// alibaba
+	Alibaba *AlibabaNodeSpec `json:"alibaba,omitempty"`
+
 	// aws
 	Aws *AWSNodeSpec `json:"aws,omitempty"`
 
@@ -46,6 +49,10 @@ type NodeCloudSpec struct {
 // Validate validates this node cloud spec
 func (m *NodeCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateAlibaba(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateAws(formats); err != nil {
 		res = append(res, err)
@@ -86,6 +93,24 @@ func (m *NodeCloudSpec) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *NodeCloudSpec) validateAlibaba(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Alibaba) { // not required
+		return nil
+	}
+
+	if m.Alibaba != nil {
+		if err := m.Alibaba.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("alibaba")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
