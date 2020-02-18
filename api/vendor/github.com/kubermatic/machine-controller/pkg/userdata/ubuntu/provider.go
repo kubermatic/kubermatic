@@ -273,11 +273,15 @@ write_files:
     {{- end }}
 
     # Update grub to include kernel command options to enable swap accounting.
+    # Exclude alibaba cloud until this is fixed https://github.com/kubermatic/machine-controller/issues/682
+    {{ if eq .CloudProviderName "alibaba" }}
     if grep -v -q swapaccount=1 /proc/cmdline
     then
+      echo "Reboot system if not alibaba cloud"
       update-grub
       touch /var/run/reboot-required
     fi
+    {{ end }}
     if [[ -e /var/run/reboot-required ]]; then
       reboot
     fi
