@@ -87,7 +87,7 @@ func (a *Client) DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, auth
 }
 
 /*
-  DeleteSeed deletes the seed
+  DeleteSeed deletes the seed c r d object from the kubermatic
 */
 func (a *Client) DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteSeedOK, error) {
 	// TODO: Validate the params before sending

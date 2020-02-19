@@ -98,7 +98,7 @@ func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 	}
 }
 
-// DeleteSeedEndpoint deletes seed element
+// DeleteSeedEndpoint deletes seed CRD element with the given name from the Kubermatic
 func DeleteSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(seedReq)
@@ -114,7 +114,7 @@ func DeleteSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if err := seedClient.Delete(ctx, seed); err != nil {
-			return nil, fmt.Errorf("failed to delete Seed: %v", err)
+			return nil, fmt.Errorf("failed to delete seed: %v", err)
 		}
 
 		return nil, nil

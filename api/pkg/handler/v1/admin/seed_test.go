@@ -217,7 +217,7 @@ func TestDeleteSeedEndpoint(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			name:                   "scenario 1: not authorized user delete seed",
+			name:                   "scenario 1: not authorized user tries to delete seed cluster",
 			seedName:               "test",
 			expectedResponse:       `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:             http.StatusForbidden,
@@ -226,7 +226,7 @@ func TestDeleteSeedEndpoint(t *testing.T) {
 		},
 		// scenario 2
 		{
-			name:                   "scenario 2: not found",
+			name:                   "scenario 2: authorized user tries to delete not existing seed cluster",
 			seedName:               "test",
 			expectedResponse:       `{"error":{"code":404,"message":"Seed \"test\" not found"}}`,
 			httpStatus:             http.StatusNotFound,
@@ -235,7 +235,7 @@ func TestDeleteSeedEndpoint(t *testing.T) {
 		},
 		// scenario 3
 		{
-			name:                   "scenario 3: authorized deletes seed",
+			name:                   "scenario 3: authorized user tries to delete seed cluster",
 			seedName:               "us-central1",
 			expectedResponse:       `{}`,
 			httpStatus:             http.StatusOK,

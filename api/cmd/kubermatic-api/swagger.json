@@ -429,7 +429,7 @@
         "tags": [
           "admin"
         ],
-        "summary": "Deletes the seed.",
+        "summary": "Deletes the seed CRD object from the Kubermatic.",
         "operationId": "deleteSeed",
         "parameters": [
           {

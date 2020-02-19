@@ -342,8 +342,7 @@ func (r Routing) updateSeed() http.Handler {
 
 // swagger:route DELETE /api/v1/admin/seeds/{seed_name} admin deleteSeed
 //
-//     Deletes the seed.
-//
+//     Deletes the seed CRD object from the Kubermatic.
 //
 //     Produces:
 //     - application/json
