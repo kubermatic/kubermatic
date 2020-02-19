@@ -27,6 +27,8 @@ type Client struct {
 type ClientService interface {
 	DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteAdmissionPluginOK, error)
 
+	DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteSeedOK, error)
+
 	GetAdmins(params *GetAdminsParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdminsOK, error)
 
 	GetAdmissionPlugin(params *GetAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdmissionPluginOK, error)
@@ -81,6 +83,40 @@ func (a *Client) DeleteAdmissionPlugin(params *DeleteAdmissionPluginParams, auth
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeleteAdmissionPluginDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteSeed deletes the seed c r d object from the kubermatic
+*/
+func (a *Client) DeleteSeed(params *DeleteSeedParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteSeedOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteSeedParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteSeed",
+		Method:             "DELETE",
+		PathPattern:        "/api/v1/admin/seeds/{seed_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteSeedReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteSeedOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteSeedDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

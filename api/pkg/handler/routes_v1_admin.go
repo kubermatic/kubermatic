@@ -60,6 +60,10 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 	mux.Methods(http.MethodPatch).
 		Path("/admin/seeds/{seed_name}").
 		Handler(r.updateSeed())
+
+	mux.Methods(http.MethodDelete).
+		Path("/admin/seeds/{seed_name}").
+		Handler(r.deleteSeed())
 }
 
 // swagger:route GET /api/v1/admin/settings admin getKubermaticSettings
@@ -331,6 +335,30 @@ func (r Routing) updateSeed() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.UpdateSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
 		admin.DecodeUpdateSeedReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/admin/seeds/{seed_name} admin deleteSeed
+//
+//     Deletes the seed CRD object from the Kubermatic.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteSeed() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(admin.DeleteSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
+		admin.DecodeSeedReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
