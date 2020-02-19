@@ -98,6 +98,29 @@ func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 	}
 }
 
+// DeleteSeedEndpoint deletes seed element
+func DeleteSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, seedClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(seedReq)
+		if !ok {
+			return nil, k8cerrors.NewBadRequest("invalid request")
+		}
+		seed, err := getSeed(ctx, req, userInfoGetter, seedsGetter)
+		if err != nil {
+			return nil, err
+		}
+		seedClient, err := seedClientGetter(seed)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if err := seedClient.Delete(ctx, seed); err != nil {
+			return nil, fmt.Errorf("failed to delete Seed: %v", err)
+		}
+
+		return nil, nil
+	}
+}
+
 func getSeed(ctx context.Context, req seedReq, userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter) (*kubermaticv1.Seed, error) {
 	userInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
@@ -119,7 +142,7 @@ func getSeed(ctx context.Context, req seedReq, userInfoGetter provider.UserInfoG
 }
 
 // seedReq defines HTTP request for getSeed
-// swagger:parameters getSeed
+// swagger:parameters getSeed deleteSeed
 type seedReq struct {
 	// in: path
 	// required: true
