@@ -77,7 +77,7 @@ func CredentialEndpoint(presetsProvider provider.PresetProvider, userInfoGetter 
 			//	Packet       Packet
 			//	GCP          GCP
 			//	Kubevirt     Kubevirt
-			//  Alibaba			 Alibaba
+			//	Alibaba      Alibaba
 			// }
 			providersRaw := reflect.ValueOf(preset.Spec)
 			if providersRaw.Kind() == reflect.Struct {

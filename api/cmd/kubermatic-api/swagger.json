@@ -526,7 +526,7 @@
             "name": "Patch",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/RawMessage"
+              "type": "object"
             }
           }
         ],
@@ -795,7 +795,7 @@
             "name": "Patch",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/RawMessage"
+              "type": "object"
             }
           }
         ],
@@ -1322,7 +1322,7 @@
             "name": "Patch",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/RawMessage"
+              "type": "object"
             }
           }
         ],
@@ -2053,7 +2053,7 @@
             "name": "Patch",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/RawMessage"
+              "type": "object"
             }
           }
         ],
@@ -2789,7 +2789,7 @@
             "name": "Patch",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/RawMessage"
+              "type": "object"
             }
           }
         ],
@@ -4680,7 +4680,7 @@
             "name": "Patch",
             "in": "body",
             "schema": {
-              "$ref": "#/definitions/RawMessage"
+              "type": "object"
             }
           }
         ],
@@ -8462,6 +8462,18 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
+    "DatacenterSpecAlibaba": {
+      "type": "object",
+      "title": "DatacenterSpecAlibaba describes a alibaba datacenter.",
+      "properties": {
+        "region": {
+          "description": "Region to use, for a full list of regions see\nhttps://www.alibabacloud.com/help/doc-detail/40654.htm",
+          "type": "string",
+          "x-go-name": "Region"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "DatacenterSpecAzure": {
       "description": "DatacenterSpecAzure describes an Azure cloud datacenter",
       "type": "object",
@@ -8795,11 +8807,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "EmptyResponse": {
-      "description": "EmptyResponse is a empty response",
-      "type": "object",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
     },
     "ErrorDetails": {
       "description": "ErrorDetails contains details about the error",
@@ -9359,17 +9366,7 @@
       "additionalProperties": {
         "type": "string"
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "Kubeconfig": {
-      "description": "Kubeconfig is a clusters kubeconfig",
-      "type": "object",
-      "properties": {
-        "Config": {
-          "$ref": "#/definitions/Config"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "KubermaticVersions": {
       "type": "object",
@@ -10907,18 +10904,12 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/runtime"
     },
-    "RawMessage": {
-      "description": "It implements Marshaler and Unmarshaler and can\nbe used to delay JSON decoding or precompute a JSON encoding.",
-      "type": "array",
-      "title": "RawMessage is a raw encoded JSON value.",
-      "items": {
-        "type": "integer",
-        "format": "uint8"
-      },
-      "x-go-package": "encoding/json"
-    },
     "ResourceLabelMap": {
+      "type": "object",
       "title": "ResourceLabelMap defines list of labels grouped by specific resource types.",
+      "additionalProperties": {
+        "$ref": "#/definitions/LabelKeyList"
+      },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "ResourceType": {
@@ -11151,6 +11142,9 @@
       "description": "SeedDatacenterSpec mutually points to provider datacenter spec",
       "type": "object",
       "properties": {
+        "alibaba": {
+          "$ref": "#/definitions/DatacenterSpecAlibaba"
+        },
         "aws": {
           "$ref": "#/definitions/DatacenterSpecAWS"
         },
@@ -11375,17 +11369,17 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
     "Subject": {
-      "description": "Right now we support \"User\" as a API group.",
+      "description": "or a value for non-objects such as user and group names.",
       "type": "object",
-      "title": "Subject contains a reference to the object or user identities a role binding applies to.",
+      "title": "Subject contains a reference to the object or user identities a role binding applies to.  This can either hold a direct API object reference,",
       "properties": {
         "apiGroup": {
-          "description": "APIGroup holds the API group of the referenced subject.\nDefaults to \"rbac.authorization.k8s.io\" for User and Group subjects.",
+          "description": "APIGroup holds the API group of the referenced subject.\nDefaults to \"\" for ServiceAccount subjects.\nDefaults to \"rbac.authorization.k8s.io\" for User and Group subjects.\n+optional",
           "type": "string",
           "x-go-name": "APIGroup"
         },
         "kind": {
-          "description": "Kind of object being referenced. Values defined by this API group are \"User\" and \"Group\".\nIf the Authorizer does not recognized the kind value, the Authorizer should report an error.",
+          "description": "Kind of object being referenced. Values defined by this API group are \"User\", \"Group\", and \"ServiceAccount\".\nIf the Authorizer does not recognized the kind value, the Authorizer should report an error.",
           "type": "string",
           "x-go-name": "Kind"
         },
@@ -11393,9 +11387,14 @@
           "description": "Name of the object being referenced.",
           "type": "string",
           "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Namespace of the referenced object.  If the object kind is non-namespace, such as \"User\" or \"Group\", and this value is not empty\nthe Authorizer should report an error.\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/rbac/v1"
     },
     "TaintSpec": {
       "description": "TaintSpec defines a node taint",
@@ -11417,8 +11416,10 @@
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "Time": {
-      "description": "Time is a wrapper around time.Time which supports correct\nmarshaling JSON.  Wrappers are provided for many\nof the factory methods that the time package offers.",
-      "type": "object",
+      "description": "Programs using times should typically store and pass them as values,\nnot pointers. That is, time variables and struct fields should be of\ntype time.Time, not *time.Time.\n\nA Time value can be used by multiple goroutines simultaneously except\nthat the methods GobDecode, UnmarshalBinary, UnmarshalJSON and\nUnmarshalText are not concurrency-safe.\n\nTime instants can be compared using the Before, After, and Equal methods.\nThe Sub method subtracts two instants, producing a Duration.\nThe Add method adds a Time and a Duration, producing a Time.\n\nThe zero value of type Time is January 1, year 1, 00:00:00.000000000 UTC.\nAs this time is unlikely to come up in practice, the IsZero method gives\na simple way of detecting a time that has not been initialized explicitly.\n\nEach Time has associated with it a Location, consulted when computing the\npresentation form of the time, such as in the Format, Hour, and Year methods.\nThe methods Local, UTC, and In return a Time with a specific location.\nChanging the location in this way changes only the presentation; it does not\nchange the instant in time being denoted and therefore does not affect the\ncomputations described in earlier paragraphs.\n\nRepresentations of a Time value saved by the GobEncode, MarshalBinary,\nMarshalJSON, and MarshalText methods store the Time.Location's offset, but not\nthe location name. They therefore lose information about Daylight Saving Time.\n\nIn addition to the required “wall clock” reading, a Time may contain an optional\nreading of the current process's monotonic clock, to provide additional precision\nfor comparison or subtraction.\nSee the “Monotonic Clocks” section in the package documentation for details.\n\nNote that the Go == operator compares not just the time instant but also the\nLocation and the monotonic clock reading. Therefore, Time values should not\nbe used as map or database keys without first guaranteeing that the\nidentical Location has been set for all values, which can be achieved\nthrough use of the UTC or Local method, and that the monotonic clock reading\nhas been stripped by setting t = t.Round(0). In general, prefer t.Equal(u)\nto t == u, since t.Equal uses the most accurate comparison available and\ncorrectly handles the case when only one of its arguments has a monotonic\nclock reading.",
+      "type": "string",
+      "format": "date-time",
+      "title": "A Time represents an instant in time with nanosecond precision.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "UID": {
