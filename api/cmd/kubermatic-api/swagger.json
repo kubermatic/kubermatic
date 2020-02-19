@@ -8462,6 +8462,18 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
+    "DatacenterSpecAlibaba": {
+      "type": "object",
+      "title": "DatacenterSpecAlibaba describes a alibaba datacenter.",
+      "properties": {
+        "region": {
+          "description": "Region to use, for a full list of regions see\nhttps://www.alibabacloud.com/help/doc-detail/40654.htm",
+          "type": "string",
+          "x-go-name": "Region"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "DatacenterSpecAzure": {
       "description": "DatacenterSpecAzure describes an Azure cloud datacenter",
       "type": "object",
@@ -11151,6 +11163,9 @@
       "description": "SeedDatacenterSpec mutually points to provider datacenter spec",
       "type": "object",
       "properties": {
+        "alibaba": {
+          "$ref": "#/definitions/DatacenterSpecAlibaba"
+        },
         "aws": {
           "$ref": "#/definitions/DatacenterSpecAWS"
         },

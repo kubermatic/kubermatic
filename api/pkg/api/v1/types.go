@@ -1492,6 +1492,7 @@ type SeedDatacenterSpec struct {
 	VSphere      *kubermaticv1.DatacenterSpecVSphere      `json:"vsphere,omitempty"`
 	GCP          *kubermaticv1.DatacenterSpecGCP          `json:"gcp,omitempty"`
 	Kubevirt     *kubermaticv1.DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
+	Alibaba      *kubermaticv1.DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
 	Fake         *kubermaticv1.DatacenterSpecFake         `json:"fake,omitempty,omitgenyaml"` // omitgenyaml is used by the example-yaml-generator
 
 	// Optional: When defined, only users with an e-mail address on the
