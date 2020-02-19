@@ -26,7 +26,7 @@ type WebsocketWriter func(providers watcher.Providers, ws *websocket.Conn)
 func (r Routing) RegisterV1Websocket(mux *mux.Router) {
 	providers := getProviders(r)
 
-	mux.HandleFunc("/ws/admin/settings/", getHandler(wsh.WriteSettings, providers, r))
+	mux.HandleFunc("/ws/admin/settings", getHandler(wsh.WriteSettings, providers, r))
 }
 
 func getProviders(r Routing) watcher.Providers {
