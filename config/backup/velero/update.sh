@@ -7,7 +7,7 @@ echo "# This file has been generated with Velero $version. Do not edit." > $crdf
 
 # extract CRDs by calling Velero with dummy values
 crds=$(
-  velero install --bucket does-not-matter --use-restic --provider gcp --secret-file Chart.yaml --dry-run -o json | \
+  velero install --bucket does-not-matter --use-restic --plugins gcp --provider gcp --secret-file Chart.yaml --dry-run -o json | \
   jq -c '.items | map(select(.kind=="CustomResourceDefinition")) | sort_by(.metadata.name) | .[]'
 )
 
