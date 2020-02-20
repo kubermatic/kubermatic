@@ -7,11 +7,12 @@ cd "$(git rev-parse --show-toplevel)"
 
 GIT_HEAD_HASH="$(git rev-parse HEAD)"
 GIT_HEAD_TAG="$(git tag -l --points-at HEAD)"
+GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 TAGS="$GIT_HEAD_HASH $GIT_HEAD_TAG"
 
 # we only want to create the "latest" tag if we're building
 # the master branch and it's not a canary deployment
-if [ -z "${CANARY_DEPLOYMENT:-}" ] && [ "$(git rev-parse --abbrev-ref HEAD)" == "master" ]; then
+if [ -z "${CANARY_DEPLOYMENT:-}" ] && [ "$GIT_BRANCH" == "master" ]; then
   TAGS="$TAGS latest"
 fi
 
@@ -29,7 +30,18 @@ export KUBERMATICDOCKERTAG="${GIT_HEAD_TAG:-$GIT_HEAD_HASH}"
 export UIDOCKERTAG="$KUBERMATICDOCKERTAG"
 
 if [ -z "$GIT_HEAD_TAG" ]; then
-  UIDOCKERTAG="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
+  # in presubmits, we check against the PULL_BASE_REF (which is incidently also
+  # only defined in presubmits); in postsubmits we check against the current branch
+  UIBRANCH="${PULL_BASE_REF:-$GIT_BRANCH}"
+
+  # the dasboard only publishes Docker images for tagged releases and all
+  # master branch revisions; this means for Kubermatic tests in release branches
+  # we need to use the latest tagged dashboard of the same branch
+  if [ "$UIBRANCH" == "master" ]; then
+    UIDOCKERTAG="$(get_latest_dashboard_hash "${UIBRANCH}")"
+  else
+    UIDOCKERTAG="$(get_latest_dashboard_tag "${UIBRANCH}")"
+  fi
 else
   if [ -z "$(check_dashboard_tag "$GIT_HEAD_TAG")" ]; then
     echo "Kubermatic was tagged as $GIT_HEAD_TAG, but this tag does not exist for the dashboard."
