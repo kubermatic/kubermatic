@@ -3,12 +3,24 @@
 set -o errexit
 set -o nounset
 set -o pipefail
-set -x
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
-# Deploy a user-cluster/ipam-controller for which we actuallly
-# have a pushed image
-export KUBERMATICCOMMIT="${KUBERMATICCOMMIT:-$(git rev-parse origin/master)}"
+DEFAULT_IMAGE_TAG="$(git rev-parse 'origin/master')"
+if [[ -z "${KUBERMATICCOMMIT:-}" && \
+    "$(git rev-parse HEAD)" != "${DEFAULT_IMAGE_TAG}" ]]; then
+    cat << EOF >&2
+WARNING: The KUBERMATICCOMMIT is defaulting to origin/master head commit
+and your current HEAD is not on it.
+
+If you are on an old commit and you want to use the images corresponding to
+such version run the following command instead:
+
+$ KUBERMATICCOMMIT="$(git rev-parse HEAD)" $0
+EOF
+fi
+# KUBERMATICCOMMIT is used to define the tag of the k8c images used by the
+# seed controller.
+export KUBERMATICCOMMIT="${KUBERMATICCOMMIT:-${DEFAULT_IMAGE_TAG}}"
 make seed-controller-manager
 
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
