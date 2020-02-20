@@ -18,6 +18,9 @@ type PublicCloudSpec struct {
 	// datacenter name
 	DatacenterName string `json:"dc,omitempty"`
 
+	// alibaba
+	Alibaba PublicAlibabaCloudSpec `json:"alibaba,omitempty"`
+
 	// aws
 	Aws PublicAWSCloudSpec `json:"aws,omitempty"`
 

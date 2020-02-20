@@ -130,6 +130,7 @@ func createExampleSeed() *kubermaticv1.Seed {
 							ZoneSuffixes: []string{},
 						},
 						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{},
+						Alibaba:  &kubermaticv1.DatacenterSpecAlibaba{},
 					},
 				},
 			},

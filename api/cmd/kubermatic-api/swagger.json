@@ -7555,6 +7555,73 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "AlibabaCloudSpec": {
+      "type": "object",
+      "title": "AlibabaCloudSpec specifies the access data to Alibaba.",
+      "properties": {
+        "accessKeyId": {
+          "type": "string",
+          "x-go-name": "AccessKeyID"
+        },
+        "accessKeySecret": {
+          "type": "string",
+          "x-go-name": "AccessKeySecret"
+        },
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "AlibabaDatacenterSpec": {
+      "type": "object",
+      "title": "AlibabaDatacenterSpec specifies a datacenter of Alibaba.",
+      "properties": {
+        "region": {
+          "type": "string",
+          "x-go-name": "Region"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AlibabaNodeSpec": {
+      "description": "AlibabaNodeSpec alibaba specific node settings",
+      "type": "object",
+      "properties": {
+        "diskSize": {
+          "type": "string",
+          "x-go-name": "DiskSize"
+        },
+        "diskType": {
+          "type": "string",
+          "x-go-name": "DiskType"
+        },
+        "instanceType": {
+          "type": "string",
+          "x-go-name": "InstanceType"
+        },
+        "internetMaxBandwidthOut": {
+          "type": "string",
+          "x-go-name": "InternetMaxBandwidthOut"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
+        "vswitchID": {
+          "type": "string",
+          "x-go-name": "VSwitchID"
+        },
+        "zoneID": {
+          "type": "string",
+          "x-go-name": "ZoneID"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "AuditLoggingSettings": {
       "type": "object",
       "properties": {
@@ -7847,6 +7914,9 @@
       "type": "object",
       "title": "CloudSpec mutually stores access data to a cloud provider.",
       "properties": {
+        "alibaba": {
+          "$ref": "#/definitions/AlibabaCloudSpec"
+        },
         "aws": {
           "$ref": "#/definitions/AWSCloudSpec"
         },
@@ -8344,6 +8414,9 @@
       "type": "object",
       "title": "DatacenterSpec specifies the data for a datacenter.",
       "properties": {
+        "alibaba": {
+          "$ref": "#/definitions/AlibabaDatacenterSpec"
+        },
         "aws": {
           "$ref": "#/definitions/AWSDatacenterSpec"
         },
@@ -8419,6 +8492,18 @@
         },
         "region": {
           "description": "The AWS region to use, e.g. \"us-east-1\". For a list of available regions, see\nhttps://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html",
+          "type": "string",
+          "x-go-name": "Region"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
+    "DatacenterSpecAlibaba": {
+      "type": "object",
+      "title": "DatacenterSpecAlibaba describes a alibaba datacenter.",
+      "properties": {
+        "region": {
+          "description": "Region to use, for a full list of regions see\nhttps://www.alibabacloud.com/help/doc-detail/40654.htm",
           "type": "string",
           "x-go-name": "Region"
         }
@@ -9647,6 +9732,9 @@
       "type": "object",
       "title": "NodeCloudSpec represents the collection of cloud provider specific settings. Only one must be set at a time.",
       "properties": {
+        "alibaba": {
+          "$ref": "#/definitions/AlibabaNodeSpec"
+        },
         "aws": {
           "$ref": "#/definitions/AWSNodeSpec"
         },
@@ -10693,6 +10781,11 @@
       "title": "PublicAWSCloudSpec is a public counterpart of apiv1.AWSCloudSpec.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "PublicAlibabaCloudSpec": {
+      "type": "object",
+      "title": "PublicAlibabaCloudSpec is a public counterpart of apiv1.AlibabaCloudSpec.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "PublicAzureCloudSpec": {
       "type": "object",
       "title": "PublicAzureCloudSpec is a public counterpart of apiv1.AzureCloudSpec.",
@@ -10707,6 +10800,9 @@
       "type": "object",
       "title": "PublicCloudSpec is a public counterpart of apiv1.CloudSpec.",
       "properties": {
+        "alibaba": {
+          "$ref": "#/definitions/PublicAlibabaCloudSpec"
+        },
         "aws": {
           "$ref": "#/definitions/PublicAWSCloudSpec"
         },
@@ -11082,6 +11178,9 @@
       "description": "SeedDatacenterSpec mutually points to provider datacenter spec",
       "type": "object",
       "properties": {
+        "alibaba": {
+          "$ref": "#/definitions/DatacenterSpecAlibaba"
+        },
         "aws": {
           "$ref": "#/definitions/DatacenterSpecAWS"
         },

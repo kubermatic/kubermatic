@@ -5,6 +5,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/alibaba"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/azure"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/bringyourown"
@@ -51,6 +52,9 @@ func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}
 	if datacenter.Spec.Kubevirt != nil {
 		return kubevirt.NewCloudProvider(secretKeyGetter), nil
+	}
+	if datacenter.Spec.Alibaba != nil {
+		return alibaba.NewCloudProvider(datacenter, secretKeyGetter)
 	}
 	return nil, errors.New("no cloudprovider found")
 }

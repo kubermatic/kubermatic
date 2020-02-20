@@ -468,6 +468,9 @@ const (
 	VsphereInfraManagementUserUsername = "infraManagementUserUsername"
 	VsphereInfraManagementUserPassword = "infraManagementUserPassword"
 
+	AlibabaAccessKeyID     = "accessKeyId"
+	AlibabaAccessKeySecret = "accessKeySecret"
+
 	UserSSHKeys = "usersshkeys"
 )
 
