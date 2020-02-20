@@ -7,6 +7,8 @@ versions:
 - version: "v1.15.7"
   default: false
 - version: "v1.15.9"
+  default: false
+- version: "v1.15.10"
   default: true
 # OpenShift 3.11
 - version: "v3.11"
