@@ -9,6 +9,7 @@ make -C $(dirname $0)/.. kubermatic-api
 
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
+PPROF_PORT=${PPROF_PORT:-6600}
 
 # Please make sure to set -feature-gates=PrometheusEndpoint=true if you want to use that endpoint.
 
@@ -35,6 +36,7 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
   -oidc-issuer-cookie-hash-key="$(vault kv get -field=oidc-issuer-cookie-hash-key dev/seed-clusters/dev.kubermatic.io)" \
   -service-account-signing-key="$(vault kv get -field=service-account-signing-key dev/seed-clusters/dev.kubermatic.io)" \
   -log-debug=$KUBERMATIC_DEBUG \
+  -pprof-listen-address=":${PPROF_PORT}" \
   -log-format=Console \
   -logtostderr \
   -v=4 $@
