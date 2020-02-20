@@ -85,7 +85,7 @@ ensure_github_host_pubkey() {
 }
 
 get_latest_dashboard_hash() {
-  FOR_BRANCH="$1"
+  local FOR_BRANCH="$1"
 
   ensure_github_host_pubkey
   git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
@@ -97,6 +97,30 @@ get_latest_dashboard_hash() {
   HASH="$(retry 5 git ls-remote "$DASHBOARD_URL" "refs/heads/$FOR_BRANCH" | awk '{print $1}')"
   echodate "The latest dashboard hash for $FOR_BRANCH is $HASH" >/dev/stderr
   echo "$HASH"
+}
+
+# This should only be used for release branches, as it only fetches the last 25 commits
+# for checking for tags.
+get_latest_dashboard_tag() {
+  local FOR_BRANCH="$1"
+  local DEPTH="${2:-25}"
+
+  ensure_github_host_pubkey
+  git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
+  local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
+
+  local TMPDIR
+  TMPDIR=$(mktemp -d dashboard.XXXXX)
+
+  # git ls-remote cannot list tags in a meaningful way, so we have to clone the repo
+  echodate "Cloning dashboard repository to find tags in $FOR_BRANCH branch..." >/dev/stderr
+  git clone -b "$FOR_BRANCH" --single-branch --depth $DEPTH "$DASHBOARD_URL" "$TMPDIR"
+
+  local TAG
+  TAG="$(git --git-dir $TMPDIR/.git describe --abbrev=0 --tags --first-parent)"
+
+  echodate "The latest dashboard tag in $FOR_BRANCH is $TAG" >/dev/stderr
+  echo "$TAG"
 }
 
 check_dashboard_tag() {
