@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"encoding/json"
+
 	api "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/log"
