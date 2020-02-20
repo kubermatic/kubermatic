@@ -72,10 +72,11 @@ func TestCreateSecretsForCredentials(t *testing.T) {
 			}
 
 			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, allObjs...)
-			ctx := &cleanupContext{
+			cleanupContext := &cleanupContext{
 				client: fakeClient,
+				ctx:    context.TODO(),
 			}
-			if err := createSecretsForCredentials(cluster, ctx); err != nil {
+			if err := createSecretsForCredentials(cluster, cleanupContext); err != nil {
 				t.Errorf("%s: error creating secrets for credentials: %v", test.name, err)
 			}
 
@@ -88,7 +89,7 @@ func TestCreateSecretsForCredentials(t *testing.T) {
 
 			secret := &corev1.Secret{}
 			namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: cluster.GetSecretName()}
-			if err := ctx.client.Get(context.TODO(), namespacedName, secret); err != nil {
+			if err := cleanupContext.client.Get(cleanupContext.ctx, namespacedName, secret); err != nil {
 				t.Fatalf("%s: error getting secret %s: %v", test.name, cluster.GetSecretName(), err)
 			}
 			if secret.Data == nil {
