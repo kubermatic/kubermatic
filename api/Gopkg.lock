@@ -2021,11 +2021,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9e2a86035f11ea63712aca515c4e28b40182491460d83d107bc52f50b5654cc6"
+  digest = "1:c8e4d640c29a9fd9e5c7cde908fad0bd7662066916ddcd47922f9c6d40cb53b5"
   name = "k8s.io/test-infra"
   packages = ["pkg/genyaml"]
   pruneopts = "NUT"
-  revision = "ac78417555d691a218c703d82c336c86529deafc"
+  revision = "18fae0a00a2cd5be7ee45563d0b0f940c0e86397"
 
 [[projects]]
   digest = "1:5011e453320ffdc30c5a06516f4de57df6e1c094b2923a1c7e699ea3f4364bc9"
