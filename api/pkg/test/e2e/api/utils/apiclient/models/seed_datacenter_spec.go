@@ -29,6 +29,9 @@ type SeedDatacenterSpec struct {
 	// required email domains
 	RequiredEmailDomains []string `json:"requiredEmailDomains"`
 
+	// alibaba
+	Alibaba *DatacenterSpecAlibaba `json:"alibaba,omitempty"`
+
 	// aws
 	Aws *DatacenterSpecAWS `json:"aws,omitempty"`
 
@@ -66,6 +69,10 @@ type SeedDatacenterSpec struct {
 // Validate validates this seed datacenter spec
 func (m *SeedDatacenterSpec) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateAlibaba(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateAws(formats); err != nil {
 		res = append(res, err)
@@ -106,6 +113,24 @@ func (m *SeedDatacenterSpec) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *SeedDatacenterSpec) validateAlibaba(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Alibaba) { // not required
+		return nil
+	}
+
+	if m.Alibaba != nil {
+		if err := m.Alibaba.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("alibaba")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
