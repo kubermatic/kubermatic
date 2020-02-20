@@ -29,7 +29,7 @@ PPROF_PORT=${PPROF_PORT:-6600}
   -feature-gates=OpenIDAuthPlugin=true \
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
   -external-url=dev.kubermatic.io \
-  -backup-container=../config/kubermatic/static/backup-container.yaml \
+  -backup-container=../config/kubermatic/static/store-container.yaml \
   -cleanup-container=../config/kubermatic/static/cleanup-container.yaml \
   -docker-pull-config-json-file=../../secrets/seed-clusters/dev.kubermatic.io/.dockerconfigjson \
   -oidc-ca-file=../../secrets/seed-clusters/dev.kubermatic.io/caBundle.pem \
