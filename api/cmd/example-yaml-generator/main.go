@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -11,6 +10,7 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -62,17 +62,21 @@ func main() {
 	}
 
 	for name, data := range examples {
-		yaml, err := cm.GenYaml(data)
+		filename := filepath.Join(target, fmt.Sprintf("zz_generated.%s.yaml", name))
+
+		f, err := os.Create(filename)
 		if err != nil {
-			log.Fatalf("Failed to create YAML: %v", err)
+			log.Fatalf("Failed to create %s: %v", filename, err)
 		}
 
-		// reduce indentation
-		yaml = strings.Replace(yaml, "    ", "  ", -1)
+		encoder := yaml.NewEncoder(f)
+		encoder.SetIndent(2)
 
-		filename := filepath.Join(target, fmt.Sprintf("zz_generated.%s.yaml", name))
-		if err := ioutil.WriteFile(filename, []byte(yaml), 0644); err != nil {
-			log.Fatalf("Failed to write %s: %v", filename, err)
+		err = cm.EncodeYaml(data, encoder)
+		f.Close()
+
+		if err != nil {
+			log.Fatalf("Failed to write YAML: %v", err)
 		}
 	}
 }
