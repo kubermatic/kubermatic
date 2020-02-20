@@ -46,9 +46,7 @@ func getHandler(writer WebsocketWriter, providers watcher.Providers, routing Rou
 
 		ws, err := upgrader.Upgrade(w, req, nil)
 		if err != nil {
-			if _, ok := err.(websocket.HandshakeError); !ok {
-				log.Logger.Debug(err)
-			}
+			log.Logger.Debug(err)
 			return
 		}
 
@@ -101,11 +99,10 @@ func requestLoggingReader(websocket *websocket.Conn) {
 		}
 	}()
 
-	websocket.SetReadLimit(512)
-
 	for {
 		_, message, err := websocket.ReadMessage()
 		if err != nil {
+			log.Logger.Debug(err)
 			break
 		}
 

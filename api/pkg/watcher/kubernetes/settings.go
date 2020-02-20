@@ -25,21 +25,34 @@ func NewSettingsWatcher(provider provider.SettingsProvider) (*SettingsWatcher, e
 		return nil, err
 	}
 
-	publisher := pubsub.New()
-	go run(watcher, publisher)
-
-	return &SettingsWatcher{
+	w := &SettingsWatcher{
 		provider:  provider,
 		watcher:   watcher,
-		publisher: publisher,
-	}, nil
+		publisher: pubsub.New(),
+	}
+
+	go w.run()
+	return w, nil
 }
 
-// run and publish information about settings updates.
-func run(input watch.Interface, settingsPublisher *pubsub.PubSub) {
-	defer input.Stop()
+// run and publish information about settings updates. Watch will restart itself if any error occur.
+func (watcher *SettingsWatcher) run() {
+	defer func() {
+		log.Logger.Debug("restarting settings watcher")
+		watcher.watcher.Stop()
+		watcher.watcher = nil
+		watcher.run()
+	}()
 
-	for event := range input.ResultChan() {
+	if watcher.watcher == nil {
+		var err error
+		if watcher.watcher, err = watcher.provider.WatchGlobalSettings(); err != nil {
+			log.Logger.Debug("could not recreate settings watcher")
+			return
+		}
+	}
+
+	for event := range watcher.watcher.ResultChan() {
 		settings, ok := event.Object.(*v1.KubermaticSetting)
 		if !ok {
 			log.Logger.Debugf("expected settings got %s", reflect.TypeOf(event.Object))
@@ -47,9 +60,9 @@ func run(input watch.Interface, settingsPublisher *pubsub.PubSub) {
 
 		if settings != nil && settings.Name == v1.GlobalSettingsName {
 			if event.Type == watch.Added || event.Type == watch.Modified {
-				settingsPublisher.Publish(settings, pubsub.LinearTreeTraverser([]uint64{}))
+				watcher.publisher.Publish(settings, pubsub.LinearTreeTraverser([]uint64{}))
 			} else if event.Type == watch.Deleted {
-				settingsPublisher.Publish(nil, pubsub.LinearTreeTraverser([]uint64{}))
+				watcher.publisher.Publish(nil, pubsub.LinearTreeTraverser([]uint64{}))
 			}
 		}
 	}
