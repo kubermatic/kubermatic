@@ -59,7 +59,7 @@ func (s *alibabaScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 }
 
 func (s *alibabaScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
-	nds := []apimodels.NodeDeployment{
+	return []apimodels.NodeDeployment{
 		{
 			Spec: &apimodels.NodeDeploymentSpec{
 				Template: &apimodels.NodeSpec{
@@ -68,7 +68,7 @@ func (s *alibabaScenario) NodeDeployments(num int, secrets secrets) ([]apimodels
 							InstanceType:            "ecs.c6.xsmall",
 							DiskSize:                "40",
 							DiskType:                "cloud_efficiency",
-							VSwitchID:               "",
+							VSwitchID:               "vsw-gw8g8mn4ohmj483hsylmn",
 							InternetMaxBandwidthOut: "10",
 							ZoneID:                  alibabaDC,
 						},
@@ -80,23 +80,7 @@ func (s *alibabaScenario) NodeDeployments(num int, secrets secrets) ([]apimodels
 				},
 			},
 		},
-	}
-
-	// evenly distribute the nodes among deployments
-	nodesInEachAZ := num / 3
-	azsWithExtraNode := num % 3
-
-	for i := range nds {
-		var replicas int32
-		if i < azsWithExtraNode {
-			replicas = int32(nodesInEachAZ + 1)
-		} else {
-			replicas = int32(nodesInEachAZ)
-		}
-		nds[i].Spec.Replicas = &replicas
-	}
-
-	return nds, nil
+	}, nil
 }
 
 func (s *alibabaScenario) OS() apimodels.OperatingSystemSpec {
