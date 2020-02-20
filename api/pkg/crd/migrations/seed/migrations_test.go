@@ -1,4 +1,4 @@
-package migrations
+package seed
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -70,7 +71,7 @@ func TestCreateSecretsForCredentials(t *testing.T) {
 				allObjs = append(allObjs, newSecret(test.secretToken))
 			}
 
-			fakeClient := fakectrlruntimeclient.NewFakeClient(allObjs...)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, allObjs...)
 			ctx := &cleanupContext{
 				client: fakeClient,
 			}

@@ -13,6 +13,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
@@ -51,9 +53,8 @@ func cleanupClusters(workerName string, ctx *cleanupContext) error {
 	if err != nil {
 		return err
 	}
-	matchingLabelSelector := selector.(ctrlruntimeclient.MatchingLabelsSelector)
 	clusters := &kubermaticv1.ClusterList{}
-	if err := ctx.client.List(context.TODO(), clusters, matchingLabelSelector); err != nil {
+	if err := ctx.client.List(context.TODO(), clusters, ctrlruntimeclient.MatchingLabelsSelector{Selector: selector}); err != nil {
 		return fmt.Errorf("failed to list clusters: %v", err)
 	}
 
@@ -136,7 +137,7 @@ func setExposeStrategyIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext
 		if err := ctx.client.Update(context.TODO(), cluster); err != nil {
 			return fmt.Errorf("failed to default exposeStrategy to NodePort for cluster %q: %v", cluster.Name, err)
 		}
-		namespacedName := types.NamespacedName{Namespace: "default", Name: cluster.Name}
+		namespacedName := types.NamespacedName{Name: cluster.Name}
 		updatedCluster := &kubermaticv1.Cluster{}
 		if err := ctx.client.Get(context.TODO(), namespacedName, updatedCluster); err != nil {
 			return fmt.Errorf("failed to get cluster %q: %v", cluster.Name, err)
@@ -157,7 +158,7 @@ func setProxyModeIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext) err
 		if err := ctx.client.Update(context.TODO(), cluster); err != nil {
 			return fmt.Errorf("failed to default proxyMode to iptables for cluster %q: %v", cluster.Name, err)
 		}
-		namespacedName := types.NamespacedName{Namespace: "default", Name: cluster.Name}
+		namespacedName := types.NamespacedName{Name: cluster.Name}
 		updatedCluster := &kubermaticv1.Cluster{}
 		if err := ctx.client.Get(context.TODO(), namespacedName, updatedCluster); err != nil {
 			return fmt.Errorf("failed to get cluster %q: %v", cluster.Name, err)
@@ -169,14 +170,16 @@ func setProxyModeIfEmpty(cluster *kubermaticv1.Cluster, ctx *cleanupContext) err
 }
 
 func cleanupDashboardAddon(cluster *kubermaticv1.Cluster, ctx *cleanupContext) error {
-	namespacedName := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: "dashboard"}
-	dashboardAddon := &kubermaticv1.Addon{}
-	if err := ctx.client.Get(context.TODO(), namespacedName, dashboardAddon); err != nil {
-		return fmt.Errorf("failed to get dashboard addon: %v", err)
+	dashboardAddon := &kubermaticv1.Addon{
+		ObjectMeta: v1.ObjectMeta{
+			Namespace: cluster.Status.NamespaceName,
+			Name:      "dashboard",
+		},
 	}
-
 	if err := ctx.client.Delete(context.TODO(), dashboardAddon); err != nil {
-		return fmt.Errorf("failed to delete dashboard addon: %v", err)
+		if !kerrors.IsNotFound(err) {
+			return err
+		}
 	}
 	return nil
 }
