@@ -119,6 +119,9 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 	if newSpec.Kubevirt == nil && oldSpec.Kubevirt != nil {
 		return ErrCloudChangeNotAllowed
 	}
+	if newSpec.Alibaba == nil && oldSpec.Alibaba != nil {
+		return ErrCloudChangeNotAllowed
+	}
 	if newSpec.DatacenterName != oldSpec.DatacenterName {
 		return errors.New("changing the datacenter is not allowed")
 	}
@@ -258,6 +261,11 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter)
 			return fmt.Errorf("datacenter %q is not a kubevirt datacenter", spec.DatacenterName)
 		}
 		return validateKubevirtCloudSpec(spec.Kubevirt)
+	case spec.Alibaba != nil:
+		if dc.Spec.Alibaba == nil {
+			return fmt.Errorf("datacenter %q is not a alibaba datacenter", spec.DatacenterName)
+		}
+		return validateAlibabaCloudSpec(spec.Alibaba)
 	default:
 		return errors.New("no cloud provider specified")
 	}
@@ -413,5 +421,19 @@ func validateKubevirtCloudSpec(spec *kubermaticv1.KubevirtCloudSpec) error {
 		}
 	}
 
+	return nil
+}
+
+func validateAlibabaCloudSpec(spec *kubermaticv1.AlibabaCloudSpec) error {
+	if spec.AccessKeyID == "" {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AlibabaAccessKeyID); err != nil {
+			return err
+		}
+	}
+	if spec.AccessKeySecret == "" {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AlibabaAccessKeySecret); err != nil {
+			return err
+		}
+	}
 	return nil
 }

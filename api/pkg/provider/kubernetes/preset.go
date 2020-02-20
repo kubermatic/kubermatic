@@ -164,6 +164,9 @@ func (m *PresetsProvider) SetCloudCredentials(userInfo *provider.UserInfo, prese
 	if cloud.Kubevirt != nil {
 		return m.setKubevirtCredentials(userInfo, presetName, cloud)
 	}
+	if cloud.Alibaba != nil {
+		return m.setAlibabaCredentials(userInfo, presetName, cloud)
+	}
 
 	return nil, fmt.Errorf("can not find provider to set credentials")
 }
@@ -360,4 +363,20 @@ func (m *PresetsProvider) setVsphereCredentials(userInfo *provider.UserInfo, pre
 	cloud.VSphere.VMNetName = credentials.VMNetName
 	return &cloud, nil
 
+}
+
+func (m *PresetsProvider) setAlibabaCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(userInfo, presetName)
+	if err != nil {
+		return nil, err
+	}
+	if preset.Spec.Alibaba == nil {
+		return nil, emptyCredentialError(presetName, "Alibaba")
+	}
+
+	credentials := preset.Spec.Alibaba
+
+	cloud.Alibaba.AccessKeyID = credentials.AccessKeyID
+	cloud.Alibaba.AccessKeySecret = credentials.AccessKeySecret
+	return &cloud, nil
 }

@@ -40,6 +40,7 @@ type PresetSpec struct {
 	Packet       *Packet       `json:"packet,omitempty"`
 	GCP          *GCP          `json:"gcp,omitempty"`
 	Kubevirt     *Kubevirt     `json:"kubevirt,omitempty"`
+	Alibaba      *Alibaba      `json:"alibaba,omitempty"`
 
 	Fake                *Fake  `json:"fake,omitempty"`
 	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
@@ -138,6 +139,13 @@ type Fake struct {
 
 type Kubevirt struct {
 	Kubeconfig string `json:"kubeconfig"`
+
+	Datacenter string `json:"datacenter,omitempty"`
+}
+
+type Alibaba struct {
+	AccessKeyID     string `json:"accessKeyId"`
+	AccessKeySecret string `json:"accessKeySecret"`
 
 	Datacenter string `json:"datacenter,omitempty"`
 }

@@ -20,6 +20,7 @@ type Credentials struct {
 	Packet       PacketCredentials
 	Kubevirt     KubevirtCredentials
 	VSphere      VSphereCredentials
+	Alibaba      AlibabaCredentials
 }
 
 type AWSCredentials struct {
@@ -66,6 +67,11 @@ type KubevirtCredentials struct {
 type VSphereCredentials struct {
 	Username string
 	Password string
+}
+
+type AlibabaCredentials struct {
+	AccessKeyID     string
+	AccessKeySecret string
 }
 
 type CredentialsData interface {
@@ -139,6 +145,11 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 	}
 	if data.Cluster().Spec.Cloud.VSphere != nil {
 		if credentials.VSphere, err = GetVSphereCredentials(data); err != nil {
+			return Credentials{}, err
+		}
+	}
+	if data.Cluster().Spec.Cloud.Alibaba != nil {
+		if credentials.Alibaba, err = GetAlibabaCredentials(data); err != nil {
 			return Credentials{}, err
 		}
 	}
@@ -361,4 +372,24 @@ func GetVSphereCredentials(data CredentialsData) (VSphereCredentials, error) {
 		Username: username,
 		Password: password,
 	}, nil
+}
+
+func GetAlibabaCredentials(data CredentialsData) (AlibabaCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.Alibaba
+	alibabaCredentials := AlibabaCredentials{}
+	var err error
+
+	if spec.AccessKeyID != "" {
+		alibabaCredentials.AccessKeyID = spec.AccessKeyID
+	} else if alibabaCredentials.AccessKeyID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AlibabaAccessKeyID); err != nil {
+		return AlibabaCredentials{}, err
+	}
+
+	if spec.AccessKeySecret != "" {
+		alibabaCredentials.AccessKeySecret = spec.AccessKeySecret
+	} else if alibabaCredentials.AccessKeySecret, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AlibabaAccessKeySecret); err != nil {
+		return AlibabaCredentials{}, err
+	}
+
+	return alibabaCredentials, nil
 }

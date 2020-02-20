@@ -18,6 +18,9 @@ type CloudSpec struct {
 	// DatacenterName where the users 'cloud' lives in.
 	DatacenterName string `json:"dc,omitempty"`
 
+	// alibaba
+	Alibaba *AlibabaCloudSpec `json:"alibaba,omitempty"`
+
 	// aws
 	Aws *AWSCloudSpec `json:"aws,omitempty"`
 
@@ -55,6 +58,10 @@ type CloudSpec struct {
 // Validate validates this cloud spec
 func (m *CloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateAlibaba(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateAws(formats); err != nil {
 		res = append(res, err)
@@ -99,6 +106,24 @@ func (m *CloudSpec) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *CloudSpec) validateAlibaba(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Alibaba) { // not required
+		return nil
+	}
+
+	if m.Alibaba != nil {
+		if err := m.Alibaba.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("alibaba")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

@@ -465,6 +465,12 @@ spec:
       country: DE
       spec:
          bringyourown: {}
+    alibaba-eu-central-1a:
+      location: Frankfurt
+      country: DE
+      spec:
+        alibaba:
+          region: eu-central-1
     aws-eu-central-1a:
       location: EU (Frankfurt)
       country: DE
