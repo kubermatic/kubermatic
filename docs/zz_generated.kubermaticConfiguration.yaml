@@ -8,7 +8,7 @@ spec:
   api:
     # AccessibleAddons is a list of addons that should be enabled in the API.
     accessibleAddons:
-      - node-exporter
+    - node-exporter
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic REST API image.
@@ -272,14 +272,14 @@ spec:
       env:
       - name: ACCESS_KEY_ID
         valueFrom:
-        secretKeyRef:
-          name: s3-credentials
-          key: ACCESS_KEY_ID
+          secretKeyRef:
+            name: s3-credentials
+            key: ACCESS_KEY_ID
       - name: SECRET_ACCESS_KEY
         valueFrom:
-        secretKeyRef:
-          name: s3-credentials
-          key: SECRET_ACCESS_KEY
+          secretKeyRef:
+            name: s3-credentials
+            key: SECRET_ACCESS_KEY
     # BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
     backupStoreContainer: |-
       name: store-container
@@ -294,14 +294,14 @@ spec:
       env:
       - name: ACCESS_KEY_ID
         valueFrom:
-        secretKeyRef:
-          name: s3-credentials
-          key: ACCESS_KEY_ID
+          secretKeyRef:
+            name: s3-credentials
+            key: ACCESS_KEY_ID
       - name: SECRET_ACCESS_KEY
         valueFrom:
-        secretKeyRef:
-          name: s3-credentials
-          key: SECRET_ACCESS_KEY
+          secretKeyRef:
+            name: s3-credentials
+            key: SECRET_ACCESS_KEY
       volumeMounts:
       - name: etcd-backup
         mountPath: /backup
@@ -371,47 +371,47 @@ spec:
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: canal
+              name: canal
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: csi
+              name: csi
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: dns
+              name: dns
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: kube-proxy
+              name: kube-proxy
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: openvpn
+              name: openvpn
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: rbac
+              name: rbac
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: kubelet-configmap
+              name: kubelet-configmap
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: default-storage-class
+              name: default-storage-class
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: nodelocal-dns-cache
+              name: nodelocal-dns-cache
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: pod-security-policy
+              name: pod-security-policy
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: logrotate
+              name: logrotate
         # DockerRepository is the repository containing the Docker image containing
         # the possible addon manifests.
         dockerRepository: quay.io/kubermatic/addons
@@ -429,41 +429,41 @@ spec:
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: crd
+              name: crd
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: default-storage-class
+              name: default-storage-class
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: logrotate
+              name: logrotate
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: network
+              name: network
             spec:
-            requiredResourceTypes:
-            - Group: config.openshift.io
-              Kind: Network
-              Version: v1
+              requiredResourceTypes:
+              - Group: config.openshift.io
+                Kind: Network
+                Version: v1
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: openvpn
+              name: openvpn
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: rbac
+              name: rbac
           - apiVersion: kubermatic.k8s.io/v1
             kind: Addon
             metadata:
-            name: registry
+              name: registry
             spec:
-            requiredResourceTypes:
-            - Group: cloudcredential.openshift.io
-              Kind: CredentialsRequest
-              Version: v1
+              requiredResourceTypes:
+              - Group: cloudcredential.openshift.io
+                Kind: CredentialsRequest
+                Version: v1
         # DockerRepository is the repository containing the Docker image containing
         # the possible addon manifests.
         dockerRepository: quay.io/kubermatic/openshift-addons
