@@ -16,7 +16,7 @@ while IFS= read -r crd; do
     echo "$crd" | \
     jq 'del(.metadata.creationTimestamp)' | \
     jq -S '.metadata.annotations["helm.sh/hook"] = "crd-install"' | \
-    yq r -
+    yq -P r -
   )
 
   echo -e "---\n$crd" >> $crdfile
