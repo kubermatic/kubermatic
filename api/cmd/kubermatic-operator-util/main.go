@@ -8,10 +8,15 @@ import (
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
-	"k8s.io/test-infra/pkg/genyaml"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/conversion"
+	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/log"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/test-infra/pkg/genyaml"
+	"sigs.k8s.io/yaml"
 )
 
 var logger *zap.SugaredLogger
@@ -41,6 +46,12 @@ func main() {
 			Usage:     "Convert a Helm values.yaml to a KubermaticConfiguration manifest (YAML)",
 			Action:    convertAction,
 			ArgsUsage: "VALUES_FILE",
+		},
+		{
+			Name:      "defaults",
+			Usage:     "Outputs a KubermaticConfiguration with all default values, optionally applied to a given configuration manifest (YAML)",
+			Action:    defaultsAction,
+			ArgsUsage: "[MANIFEST_FILE]",
 		},
 	}
 
@@ -105,6 +116,49 @@ func convertAction(ctx *cli.Context) error {
 			fmt.Println("\n---")
 		}
 	}
+
+	return nil
+}
+
+func defaultsAction(ctx *cli.Context) error {
+	config := &operatorv1alpha1.KubermaticConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "operator.kubermatic.io/v1alpha1",
+			Kind:       "KubermaticConfiguration",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubermatic",
+			Namespace: "kubermatic",
+		},
+	}
+
+	configFile := ctx.Args().First()
+	if configFile != "" {
+		content, err := ioutil.ReadFile(configFile)
+		if err != nil {
+			return cli.NewExitError(fmt.Errorf("failed to read file %s: %v", configFile, err), 1)
+		}
+
+		if err := yaml.Unmarshal(content, &config); err != nil {
+			return cli.NewExitError(fmt.Errorf("failed to parse file %s as YAML: %v", configFile, err), 1)
+		}
+	}
+
+	logger := zap.NewNop().Sugar()
+	defaulted, err := common.DefaultConfiguration(config, logger)
+	if err != nil {
+		return cli.NewExitError(fmt.Errorf("failed to create KubermaticConfiguration: %v", err), 1)
+	}
+
+	// genyaml is smart enough to not output a creationTimestamp when marshalling as YAML
+	cm := genyaml.NewCommentMap()
+
+	output, err := cm.GenYaml(defaulted)
+	if err != nil {
+		return cli.NewExitError(fmt.Errorf("failed to create YAML: %v", err), 1)
+	}
+
+	fmt.Print(output)
 
 	return nil
 }
