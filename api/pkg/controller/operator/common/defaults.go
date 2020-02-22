@@ -338,10 +338,6 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "ui.replicas", "value", *copy.Spec.UI.Replicas)
 	}
 
-	if copy.Spec.MasterFiles == nil {
-		copy.Spec.MasterFiles = map[string]string{}
-	}
-
 	if err := defaultVersioning(&copy.Spec.Versions.Kubernetes, DefaultKubernetesVersioning, "versions.kubernetes", logger); err != nil {
 		return copy, err
 	}

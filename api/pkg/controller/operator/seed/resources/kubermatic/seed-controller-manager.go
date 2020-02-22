@@ -162,7 +162,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 			if cfg.Spec.UserCluster.Addons.Kubernetes.DefaultManifests != "" {
 				args = append(args, "-kubernetes-addons-file=/opt/master-files/"+common.KubernetesAddonsFileName)
 			} else {
-
 				args = append(args, fmt.Sprintf("-kubernetes-addons-list=%s", strings.Join(cfg.Spec.UserCluster.Addons.Kubernetes.Default, ",")))
 			}
 
