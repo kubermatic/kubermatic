@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
+	yaml3 "gopkg.in/yaml.v3"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/conversion"
@@ -98,19 +98,10 @@ func convertAction(ctx *cli.Context) error {
 		return cli.NewExitError(err, 1)
 	}
 
-	// genyaml is smart enough to not output a creationTimestamp when marshalling as YAML
-	cm := genyaml.NewCommentMap()
-
 	for i, resource := range resources {
-		output, err := cm.GenYaml(resource)
-		if err != nil {
+		if err := printYAML(resource); err != nil {
 			return cli.NewExitError(fmt.Errorf("failed to create YAML: %v", err), 1)
 		}
-
-		// reduce indentation
-		output = strings.Replace(output, "    ", "  ", -1)
-
-		fmt.Print(output)
 
 		if i < len(resources)-1 {
 			fmt.Println("\n---")
@@ -150,15 +141,17 @@ func defaultsAction(ctx *cli.Context) error {
 		return cli.NewExitError(fmt.Errorf("failed to create KubermaticConfiguration: %v", err), 1)
 	}
 
-	// genyaml is smart enough to not output a creationTimestamp when marshalling as YAML
-	cm := genyaml.NewCommentMap()
-
-	output, err := cm.GenYaml(defaulted)
-	if err != nil {
+	if err := printYAML(defaulted); err != nil {
 		return cli.NewExitError(fmt.Errorf("failed to create YAML: %v", err), 1)
 	}
 
-	fmt.Print(output)
-
 	return nil
+}
+
+func printYAML(resource interface{}) error {
+	encoder := yaml3.NewEncoder(os.Stdout)
+	encoder.SetIndent(2)
+
+	// genyaml is smart enough to not output a creationTimestamp when marshalling as YAML
+	return genyaml.NewCommentMap().EncodeYaml(resource, encoder)
 }
