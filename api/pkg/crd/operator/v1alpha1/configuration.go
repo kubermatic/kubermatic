@@ -48,7 +48,7 @@ type KubermaticConfigurationSpec struct {
 	// UserCluster configures various aspects of the user-created clusters.
 	UserCluster KubermaticUserClusterConfiguration `json:"userCluster,omitempty"`
 	// MasterFiles is a map of additional files to mount into each master component.
-	MasterFiles map[string]string `json:"masterFiles,omitempty"`
+	MasterFiles map[string]string `json:"masterFiles,omitempty,omitgenyaml"`
 	// ExposeStrategy is the strategy to expose the cluster with.
 	// Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
 	// if this is set to LoadBalancerStrategy.
