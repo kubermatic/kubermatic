@@ -289,7 +289,7 @@ func (r *Reconciler) reconcileSecrets(cfg *operatorv1alpha1.KubermaticConfigurat
 
 	creators := []reconciling.NamedSecretCreatorGetter{
 		common.DockercfgSecretCreator(cfg),
-		common.MasterFilesSecretCreator(cfg),
+		common.ExtraFilesSecretCreator(cfg),
 		common.SeedWebhookServingCASecretCreator(cfg),
 		common.SeedWebhookServingCertSecretCreator(cfg, client),
 	}

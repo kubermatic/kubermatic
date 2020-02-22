@@ -173,13 +173,6 @@ func (in *KubermaticConfigurationSpec) DeepCopyInto(out *KubermaticConfiguration
 	in.SeedController.DeepCopyInto(&out.SeedController)
 	in.MasterController.DeepCopyInto(&out.MasterController)
 	in.UserCluster.DeepCopyInto(&out.UserCluster)
-	if in.MasterFiles != nil {
-		in, out := &in.MasterFiles, &out.MasterFiles
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
 	in.Ingress.DeepCopyInto(&out.Ingress)
 	in.Versions.DeepCopyInto(&out.Versions)
 	return

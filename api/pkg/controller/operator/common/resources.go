@@ -48,7 +48,7 @@ const (
 
 	DockercfgSecretName                   = "dockercfg"
 	DexCASecretName                       = "dex-ca"
-	MasterFilesSecretName                 = "extra-files"
+	ExtraFilesSecretName                  = "extra-files"
 	SeedWebhookServingCASecretName        = "seed-webhook-ca"
 	SeedWebhookServingCertSecretName      = "seed-webhook-cert"
 	seedWebhookCommonName                 = "seed-webhook"
@@ -96,9 +96,9 @@ func DexCASecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcili
 	}
 }
 
-func MasterFilesSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+func ExtraFilesSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
-		return MasterFilesSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+		return ExtraFilesSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			versions, err := CreateVersionsYAML(&cfg.Spec.Versions)
 			if err != nil {
 				return s, fmt.Errorf("failed to encode versions as YAML: %v", err)

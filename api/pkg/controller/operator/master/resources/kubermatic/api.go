@@ -61,10 +61,10 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 
 			volumes := []corev1.Volume{
 				{
-					Name: "master-files",
+					Name: "extra-files",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: common.MasterFilesSecretName,
+							SecretName: common.ExtraFilesSecretName,
 						},
 					},
 				},
@@ -72,8 +72,8 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 
 			volumeMounts := []corev1.VolumeMount{
 				{
-					MountPath: "/opt/master-files/",
-					Name:      "master-files",
+					MountPath: "/opt/extra-files/",
+					Name:      "extra-files",
 					ReadOnly:  true,
 				},
 			}
@@ -85,9 +85,9 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				"-dynamic-datacenters=true",
 				"-dynamic-presets=true",
 				"-swagger=/opt/swagger.json",
-				"-master-resources=/opt/master-files",
-				fmt.Sprintf("-versions=/opt/master-files/%s", common.VersionsFileName),
-				fmt.Sprintf("-updates=/opt/master-files/%s", common.UpdatesFileName),
+				"-master-resources=/opt/extra-files",
+				fmt.Sprintf("-versions=/opt/extra-files/%s", common.VersionsFileName),
+				fmt.Sprintf("-updates=/opt/extra-files/%s", common.UpdatesFileName),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-oidc-url=%s", cfg.Spec.Auth.TokenIssuer),
 				fmt.Sprintf("-oidc-authenticator-client-id=%s", cfg.Spec.Auth.ClientID),
