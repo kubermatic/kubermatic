@@ -78,8 +78,8 @@ iap:
   port: 3000
 
   image:
-    repository: docker.io/jboss/keycloak
-    tag: 9.0.0
+    repository: docker.io/keycloak/keycloak-gatekeeper
+    tag: 7.0.0
     pullPolicy: IfNotPresent
 
   resources:
