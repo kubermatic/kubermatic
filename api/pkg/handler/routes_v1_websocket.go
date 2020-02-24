@@ -2,7 +2,9 @@ package handler
 
 import (
 	"context"
+	"net"
 	"net/http"
+	"net/url"
 
 	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
@@ -19,6 +21,32 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		origin := r.Header["Origin"]
+		if len(origin) == 0 {
+			return true
+		}
+
+		u, err := url.Parse(origin[0])
+		if err != nil {
+			return false
+		}
+
+		if u.Host == r.Host {
+			return true
+		}
+
+		host, _, err := net.SplitHostPort(r.Host)
+		if err != nil {
+			return false
+		}
+
+		if u.Hostname() == host {
+			return true
+		}
+
+		return false
+	},
 }
 
 type WebsocketWriter func(providers watcher.Providers, ws *websocket.Conn)
@@ -46,9 +74,7 @@ func getHandler(writer WebsocketWriter, providers watcher.Providers, routing Rou
 
 		ws, err := upgrader.Upgrade(w, req, nil)
 		if err != nil {
-			if _, ok := err.(websocket.HandshakeError); !ok {
-				log.Logger.Debug(err)
-			}
+			log.Logger.Debug(err)
 			return
 		}
 
@@ -58,7 +84,11 @@ func getHandler(writer WebsocketWriter, providers watcher.Providers, routing Rou
 }
 
 func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifier) (*v1.User, error) {
-	tokenExtractor := auth.NewHeaderBearerTokenExtractor("Authorization")
+	tokenExtractor := auth.NewCombinedExtractor(
+		auth.NewHeaderBearerTokenExtractor("Authorization"),
+		auth.NewCookieHeaderBearerTokenExtractor("token"),
+		auth.NewQueryParamBearerTokenExtractor("token"),
+	)
 	token, err := tokenExtractor.Extract(req)
 	if err != nil {
 		return nil, err
@@ -101,11 +131,10 @@ func requestLoggingReader(websocket *websocket.Conn) {
 		}
 	}()
 
-	websocket.SetReadLimit(512)
-
 	for {
 		_, message, err := websocket.ReadMessage()
 		if err != nil {
+			log.Logger.Debug(err)
 			break
 		}
 
