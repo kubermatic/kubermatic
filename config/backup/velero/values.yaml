@@ -3,7 +3,7 @@ velero:
   # if you are using restic, make sure to use an official image
   # that also contains the restic binary
   image:
-    repository: velero/velero
+    repository: docker.io/velero/velero
     tag: v1.2.0
     pullPolicy: IfNotPresent
 
