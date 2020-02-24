@@ -3,8 +3,8 @@ velero:
   # if you are using restic, make sure to use an official image
   # that also contains the restic binary
   image:
-    repository: gcr.io/heptio-images/velero
-    tag: v1.1.0
+    repository: docker.io/velero/velero
+    tag: v1.2.0
     pullPolicy: IfNotPresent
 
   # CLI flags to pass to velero server; note that the two flags
