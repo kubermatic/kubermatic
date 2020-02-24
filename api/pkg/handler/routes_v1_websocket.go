@@ -93,11 +93,11 @@ func getProviders(r Routing) watcher.Providers {
 
 func getHandler(writer WebsocketWriter, providers watcher.Providers, routing Routing) func(w http.ResponseWriter, req *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
-		//_, err := verifyAuthorizationToken(req, routing.tokenVerifiers)
-		//if err != nil {
-		//	log.Logger.Debug(err)
-		//	return
-		//}
+		_, err := verifyAuthorizationToken(req, routing.tokenVerifiers)
+		if err != nil {
+			log.Logger.Debug(err)
+			return
+		}
 
 		ws, err := upgrader.Upgrade(w, req, nil)
 		if err != nil {
@@ -111,7 +111,11 @@ func getHandler(writer WebsocketWriter, providers watcher.Providers, routing Rou
 }
 
 func verifyAuthorizationToken(req *http.Request, tokenVerifier auth.TokenVerifier) (*v1.User, error) {
-	tokenExtractor := auth.NewHeaderBearerTokenExtractor("Authorization")
+	tokenExtractor := auth.NewCombinedExtractor(
+		auth.NewHeaderBearerTokenExtractor("Authorization"),
+		auth.NewCookieHeaderBearerTokenExtractor("token"),
+		auth.NewQueryParamBearerTokenExtractor("token"),
+	)
 	token, err := tokenExtractor.Extract(req)
 	if err != nil {
 		return nil, err
