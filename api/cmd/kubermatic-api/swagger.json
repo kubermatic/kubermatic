@@ -7417,7 +7417,7 @@
         "cpuCoreCount": {
           "type": "integer",
           "format": "int64",
-          "x-go-name": "CpuCoreCount"
+          "x-go-name": "CPUCoreCount"
         },
         "id": {
           "type": "string",

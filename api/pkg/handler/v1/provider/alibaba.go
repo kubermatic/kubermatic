@@ -151,13 +151,16 @@ func listAlibabaInstanceTypes(ctx context.Context, accessKeyID string, accessKey
 	instanceTypes := apiv1.AlibabaInstanceTypeList{}
 
 	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
+	}
 
 	request := ecs.CreateDescribeInstanceTypesRequest()
 	request.Scheme = "https"
 
 	instTypes, err := client.DescribeInstanceTypes(request)
 	if err != nil {
-		return apiv1.AlibabaInstanceTypeList{}, fmt.Errorf("failed to list instance types: %v", err)
+		return apiv1.AlibabaInstanceTypeList{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance types: %v", err))
 	}
 
 	for _, instType := range instTypes.InstanceTypes.InstanceType {
@@ -165,7 +168,7 @@ func listAlibabaInstanceTypes(ctx context.Context, accessKeyID string, accessKey
 		if instType.MemorySize >= 2 {
 			it := apiv1.AlibabaInstanceType{
 				ID:           instType.InstanceTypeId,
-				CpuCoreCount: instType.CpuCoreCount,
+				CPUCoreCount: instType.CpuCoreCount,
 				MemorySize:   instType.MemorySize,
 			}
 			instanceTypes = append(instanceTypes, it)

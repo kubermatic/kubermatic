@@ -595,7 +595,7 @@ type AlibabaInstanceTypeList []AlibabaInstanceType
 // swagger:model AlibabaInstanceType
 type AlibabaInstanceType struct {
 	ID           string  `json:"id"`
-	CpuCoreCount int     `json:"cpuCoreCount"`
+	CPUCoreCount int     `json:"cpuCoreCount"`
 	MemorySize   float64 `json:"memorySize"`
 }
 
