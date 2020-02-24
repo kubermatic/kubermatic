@@ -149,35 +149,34 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 
 			args = append(
 				args,
-				"-versions=/opt/master-files/versions.yaml",
-				"-updates=/opt/master-files/updates.yaml",
+				"-versions=/opt/extra-files/versions.yaml",
+				"-updates=/opt/extra-files/updates.yaml",
 			)
 
 			if cfg.Spec.UserCluster.Addons.Openshift.DefaultManifests != "" {
-				args = append(args, "-openshift-addons-file=/opt/master-files/"+common.OpenshiftAddonsFileName)
+				args = append(args, "-openshift-addons-file=/opt/extra-files/"+common.OpenshiftAddonsFileName)
 			} else {
 				args = append(args, fmt.Sprintf("-openshift-addons-list=%s", strings.Join(cfg.Spec.UserCluster.Addons.Openshift.Default, ",")))
 			}
 
 			if cfg.Spec.UserCluster.Addons.Kubernetes.DefaultManifests != "" {
-				args = append(args, "-kubernetes-addons-file=/opt/master-files/"+common.KubernetesAddonsFileName)
+				args = append(args, "-kubernetes-addons-file=/opt/extra-files/"+common.KubernetesAddonsFileName)
 			} else {
-
 				args = append(args, fmt.Sprintf("-kubernetes-addons-list=%s", strings.Join(cfg.Spec.UserCluster.Addons.Kubernetes.Default, ",")))
 			}
 
 			volumes = append(volumes, corev1.Volume{
-				Name: "master-files",
+				Name: "extra-files",
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName: common.MasterFilesSecretName,
+						SecretName: common.ExtraFilesSecretName,
 					},
 				},
 			})
 
 			volumeMounts = append(volumeMounts, corev1.VolumeMount{
-				MountPath: "/opt/master-files/",
-				Name:      "master-files",
+				MountPath: "/opt/extra-files/",
+				Name:      "extra-files",
 				ReadOnly:  true,
 			})
 

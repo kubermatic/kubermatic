@@ -7,7 +7,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	v1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/validation/nodeupdate"
 )
@@ -26,17 +26,17 @@ type Manager struct {
 // Version is the object representing a Kubernetes version.
 type Version struct {
 	Version *semver.Version `json:"version"`
-	Default bool            `json:"default"`
-	Type    string          `json:"type"`
+	Default bool            `json:"default,omitempty"`
+	Type    string          `json:"type,omitempty"`
 }
 
 // Update represents an update option for a cluster
 type Update struct {
 	From                string `json:"from"`
 	To                  string `json:"to"`
-	Automatic           bool   `json:"automatic"`
-	AutomaticNodeUpdate bool   `json:"automaticNodeUpdate"`
-	Type                string `json:"type"`
+	Automatic           bool   `json:"automatic,omitempty"`
+	AutomaticNodeUpdate bool   `json:"automaticNodeUpdate,omitempty"`
+	Type                string `json:"type,omitempty"`
 }
 
 // New returns a instance of Manager
