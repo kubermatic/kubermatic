@@ -43,7 +43,7 @@ func CreateOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 		return createVSphereSecret(ctx, seedClient, cluster)
 	}
 	if cluster.Spec.Cloud.Alibaba != nil {
-		return createAlibabaSecret(ctx, seedClient, cluster, projectID)
+		return createAlibabaSecret(ctx, seedClient, cluster)
 	}
 	return nil
 }
@@ -674,7 +674,7 @@ func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 	return nil
 }
 
-func createAlibabaSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
+func createAlibabaSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	// create secret for storing credentials
 	name := cluster.GetSecretName()
 	secret := &corev1.Secret{
@@ -682,8 +682,7 @@ func createAlibabaSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 			Name:      name,
 			Namespace: resources.KubermaticNamespace,
 			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: projectID,
-				"name":                         name,
+				"name": name,
 			},
 		},
 		Type: corev1.SecretTypeOpaque,
