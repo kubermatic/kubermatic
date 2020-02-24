@@ -105,158 +105,6 @@ spec:
       requests:
         cpu: 50m
         memory: 128Mi
-  # MasterFiles is a map of additional files to mount into each master component.
-  masterFiles:
-    updates.yaml: |-
-      ### Updates file
-      #
-      # Contains a list of allowed updated
-      #
-      # Each update may optionally contain 'automatic: true' in which case the
-      # controlplane of all clusters whose version matches the 'from' directive
-      # will get updated to the 'to' version. If 'automatic: true' is set, the
-      # 'to' version must be a version and not a version range.
-      #
-      # All 'to' versions must be configured in the 'versions.yaml'.
-      #
-      # Also, updates may contan 'automaticNodeUpdate: true', in which case
-      # Nodes will get updates as well. 'automaticNodeUpdate: true' sets
-      # 'automatic: true' as well if not yet the case, because Nodes may not have
-      # a newer version than the controlplane.
-      #
-      ####
-
-      updates:
-      # ======= 1.12 =======
-      # Allow to next minor release
-      - from: 1.12.*
-        to: 1.13.*
-        automatic: false
-
-      # ======= 1.13 =======
-      # CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514
-      - from: <= 1.13.9, >= 1.13.0
-        to: 1.13.10
-        automatic: true
-      # Allow to next minor release
-      - from: 1.13.*
-        to: 1.14.*
-        automatic: false
-
-      # ======= 1.14 =======
-      # Allow to change to any patch version
-      - from: 1.14.*
-        to: 1.14.*
-        automatic: false
-      # CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
-      - from: <= 1.14.7, >= 1.14.0
-        to: 1.14.8
-        automatic: true
-      # Allow to next minor release
-      - from: 1.14.*
-        to: 1.15.*
-        automatic: false
-
-      # ======= 1.15 =======
-      # Allow to change to any patch version
-      - from: 1.15.*
-        to: 1.15.*
-        automatic: false
-      # CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
-      - from: <= 1.15.4, >= 1.15.0
-        to: 1.15.5
-        automatic: true
-      # Released with broken Anago
-      - from: 1.15.8
-        to: 1.15.9
-        automatic: true
-      # Allow to next minor release
-      - from: 1.15.*
-        to: 1.16.*
-        automatic: false
-
-      # ======= 1.16 =======
-      # Allow to change to any patch version
-      - from: 1.16.*
-        to: 1.16.*
-        automatic: false
-      # CVE-2019-11253
-      - from: <= 1.16.1, >= 1.16.0
-        to: 1.16.2
-        automatic: true
-      # Released with broken Anago
-      - from: 1.16.5
-        to: 1.16.6
-        automatic: true
-      # Allow to next minor release
-      - from: 1.16.*
-        to: 1.17.*
-        automatic: false
-
-      # ======= 1.17 =======
-      # Allow to change to any patch version
-      - from: 1.17.*
-        to: 1.17.*
-        automatic: false
-      # Released with broken Anago
-      - from: 1.17.1
-        to: 1.17.2
-        automatic: true
-      # Allow to next minor release
-      - from: 1.17.*
-        to: 1.18.*
-        automatic: false
-
-      # ======= Openshift 4.1 =======
-      # Allow to change to any patch version
-      - from: 4.1.*
-        to: 4.1.*
-        automatic: false
-        type: openshift
-      # Allow to next minor release
-      - from: 4.1.*
-        to: 2.2.*
-        automatic: false
-        type: openshift
-    versions.yaml: |-
-      versions:
-      # Kubernetes 1.15
-      - version: "v1.15.5"
-        default: false
-      - version: "v1.15.6"
-        default: false
-      - version: "v1.15.7"
-        default: false
-      - version: "v1.15.9"
-        default: true
-      - version: "v1.15.10"
-        default: true
-      # Kubernetes 1.16
-      - version: "v1.16.2"
-        default: false
-      - version: "v1.16.3"
-        default: false
-      - version: "v1.16.4"
-        default: false
-      - version: "v1.16.6"
-        default: false
-      - version: "v1.16.7"
-        default: false
-      # Kubernetes 1.17
-      - version: "v1.17.0"
-        default: false
-      - version: "v1.17.2"
-        default: false
-      - version: "v1.17.3"
-        default: false
-      # OpenShift 4.1.9
-      - version: "v4.1.9"
-        default: false
-        type: "openshift"
-      # OpenShift 4.1.18
-      - version: "v4.1.18"
-        default: true
-        type: "openshift"
   # SeedController configures the seed-controller-manager.
   seedController:
     # BackupCleanupContainer is the container used for removing expired backups from the storage location.
@@ -502,3 +350,113 @@ spec:
     # used inside user clusters (user cluster control plane + addons). This also applies to
     # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
     overwriteRegistry: ""
+  # Versions configures the available and default Kubernetes/Openshift versions and updates.
+  versions:
+    # Kubernetes configures the Kubernetes versions and updates.
+    kubernetes:
+      # Default is the default version to offer users.
+      default: 1.15.10
+      # Updates is a list of available and automatic upgrades.
+      # All 'to' versions must be configured in the version list for this orchestrator.
+      # Each update may optionally be configured to be 'automatic: true', in which case the
+      # controlplane of all clusters whose version matches the 'from' directive will get
+      # updated to the 'to' version. If automatic is enabled, the 'to' version must be a
+      # version and not a version range.
+      # Also, updates may set 'automaticNodeUpdate: true', in which case Nodes will get
+      # updates as well. 'automaticNodeUpdate: true' implies 'automatic: true' as well,
+      # because Nodes may not have a newer version than the controlplane.
+      updates:
+      - # Automatic controls whether this update is executed automatically
+        # for the control plane of all matching user clusters.
+        automatic: false
+        # Automatic controls whether this update is executed automatically
+        # for the worker nodes of all matching user clusters.
+        automaticNodeUpdate: false
+        # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.12.*".
+        from: 1.12.*
+        # From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.13.*".
+        to: 1.13.*
+      - automatic: true
+        from: <= 1.13.9, >= 1.13.0
+        to: 1.13.10
+      - from: 1.13.*
+        to: 1.14.*
+      - from: 1.14.*
+        to: 1.14.*
+      - automatic: true
+        from: <= 1.14.7, >= 1.14.0
+        to: 1.14.8
+      - from: 1.14.*
+        to: 1.15.*
+      - from: 1.15.*
+        to: 1.15.*
+      - automatic: true
+        from: <= 1.15.4, >= 1.15.0
+        to: 1.15.5
+      - automatic: true
+        from: 1.15.8
+        to: 1.15.9
+      - from: 1.15.*
+        to: 1.16.*
+      - from: 1.16.*
+        to: 1.16.*
+      - automatic: true
+        from: <= 1.16.1, >= 1.16.0
+        to: 1.16.2
+      - automatic: true
+        from: 1.16.5
+        to: 1.16.6
+      - from: 1.16.*
+        to: 1.17.*
+      - from: 1.17.*
+        to: 1.17.*
+      - automatic: true
+        from: 1.17.1
+        to: 1.17.2
+      - from: 1.17.*
+        to: 1.18.*
+      # Versions lists the available versions.
+      versions:
+      - 1.15.5
+      - 1.15.6
+      - 1.15.7
+      - 1.15.9
+      - 1.15.10
+      - 1.16.2
+      - 1.16.3
+      - 1.16.4
+      - 1.16.6
+      - 1.16.7
+      - 1.17.0
+      - 1.17.2
+      - 1.17.3
+    # Openshift configures the Openshift versions and updates.
+    openshift:
+      # Default is the default version to offer users.
+      default: 4.1.18
+      # Updates is a list of available and automatic upgrades.
+      # All 'to' versions must be configured in the version list for this orchestrator.
+      # Each update may optionally be configured to be 'automatic: true', in which case the
+      # controlplane of all clusters whose version matches the 'from' directive will get
+      # updated to the 'to' version. If automatic is enabled, the 'to' version must be a
+      # version and not a version range.
+      # Also, updates may set 'automaticNodeUpdate: true', in which case Nodes will get
+      # updates as well. 'automaticNodeUpdate: true' implies 'automatic: true' as well,
+      # because Nodes may not have a newer version than the controlplane.
+      updates:
+      - # Automatic controls whether this update is executed automatically
+        # for the control plane of all matching user clusters.
+        automatic: false
+        # Automatic controls whether this update is executed automatically
+        # for the worker nodes of all matching user clusters.
+        automaticNodeUpdate: false
+        # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.12.*".
+        from: 4.1.*
+        # From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.13.*".
+        to: 4.1.*
+      - from: 4.1.*
+        to: 2.2.*
+      # Versions lists the available versions.
+      versions:
+      - 4.1.9
+      - 4.1.18

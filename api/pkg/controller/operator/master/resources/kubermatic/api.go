@@ -59,8 +59,24 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				},
 			}
 
-			volumes := []corev1.Volume{}
-			volumeMounts := []corev1.VolumeMount{}
+			volumes := []corev1.Volume{
+				{
+					Name: "extra-files",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: common.ExtraFilesSecretName,
+						},
+					},
+				},
+			}
+
+			volumeMounts := []corev1.VolumeMount{
+				{
+					MountPath: "/opt/extra-files/",
+					Name:      "extra-files",
+					ReadOnly:  true,
+				},
+			}
 
 			args := []string{
 				"-logtostderr",
@@ -69,6 +85,9 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				"-dynamic-datacenters=true",
 				"-dynamic-presets=true",
 				"-swagger=/opt/swagger.json",
+				"-master-resources=/opt/extra-files",
+				fmt.Sprintf("-versions=/opt/extra-files/%s", common.VersionsFileName),
+				fmt.Sprintf("-updates=/opt/extra-files/%s", common.UpdatesFileName),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-oidc-url=%s", cfg.Spec.Auth.TokenIssuer),
 				fmt.Sprintf("-oidc-authenticator-client-id=%s", cfg.Spec.Auth.ClientID),
@@ -118,30 +137,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 
 			if workerName != "" {
 				args = append(args, fmt.Sprintf("-worker-name=%s", workerName))
-			}
-
-			if len(cfg.Spec.MasterFiles) > 0 {
-				args = append(
-					args,
-					"-versions=/opt/master-files/versions.yaml",
-					"-updates=/opt/master-files/updates.yaml",
-					"-master-resources=/opt/master-files",
-				)
-
-				volumes = append(volumes, corev1.Volume{
-					Name: "master-files",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: common.MasterFilesSecretName,
-						},
-					},
-				})
-
-				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					MountPath: "/opt/master-files/",
-					Name:      "master-files",
-					ReadOnly:  true,
-				})
 			}
 
 			d.Spec.Template.Spec.Volumes = volumes
