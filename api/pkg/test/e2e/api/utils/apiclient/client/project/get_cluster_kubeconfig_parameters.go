@@ -20,7 +20,7 @@ import (
 // NewGetClusterKubeconfigParams creates a new GetClusterKubeconfigParams object
 // with the default values initialized.
 func NewGetClusterKubeconfigParams() *GetClusterKubeconfigParams {
-	var ()
+
 	return &GetClusterKubeconfigParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +30,7 @@ func NewGetClusterKubeconfigParams() *GetClusterKubeconfigParams {
 // NewGetClusterKubeconfigParamsWithTimeout creates a new GetClusterKubeconfigParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetClusterKubeconfigParamsWithTimeout(timeout time.Duration) *GetClusterKubeconfigParams {
-	var ()
+
 	return &GetClusterKubeconfigParams{
 
 		timeout: timeout,
@@ -40,7 +40,7 @@ func NewGetClusterKubeconfigParamsWithTimeout(timeout time.Duration) *GetCluster
 // NewGetClusterKubeconfigParamsWithContext creates a new GetClusterKubeconfigParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewGetClusterKubeconfigParamsWithContext(ctx context.Context) *GetClusterKubeconfigParams {
-	var ()
+
 	return &GetClusterKubeconfigParams{
 
 		Context: ctx,
@@ -50,7 +50,7 @@ func NewGetClusterKubeconfigParamsWithContext(ctx context.Context) *GetClusterKu
 // NewGetClusterKubeconfigParamsWithHTTPClient creates a new GetClusterKubeconfigParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetClusterKubeconfigParamsWithHTTPClient(client *http.Client) *GetClusterKubeconfigParams {
-	var ()
+
 	return &GetClusterKubeconfigParams{
 		HTTPClient: client,
 	}
@@ -60,14 +60,6 @@ func NewGetClusterKubeconfigParamsWithHTTPClient(client *http.Client) *GetCluste
 for the get cluster kubeconfig operation typically these are written to a http.Request
 */
 type GetClusterKubeconfigParams struct {
-
-	/*ClusterID*/
-	ClusterID string
-	/*Dc*/
-	DC string
-	/*ProjectID*/
-	ProjectID string
-
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -106,39 +98,6 @@ func (o *GetClusterKubeconfigParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithClusterID adds the clusterID to the get cluster kubeconfig params
-func (o *GetClusterKubeconfigParams) WithClusterID(clusterID string) *GetClusterKubeconfigParams {
-	o.SetClusterID(clusterID)
-	return o
-}
-
-// SetClusterID adds the clusterId to the get cluster kubeconfig params
-func (o *GetClusterKubeconfigParams) SetClusterID(clusterID string) {
-	o.ClusterID = clusterID
-}
-
-// WithDC adds the dc to the get cluster kubeconfig params
-func (o *GetClusterKubeconfigParams) WithDC(dc string) *GetClusterKubeconfigParams {
-	o.SetDC(dc)
-	return o
-}
-
-// SetDC adds the dc to the get cluster kubeconfig params
-func (o *GetClusterKubeconfigParams) SetDC(dc string) {
-	o.DC = dc
-}
-
-// WithProjectID adds the projectID to the get cluster kubeconfig params
-func (o *GetClusterKubeconfigParams) WithProjectID(projectID string) *GetClusterKubeconfigParams {
-	o.SetProjectID(projectID)
-	return o
-}
-
-// SetProjectID adds the projectId to the get cluster kubeconfig params
-func (o *GetClusterKubeconfigParams) SetProjectID(projectID string) {
-	o.ProjectID = projectID
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *GetClusterKubeconfigParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -146,21 +105,6 @@ func (o *GetClusterKubeconfigParams) WriteToRequest(r runtime.ClientRequest, reg
 		return err
 	}
 	var res []error
-
-	// path param cluster_id
-	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
-		return err
-	}
-
-	// path param dc
-	if err := r.SetPathParam("dc", o.DC); err != nil {
-		return err
-	}
-
-	// path param project_id
-	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
-		return err
-	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

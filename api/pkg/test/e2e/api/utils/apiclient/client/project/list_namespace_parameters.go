@@ -20,7 +20,7 @@ import (
 // NewListNamespaceParams creates a new ListNamespaceParams object
 // with the default values initialized.
 func NewListNamespaceParams() *ListNamespaceParams {
-	var ()
+
 	return &ListNamespaceParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +30,7 @@ func NewListNamespaceParams() *ListNamespaceParams {
 // NewListNamespaceParamsWithTimeout creates a new ListNamespaceParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListNamespaceParamsWithTimeout(timeout time.Duration) *ListNamespaceParams {
-	var ()
+
 	return &ListNamespaceParams{
 
 		timeout: timeout,
@@ -40,7 +40,7 @@ func NewListNamespaceParamsWithTimeout(timeout time.Duration) *ListNamespacePara
 // NewListNamespaceParamsWithContext creates a new ListNamespaceParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListNamespaceParamsWithContext(ctx context.Context) *ListNamespaceParams {
-	var ()
+
 	return &ListNamespaceParams{
 
 		Context: ctx,
@@ -50,7 +50,7 @@ func NewListNamespaceParamsWithContext(ctx context.Context) *ListNamespaceParams
 // NewListNamespaceParamsWithHTTPClient creates a new ListNamespaceParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListNamespaceParamsWithHTTPClient(client *http.Client) *ListNamespaceParams {
-	var ()
+
 	return &ListNamespaceParams{
 		HTTPClient: client,
 	}
@@ -60,14 +60,6 @@ func NewListNamespaceParamsWithHTTPClient(client *http.Client) *ListNamespacePar
 for the list namespace operation typically these are written to a http.Request
 */
 type ListNamespaceParams struct {
-
-	/*ClusterID*/
-	ClusterID string
-	/*Dc*/
-	DC string
-	/*ProjectID*/
-	ProjectID string
-
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -106,39 +98,6 @@ func (o *ListNamespaceParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithClusterID adds the clusterID to the list namespace params
-func (o *ListNamespaceParams) WithClusterID(clusterID string) *ListNamespaceParams {
-	o.SetClusterID(clusterID)
-	return o
-}
-
-// SetClusterID adds the clusterId to the list namespace params
-func (o *ListNamespaceParams) SetClusterID(clusterID string) {
-	o.ClusterID = clusterID
-}
-
-// WithDC adds the dc to the list namespace params
-func (o *ListNamespaceParams) WithDC(dc string) *ListNamespaceParams {
-	o.SetDC(dc)
-	return o
-}
-
-// SetDC adds the dc to the list namespace params
-func (o *ListNamespaceParams) SetDC(dc string) {
-	o.DC = dc
-}
-
-// WithProjectID adds the projectID to the list namespace params
-func (o *ListNamespaceParams) WithProjectID(projectID string) *ListNamespaceParams {
-	o.SetProjectID(projectID)
-	return o
-}
-
-// SetProjectID adds the projectId to the list namespace params
-func (o *ListNamespaceParams) SetProjectID(projectID string) {
-	o.ProjectID = projectID
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *ListNamespaceParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -146,21 +105,6 @@ func (o *ListNamespaceParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 		return err
 	}
 	var res []error
-
-	// path param cluster_id
-	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
-		return err
-	}
-
-	// path param dc
-	if err := r.SetPathParam("dc", o.DC); err != nil {
-		return err
-	}
-
-	// path param project_id
-	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
-		return err
-	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

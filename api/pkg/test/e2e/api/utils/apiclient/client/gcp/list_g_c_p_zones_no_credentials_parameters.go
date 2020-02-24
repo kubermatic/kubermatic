@@ -20,7 +20,7 @@ import (
 // NewListGCPZonesNoCredentialsParams creates a new ListGCPZonesNoCredentialsParams object
 // with the default values initialized.
 func NewListGCPZonesNoCredentialsParams() *ListGCPZonesNoCredentialsParams {
-	var ()
+
 	return &ListGCPZonesNoCredentialsParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +30,7 @@ func NewListGCPZonesNoCredentialsParams() *ListGCPZonesNoCredentialsParams {
 // NewListGCPZonesNoCredentialsParamsWithTimeout creates a new ListGCPZonesNoCredentialsParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListGCPZonesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListGCPZonesNoCredentialsParams {
-	var ()
+
 	return &ListGCPZonesNoCredentialsParams{
 
 		timeout: timeout,
@@ -40,7 +40,7 @@ func NewListGCPZonesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListG
 // NewListGCPZonesNoCredentialsParamsWithContext creates a new ListGCPZonesNoCredentialsParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListGCPZonesNoCredentialsParamsWithContext(ctx context.Context) *ListGCPZonesNoCredentialsParams {
-	var ()
+
 	return &ListGCPZonesNoCredentialsParams{
 
 		Context: ctx,
@@ -50,7 +50,7 @@ func NewListGCPZonesNoCredentialsParamsWithContext(ctx context.Context) *ListGCP
 // NewListGCPZonesNoCredentialsParamsWithHTTPClient creates a new ListGCPZonesNoCredentialsParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListGCPZonesNoCredentialsParamsWithHTTPClient(client *http.Client) *ListGCPZonesNoCredentialsParams {
-	var ()
+
 	return &ListGCPZonesNoCredentialsParams{
 		HTTPClient: client,
 	}
@@ -60,14 +60,6 @@ func NewListGCPZonesNoCredentialsParamsWithHTTPClient(client *http.Client) *List
 for the list g c p zones no credentials operation typically these are written to a http.Request
 */
 type ListGCPZonesNoCredentialsParams struct {
-
-	/*ClusterID*/
-	ClusterID string
-	/*Dc*/
-	DC string
-	/*ProjectID*/
-	ProjectID string
-
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -106,39 +98,6 @@ func (o *ListGCPZonesNoCredentialsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithClusterID adds the clusterID to the list g c p zones no credentials params
-func (o *ListGCPZonesNoCredentialsParams) WithClusterID(clusterID string) *ListGCPZonesNoCredentialsParams {
-	o.SetClusterID(clusterID)
-	return o
-}
-
-// SetClusterID adds the clusterId to the list g c p zones no credentials params
-func (o *ListGCPZonesNoCredentialsParams) SetClusterID(clusterID string) {
-	o.ClusterID = clusterID
-}
-
-// WithDC adds the dc to the list g c p zones no credentials params
-func (o *ListGCPZonesNoCredentialsParams) WithDC(dc string) *ListGCPZonesNoCredentialsParams {
-	o.SetDC(dc)
-	return o
-}
-
-// SetDC adds the dc to the list g c p zones no credentials params
-func (o *ListGCPZonesNoCredentialsParams) SetDC(dc string) {
-	o.DC = dc
-}
-
-// WithProjectID adds the projectID to the list g c p zones no credentials params
-func (o *ListGCPZonesNoCredentialsParams) WithProjectID(projectID string) *ListGCPZonesNoCredentialsParams {
-	o.SetProjectID(projectID)
-	return o
-}
-
-// SetProjectID adds the projectId to the list g c p zones no credentials params
-func (o *ListGCPZonesNoCredentialsParams) SetProjectID(projectID string) {
-	o.ProjectID = projectID
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *ListGCPZonesNoCredentialsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -146,21 +105,6 @@ func (o *ListGCPZonesNoCredentialsParams) WriteToRequest(r runtime.ClientRequest
 		return err
 	}
 	var res []error
-
-	// path param cluster_id
-	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
-		return err
-	}
-
-	// path param dc
-	if err := r.SetPathParam("dc", o.DC); err != nil {
-		return err
-	}
-
-	// path param project_id
-	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
-		return err
-	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

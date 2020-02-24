@@ -93,6 +93,26 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  digest = "1:fa8c7388014f41adc0fec7363916084eecd90ba513f892eb0f20faac013f4bbd"
+  name = "github.com/aliyun/alibaba-cloud-sdk-go"
+  packages = [
+    "sdk",
+    "sdk/auth",
+    "sdk/auth/credentials",
+    "sdk/auth/credentials/provider",
+    "sdk/auth/signers",
+    "sdk/endpoints",
+    "sdk/errors",
+    "sdk/requests",
+    "sdk/responses",
+    "sdk/utils",
+    "services/ecs",
+  ]
+  pruneopts = "NUT"
+  revision = "111b102694f9e38f0792c9f544e8586c8ac7de9b"
+  version = "1.60.121"
+
+[[projects]]
   digest = "1:975108e8d4f5dab096fc991326e96a5716ee8d02e5e7386bb4796171afc4ab9a"
   name = "github.com/aokoli/goutils"
   packages = ["."]
@@ -2119,6 +2139,7 @@
     "github.com/Azure/go-autorest/autorest/to",
     "github.com/Masterminds/semver",
     "github.com/Masterminds/sprig",
+    "github.com/aliyun/alibaba-cloud-sdk-go/services/ecs",
     "github.com/aws/aws-sdk-go/aws",
     "github.com/aws/aws-sdk-go/aws/awserr",
     "github.com/aws/aws-sdk-go/aws/credentials",

@@ -13,6 +13,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/addon"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/admin"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/alibaba"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/aws"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/azure"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/credentials"
@@ -77,6 +78,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Transport = transport
 	cli.Addon = addon.New(transport, formats)
 	cli.Admin = admin.New(transport, formats)
+	cli.Alibaba = alibaba.New(transport, formats)
 	cli.Aws = aws.New(transport, formats)
 	cli.Azure = azure.New(transport, formats)
 	cli.Credentials = credentials.New(transport, formats)
@@ -143,6 +145,8 @@ type Kubermatic struct {
 
 	Admin admin.ClientService
 
+	Alibaba alibaba.ClientService
+
 	Aws aws.ClientService
 
 	Azure azure.ClientService
@@ -187,6 +191,7 @@ func (c *Kubermatic) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
 	c.Addon.SetTransport(transport)
 	c.Admin.SetTransport(transport)
+	c.Alibaba.SetTransport(transport)
 	c.Aws.SetTransport(transport)
 	c.Azure.SetTransport(transport)
 	c.Credentials.SetTransport(transport)

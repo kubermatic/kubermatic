@@ -20,7 +20,7 @@ import (
 // NewGetOidcClusterKubeconfigParams creates a new GetOidcClusterKubeconfigParams object
 // with the default values initialized.
 func NewGetOidcClusterKubeconfigParams() *GetOidcClusterKubeconfigParams {
-	var ()
+
 	return &GetOidcClusterKubeconfigParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +30,7 @@ func NewGetOidcClusterKubeconfigParams() *GetOidcClusterKubeconfigParams {
 // NewGetOidcClusterKubeconfigParamsWithTimeout creates a new GetOidcClusterKubeconfigParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetOidcClusterKubeconfigParamsWithTimeout(timeout time.Duration) *GetOidcClusterKubeconfigParams {
-	var ()
+
 	return &GetOidcClusterKubeconfigParams{
 
 		timeout: timeout,
@@ -40,7 +40,7 @@ func NewGetOidcClusterKubeconfigParamsWithTimeout(timeout time.Duration) *GetOid
 // NewGetOidcClusterKubeconfigParamsWithContext creates a new GetOidcClusterKubeconfigParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewGetOidcClusterKubeconfigParamsWithContext(ctx context.Context) *GetOidcClusterKubeconfigParams {
-	var ()
+
 	return &GetOidcClusterKubeconfigParams{
 
 		Context: ctx,
@@ -50,7 +50,7 @@ func NewGetOidcClusterKubeconfigParamsWithContext(ctx context.Context) *GetOidcC
 // NewGetOidcClusterKubeconfigParamsWithHTTPClient creates a new GetOidcClusterKubeconfigParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetOidcClusterKubeconfigParamsWithHTTPClient(client *http.Client) *GetOidcClusterKubeconfigParams {
-	var ()
+
 	return &GetOidcClusterKubeconfigParams{
 		HTTPClient: client,
 	}
@@ -60,14 +60,6 @@ func NewGetOidcClusterKubeconfigParamsWithHTTPClient(client *http.Client) *GetOi
 for the get oidc cluster kubeconfig operation typically these are written to a http.Request
 */
 type GetOidcClusterKubeconfigParams struct {
-
-	/*ClusterID*/
-	ClusterID string
-	/*Dc*/
-	DC string
-	/*ProjectID*/
-	ProjectID string
-
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -106,39 +98,6 @@ func (o *GetOidcClusterKubeconfigParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithClusterID adds the clusterID to the get oidc cluster kubeconfig params
-func (o *GetOidcClusterKubeconfigParams) WithClusterID(clusterID string) *GetOidcClusterKubeconfigParams {
-	o.SetClusterID(clusterID)
-	return o
-}
-
-// SetClusterID adds the clusterId to the get oidc cluster kubeconfig params
-func (o *GetOidcClusterKubeconfigParams) SetClusterID(clusterID string) {
-	o.ClusterID = clusterID
-}
-
-// WithDC adds the dc to the get oidc cluster kubeconfig params
-func (o *GetOidcClusterKubeconfigParams) WithDC(dc string) *GetOidcClusterKubeconfigParams {
-	o.SetDC(dc)
-	return o
-}
-
-// SetDC adds the dc to the get oidc cluster kubeconfig params
-func (o *GetOidcClusterKubeconfigParams) SetDC(dc string) {
-	o.DC = dc
-}
-
-// WithProjectID adds the projectID to the get oidc cluster kubeconfig params
-func (o *GetOidcClusterKubeconfigParams) WithProjectID(projectID string) *GetOidcClusterKubeconfigParams {
-	o.SetProjectID(projectID)
-	return o
-}
-
-// SetProjectID adds the projectId to the get oidc cluster kubeconfig params
-func (o *GetOidcClusterKubeconfigParams) SetProjectID(projectID string) {
-	o.ProjectID = projectID
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *GetOidcClusterKubeconfigParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -146,21 +105,6 @@ func (o *GetOidcClusterKubeconfigParams) WriteToRequest(r runtime.ClientRequest,
 		return err
 	}
 	var res []error
-
-	// path param cluster_id
-	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
-		return err
-	}
-
-	// path param dc
-	if err := r.SetPathParam("dc", o.DC); err != nil {
-		return err
-	}
-
-	// path param project_id
-	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
-		return err
-	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
