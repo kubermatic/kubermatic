@@ -128,6 +128,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listHetznerSizes())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/alibaba/instancetypes").
+		Handler(r.listAlibabaInstanceTypes())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/presets/credentials").
 		Handler(r.listCredentials())
 
@@ -465,6 +469,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes").
 		Handler(r.listPacketSizesNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/instancetypes").
+		Handler(r.listAlibabaInstanceTypesNoCredentials()
 
 	//
 	// Defines a set of openshift-specific endpoints
@@ -1102,6 +1110,28 @@ func (r Routing) listHetznerSizes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.HetznerSizeEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeHetznerSizesReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/alibaba/instancetypes alibaba listAlibabaInstanceTypes
+//
+// Lists available Alibaba instance types.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AlibabaInstanceTypeList
+func (r Routing) listAlibabaInstanceTypes() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AlibabaInstanceTypesEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeAlibabaInstanceTypesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -2588,6 +2618,29 @@ func (r Routing) listVSphereFoldersNoCredentials() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.VsphereFoldersWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeVSphereFoldersNoCredentialsReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/instancetypes alibaba listAlibabaInstanceTypesNoCredentials
+//
+// Lists available Alibaba Instance Types
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AlibabaInstanceTypeList
+func (r Routing) listAlibabaInstanceTypesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.AlibabaInstanceTypesWithClusterCredentialsEndpoint(r.projectProvider, r.userInfoGetter)),
+		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
