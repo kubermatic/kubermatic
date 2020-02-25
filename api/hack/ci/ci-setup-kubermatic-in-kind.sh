@@ -411,6 +411,10 @@ $(echo "$IMAGE_PULL_SECRET_DATA" | base64 -d | sed 's/^/    /')
     apiserverReplicas: 1
   api:
     debugLog: true
+  featureGates:
+    # VPA won't do anything useful due to missing Prometheus, but we can
+    # at least ensure we deploy a working set of Deployments.
+    VerticalPodAutoscaler: {}
   ui:
     replicas: $KUBERMATIC_UI_REPLICAS
   # Dex integration
@@ -426,8 +430,9 @@ EOF
   echodate "Waiting for Kubermatic Operator to deploy master components..."
   # sleep a bit to prevent us from checking the Deployments too early, before
   # the operator had time to reconcile
-  sleep 2
-  retry 8 check_all_deployments_ready kubermatic
+  sleep 5
+  retry 10 check_all_deployments_ready kubermatic
+
   echodate "Kubermatic Master is ready."
 fi
 
@@ -556,15 +561,19 @@ spec:
             minimum_vcpus: 0
           region: dbl
 EOF
-retry 7 kubectl apply -f $SEED_MANIFEST
+retry 8 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing Seed"
 
 # wait until the operator has reconciled
 if [[ "${KUBERMATIC_USE_OPERATOR}" = "true" ]]; then
-  sleep 2
+  sleep 5
   echodate "Waiting for Kubermatic Operator to deploy seed components..."
   retry 8 check_all_deployments_ready kubermatic
   echodate "Kubermatic Seed is ready."
+
+  echodate "Waiting for VPA to be ready..."
+  retry 5 check_all_deployments_ready kube-system
+  echodate "VPA is ready."
 fi
 
 function kill_port_forwardings() {

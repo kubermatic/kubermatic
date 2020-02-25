@@ -22,17 +22,20 @@ import (
 )
 
 const (
-	DefaultPProfEndpoint               = ":6600"
-	DefaultNodePortRange               = "30000-32767"
-	DefaultEtcdVolumeSize              = "5Gi"
-	DefaultAuthClientID                = "kubermatic"
-	DefaultIngressClass                = "nginx"
-	DefaultAPIReplicas                 = 2
-	DefaultUIReplicas                  = 2
-	DefaultSeedControllerMgrReplicas   = 2
-	DefaultMasterControllerMgrReplicas = 2
-	DefaultAPIServerReplicas           = 2
-	DefaultExposeStrategy              = operatorv1alpha1.NodePortStrategy
+	DefaultPProfEndpoint                          = ":6600"
+	DefaultNodePortRange                          = "30000-32767"
+	DefaultEtcdVolumeSize                         = "5Gi"
+	DefaultAuthClientID                           = "kubermatic"
+	DefaultIngressClass                           = "nginx"
+	DefaultAPIReplicas                            = 2
+	DefaultUIReplicas                             = 2
+	DefaultSeedControllerMgrReplicas              = 2
+	DefaultMasterControllerMgrReplicas            = 2
+	DefaultAPIServerReplicas                      = 2
+	DefaultExposeStrategy                         = operatorv1alpha1.NodePortStrategy
+	DefaultVPARecommenderDockerRepository         = "gcr.io/google_containers/vpa-recommender"
+	DefaultVPAUpdaterDockerRepository             = "gcr.io/google_containers/vpa-updater"
+	DefaultVPAAdmissionControllerDockerRepository = "gcr.io/google_containers/vpa-admission-controller"
 )
 
 var (
@@ -81,6 +84,39 @@ var (
 		Limits: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("500m"),
 			corev1.ResourceMemory: resource.MustParse("1Gi"),
+		},
+	}
+
+	DefaultVPARecommenderResources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("200m"),
+			corev1.ResourceMemory: resource.MustParse("3Gi"),
+		},
+	}
+
+	DefaultVPAUpdaterResources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("200m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+		},
+	}
+
+	DefaultVPAAdmissionControllerResources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("200m"),
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		},
 	}
 
@@ -402,6 +438,18 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		return copy, err
 	}
 
+	if err := defaultDockerRepo(&copy.Spec.VerticalPodAutoscaler.Recommender.DockerRepository, DefaultVPARecommenderDockerRepository, "verticalPodAutoscaler.recommender.dockerRepository", logger); err != nil {
+		return copy, err
+	}
+
+	if err := defaultDockerRepo(&copy.Spec.VerticalPodAutoscaler.Updater.DockerRepository, DefaultVPAUpdaterDockerRepository, "verticalPodAutoscaler.updater.dockerRepository", logger); err != nil {
+		return copy, err
+	}
+
+	if err := defaultDockerRepo(&copy.Spec.VerticalPodAutoscaler.AdmissionController.DockerRepository, DefaultVPAAdmissionControllerDockerRepository, "verticalPodAutoscaler.admissionController.dockerRepository", logger); err != nil {
+		return copy, err
+	}
+
 	if err := defaultResources(&copy.Spec.UI.Resources, DefaultUIResources, "ui.resources", logger); err != nil {
 		return copy, err
 	}
@@ -415,6 +463,18 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	}
 
 	if err := defaultResources(&copy.Spec.MasterController.Resources, DefaultMasterControllerMgrResources, "masterController.resources", logger); err != nil {
+		return copy, err
+	}
+
+	if err := defaultResources(&copy.Spec.VerticalPodAutoscaler.Recommender.Resources, DefaultVPARecommenderResources, "verticalPodAutoscaler.recommender.resources", logger); err != nil {
+		return copy, err
+	}
+
+	if err := defaultResources(&copy.Spec.VerticalPodAutoscaler.Updater.Resources, DefaultVPAUpdaterResources, "verticalPodAutoscaler.updater.resources", logger); err != nil {
+		return copy, err
+	}
+
+	if err := defaultResources(&copy.Spec.VerticalPodAutoscaler.AdmissionController.Resources, DefaultVPAAdmissionControllerResources, "verticalPodAutoscaler.admissionController.resources", logger); err != nil {
 		return copy, err
 	}
 

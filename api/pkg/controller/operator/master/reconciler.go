@@ -333,7 +333,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(config *operatorv1alpha1.Kuberma
 		common.SeedAdmissionWebhookCreator(config, r.Client),
 	}
 
-	if err := reconciling.ReconcileValidatingWebhookConfigurations(r.ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileValidatingWebhookConfigurations(r.ctx, creators, "", r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile AdmissionWebhooks: %v", err)
 	}
 
