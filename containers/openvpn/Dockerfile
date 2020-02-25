@@ -1,4 +1,4 @@
-FROM alpine:3.9
+FROM alpine:3.11
 LABEL maintainer="support@loodse.com"
 
 RUN apk add -U \
