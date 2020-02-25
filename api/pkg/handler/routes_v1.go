@@ -1,8 +1,9 @@
 package handler
 
 import (
-	admissionplugin "github.com/kubermatic/kubermatic/api/pkg/handler/v1/admission-plugin"
 	"net/http"
+
+	admissionplugin "github.com/kubermatic/kubermatic/api/pkg/handler/v1/admission-plugin"
 
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -472,7 +473,7 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/instancetypes").
-		Handler(r.listAlibabaInstanceTypesNoCredentials()
+		Handler(r.listAlibabaInstanceTypesNoCredentials())
 
 	//
 	// Defines a set of openshift-specific endpoints
