@@ -514,6 +514,7 @@ func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
 	apiCluster.ID = cluster.ID
 	apiCluster.Name = cluster.Name
 	apiCluster.Type = cluster.Type
+	apiCluster.Labels = cluster.Labels
 
 	creationTime, err := time.Parse(time.RFC3339, cluster.CreationTimestamp.String())
 	if err != nil {
@@ -941,4 +942,22 @@ func fmtSwaggerError(err error) string {
 		return fmt.Sprintf("failed to marshal response(%v): %v", err, newErr)
 	}
 	return string(rawData)
+}
+
+// UpdateCluster updates cluster
+func (r *runner) UpdateCluster(projectID, dc, clusterID string, patch PatchCluster) (*apiv1.Cluster, error) {
+
+	params := &project.PatchClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID, Patch: patch}
+	params.WithTimeout(timeout)
+
+	cluster, err := r.client.Project.PatchCluster(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	return convertCluster(cluster.Payload)
+}
+
+type PatchCluster struct {
+	Name   string            `json:"name"`
+	Labels map[string]string `json:"labels,omitempty"`
 }
