@@ -8,9 +8,11 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common/vpa"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/seed/resources/kubermatic"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/api/pkg/features"
 	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -19,6 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -189,6 +192,10 @@ func (r *Reconciler) reconcileResources(cfg *operatorv1alpha1.KubermaticConfigur
 		return err
 	}
 
+	if err := r.reconcileClusterRoles(cfg, seed, client, log); err != nil {
+		return err
+	}
+
 	if err := r.reconcileClusterRoleBindings(cfg, seed, client, log); err != nil {
 		return err
 	}
@@ -235,14 +242,42 @@ func (r *Reconciler) reconcileNamespaces(cfg *operatorv1alpha1.KubermaticConfigu
 }
 
 func (r *Reconciler) reconcileServiceAccounts(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	log.Debug("reconciling ServiceAccounts")
+	log.Debug("reconciling Kubermatic ServiceAccounts")
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		kubermatic.ServiceAccountCreator(cfg, seed),
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
-		return fmt.Errorf("failed to reconcile ServiceAccounts: %v", err)
+		return fmt.Errorf("failed to reconcile Kubermatic ServiceAccounts: %v", err)
+	}
+
+	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+		creators := []reconciling.NamedServiceAccountCreatorGetter{
+			vpa.RecommenderServiceAccountCreator(),
+			vpa.UpdaterServiceAccountCreator(),
+			vpa.AdmissionControllerServiceAccountCreator(),
+		}
+
+		if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, metav1.NamespaceSystem, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+			return fmt.Errorf("failed to reconcile VPA ServiceAccounts: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileClusterRoles(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling VPA ClusterRoles")
+
+	if !cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+		return nil
+	}
+
+	creators := vpa.ClusterRoleCreators()
+
+	if err := reconciling.ReconcileClusterRoles(r.ctx, creators, "", client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+		return fmt.Errorf("failed to reconcile ClusterRoles: %v", err)
 	}
 
 	return nil
@@ -253,6 +288,10 @@ func (r *Reconciler) reconcileClusterRoleBindings(cfg *operatorv1alpha1.Kubermat
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		kubermatic.ClusterRoleBindingCreator(cfg, seed),
+	}
+
+	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+		creators = append(creators, vpa.ClusterRoleBindingCreators()...)
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(r.ctx, creators, "", client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
@@ -299,7 +338,17 @@ func (r *Reconciler) reconcileSecrets(cfg *operatorv1alpha1.KubermaticConfigurat
 	}
 
 	if err := reconciling.ReconcileSecrets(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
-		return fmt.Errorf("failed to reconcile Secrets: %v", err)
+		return fmt.Errorf("failed to reconcile Kubermatic Secrets: %v", err)
+	}
+
+	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+		creators := []reconciling.NamedSecretCreatorGetter{
+			vpa.AdmissionControllerServingCertCreator(),
+		}
+
+		if err := reconciling.ReconcileSecrets(r.ctx, creators, metav1.NamespaceSystem, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+			return fmt.Errorf("failed to reconcile VPA Secrets: %v", err)
+		}
 	}
 
 	return nil
@@ -318,7 +367,19 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 	}
 
 	if err := reconciling.ReconcileDeployments(r.ctx, creators, r.namespace, client, modifiers...); err != nil {
-		return fmt.Errorf("failed to reconcile Deployments: %v", err)
+		return fmt.Errorf("failed to reconcile Kubermatic Deployments: %v", err)
+	}
+
+	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+		creators = []reconciling.NamedDeploymentCreatorGetter{
+			vpa.RecommenderDeploymentCreator(cfg, r.versions),
+			vpa.UpdaterDeploymentCreator(cfg, r.versions),
+			vpa.AdmissionControllerDeploymentCreator(cfg, r.versions),
+		}
+
+		if err := reconciling.ReconcileDeployments(r.ctx, creators, metav1.NamespaceSystem, client, modifiers...); err != nil {
+			return fmt.Errorf("failed to reconcile VPA Deployments: %v", err)
+		}
 	}
 
 	return nil
@@ -343,6 +404,10 @@ func (r *Reconciler) reconcileServices(cfg *operatorv1alpha1.KubermaticConfigura
 
 	creators := []reconciling.NamedServiceCreatorGetter{
 		common.SeedAdmissionServiceCreator(cfg, client),
+	}
+
+	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+		creators = append(creators, vpa.AdmissionControllerServiceCreator())
 	}
 
 	if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {

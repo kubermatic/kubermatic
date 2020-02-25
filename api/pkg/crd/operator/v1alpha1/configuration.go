@@ -55,6 +55,8 @@ type KubermaticConfigurationSpec struct {
 	Ingress KubermaticIngressConfiguration `json:"ingress,omitempty"`
 	// Versions configures the available and default Kubernetes/Openshift versions and updates.
 	Versions KubermaticVersionsConfiguration `json:"versions,omitempty"`
+	// VerticalPodAutoscaler configures the Kubernetes VPA integration.
+	VerticalPodAutoscaler KubermaticVPAConfiguration `json:"verticalPodAutoscaler,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
@@ -267,6 +269,20 @@ type Update struct {
 	// Automatic controls whether this update is executed automatically
 	// for the worker nodes of all matching user clusters.
 	AutomaticNodeUpdate *bool `json:"automaticNodeUpdate,omitempty,omitgenyaml"`
+}
+
+// KubermaticVPAConfiguration configures the Kubernetes VPA.
+type KubermaticVPAConfiguration struct {
+	Recommender         KubermaticVPAComponent `json:"recommender,omitempty"`
+	Updater             KubermaticVPAComponent `json:"updater,omitempty"`
+	AdmissionController KubermaticVPAComponent `json:"admissionController,omitempty"`
+}
+
+type KubermaticVPAComponent struct {
+	// DockerRepository is the repository containing the component's image.
+	DockerRepository string `json:"dockerRepository,omitempty"`
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

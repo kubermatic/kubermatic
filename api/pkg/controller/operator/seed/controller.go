@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -108,7 +109,7 @@ func Add(
 		reconciler.seedClients[key] = manager.GetClient()
 		reconciler.seedRecorders[key] = manager.GetEventRecorderFor(ControllerName)
 
-		if err := createSeedWatches(c, key, manager, namespace, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
+		if err := createSeedWatches(c, key, manager, namespace); err != nil {
 			return fmt.Errorf("failed to setup watches for seed %s: %v", key, err)
 		}
 	}
@@ -116,7 +117,7 @@ func Add(
 	return nil
 }
 
-func createSeedWatches(controller controller.Controller, seedName string, seedManager manager.Manager, namespace string, predicates ...predicate.Predicate) error {
+func createSeedWatches(controller controller.Controller, seedName string, seedManager manager.Manager, namespace string) error {
 	cache := seedManager.GetCache()
 	eventHandler := util.EnqueueConst(seedName)
 
@@ -134,19 +135,28 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 		return nil
 	}
 
-	typesToWatch := []runtime.Object{
+	namespacedTypesToWatch := []runtime.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
-		&rbacv1.ClusterRoleBinding{},
 		&policyv1beta1.PodDisruptionBudget{},
+	}
+
+	for _, t := range namespacedTypesToWatch {
+		if err := watch(t, predicateutil.ByNamespace(namespace), common.ManagedByOperatorPredicate); err != nil {
+			return err
+		}
+	}
+
+	globalTypesToWatch := []runtime.Object{
+		&rbacv1.ClusterRoleBinding{},
 		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
 	}
 
-	for _, t := range typesToWatch {
-		if err := watch(t, predicates...); err != nil {
+	for _, t := range globalTypesToWatch {
+		if err := watch(t, common.ManagedByOperatorPredicate); err != nil {
 			return err
 		}
 	}
@@ -161,6 +171,31 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	// nor ManagedByPredicate, but still need to get their labels reconciled
 	if err := watch(&corev1.Namespace{}, predicateutil.ByName(namespace)); err != nil {
 		return err
+	}
+
+	// The VPA gets resources deployed into the kube-system namespace.
+	namespacedVPATypes := []runtime.Object{
+		&appsv1.Deployment{},
+		&corev1.Secret{},
+		&corev1.Service{},
+		&corev1.ServiceAccount{},
+	}
+
+	for _, t := range namespacedVPATypes {
+		if err := watch(t, predicateutil.ByNamespace(metav1.NamespaceSystem), common.ManagedByOperatorPredicate); err != nil {
+			return err
+		}
+	}
+
+	globalVPATypes := []runtime.Object{
+		&rbacv1.ClusterRole{},
+		&rbacv1.ClusterRoleBinding{},
+	}
+
+	for _, t := range globalVPATypes {
+		if err := watch(t, common.ManagedByOperatorPredicate); err != nil {
+			return err
+		}
 	}
 
 	return nil
