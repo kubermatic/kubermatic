@@ -238,7 +238,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 			return leaderelection.RunAsLeader(leaderCtx, log, config, mgr.GetEventRecorderFor(controllerName), electionName, func(ctx context.Context) error {
 				log.Info("Executing migrations...")
-				if err := seedmigrations.RunAll(ctrlCtx.mgr.GetConfig(), options.workerName); err != nil {
+				if err := seedmigrations.RunAll(leaderCtx, ctrlCtx.mgr.GetConfig(), options.workerName); err != nil {
 					return fmt.Errorf("failed to run migrations: %v", err)
 				}
 				log.Info("Migrations executed successfully")
