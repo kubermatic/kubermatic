@@ -11,19 +11,25 @@ import (
 	"testing"
 	"time"
 
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 const getDOMaxAttempts = 24
 
-func TestCreateDOCluster(t *testing.T) {
+func TestCreateUpdateDOCluster(t *testing.T) {
 	tests := []struct {
-		name       string
-		dc         string
-		location   string
-		version    string
-		credential string
-		replicas   int32
+		name           string
+		dc             string
+		location       string
+		version        string
+		credential     string
+		replicas       int32
+		patch          PatchCluster
+		expectedName   string
+		expectedLabels map[string]string
 	}{
 		{
 			name:       "create cluster on DigitalOcean",
@@ -32,6 +38,12 @@ func TestCreateDOCluster(t *testing.T) {
 			version:    "v1.15.6",
 			credential: "e2e-digitalocean",
 			replicas:   1,
+			patch: PatchCluster{
+				Name:   "newName",
+				Labels: map[string]string{"a": "b"},
+			},
+			expectedName:   "newName",
+			expectedLabels: map[string]string{"a": "b"},
 		},
 	}
 	for _, tc := range tests {
@@ -90,8 +102,9 @@ func TestCreateDOCluster(t *testing.T) {
 			}
 
 			var replicasReady bool
+			var ndList []apiv1.NodeDeployment
 			for attempt := 1; attempt <= getDOMaxAttempts; attempt++ {
-				ndList, err := apiRunner.GetClusterNodeDeployment(project.ID, tc.dc, cluster.ID)
+				ndList, err = apiRunner.GetClusterNodeDeployment(project.ID, tc.dc, cluster.ID)
 				if err != nil {
 					t.Fatalf("can not get node deployments %v", GetErrorResponse(err))
 				}
@@ -103,7 +116,25 @@ func TestCreateDOCluster(t *testing.T) {
 				time.Sleep(30 * time.Second)
 			}
 			if !replicasReady {
-				t.Fatalf("number of nodes is not as expected")
+				t.Fatalf("the number of nodes is not as expected, available replicas %d", ndList[0].Status.AvailableReplicas)
+			}
+
+			_, err = apiRunner.UpdateCluster(project.ID, tc.dc, cluster.ID, tc.patch)
+			if err != nil {
+				t.Fatalf("can not update cluster %v", GetErrorResponse(err))
+			}
+
+			updatedCluster, err := apiRunner.GetCluster(project.ID, tc.dc, cluster.ID)
+			if err != nil {
+				t.Fatalf("can not get cluster %v", GetErrorResponse(err))
+			}
+
+			if updatedCluster.Name != tc.expectedName {
+				t.Fatalf("expected new name %s got %s", tc.expectedName, updatedCluster.Name)
+			}
+
+			if !equality.Semantic.DeepEqual(updatedCluster.Labels, tc.expectedLabels) {
+				t.Fatalf("expected labels %v got %v", tc.expectedLabels, updatedCluster.Labels)
 			}
 
 			cleanUpCluster(t, apiRunner, project.ID, tc.dc, cluster.ID)
