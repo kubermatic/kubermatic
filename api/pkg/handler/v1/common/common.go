@@ -11,11 +11,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
-	"k8s.io/apimachinery/pkg/util/httpstream"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/portforward"
-	"k8s.io/client-go/transport/spdy"
 
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kubermaticerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
@@ -24,7 +22,11 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/httpstream"
 	corev1interface "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/portforward"
+	"k8s.io/client-go/transport/spdy"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -229,4 +231,27 @@ func ForwardPort(log *zap.SugaredLogger, forwarder *portforward.PortForwarder) e
 	}
 
 	return nil
+}
+
+func GetOwnersForProject(userInfo *provider.UserInfo, project *kubermaticv1.Project, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) ([]apiv1.User, error) {
+	allProjectMembers, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{SkipPrivilegeVerification: true})
+	if err != nil {
+		return nil, err
+	}
+	projectOwners := []apiv1.User{}
+	for _, projectMember := range allProjectMembers {
+		if rbac.ExtractGroupPrefix(projectMember.Spec.Group) == rbac.OwnerGroupNamePrefix {
+			user, err := userProvider.UserByEmail(projectMember.Spec.UserEmail)
+			if err != nil {
+				continue
+			}
+			projectOwners = append(projectOwners, apiv1.User{
+				ObjectMeta: apiv1.ObjectMeta{
+					Name: user.Spec.Name,
+				},
+				Email: user.Spec.Email,
+			})
+		}
+	}
+	return projectOwners, nil
 }
