@@ -38,7 +38,7 @@ const (
 	ServingCertSecretName  = "metrics-server-serving-cert"
 	servingCertMountFolder = "/etc/serving-cert"
 
-	tag = "v0.3.4"
+	tag = "v0.3.6"
 )
 
 // metricsServerData is the data needed to construct the metrics-server components
