@@ -93,6 +93,9 @@ type KubermaticAPIConfiguration struct {
 type KubermaticUIConfiguration struct {
 	// DockerRepository is the repository containing the Kubermatic dashboard image.
 	DockerRepository string `json:"dockerRepository,omitempty"`
+	// DockerTag is used to overwrite the dashboard Docker image tag and is only for development
+	// purposes. This field must not be set in production environments.
+	DockerTag string `json:"dockerTag,omitempty,omitgenyaml"`
 	// Config sets flags for various dashboard features.
 	Config string `json:"config,omitempty"`
 	// Resources describes the requested and maximum allowed CPU/memory usage.

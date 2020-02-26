@@ -39,10 +39,15 @@ func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, versions
 				RunAsUser:    pointer.Int64Ptr(65534),
 			}
 
+			tag := versions.UI
+			if cfg.Spec.UI.DockerTag != "" {
+				tag = cfg.Spec.UI.DockerTag
+			}
+
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  "webserver",
-					Image: cfg.Spec.UI.DockerRepository + ":" + versions.UI,
+					Image: cfg.Spec.UI.DockerRepository + ":" + tag,
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "http",
