@@ -129,7 +129,7 @@ func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if cluster.Spec.Cloud.Alibaba == nil {
-			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
+			return nil, errors.NewNotFound("cloud spec for %s", req.ClusterID)
 		}
 
 		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)

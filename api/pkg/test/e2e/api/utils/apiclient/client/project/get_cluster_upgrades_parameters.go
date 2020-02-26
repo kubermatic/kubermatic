@@ -20,7 +20,7 @@ import (
 // NewGetClusterUpgradesParams creates a new GetClusterUpgradesParams object
 // with the default values initialized.
 func NewGetClusterUpgradesParams() *GetClusterUpgradesParams {
-
+	var ()
 	return &GetClusterUpgradesParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +30,7 @@ func NewGetClusterUpgradesParams() *GetClusterUpgradesParams {
 // NewGetClusterUpgradesParamsWithTimeout creates a new GetClusterUpgradesParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetClusterUpgradesParamsWithTimeout(timeout time.Duration) *GetClusterUpgradesParams {
-
+	var ()
 	return &GetClusterUpgradesParams{
 
 		timeout: timeout,
@@ -40,7 +40,7 @@ func NewGetClusterUpgradesParamsWithTimeout(timeout time.Duration) *GetClusterUp
 // NewGetClusterUpgradesParamsWithContext creates a new GetClusterUpgradesParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewGetClusterUpgradesParamsWithContext(ctx context.Context) *GetClusterUpgradesParams {
-
+	var ()
 	return &GetClusterUpgradesParams{
 
 		Context: ctx,
@@ -50,7 +50,7 @@ func NewGetClusterUpgradesParamsWithContext(ctx context.Context) *GetClusterUpgr
 // NewGetClusterUpgradesParamsWithHTTPClient creates a new GetClusterUpgradesParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetClusterUpgradesParamsWithHTTPClient(client *http.Client) *GetClusterUpgradesParams {
-
+	var ()
 	return &GetClusterUpgradesParams{
 		HTTPClient: client,
 	}
@@ -60,6 +60,14 @@ func NewGetClusterUpgradesParamsWithHTTPClient(client *http.Client) *GetClusterU
 for the get cluster upgrades operation typically these are written to a http.Request
 */
 type GetClusterUpgradesParams struct {
+
+	/*ClusterID*/
+	ClusterID string
+	/*Dc*/
+	DC string
+	/*ProjectID*/
+	ProjectID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -98,6 +106,39 @@ func (o *GetClusterUpgradesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithClusterID adds the clusterID to the get cluster upgrades params
+func (o *GetClusterUpgradesParams) WithClusterID(clusterID string) *GetClusterUpgradesParams {
+	o.SetClusterID(clusterID)
+	return o
+}
+
+// SetClusterID adds the clusterId to the get cluster upgrades params
+func (o *GetClusterUpgradesParams) SetClusterID(clusterID string) {
+	o.ClusterID = clusterID
+}
+
+// WithDC adds the dc to the get cluster upgrades params
+func (o *GetClusterUpgradesParams) WithDC(dc string) *GetClusterUpgradesParams {
+	o.SetDC(dc)
+	return o
+}
+
+// SetDC adds the dc to the get cluster upgrades params
+func (o *GetClusterUpgradesParams) SetDC(dc string) {
+	o.DC = dc
+}
+
+// WithProjectID adds the projectID to the get cluster upgrades params
+func (o *GetClusterUpgradesParams) WithProjectID(projectID string) *GetClusterUpgradesParams {
+	o.SetProjectID(projectID)
+	return o
+}
+
+// SetProjectID adds the projectId to the get cluster upgrades params
+func (o *GetClusterUpgradesParams) SetProjectID(projectID string) {
+	o.ProjectID = projectID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetClusterUpgradesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -105,6 +146,21 @@ func (o *GetClusterUpgradesParams) WriteToRequest(r runtime.ClientRequest, reg s
 		return err
 	}
 	var res []error
+
+	// path param cluster_id
+	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
+		return err
+	}
+
+	// path param dc
+	if err := r.SetPathParam("dc", o.DC); err != nil {
+		return err
+	}
+
+	// path param project_id
+	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

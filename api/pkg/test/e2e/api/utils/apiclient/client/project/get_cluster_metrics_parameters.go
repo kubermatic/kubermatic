@@ -20,7 +20,7 @@ import (
 // NewGetClusterMetricsParams creates a new GetClusterMetricsParams object
 // with the default values initialized.
 func NewGetClusterMetricsParams() *GetClusterMetricsParams {
-
+	var ()
 	return &GetClusterMetricsParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +30,7 @@ func NewGetClusterMetricsParams() *GetClusterMetricsParams {
 // NewGetClusterMetricsParamsWithTimeout creates a new GetClusterMetricsParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetClusterMetricsParamsWithTimeout(timeout time.Duration) *GetClusterMetricsParams {
-
+	var ()
 	return &GetClusterMetricsParams{
 
 		timeout: timeout,
@@ -40,7 +40,7 @@ func NewGetClusterMetricsParamsWithTimeout(timeout time.Duration) *GetClusterMet
 // NewGetClusterMetricsParamsWithContext creates a new GetClusterMetricsParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewGetClusterMetricsParamsWithContext(ctx context.Context) *GetClusterMetricsParams {
-
+	var ()
 	return &GetClusterMetricsParams{
 
 		Context: ctx,
@@ -50,7 +50,7 @@ func NewGetClusterMetricsParamsWithContext(ctx context.Context) *GetClusterMetri
 // NewGetClusterMetricsParamsWithHTTPClient creates a new GetClusterMetricsParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetClusterMetricsParamsWithHTTPClient(client *http.Client) *GetClusterMetricsParams {
-
+	var ()
 	return &GetClusterMetricsParams{
 		HTTPClient: client,
 	}
@@ -60,6 +60,14 @@ func NewGetClusterMetricsParamsWithHTTPClient(client *http.Client) *GetClusterMe
 for the get cluster metrics operation typically these are written to a http.Request
 */
 type GetClusterMetricsParams struct {
+
+	/*ClusterID*/
+	ClusterID string
+	/*Dc*/
+	DC string
+	/*ProjectID*/
+	ProjectID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -98,6 +106,39 @@ func (o *GetClusterMetricsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithClusterID adds the clusterID to the get cluster metrics params
+func (o *GetClusterMetricsParams) WithClusterID(clusterID string) *GetClusterMetricsParams {
+	o.SetClusterID(clusterID)
+	return o
+}
+
+// SetClusterID adds the clusterId to the get cluster metrics params
+func (o *GetClusterMetricsParams) SetClusterID(clusterID string) {
+	o.ClusterID = clusterID
+}
+
+// WithDC adds the dc to the get cluster metrics params
+func (o *GetClusterMetricsParams) WithDC(dc string) *GetClusterMetricsParams {
+	o.SetDC(dc)
+	return o
+}
+
+// SetDC adds the dc to the get cluster metrics params
+func (o *GetClusterMetricsParams) SetDC(dc string) {
+	o.DC = dc
+}
+
+// WithProjectID adds the projectID to the get cluster metrics params
+func (o *GetClusterMetricsParams) WithProjectID(projectID string) *GetClusterMetricsParams {
+	o.SetProjectID(projectID)
+	return o
+}
+
+// SetProjectID adds the projectId to the get cluster metrics params
+func (o *GetClusterMetricsParams) SetProjectID(projectID string) {
+	o.ProjectID = projectID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetClusterMetricsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -105,6 +146,21 @@ func (o *GetClusterMetricsParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return err
 	}
 	var res []error
+
+	// path param cluster_id
+	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
+		return err
+	}
+
+	// path param dc
+	if err := r.SetPathParam("dc", o.DC); err != nil {
+		return err
+	}
+
+	// path param project_id
+	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

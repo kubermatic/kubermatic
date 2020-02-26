@@ -20,7 +20,7 @@ import (
 // NewGetClusterHealthParams creates a new GetClusterHealthParams object
 // with the default values initialized.
 func NewGetClusterHealthParams() *GetClusterHealthParams {
-
+	var ()
 	return &GetClusterHealthParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +30,7 @@ func NewGetClusterHealthParams() *GetClusterHealthParams {
 // NewGetClusterHealthParamsWithTimeout creates a new GetClusterHealthParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetClusterHealthParamsWithTimeout(timeout time.Duration) *GetClusterHealthParams {
-
+	var ()
 	return &GetClusterHealthParams{
 
 		timeout: timeout,
@@ -40,7 +40,7 @@ func NewGetClusterHealthParamsWithTimeout(timeout time.Duration) *GetClusterHeal
 // NewGetClusterHealthParamsWithContext creates a new GetClusterHealthParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewGetClusterHealthParamsWithContext(ctx context.Context) *GetClusterHealthParams {
-
+	var ()
 	return &GetClusterHealthParams{
 
 		Context: ctx,
@@ -50,7 +50,7 @@ func NewGetClusterHealthParamsWithContext(ctx context.Context) *GetClusterHealth
 // NewGetClusterHealthParamsWithHTTPClient creates a new GetClusterHealthParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetClusterHealthParamsWithHTTPClient(client *http.Client) *GetClusterHealthParams {
-
+	var ()
 	return &GetClusterHealthParams{
 		HTTPClient: client,
 	}
@@ -60,6 +60,14 @@ func NewGetClusterHealthParamsWithHTTPClient(client *http.Client) *GetClusterHea
 for the get cluster health operation typically these are written to a http.Request
 */
 type GetClusterHealthParams struct {
+
+	/*ClusterID*/
+	ClusterID string
+	/*Dc*/
+	DC string
+	/*ProjectID*/
+	ProjectID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -98,6 +106,39 @@ func (o *GetClusterHealthParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithClusterID adds the clusterID to the get cluster health params
+func (o *GetClusterHealthParams) WithClusterID(clusterID string) *GetClusterHealthParams {
+	o.SetClusterID(clusterID)
+	return o
+}
+
+// SetClusterID adds the clusterId to the get cluster health params
+func (o *GetClusterHealthParams) SetClusterID(clusterID string) {
+	o.ClusterID = clusterID
+}
+
+// WithDC adds the dc to the get cluster health params
+func (o *GetClusterHealthParams) WithDC(dc string) *GetClusterHealthParams {
+	o.SetDC(dc)
+	return o
+}
+
+// SetDC adds the dc to the get cluster health params
+func (o *GetClusterHealthParams) SetDC(dc string) {
+	o.DC = dc
+}
+
+// WithProjectID adds the projectID to the get cluster health params
+func (o *GetClusterHealthParams) WithProjectID(projectID string) *GetClusterHealthParams {
+	o.SetProjectID(projectID)
+	return o
+}
+
+// SetProjectID adds the projectId to the get cluster health params
+func (o *GetClusterHealthParams) SetProjectID(projectID string) {
+	o.ProjectID = projectID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetClusterHealthParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -105,6 +146,21 @@ func (o *GetClusterHealthParams) WriteToRequest(r runtime.ClientRequest, reg str
 		return err
 	}
 	var res []error
+
+	// path param cluster_id
+	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
+		return err
+	}
+
+	// path param dc
+	if err := r.SetPathParam("dc", o.DC); err != nil {
+		return err
+	}
+
+	// path param project_id
+	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

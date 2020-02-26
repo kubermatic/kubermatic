@@ -20,7 +20,7 @@ import (
 // NewListAWSSubnetsNoCredentialsParams creates a new ListAWSSubnetsNoCredentialsParams object
 // with the default values initialized.
 func NewListAWSSubnetsNoCredentialsParams() *ListAWSSubnetsNoCredentialsParams {
-
+	var ()
 	return &ListAWSSubnetsNoCredentialsParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +30,7 @@ func NewListAWSSubnetsNoCredentialsParams() *ListAWSSubnetsNoCredentialsParams {
 // NewListAWSSubnetsNoCredentialsParamsWithTimeout creates a new ListAWSSubnetsNoCredentialsParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListAWSSubnetsNoCredentialsParamsWithTimeout(timeout time.Duration) *ListAWSSubnetsNoCredentialsParams {
-
+	var ()
 	return &ListAWSSubnetsNoCredentialsParams{
 
 		timeout: timeout,
@@ -40,7 +40,7 @@ func NewListAWSSubnetsNoCredentialsParamsWithTimeout(timeout time.Duration) *Lis
 // NewListAWSSubnetsNoCredentialsParamsWithContext creates a new ListAWSSubnetsNoCredentialsParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListAWSSubnetsNoCredentialsParamsWithContext(ctx context.Context) *ListAWSSubnetsNoCredentialsParams {
-
+	var ()
 	return &ListAWSSubnetsNoCredentialsParams{
 
 		Context: ctx,
@@ -50,7 +50,7 @@ func NewListAWSSubnetsNoCredentialsParamsWithContext(ctx context.Context) *ListA
 // NewListAWSSubnetsNoCredentialsParamsWithHTTPClient creates a new ListAWSSubnetsNoCredentialsParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListAWSSubnetsNoCredentialsParamsWithHTTPClient(client *http.Client) *ListAWSSubnetsNoCredentialsParams {
-
+	var ()
 	return &ListAWSSubnetsNoCredentialsParams{
 		HTTPClient: client,
 	}
@@ -60,6 +60,14 @@ func NewListAWSSubnetsNoCredentialsParamsWithHTTPClient(client *http.Client) *Li
 for the list a w s subnets no credentials operation typically these are written to a http.Request
 */
 type ListAWSSubnetsNoCredentialsParams struct {
+
+	/*ClusterID*/
+	ClusterID string
+	/*Dc*/
+	DC string
+	/*ProjectID*/
+	ProjectID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -98,6 +106,39 @@ func (o *ListAWSSubnetsNoCredentialsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithClusterID adds the clusterID to the list a w s subnets no credentials params
+func (o *ListAWSSubnetsNoCredentialsParams) WithClusterID(clusterID string) *ListAWSSubnetsNoCredentialsParams {
+	o.SetClusterID(clusterID)
+	return o
+}
+
+// SetClusterID adds the clusterId to the list a w s subnets no credentials params
+func (o *ListAWSSubnetsNoCredentialsParams) SetClusterID(clusterID string) {
+	o.ClusterID = clusterID
+}
+
+// WithDC adds the dc to the list a w s subnets no credentials params
+func (o *ListAWSSubnetsNoCredentialsParams) WithDC(dc string) *ListAWSSubnetsNoCredentialsParams {
+	o.SetDC(dc)
+	return o
+}
+
+// SetDC adds the dc to the list a w s subnets no credentials params
+func (o *ListAWSSubnetsNoCredentialsParams) SetDC(dc string) {
+	o.DC = dc
+}
+
+// WithProjectID adds the projectID to the list a w s subnets no credentials params
+func (o *ListAWSSubnetsNoCredentialsParams) WithProjectID(projectID string) *ListAWSSubnetsNoCredentialsParams {
+	o.SetProjectID(projectID)
+	return o
+}
+
+// SetProjectID adds the projectId to the list a w s subnets no credentials params
+func (o *ListAWSSubnetsNoCredentialsParams) SetProjectID(projectID string) {
+	o.ProjectID = projectID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListAWSSubnetsNoCredentialsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -105,6 +146,21 @@ func (o *ListAWSSubnetsNoCredentialsParams) WriteToRequest(r runtime.ClientReque
 		return err
 	}
 	var res []error
+
+	// path param cluster_id
+	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
+		return err
+	}
+
+	// path param dc
+	if err := r.SetPathParam("dc", o.DC); err != nil {
+		return err
+	}
+
+	// path param project_id
+	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

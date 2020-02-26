@@ -20,7 +20,7 @@ import (
 // NewListAWSSizesNoCredentialsParams creates a new ListAWSSizesNoCredentialsParams object
 // with the default values initialized.
 func NewListAWSSizesNoCredentialsParams() *ListAWSSizesNoCredentialsParams {
-
+	var ()
 	return &ListAWSSizesNoCredentialsParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +30,7 @@ func NewListAWSSizesNoCredentialsParams() *ListAWSSizesNoCredentialsParams {
 // NewListAWSSizesNoCredentialsParamsWithTimeout creates a new ListAWSSizesNoCredentialsParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListAWSSizesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListAWSSizesNoCredentialsParams {
-
+	var ()
 	return &ListAWSSizesNoCredentialsParams{
 
 		timeout: timeout,
@@ -40,7 +40,7 @@ func NewListAWSSizesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListA
 // NewListAWSSizesNoCredentialsParamsWithContext creates a new ListAWSSizesNoCredentialsParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListAWSSizesNoCredentialsParamsWithContext(ctx context.Context) *ListAWSSizesNoCredentialsParams {
-
+	var ()
 	return &ListAWSSizesNoCredentialsParams{
 
 		Context: ctx,
@@ -50,7 +50,7 @@ func NewListAWSSizesNoCredentialsParamsWithContext(ctx context.Context) *ListAWS
 // NewListAWSSizesNoCredentialsParamsWithHTTPClient creates a new ListAWSSizesNoCredentialsParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListAWSSizesNoCredentialsParamsWithHTTPClient(client *http.Client) *ListAWSSizesNoCredentialsParams {
-
+	var ()
 	return &ListAWSSizesNoCredentialsParams{
 		HTTPClient: client,
 	}
@@ -60,6 +60,14 @@ func NewListAWSSizesNoCredentialsParamsWithHTTPClient(client *http.Client) *List
 for the list a w s sizes no credentials operation typically these are written to a http.Request
 */
 type ListAWSSizesNoCredentialsParams struct {
+
+	/*ClusterID*/
+	ClusterID string
+	/*Dc*/
+	DC string
+	/*ProjectID*/
+	ProjectID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -98,6 +106,39 @@ func (o *ListAWSSizesNoCredentialsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithClusterID adds the clusterID to the list a w s sizes no credentials params
+func (o *ListAWSSizesNoCredentialsParams) WithClusterID(clusterID string) *ListAWSSizesNoCredentialsParams {
+	o.SetClusterID(clusterID)
+	return o
+}
+
+// SetClusterID adds the clusterId to the list a w s sizes no credentials params
+func (o *ListAWSSizesNoCredentialsParams) SetClusterID(clusterID string) {
+	o.ClusterID = clusterID
+}
+
+// WithDC adds the dc to the list a w s sizes no credentials params
+func (o *ListAWSSizesNoCredentialsParams) WithDC(dc string) *ListAWSSizesNoCredentialsParams {
+	o.SetDC(dc)
+	return o
+}
+
+// SetDC adds the dc to the list a w s sizes no credentials params
+func (o *ListAWSSizesNoCredentialsParams) SetDC(dc string) {
+	o.DC = dc
+}
+
+// WithProjectID adds the projectID to the list a w s sizes no credentials params
+func (o *ListAWSSizesNoCredentialsParams) WithProjectID(projectID string) *ListAWSSizesNoCredentialsParams {
+	o.SetProjectID(projectID)
+	return o
+}
+
+// SetProjectID adds the projectId to the list a w s sizes no credentials params
+func (o *ListAWSSizesNoCredentialsParams) SetProjectID(projectID string) {
+	o.ProjectID = projectID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListAWSSizesNoCredentialsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -105,6 +146,21 @@ func (o *ListAWSSizesNoCredentialsParams) WriteToRequest(r runtime.ClientRequest
 		return err
 	}
 	var res []error
+
+	// path param cluster_id
+	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
+		return err
+	}
+
+	// path param dc
+	if err := r.SetPathParam("dc", o.DC); err != nil {
+		return err
+	}
+
+	// path param project_id
+	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
