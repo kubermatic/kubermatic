@@ -587,6 +587,18 @@ type VSphereFolder struct {
 	Path string `json:"path"`
 }
 
+// AlibabaInstanceTypeList represents an array of Alibaba instance types.
+// swagger:model AlibabaInstanceTypeList
+type AlibabaInstanceTypeList []AlibabaInstanceType
+
+// AlibabaInstanceType represents a object of Alibaba instance type.
+// swagger:model AlibabaInstanceType
+type AlibabaInstanceType struct {
+	ID           string  `json:"id"`
+	CPUCoreCount int     `json:"cpuCoreCount"`
+	MemorySize   float64 `json:"memorySize"`
+}
+
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {
