@@ -107,7 +107,7 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 			}
 
 			// update ConfigMap
-			cm.Labels = resources.BaseAppLabel(name, nil)
+			cm.Labels = resources.BaseAppLabels(name, nil)
 
 			if cm.Data == nil {
 				cm.Data = map[string]string{}

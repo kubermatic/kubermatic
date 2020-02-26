@@ -13,7 +13,7 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.MetricsServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.MetricsServerServiceName
-			labels := resources.BaseAppLabel(name, nil)
+			labels := resources.BaseAppLabels(name, nil)
 			se.Labels = labels
 
 			se.Spec.Selector = labels

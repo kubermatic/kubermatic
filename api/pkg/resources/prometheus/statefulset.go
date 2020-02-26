@@ -51,9 +51,9 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 			set.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
 
 			requiredBaseLabels := map[string]string{"cluster": data.Cluster().Name}
-			set.Labels = resources.BaseAppLabel(name, requiredBaseLabels)
+			set.Labels = resources.BaseAppLabels(name, requiredBaseLabels)
 			set.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(name, requiredBaseLabels),
+				MatchLabels: resources.BaseAppLabels(name, requiredBaseLabels),
 			}
 
 			set.Spec.Replicas = resources.Int32(1)

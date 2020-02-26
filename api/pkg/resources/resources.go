@@ -596,8 +596,8 @@ func UserClusterDNSPolicyAndConfig(d userClusterDNSPolicyAndConfigData) (corev1.
 	}, nil
 }
 
-// BaseAppLabel returns the minimum required labels
-func BaseAppLabel(name string, additionalLabels map[string]string) map[string]string {
+// BaseAppLabels returns the minimum required labels
+func BaseAppLabels(name string, additionalLabels map[string]string) map[string]string {
 	labels := map[string]string{
 		AppLabelKey: name,
 	}
@@ -609,7 +609,7 @@ func BaseAppLabel(name string, additionalLabels map[string]string) map[string]st
 
 // AppClusterLabel returns the base app label + the cluster label. Additional labels can be included as well
 func AppClusterLabel(appName, clusterName string, additionalLabels map[string]string) map[string]string {
-	podLabels := BaseAppLabel(appName, additionalLabels)
+	podLabels := BaseAppLabels(appName, additionalLabels)
 	podLabels["cluster"] = clusterName
 
 	return podLabels

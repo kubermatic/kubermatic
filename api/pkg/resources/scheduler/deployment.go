@@ -41,7 +41,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.SchedulerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.SchedulerDeploymentName
-			dep.Labels = resources.BaseAppLabel(name, nil)
+			dep.Labels = resources.BaseAppLabels(name, nil)
 
 			flags, err := getFlags(data.Cluster())
 			if err != nil {
@@ -54,7 +54,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			}
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(name, nil),
+				MatchLabels: resources.BaseAppLabels(name, nil),
 			}
 
 			volumes := getVolumes()

@@ -15,7 +15,7 @@ func ServiceCreator(data *resources.TemplateData) reconciling.NamedServiceCreato
 		return name, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = name
 			se.OwnerReferences = []metav1.OwnerReference{data.GetClusterRef()}
-			se.Labels = resources.BaseAppLabel(name, nil)
+			se.Labels = resources.BaseAppLabels(name, nil)
 			// We need to set cluster: user for the ServiceMonitor which federates metrics8
 			se.Labels["cluster"] = "user"
 

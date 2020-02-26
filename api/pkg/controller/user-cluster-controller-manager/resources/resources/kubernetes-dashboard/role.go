@@ -11,7 +11,7 @@ import (
 func RoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.KubernetesDashboardRoleName, func(role *rbacv1.Role) (*rbacv1.Role, error) {
-			role.Labels = resources.BaseAppLabel(AppName, nil)
+			role.Labels = resources.BaseAppLabels(AppName, nil)
 			role.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups:     []string{""},

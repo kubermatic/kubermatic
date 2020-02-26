@@ -11,7 +11,7 @@ import (
 func RoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.PrometheusRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Labels = resources.BaseAppLabel(name, nil)
+			r.Labels = resources.BaseAppLabels(name, nil)
 
 			r.Rules = []rbacv1.PolicyRule{
 				{

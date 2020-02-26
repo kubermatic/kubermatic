@@ -14,7 +14,7 @@ func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceC
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.OpenVPNServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.OpenVPNServerServiceName
-			se.Labels = resources.BaseAppLabel(name, nil)
+			se.Labels = resources.BaseAppLabels(name, nil)
 
 			if se.Annotations == nil {
 				se.Annotations = map[string]string{}

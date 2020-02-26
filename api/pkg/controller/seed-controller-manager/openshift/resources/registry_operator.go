@@ -37,7 +37,7 @@ func RegistryOperatorFactory(data openshiftData) reconciling.NamedDeploymentCrea
 			})
 
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(openshiftRegistryOperatorName, nil),
+				MatchLabels: resources.BaseAppLabels(openshiftRegistryOperatorName, nil),
 			}
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: openshiftImagePullSecretName},

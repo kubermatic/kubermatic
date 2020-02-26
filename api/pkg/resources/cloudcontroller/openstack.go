@@ -36,12 +36,12 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 	return func() (string, reconciling.DeploymentCreator) {
 		return osName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = osName
-			dep.Labels = resources.BaseAppLabel(osName, nil)
+			dep.Labels = resources.BaseAppLabels(osName, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(osName, nil),
+				MatchLabels: resources.BaseAppLabels(osName, nil),
 			}
 
 			dep.Spec.Template.Spec.Volumes = getOSVolumes()

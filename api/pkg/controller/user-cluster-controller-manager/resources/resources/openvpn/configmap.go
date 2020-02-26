@@ -20,7 +20,7 @@ func ClientConfigConfigMapCreator(hostname string, serverPort int) reconciling.N
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
-			cm.Labels = resources.BaseAppLabel(Name, nil)
+			cm.Labels = resources.BaseAppLabels(Name, nil)
 
 			config := fmt.Sprintf(`client
 proto tcp

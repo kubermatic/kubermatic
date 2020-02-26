@@ -16,7 +16,7 @@ func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGet
 			maxUnavailable := intstr.FromInt(1)
 			pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
 				Selector: &metav1.LabelSelector{
-					MatchLabels: resources.BaseAppLabel(name, nil),
+					MatchLabels: resources.BaseAppLabels(name, nil),
 				},
 				// we can only specify maxUnavailable as minAvailable would block in case we have replicas=1. See https://github.com/kubernetes/kubernetes/issues/66811
 				MaxUnavailable: &maxUnavailable,

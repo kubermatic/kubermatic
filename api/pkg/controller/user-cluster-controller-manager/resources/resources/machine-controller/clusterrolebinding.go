@@ -42,7 +42,7 @@ func NodeSignerClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCr
 func createClusterRoleBindingCreator(crbSuffix, cRoleRef string, subj rbacv1.Subject) reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return fmt.Sprintf("%s:%s", resources.MachineControllerClusterRoleBindingName, crbSuffix), func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.Labels = resources.BaseAppLabel(Name, nil)
+			crb.Labels = resources.BaseAppLabels(Name, nil)
 
 			crb.RoleRef = rbacv1.RoleRef{
 				Name:     cRoleRef,

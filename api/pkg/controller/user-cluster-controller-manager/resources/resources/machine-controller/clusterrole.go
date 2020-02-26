@@ -15,7 +15,7 @@ const (
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.MachineControllerClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-			cr.Labels = resources.BaseAppLabel(Name, nil)
+			cr.Labels = resources.BaseAppLabels(Name, nil)
 
 			cr.Rules = []rbacv1.PolicyRule{
 				{

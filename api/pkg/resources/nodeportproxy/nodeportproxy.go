@@ -164,11 +164,11 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 	name := envoyAppLabelValue
 	return func() (string, reconciling.DeploymentCreator) {
 		return name, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Labels = resources.BaseAppLabel(name, nil)
+			d.Labels = resources.BaseAppLabels(name, nil)
 			d.Spec.Replicas = resources.Int32(2)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(name, nil)}
-			d.Spec.Template.Labels = resources.BaseAppLabel(name, nil)
+				MatchLabels: resources.BaseAppLabels(name, nil)}
+			d.Spec.Template.Labels = resources.BaseAppLabels(name, nil)
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 			}
@@ -266,11 +266,11 @@ func deploymentLBUpdater(image string) reconciling.NamedDeploymentCreatorGetter 
 	name := name + "-lb-updater"
 	return func() (string, reconciling.DeploymentCreator) {
 		return name, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Labels = resources.BaseAppLabel(name, nil)
+			d.Labels = resources.BaseAppLabels(name, nil)
 			d.Spec.Replicas = resources.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(name, nil)}
-			d.Spec.Template.Labels = resources.BaseAppLabel(name, nil)
+				MatchLabels: resources.BaseAppLabels(name, nil)}
+			d.Spec.Template.Labels = resources.BaseAppLabels(name, nil)
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 			}
@@ -309,7 +309,7 @@ func podDisruptionBudget() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 		return name + "-envoy", func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
 			pdb.Spec.MaxUnavailable = &maxUnavailable
 			pdb.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(envoyAppLabelValue, nil),
+				MatchLabels: resources.BaseAppLabels(envoyAppLabelValue, nil),
 			}
 			return pdb, nil
 		}
@@ -336,7 +336,7 @@ func FrontLoadBalancerServiceCreator() reconciling.NamedServiceCreatorGetter {
 				}
 			}
 
-			s.Spec.Selector = resources.BaseAppLabel(envoyAppLabelValue, nil)
+			s.Spec.Selector = resources.BaseAppLabels(envoyAppLabelValue, nil)
 			return s, nil
 		}
 	}

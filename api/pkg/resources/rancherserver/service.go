@@ -14,7 +14,7 @@ func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceC
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.RancherServerServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Name = resources.RancherServerServiceName
-			s.Labels = resources.BaseAppLabel(resources.RancherStatefulSetName, nil)
+			s.Labels = resources.BaseAppLabels(resources.RancherStatefulSetName, nil)
 			if s.Annotations == nil {
 				s.Annotations = map[string]string{}
 			}
@@ -25,7 +25,7 @@ func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceC
 				s.Annotations[nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey] = "true"
 				delete(s.Annotations, "nodeport-proxy.k8s.io/expose")
 			}
-			s.Spec.Selector = resources.BaseAppLabel(resources.RancherStatefulSetName, nil)
+			s.Spec.Selector = resources.BaseAppLabels(resources.RancherStatefulSetName, nil)
 			s.Spec.Type = corev1.ServiceTypeNodePort
 			if len(s.Spec.Ports) == 0 {
 				s.Spec.Ports = make([]corev1.ServicePort, 2)

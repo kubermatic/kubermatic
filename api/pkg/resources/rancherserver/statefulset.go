@@ -138,5 +138,5 @@ func getBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 	additionalLabels := map[string]string{
 		"cluster": cluster.Name,
 	}
-	return resources.BaseAppLabel(resources.RancherStatefulSetName, additionalLabels)
+	return resources.BaseAppLabels(resources.RancherStatefulSetName, additionalLabels)
 }

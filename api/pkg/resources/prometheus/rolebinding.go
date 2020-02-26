@@ -11,7 +11,7 @@ import (
 func RoleBindingCreator(clusterNamespace string) reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.PrometheusRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			rb.Labels = resources.BaseAppLabel(name, nil)
+			rb.Labels = resources.BaseAppLabels(name, nil)
 
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     resources.PrometheusRoleName,

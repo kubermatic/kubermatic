@@ -250,7 +250,7 @@ func getBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 	additionalLabels := map[string]string{
 		"cluster": cluster.Name,
 	}
-	return resources.BaseAppLabel(resources.EtcdStatefulSetName, additionalLabels)
+	return resources.BaseAppLabels(resources.EtcdStatefulSetName, additionalLabels)
 }
 
 type commandTplData struct {

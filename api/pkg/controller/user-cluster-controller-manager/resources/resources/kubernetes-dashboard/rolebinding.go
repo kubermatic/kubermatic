@@ -11,7 +11,7 @@ import (
 func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.KubernetesDashboardRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			rb.Labels = resources.BaseAppLabel(AppName, nil)
+			rb.Labels = resources.BaseAppLabels(AppName, nil)
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     resources.KubernetesDashboardRoleName,
 				Kind:     "Role",
