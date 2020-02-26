@@ -54,11 +54,11 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.UserClusterControllerDeploymentName
-			dep.Labels = resources.BaseAppLabel(name, nil)
+			dep.Labels = resources.BaseAppLabels(name, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(name, nil),
+				MatchLabels: resources.BaseAppLabels(name, nil),
 			}
 			dep.Spec.Strategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 			dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{

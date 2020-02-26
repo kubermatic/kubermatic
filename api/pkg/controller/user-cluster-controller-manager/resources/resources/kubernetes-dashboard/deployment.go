@@ -39,14 +39,14 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return scraperName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = scraperName
-			dep.Labels = resources.BaseAppLabel(scraperName, nil)
+			dep.Labels = resources.BaseAppLabels(scraperName, nil)
 
 			dep.Spec.Replicas = resources.Int32(2)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(scraperName, nil),
+				MatchLabels: resources.BaseAppLabels(scraperName, nil),
 			}
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: resources.BaseAppLabel(scraperName, nil),
+				Labels: resources.BaseAppLabels(scraperName, nil),
 			}
 
 			volumes := getVolumes()

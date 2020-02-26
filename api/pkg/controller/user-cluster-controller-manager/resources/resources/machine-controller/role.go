@@ -15,7 +15,7 @@ func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 		return resources.MachineControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = resources.MachineControllerRoleName
 			r.Namespace = metav1.NamespaceSystem
-			r.Labels = resources.BaseAppLabel(machinecontroller.Name, nil)
+			r.Labels = resources.BaseAppLabels(machinecontroller.Name, nil)
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
@@ -51,7 +51,7 @@ func EndpointReaderRoleCreator() reconciling.NamedRoleCreatorGetter {
 		return resources.MachineControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = resources.MachineControllerRoleName
 			r.Namespace = metav1.NamespaceDefault
-			r.Labels = resources.BaseAppLabel(machinecontroller.Name, nil)
+			r.Labels = resources.BaseAppLabels(machinecontroller.Name, nil)
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
@@ -76,7 +76,7 @@ func ClusterInfoReaderRoleCreator() reconciling.NamedRoleCreatorGetter {
 		return resources.ClusterInfoReaderRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = resources.ClusterInfoReaderRoleName
 			r.Namespace = metav1.NamespacePublic
-			r.Labels = resources.BaseAppLabel(machinecontroller.Name, nil)
+			r.Labels = resources.BaseAppLabels(machinecontroller.Name, nil)
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
@@ -98,7 +98,7 @@ func KubePublicRoleCreator() reconciling.NamedRoleCreatorGetter {
 		return resources.MachineControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = resources.MachineControllerRoleName
 			r.Namespace = metav1.NamespacePublic
-			r.Labels = resources.BaseAppLabel(machinecontroller.Name, nil)
+			r.Labels = resources.BaseAppLabels(machinecontroller.Name, nil)
 
 			r.Rules = []rbacv1.PolicyRule{
 				{

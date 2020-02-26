@@ -47,11 +47,11 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 			}
 
 			dep.Name = resources.ClusterAutoscalerDeploymentName
-			dep.Labels = resources.BaseAppLabel(resources.ClusterAutoscalerDeploymentName, nil)
+			dep.Labels = resources.BaseAppLabels(resources.ClusterAutoscalerDeploymentName, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(resources.ClusterAutoscalerDeploymentName, nil),
+				MatchLabels: resources.BaseAppLabels(resources.ClusterAutoscalerDeploymentName, nil),
 			}
 
 			volumes := []corev1.Volume{

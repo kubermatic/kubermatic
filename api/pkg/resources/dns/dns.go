@@ -34,7 +34,7 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.DNSResolverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.DNSResolverServiceName
-			se.Spec.Selector = resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil)
+			se.Spec.Selector = resources.BaseAppLabels(resources.DNSResolverDeploymentName, nil)
 			se.Spec.Ports = []corev1.ServicePort{
 				{
 					Name:       "dns",
@@ -60,11 +60,11 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.DNSResolverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.DNSResolverDeploymentName
-			dep.Labels = resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil)
+			dep.Labels = resources.BaseAppLabels(resources.DNSResolverDeploymentName, nil)
 			dep.Spec.Replicas = resources.Int32(2)
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil),
+				MatchLabels: resources.BaseAppLabels(resources.DNSResolverDeploymentName, nil),
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
@@ -220,7 +220,7 @@ func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGet
 			minAvailable := intstr.FromInt(1)
 			pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
 				Selector: &metav1.LabelSelector{
-					MatchLabels: resources.BaseAppLabel(resources.DNSResolverDeploymentName, nil),
+					MatchLabels: resources.BaseAppLabels(resources.DNSResolverDeploymentName, nil),
 				},
 				MinAvailable: &minAvailable,
 			}

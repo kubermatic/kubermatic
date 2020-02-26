@@ -44,7 +44,7 @@ func OpenshiftAPIServiceCreator() (string, reconciling.ServiceCreator) {
 			Port:       443,
 			TargetPort: intstr.FromInt(8443),
 		}}
-		svc.Spec.Selector = resources.BaseAppLabel(OpenshiftAPIServerDeploymentName, nil)
+		svc.Spec.Selector = resources.BaseAppLabels(OpenshiftAPIServerDeploymentName, nil)
 
 		return svc, nil
 	}
@@ -65,7 +65,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas
 			}
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(OpenshiftAPIServerDeploymentName, nil),
+				MatchLabels: resources.BaseAppLabels(OpenshiftAPIServerDeploymentName, nil),
 			}
 
 			dep.Spec.Strategy.Type = appsv1.RollingUpdateDeploymentStrategyType
@@ -79,7 +79,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 					IntVal: 0,
 				},
 			}
-			dep.Spec.Template.Labels = resources.BaseAppLabel(OpenshiftAPIServerDeploymentName, nil)
+			dep.Spec.Template.Labels = resources.BaseAppLabels(OpenshiftAPIServerDeploymentName, nil)
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 				{Name: openshiftImagePullSecretName},

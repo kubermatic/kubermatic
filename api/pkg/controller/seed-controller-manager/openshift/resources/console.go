@@ -63,7 +63,7 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 			d.Spec.Template.Spec.AutomountServiceAccountToken = utilpointer.BoolPtr(false)
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: openshiftImagePullSecretName}}
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(consoleDeploymentName, nil),
+				MatchLabels: resources.BaseAppLabels(consoleDeploymentName, nil),
 			}
 			image, err := consoleImage(data.Cluster().Spec.Version.String(), data.ImageRegistry(""))
 			if err != nil {

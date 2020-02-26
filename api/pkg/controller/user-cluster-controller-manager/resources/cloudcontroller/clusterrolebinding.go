@@ -10,7 +10,7 @@ import (
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.CloudControllerManagerRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.Labels = resources.BaseAppLabel(resources.CloudControllerManagerRoleBindingName, nil)
+			crb.Labels = resources.BaseAppLabels(resources.CloudControllerManagerRoleBindingName, nil)
 
 			crb.RoleRef = rbacv1.RoleRef{
 				// Can probably be tightened up a bit but for now I'm following the documentation.

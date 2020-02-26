@@ -79,11 +79,11 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MachineControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MachineControllerDeploymentName
-			dep.Labels = resources.BaseAppLabel(Name, nil)
+			dep.Labels = resources.BaseAppLabels(Name, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(Name, nil),
+				MatchLabels: resources.BaseAppLabels(Name, nil),
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 

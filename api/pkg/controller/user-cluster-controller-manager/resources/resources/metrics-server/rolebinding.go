@@ -11,7 +11,7 @@ import (
 func RolebindingAuthReaderCreator() reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.MetricsServerAuthReaderRoleName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			rb.Labels = resources.BaseAppLabel(Name, nil)
+			rb.Labels = resources.BaseAppLabels(Name, nil)
 
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     "extension-apiserver-authentication-reader",

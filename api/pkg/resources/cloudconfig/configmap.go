@@ -49,7 +49,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 				return nil, fmt.Errorf("failed to create cloud-config: %v", err)
 			}
 
-			cm.Labels = resources.BaseAppLabel(name, nil)
+			cm.Labels = resources.BaseAppLabels(name, nil)
 			cm.Data[resources.CloudConfigConfigMapKey] = cloudConfig
 			cm.Data[FakeVMWareUUIDKeyName] = fakeVMWareUUID
 

@@ -16,7 +16,7 @@ func InternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.ApiserverInternalServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.ApiserverInternalServiceName
-			se.Labels = resources.BaseAppLabel(name, nil)
+			se.Labels = resources.BaseAppLabels(name, nil)
 			se.Spec.Type = corev1.ServiceTypeClusterIP
 			se.Spec.Selector = map[string]string{
 				resources.AppLabelKey: name,
