@@ -42,7 +42,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ControllerManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.ControllerManagerDeploymentName
-			dep.Labels = resources.BaseAppLabel(name, nil)
+			dep.Labels = resources.BaseAppLabels(name, nil)
 
 			flags, err := getFlags(data)
 			if err != nil {
@@ -55,7 +55,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			}
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(name, nil),
+				MatchLabels: resources.BaseAppLabels(name, nil),
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 

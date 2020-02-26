@@ -56,7 +56,7 @@ func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.Name
 				})
 
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(openshiftNetworkOperatorDeploymentName, nil),
+				MatchLabels: resources.BaseAppLabels(openshiftNetworkOperatorDeploymentName, nil),
 			}
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: openshiftImagePullSecretName},

@@ -28,7 +28,7 @@ func CloudCredentialOperator(data openshiftData) reconciling.NamedDeploymentCrea
 			}
 
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(cloudCredentialOperatorDeploymentName, nil),
+				MatchLabels: resources.BaseAppLabels(cloudCredentialOperatorDeploymentName, nil),
 			}
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: openshiftImagePullSecretName},

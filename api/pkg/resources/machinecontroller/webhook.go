@@ -38,10 +38,10 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MachineControllerWebhookDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MachineControllerWebhookDeploymentName
-			dep.Labels = resources.BaseAppLabel(resources.MachineControllerWebhookDeploymentName, nil)
+			dep.Labels = resources.BaseAppLabels(resources.MachineControllerWebhookDeploymentName, nil)
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(resources.MachineControllerWebhookDeploymentName, nil),
+				MatchLabels: resources.BaseAppLabels(resources.MachineControllerWebhookDeploymentName, nil),
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
@@ -135,7 +135,7 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.MachineControllerWebhookServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.MachineControllerWebhookServiceName
-			se.Labels = resources.BaseAppLabel(resources.MachineControllerWebhookDeploymentName, nil)
+			se.Labels = resources.BaseAppLabels(resources.MachineControllerWebhookDeploymentName, nil)
 
 			se.Spec.Type = corev1.ServiceTypeClusterIP
 			se.Spec.Selector = map[string]string{

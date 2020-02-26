@@ -158,7 +158,7 @@ func (od *openshiftData) GetPodTemplateLabels(appName string, volumes []corev1.V
 }
 
 func (od *openshiftData) GetPodTemplateLabelsWithContext(ctx context.Context, appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
-	podLabels := kubernetesresources.AppClusterLabel(appName, od.cluster.Name, additionalLabels)
+	podLabels := kubernetesresources.AppClusterLabels(appName, od.cluster.Name, additionalLabels)
 	for _, v := range volumes {
 		if v.VolumeSource.Secret != nil {
 			revision, err := od.secretRevision(ctx, v.VolumeSource.Secret.SecretName)

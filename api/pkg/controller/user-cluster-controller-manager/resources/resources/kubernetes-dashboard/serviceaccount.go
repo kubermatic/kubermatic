@@ -11,7 +11,7 @@ import (
 func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return resources.MetricsScraperServiceAccountUsername, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			sa.Labels = resources.BaseAppLabel(scraperName, nil)
+			sa.Labels = resources.BaseAppLabels(scraperName, nil)
 			sa.Name = resources.MetricsScraperServiceAccountUsername
 			return sa, nil
 		}

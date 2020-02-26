@@ -110,7 +110,7 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 	return func() (string, reconciling.DeploymentCreator) {
 		return OpenshiftControllerManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.ControllerManagerDeploymentName
-			dep.Labels = resources.BaseAppLabel(OpenshiftControllerManagerDeploymentName, nil)
+			dep.Labels = resources.BaseAppLabels(OpenshiftControllerManagerDeploymentName, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			if data.Cluster().Spec.ComponentsOverride.ControllerManager.Replicas != nil {
@@ -119,7 +119,7 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = utilpointer.BoolPtr(false)
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(OpenshiftControllerManagerDeploymentName, nil),
+				MatchLabels: resources.BaseAppLabels(OpenshiftControllerManagerDeploymentName, nil),
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: openshiftImagePullSecretName}}
 

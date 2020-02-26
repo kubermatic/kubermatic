@@ -11,7 +11,7 @@ import (
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.KubeStateMetricsClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.Labels = resources.BaseAppLabel(Name, nil)
+			crb.Labels = resources.BaseAppLabels(Name, nil)
 
 			crb.RoleRef = rbacv1.RoleRef{
 				Name:     resources.KubeStateMetricsClusterRoleName,

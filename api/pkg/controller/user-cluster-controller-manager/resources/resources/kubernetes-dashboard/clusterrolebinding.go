@@ -12,7 +12,7 @@ import (
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.MetricsScraperClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.Labels = resources.BaseAppLabel(scraperName, nil)
+			crb.Labels = resources.BaseAppLabels(scraperName, nil)
 
 			crb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,

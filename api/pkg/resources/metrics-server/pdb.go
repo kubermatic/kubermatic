@@ -16,7 +16,7 @@ func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGet
 			minAvailable := intstr.FromInt(1)
 			pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
 				Selector: &metav1.LabelSelector{
-					MatchLabels: resources.BaseAppLabel(name, nil),
+					MatchLabels: resources.BaseAppLabels(name, nil),
 				},
 				MinAvailable: &minAvailable,
 			}

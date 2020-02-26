@@ -59,7 +59,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.ApiserverDeploymentName
-			dep.Labels = resources.BaseAppLabel(name, nil)
+			dep.Labels = resources.BaseAppLabels(name, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			if data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas != nil {
@@ -67,7 +67,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			}
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(name, nil),
+				MatchLabels: resources.BaseAppLabels(name, nil),
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 

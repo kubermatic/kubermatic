@@ -28,7 +28,7 @@ func KubePublicRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.MachineControllerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			rb.Labels = resources.BaseAppLabel(machinecontroller.Name, nil)
+			rb.Labels = resources.BaseAppLabels(machinecontroller.Name, nil)
 
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     resources.MachineControllerRoleName,

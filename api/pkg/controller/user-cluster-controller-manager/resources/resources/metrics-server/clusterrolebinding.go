@@ -11,7 +11,7 @@ import (
 func ClusterRoleBindingResourceReaderCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.MetricsServerResourceReaderClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.Labels = resources.BaseAppLabel(Name, nil)
+			crb.Labels = resources.BaseAppLabels(Name, nil)
 
 			crb.RoleRef = rbacv1.RoleRef{
 				Name:     resources.MetricsServerClusterRoleName,

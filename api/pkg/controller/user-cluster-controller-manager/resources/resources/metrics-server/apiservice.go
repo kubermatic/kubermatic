@@ -16,7 +16,7 @@ const (
 func APIServiceCreator(caBundle []byte) reconciling.NamedAPIServiceCreatorGetter {
 	return func() (string, reconciling.APIServiceCreator) {
 		return resources.MetricsServerAPIServiceName, func(se *apiregistrationv1beta1.APIService) (*apiregistrationv1beta1.APIService, error) {
-			labels := resources.BaseAppLabel(Name, nil)
+			labels := resources.BaseAppLabels(Name, nil)
 			se.Labels = labels
 
 			if se.Spec.Service == nil {

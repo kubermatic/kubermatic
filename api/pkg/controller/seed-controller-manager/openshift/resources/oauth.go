@@ -181,7 +181,7 @@ func OauthConfigMapCreator(data openshiftData) reconciling.NamedConfigMapCreator
 func OauthServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return OAuthServiceName, func(se *corev1.Service) (*corev1.Service, error) {
-			se.Labels = resources.BaseAppLabel(name, nil)
+			se.Labels = resources.BaseAppLabels(name, nil)
 
 			if se.Annotations == nil {
 				se.Annotations = map[string]string{}
@@ -302,9 +302,9 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 
 			dep.Spec.Replicas = utilpointer.Int32Ptr(2)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(OauthName, nil),
+				MatchLabels: resources.BaseAppLabels(OauthName, nil),
 			}
-			dep.Spec.Template.Labels = resources.BaseAppLabel(OauthName, nil)
+			dep.Spec.Template.Labels = resources.BaseAppLabels(OauthName, nil)
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 				{Name: openshiftImagePullSecretName},

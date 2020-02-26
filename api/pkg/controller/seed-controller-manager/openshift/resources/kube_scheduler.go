@@ -70,7 +70,7 @@ func KubeSchedulerDeploymentCreator(data openshiftData) reconciling.NamedDeploym
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.SchedulerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.SchedulerDeploymentName
-			dep.Labels = resources.BaseAppLabel(name, nil)
+			dep.Labels = resources.BaseAppLabels(name, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			if data.Cluster().Spec.ComponentsOverride.Scheduler.Replicas != nil {
@@ -78,7 +78,7 @@ func KubeSchedulerDeploymentCreator(data openshiftData) reconciling.NamedDeploym
 			}
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabel(name, nil),
+				MatchLabels: resources.BaseAppLabels(name, nil),
 			}
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = utilpointer.BoolPtr(false)
