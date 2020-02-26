@@ -607,8 +607,8 @@ func BaseAppLabels(name string, additionalLabels map[string]string) map[string]s
 	return labels
 }
 
-// AppClusterLabel returns the base app label + the cluster label. Additional labels can be included as well
-func AppClusterLabel(appName, clusterName string, additionalLabels map[string]string) map[string]string {
+// AppClusterLabels returns the base app label + the cluster label. Additional labels can be included as well
+func AppClusterLabels(appName, clusterName string, additionalLabels map[string]string) map[string]string {
 	podLabels := BaseAppLabels(appName, additionalLabels)
 	podLabels["cluster"] = clusterName
 
@@ -862,7 +862,7 @@ func GetPodTemplateLabels(
 	volumes []corev1.Volume,
 	additionalLabels map[string]string,
 ) (map[string]string, error) {
-	podLabels := AppClusterLabel(appName, clusterName, additionalLabels)
+	podLabels := AppClusterLabels(appName, clusterName, additionalLabels)
 
 	volumeLabels, err := VolumeRevisionLabels(ctx, client, namespace, volumes)
 	if err != nil {
