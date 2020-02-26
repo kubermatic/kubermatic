@@ -8,7 +8,7 @@ RUN apk add -U \
 	iptables \
 	jq \
 	openssl \
-	openvpn \
+	openvpn=2.4.8-r1 \
 	--no-cache
 
 # add kubectl
