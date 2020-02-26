@@ -33,7 +33,7 @@ type ObjectReference struct {
 	FieldPath string `json:"fieldPath,omitempty"`
 
 	// Kind of the referent.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
 	// +optional
 	Kind string `json:"kind,omitempty"`
 
@@ -48,7 +48,7 @@ type ObjectReference struct {
 	Namespace string `json:"namespace,omitempty"`
 
 	// Specific resourceVersion to which this reference is made, if any.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
 	// +optional
 	ResourceVersion string `json:"resourceVersion,omitempty"`
 

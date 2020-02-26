@@ -181,7 +181,7 @@ spec:
     # referencing a part of an object.
     fieldPath: ""
     # Kind of the referent.
-    # More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+    # More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
     kind: ""
     # Name of the referent.
     # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -190,7 +190,7 @@ spec:
     # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
     namespace: ""
     # Specific resourceVersion to which this reference is made, if any.
-    # More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency
+    # More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
     resourceVersion: ""
     # UID of the referent.
     # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids

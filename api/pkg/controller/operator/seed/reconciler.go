@@ -276,7 +276,7 @@ func (r *Reconciler) reconcileClusterRoles(cfg *operatorv1alpha1.KubermaticConfi
 
 	creators := vpa.ClusterRoleCreators()
 
-	if err := reconciling.ReconcileClusterRoles(r.ctx, creators, "", client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.ReconcileClusterRoles(r.ctx, creators, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoles: %v", err)
 	}
 
@@ -294,7 +294,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(cfg *operatorv1alpha1.Kubermat
 		creators = append(creators, vpa.ClusterRoleBindingCreators()...)
 	}
 
-	if err := reconciling.ReconcileClusterRoleBindings(r.ctx, creators, "", client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(r.ctx, creators, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %v", err)
 	}
 

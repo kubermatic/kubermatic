@@ -6,7 +6,6 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/errors"
 	strfmt "github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -19,38 +18,11 @@ type NamedExtension struct {
 	Name string `json:"name,omitempty"`
 
 	// extension
-	Extension *RawExtension `json:"extension,omitempty"`
+	Extension RawExtension `json:"extension,omitempty"`
 }
 
 // Validate validates this named extension
 func (m *NamedExtension) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateExtension(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *NamedExtension) validateExtension(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.Extension) { // not required
-		return nil
-	}
-
-	if m.Extension != nil {
-		if err := m.Extension.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("extension")
-			}
-			return err
-		}
-	}
-
 	return nil
 }
 

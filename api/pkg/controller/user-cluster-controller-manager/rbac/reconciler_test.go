@@ -28,7 +28,7 @@ func TestReconcileCreate(t *testing.T) {
 		expectedRoleBindings      []rbacv1.ClusterRoleBinding
 	}{
 		{
-			name:                      "scenario 1: test Reconcile method for crating system:kubermatic:owners",
+			name:                      "scenario 1: test Reconcile method for creating system:kubermatic:owners",
 			resourceNames:             []string{owners},
 			expectedRoleNumber:        1,
 			expectedRoleBindingNumber: 1,
@@ -172,6 +172,7 @@ func genTestClusterRole(t *testing.T, resourceName string) rbacv1.ClusterRole {
 	if err != nil {
 		t.Fatalf("can't generate role for %s, error: %v", resourceName, err)
 	}
+	role.ResourceVersion = "1"
 	return *role
 }
 
@@ -180,5 +181,6 @@ func genTestClusterRoleBinding(t *testing.T, resourceName string) rbacv1.Cluster
 	if err != nil {
 		t.Fatalf("can't generate role for %s, error: %v", resourceName, err)
 	}
+	roleBinding.ResourceVersion = "1"
 	return *roleBinding
 }

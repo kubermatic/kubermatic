@@ -29,9 +29,14 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 		{
 			name: "Object gets created",
 			expectedObject: &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      testResourceName,
-					Namespace: testNamespace,
+					Name:            testResourceName,
+					Namespace:       testNamespace,
+					ResourceVersion: "1",
 				},
 				Data: map[string]string{
 					"foo": "bar",
@@ -78,9 +83,14 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 				return sa, nil
 			},
 			expectedObject: &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      testResourceName,
-					Namespace: testNamespace,
+					Name:            testResourceName,
+					Namespace:       testNamespace,
+					ResourceVersion: "1",
 				},
 				Data: map[string]string{
 					"foo": "bar",
@@ -113,6 +123,10 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 				return sa, nil
 			},
 			expectedObject: &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testResourceName,
 					Namespace: testNamespace,

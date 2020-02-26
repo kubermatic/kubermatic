@@ -73,6 +73,10 @@ func TestResources(t *testing.T) {
 				concurrentClusterUpdates: 10,
 			},
 			object: &appsv1.Deployment{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "usercluster-controller",
 				},

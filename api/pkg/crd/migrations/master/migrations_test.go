@@ -69,7 +69,7 @@ func TestMigrateAllDatacenterEmailRestrictions(t *testing.T) {
 	migratedSeed := &kubermaticv1.Seed{}
 	err = client.Get(context.Background(), key, migratedSeed)
 	assert.NoError(t, err)
-	assert.Equal(t, expectedSeed, migratedSeed)
+	assert.Equal(t, expectedSeed.Spec, migratedSeed.Spec)
 }
 
 func TestMigrateAllDatacenterEmailRestrictionsInvalid(t *testing.T) {
