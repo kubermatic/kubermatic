@@ -3429,6 +3429,60 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/instancetypes": {
+      "get": {
+        "description": "Lists available Alibaba Instance Types",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "alibaba"
+        ],
+        "operationId": "listAlibabaInstanceTypesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AlibabaInstanceTypeList",
+            "schema": {
+              "$ref": "#/definitions/AlibabaInstanceTypeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/sizes": {
       "get": {
         "description": "Lists available AWS sizes",
@@ -6133,6 +6187,54 @@
         }
       }
     },
+    "/api/v1/providers/alibaba/instancetypes": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "alibaba"
+        ],
+        "summary": "Lists available Alibaba instance types.",
+        "operationId": "listAlibabaInstanceTypes",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "AccessKeySecret",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AlibabaInstanceTypeList",
+            "schema": {
+              "$ref": "#/definitions/AlibabaInstanceTypeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/aws/sizes": {
       "get": {
         "produces": [
@@ -7581,6 +7683,35 @@
           "type": "string",
           "x-go-name": "Region"
         }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AlibabaInstanceType": {
+      "type": "object",
+      "title": "AlibabaInstanceType represents a object of Alibaba instance type.",
+      "properties": {
+        "cpuCoreCount": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUCoreCount"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "memorySize": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "MemorySize"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "AlibabaInstanceTypeList": {
+      "type": "array",
+      "title": "AlibabaInstanceTypeList represents an array of Alibaba instance types.",
+      "items": {
+        "$ref": "#/definitions/AlibabaInstanceType"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
