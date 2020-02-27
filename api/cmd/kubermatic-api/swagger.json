@@ -7537,7 +7537,7 @@
       "type": "object",
       "properties": {
         "description": {
-          "description": "Description of the configured addon",
+          "description": "Description of the configured addon, it will be displayed in the addon overview in the UI",
           "type": "string",
           "x-go-name": "Description"
         },
@@ -7560,7 +7560,7 @@
           "x-go-name": "LogoFormat"
         },
         "shortDescription": {
-          "description": "ShortDescription of the configured addon",
+          "description": "ShortDescription of the configured addon that contains more detailed information about the addon,\nit will be displayed in the addon details view in the UI",
           "type": "string",
           "x-go-name": "ShortDescription"
         }
