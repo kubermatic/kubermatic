@@ -158,6 +158,16 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, errors.Wrap(err, "failed to reconcile namespace")
 	}
 
+	data, err := r.getClusterTemplateData(ctx, r.Client, cluster)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get cluster template data")
+	}
+
+	if err := r.ensureDeployments(ctx, cluster, data); err != nil {
+		return nil, errors.Wrap(err, "failed to ensure deployment")
+	}
+
+	return &reconcile.Result{}, nil
 }
 
 func (r *Reconciler) ensureNamespace(ctx context.Context, c *kubermaticv1.Cluster) error {
