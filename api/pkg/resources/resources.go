@@ -77,6 +77,9 @@ const (
 	KubernetesDashboardDeploymentName = "kubernetes-dashboard"
 	// MetricsScraperDeploymentName is the name of dashboard-metrics-scraper deployment
 	MetricsScraperDeploymentName = "dashboard-metrics-scraper"
+	// GRPCServerDeploymentName is the name of the grpc-server deployment.
+	GRPCServerDeploymentName = "grpc-server"
+
 	// MetricsScraperServiceName is the name of dashboard-metrics-scraper service
 	MetricsScraperServiceName = "dashboard-metrics-scraper"
 
@@ -107,6 +110,9 @@ const (
 
 	// MetricsServerAPIServiceName is the name for the metrics-server APIService
 	MetricsServerAPIServiceName = "v1beta1.metrics.k8s.io"
+
+	// GRPCTunnelServiceName is the name for the grpc-tunnel service required for the grpc-server.
+	GRPCTunnelServiceName = "grpc-tunnel"
 
 	//AdminKubeconfigSecretName is the name for the secret containing the private ca key
 	AdminKubeconfigSecretName = "admin-kubeconfig"
@@ -140,6 +146,9 @@ const (
 	ClusterAutoscalerKubeconfigSecretName = "cluster-autoscaler-kubeconfig"
 	// KubernetesDashboardKubeconfigSecretName is the name of the kubeconfig secret user for Kubernetes Dashboard
 	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
+
+	// GRPCServerSecretName is the name of the secret used for the grpc-server deployment.
+	GRPCServerSecretName = "grpc-server"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"

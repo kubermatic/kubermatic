@@ -340,3 +340,7 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
 func (d *TemplateData) Seed() *kubermaticv1.Seed {
 	return d.seed
 }
+
+func (d *TemplateData) ClusterNamespaceName() string {
+	return d.cluster.Status.NamespaceName
+}
