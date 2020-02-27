@@ -13,6 +13,7 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/swag"
 
 	strfmt "github.com/go-openapi/strfmt"
 )
@@ -20,7 +21,7 @@ import (
 // NewListProjectsParams creates a new ListProjectsParams object
 // with the default values initialized.
 func NewListProjectsParams() *ListProjectsParams {
-
+	var ()
 	return &ListProjectsParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +31,7 @@ func NewListProjectsParams() *ListProjectsParams {
 // NewListProjectsParamsWithTimeout creates a new ListProjectsParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListProjectsParamsWithTimeout(timeout time.Duration) *ListProjectsParams {
-
+	var ()
 	return &ListProjectsParams{
 
 		timeout: timeout,
@@ -40,7 +41,7 @@ func NewListProjectsParamsWithTimeout(timeout time.Duration) *ListProjectsParams
 // NewListProjectsParamsWithContext creates a new ListProjectsParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListProjectsParamsWithContext(ctx context.Context) *ListProjectsParams {
-
+	var ()
 	return &ListProjectsParams{
 
 		Context: ctx,
@@ -50,7 +51,7 @@ func NewListProjectsParamsWithContext(ctx context.Context) *ListProjectsParams {
 // NewListProjectsParamsWithHTTPClient creates a new ListProjectsParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListProjectsParamsWithHTTPClient(client *http.Client) *ListProjectsParams {
-
+	var ()
 	return &ListProjectsParams{
 		HTTPClient: client,
 	}
@@ -60,6 +61,10 @@ func NewListProjectsParamsWithHTTPClient(client *http.Client) *ListProjectsParam
 for the list projects operation typically these are written to a http.Request
 */
 type ListProjectsParams struct {
+
+	/*DisplayAll*/
+	DisplayAll *bool
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -98,6 +103,17 @@ func (o *ListProjectsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithDisplayAll adds the displayAll to the list projects params
+func (o *ListProjectsParams) WithDisplayAll(displayAll *bool) *ListProjectsParams {
+	o.SetDisplayAll(displayAll)
+	return o
+}
+
+// SetDisplayAll adds the displayAll to the list projects params
+func (o *ListProjectsParams) SetDisplayAll(displayAll *bool) {
+	o.DisplayAll = displayAll
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListProjectsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -105,6 +121,22 @@ func (o *ListProjectsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 	var res []error
+
+	if o.DisplayAll != nil {
+
+		// query param displayAll
+		var qrDisplayAll bool
+		if o.DisplayAll != nil {
+			qrDisplayAll = *o.DisplayAll
+		}
+		qDisplayAll := swag.FormatBool(qrDisplayAll)
+		if qDisplayAll != "" {
+			if err := r.SetQueryParam("displayAll", qDisplayAll); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

@@ -5,15 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
@@ -58,12 +57,22 @@ func CreateEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 }
 
 // ListEndpoint defines an HTTP endpoint for listing projects
-func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) endpoint.Endpoint {
+func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
-		projects := []*apiv1.Project{}
+		req, ok := request.(ListReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
-		userMappings, err := memberMapper.MappingsFor(user.Spec.Email)
+		if req.DisplayAll {
+			return getAllProjectsForAdmin(userInfo, projectProvider, memberProvider, userProvider)
+		}
+		projects := []*apiv1.Project{}
+		userMappings, err := memberMapper.MappingsFor(userInfo.Email)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -86,11 +95,11 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 				continue
 			}
 
-			projectOwners, err := getOwnersForProject(userInfo, projectInternal, memberProvider, userProvider)
+			projectOwners, err := common.GetOwnersForProject(userInfo, projectInternal, memberProvider, userProvider)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			projects = append(projects, convertInternalProjectToExternal(projectInternal, projectOwners))
+			projects = append(projects, common.ConvertInternalProjectToExternal(projectInternal, projectOwners))
 
 		}
 
@@ -99,6 +108,24 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 		}
 		return projects, nil
 	}
+}
+
+func getAllProjectsForAdmin(userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) ([]*apiv1.Project, error) {
+	projects := []*apiv1.Project{}
+	projectList, err := projectProvider.List(nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	for _, project := range projectList {
+		projectOwners, err := common.GetOwnersForProject(userInfo, project, memberProvider, userProvider)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		projects = append(projects, common.ConvertInternalProjectToExternal(project, projectOwners))
+	}
+
+	return projects, nil
 }
 
 func isStatus(err error, status int32) bool {
@@ -158,11 +185,11 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, memberProvider pro
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		projectOwners, err := getOwnersForProject(userInfo, kubermaticProject, memberProvider, userProvider)
+		projectOwners, err := common.GetOwnersForProject(userInfo, kubermaticProject, memberProvider, userProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return convertInternalProjectToExternal(project, projectOwners), nil
+		return common.ConvertInternalProjectToExternal(project, projectOwners), nil
 	}
 }
 
@@ -185,55 +212,12 @@ func GetEndpoint(projectProvider provider.ProjectProvider, memberProvider provid
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		projectOwners, err := getOwnersForProject(userInfo, kubermaticProject, memberProvider, userProvider)
+		projectOwners, err := common.GetOwnersForProject(userInfo, kubermaticProject, memberProvider, userProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return convertInternalProjectToExternal(kubermaticProject, projectOwners), nil
+		return common.ConvertInternalProjectToExternal(kubermaticProject, projectOwners), nil
 	}
-}
-
-func convertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project, projectOwners []apiv1.User) *apiv1.Project {
-	return &apiv1.Project{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                kubermaticProject.Name,
-			Name:              kubermaticProject.Spec.Name,
-			CreationTimestamp: apiv1.NewTime(kubermaticProject.CreationTimestamp.Time),
-			DeletionTimestamp: func() *apiv1.Time {
-				if kubermaticProject.DeletionTimestamp != nil {
-					dt := apiv1.NewTime(kubermaticProject.DeletionTimestamp.Time)
-					return &dt
-				}
-				return nil
-			}(),
-		},
-		Labels: label.FilterLabels(label.ProjectResourceType, kubermaticProject.Labels),
-		Status: kubermaticProject.Status.Phase,
-		Owners: projectOwners,
-	}
-}
-
-func getOwnersForProject(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) ([]apiv1.User, error) {
-	allProjectMembers, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{SkipPrivilegeVerification: true})
-	if err != nil {
-		return nil, err
-	}
-	projectOwners := []apiv1.User{}
-	for _, projectMember := range allProjectMembers {
-		if rbac.ExtractGroupPrefix(projectMember.Spec.Group) == rbac.OwnerGroupNamePrefix {
-			user, err := userProvider.UserByEmail(projectMember.Spec.UserEmail)
-			if err != nil {
-				continue
-			}
-			projectOwners = append(projectOwners, apiv1.User{
-				ObjectMeta: apiv1.ObjectMeta{
-					Name: user.Spec.Name,
-				},
-				Email: user.Spec.Email,
-			})
-		}
-	}
-	return projectOwners, nil
 }
 
 // updateRq defines HTTP request for updateProject
@@ -307,4 +291,29 @@ func DecodeDelete(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, nil
 	}
 	return deleteRq{ProjectReq: req.(common.ProjectReq)}, err
+}
+
+// ListReq defines HTTP request for listProjects endpoint
+// swagger:parameters listProjects
+type ListReq struct {
+	// in: query
+	DisplayAll bool `json:"displayAll,omitempty"`
+}
+
+func DecodeList(c context.Context, r *http.Request) (interface{}, error) {
+	var req ListReq
+	var displayAll bool
+	var err error
+
+	queryParam := r.URL.Query().Get("displayAll")
+
+	if queryParam != "" {
+		displayAll, err = strconv.ParseBool(queryParam)
+		if err != nil {
+			return nil, fmt.Errorf("wrong query paramater: %v", err)
+		}
+	}
+	req.DisplayAll = displayAll
+
+	return req, nil
 }

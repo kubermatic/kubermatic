@@ -864,6 +864,14 @@
         ],
         "summary": "Lists projects that an authenticated user is a member of.",
         "operationId": "listProjects",
+        "parameters": [
+          {
+            "type": "boolean",
+            "x-go-name": "DisplayAll",
+            "name": "displayAll",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Project",

@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
@@ -160,7 +162,8 @@ func TestListProjectEndpoint(t *testing.T) {
 		ExpectedResponse          []apiv1.Project
 		HTTPStatus                int
 		ExistingKubermaticObjects []runtime.Object
-		ExistingAPIUser           apiv1.User
+		ExistingAPIUser           *apiv1.User
+		DisplayAll                bool
 	}{
 		{
 			Name:       "scenario 1: list projects that John is the member of",
@@ -177,10 +180,10 @@ func TestListProjectEndpoint(t *testing.T) {
 				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
 				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
 			},
-			ExistingAPIUser: func() apiv1.User {
+			ExistingAPIUser: func() *apiv1.User {
 				apiUser := test.GenDefaultAPIUser()
 				apiUser.Email = "john@acme.com"
-				return *apiUser
+				return apiUser
 			}(),
 			ExpectedResponse: []apiv1.Project{
 				{
@@ -209,14 +212,76 @@ func TestListProjectEndpoint(t *testing.T) {
 				},
 			},
 		},
+		{
+			Name:       "scenario 2: list all projects for the admin user",
+			Body:       ``,
+			DisplayAll: true,
+			HTTPStatus: http.StatusOK,
+			ExistingKubermaticObjects: []runtime.Object{
+				// add some projects
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-second-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute)),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
+				// add John
+				test.GenUser("JohnID", "John", "john@acme.com"),
+				genUser("Bob", "bob@acme.com", true),
+				// make John the owner of the first project and the editor of the second
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-second-project-ID", "john@acme.com", "editors"),
+				test.GenBinding("my-third-project-ID", "bob@acme.com", "owners"),
+			},
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+			ExpectedResponse: []apiv1.Project{
+				{
+					Status: "Active",
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "my-first-project-ID",
+						Name:              "my-first-project",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+					},
+					Owners: []apiv1.User{
+						{
+							ObjectMeta: apiv1.ObjectMeta{
+								Name: "John",
+							},
+							Email: "john@acme.com",
+						},
+					},
+				},
+				{
+					Status: "Active",
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "my-second-project-ID",
+						Name:              "my-second-project",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
+					},
+				},
+				{
+					Status: "Active",
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "my-third-project-ID",
+						Name:              "my-third-project",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
+					},
+					Owners: []apiv1.User{
+						{
+							ObjectMeta: apiv1.ObjectMeta{
+								Name: "Bob",
+							},
+							Email: "bob@acme.com",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			// test data
-			req := httptest.NewRequest("GET", "/api/v1/projects", strings.NewReader(tc.Body))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects?displayAll=%v", tc.DisplayAll), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -320,14 +385,19 @@ func TestListProjectMethod(t *testing.T) {
 			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, projectBindingLister, userLister, kubernetes.IsServiceAccount)
 			userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister(), kubernetes.IsServiceAccount)
 
+			userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			kubermaticInformerFactory.Start(wait.NeverStop)
 			kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-			endpointFun := project.ListEndpoint(test.NewFakeProjectProvider(), test.NewFakePrivilegedProjectProvider(), projectMemberProvider, projectMemberProvider, userProvider)
+			endpointFun := project.ListEndpoint(userInfoGetter, test.NewFakeProjectProvider(), test.NewFakePrivilegedProjectProvider(), projectMemberProvider, projectMemberProvider, userProvider)
 
 			ctx := context.WithValue(context.TODO(), middleware.UserCRContextKey, tc.ExistingAPIUser)
 
-			projectsRaw, err := endpointFun(ctx, nil)
+			projectsRaw, err := endpointFun(ctx, project.ListReq{})
 			resultProjectList := make([]apiv1.Project, 0)
 
 			if len(tc.ExpectedErrorMsg) > 0 {
@@ -515,4 +585,10 @@ func TestDeleteProjectEndpoint(t *testing.T) {
 			}
 		})
 	}
+}
+
+func genUser(name, email string, isAdmin bool) *kubermaticapiv1.User {
+	user := test.GenUser("", name, email)
+	user.Spec.IsAdmin = isAdmin
+	return user
 }
