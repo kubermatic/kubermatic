@@ -1068,6 +1068,12 @@ type AzureNodeSpec struct {
 	// Additional metadata to set
 	// required: false
 	Tags map[string]string `json:"tags,omitempty"`
+	// OS disk size in GB
+	// required: false
+	OSDiskSize int32 `json:"osDiskSize"`
+	// Data disk size in GB
+	// required: false
+	DataDiskSize int32 `json:"dataDiskSize"`
 }
 
 // VSphereNodeSpec VSphere node settings
