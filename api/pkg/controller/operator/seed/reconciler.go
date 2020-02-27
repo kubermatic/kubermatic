@@ -259,7 +259,8 @@ func (r *Reconciler) reconcileServiceAccounts(cfg *operatorv1alpha1.KubermaticCo
 			vpa.AdmissionControllerServiceAccountCreator(),
 		}
 
-		if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, metav1.NamespaceSystem, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+		// no ownership because these resources are most likely in a different namespace than Kubermatic
+		if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, metav1.NamespaceSystem, client); err != nil {
 			return fmt.Errorf("failed to reconcile VPA ServiceAccounts: %v", err)
 		}
 	}
@@ -346,7 +347,8 @@ func (r *Reconciler) reconcileSecrets(cfg *operatorv1alpha1.KubermaticConfigurat
 			vpa.AdmissionControllerServingCertCreator(),
 		}
 
-		if err := reconciling.ReconcileSecrets(r.ctx, creators, metav1.NamespaceSystem, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+		// no ownership because these resources are most likely in a different namespace than Kubermatic
+		if err := reconciling.ReconcileSecrets(r.ctx, creators, metav1.NamespaceSystem, client); err != nil {
 			return fmt.Errorf("failed to reconcile VPA Secrets: %v", err)
 		}
 	}
@@ -361,9 +363,10 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 		kubermatic.SeedControllerManagerDeploymentCreator(r.workerName, r.versions, cfg, seed),
 	}
 
+	volumeLabelModifier := common.VolumeRevisionLabelsModifierFactory(r.ctx, client)
 	modifiers := []reconciling.ObjectModifier{
 		common.OwnershipModifierFactory(seed, r.scheme),
-		common.VolumeRevisionLabelsModifierFactory(r.ctx, client),
+		volumeLabelModifier,
 	}
 
 	if err := reconciling.ReconcileDeployments(r.ctx, creators, r.namespace, client, modifiers...); err != nil {
@@ -377,7 +380,8 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 			vpa.AdmissionControllerDeploymentCreator(cfg, r.versions),
 		}
 
-		if err := reconciling.ReconcileDeployments(r.ctx, creators, metav1.NamespaceSystem, client, modifiers...); err != nil {
+		// no ownership because these resources are most likely in a different namespace than Kubermatic
+		if err := reconciling.ReconcileDeployments(r.ctx, creators, metav1.NamespaceSystem, client, volumeLabelModifier); err != nil {
 			return fmt.Errorf("failed to reconcile VPA Deployments: %v", err)
 		}
 	}
@@ -406,12 +410,19 @@ func (r *Reconciler) reconcileServices(cfg *operatorv1alpha1.KubermaticConfigura
 		common.SeedAdmissionServiceCreator(cfg, client),
 	}
 
-	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
-		creators = append(creators, vpa.AdmissionControllerServiceCreator())
-	}
-
 	if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %v", err)
+	}
+
+	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+		creators := []reconciling.NamedServiceCreatorGetter{
+			vpa.AdmissionControllerServiceCreator(),
+		}
+
+		// no ownership because these resources are most likely in a different namespace than Kubermatic
+		if err := reconciling.ReconcileServices(r.ctx, creators, metav1.NamespaceSystem, client); err != nil {
+			return fmt.Errorf("failed to reconcile VPA Services: %v", err)
+		}
 	}
 
 	return nil
