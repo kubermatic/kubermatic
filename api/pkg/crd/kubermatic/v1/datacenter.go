@@ -100,7 +100,10 @@ type DatacenterSpec struct {
 	GCP          *DatacenterSpecGCP          `json:"gcp,omitempty"`
 	Kubevirt     *DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
-	Fake         *DatacenterSpecFake         `json:"fake,omitempty,omitgenyaml"` // omitgenyaml is used by the example-yaml-generator
+
+	//nolint:staticcheck
+	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
+	Fake *DatacenterSpecFake `json:"fake,omitempty,omitgenyaml"`
 
 	// Optional: When defined, only users with an e-mail address on the
 	// given domains can make use of this datacenter. You can define multiple
