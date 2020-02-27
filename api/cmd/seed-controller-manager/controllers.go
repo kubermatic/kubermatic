@@ -12,6 +12,7 @@ import (
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/backup"
 	cloudcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/cloud"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/clustercomponentdefaulter"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/kubeone"
 	kubernetescontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/monitoring"
 	openshiftcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift"
@@ -42,6 +43,7 @@ var AllControllers = map[string]controllerCreator{
 	clustercomponentdefaulter.ControllerName:      createClusterComponentDefaulter,
 	seedresourcesuptodatecondition.ControllerName: createSeedConditionUpToDateController,
 	rancher.ControllerName:                        createRancherController,
+	kubeone.ControllerName:                        createKubeoneController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -282,4 +284,8 @@ func createRancherController(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.clientProvider)
+}
+
+func createKubeoneController(ctrlCtx *controllerContext) error {
+	return kubeone.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerName)
 }
