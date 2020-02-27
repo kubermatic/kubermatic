@@ -18,7 +18,10 @@ type AddonConfig struct {
 
 // AddonConfigSpec specifies configuration of addon
 type AddonConfigSpec struct {
-	// Description of the configured addon
+	// ShortDescription of the configured addon that contains more detailed information about the addon,
+	// it will be displayed in the addon details view in the UI
+	ShortDescription string `json:"shortDescription,omitempty"`
+	// Description of the configured addon, it will be displayed in the addon overview in the UI
 	Description string `json:"description,omitempty"`
 	// Logo of the configured addon, encoded in base64
 	Logo string `json:"logo,omitempty"`
