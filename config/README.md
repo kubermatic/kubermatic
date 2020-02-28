@@ -25,7 +25,7 @@ For reference you can see the dev clusters [values.yaml][1] file.
   **The value should be quoted.**
 
   Example:
-  > `KubermaticURL: "cloud.kubermatic.io"`
+  > `KubermaticURL: "dev.kubermatic.io"`
 
 - #### `Kubeconfig` _(required)_
 
@@ -224,7 +224,7 @@ kubectl create -f installer/serviceaccount.yaml
 kubectl create -f installer/clusterrolebinding.yaml
 # values.yaml is the file you created during the step above
 kubectl -n kubermatic-installer create secret generic values --from-file=values.yaml
-#Create the docker secret - needs to have read access to kubermatic/installer 
+#Create the docker secret - needs to have read access to kubermatic/installer
 kubectl  -n kubermatic-installer create secret docker-registry dockercfg --docker-username='' --docker-password='' --docker-email=''
 kubectl  -n kubermatic-installer create secret docker-registry quay --docker-username='' --docker-password='' --docker-email=''
 # Create and run the installer job
@@ -236,7 +236,7 @@ kubectl create -f install-job.yaml
 
 ### Create DNS entry for your domain
 Go to https://www.ovh.ie/ and add a dns entry for the dashboard:
-- $DOMAIN  
+- $DOMAIN
 
 The external ip for the DNS entry can be fetched via
 ```bash
@@ -245,7 +245,7 @@ kubectl -n ingress-nginx describe service nginx-ingress-controller | grep "LoadB
 
 Go to https://www.ovh.ie/ and add a dns entry for the nodeport-exposer:
 $DATACENTER=us-central1
-- *.$DATACENTER.$DOMAIN  =  *.us-central1.dev.kubermatic.io  
+- *.$DATACENTER.$DOMAIN  =  *.us-central1.dev.kubermatic.io
 
 The external ip for the DNS entry can be fetched via
 ```bash

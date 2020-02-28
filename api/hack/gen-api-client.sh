@@ -16,7 +16,7 @@ SWAGGER_META="// Kubermatic API.
 // Kubermatic API. This describes possible operations which can be made against the Kubermatic API.
 //
 //     Schemes: https
-//     Host: cloud.kubermatic.io
+//     Host: dev.kubermatic.io
 //
 //     Security:
 //     - api_key:
