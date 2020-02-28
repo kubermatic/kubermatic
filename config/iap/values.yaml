@@ -74,6 +74,11 @@ iap:
     #   passthrough:
     #   - /-/healthy # exposes nothing
 
+  # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
+  certIssuer:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+
   discovery_url: https://kubermatic.tld/dex/.well-known/openid-configuration
   port: 3000
 
