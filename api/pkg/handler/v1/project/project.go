@@ -138,7 +138,7 @@ func isStatus(err error, status int32) bool {
 }
 
 // DeleteEndpoint defines an HTTP endpoint for deleting a project
-func DeleteEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteRq)
 		if !ok {
@@ -148,6 +148,19 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, userInfoGetter pro
 			return nil, errors.NewBadRequest("the id of the project cannot be empty")
 		}
 
+		// check if admin user
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		// allow to delete any project for the admin user
+		if adminUserInfo.IsAdmin {
+			err := privilegedProjectProvider.DeleteUnsecured(req.ProjectID)
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// delete project by regular user
+		// check if project is assigned do the user
 		userInfo, err := userInfoGetter(ctx, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -194,7 +207,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, memberProvider pro
 }
 
 // GeEndpoint defines an HTTP endpoint for getting a project
-func GetEndpoint(projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetProjectRq)
 		if !ok {
@@ -204,15 +217,31 @@ func GetEndpoint(projectProvider provider.ProjectProvider, memberProvider provid
 			return nil, errors.NewBadRequest("the id of the project cannot be empty")
 		}
 
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		adminUserInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		kubermaticProject, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+
+		var kubermaticProject *kubermaticapiv1.Project
+
+		if adminUserInfo.IsAdmin {
+			// get any project for admin
+			kubermaticProject, err = privilegedProjectProvider.GetUnsecured(req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+		} else {
+			userInfo, err := userInfoGetter(ctx, req.ProjectID)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			kubermaticProject, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
 		}
-		projectOwners, err := common.GetOwnersForProject(userInfo, kubermaticProject, memberProvider, userProvider)
+
+		projectOwners, err := common.GetOwnersForProject(adminUserInfo, kubermaticProject, memberProvider, userProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
