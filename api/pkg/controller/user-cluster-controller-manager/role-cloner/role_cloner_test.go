@@ -315,7 +315,6 @@ func TestReconcile(t *testing.T) {
 			}
 
 			existingRoles := existingRoleList.Items
-
 			if len(existingRoles) != len(tc.expectedRoles) {
 				t.Fatalf("roles are not equal, expected length %d got %d", len(tc.expectedRoles), len(existingRoles))
 			}
@@ -323,6 +322,8 @@ func TestReconcile(t *testing.T) {
 			var newExistingRoles []rbacv1.Role
 			// get rid of time format differences
 			for _, role := range existingRoles {
+				role.TypeMeta = metav1.TypeMeta{}
+				role.ResourceVersion = ""
 				role.DeletionTimestamp = nil
 				newExistingRoles = append(newExistingRoles, role)
 			}
@@ -332,7 +333,6 @@ func TestReconcile(t *testing.T) {
 			if !reflect.DeepEqual(newExistingRoles, tc.expectedRoles) {
 				t.Fatalf("roles are not equal, expected %v got %v", tc.expectedRoles, newExistingRoles)
 			}
-
 		})
 	}
 }

@@ -1505,7 +1505,10 @@ type SeedDatacenterSpec struct {
 	GCP          *kubermaticv1.DatacenterSpecGCP          `json:"gcp,omitempty"`
 	Kubevirt     *kubermaticv1.DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *kubermaticv1.DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
-	Fake         *kubermaticv1.DatacenterSpecFake         `json:"fake,omitempty,omitgenyaml"` // omitgenyaml is used by the example-yaml-generator
+
+	//nolint:staticcheck
+	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
+	Fake *kubermaticv1.DatacenterSpecFake `json:"fake,omitempty,omitgenyaml"`
 
 	// Optional: When defined, only users with an e-mail address on the
 	// given domains can make use of this datacenter. You can define multiple

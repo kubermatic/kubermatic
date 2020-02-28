@@ -40,7 +40,6 @@ func TestListSystemLabels(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/labels/system"), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
-			kubermaticObj = append(kubermaticObj)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)

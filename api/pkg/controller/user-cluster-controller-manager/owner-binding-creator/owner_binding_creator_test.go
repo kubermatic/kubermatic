@@ -40,7 +40,8 @@ func TestReconcile(t *testing.T) {
 			ownerEmail:  "test@test.com",
 			expectedBinding: rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+					Labels:          map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+					ResourceVersion: "1",
 				},
 				RoleRef: rbacv1.RoleRef{
 					APIGroup: rbacv1.GroupName,
@@ -66,7 +67,8 @@ func TestReconcile(t *testing.T) {
 			ownerEmail:  "test@test.com",
 			expectedBinding: rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+					Labels:          map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+					ResourceVersion: "1",
 				},
 				RoleRef: rbacv1.RoleRef{
 					APIGroup: rbacv1.GroupName,

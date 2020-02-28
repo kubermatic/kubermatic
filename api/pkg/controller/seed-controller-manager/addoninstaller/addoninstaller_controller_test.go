@@ -37,9 +37,14 @@ func TestCreateAddon(t *testing.T) {
 			name: "successfully created",
 			expectedClusterAddons: []*kubermaticv1.Addon{
 				{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kubermatic.k8s.io/v1",
+						Kind:       "Addon",
+					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "Foo",
-						Namespace: "cluster-" + name,
+						Name:            "Foo",
+						Namespace:       "cluster-" + name,
+						ResourceVersion: "1",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion:         "kubermatic.k8s.io/v1",
@@ -60,9 +65,14 @@ func TestCreateAddon(t *testing.T) {
 					},
 				},
 				{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kubermatic.k8s.io/v1",
+						Kind:       "Addon",
+					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "Bar",
-						Namespace: "cluster-" + name,
+						Name:            "Bar",
+						Namespace:       "cluster-" + name,
+						ResourceVersion: "1",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion:         "kubermatic.k8s.io/v1",
