@@ -1,0 +1,13 @@
+{{ if .Values.kubermatic.isMaster }}
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: kubermatic
+spec:
+  secretName: kubermatic-tls
+  issuerRef:
+    name: {{ .Values.kubermatic.certIssuer.name }}
+    kind: {{ .Values.kubermatic.certIssuer.kind }}
+  dnsNames:
+  - {{ .Values.kubermatic.domain }}
+{{ end }}
