@@ -33,7 +33,7 @@ git config --global user.name "Prow CI Robot"
 git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
 ensure_github_host_pubkey
 
-export CHARTS='kubermatic cert-manager nginx-ingress-controller nodeport-proxy oauth minio iap s3-exporter'
+export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio iap s3-exporter'
 export MONITORING_CHARTS='alertmanager blackbox-exporter grafana kube-state-metrics node-exporter prometheus'
 export LOGGING_CHARTS='loki promtail elasticsearch kibana fluentbit'
 export BACKUP_CHARTS='velero'
