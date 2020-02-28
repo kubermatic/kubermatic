@@ -231,6 +231,10 @@ type PrivilegedProjectProvider interface {
 	// GetUnsecured returns the project with the given name
 	// This function is unsafe in a sense that it uses privileged account to get project with the given name
 	GetUnsecured(projectInternalName string, options *ProjectGetOptions) (*kubermaticv1.Project, error)
+
+	// DeleteUnsecured deletes any given project
+	// This function is unsafe in a sense that it uses privileged account to delete project with the given name
+	DeleteUnsecured(projectInternalName string) error
 }
 
 // ProjectProvider declares the set of method for interacting with kubermatic's project
