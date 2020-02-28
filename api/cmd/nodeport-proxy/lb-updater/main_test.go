@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
+	"go.uber.org/zap"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -500,17 +501,14 @@ func TestReconciliation(t *testing.T) {
 		},
 	}
 
-	var breakNow bool
 	for _, tc := range testCases {
-		if breakNow {
-			break
-		}
 		t.Run(tc.name, func(t *testing.T) {
 			client := fake.NewFakeClient(tc.initialServices...)
 			updater := &LBUpdater{
 				lbNamespace: "lb-ns",
 				lbName:      "lb",
 				client:      client,
+				log:         zap.NewNop().Sugar(),
 			}
 
 			if _, err := updater.Reconcile(reconcile.Request{}); err != nil {
@@ -525,7 +523,6 @@ func TestReconciliation(t *testing.T) {
 			if diff := deep.Equal(resultingServices.Items, tc.expectedServices.Items); diff != nil {
 				expected, _ := json.Marshal(tc.expectedServices.Items)
 				actual, _ := json.Marshal(resultingServices.Items)
-				breakNow = true
 				t.Fatalf("resulting services differ from expected services, diff:\n%v, expected:\n%s\nactual:\n%s", diff, expected, actual)
 			}
 		})

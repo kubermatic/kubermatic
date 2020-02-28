@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	envoyv2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoycorev2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -21,7 +22,7 @@ import (
 	envoyhttpconnectionmanagerv2 "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	envoytcpfilterv2 "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	envoycache "github.com/envoyproxy/go-control-plane/pkg/cache"
-	envoyutil "github.com/envoyproxy/go-control-plane/pkg/util"
+	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -31,9 +32,10 @@ import (
 )
 
 type reconciler struct {
-	ctx context.Context
-	log *logrus.Entry
 	ctrlruntimeclient.Client
+
+	ctx       context.Context
+	log       *zap.SugaredLogger
 	namespace string
 
 	envoySnapshotCache  envoycache.SnapshotCache
@@ -43,21 +45,23 @@ type reconciler struct {
 func (r *reconciler) getInitialResources() (listeners []envoycache.Resource, clusters []envoycache.Resource, err error) {
 	adminCluster := &envoyv2.Cluster{
 		Name:           "service_stats",
-		ConnectTimeout: 50 * time.Millisecond,
-		Type:           envoyv2.Cluster_STATIC,
-		LbPolicy:       envoyv2.Cluster_ROUND_ROBIN,
+		ConnectTimeout: ptypes.DurationProto(50 * time.Millisecond),
+		ClusterDiscoveryType: &envoyv2.Cluster_Type{
+			Type: envoyv2.Cluster_STATIC,
+		},
+		LbPolicy: envoyv2.Cluster_ROUND_ROBIN,
 		LoadAssignment: &envoyv2.ClusterLoadAssignment{
 			ClusterName: "service_stats",
-			Endpoints: []envoyendpointv2.LocalityLbEndpoints{
+			Endpoints: []*envoyendpointv2.LocalityLbEndpoints{
 				{
-					LbEndpoints: []envoyendpointv2.LbEndpoint{
+					LbEndpoints: []*envoyendpointv2.LbEndpoint{
 						{
 							HostIdentifier: &envoyendpointv2.LbEndpoint_Endpoint{
 								Endpoint: &envoyendpointv2.Endpoint{
 									Address: &envoycorev2.Address{
 										Address: &envoycorev2.Address_SocketAddress{
 											SocketAddress: &envoycorev2.SocketAddress{
-												Protocol: envoycorev2.TCP,
+												Protocol: envoycorev2.SocketAddress_TCP,
 												Address:  "127.0.0.1",
 												PortSpecifier: &envoycorev2.SocketAddress_PortValue{
 													PortValue: uint32(envoyAdminPort),
@@ -76,7 +80,7 @@ func (r *reconciler) getInitialResources() (listeners []envoycache.Resource, clu
 	clusters = append(clusters, adminCluster)
 
 	healthCheck := &envoyhealthv2.HealthCheck{
-		PassThroughMode: &types.BoolValue{Value: false},
+		PassThroughMode: &wrappers.BoolValue{Value: false},
 		Headers: []*envoyroutev2.HeaderMatcher{
 			{
 				Name: ":path",
@@ -86,23 +90,24 @@ func (r *reconciler) getInitialResources() (listeners []envoycache.Resource, clu
 			},
 		},
 	}
-	healthCheckMsg, err := envoyutil.MessageToStruct(healthCheck)
+
+	healthCheckMarshalled, err := ptypes.MarshalAny(healthCheck)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to convert HealthCheck config to GRPC message")
+		return nil, nil, errors.Wrap(err, "failed to marshal HealthCheck")
 	}
 
 	httpConnectionManager := &envoyhttpconnectionmanagerv2.HttpConnectionManager{
-		CodecType:  envoyhttpconnectionmanagerv2.AUTO,
+		CodecType:  envoyhttpconnectionmanagerv2.HttpConnectionManager_AUTO,
 		StatPrefix: "service_stats",
 		RouteSpecifier: &envoyhttpconnectionmanagerv2.HttpConnectionManager_RouteConfig{
 			RouteConfig: &envoyv2.RouteConfiguration{
-				VirtualHosts: []envoyroutev2.VirtualHost{
+				VirtualHosts: []*envoyroutev2.VirtualHost{
 					{
 						Name:    "backend",
 						Domains: []string{"*"},
-						Routes: []envoyroutev2.Route{
+						Routes: []*envoyroutev2.Route{
 							{
-								Match: envoyroutev2.RouteMatch{
+								Match: &envoyroutev2.RouteMatch{
 									PathSpecifier: &envoyroutev2.RouteMatch_Prefix{
 										Prefix: "/stats",
 									},
@@ -122,26 +127,28 @@ func (r *reconciler) getInitialResources() (listeners []envoycache.Resource, clu
 		},
 		HttpFilters: []*envoyhttpconnectionmanagerv2.HttpFilter{
 			{
-				Name:       envoyutil.HealthCheck,
-				ConfigType: &envoyhttpconnectionmanagerv2.HttpFilter_Config{Config: healthCheckMsg},
+				Name: envoywellknown.HealthCheck,
+				ConfigType: &envoyhttpconnectionmanagerv2.HttpFilter_TypedConfig{
+					TypedConfig: healthCheckMarshalled,
+				},
 			},
 			{
-				Name: envoyutil.Router,
+				Name: envoywellknown.Router,
 			},
 		},
 	}
 
-	httpConnectionManagerMsg, err := envoyutil.MessageToStruct(httpConnectionManager)
+	httpConnectionManagerMarshalled, err := ptypes.MarshalAny(httpConnectionManager)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to convert HTTPConnectionManager config to GRPC message")
+		return nil, nil, errors.Wrap(err, "failed to marshal HTTPConnectionManager")
 	}
 
 	listener := &envoyv2.Listener{
 		Name: "service_stats",
-		Address: envoycorev2.Address{
+		Address: &envoycorev2.Address{
 			Address: &envoycorev2.Address_SocketAddress{
 				SocketAddress: &envoycorev2.SocketAddress{
-					Protocol: envoycorev2.TCP,
+					Protocol: envoycorev2.SocketAddress_TCP,
 					Address:  "0.0.0.0",
 					PortSpecifier: &envoycorev2.SocketAddress_PortValue{
 						PortValue: uint32(envoyStatsPort),
@@ -149,13 +156,13 @@ func (r *reconciler) getInitialResources() (listeners []envoycache.Resource, clu
 				},
 			},
 		},
-		FilterChains: []envoylistenerv2.FilterChain{
+		FilterChains: []*envoylistenerv2.FilterChain{
 			{
-				Filters: []envoylistenerv2.Filter{
+				Filters: []*envoylistenerv2.Filter{
 					{
-						Name: envoyutil.HTTPConnectionManager,
-						ConfigType: &envoylistenerv2.Filter_Config{
-							Config: httpConnectionManagerMsg,
+						Name: envoywellknown.HTTPConnectionManager,
+						ConfigType: &envoylistenerv2.Filter_TypedConfig{
+							TypedConfig: httpConnectionManagerMarshalled,
 						},
 					},
 				},
@@ -171,7 +178,7 @@ func (r *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 	r.log.Debug("Got reconcile request")
 	err := r.sync()
 	if err != nil {
-		r.log.WithError(err).Print("Failed to reconcile")
+		r.log.Errorf("Failed to reconcile", zap.Error(err))
 	}
 	return reconcile.Result{}, err
 }
@@ -189,16 +196,17 @@ func (r *reconciler) sync() error {
 
 	for _, service := range services.Items {
 		serviceKey := ServiceKey(&service)
+		serviceLog := r.log.With("service", serviceKey)
 
 		// Only cover services which have the annotation: true
 		if strings.ToLower(service.Annotations[exposeAnnotationKey]) != "true" {
-			r.log.Debugf("Skipping service '%s'. It does not have the annotation %s=true", serviceKey, exposeAnnotationKey)
+			serviceLog.Debugf("Skipping service: it does not have the annotation %s=true", exposeAnnotationKey)
 			continue
 		}
 
 		// We only manage NodePort services so Kubernetes takes care of allocating a unique port
 		if service.Spec.Type != corev1.ServiceTypeNodePort {
-			r.log.Warnf("Skipping service '%s'. It is not of type NodePort", serviceKey)
+			serviceLog.Warn("Skipping service: it is not of type NodePort")
 			return nil
 		}
 
@@ -209,33 +217,35 @@ func (r *reconciler) sync() error {
 
 		// If we have no pods, dont bother creating a cluster.
 		if len(pods) == 0 {
-			r.log.Debugf("skipping service %s/%s as it has no running pods", service.Namespace, service.Name)
+			serviceLog.Debug("Skipping service: it has no running pods")
 			continue
 		}
 
 		for _, servicePort := range service.Spec.Ports {
 			serviceNodePortName := fmt.Sprintf("%s-%d", serviceKey, servicePort.NodePort)
+			servicePortLog := serviceLog.With("port", servicePort.NodePort)
 
-			var endpoints []envoyendpointv2.LbEndpoint
+			var endpoints []*envoyendpointv2.LbEndpoint
 			for _, pod := range pods {
+				podLog := servicePortLog.With("pod", pod.Name, "namespace", pod.Namespace, "service", service.Name)
 
 				// Get the port on the pod, the NodePort Service port is pointing to
 				podPort := getMatchingPodPort(servicePort, pod)
 				if podPort == 0 {
-					r.log.Infof("Skipping pod %s/%s for service port %s/%s:%d. The service port does not match to any of the pods containers", pod.Namespace, pod.Name, service.Namespace, service.Name, servicePort.NodePort)
+					podLog.Debug("Skipping pod for service port: the service port does not match to any of the pods containers")
 					continue
 				}
 
-				r.log.Debugf("Using pod %s/%s:%d as backend for %s/%s:%d", pod.Namespace, pod.Name, podPort, service.Namespace, service.Name, servicePort.NodePort)
+				podLog.Debug("Using pod as backend for service")
 
 				// Cluster endpoints
-				endpoints = append(endpoints, envoyendpointv2.LbEndpoint{
+				endpoints = append(endpoints, &envoyendpointv2.LbEndpoint{
 					HostIdentifier: &envoyendpointv2.LbEndpoint_Endpoint{
 						Endpoint: &envoyendpointv2.Endpoint{
 							Address: &envoycorev2.Address{
 								Address: &envoycorev2.Address_SocketAddress{
 									SocketAddress: &envoycorev2.SocketAddress{
-										Protocol: envoycorev2.TCP,
+										Protocol: envoycorev2.SocketAddress_TCP,
 										Address:  pod.Status.PodIP,
 										PortSpecifier: &envoycorev2.SocketAddress_PortValue{
 											PortValue: uint32(podPort),
@@ -247,6 +257,7 @@ func (r *reconciler) sync() error {
 					},
 				})
 			}
+
 			// Must be sorted, otherwise we get into trouble when doing the snapshot diff later
 			sort.Slice(endpoints, func(i, j int) bool {
 				addrI := endpoints[i].HostIdentifier.(*envoyendpointv2.LbEndpoint_Endpoint).Endpoint.Address.Address.(*envoycorev2.Address_SocketAddress).SocketAddress.Address
@@ -256,12 +267,14 @@ func (r *reconciler) sync() error {
 
 			cluster := &envoyv2.Cluster{
 				Name:           serviceNodePortName,
-				ConnectTimeout: clusterConnectTimeout,
-				Type:           envoyv2.Cluster_STATIC,
-				LbPolicy:       envoyv2.Cluster_ROUND_ROBIN,
+				ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
+				ClusterDiscoveryType: &envoyv2.Cluster_Type{
+					Type: envoyv2.Cluster_STATIC,
+				},
+				LbPolicy: envoyv2.Cluster_ROUND_ROBIN,
 				LoadAssignment: &envoyv2.ClusterLoadAssignment{
 					ClusterName: serviceNodePortName,
-					Endpoints: []envoyendpointv2.LocalityLbEndpoints{
+					Endpoints: []*envoyendpointv2.LocalityLbEndpoints{
 						{
 							LbEndpoints: endpoints,
 						},
@@ -276,19 +289,20 @@ func (r *reconciler) sync() error {
 					Cluster: serviceNodePortName,
 				},
 			}
-			tcpProxyConfigStruct, err := envoyutil.MessageToStruct(tcpProxyConfig)
+
+			tcpProxyConfigMarshalled, err := ptypes.MarshalAny(tcpProxyConfig)
 			if err != nil {
-				return errors.Wrap(err, "failed to convert TCPProxy config to GRPC struct")
+				return errors.Wrap(err, "failed to marshal tcpProxyConfig")
 			}
 
 			r.log.Debugf("Using a listener on port %d", servicePort.NodePort)
 
 			listener := &envoyv2.Listener{
 				Name: serviceNodePortName,
-				Address: envoycorev2.Address{
+				Address: &envoycorev2.Address{
 					Address: &envoycorev2.Address_SocketAddress{
 						SocketAddress: &envoycorev2.SocketAddress{
-							Protocol: envoycorev2.TCP,
+							Protocol: envoycorev2.SocketAddress_TCP,
 							Address:  "0.0.0.0",
 							PortSpecifier: &envoycorev2.SocketAddress_PortValue{
 								PortValue: uint32(servicePort.NodePort),
@@ -296,13 +310,13 @@ func (r *reconciler) sync() error {
 						},
 					},
 				},
-				FilterChains: []envoylistenerv2.FilterChain{
+				FilterChains: []*envoylistenerv2.FilterChain{
 					{
-						Filters: []envoylistenerv2.Filter{
+						Filters: []*envoylistenerv2.Filter{
 							{
-								Name: envoyutil.TCPProxy,
-								ConfigType: &envoylistenerv2.Filter_Config{
-									Config: tcpProxyConfigStruct,
+								Name: envoywellknown.TCPProxy,
+								ConfigType: &envoylistenerv2.Filter_TypedConfig{
+									TypedConfig: tcpProxyConfigMarshalled,
 								},
 							},
 						},
@@ -319,14 +333,14 @@ func (r *reconciler) sync() error {
 	}
 
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
-	snapshot := envoycache.NewSnapshot(lastUsedVersion.String(), nil, clusters, nil, listeners)
+	snapshot := envoycache.NewSnapshot(lastUsedVersion.String(), nil, clusters, nil, listeners, nil)
 	if equality.Semantic.DeepEqual(r.lastAppliedSnapshot, snapshot) {
 		return nil
 	}
 
 	r.log.Info("detected a change. Updating the Envoy config cache...")
 	newVersion := lastUsedVersion.IncMajor()
-	newSnapshot := envoycache.NewSnapshot(newVersion.String(), nil, clusters, nil, listeners)
+	newSnapshot := envoycache.NewSnapshot(newVersion.String(), nil, clusters, nil, listeners, nil)
 
 	if err := newSnapshot.Consistent(); err != nil {
 		return errors.Wrap(err, "new Envoy config snapshot is not consistent")
@@ -360,9 +374,9 @@ func (r *reconciler) getReadyServicePods(service *corev1.Service) ([]*corev1.Pod
 	}
 
 	// Filter for ready pods
-	for _, pod := range servicePods.Items {
+	for idx, pod := range servicePods.Items {
 		if PodIsReady(&pod) {
-			readyPods = append(readyPods, &pod)
+			readyPods = append(readyPods, &servicePods.Items[idx])
 		} else {
 			// Only log when we do not add pods as the caller is responsible for logging the final pods
 			r.log.Debugf("Skipping pod %s/%s for service %s/%s. The pod ist not ready", pod.Namespace, pod.Name, service.Namespace, service.Name)
