@@ -3,26 +3,6 @@ presubmits:
   # unit tests
   #########################################################
 
-  - name: pre-kubermatic-build
-    run_if_changed: "^api/"
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    spec:
-      containers:
-      - image: golang:1.12.12
-        command:
-        - make
-        args:
-        - -C
-        - api
-        - build
-        resources:
-          requests:
-            memory: 2Gi
-            cpu: 2
-          limits:
-            memory: 4Gi
-
   - name: pre-kubermatic-test
     run_if_changed: "^api/"
     decorate: true
