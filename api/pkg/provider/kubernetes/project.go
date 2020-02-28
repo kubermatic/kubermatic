@@ -166,6 +166,24 @@ func (p *PrivilegedProjectProvider) GetUnsecured(projectInternalName string, opt
 	return project, nil
 }
 
+// DeleteUnsecured deletes any given project
+// This function is unsafe in a sense that it uses privileged account to delete project with the given name
+//
+// Note:
+// Before deletion project's status.phase is set to ProjectTerminating
+func (p *PrivilegedProjectProvider) DeleteUnsecured(projectInternalName string) error {
+	existingProject, err := p.clientPrivileged.Get(projectInternalName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	existingProject.Status.Phase = kubermaticapiv1.ProjectTerminating
+	if _, err := p.clientPrivileged.Update(existingProject); err != nil {
+		return err
+	}
+
+	return p.clientPrivileged.Delete(projectInternalName, &metav1.DeleteOptions{})
+}
+
 // List gets a list of projects, by default it returns all resources.
 // If you want to filter the result please set ProjectListOptions
 //
