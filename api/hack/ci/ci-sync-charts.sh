@@ -35,7 +35,7 @@ ensure_github_host_pubkey
 
 export CHARTS='kubermatic cert-manager certs nginx-ingress-controller nodeport-proxy oauth minio iap s3-exporter'
 export MONITORING_CHARTS='alertmanager blackbox-exporter grafana kube-state-metrics node-exporter prometheus'
-export LOGGING_CHARTS='elasticsearch kibana fluentbit'
+export LOGGING_CHARTS='loki promtail elasticsearch kibana fluentbit'
 export BACKUP_CHARTS='velero'
 export CHARTS_DIR=$(pwd)/config
 export TARGET_DIR='sync_target'
