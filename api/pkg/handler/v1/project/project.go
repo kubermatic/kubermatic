@@ -159,15 +159,17 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		// delete project by regular user
-		// check if project is assigned do the user
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		err = projectProvider.Delete(userInfo, req.ProjectID)
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, deleteProjectByRegularUser(ctx, userInfoGetter, projectProvider, req.ProjectID)
 	}
+}
+
+func deleteProjectByRegularUser(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, projectID string) error {
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+	err = projectProvider.Delete(userInfo, projectID)
+	return common.KubernetesErrorToHTTPError(err)
 }
 
 // UpdateEndpoint defines an HTTP endpoint that updates an existing project in the system
@@ -222,23 +224,9 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		var kubermaticProject *kubermaticapiv1.Project
-
-		if adminUserInfo.IsAdmin {
-			// get any project for admin
-			kubermaticProject, err = privilegedProjectProvider.GetUnsecured(req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-		} else {
-			userInfo, err := userInfoGetter(ctx, req.ProjectID)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-			kubermaticProject, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
+		kubermaticProject, err := getProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		projectOwners, err := common.GetOwnersForProject(adminUserInfo, kubermaticProject, memberProvider, userProvider)
@@ -247,6 +235,24 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 		}
 		return common.ConvertInternalProjectToExternal(kubermaticProject, projectOwners), nil
 	}
+}
+
+func getProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) (*kubermaticapiv1.Project, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+
+	if adminUserInfo.IsAdmin {
+		// get any project for admin
+		return privilegedProjectProvider.GetUnsecured(projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+	}
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 }
 
 // updateRq defines HTTP request for updateProject
