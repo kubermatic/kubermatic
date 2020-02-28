@@ -32,6 +32,7 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 			bindingToSync:   test.CreateExpectedEditorBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond"))),
 			expectedProject: func() *kubermaticv1.Project {
 				prj := test.CreateProject("thunderball", test.CreateUser("James Bond"))
+				prj.ResourceVersion = "1"
 				prj.OwnerReferences = []metav1.OwnerReference{}
 				return prj
 			}(),
@@ -67,6 +68,7 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 			bindingToSync: test.CreateExpectedEditorBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond"))),
 			expectedProject: func() *kubermaticv1.Project {
 				prj := test.CreateProject("thunderball", test.CreateUser("James Bond"))
+				prj.ResourceVersion = "1"
 				prj.OwnerReferences = []metav1.OwnerReference{
 					{
 						APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -145,9 +147,13 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 				prj.OwnerReferences = []metav1.OwnerReference{}
 				return prj
 			}(),
-			existingUsers:   []*kubermaticv1.User{test.CreateUser("James Bond")},
-			bindingToSync:   test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond"))),
-			expectedProject: test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			existingUsers: []*kubermaticv1.User{test.CreateUser("James Bond")},
+			bindingToSync: test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond"))),
+			expectedProject: func() *kubermaticv1.Project {
+				prj := test.CreateProject("thunderball", test.CreateUser("James Bond"))
+				prj.ResourceVersion = "1"
+				return prj
+			}(),
 		},
 		{
 			name:            "scenario 3: expected owner reference was added to a project - with previous owners)",
@@ -156,6 +162,7 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 			bindingToSync:   test.CreateExpectedOwnerBinding("Bob", test.CreateProject("thunderball", test.CreateUser("Bob"))),
 			expectedProject: func() *kubermaticv1.Project {
 				prj := test.CreateProject("thunderball", test.CreateUser("James Bond"))
+				prj.ResourceVersion = "1"
 				prj.OwnerReferences = append(prj.OwnerReferences, metav1.OwnerReference{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 					Kind:       kubermaticv1.UserKindName,

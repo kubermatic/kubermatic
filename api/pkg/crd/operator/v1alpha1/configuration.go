@@ -95,6 +95,9 @@ type KubermaticUIConfiguration struct {
 	DockerRepository string `json:"dockerRepository,omitempty"`
 	// DockerTag is used to overwrite the dashboard Docker image tag and is only for development
 	// purposes. This field must not be set in production environments.
+	// ---
+	//nolint:staticcheck
+	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
 	DockerTag string `json:"dockerTag,omitempty,omitgenyaml"`
 	// Config sets flags for various dashboard features.
 	Config string `json:"config,omitempty"`
@@ -268,9 +271,15 @@ type Update struct {
 	To string `json:"to,omitempty"`
 	// Automatic controls whether this update is executed automatically
 	// for the control plane of all matching user clusters.
+	// ---
+	//nolint:staticcheck
+	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
 	Automatic *bool `json:"automatic,omitempty,omitgenyaml"`
 	// Automatic controls whether this update is executed automatically
 	// for the worker nodes of all matching user clusters.
+	// ---
+	//nolint:staticcheck
+	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
 	AutomaticNodeUpdate *bool `json:"automaticNodeUpdate,omitempty,omitgenyaml"`
 }
 

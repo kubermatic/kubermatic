@@ -415,6 +415,10 @@ func TestDefaultDeployment(t *testing.T) {
 		t.Fatalf("Failed to get the Deployment from the client: %v", err)
 	}
 
+	// wipe formatting differenes
+	actualDeployment.TypeMeta = metav1.TypeMeta{}
+	actualDeployment.ResourceVersion = ""
+
 	if diff := deep.Equal(actualDeployment, expectedObject); diff != nil {
 		t.Errorf("The Deployment from the client does not match the expected Deployment. Diff: \n%v", diff)
 	}
@@ -482,6 +486,10 @@ func TestDefaultStatefulSet(t *testing.T) {
 		t.Fatalf("Failed to get the StatefulSet from the client: %v", err)
 	}
 
+	// wipe formatting differenes
+	actualStatefulSet.TypeMeta = metav1.TypeMeta{}
+	actualStatefulSet.ResourceVersion = ""
+
 	if diff := deep.Equal(actualStatefulSet, expectedObject); diff != nil {
 		t.Errorf("The StatefulSet from the client does not match the expected StatefulSet. Diff: \n%v", diff)
 	}
@@ -548,6 +556,10 @@ func TestDefaultDaemonSet(t *testing.T) {
 	if err := client.Get(context.Background(), key, actualDaemonSet); err != nil {
 		t.Fatalf("Failed to get the DaemonSet from the client: %v", err)
 	}
+
+	// wipe formatting differenes
+	actualDaemonSet.TypeMeta = metav1.TypeMeta{}
+	actualDaemonSet.ResourceVersion = ""
 
 	if diff := deep.Equal(actualDaemonSet, expectedObject); diff != nil {
 		t.Errorf("The DaemonSet from the client does not match the expected DaemonSet. Diff: \n%v", diff)
@@ -624,6 +636,10 @@ func TestDefaultCronJob(t *testing.T) {
 		t.Fatalf("Failed to get the CronJob from the client: %v", err)
 	}
 
+	// wipe formatting differenes
+	actualCronJob.TypeMeta = metav1.TypeMeta{}
+	actualCronJob.ResourceVersion = ""
+
 	if diff := deep.Equal(actualCronJob, expectedObject); diff != nil {
 		t.Errorf("The CronJob from the client does not match the expected CronJob. Diff: \n%v", diff)
 	}
@@ -641,7 +657,7 @@ func TestDeploymentStrategyDefaulting(t *testing.T) {
 			verify: func(d *appsv1.Deployment) error {
 				if d.Spec.Strategy.Type != appsv1.RollingUpdateDeploymentStrategyType {
 					return fmt.Errorf("expected strategy to be %q, was %q",
-						appsv1.RollingUpdateStatefulSetStrategyType, d.Spec.Strategy.Type)
+						appsv1.RollingUpdateDeploymentStrategyType, d.Spec.Strategy.Type)
 				}
 				if d.Spec.Strategy.RollingUpdate == nil {
 					return errors.New("expected .Spec.Strategy.RollingUpdate to get defaulted, was nil")

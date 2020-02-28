@@ -1,9 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
     app: usercluster-controller
   name: usercluster-controller
   namespace: test-cluster-ns
+  resourceVersion: "1"
 spec:
   replicas: 1
   selector:
@@ -24,7 +27,7 @@ spec:
       labels:
         app: usercluster-controller
         cluster: test-cluster
-        internal-admin-kubeconfig-secret-revision: ""
+        internal-admin-kubeconfig-secret-revision: "1"
     spec:
       containers:
       - args:
