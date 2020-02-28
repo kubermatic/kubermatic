@@ -7,8 +7,7 @@ nginx:
     tag: 0.29.0
   config: {}
 #   load-balance: "least_conn"
-  extraArgs:
-  - '--default-ssl-certificate=default/kubermatic-tls-certificates'
+  extraArgs: []
   resources:
     requests:
       cpu: 50m
