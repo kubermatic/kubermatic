@@ -81,7 +81,7 @@ spec:
         - /dev/stdout
         command:
         - /usr/sbin/openvpn
-        image: quay.io/kubermatic/openvpn:v0.6-dev
+        image: quay.io/kubermatic/openvpn:2.4.8
         name: openvpn-client
         resources:
           limits:

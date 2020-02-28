@@ -34,7 +34,7 @@ type openvpnData interface {
 func OpenVPNSidecarContainer(data openvpnData, name string) (*corev1.Container, error) {
 	return &corev1.Container{
 		Name:    name,
-		Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:v0.6-dev",
+		Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:2.4.8",
 		Command: []string{"/usr/sbin/openvpn"},
 		Args: []string{
 			"--client",

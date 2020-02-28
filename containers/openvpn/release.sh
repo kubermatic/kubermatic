@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ver=v0.6-dev
+ver=v2.4.8
 
 set -euox pipefail
 
