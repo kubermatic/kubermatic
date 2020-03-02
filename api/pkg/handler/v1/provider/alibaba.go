@@ -85,7 +85,7 @@ func DecodeAlibabaInstanceTypesNoCredentialReq(c context.Context, r *http.Reques
 	return req, nil
 }
 
-func AlibabaInstanceTypesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AlibabaInstanceTypesEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AlibabaInstanceTypeReq)
 
@@ -106,11 +106,11 @@ func AlibabaInstanceTypesEndpoint(presetsProvider provider.PresetProvider, userI
 				accessKeySecret = credentials.AccessKeySecret
 			}
 		}
-		return listAlibabaInstanceTypes(ctx, accessKeyID, accessKeySecret, req.Region)
+		return listAlibabaInstanceTypes(ctx, seedsGetter, accessKeyID, accessKeySecret, req.Region)
 	}
 }
 
-func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AlibabaInstanceTypesNoCredentialReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -132,22 +132,29 @@ func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider
 			return nil, errors.NewNotFound("cloud spec for %s", req.ClusterID)
 		}
 
+		datacenterName := cluster.Spec.Cloud.DatacenterName
+
 		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 		if !ok {
 			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 		}
 
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
+		}
+
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-		accessKeyID, accessKeySecret, err := alibaba.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		accessKeyID, accessKeySecret, err := alibaba.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector, datacenter.Spec.Alibaba)
 		if err != nil {
 			return nil, err
 		}
 
-		return listAlibabaInstanceTypes(ctx, accessKeyID, accessKeySecret, req.Region)
+		return listAlibabaInstanceTypes(ctx, seedsGetter, accessKeyID, accessKeySecret, req.Region)
 	}
 }
 
-func listAlibabaInstanceTypes(ctx context.Context, accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaInstanceTypeList, error) {
+func listAlibabaInstanceTypes(ctx context.Context, seedsGetter provider.SeedsGetter, accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaInstanceTypeList, error) {
 	instanceTypes := apiv1.AlibabaInstanceTypeList{}
 
 	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
@@ -155,21 +162,26 @@ func listAlibabaInstanceTypes(ctx context.Context, accessKeyID string, accessKey
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
 	}
 
-	request := ecs.CreateDescribeInstanceTypesRequest()
+	// Status March 2020:
+	// Alibabas DescribeInstanceTypes() doesn't correctly filter for regions,
+	// which ends up in a list >700 items, where most of them aren't available
+	// in all regions. DescribeAccountAttributes() only contains the ids (no
+	// memory size or cpu count), but it seems like there are only instance types,
+	// that are really supported.
+	// Therefor for now this is the best solution.
+	request := ecs.CreateDescribeAccountAttributesRequest()
 	request.Scheme = "https"
+	request.AttributeName = &[]string{"supported-postpaid-instance-types"}
 
-	instTypes, err := client.DescribeInstanceTypes(request)
+	instTypes, err := client.DescribeAccountAttributes(request)
 	if err != nil {
 		return apiv1.AlibabaInstanceTypeList{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance types: %v", err))
 	}
 
-	for _, instType := range instTypes.InstanceTypes.InstanceType {
-		// Pods with memory under 2 GB will be full with required pods like kube-proxy, CNI etc.
-		if instType.MemorySize >= 2 {
+	for _, v := range instTypes.AccountAttributeItems.AccountAttributeItem {
+		for _, instType := range v.AttributeValues.ValueItem {
 			it := apiv1.AlibabaInstanceType{
-				ID:           instType.InstanceTypeId,
-				CPUCoreCount: instType.CpuCoreCount,
-				MemorySize:   instType.MemorySize,
+				ID: instType.Value,
 			}
 			instanceTypes = append(instanceTypes, it)
 		}

@@ -594,9 +594,7 @@ type AlibabaInstanceTypeList []AlibabaInstanceType
 // AlibabaInstanceType represents a object of Alibaba instance type.
 // swagger:model AlibabaInstanceType
 type AlibabaInstanceType struct {
-	ID           string  `json:"id"`
-	CPUCoreCount int     `json:"cpuCoreCount"`
-	MemorySize   float64 `json:"memorySize"`
+	ID string `json:"id"`
 }
 
 // MasterVersion describes a version of the master components
@@ -699,9 +697,9 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			Kubevirt:       newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
 			Alibaba:        newPublicAlibabaCloudSpec(cs.Cloud.Alibaba),
 		},
-		Version:                             cs.Version,
-		MachineNetworks:                     cs.MachineNetworks,
-		OIDC:                                cs.OIDC,
+		Version:         cs.Version,
+		MachineNetworks: cs.MachineNetworks,
+		OIDC:            cs.OIDC,
 		UsePodSecurityPolicyAdmissionPlugin: cs.UsePodSecurityPolicyAdmissionPlugin,
 		UsePodNodeSelectorAdmissionPlugin:   cs.UsePodNodeSelectorAdmissionPlugin,
 		AuditLogging:                        cs.AuditLogging,
