@@ -163,6 +163,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, errors.Wrap(err, "failed to get cluster template data")
 	}
 
+	if err := r.ensureConfigMaps(ctx, cluster, data); err != nil {
+		return nil, errors.Wrap(err, "failed to ensure configmaps")
+	}
+
 	if err := r.ensureDeployments(ctx, cluster, data); err != nil {
 		return nil, errors.Wrap(err, "failed to ensure deployment")
 	}

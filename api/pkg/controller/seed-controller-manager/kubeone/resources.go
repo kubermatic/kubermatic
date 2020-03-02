@@ -8,7 +8,11 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/grpcserver"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/kubeone"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+
+	"github.com/pkg/errors"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -48,6 +52,25 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client client.C
 		r.dnatControllerImage,
 		supportsFailureDomainZoneAntiAffinity,
 	), nil
+}
+
+func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
+	return []reconciling.NamedConfigMapCreatorGetter{
+		kubeone.ConfigMapCreator(data),
+	}
+}
+
+func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	creators := GetConfigMapCreators(data)
+
+	objModifier := reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster))
+
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, cluster.Status.NamespaceName, r.Client, objModifier); err != nil {
+		return errors.Wrapf(err, "failed to ensure that the ConfigMap exists")
+	}
+
+	return nil
+
 }
 
 func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
