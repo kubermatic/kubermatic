@@ -212,7 +212,7 @@ func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret) rec
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "proxy",
-					Image:   "quay.io/kubermatic/util:1.3.2",
+					Image:   "quay.io/kubermatic/util:1.3.3-dev",
 					Command: []string{"/bin/bash"},
 					Args:    []string{"-c", strings.TrimSpace(proxyScript)},
 					Env: []corev1.EnvVar{
