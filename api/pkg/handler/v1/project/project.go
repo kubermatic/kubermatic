@@ -174,7 +174,7 @@ func deleteProjectByRegularUser(ctx context.Context, userInfoGetter provider.Use
 
 // UpdateEndpoint defines an HTTP endpoint that updates an existing project in the system
 // in the current implementation only project renaming is supported
-func UpdateEndpoint(projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateRq)
 		if !ok {
@@ -185,27 +185,45 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, memberProvider pro
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		kubermaticProject, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+		kubermaticProject, err := getProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		kubermaticProject.Spec.Name = req.Body.Name
 		kubermaticProject.Labels = req.Body.Labels
-		project, err := projectProvider.Update(userInfo, kubermaticProject)
+
+		project, err := updateProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, kubermaticProject)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		projectOwners, err := common.GetOwnersForProject(userInfo, kubermaticProject, memberProvider, userProvider)
+
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		projectOwners, err := common.GetOwnersForProject(adminUserInfo, kubermaticProject, memberProvider, userProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return common.ConvertInternalProjectToExternal(project, projectOwners), nil
 	}
+}
+
+func updateProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, kubermaticProject *kubermaticapiv1.Project) (*kubermaticapiv1.Project, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+
+	if adminUserInfo.IsAdmin {
+		return privilegedProjectProvider.UpdateUnsecured(kubermaticProject)
+	}
+	userInfo, err := userInfoGetter(ctx, kubermaticProject.Name)
+	if err != nil {
+		return nil, err
+	}
+	return projectProvider.Update(userInfo, kubermaticProject)
 }
 
 // GeEndpoint defines an HTTP endpoint for getting a project
