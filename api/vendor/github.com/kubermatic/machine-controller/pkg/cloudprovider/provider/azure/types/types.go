@@ -30,8 +30,6 @@ type RawConfig struct {
 	Location          providerconfigtypes.ConfigVarString `json:"location"`
 	ResourceGroup     providerconfigtypes.ConfigVarString `json:"resourceGroup"`
 	VMSize            providerconfigtypes.ConfigVarString `json:"vmSize"`
-	OSDiskSize        providerconfigtypes.ConfigVarString `json:"osDiskSize"`
-	DataDiskSize      providerconfigtypes.ConfigVarString `json:"dataDiskSize"`
 	VNetName          providerconfigtypes.ConfigVarString `json:"vnetName"`
 	SubnetName        providerconfigtypes.ConfigVarString `json:"subnetName"`
 	RouteTableName    providerconfigtypes.ConfigVarString `json:"routeTableName"`
