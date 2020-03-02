@@ -14,14 +14,8 @@ import (
 // swagger:model AlibabaInstanceType
 type AlibabaInstanceType struct {
 
-	// CPU core count
-	CPUCoreCount int64 `json:"cpuCoreCount,omitempty"`
-
 	// ID
 	ID string `json:"id,omitempty"`
-
-	// memory size
-	MemorySize float64 `json:"memorySize,omitempty"`
 }
 
 // Validate validates this alibaba instance type

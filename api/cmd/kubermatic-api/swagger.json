@@ -7703,19 +7703,9 @@
       "type": "object",
       "title": "AlibabaInstanceType represents a object of Alibaba instance type.",
       "properties": {
-        "cpuCoreCount": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "CPUCoreCount"
-        },
         "id": {
           "type": "string",
           "x-go-name": "ID"
-        },
-        "memorySize": {
-          "type": "number",
-          "format": "double",
-          "x-go-name": "MemorySize"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
