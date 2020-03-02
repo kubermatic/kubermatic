@@ -27,6 +27,7 @@ var providerNames = []string{
 	"gcp",
 	"kubevirt",
 	"alibaba",
+	"kubeone",
 }
 
 // providerReq represents a request for provider name
@@ -78,6 +79,7 @@ func CredentialEndpoint(presetsProvider provider.PresetProvider, userInfoGetter 
 			//	GCP          GCP
 			//	Kubevirt     Kubevirt
 			//	Alibaba      Alibaba
+			//      Kubeone      Kubeone
 			// }
 			providersRaw := reflect.ValueOf(preset.Spec)
 			if providersRaw.Kind() == reflect.Struct {

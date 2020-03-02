@@ -231,8 +231,12 @@ func apiSpec(dc *kubermaticv1.Datacenter) (*apiv1.DatacenterSpec, error) {
 		spec.Alibaba = &apiv1.AlibabaDatacenterSpec{
 			Region: dc.Spec.Alibaba.Region,
 		}
-	}
 
+	case dc.Spec.Kubeone != nil:
+		spec.Kubeone = &apiv1.KubeoneDatacenterSpec{
+			Edge: dc.Spec.Kubeone.Edge,
+		}
+	}
 	spec.RequiredEmailDomain = dc.Spec.RequiredEmailDomain
 	spec.RequiredEmailDomains = dc.Spec.RequiredEmailDomains
 	spec.EnforceAuditLogging = dc.Spec.EnforceAuditLogging
