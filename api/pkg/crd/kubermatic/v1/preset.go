@@ -41,6 +41,7 @@ type PresetSpec struct {
 	GCP          *GCP          `json:"gcp,omitempty"`
 	Kubevirt     *Kubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *Alibaba      `json:"alibaba,omitempty"`
+	Kubeone      *Kubeone      `json:"kubeone,omitempty"`
 
 	Fake                *Fake  `json:"fake,omitempty"`
 	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
@@ -149,3 +150,5 @@ type Alibaba struct {
 
 	Datacenter string `json:"datacenter,omitempty"`
 }
+
+type Kubeone struct{}
