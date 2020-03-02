@@ -109,6 +109,10 @@ type GCPDatacenterSpec struct {
 	Regional     bool     `json:"regional"`
 }
 
+type KubeoneDatacenterSpec struct {
+	Edge bool `json:"edge"`
+}
+
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
 	Seed         string                       `json:"seed"`
@@ -126,6 +130,7 @@ type DatacenterSpec struct {
 	VSphere      *VSphereDatacenterSpec       `json:"vsphere,omitempty"`
 	Kubevirt     *KubevirtDatacenterSpec      `json:"kubevirt,omitempty"`
 	Alibaba      *AlibabaDatacenterSpec       `json:"alibaba,omitempty"`
+	Kubeone      *KubeoneDatacenterSpec       `json:kubeone,omitempty`
 
 	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
 	RequiredEmailDomain  string   `json:"requiredEmailDomain,omitempty"`
@@ -1505,6 +1510,7 @@ type SeedDatacenterSpec struct {
 	GCP          *kubermaticv1.DatacenterSpecGCP          `json:"gcp,omitempty"`
 	Kubevirt     *kubermaticv1.DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *kubermaticv1.DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
+	Kubeone      *kubermaticv1.DatacenterSpecKubeone      `json:"kubeone,omitempty"`
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
