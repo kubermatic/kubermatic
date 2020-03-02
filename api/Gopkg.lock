@@ -861,6 +861,17 @@
   version = "v0.1.0"
 
 [[projects]]
+  digest = "1:87ecd5625befe5413e382d224911fcf238bac874e369eb4566d0fd78cbf03b49"
+  name = "github.com/kubermatic/kubeone"
+  packages = [
+    "pkg/apis/kubeone",
+    "pkg/apis/kubeone/v1alpha1",
+  ]
+  pruneopts = "NUT"
+  revision = "adfe7aa0a5e51ba54a79638055d253433e6718e2"
+  version = "v0.10.0"
+
+[[projects]]
   digest = "1:bba62c1cab7a8fd6c2afd2c7f8c859a4fc1cbb478597e3e904b203c7ca37c15e"
   name = "github.com/kubermatic/machine-controller"
   packages = [
@@ -2217,6 +2228,7 @@
     "github.com/hetznercloud/hcloud-go/hcloud",
     "github.com/iancoleman/strcase",
     "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2",
+    "github.com/kubermatic/kubeone/pkg/apis/kubeone/v1alpha1",
     "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1",
     "github.com/kubermatic/machine-controller/pkg/apis/plugin",
     "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types",
