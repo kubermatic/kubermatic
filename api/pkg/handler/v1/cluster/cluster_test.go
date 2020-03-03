@@ -1190,6 +1190,79 @@ func TestListClusters(t *testing.T) {
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
+		// scenario 2
+		{
+			Name: "scenario 2: the admin John can list Bob's clusters",
+			ExpectedClusters: []apiv1.Cluster{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "clusterAbcID",
+						Name:              "clusterAbc",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "FakeDatacenter",
+							Fake:           &kubermaticv1.FakeCloudSpec{},
+						},
+						Version: *semver.NewSemverOrDie("9.9.9"),
+					},
+					Status: apiv1.ClusterStatus{
+						Version: *semver.NewSemverOrDie("9.9.9"),
+						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+					},
+					Type: "kubernetes",
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "clusterDefID",
+						Name:              "clusterDef",
+						CreationTimestamp: apiv1.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "FakeDatacenter",
+							Fake:           &kubermaticv1.FakeCloudSpec{},
+						},
+						Version: *semver.NewSemverOrDie("9.9.9"),
+					},
+					Status: apiv1.ClusterStatus{
+						Version: *semver.NewSemverOrDie("9.9.9"),
+						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+					},
+					Type: "kubernetes",
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "clusterOpenstackID",
+						Name:              "clusterOpenstack",
+						CreationTimestamp: apiv1.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "OpenstackDatacenter",
+							Openstack: &kubermaticv1.OpenstackCloudSpec{
+								FloatingIPPool: "floatingIPPool",
+							},
+						},
+						Version: *semver.NewSemverOrDie("9.9.9"),
+					},
+					Status: apiv1.ClusterStatus{
+						Version: *semver.NewSemverOrDie("9.9.9"),
+						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+					},
+					Type: "kubernetes",
+				},
+			},
+			HTTPStatus: http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", true),
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+				test.GenCluster("clusterDefID", "clusterDef", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC)),
+				genClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -1280,6 +1353,59 @@ func TestListClustersForProject(t *testing.T) {
 				genClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 2
+		{
+			Name: "scenario 2: the admin John can list Bob's clusters in his project",
+			ExpectedClusters: []apiv1.Cluster{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "clusterAbcID",
+						Name:              "clusterAbc",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "FakeDatacenter",
+							Fake:           &kubermaticv1.FakeCloudSpec{},
+						},
+						Version: *semver.NewSemverOrDie("9.9.9"),
+					},
+					Status: apiv1.ClusterStatus{
+						Version: *semver.NewSemverOrDie("9.9.9"),
+						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+					},
+					Type: "kubernetes",
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "clusterOpenstackID",
+						Name:              "clusterOpenstack",
+						CreationTimestamp: apiv1.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "OpenstackDatacenter",
+							Openstack: &kubermaticv1.OpenstackCloudSpec{
+								FloatingIPPool: "floatingIPPool",
+							},
+						},
+						Version: *semver.NewSemverOrDie("9.9.9"),
+					},
+					Status: apiv1.ClusterStatus{
+						Version: *semver.NewSemverOrDie("9.9.9"),
+						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+					},
+					Type: "kubernetes",
+				},
+			},
+			HTTPStatus: http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", true),
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+				genClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
 	}
 
@@ -1611,4 +1737,10 @@ func genClusterWithOpenstack(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluste
 		},
 	}
 	return cluster
+}
+
+func genUser(name, email string, isAdmin bool) *kubermaticv1.User {
+	user := test.GenUser("", name, email)
+	user.Spec.IsAdmin = isAdmin
+	return user
 }

@@ -1399,7 +1399,7 @@ func (r Routing) listClusters() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.ListEndpoint(r.projectProvider, r.userInfoGetter)),
+		)(cluster.ListEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeListReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1423,7 +1423,7 @@ func (r Routing) listClustersForProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(cluster.ListAllEndpoint(r.projectProvider, r.seedsGetter, r.clusterProviderGetter, r.userInfoGetter)),
+		)(cluster.ListAllEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.clusterProviderGetter, r.userInfoGetter)),
 		common.DecodeGetProject,
 		encodeJSON,
 		r.defaultServerOptions()...,

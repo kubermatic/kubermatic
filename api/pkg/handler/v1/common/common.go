@@ -255,3 +255,21 @@ func GetOwnersForProject(userInfo *provider.UserInfo, project *kubermaticv1.Proj
 	}
 	return projectOwners, nil
 }
+
+func GetProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) (*kubermaticv1.Project, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+
+	if adminUserInfo.IsAdmin {
+		// get any project for admin
+		return privilegedProjectProvider.GetUnsecured(projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+	}
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+}
