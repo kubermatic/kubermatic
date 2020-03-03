@@ -8115,12 +8115,14 @@
         },
         "dataDiskSize": {
           "description": "Data disk size in GB",
-          "type": "string",
+          "type": "integer",
+          "format": "int32",
           "x-go-name": "DataDiskSize"
         },
         "osDiskSize": {
           "description": "OS disk size in GB",
-          "type": "string",
+          "type": "integer",
+          "format": "int32",
           "x-go-name": "OSDiskSize"
         },
         "size": {
