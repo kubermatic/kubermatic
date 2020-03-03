@@ -444,15 +444,11 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 }
 
 // ListEndpoint list clusters within the given datacenter
-func ListEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ListReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
-		}
-		apiClusters, err := getClusters(clusterProvider, userInfo, projectProvider, req.ProjectID)
+		apiClusters, err := getClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -461,14 +457,10 @@ func ListEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provi
 }
 
 // ListAllEndpoint list clusters for the given project in all datacenters
-func ListAllEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListAllEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetProjectRq)
 		allClusters := make([]*apiv1.Cluster, 0)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
-		}
 
 		seeds, err := seedsGetter()
 		if err != nil {
@@ -482,7 +474,7 @@ func ListAllEndpoint(projectProvider provider.ProjectProvider, seedsGetter provi
 				klog.Errorf("failed to create cluster provider for seed %s: %v", seed.Name, err)
 				continue
 			}
-			apiClusters, err := getClusters(clusterProvider, userInfo, projectProvider, req.ProjectID)
+			apiClusters, err := getClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, req.ProjectID)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -1211,8 +1203,8 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func getClusters(clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, projectID string) ([]*apiv1.Cluster, error) {
-	project, err := projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{})
+func getClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) ([]*apiv1.Cluster, error) {
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID)
 	if err != nil {
 		return nil, err
 	}
