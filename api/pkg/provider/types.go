@@ -235,6 +235,10 @@ type PrivilegedProjectProvider interface {
 	// DeleteUnsecured deletes any given project
 	// This function is unsafe in a sense that it uses privileged account to delete project with the given name
 	DeleteUnsecured(projectInternalName string) error
+
+	// UpdateUnsecured update an existing project and returns it
+	// This function is unsafe in a sense that it uses privileged account to update project
+	UpdateUnsecured(project *kubermaticv1.Project) (*kubermaticv1.Project, error)
 }
 
 // ProjectProvider declares the set of method for interacting with kubermatic's project
