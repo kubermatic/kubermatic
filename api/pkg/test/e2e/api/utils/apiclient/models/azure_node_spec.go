@@ -20,6 +20,12 @@ type AzureNodeSpec struct {
 	// should the machine have a publicly accessible IP address
 	AssignPublicIP bool `json:"assignPublicIP,omitempty"`
 
+	// Data disk size in GB
+	DataDiskSize int32 `json:"dataDiskSize,omitempty"`
+
+	// OS disk size in GB
+	OSDiskSize int32 `json:"osDiskSize,omitempty"`
+
 	// VM size
 	// Required: true
 	Size *string `json:"size"`
