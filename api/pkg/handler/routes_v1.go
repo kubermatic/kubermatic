@@ -1320,7 +1320,7 @@ func (r Routing) updateProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(project.UpdateEndpoint(r.projectProvider, r.projectMemberProvider, r.userProvider, r.userInfoGetter)),
+		)(project.UpdateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.projectMemberProvider, r.userProvider, r.userInfoGetter)),
 		project.DecodeUpdateRq,
 		encodeJSON,
 		r.defaultServerOptions()...,

@@ -131,6 +131,44 @@ func TestRenameProjectEndpoint(t *testing.T) {
 			ExistingAPIUser:  *test.GenDefaultAPIUser(),
 			ExpectedResponse: `{"error":{"code":400,"message":"the name of the project cannot be empty"}}`,
 		},
+		{
+			Name:             "scenario 6: the admin Bob can update John's project",
+			Body:             `{"Name": "Super-Project"}`,
+			ProjectToRename:  "my-first-project-ID",
+			ExpectedResponse: `{"id":"my-first-project-ID","name":"Super-Project","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active","owners":[{"name":"John","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com"}]}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjects: []runtime.Object{
+				// add some projects
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
+				// add John
+				test.GenUser("JohnID", "John", "john@acme.com"),
+				genUser("Bob", "bob@acme.com", true),
+				// make John the owner of the first project and the editor of the second
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-third-project-ID", "bob@acme.com", "owners"),
+			},
+			ExistingAPIUser: *test.GenDefaultAPIUser(),
+		},
+		{
+			Name:             "scenario 7: the user John can't update Bob's project",
+			Body:             `{"Name": "Super-Project"}`,
+			ProjectToRename:  "my-third-project-ID",
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-third-project-ID"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingKubermaticObjects: []runtime.Object{
+				// add some projects
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
+				// add John
+				test.GenUser("JohnID", "John", "john@acme.com"),
+				genUser("Bob", "bob@acme.com", true),
+				// make John the owner of the first project and the editor of the second
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-third-project-ID", "bob@acme.com", "owners"),
+			},
+			ExistingAPIUser: *test.GenAPIUser("John", "john@acme.com"),
+		},
 	}
 
 	for _, tc := range testcases {

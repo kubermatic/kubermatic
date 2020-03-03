@@ -184,6 +184,12 @@ func (p *PrivilegedProjectProvider) DeleteUnsecured(projectInternalName string) 
 	return p.clientPrivileged.Delete(projectInternalName, &metav1.DeleteOptions{})
 }
 
+// UpdateUnsecured update a specific project and returns the updated project
+// This function is unsafe in a sense that it uses privileged account to update the project
+func (p *PrivilegedProjectProvider) UpdateUnsecured(project *kubermaticapiv1.Project) (*kubermaticapiv1.Project, error) {
+	return p.clientPrivileged.Update(project)
+}
+
 // List gets a list of projects, by default it returns all resources.
 // If you want to filter the result please set ProjectListOptions
 //
