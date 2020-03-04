@@ -594,7 +594,9 @@ type AlibabaInstanceTypeList []AlibabaInstanceType
 // AlibabaInstanceType represents a object of Alibaba instance type.
 // swagger:model AlibabaInstanceType
 type AlibabaInstanceType struct {
-	ID string `json:"id"`
+	ID           string  `json:"id"`
+	CpuCoreCount int     `json:"cpuCoreCount"`
+	MemorySize   float64 `json:"memorySize"`
 }
 
 // MasterVersion describes a version of the master components

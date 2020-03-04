@@ -154,7 +154,21 @@ func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider
 	}
 }
 
+func isInList(arr []string, str string) bool {
+	for _, a := range arr {
+		if a == str {
+			return true
+		}
+	}
+	return false
+}
+
 func listAlibabaInstanceTypes(ctx context.Context, seedsGetter provider.SeedsGetter, accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaInstanceTypeList, error) {
+	// Alibaba has way too many instance types that are not all available in each region
+	// recommendedInstanceFamilies are those families that are recommended in this document:
+	// https://www.alibabacloud.com/help/doc-detail/25378.htm?spm=a2c63.p38356.b99.47.7acf342enhNVmo
+	recommendedInstanceFamilies := []string{"ecs.g6", "ecs.g5", "ecs.g5se", "ecs.g5ne", "ecs.ic5", "ecs.c6", "ecs.c5", "ecs.r6", "ecs.r5", "ecs.d1ne", "ecs.i2", "ecs.i2g", "ecs.hfc6", "ecs.hfg6", "ecs.hfr6"}
+	availableInstanceFamilies := []string{}
 	instanceTypes := apiv1.AlibabaInstanceTypeList{}
 
 	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
@@ -162,26 +176,37 @@ func listAlibabaInstanceTypes(ctx context.Context, seedsGetter provider.SeedsGet
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
 	}
 
-	// Status March 2020:
-	// Alibabas DescribeInstanceTypes() doesn't correctly filter for regions,
-	// which ends up in a list >700 items, where most of them aren't available
-	// in all regions. DescribeAccountAttributes() only contains the ids (no
-	// memory size or cpu count), but it seems like there are only instance types,
-	// that are really supported.
-	// Therefor for now this is the best solution.
-	request := ecs.CreateDescribeAccountAttributesRequest()
-	request.Scheme = "https"
-	request.AttributeName = &[]string{"supported-postpaid-instance-types"}
+	// get all families that are available for the Region
+	requestFamilies := ecs.CreateDescribeInstanceTypeFamiliesRequest()
+	requestFamilies.Scheme = "https"
+	requestFamilies.RegionId = region
 
-	instTypes, err := client.DescribeAccountAttributes(request)
+	instTypeFamilies, err := client.DescribeInstanceTypeFamilies(requestFamilies)
 	if err != nil {
-		return apiv1.AlibabaInstanceTypeList{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance types: %v", err))
+		fmt.Print(apiv1.AlibabaInstanceTypeList{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance type families: %#v", err)))
 	}
 
-	for _, v := range instTypes.AccountAttributeItems.AccountAttributeItem {
-		for _, instType := range v.AttributeValues.ValueItem {
+	for _, instanceFamily := range instTypeFamilies.InstanceTypeFamilies.InstanceTypeFamily {
+		if isInList(recommendedInstanceFamilies, instanceFamily.InstanceTypeFamilyId) {
+			availableInstanceFamilies = append(availableInstanceFamilies, instanceFamily.InstanceTypeFamilyId)
+		}
+	}
+
+	// get all instance types and filter afterwards, to reduce calls
+	requestInstanceTypes := ecs.CreateDescribeInstanceTypesRequest()
+	requestInstanceTypes.Scheme = "https"
+
+	instTypes, err := client.DescribeInstanceTypes(requestInstanceTypes)
+	if err != nil {
+		fmt.Print(apiv1.AlibabaInstanceTypeList{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance types: %#v", err)))
+	}
+
+	for _, instType := range instTypes.InstanceTypes.InstanceType {
+		if isInList(availableInstanceFamilies, instType.InstanceTypeFamily) {
 			it := apiv1.AlibabaInstanceType{
-				ID: instType.Value,
+				ID:           instType.InstanceTypeId,
+				CpuCoreCount: instType.CpuCoreCount,
+				MemorySize:   instType.MemorySize,
 			}
 			instanceTypes = append(instanceTypes, it)
 		}
