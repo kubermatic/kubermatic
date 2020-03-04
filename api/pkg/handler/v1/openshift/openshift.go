@@ -42,6 +42,7 @@ func ConsoleLoginEndpoint(
 	log *zap.SugaredLogger,
 	extractor transporthttp.RequestFunc,
 	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	userInfoGetter provider.UserInfoGetter,
 	middlewares endpoint.Middleware) http.Handler {
 	return dynamicHTTPHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +58,7 @@ func ConsoleLoginEndpoint(
 		// The endpoint the middleware is called with is the innermost one, hence we must
 		// define it as closure and pass it to the middleware() call below.
 		endpoint := func(ctx context.Context, request interface{}) (interface{}, error) {
-			cluster, clusterProvider, err := cluster.GetClusterProviderFromRequest(ctx, request, projectProvider, userInfoGetter)
+			cluster, clusterProvider, err := cluster.GetClusterProviderFromRequest(ctx, request, projectProvider, privilegedProjectProvider, userInfoGetter)
 			if err != nil {
 				common.WriteHTTPError(log, w, err)
 				return nil, nil
@@ -95,6 +96,7 @@ func ConsoleProxyEndpoint(
 	log *zap.SugaredLogger,
 	extractor transporthttp.RequestFunc,
 	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	userInfoGetter provider.UserInfoGetter,
 	middlewares endpoint.Middleware) http.Handler {
 	return dynamicHTTPHandler(func(w http.ResponseWriter, r *http.Request) {
@@ -110,7 +112,7 @@ func ConsoleProxyEndpoint(
 		// The endpoint the middleware is called with is the innermost one, hence we must
 		// define it as closure and pass it to the middleware() call below.
 		endpoint := func(ctx context.Context, request interface{}) (interface{}, error) {
-			cluster, clusterProvider, err := cluster.GetClusterProviderFromRequest(ctx, request, projectProvider, userInfoGetter)
+			cluster, clusterProvider, err := cluster.GetClusterProviderFromRequest(ctx, request, projectProvider, privilegedProjectProvider, userInfoGetter)
 			if err != nil {
 				common.WriteHTTPError(log, w, err)
 				return nil, nil
