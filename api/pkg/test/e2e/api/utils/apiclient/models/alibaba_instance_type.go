@@ -14,7 +14,7 @@ import (
 // swagger:model AlibabaInstanceType
 type AlibabaInstanceType struct {
 
-	// Cpu core count
+	// CPU core count
 	CPUCoreCount int64 `json:"cpuCoreCount,omitempty"`
 
 	// ID

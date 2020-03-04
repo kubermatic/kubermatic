@@ -205,7 +205,7 @@ func listAlibabaInstanceTypes(ctx context.Context, seedsGetter provider.SeedsGet
 		if isInList(availableInstanceFamilies, instType.InstanceTypeFamily) {
 			it := apiv1.AlibabaInstanceType{
 				ID:           instType.InstanceTypeId,
-				CpuCoreCount: instType.CpuCoreCount,
+				CPUCoreCount: instType.CpuCoreCount,
 				MemorySize:   instType.MemorySize,
 			}
 			instanceTypes = append(instanceTypes, it)
