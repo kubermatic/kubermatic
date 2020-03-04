@@ -1131,7 +1131,7 @@ func (r Routing) listAlibabaInstanceTypes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AlibabaInstanceTypesEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter)),
+		)(provider.AlibabaInstanceTypesEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeAlibabaInstanceTypesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

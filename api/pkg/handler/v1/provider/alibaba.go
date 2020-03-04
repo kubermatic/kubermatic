@@ -7,7 +7,6 @@ import (
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/go-kit/kit/endpoint"
-	"k8s.io/apimachinery/pkg/util/sets"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
@@ -16,6 +15,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/alibaba"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // AlibabaCommonReq represent a request with common parameters for Alibaba.
@@ -86,7 +87,7 @@ func DecodeAlibabaInstanceTypesNoCredentialReq(c context.Context, r *http.Reques
 	return req, nil
 }
 
-func AlibabaInstanceTypesEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AlibabaInstanceTypesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AlibabaInstanceTypeReq)
 
@@ -107,7 +108,7 @@ func AlibabaInstanceTypesEndpoint(seedsGetter provider.SeedsGetter, presetsProvi
 				accessKeySecret = credentials.AccessKeySecret
 			}
 		}
-		return listAlibabaInstanceTypes(ctx, seedsGetter, accessKeyID, accessKeySecret, req.Region)
+		return listAlibabaInstanceTypes(ctx, accessKeyID, accessKeySecret, req.Region)
 	}
 }
 
@@ -151,11 +152,11 @@ func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider
 			return nil, err
 		}
 
-		return listAlibabaInstanceTypes(ctx, seedsGetter, accessKeyID, accessKeySecret, req.Region)
+		return listAlibabaInstanceTypes(ctx, accessKeyID, accessKeySecret, req.Region)
 	}
 }
 
-func listAlibabaInstanceTypes(ctx context.Context, seedsGetter provider.SeedsGetter, accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaInstanceTypeList, error) {
+func listAlibabaInstanceTypes(ctx context.Context, accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaInstanceTypeList, error) {
 	// Alibaba has way too many instance types that are not all available in each region
 	// recommendedInstanceFamilies are those families that are recommended in this document:
 	// https://www.alibabacloud.com/help/doc-detail/25378.htm?spm=a2c63.p38356.b99.47.7acf342enhNVmo
@@ -175,7 +176,7 @@ func listAlibabaInstanceTypes(ctx context.Context, seedsGetter provider.SeedsGet
 
 	instTypeFamilies, err := client.DescribeInstanceTypeFamilies(requestFamilies)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance type families: %#v", err))
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance type families: %v", err))
 	}
 
 	for _, instanceFamily := range instTypeFamilies.InstanceTypeFamilies.InstanceTypeFamily {
@@ -190,7 +191,7 @@ func listAlibabaInstanceTypes(ctx context.Context, seedsGetter provider.SeedsGet
 
 	instTypes, err := client.DescribeInstanceTypes(requestInstanceTypes)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance types: %#v", err))
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance types: %v", err))
 	}
 
 	for _, instType := range instTypes.InstanceTypes.InstanceType {
