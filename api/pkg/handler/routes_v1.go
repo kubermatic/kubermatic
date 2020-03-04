@@ -1449,7 +1449,7 @@ func (r Routing) getCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.GetEndpoint(r.projectProvider, r.userInfoGetter)),
+		)(cluster.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3063,7 +3063,7 @@ func (r Routing) getClusterMetrics() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.GetMetricsEndpoint(r.projectProvider, r.userInfoGetter)),
+		)(cluster.GetMetricsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -3118,6 +3118,7 @@ func (r Routing) openshiftConsoleLogin() http.Handler {
 		r.log,
 		middleware.TokenExtractor(r.tokenExtractors),
 		r.projectProvider,
+		r.privilegedProjectProvider,
 		r.userInfoGetter,
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
@@ -3142,6 +3143,7 @@ func (r Routing) openshiftConsoleProxy() http.Handler {
 		r.log,
 		middleware.TokenExtractor(r.tokenExtractors),
 		r.projectProvider,
+		r.privilegedProjectProvider,
 		r.userInfoGetter,
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
@@ -3166,6 +3168,7 @@ func (r Routing) kubernetesDashboardProxy() http.Handler {
 		r.log,
 		middleware.TokenExtractor(r.tokenExtractors),
 		r.projectProvider,
+		r.privilegedProjectProvider,
 		r.userInfoGetter,
 		r.settingsProvider,
 		endpoint.Chain(

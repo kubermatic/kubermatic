@@ -31,6 +31,7 @@ func ProxyEndpoint(
 	log *zap.SugaredLogger,
 	extractor transporthttp.RequestFunc,
 	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	userInfoGetter provider.UserInfoGetter,
 	settingsProvider provider.SettingsProvider,
 	middlewares endpoint.Middleware) http.Handler {
@@ -64,7 +65,7 @@ func ProxyEndpoint(
 				return nil, nil
 			}
 
-			userCluster, clusterProvider, err := cluster.GetClusterProviderFromRequest(ctx, request, projectProvider, userInfoGetter)
+			userCluster, clusterProvider, err := cluster.GetClusterProviderFromRequest(ctx, request, projectProvider, privilegedProjectProvider, userInfoGetter)
 			if err != nil {
 				common.WriteHTTPError(log, w, err)
 				return nil, nil
