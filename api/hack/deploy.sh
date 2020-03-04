@@ -145,7 +145,6 @@ case "${DEPLOY_STACK}" in
     if [[ "${1}" = "master" ]]; then
       deploy "nginx-ingress-controller" "nginx-ingress-controller" ./config/nginx-ingress-controller/
       deploy "cert-manager" "cert-manager" ./config/cert-manager/
-      deploy "certs" "default" ./config/certs/
       deploy "oauth" "oauth" ./config/oauth/
       # We might have not configured IAP which results in nothing being deployed. This triggers https://github.com/helm/helm/issues/4295 and marks this as failed
       # We hack around this by grepping for a string that is mandatory in the values file of IAP

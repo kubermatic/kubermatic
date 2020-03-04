@@ -14,7 +14,8 @@ metadata:
 {{- end }}
 spec:
   tls:
-  - hosts:
+  - secretName: {{ .name }}-tls
+    hosts:
     - {{ .ingress.host | trim }}
   backend:
     serviceName: {{ .name }}-iap
