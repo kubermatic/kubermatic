@@ -63,11 +63,6 @@ kubermatic:
     # PV size for the etcd StatefulSet of new clusters
     diskSize: "5Gi"
 
-  # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificate
-  certIssuer:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-
   controller:
     # Available feature gates:
     # - OpenIDAuthPlugin

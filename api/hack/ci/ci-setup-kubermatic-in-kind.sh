@@ -327,12 +327,6 @@ function check_all_deployments_ready() {
   return 0
 }
 
-# We don't need a valid certificate (and can't even get one), but still need
-# to have the CRDs installed so we can at least create a Certificate resource.
-TEST_NAME="Deploy cert-manager CRDs"
-echodate "Deploying cert-manager CRDs"
-retry 5 kubectl apply -f config/cert-manager/templates/crd.yaml
-
 if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
   TEST_NAME="Deploy Kubermatic"
   echodate "Deploying Kubermatic using Helm..."
@@ -379,6 +373,12 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
     git checkout ${KUBERMATIC_VERSION}
   fi
 else
+  # Even when it does not reconcile certificates, the operator absolutely needs the
+  # cert-manager CRDs to exist.
+  TEST_NAME="Deploy cert-manager CRDs"
+  echodate "Deploying cert-manager CRDs"
+  retry 5 kubectl apply -f config/cert-manager/templates/crd.yaml
+
   TEST_NAME="Deploy Kubermatic"
   echodate "Installing Kubermatic using operator..."
 
