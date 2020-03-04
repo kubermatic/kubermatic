@@ -121,6 +121,18 @@ Supported Kubernetes versions:
 
 
 
+### [v2.12.6]()
+
+
+**Misc:**
+
+- System labels can no longer be removed by the user. [#4983](https://github.com/kubermatic/kubermatic/issues/4983) ([zreigz](https://github.com/zreigz))
+- End-of-Life Kubernetes v1.14 is no longer supported. [#4988](https://github.com/kubermatic/kubermatic/issues/4988) ([kdomanski](https://github.com/kdomanski))
+- Added Kubernetes v1.15.7, v1.15.9, v1.16.4, v1.16.6 [#4995](https://github.com/kubermatic/kubermatic/issues/4995) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
 ### [v2.12.5]()
 
 
@@ -298,6 +310,15 @@ Supported Kubernetes versions:
 - Redesigned extended options in wizard [#1609](https://github.com/kubermatic/dashboard-v2/issues/1609) ([kgroschoff](https://github.com/kgroschoff))
 - Various security improvements in authentication
 - Various other visual improvements
+
+
+
+
+### [v2.11.8]()
+
+
+- End-of-Life Kubernetes v1.14 is no longer supported. [#4989](https://github.com/kubermatic/kubermatic/issues/4989) ([kdomanski](https://github.com/kdomanski))
+- Added Kubernetes v1.15.7, v1.15.9 [#4995](https://github.com/kubermatic/kubermatic/issues/4995) ([kdomanski](https://github.com/kdomanski))
 
 
 
