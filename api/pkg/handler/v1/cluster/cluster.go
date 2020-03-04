@@ -278,11 +278,11 @@ func getNodeDeploymentDisplayName(nd *apiv1.NodeDeployment) string {
 	return ""
 }
 
-func GetEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 
-		cluster, err := GetCluster(ctx, req, projectProvider, userInfoGetter)
+		cluster, err := GetCluster(ctx, req, projectProvider, privilegedProjectProvider, userInfoGetter)
 		if err != nil {
 			return nil, err
 		}
@@ -292,21 +292,38 @@ func GetEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provid
 }
 
 // GetCluster returns the cluster for a given request
-func GetCluster(ctx context.Context, req common.GetClusterReq, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) (*kubermaticv1.Cluster, error) {
+func GetCluster(ctx context.Context, req common.GetClusterReq, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) (*kubermaticv1.Cluster, error) {
 	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	if !ok {
 		return nil, errors.New(http.StatusInternalServerError, "no cluster in request")
 	}
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-	userInfo, err := userInfoGetter(ctx, req.ProjectID)
-	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
-	}
-	project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+	}
+	if adminUserInfo.IsAdmin {
+		cluster, err := privilegedClusterProvider.GetUnsecured(project, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return cluster, nil
+	}
+
+	return getClusterForRegularUser(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID)
+}
+
+func getClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string) (*kubermaticv1.Cluster, error) {
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+	}
+	cluster, err := clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{})
 	if err != nil {
 
 		// Request came from the specified user. Instead `Not found` error status the `Forbidden` is returned.
@@ -315,7 +332,7 @@ func GetCluster(ctx context.Context, req common.GetClusterReq, projectProvider p
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		// Check if cluster really doesn't exist or some other error occurred.
-		if _, errGetUnsecured := privilegedClusterProvider.GetUnsecured(project, req.ClusterID); errGetUnsecured != nil {
+		if _, errGetUnsecured := privilegedClusterProvider.GetUnsecured(project, clusterID); errGetUnsecured != nil {
 			return nil, common.KubernetesErrorToHTTPError(errGetUnsecured)
 		}
 		// Cluster is not ready yet, return original error
@@ -801,7 +818,7 @@ func DetachSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvide
 	}
 }
 
-func GetMetricsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetMetricsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
@@ -811,7 +828,7 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter
 			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
 		}
 
-		cluster, err := GetCluster(ctx, req, projectProvider, userInfoGetter)
+		cluster, err := GetCluster(ctx, req, projectProvider, privilegedProjectProvider, userInfoGetter)
 		if err != nil {
 			return nil, err
 		}
@@ -1287,13 +1304,15 @@ func GetClusterProviderFromRequest(
 	ctx context.Context,
 	request interface{},
 	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	userInfoGetter provider.UserInfoGetter) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
 
 	req, ok := request.(common.GetClusterReq)
 	if !ok {
 		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")
 	}
-	cluster, err := GetCluster(ctx, req, projectProvider, userInfoGetter)
+
+	cluster, err := GetCluster(ctx, req, projectProvider, privilegedProjectProvider, userInfoGetter)
 	if err != nil {
 		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
 	}
