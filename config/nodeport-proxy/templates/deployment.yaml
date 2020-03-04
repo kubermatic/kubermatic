@@ -123,7 +123,6 @@ spec:
         args:
         - "-lb-namespace=$(MY_NAMESPACE)"
         - "-lb-name=nodeport-lb"
-        - "-logtostderr"
         env:
         - name: MY_NAMESPACE
           valueFrom:
