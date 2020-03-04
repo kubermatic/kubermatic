@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	envoycorev2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	"github.com/sirupsen/logrus"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -45,21 +44,4 @@ func getMatchingPodPort(servicePort corev1.ServicePort, pod *corev1.Pod) int32 {
 	}
 
 	return 0
-}
-
-// envoyLogProxy is a wrapper around a logrus logger that forwards
-// noisy envoy info messages to the debug level, but keeps errors
-// as errors.
-type envoyLogProxy struct {
-	upstream logrus.FieldLogger
-}
-
-// Infof redirects log messages to the debug level of the underlying upstream logger.
-func (p *envoyLogProxy) Infof(format string, args ...interface{}) {
-	p.upstream.Debugf(format, args...)
-}
-
-// Errorf redirects directly to the underlying upstream logger.
-func (p *envoyLogProxy) Errorf(format string, args ...interface{}) {
-	p.upstream.Errorf(format, args...)
 }
