@@ -16,7 +16,6 @@ package cache
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -46,6 +45,9 @@ type SnapshotCache interface {
 	// This method will cause the server to respond to all open watches, for which
 	// the version differs from the snapshot version.
 	SetSnapshot(node string, snapshot Snapshot) error
+
+	// GetSnapshots gets the snapshot for a node.
+	GetSnapshot(node string) (Snapshot, error)
 
 	// ClearSnapshot removes all status and snapshot information associated with a node.
 	ClearSnapshot(node string)
@@ -108,7 +110,7 @@ func (cache *snapshotCache) SetSnapshot(node string, snapshot Snapshot) error {
 			version := snapshot.GetVersion(watch.Request.TypeUrl)
 			if version != watch.Request.VersionInfo {
 				if cache.log != nil {
-					cache.log.Infof("respond open watch %d%v with new version %q", id, watch.Request.ResourceNames, version)
+					cache.log.Debugf("respond open watch %d%v with new version %q", id, watch.Request.ResourceNames, version)
 				}
 				cache.respond(watch.Request, watch.Response, snapshot.GetResources(watch.Request.TypeUrl), version)
 
@@ -120,6 +122,18 @@ func (cache *snapshotCache) SetSnapshot(node string, snapshot Snapshot) error {
 	}
 
 	return nil
+}
+
+// GetSnapshots gets the snapshot for a node, and returns an error if not found.
+func (cache *snapshotCache) GetSnapshot(node string) (Snapshot, error) {
+	cache.mu.RLock()
+	defer cache.mu.RUnlock()
+
+	snap, ok := cache.snapshots[node]
+	if !ok {
+		return Snapshot{}, fmt.Errorf("no snapshot found for node %s", node)
+	}
+	return snap, nil
 }
 
 // ClearSnapshot clears snapshot and info for a node.
@@ -178,7 +192,7 @@ func (cache *snapshotCache) CreateWatch(request Request) (chan Response, func())
 	if !exists || request.VersionInfo == version {
 		watchID := cache.nextWatchID()
 		if cache.log != nil {
-			cache.log.Infof("open watch %d for %s%v from nodeID %q, version %q", watchID,
+			cache.log.Debugf("open watch %d for %s%v from nodeID %q, version %q", watchID,
 				request.TypeUrl, request.ResourceNames, nodeID, request.VersionInfo)
 		}
 		info.mu.Lock()
@@ -219,13 +233,13 @@ func (cache *snapshotCache) respond(request Request, value chan Response, resour
 	if len(request.ResourceNames) != 0 && cache.ads {
 		if err := superset(nameSet(request.ResourceNames), resources); err != nil {
 			if cache.log != nil {
-				cache.log.Infof("ADS mode: not responding to request: %v", err)
+				cache.log.Debugf("ADS mode: not responding to request: %v", err)
 			}
 			return
 		}
 	}
 	if cache.log != nil {
-		cache.log.Infof("respond %s%v version %q with version %q",
+		cache.log.Debugf("respond %s%v version %q with version %q",
 			request.TypeUrl, request.ResourceNames, request.VersionInfo, version)
 	}
 
@@ -271,7 +285,10 @@ func (cache *snapshotCache) Fetch(ctx context.Context, request Request) (*Respon
 		// It might be beneficial to hold the request since Envoy will re-attempt the refresh.
 		version := snapshot.GetVersion(request.TypeUrl)
 		if request.VersionInfo == version {
-			return nil, errors.New("skip fetch: version up to date")
+			if cache.log != nil {
+				cache.log.Warnf("skip fetch: version up to date")
+			}
+			return nil, &SkipFetchError{}
 		}
 
 		resources := snapshot.GetResources(request.TypeUrl)
@@ -289,6 +306,9 @@ func (cache *snapshotCache) GetStatusInfo(node string) StatusInfo {
 
 	info, exists := cache.status[node]
 	if !exists {
+		if cache.log != nil {
+			cache.log.Warnf("node does not exist")
+		}
 		return nil
 	}
 
