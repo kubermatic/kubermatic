@@ -7,7 +7,8 @@ metadata:
     kubernetes.io/ingress.class: "{{ .Values.dex.ingress.class }}"
 spec:
   tls:
-  - hosts:
+  - secretName: dex-tls
+    hosts:
     - {{ .Values.dex.ingress.host }}
   backend:
     serviceName: dex

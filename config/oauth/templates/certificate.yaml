@@ -1,0 +1,13 @@
+{{- if ne .Values.dex.ingress.class "non-existent" }}
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: dex
+spec:
+  secretName: dex-tls
+  issuerRef:
+    name: {{ .Values.dex.certIssuer.name }}
+    kind: {{ .Values.dex.certIssuer.kind }}
+  dnsNames:
+  - {{ .Values.dex.ingress.host }}
+{{- end }}
