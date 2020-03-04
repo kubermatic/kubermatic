@@ -72,6 +72,20 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 					Verbs: []string{"list", "watch"},
 				},
 				{
+					APIGroups: []string{"authentication.k8s.io"},
+					Resources: []string{
+						"tokenreviews",
+					},
+					Verbs: []string{"create"},
+				},
+				{
+					APIGroups: []string{"authorization.k8s.io"},
+					Resources: []string{
+						"subjectaccessreviews",
+					},
+					Verbs: []string{"create"},
+				},
+				{
 					APIGroups: []string{"policy"},
 					Resources: []string{
 						"poddisruptionbudgets",
@@ -87,8 +101,33 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 				},
 				{
 					APIGroups: []string{"storage.k8s.io"},
-					Resources: []string{"storageclasses"},
-					Verbs:     []string{"list", "watch"},
+					Resources: []string{
+						"storageclasses",
+						"volumeattachments",
+					},
+					Verbs: []string{"list", "watch"},
+				},
+				{
+					APIGroups: []string{"networking.k8s.io"},
+					Resources: []string{
+						"networkpolicies",
+					},
+					Verbs: []string{"list", "watch"},
+				},
+				{
+					APIGroups: []string{"admissionregistration.k8s.io"},
+					Resources: []string{
+						"mutatingwebhookconfigurations",
+						"validatingwebhookconfigurations",
+					},
+					Verbs: []string{"list", "watch"},
+				},
+				{
+					APIGroups: []string{"coordination.k8s.io"},
+					Resources: []string{
+						"leases",
+					},
+					Verbs: []string{"list", "watch"},
 				},
 			}
 			return cr, nil
