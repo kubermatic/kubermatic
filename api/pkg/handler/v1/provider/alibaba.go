@@ -15,6 +15,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/alibaba"
 	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // AlibabaCommonReq represent a request with common parameters for Alibaba.
@@ -110,7 +112,7 @@ func AlibabaInstanceTypesEndpoint(presetsProvider provider.PresetProvider, userI
 	}
 }
 
-func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AlibabaInstanceTypesNoCredentialReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -132,13 +134,20 @@ func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider
 			return nil, errors.NewNotFound("cloud spec for %s", req.ClusterID)
 		}
 
+		datacenterName := cluster.Spec.Cloud.DatacenterName
+
 		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
 		if !ok {
 			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
 		}
 
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
+		}
+
 		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-		accessKeyID, accessKeySecret, err := alibaba.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		accessKeyID, accessKeySecret, err := alibaba.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector, datacenter.Spec.Alibaba)
 		if err != nil {
 			return nil, err
 		}
@@ -148,6 +157,11 @@ func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider
 }
 
 func listAlibabaInstanceTypes(ctx context.Context, accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaInstanceTypeList, error) {
+	// Alibaba has way too many instance types that are not all available in each region
+	// recommendedInstanceFamilies are those families that are recommended in this document:
+	// https://www.alibabacloud.com/help/doc-detail/25378.htm?spm=a2c63.p38356.b99.47.7acf342enhNVmo
+	recommendedInstanceFamilies := sets.NewString("ecs.g6", "ecs.g5", "ecs.g5se", "ecs.g5ne", "ecs.ic5", "ecs.c6", "ecs.c5", "ecs.r6", "ecs.r5", "ecs.d1ne", "ecs.i2", "ecs.i2g", "ecs.hfc6", "ecs.hfg6", "ecs.hfr6")
+	availableInstanceFamilies := sets.String{}
 	instanceTypes := apiv1.AlibabaInstanceTypeList{}
 
 	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
@@ -155,17 +169,33 @@ func listAlibabaInstanceTypes(ctx context.Context, accessKeyID string, accessKey
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
 	}
 
-	request := ecs.CreateDescribeInstanceTypesRequest()
-	request.Scheme = "https"
+	// get all families that are available for the Region
+	requestFamilies := ecs.CreateDescribeInstanceTypeFamiliesRequest()
+	requestFamilies.Scheme = "https"
+	requestFamilies.RegionId = region
 
-	instTypes, err := client.DescribeInstanceTypes(request)
+	instTypeFamilies, err := client.DescribeInstanceTypeFamilies(requestFamilies)
 	if err != nil {
-		return apiv1.AlibabaInstanceTypeList{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance types: %v", err))
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance type families: %v", err))
+	}
+
+	for _, instanceFamily := range instTypeFamilies.InstanceTypeFamilies.InstanceTypeFamily {
+		if recommendedInstanceFamilies.Has(instanceFamily.InstanceTypeFamilyId) {
+			availableInstanceFamilies.Insert(instanceFamily.InstanceTypeFamilyId)
+		}
+	}
+
+	// get all instance types and filter afterwards, to reduce calls
+	requestInstanceTypes := ecs.CreateDescribeInstanceTypesRequest()
+	requestInstanceTypes.Scheme = "https"
+
+	instTypes, err := client.DescribeInstanceTypes(requestInstanceTypes)
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance types: %v", err))
 	}
 
 	for _, instType := range instTypes.InstanceTypes.InstanceType {
-		// Pods with memory under 2 GB will be full with required pods like kube-proxy, CNI etc.
-		if instType.MemorySize >= 2 {
+		if availableInstanceFamilies.Has(instType.InstanceTypeFamily) {
 			it := apiv1.AlibabaInstanceType{
 				ID:           instType.InstanceTypeId,
 				CPUCoreCount: instType.CpuCoreCount,
