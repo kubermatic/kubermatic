@@ -1,0 +1,14 @@
+{{- range .Values.iap.deployments }}
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: {{ .name }}
+spec:
+  secretName: {{ .name }}-tls
+  issuerRef:
+    name: {{ $.Values.iap.certIssuer.name }}
+    kind: {{ $.Values.iap.certIssuer.kind }}
+  dnsNames:
+  - {{ .ingress.host | trim }}
+{{- end -}}
