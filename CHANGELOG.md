@@ -3,6 +3,7 @@
 
 - Fixed swagger and API client for ssh key creation. [#5069](https://github.com/kubermatic/kubermatic/issues/5069) ([kdomanski](https://github.com/kdomanski))
 - Added Kubernetes v1.15.10, v1.16.7, v1.17.3 [#5102](https://github.com/kubermatic/kubermatic/issues/5102) ([kdomanski](https://github.com/kdomanski))
+- AddonConfig's shortDescription field is now used in the accessible addons overview. [#2050](https://github.com/kubermatic/dashboard-v2/issues/2050) ([maciaszczykm](https://github.com/maciaszczykm))
 
 
 
