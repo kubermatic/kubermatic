@@ -61,3 +61,8 @@ dex:
           topologyKey: kubernetes.io/hostname
         weight: 10
   tolerations: []
+
+  # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
+  certIssuer:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
