@@ -7,6 +7,7 @@ import (
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/go-kit/kit/endpoint"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
@@ -154,21 +155,12 @@ func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider
 	}
 }
 
-func isInList(arr []string, str string) bool {
-	for _, a := range arr {
-		if a == str {
-			return true
-		}
-	}
-	return false
-}
-
 func listAlibabaInstanceTypes(ctx context.Context, seedsGetter provider.SeedsGetter, accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaInstanceTypeList, error) {
 	// Alibaba has way too many instance types that are not all available in each region
 	// recommendedInstanceFamilies are those families that are recommended in this document:
 	// https://www.alibabacloud.com/help/doc-detail/25378.htm?spm=a2c63.p38356.b99.47.7acf342enhNVmo
-	recommendedInstanceFamilies := []string{"ecs.g6", "ecs.g5", "ecs.g5se", "ecs.g5ne", "ecs.ic5", "ecs.c6", "ecs.c5", "ecs.r6", "ecs.r5", "ecs.d1ne", "ecs.i2", "ecs.i2g", "ecs.hfc6", "ecs.hfg6", "ecs.hfr6"}
-	availableInstanceFamilies := []string{}
+	recommendedInstanceFamilies := sets.NewString("ecs.g6", "ecs.g5", "ecs.g5se", "ecs.g5ne", "ecs.ic5", "ecs.c6", "ecs.c5", "ecs.r6", "ecs.r5", "ecs.d1ne", "ecs.i2", "ecs.i2g", "ecs.hfc6", "ecs.hfg6", "ecs.hfr6")
+	availableInstanceFamilies := sets.String{}
 	instanceTypes := apiv1.AlibabaInstanceTypeList{}
 
 	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
@@ -183,12 +175,12 @@ func listAlibabaInstanceTypes(ctx context.Context, seedsGetter provider.SeedsGet
 
 	instTypeFamilies, err := client.DescribeInstanceTypeFamilies(requestFamilies)
 	if err != nil {
-		fmt.Print(apiv1.AlibabaInstanceTypeList{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance type families: %#v", err)))
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance type families: %#v", err))
 	}
 
 	for _, instanceFamily := range instTypeFamilies.InstanceTypeFamilies.InstanceTypeFamily {
-		if isInList(recommendedInstanceFamilies, instanceFamily.InstanceTypeFamilyId) {
-			availableInstanceFamilies = append(availableInstanceFamilies, instanceFamily.InstanceTypeFamilyId)
+		if recommendedInstanceFamilies.Has(instanceFamily.InstanceTypeFamilyId) {
+			availableInstanceFamilies.Insert(instanceFamily.InstanceTypeFamilyId)
 		}
 	}
 
@@ -198,11 +190,11 @@ func listAlibabaInstanceTypes(ctx context.Context, seedsGetter provider.SeedsGet
 
 	instTypes, err := client.DescribeInstanceTypes(requestInstanceTypes)
 	if err != nil {
-		fmt.Print(apiv1.AlibabaInstanceTypeList{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance types: %#v", err)))
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance types: %#v", err))
 	}
 
 	for _, instType := range instTypes.InstanceTypes.InstanceType {
-		if isInList(availableInstanceFamilies, instType.InstanceTypeFamily) {
+		if availableInstanceFamilies.Has(instType.InstanceTypeFamily) {
 			it := apiv1.AlibabaInstanceType{
 				ID:           instType.InstanceTypeId,
 				CPUCoreCount: instType.CpuCoreCount,
