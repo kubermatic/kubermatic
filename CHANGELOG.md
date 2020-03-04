@@ -314,6 +314,15 @@ Supported Kubernetes versions:
 
 
 
+### [v2.11.8]()
+
+
+- End-of-Life Kubernetes v1.14 is no longer supported. [#4989](https://github.com/kubermatic/kubermatic/issues/4989) ([kdomanski](https://github.com/kdomanski))
+- Added Kubernetes v1.15.7, v1.15.9 [#4995](https://github.com/kubermatic/kubermatic/issues/4995) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
 ### [v2.11.7]()
 
 
