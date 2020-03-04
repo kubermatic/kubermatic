@@ -12,7 +12,6 @@ import (
 	kubestatemetrics "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
 	kubernetesdashboard "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	machinecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
-	metricsserver "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/prometheus"
@@ -121,9 +120,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 
 func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) error {
 	caCert := triple.EncodeCertPEM(data.caCert.Cert)
-	creators := []reconciling.NamedAPIServiceCreatorGetter{
-		metricsserver.APIServiceCreator(caCert),
-	}
+	creators := []reconciling.NamedAPIServiceCreatorGetter{}
 
 	if r.openshift {
 		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion(r.version, caCert)
@@ -235,7 +232,6 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 	// kube-system
 	creators := []reconciling.NamedRoleBindingCreatorGetter{
 		machinecontroller.KubeSystemRoleBindingCreator(),
-		metricsserver.RolebindingAuthReaderCreator(),
 		scheduler.RoleBindingAuthDelegator(),
 		controllermanager.RoleBindingAuthDelegator(),
 		clusterautoscaler.KubeSystemRoleBindingCreator(),
@@ -301,7 +297,6 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context) error {
 		prometheus.ClusterRoleCreator(),
 		machinecontroller.ClusterRoleCreator(),
 		dnatcontroller.ClusterRoleCreator(),
-		metricsserver.ClusterRoleCreator(),
 		clusterautoscaler.ClusterRoleCreator(),
 	}
 
@@ -324,8 +319,6 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 		machinecontroller.NodeBootstrapperClusterRoleBindingCreator(),
 		machinecontroller.NodeSignerClusterRoleBindingCreator(),
 		dnatcontroller.ClusterRoleBindingCreator(),
-		metricsserver.ClusterRoleBindingResourceReaderCreator(),
-		metricsserver.ClusterRoleBindingAuthDelegatorCreator(),
 		scheduler.ClusterRoleBindingAuthDelegatorCreator(),
 		controllermanager.ClusterRoleBindingAuthDelegator(),
 		clusterautoscaler.ClusterRoleBindingCreator(),
@@ -374,9 +367,7 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(
 }
 
 func (r *reconciler) reconcileServices(ctx context.Context) error {
-	creatorsKubeSystem := []reconciling.NamedServiceCreatorGetter{
-		metricsserver.ExternalNameServiceCreator(r.namespace),
-	}
+	creatorsKubeSystem := []reconciling.NamedServiceCreatorGetter{}
 
 	if err := reconciling.ReconcileServices(ctx, creatorsKubeSystem, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Services in kube-system namespace: %v", err)
