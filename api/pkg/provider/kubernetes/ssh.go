@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
+	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -14,7 +15,26 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	restclient "k8s.io/client-go/rest"
 )
+
+// PrivilegedSSHKeyProvider represents a data structure that knows how to manage ssh keys in a privileged way
+type PrivilegedSSHKeyProvider struct {
+	// treat clientPrivileged as a privileged user and use wisely
+	clientPrivileged kubermaticclientv1.UserSSHKeyInterface
+}
+
+// NewPrivilegedSSHKeyProvider returns a privileged ssh key provider
+func NewPrivilegedSSHKeyProvider(createMasterImpersonatedClient kubermaticImpersonationClient) (*PrivilegedSSHKeyProvider, error) {
+	kubermaticClient, err := createMasterImpersonatedClient(restclient.ImpersonationConfig{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &PrivilegedSSHKeyProvider{
+		clientPrivileged: kubermaticClient.UserSSHKeys(),
+	}, nil
+}
 
 // NewSSHKeyProvider returns a new ssh key provider that respects RBAC policies
 // it uses createMasterImpersonatedClient to create a connection that uses User Impersonation
@@ -160,4 +180,10 @@ func (p *SSHKeyProvider) Update(userInfo *provider.UserInfo, newKey *kubermatica
 		return nil, err
 	}
 	return masterImpersonatedClient.UserSSHKeys().Update(newKey)
+}
+
+// UpdateUnsecured update a specific ssh key and returns the updated ssh key
+// This function is unsafe in a sense that it uses privileged account to update the ssh key
+func (p *PrivilegedSSHKeyProvider) UpdateUnsecured(sshKey *kubermaticapiv1.UserSSHKey) (*kubermaticapiv1.UserSSHKey, error) {
+	return p.clientPrivileged.Update(sshKey)
 }

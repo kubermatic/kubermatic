@@ -26,6 +26,7 @@ type Routing struct {
 	seedsGetter                 provider.SeedsGetter
 	seedsClientGetter           provider.SeedClientGetter
 	sshKeyProvider              provider.SSHKeyProvider
+	privilegedSSHKeyProvider    provider.PrivilegedSSHKeyProvider
 	userProvider                provider.UserProvider
 	serviceAccountProvider      provider.ServiceAccountProvider
 	serviceAccountTokenProvider provider.ServiceAccountTokenProvider
@@ -64,6 +65,7 @@ func NewRouting(
 	addonProviderGetter provider.AddonProviderGetter,
 	addonConfigProvider provider.AddonConfigProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
+	privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
 	serviceAccountTokenProvider provider.ServiceAccountTokenProvider,
@@ -96,6 +98,7 @@ func NewRouting(
 		addonProviderGetter:         addonProviderGetter,
 		addonConfigProvider:         addonConfigProvider,
 		sshKeyProvider:              newSSHKeyProvider,
+		privilegedSSHKeyProvider:    privilegedSSHKeyProvider,
 		userProvider:                userProvider,
 		serviceAccountProvider:      serviceAccountProvider,
 		serviceAccountTokenProvider: serviceAccountTokenProvider,
