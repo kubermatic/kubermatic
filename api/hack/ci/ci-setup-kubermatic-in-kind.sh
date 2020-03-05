@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #############################################################
 ## CI Setup Kubermatic in kind                              #
 ## A simple script to get a Kubermatic setup using kind     #

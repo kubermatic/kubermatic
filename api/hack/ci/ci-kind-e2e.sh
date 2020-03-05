@@ -10,7 +10,7 @@ export GIT_HEAD_HASH="$(git rev-parse HEAD)"
 
 export KUBERMATIC_VERSION="${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH}"
 echodate "Setting up kubermatic in kind on revision ${KUBERMATIC_VERSION}"
-source ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
+. ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
 echodate "Done setting up kubermatic in kind"
 
 # We can safely assume that the base version got tested already
@@ -38,7 +38,7 @@ export ONLY_TEST_CREATION=false
 export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
 export KUBERMATIC_USE_EXISTING_CLUSTER=true
 echodate "Setting up kubermatic in kind on revision ${KUBERMATIC_VERSION} for upgradetest"
-source ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
+. ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
 echodate "Done setting up kubermatic in kind"
 
 echodate "Getting existing project id"
