@@ -247,8 +247,6 @@ retry 5 kubectl apply -f config/kubermatic/crd
 
 if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   # Build kubermatic binaries and push the image
-  OLD_HEAD="$(git rev-parse HEAD)"
-  git checkout ${KUBERMATIC_VERSION}
   echodate "Building containers with tag $KUBERMATIC_VERSION"
   echodate "Building binaries"
   TEST_NAME="Build Kubermatic binaries"
@@ -301,7 +299,6 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
       time retry 5 docker push "quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
     fi
   )
-  git checkout ${OLD_HEAD}
   echodate "Successfully built and loaded all images"
 fi
 
@@ -331,11 +328,6 @@ function check_all_deployments_ready() {
 if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
   TEST_NAME="Deploy Kubermatic"
   echodate "Deploying Kubermatic using Helm..."
-
-  OLD_HEAD="$(git rev-parse HEAD)"
-  if [[ -n ${CHARTS_VERSION:-} ]]; then
-    git checkout "$CHARTS_VERSION"
-  fi
 
   # --force is needed in case the first attempt at installing didn't succeed
   # see https://github.com/helm/helm/pull/3597
@@ -368,11 +360,6 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
     --values ${VALUES_FILE} \
     kubermatic \
     ./config/kubermatic/
-
-  # Return repo to previous state if we checked out older charts before.
-  if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
-    git checkout ${KUBERMATIC_VERSION}
-  fi
 else
   # Even when it does not reconcile certificates, the operator absolutely needs the
   # cert-manager CRDs to exist.
@@ -390,9 +377,6 @@ else
   retry 3 kubectl apply -f config/kubermatic-operator/
   retry 5 check_all_deployments_ready kubermatic
   echodate "Kubermatic Operator is ready."
-
-  # reset changes in case we re-deploy another version
-  git checkout -- config/kubermatic-operator/
 
   KUBERMATIC_CONFIG="$(mktemp)"
   cat <<EOF >$KUBERMATIC_CONFIG
