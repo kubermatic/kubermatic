@@ -87,6 +87,8 @@ func DecodeAlibabaNoCredentialReq(c context.Context, r *http.Request) (interface
 	return req, nil
 }
 
+const requestScheme = "https"
+
 func AlibabaInstanceTypesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AlibabaReq)
@@ -171,7 +173,7 @@ func listAlibabaInstanceTypes(ctx context.Context, accessKeyID string, accessKey
 
 	// get all families that are available for the Region
 	requestFamilies := ecs.CreateDescribeInstanceTypeFamiliesRequest()
-	requestFamilies.Scheme = "https"
+	requestFamilies.Scheme = requestScheme
 	requestFamilies.RegionId = region
 
 	instTypeFamilies, err := client.DescribeInstanceTypeFamilies(requestFamilies)
@@ -187,7 +189,7 @@ func listAlibabaInstanceTypes(ctx context.Context, accessKeyID string, accessKey
 
 	// get all instance types and filter afterwards, to reduce calls
 	requestInstanceTypes := ecs.CreateDescribeInstanceTypesRequest()
-	requestInstanceTypes.Scheme = "https"
+	requestInstanceTypes.Scheme = requestScheme
 
 	instTypes, err := client.DescribeInstanceTypes(requestInstanceTypes)
 	if err != nil {
@@ -286,7 +288,7 @@ func listAlibabaZones(ctx context.Context, accessKeyID string, accessKeySecret s
 	}
 
 	requestZones := ecs.CreateDescribeZonesRequest()
-	requestZones.Scheme = "https"
+	requestZones.Scheme = requestScheme
 
 	responseZones, err := client.DescribeZones(requestZones)
 	if err != nil {
