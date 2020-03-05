@@ -24,6 +24,9 @@ const (
 	kubeconfigOuter      = "kubeconfig-outer"
 	kubeconfigOuterUsage = ""
 
+	namespace      = "namespace"
+	namespaceUsage = ""
+
 	buildIDFlag      = "build-id"
 	buildIDFlagUsage = ""
 
@@ -40,6 +43,7 @@ var (
 
 	kubeconfigInnerFile = ""
 	kubeconfigOuterFile = ""
+	namespaceName       = ""
 	buildID             = ""
 	debug               = false
 
@@ -59,6 +63,7 @@ func main() {
 func init() {
 	rootCmd.PersistentFlags().StringVar(&kubeconfigInnerFile, kubeconfigInner, "", kubeconfigInnerUsage)
 	rootCmd.PersistentFlags().StringVar(&kubeconfigOuterFile, kubeconfigOuter, "", kubeconfigOuterUsage)
+	rootCmd.PersistentFlags().StringVar(&namespaceName, namespace, "", namespaceUsage) // noop
 	rootCmd.PersistentFlags().StringVar(&buildID, buildIDFlag, "", buildIDFlagUsage)
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "")
 }

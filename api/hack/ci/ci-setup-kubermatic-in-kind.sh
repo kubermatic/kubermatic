@@ -153,6 +153,7 @@ else
   CGO_ENABLED=0 /tmp/clusterexposer \
     --kubeconfig-inner "$KUBECONFIG" \
     --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
+    --namespace default \
     --build-id "$PROW_JOB_ID" &> /var/log/clusterexposer.log &
 fi
 
