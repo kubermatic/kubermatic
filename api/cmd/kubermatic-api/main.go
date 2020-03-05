@@ -191,6 +191,10 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 	userMasterLister := kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
+	privilegedSSHKeyProvider, err := kubernetesprovider.NewPrivilegedSSHKeyProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet)
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create privileged SSH key provider due to %v", err)
+	}
 	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userMasterLister, kubernetesprovider.IsServiceAccount)
 	settingsProvider := kubernetesprovider.NewSettingsProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().KubermaticSettings().Lister())
 	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().AddonConfigs().Lister())
@@ -234,6 +238,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 	return providers{
 		sshKey:                                sshKeyProvider,
+		privilegedSSHKeyProvider:              privilegedSSHKeyProvider,
 		user:                                  userProvider,
 		serviceAccountProvider:                serviceAccountProvider,
 		serviceAccountTokenProvider:           serviceAccountTokenProvider,
@@ -328,6 +333,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.addons,
 		prov.addonConfigProvider,
 		prov.sshKey,
+		prov.privilegedSSHKeyProvider,
 		prov.user,
 		prov.serviceAccountProvider,
 		prov.serviceAccountTokenProvider,
