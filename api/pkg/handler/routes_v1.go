@@ -133,6 +133,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAlibabaInstanceTypes())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/alibaba/zones").
+		Handler(r.listAlibabaZones())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/presets/credentials").
 		Handler(r.listCredentials())
 
@@ -474,6 +478,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/instancetypes").
 		Handler(r.listAlibabaInstanceTypesNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/zones").
+		Handler(r.listAlibabaZonesNoCredentials())
 
 	//
 	// Defines a set of openshift-specific endpoints
@@ -1132,7 +1140,29 @@ func (r Routing) listAlibabaInstanceTypes() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 		)(provider.AlibabaInstanceTypesEndpoint(r.presetsProvider, r.userInfoGetter)),
-		provider.DecodeAlibabaInstanceTypesReq,
+		provider.DecodeAlibabaReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/alibaba/zones alibaba listAlibabaZones
+//
+// Lists available Alibaba zones.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AlibabaZoneList
+func (r Routing) listAlibabaZones() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AlibabaZonesEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeAlibabaReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -2641,7 +2671,30 @@ func (r Routing) listAlibabaInstanceTypesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.AlibabaInstanceTypesWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
-		provider.DecodeAlibabaInstanceTypesNoCredentialReq,
+		provider.DecodeAlibabaNoCredentialReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/zones alibaba listAlibabaZonesNoCredentials
+//
+// Lists available Alibaba Instance Types
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AlibabaZoneList
+func (r Routing) listAlibabaZonesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.AlibabaZonesWithClusterCredentialsEndpoint(r.projectProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeAlibabaNoCredentialReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

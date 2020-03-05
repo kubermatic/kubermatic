@@ -599,6 +599,16 @@ type AlibabaInstanceType struct {
 	MemorySize   float64 `json:"memorySize"`
 }
 
+// AlibabaZoneList represents an array of Alibaba zones.
+// swagger:model AlibabaZoneList
+type AlibabaZoneList []AlibabaZone
+
+// AlibabaZone represents a object of Alibaba zone.
+// swagger:model AlibabaZone
+type AlibabaZone struct {
+	ID string `json:"id"`
+}
+
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {
@@ -1158,7 +1168,7 @@ type AlibabaNodeSpec struct {
 	InstanceType            string            `json:"instanceType"`
 	DiskSize                string            `json:"diskSize"`
 	DiskType                string            `json:"diskType"`
-	VSwitchID               string            `json:"vswitchID"`
+	VSwitchID               string            `json:"vSwitchID"`
 	InternetMaxBandwidthOut string            `json:"internetMaxBandwidthOut"`
 	Labels                  map[string]string `json:"labels"`
 	ZoneID                  string            `json:"zoneID"`
