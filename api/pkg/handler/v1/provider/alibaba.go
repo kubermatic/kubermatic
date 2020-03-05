@@ -32,26 +32,26 @@ type AlibabaCommonReq struct {
 	Credential string
 }
 
-// AlibabaInstanceTypeReq represent a request for Alibaba instance types.
-// swagger:parameters listAlibabaInstanceTypes
-type AlibabaInstanceTypeReq struct {
+// AlibabaReq represent a request for Alibaba instance types.
+// swagger:parameters listAlibabaInstanceTypes listAlibabaZones
+type AlibabaReq struct {
 	AlibabaCommonReq
 	// in: header
 	// name: Region
 	Region string
 }
 
-// AlibabaInstanceTypesNoCredentialReq represent a request for Alibaba instance types.
-// swagger:parameters listAlibabaInstanceTypesNoCredentials
-type AlibabaInstanceTypesNoCredentialReq struct {
+// AlibabaNoCredentialReq represent a request for Alibaba instance types.
+// swagger:parameters listAlibabaInstanceTypesNoCredentials listAlibabaZonesNoCredentials
+type AlibabaNoCredentialReq struct {
 	common.GetClusterReq
 	// in: header
 	// name: Region
 	Region string
 }
 
-func DecodeAlibabaInstanceTypesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req AlibabaInstanceTypeReq
+func DecodeAlibabaReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AlibabaReq
 
 	commonReq, err := DecodeAlibabaCommonReq(c, r)
 	if err != nil {
@@ -74,8 +74,8 @@ func DecodeAlibabaCommonReq(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-func DecodeAlibabaInstanceTypesNoCredentialReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req AlibabaInstanceTypesNoCredentialReq
+func DecodeAlibabaNoCredentialReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AlibabaNoCredentialReq
 
 	commonReq, err := common.DecodeGetClusterReq(c, r)
 	if err != nil {
@@ -89,7 +89,7 @@ func DecodeAlibabaInstanceTypesNoCredentialReq(c context.Context, r *http.Reques
 
 func AlibabaInstanceTypesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(AlibabaInstanceTypeReq)
+		req := request.(AlibabaReq)
 
 		accessKeyID := req.AccessKeyID
 		accessKeySecret := req.AccessKeySecret
@@ -114,7 +114,7 @@ func AlibabaInstanceTypesEndpoint(presetsProvider provider.PresetProvider, userI
 
 func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(AlibabaInstanceTypesNoCredentialReq)
+		req := request.(AlibabaNoCredentialReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 		userInfo, err := userInfoGetter(ctx, req.ProjectID)
@@ -206,4 +206,99 @@ func listAlibabaInstanceTypes(ctx context.Context, accessKeyID string, accessKey
 	}
 
 	return instanceTypes, nil
+}
+
+func AlibabaZonesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AlibabaReq)
+
+		accessKeyID := req.AccessKeyID
+		accessKeySecret := req.AccessKeySecret
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if len(req.Credential) > 0 {
+			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.Alibaba; credentials != nil {
+				accessKeyID = credentials.AccessKeyID
+				accessKeySecret = credentials.AccessKeySecret
+			}
+		}
+		return listAlibabaZones(ctx, accessKeyID, accessKeySecret, req.Region)
+	}
+}
+
+func AlibabaZonesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AlibabaNoCredentialReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if cluster.Spec.Cloud.Alibaba == nil {
+			return nil, errors.NewNotFound("cloud spec for %s", req.ClusterID)
+		}
+
+		datacenterName := cluster.Spec.Cloud.DatacenterName
+
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		accessKeyID, accessKeySecret, err := alibaba.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector, datacenter.Spec.Alibaba)
+		if err != nil {
+			return nil, err
+		}
+
+		return listAlibabaZones(ctx, accessKeyID, accessKeySecret, req.Region)
+	}
+}
+
+func listAlibabaZones(ctx context.Context, accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaZoneList, error) {
+	zones := apiv1.AlibabaZoneList{}
+
+	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
+	}
+
+	requestZones := ecs.CreateDescribeZonesRequest()
+	requestZones.Scheme = "https"
+
+	responseZones, err := client.DescribeZones(requestZones)
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list zones: %v", err))
+	}
+
+	for _, zone := range responseZones.Zones.Zone {
+		z := apiv1.AlibabaZone{
+			ID: zone.ZoneId,
+		}
+		zones = append(zones, z)
+	}
+
+	return zones, nil
 }

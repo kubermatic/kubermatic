@@ -30,7 +30,7 @@ type AlibabaNodeSpec struct {
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// v switch ID
-	VSwitchID string `json:"vswitchID,omitempty"`
+	VSwitchID string `json:"vSwitchID,omitempty"`
 
 	// zone ID
 	ZoneID string `json:"zoneID,omitempty"`
