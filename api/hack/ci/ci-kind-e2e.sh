@@ -15,6 +15,8 @@ else
   KUBERMATIC_VERSION="$GIT_HEAD_HASH"
 fi
 export KUBERMATIC_VERSION
+rm -rf api/{cmd/,pkg/,vendor/,Gopkg.toml,Gopkg.lock,hack/ci/testdata} config/
+git checkout "$KUBERMATIC_VERSION" api/{cmd/,pkg/,vendor/,Gopkg.toml,Gopkg.lock,hack/ci/testdata} config/
 echodate "Setting up kubermatic in kind on revision ${KUBERMATIC_VERSION}"
 . ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
 echodate "Done setting up kubermatic in kind"
@@ -43,6 +45,8 @@ fi
 export ONLY_TEST_CREATION=false
 export KUBERMATIC_VERSION="$UPGRADE_TO_VERSION"
 export KUBERMATIC_USE_EXISTING_CLUSTER=true
+rm -rf api/{cmd/,pkg/,vendor/,Gopkg.toml,Gopkg.lock,hack/ci/testdata} config/
+git checkout "$KUBERMATIC_VERSION" api/{cmd/,pkg/,vendor/,Gopkg.toml,Gopkg.lock,hack/ci/testdata} config/
 echodate "Setting up kubermatic in kind on revision ${KUBERMATIC_VERSION} for upgradetest"
 . ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
 echodate "Done setting up kubermatic in kind"
