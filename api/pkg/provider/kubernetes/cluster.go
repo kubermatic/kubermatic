@@ -391,6 +391,35 @@ func (p *ClusterProvider) GetUnsecured(project *kubermaticv1.Project, clusterNam
 	return nil, kerrors.NewNotFound(schema.GroupResource{}, clusterName)
 }
 
+// UpdateUnsecured updates a cluster.
+//
+// Note that the admin privileges are used to update cluster
+func (p *ClusterProvider) UpdateUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	if project == nil {
+		return nil, errors.New("project is missing but required")
+	}
+	cluster.Status.KubermaticVersion = resources.KUBERMATICCOMMIT
+	cluster.Labels = getClusterLabels(cluster.Labels, project.Name, "") // Do not update worker name.
+	err := p.client.Update(context.Background(), cluster)
+	if err != nil {
+		return nil, err
+	}
+	return cluster, nil
+}
+
+// DeleteUnsecured deletes a cluster.
+//
+// Note that the admin privileges are used to delete cluster
+func (p *ClusterProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster) error {
+	// Will delete all child's after the object is gone - otherwise the etcd might be deleted before all machines are gone
+	// See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents
+	policy := metav1.DeletePropagationBackground
+	delOpts := &ctrlruntimeclient.DeleteOptions{
+		PropagationPolicy: &policy,
+	}
+	return p.client.Delete(context.Background(), cluster, delOpts)
+}
+
 // SeedAdminConfig return an admin kubeconfig for the seed. This function does not perform any kind
 // of access control. Try to not use it.
 func (p *ClusterProvider) SeedAdminConfig() *restclient.Config {

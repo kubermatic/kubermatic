@@ -127,6 +127,7 @@ type newRoutingFunc func(
 	addonProviderGetter provider.AddonProviderGetter,
 	addonConfigProvider provider.AddonConfigProvider,
 	newSSHKeyProvider provider.SSHKeyProvider,
+	privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider,
 	userProvider provider.UserProvider,
 	serviceAccountProvider provider.ServiceAccountProvider,
 	serviceAccountTokenProvider provider.ServiceAccountTokenProvider,
@@ -167,6 +168,10 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserSSHKeys().Lister())
+	privilegedSSHKeyProvider, err := kubernetes.NewPrivilegedSSHKeyProvider(fakeKubermaticImpersonationClient)
+	if err != nil {
+		return nil, nil, err
+	}
 	userProvider := kubernetes.NewUserProvider(kubermaticClient, userLister, kubernetes.IsServiceAccount)
 	adminProvider := kubernetes.NewAdminProvider(kubermaticClient, userLister)
 	settingsProvider := kubernetes.NewSettingsProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().KubermaticSettings().Lister())
@@ -289,6 +294,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		addonProviderGetter,
 		addonConfigProvider,
 		sshKeyProvider,
+		privilegedSSHKeyProvider,
 		userProvider,
 		serviceAccountProvider,
 		serviceAccountTokenProvider,

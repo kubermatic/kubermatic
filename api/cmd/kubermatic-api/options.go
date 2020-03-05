@@ -162,6 +162,7 @@ func (o serverRunOptions) validate() error {
 
 type providers struct {
 	sshKey                                provider.SSHKeyProvider
+	privilegedSSHKeyProvider              provider.PrivilegedSSHKeyProvider
 	user                                  provider.UserProvider
 	serviceAccountProvider                provider.ServiceAccountProvider
 	serviceAccountTokenProvider           provider.ServiceAccountTokenProvider
