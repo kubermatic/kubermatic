@@ -8,7 +8,13 @@ source ./api/hack/lib.sh
 export KUBERMATIC_NO_WORKER_NAME=true
 export GIT_HEAD_HASH="$(git rev-parse HEAD)"
 
-export KUBERMATIC_VERSION="${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH}"
+if [ -n "${UPGRADE_TEST_BASE_HASH:-}" ]; then
+  KUBERMATIC_VERSION="${UPGRADE_TEST_BASE_HASH:-}"
+  UPGRADE_TO_VERSION="$GIT_HEAD_HASH"
+else
+  KUBERMATIC_VERSION="$GIT_HEAD_HASH"
+fi
+export KUBERMATIC_VERSION
 echodate "Setting up kubermatic in kind on revision ${KUBERMATIC_VERSION}"
 . ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
 echodate "Done setting up kubermatic in kind"
@@ -22,7 +28,7 @@ echodate "Running conformance tests"
 CHARTS_VERSION="$KUBERMATIC_VERSION" ./api/hack/ci/ci-run-conformance-tester.sh
 
 # No upgradetest, just exit
-if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
+if [[ -z ${UPGRADE_TO_VERSION:-} ]]; then
   echodate "Success!"
   exit 0
 fi
@@ -35,7 +41,7 @@ if [[ -n "$(pidof oidc-proxy-client)" ]]; then
 fi
 
 export ONLY_TEST_CREATION=false
-export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
+export KUBERMATIC_VERSION="$UPGRADE_TO_VERSION"
 export KUBERMATIC_USE_EXISTING_CLUSTER=true
 echodate "Setting up kubermatic in kind on revision ${KUBERMATIC_VERSION} for upgradetest"
 . ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
