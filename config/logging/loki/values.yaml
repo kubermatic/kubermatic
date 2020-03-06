@@ -29,7 +29,7 @@ loki:
     limits_config:
       enforce_metric_name: false
       reject_old_samples: true
-      reject_old_samples_max_age: 168h
+      reject_old_samples_max_age: 144h
     schema_config:
       configs:
       - from: 2018-04-15
@@ -38,7 +38,7 @@ loki:
         schema: v9
         index:
           prefix: index_
-          period: 168h
+          period: 144h
     server:
       http_listen_port: 3100
     storage_config:
