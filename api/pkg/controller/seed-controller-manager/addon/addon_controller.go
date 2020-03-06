@@ -58,12 +58,13 @@ type KubeconfigProvider interface {
 
 // Reconciler stores necessary components that are required to manage in-cluster Add-On's
 type Reconciler struct {
-	log                *zap.SugaredLogger
-	workerName         string
-	addonVariables     map[string]interface{}
-	kubernetesAddonDir string
-	openshiftAddonDir  string
-	overwriteRegistry  string
+	log                  *zap.SugaredLogger
+	workerName           string
+	addonEnforceInterval int
+	addonVariables       map[string]interface{}
+	kubernetesAddonDir   string
+	openshiftAddonDir    string
+	overwriteRegistry    string
 	ctrlruntimeclient.Client
 	recorder                 record.EventRecorder
 	KubeconfigProvider       KubeconfigProvider
@@ -77,6 +78,7 @@ func Add(
 	log *zap.SugaredLogger,
 	numWorkers int,
 	workerName string,
+	addonEnforceInterval int,
 	addonCtxVariables map[string]interface{},
 	kubernetesAddonDir,
 	openshiftAddonDir,
@@ -90,6 +92,7 @@ func Add(
 	reconciler := &Reconciler{
 		log:                      log,
 		addonVariables:           addonCtxVariables,
+		addonEnforceInterval:     addonEnforceInterval,
 		kubernetesAddonDir:       kubernetesAddonDir,
 		openshiftAddonDir:        openshiftAddonDir,
 		KubeconfigProvider:       kubeconfigProvider,
@@ -196,7 +199,14 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			"failed to reconcile Addon %q: %v", addon.Name, err)
 	}
 	if result == nil {
-		result = &reconcile.Result{}
+		// we check for this after the ClusterReconcileWrapper() call because otherwise the cluster would never reconcile since we always requeue
+		if r.addonEnforceInterval == 0 { // addon enforce is disabled.
+			result = &reconcile.Result{}
+		} else {
+			// All is well, requeue in addonEnforceInterval minutes. We do this to enforce default addons and prevent cluster admins from disabling them.
+			result = &reconcile.Result{RequeueAfter: time.Duration(r.addonEnforceInterval) * time.Minute}
+		}
+
 	}
 	return *result, err
 }
@@ -242,7 +252,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	if err := r.ensureFinalizerIsSet(ctx, addon); err != nil {
 		return nil, fmt.Errorf("failed to ensure that the cleanup finalizer existis on the addon: %v", err)
 	}
-
 	return nil, nil
 }
 

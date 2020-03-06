@@ -254,6 +254,7 @@ func createAddonController(ctrlCtx *controllerContext) error {
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
+		ctrlCtx.runOptions.addonEnforceInterval,
 		map[string]interface{}{ // addonVariables
 			"openvpn": map[string]interface{}{
 				"NodeAccessNetwork": ctrlCtx.runOptions.nodeAccessNetwork,
