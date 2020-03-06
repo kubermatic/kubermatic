@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -29,11 +31,14 @@ func (a *Alibaba) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 }
 
 func (a *Alibaba) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
-	if spec.Alibaba.AccessKeyID == "" {
-		return fmt.Errorf("accessKeyID cannot be empty")
+	accessKeyID, accessKeySecret, err := GetCredentialsForCluster(spec, a.secretKeySelector, a.dc)
+	if err != nil {
+		return err
 	}
-	if spec.Alibaba.AccessKeySecret == "" {
-		return fmt.Errorf("accessKeySecret cannot be empty")
+
+	_, err = ecs.NewClientWithAccessKey(a.dc.Region, accessKeyID, accessKeySecret)
+	if err != nil {
+		return fmt.Errorf("failed to get Alibaba cloud client: %v", err)
 	}
 	return nil
 }
@@ -57,7 +62,7 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 
 	if accessKeyID == "" {
 		if cloud.Alibaba.CredentialsReference == nil {
-			return "", "", errors.New("no credentials provided")
+			return "", "", errors.New("no credentials provided, accessKeyID cannot be empty")
 		}
 		accessKeyID, err = secretKeySelector(cloud.Alibaba.CredentialsReference, resources.AlibabaAccessKeyID)
 		if err != nil {
@@ -67,7 +72,7 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 
 	if accessKeySecret == "" {
 		if cloud.Alibaba.CredentialsReference == nil {
-			return "", "", errors.New("no credentials provided")
+			return "", "", errors.New("no credentials provided, accessKeySecret cannot be empty")
 		}
 		accessKeySecret, err = secretKeySelector(cloud.Alibaba.CredentialsReference, resources.AlibabaAccessKeySecret)
 		if err != nil {
