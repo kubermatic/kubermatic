@@ -231,10 +231,20 @@ export KUBERMATIC_DEX_VALUES_FILE=$(realpath api/hack/ci/testdata/oauth_values.y
 if kubectl get namespace oauth; then
   echodate "Dex already deployed"
 else
-  retry 5 helm install --wait --timeout 180 \
-    --values $KUBERMATIC_DEX_VALUES_FILE \
-    --namespace oauth \
-    --name oauth ./config/oauth
+  if grep 'v2\.16\.0' $KUBERMATIC_DEX_VALUES_FILE; then
+    echodate "old"
+    retry 5 helm install --wait --timeout 180 \
+      --values $KUBERMATIC_DEX_VALUES_FILE \
+      --set-string=dex.ingress.host=dex.oauth --set-string=dex.ingress.path=/dex \
+      --namespace oauth \
+      --name oauth ./config/oauth
+  else
+    echodate "new"
+    retry 5 helm install --wait --timeout 180 \
+      --values $KUBERMATIC_DEX_VALUES_FILE \
+      --namespace oauth \
+      --name oauth ./config/oauth
+  fi
 fi
 
 export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
