@@ -2,14 +2,19 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 
 	"go.uber.org/zap"
+
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -244,5 +249,69 @@ func (r *testRunner) testLB(log *zap.SugaredLogger, userClusterClient ctrlruntim
 	}
 
 	log.Info("Successfully validated LB support")
+	return nil
+}
+
+type metricsData struct {
+	Status string   `json:"status"`
+	Data   []string `json:"data"`
+}
+
+func (r *testRunner) testUserClusterMetrics(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, seedClient ctrlruntimeclient.Client) error {
+	log.Info("Testing user cluster metrics availability...")
+
+	namespacedPod := types.NamespacedName{
+		Namespace: cluster.Status.NamespaceName,
+		Name:      "prometheus-0",
+	}
+
+	prometheusPod := &corev1.Pod{}
+	if err := seedClient.Get(context.Background(), namespacedPod, prometheusPod); err != nil {
+		return fmt.Errorf("failed to get prometheus pod: %v", err)
+	}
+
+	url := fmt.Sprintf("http://%s:9090/api/v1/label/__name__/values", prometheusPod.Status.PodIP)
+	res, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to get prometheus metrics: %v", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to get a proper response: response status code is %v", res.StatusCode)
+	}
+
+	data := &metricsData{}
+
+	metricsBytes, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("failed reading metrics response: %v", err)
+	}
+
+	if err := json.Unmarshal(metricsBytes, data); err != nil {
+		return fmt.Errorf("failed to unmarshal metrics response: %v", err)
+	}
+
+	if data.Status != "success" {
+		return fmt.Errorf("failed to get prometheus metrics with data status: %s", data.Status)
+	}
+
+	if len(data.Data) <= 0 {
+		return errors.New("failed to get prometheus metrics: no metrics found")
+	}
+
+	metricsDataFile, err := ioutil.ReadFile("./testdata/expected_metrics.json")
+	if err != nil {
+		return fmt.Errorf("failed to read testing metrics file: %v", err)
+	}
+
+	expectedMetrics := &metricsData{}
+	if err := json.Unmarshal(metricsDataFile, expectedMetrics); err != nil {
+		return fmt.Errorf("failed to unmarshal expectedMetrics: %v", err)
+	}
+
+	if reflect.DeepEqual(expectedMetrics, data) {
+		return fmt.Errorf("expected metrics and got metrics don't match: exepctedMetrics: %#v, got: %#v ", expectedMetrics, data)
+	}
+
 	return nil
 }

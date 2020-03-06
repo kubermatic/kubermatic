@@ -635,6 +635,16 @@ func (r *testRunner) testCluster(
 		log.Errorf("Failed to verify that user cluster RBAC controller work: %v", err)
 	}
 
+	// Do prometheus metrics available test - with retries
+	if err := junitReporterWrapper(
+		"", report, func() error {
+			return retryNAttempts(maxTestAttempts, func(attempt int) error {
+				return r.testUserClusterMetrics(log, cluster, r.seedClusterClient)
+			})
+		}); err != nil {
+
+	}
+
 	return nil
 }
 
