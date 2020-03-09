@@ -241,6 +241,8 @@ else
     rm config/oauth/templates/ingress.yaml
     retry 10 helm install --wait --timeout 180 \
       --values $KUBERMATIC_DEX_VALUES_FILE \
+      --set-string=dex.ingress.host=http://dex.oauth:5556 \
+      --set-string=dex.ingress.path=/dex \
       --namespace oauth \
       --name oauth ./config/oauth
   else
