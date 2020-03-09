@@ -227,19 +227,20 @@ TEST_NAME="Deploy Dex"
 echodate "Deploying Dex"
 
 export KUBERMATIC_DEX_VALUES_FILE=$(realpath api/hack/ci/testdata/oauth_values.yaml)
+set -x
 
 if kubectl get namespace oauth; then
   echodate "Dex already deployed"
 else
   if grep 'v2\.16\.0' $KUBERMATIC_DEX_VALUES_FILE; then
     echodate "old"
-    retry 5 helm install --wait --timeout 180 \
+    retry 15 helm install --wait --timeout 180 \
       --values $KUBERMATIC_DEX_VALUES_FILE \
       --namespace oauth \
       --name oauth ./config/oauth
   else
     echodate "new"
-    retry 5 helm install --wait --timeout 180 \
+    retry 15 helm install --wait --timeout 180 \
       --values $KUBERMATIC_DEX_VALUES_FILE \
       --namespace oauth \
       --name oauth ./config/oauth
