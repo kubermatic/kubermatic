@@ -17,8 +17,8 @@ import (
 
 // CheckClusterVersionSkew returns a list of machines and/or machine deployments
 // that are running kubelet at a version incompatible with the cluster's control plane.
-func CheckClusterVersionSkew(ctx context.Context, userInfo *provider.UserInfo, clusterProvider provider.ClusterProvider, cluster *kubermaticapiv1.Cluster) ([]string, error) {
-	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+func CheckClusterVersionSkew(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, cluster *kubermaticapiv1.Cluster, projectID string) ([]string, error) {
+	client, err := getClientForUser(ctx, userInfoGetter, clusterProvider, cluster, projectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a machine client: %v", err)
 	}
@@ -58,6 +58,22 @@ func CheckClusterVersionSkew(ctx context.Context, userInfo *provider.UserInfo, c
 	}
 
 	return incompatibleVersionsList, nil
+}
+
+func getClientForUser(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, cluster *kubermaticapiv1.Cluster, projectID string) (ctrlruntimeclient.Client, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user information: %v", err)
+	}
+	if adminUserInfo.IsAdmin {
+		return clusterProvider.GetAdminClientForCustomerCluster(cluster)
+	}
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user information: %v", err)
+	}
+	return clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
 }
 
 // getKubeletVersions returns the list of all kubelet versions used by a given cluster's Machines and MachineDeployments
