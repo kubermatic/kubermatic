@@ -227,6 +227,10 @@ TEST_NAME="Deploy Dex"
 echodate "Deploying Dex"
 
 export KUBERMATIC_DEX_VALUES_FILE=$(realpath api/hack/ci/testdata/oauth_values.yaml)
+
+echodate "FOOO"
+cat $KUBERMATIC_DEX_VALUES_FILE
+
 set -x
 
 if kubectl get namespace oauth; then
@@ -234,21 +238,19 @@ if kubectl get namespace oauth; then
 else
   if grep 'v2\.16\.0' $KUBERMATIC_DEX_VALUES_FILE; then
     echodate "old"
-    retry 15 helm install --wait --timeout 180 \
+    rm config/oauth/templates/ingress.yaml
+    retry 10 helm install --wait --timeout 180 \
       --values $KUBERMATIC_DEX_VALUES_FILE \
       --namespace oauth \
       --name oauth ./config/oauth
   else
     echodate "new"
-    retry 15 helm install --wait --timeout 180 \
+    retry 10 helm install --wait --timeout 180 \
       --values $KUBERMATIC_DEX_VALUES_FILE \
       --namespace oauth \
       --name oauth ./config/oauth
   fi
 fi
-
-echodate "FOOO"
-cat $KUBERMATIC_DEX_VALUES_FILE
 
 export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
 export KUBERMATIC_OIDC_PASSWORD="password"
