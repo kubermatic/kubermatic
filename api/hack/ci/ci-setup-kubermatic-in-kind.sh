@@ -237,13 +237,14 @@ else
   if grep 'v2\.16\.0' $KUBERMATIC_DEX_VALUES_FILE; then
     echodate "old"
 
-    # prepare oauth chart for non-https, non-Ingress mode
+    # prepare oauth chart for non-https, non-Ingress mode;
+    # enable static password logins
     rm config/oauth/templates/ingress.yaml
-    sed -i 's#https://#http://#g' config/oauth/templates/configmap.yaml
+    cp api/hack/ci/testdata/oauth_configmap.yaml config/oauth/templates/configmap.yaml
 
     retry 10 helm install --wait --timeout 180 \
       --values $KUBERMATIC_DEX_VALUES_FILE \
-      --set-string=dex.ingress.host=dex.oauth:5556 \
+      --set-string=dex.ingress.host=http://dex.oauth:5556 \
       --set-string=dex.ingress.path=/dex \
       --namespace oauth \
       --name oauth ./config/oauth
