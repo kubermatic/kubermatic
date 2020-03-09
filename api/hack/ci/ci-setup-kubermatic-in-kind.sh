@@ -257,6 +257,20 @@ else
   fi
 fi
 
+function print_dex_logs {
+  originalRC=$?
+
+  # Tolerate errors and just continue
+  set +e
+  echodate "Printing Dex logs"
+  kubectl -n oauth logs -l 'app=dex'
+  echodate "Done printing Dex logs"
+  set -e
+
+  return $originalRC
+}
+appendTrap print_dex_logs EXIT
+
 export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
 export KUBERMATIC_OIDC_PASSWORD="password"
 
