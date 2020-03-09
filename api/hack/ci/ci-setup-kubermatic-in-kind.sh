@@ -369,7 +369,7 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
     ${OPENSHIFT_HELM_ARGS:-} \
     --values ${VALUES_FILE} \
     kubermatic \
-    ./config/kubermatic/
+    ./config/kubermatic/ || ( dump_logs_in_namespace kubermatic && false )
 else
   # Even when it does not reconcile certificates, the operator absolutely needs the
   # cert-manager CRDs to exist.

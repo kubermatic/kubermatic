@@ -40,6 +40,18 @@ echodate() {
   echo "[$(date -Is)]" "$@"
 }
 
+dump_logs_in_namespace() {
+  echodate "Dumping all logs in namespace $1"
+  local GOTEMPLATE='{{ range $pod := .items }}{{ range $container := .spec.containers }}{{ printf "%s,%s\n" $pod.metadata.name $container.name }}{{end}}{{end}}'
+  for i in $(kubectl get pods -n "$1" -o go-template="$GOTEMPLATE"); do
+    local POD="${i%,*}"
+    local CONTAINER="${i#*,}"
+
+    echo " [*] Pod $POD, container $CONTAINER:"
+    kubectl logs -n "$1" "$POD" "$CONTAINER"
+  done
+}
+
 write_junit() {
   # Doesn't make any sense if we don't know a testname
   if [ -z "${TEST_NAME:-}" ]; then return; fi
