@@ -247,6 +247,9 @@ else
   fi
 fi
 
+echodate "FOOO"
+cat $KUBERMATIC_DEX_VALUES_FILE
+
 export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
 export KUBERMATIC_OIDC_PASSWORD="password"
 
