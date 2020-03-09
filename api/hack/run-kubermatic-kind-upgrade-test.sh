@@ -11,6 +11,7 @@ set -o monitor
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api/hack/ci
 
 export UPGRADE_TEST_BASE_HASH=${UPGRADE_TEST_BASE_HASH:-"master"}
+export EXCLUDE_DISTRIBUTIONS=ubuntu,centos
 
 # We need to fetch UPGRADE_TEST_BASE_HASH in case its not in either the PRs base or the Prs HEAD
 ensure_github_host_pubkey
