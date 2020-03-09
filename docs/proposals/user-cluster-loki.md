@@ -34,7 +34,7 @@ We will need to do the same from a user cluster perspective: Promtail pods will 
 * Implement Promtail on the user-cluster.
 * Configure OpenVPN to inject seed-cluster networks routes. 
 * Add the sidecars to Promtail: DNAT and OpenVPN.
-* Configure CoreDNS on user-cluster for Loki's domain forwarding.
+* Configure CoreDNS (node-local-dns pod) on user-cluster for Loki's domain forwarding.
 * Add the sidcars to CoreDNS: DNAT and OpenVPN.
 * Configure CoreDNS on control-plane for forwarding to seed-cluster DNS servers.
 * Validate using:
