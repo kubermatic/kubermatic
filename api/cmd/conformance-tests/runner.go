@@ -40,6 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -69,6 +70,7 @@ func newRunner(scenarios []testScenario, opts *Opts, log *zap.SugaredLogger) *te
 		namePrefix:                   opts.namePrefix,
 		clusterClientProvider:        opts.clusterClientProvider,
 		seed:                         opts.seed,
+		seedRestConfig:               opts.seedRestConfig,
 		nodeCount:                    opts.nodeCount,
 		repoRoot:                     opts.repoRoot,
 		reportsRoot:                  opts.reportsRoot,
@@ -117,6 +119,7 @@ type testRunner struct {
 	seedGeneratedClient   kubernetes.Interface
 	clusterClientProvider *clusterclient.Provider
 	seed                  *kubermaticv1.Seed
+	seedRestConfig        *rest.Config
 
 	// The label to use to select an existing cluster to test against instead of
 	// creating a new one
@@ -637,12 +640,12 @@ func (r *testRunner) testCluster(
 
 	// Do prometheus metrics available test - with retries
 	if err := junitReporterWrapper(
-		"", report, func() error {
+		"[Kubermatic] Test prometheus metrics availability", report, func() error {
 			return retryNAttempts(maxTestAttempts, func(attempt int) error {
 				return r.testUserClusterMetrics(log, cluster, r.seedClusterClient)
 			})
 		}); err != nil {
-
+		log.Errorf("Failed to verify that prometheus metrics are available: %v", err)
 	}
 
 	return nil

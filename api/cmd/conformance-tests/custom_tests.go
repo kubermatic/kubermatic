@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -8,7 +9,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"reflect"
+	"net/url"
 	"strings"
 	"time"
 
@@ -22,7 +23,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/tools/portforward"
+	"k8s.io/client-go/transport/spdy"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -220,22 +224,22 @@ func (r *testRunner) testLB(log *zap.SugaredLogger, userClusterClient ctrlruntim
 	}
 	log.Debug("The Service has an external IP/Name")
 
-	url := fmt.Sprintf("http://%s:80", host)
+	hostURL := fmt.Sprintf("http://%s:80", host)
 	log.Debug("Waiting until the pod is available via the LB...")
 	err = wait.Poll(30*time.Second, defaultTimeout, func() (done bool, err error) {
-		resp, err := http.Get(url)
+		resp, err := http.Get(hostURL)
 		if err != nil {
-			log.Warnf("Failed to call Pod via LB(%s) during LB test: %v", url, err)
+			log.Warnf("Failed to call Pod via LB(%s) during LB test: %v", hostURL, err)
 			return false, nil
 		}
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
-				log.Warnf("Failed to close response body from Hello-Kubernetes Pod during LB test (%s): %v", url, err)
+				log.Warnf("Failed to close response body from Hello-Kubernetes Pod during LB test (%s): %v", hostURL, err)
 			}
 		}()
 		contents, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Warnf("Failed to read response body from Hello-Kubernetes Pod during LB test (%s): %v", url, err)
+			log.Warnf("Failed to read response body from Hello-Kubernetes Pod during LB test (%s): %v", hostURL, err)
 			return false, nil
 		}
 
@@ -270,48 +274,100 @@ func (r *testRunner) testUserClusterMetrics(log *zap.SugaredLogger, cluster *kub
 		return fmt.Errorf("failed to get prometheus pod: %v", err)
 	}
 
-	url := fmt.Sprintf("http://%s:9090/api/v1/label/__name__/values", prometheusPod.Status.PodIP)
-	res, err := http.Get(url)
+	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", cluster.Status.NamespaceName, prometheusPod.Name)
+	hostIP := strings.TrimLeft(r.seedRestConfig.Host, "htps:/")
+	podURL := url.URL{Scheme: "https", Path: path, Host: hostIP}
+
+	roundTripper, upgrader, err := spdy.RoundTripperFor(r.seedRestConfig)
 	if err != nil {
-		return fmt.Errorf("failed to get prometheus metrics: %v", err)
+		return fmt.Errorf("failed to create a roundTripper: %v", err)
 	}
 
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to get a proper response: response status code is %v", res.StatusCode)
-	}
+	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, &podURL)
 
-	data := &metricsData{}
+	stopChan, readyChan := make(chan struct{}, 1), make(chan struct{}, 1)
+	out, errOut := new(bytes.Buffer), new(bytes.Buffer)
 
-	metricsBytes, err := ioutil.ReadAll(res.Body)
+	forwarder, err := portforward.New(dialer, []string{"9090", "9090"}, stopChan, readyChan, out, errOut)
 	if err != nil {
-		return fmt.Errorf("failed reading metrics response: %v", err)
+		return fmt.Errorf("failed creating a new port-forwarder: %v", err)
 	}
 
-	if err := json.Unmarshal(metricsBytes, data); err != nil {
-		return fmt.Errorf("failed to unmarshal metrics response: %v", err)
+	go handlePortForwardChan(r.log, readyChan, out, errOut)
+
+	go func(logger *zap.SugaredLogger) {
+		if err = forwarder.ForwardPorts(); err != nil {
+			logger.Errorf("failed port-forwarding pod: %s with error: %v", prometheusPod.Name, err)
+		}
+	}(log)
+
+	var (
+		retries    = 0
+		requestErr error
+	)
+
+	for {
+		if retries >= 15 {
+			return fmt.Errorf("failed to request metrics forever: %v", requestErr)
+		}
+
+		res, err := http.Get("http://localhost:9090/api/v1/label/__name__/values")
+		if err != nil {
+			requestErr = fmt.Errorf("failed to get prometheus metrics: %v", err)
+			retries++
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		if res.StatusCode != http.StatusOK {
+			return fmt.Errorf("failed to get a proper response: response status code is %v", res.StatusCode)
+		}
+
+		data := &metricsData{}
+
+		metricsBytes, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return fmt.Errorf("failed reading metrics response: %v", err)
+		}
+
+		if err := res.Body.Close(); err != nil {
+			return fmt.Errorf("failed closing response: %v", err)
+		}
+
+		if err := json.Unmarshal(metricsBytes, data); err != nil {
+			return fmt.Errorf("failed to unmarshal metrics response: %v", err)
+		}
+
+		if data.Status != "success" {
+			return fmt.Errorf("failed to get prometheus metrics with data status: %s", data.Status)
+		}
+
+		if len(data.Data) == 0 {
+			return errors.New("failed to get prometheus metrics: no metrics found")
+		}
+
+		fetchedMetricsSet := sets.NewString(data.Data...)
+
+		if !fetchedMetricsSet.HasAll("machine_controller_machines", "kubelet_runtime_operations_latency_microseconds_count",
+			"replicaset_controller_rate_limiter_use", "workqueue_retries_total", "ssh_tunnel_open_count", "scheduler_e2e_scheduling_duration_seconds_count",
+			"kube_daemonset_labels", "etcd_disk_backend_defrag_duration_seconds_sum", "cloudprovider_aws_api_request_duration_seconds_sum") {
+			return errors.New("failed to get all expected metrics")
+		}
+
+		close(stopChan)
+
+		return nil
+	}
+}
+
+func handlePortForwardChan(logger *zap.SugaredLogger, readyChan chan struct{}, out, errOut fmt.Stringer) {
+	for range readyChan {
+	}
+	if len(errOut.String()) != 0 {
+		logger.Errorf("Error while port-forwarding: %s", errOut.String())
 	}
 
-	if data.Status != "success" {
-		return fmt.Errorf("failed to get prometheus metrics with data status: %s", data.Status)
+	if len(out.String()) != 0 {
+		logger.Infof("Port-forwarder returned: %s", errOut.String())
 	}
-
-	if len(data.Data) <= 0 {
-		return errors.New("failed to get prometheus metrics: no metrics found")
-	}
-
-	metricsDataFile, err := ioutil.ReadFile("./testdata/expected_metrics.json")
-	if err != nil {
-		return fmt.Errorf("failed to read testing metrics file: %v", err)
-	}
-
-	expectedMetrics := &metricsData{}
-	if err := json.Unmarshal(metricsDataFile, expectedMetrics); err != nil {
-		return fmt.Errorf("failed to unmarshal expectedMetrics: %v", err)
-	}
-
-	if reflect.DeepEqual(expectedMetrics, data) {
-		return fmt.Errorf("expected metrics and got metrics don't match: exepctedMetrics: %#v, got: %#v ", expectedMetrics, data)
-	}
-
-	return nil
 }
