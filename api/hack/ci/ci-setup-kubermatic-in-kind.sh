@@ -235,7 +235,7 @@ else
     echodate "old"
     retry 5 helm install --wait --timeout 180 \
       --values $KUBERMATIC_DEX_VALUES_FILE \
-      --set-string=dex.ingress.host=dex.oauth --set-string=dex.ingress.path=/dex \
+      --set-string=dex.ingress.host=dex.oauth --set-string=dex.ingress.path=/dex --set-string=dex.ingress.scheme=https --set-string=dex.ingress.port=5556 \
       --namespace oauth \
       --name oauth ./config/oauth
   else
