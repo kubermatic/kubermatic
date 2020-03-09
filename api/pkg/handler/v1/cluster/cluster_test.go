@@ -30,6 +30,8 @@ import (
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
+const fakeDC = "fake-dc"
+
 func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
@@ -1030,7 +1032,7 @@ func TestPatchCluster(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-					cluster.Spec.Cloud.DatacenterName = "fake-dc"
+					cluster.Spec.Cloud.DatacenterName = fakeDC
 					return cluster
 				}()),
 		},
@@ -1057,7 +1059,7 @@ func TestPatchCluster(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-					cluster.Spec.Cloud.DatacenterName = "fake-dc"
+					cluster.Spec.Cloud.DatacenterName = fakeDC
 					return cluster
 				}(),
 			),
@@ -1107,6 +1109,38 @@ func TestPatchCluster(t *testing.T) {
 				test.GenTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 				test.GenTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 			},
+		},
+		// scenario 6
+		{
+			Name:             "scenario 6: the admin John can update Bob's cluster version",
+			Body:             `{"spec":{"version":"1.2.3"}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{}},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusOK,
+			project:          test.GenDefaultProject().Name,
+			ExistingAPIUser:  test.GenAPIUser("John", "john@acme.com"),
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+					cluster.Spec.Cloud.DatacenterName = fakeDC
+					return cluster
+				}(), genUser("John", "john@acme.com", true)),
+		},
+		// scenario 7
+		{
+			Name:             "scenario 7: the regular user John can not update Bob's cluster version",
+			Body:             `{"spec":{"version":"1.2.3"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusForbidden,
+			project:          test.GenDefaultProject().Name,
+			ExistingAPIUser:  test.GenAPIUser("John", "john@acme.com"),
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+					cluster.Spec.Cloud.DatacenterName = fakeDC
+					return cluster
+				}(), genUser("John", "john@acme.com", false)),
 		},
 	}
 
