@@ -146,6 +146,11 @@
 	filter: invert(100%) !important;
 }
 
+.dex-btn-icon--oidc {
+	background-color: white;
+	background-image: url('../static/img/google-icon.svg');
+}
+
 .dex-btn-text {
 	font-size: 16px;
 	font-weight: normal;
