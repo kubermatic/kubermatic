@@ -37,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -62,6 +63,7 @@ type Opts struct {
 	clusterClientProvider        *clusterclient.Provider
 	repoRoot                     string
 	seed                         *kubermaticv1.Seed
+	seedRestConfig               *rest.Config
 	clusterParallelCount         int
 	workerName                   string
 	homeDir                      string
@@ -368,6 +370,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	opts.seedRestConfig = config
 
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		log.Fatalf("failed to add clusterv1alpha1 to scheme: %v", err)
