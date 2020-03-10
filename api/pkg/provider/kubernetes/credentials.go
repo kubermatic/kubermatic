@@ -66,7 +66,8 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 				Name:      name,
 				Namespace: resources.KubermaticNamespace,
 				Labels: map[string]string{
-					"name": name,
+					"name":                         name,
+					kubermaticv1.ProjectIDLabelKey: cluster.Labels[kubermaticv1.ProjectIDLabelKey],
 				},
 			},
 			Type: corev1.SecretTypeOpaque,
