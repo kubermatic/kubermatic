@@ -62,11 +62,34 @@ type SeedSpec struct {
 	// Optional: This can be used to override the DNS name used for this seed.
 	// By default the seed name is used.
 	SeedDNSOverwrite string `json:"seed_dns_overwrite,omitempty"`
+	// NodeportProxy can be used to configure the NodePort proxy service that is
+	// responsible for making user-cluster control planes accessible from the outside.
+	NodeportProxy NodeportProxyConfig `json:"nodeport_proxy,omitempty"`
 	// Optional: ProxySettings can be used to configure HTTP proxy settings on the
 	// worker nodes in user clusters. However, proxy settings on nodes take precedence.
 	ProxySettings *ProxySettings `json:"proxy_settings,omitempty"`
 	// Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
 	ExposeStrategy corev1.ServiceType `json:"expose_strategy,omitempty"`
+}
+
+type NodeportProxyConfig struct {
+	// Annotations are used to further tweak the LoadBalancer integration with the
+	// cloud provider where the seed cluster is running.
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// Envoy configures the Envoy application itself.
+	Envoy NodeportProxyComponent `json:"envoy,omitempty"`
+	// EnvoyManager configures the Kubermatic-internal Envoy manager.
+	EnvoyManager NodeportProxyComponent `json:"envoyManager,omitempty"`
+	// Updater configures the component responsible for updating the LoadBalancer
+	// service.
+	Updater NodeportProxyComponent `json:"updater,omitempty"`
+}
+
+type NodeportProxyComponent struct {
+	// DockerRepository is the repository containing the component's image.
+	DockerRepository string `json:"dockerRepository,omitempty"`
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type Datacenter struct {

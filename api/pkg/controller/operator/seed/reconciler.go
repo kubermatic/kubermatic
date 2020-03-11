@@ -366,8 +366,8 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		kubermatic.SeedControllerManagerDeploymentCreator(r.workerName, r.versions, cfg, seed),
-		nodeportproxy.ProxyDeploymentCreator(cfg),
-		nodeportproxy.UpdaterDeploymentCreator(cfg),
+		nodeportproxy.ProxyDeploymentCreator(cfg, seed, r.versions),
+		nodeportproxy.UpdaterDeploymentCreator(cfg, seed, r.versions),
 	}
 
 	volumeLabelModifier := common.VolumeRevisionLabelsModifierFactory(r.ctx, client)

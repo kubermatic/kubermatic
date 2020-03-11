@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -22,7 +23,7 @@ const (
 	EnvoyPort             = 8002
 )
 
-func ProxyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
+func ProxyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions common.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return ProxyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(3)
@@ -60,7 +61,7 @@ func ProxyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) recon
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:    "copy-envoy-config",
-					Image:   "seed.seed.something.something.dark.side",
+					Image:   seed.Spec.NodeportProxy.EnvoyManager.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"/bin/cp"},
 					Args:    []string{"/envoy.yaml", "/etc/envoy/envoy.yaml"},
 					VolumeMounts: []corev1.VolumeMount{
@@ -75,7 +76,7 @@ func ProxyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) recon
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "envoy-manager",
-					Image:   "seed.seed.something.something.dark.side",
+					Image:   seed.Spec.NodeportProxy.EnvoyManager.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"/envoy-manager"},
 					Args: []string{
 						"-listen-address=:8001",
@@ -100,7 +101,7 @@ func ProxyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) recon
 
 				{
 					Name:    "envoy",
-					Image:   "seed.seed.something.something.envoy.dark.side",
+					Image:   seed.Spec.NodeportProxy.Envoy.DockerRepository + ":" + versions.Envoy,
 					Command: []string{"/usr/local/bin/envoy"},
 					Args: []string{
 						"-c",
@@ -164,7 +165,7 @@ func ProxyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) recon
 	}
 }
 
-func UpdaterDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedDeploymentCreatorGetter {
+func UpdaterDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions common.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return UpdaterDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(1)
@@ -189,7 +190,7 @@ func UpdaterDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration) rec
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "lb-updater",
-					Image:   "seed.seed.something.something.dark.side",
+					Image:   seed.Spec.NodeportProxy.Updater.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"/lb-updater"},
 					Args: []string{
 						"-lb-namespace=$(NAMESPACE)",
