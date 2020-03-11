@@ -230,6 +230,9 @@ type SSHKeyProvider interface {
 
 // SSHKeyProvider declares the set of methods for interacting with ssh keys and uses privileged account for it
 type PrivilegedSSHKeyProvider interface {
+	// GetUnsecured returns a key with the given name
+	// This function is unsafe in a sense that it uses privileged account to get the ssh key
+	GetUnsecured(keyName string) (*kubermaticv1.UserSSHKey, error)
 
 	// UpdateUnsecured update a specific ssh key and returns the updated ssh key
 	// This function is unsafe in a sense that it uses privileged account to update the ssh key

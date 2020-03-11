@@ -187,3 +187,9 @@ func (p *SSHKeyProvider) Update(userInfo *provider.UserInfo, newKey *kubermatica
 func (p *PrivilegedSSHKeyProvider) UpdateUnsecured(sshKey *kubermaticapiv1.UserSSHKey) (*kubermaticapiv1.UserSSHKey, error) {
 	return p.clientPrivileged.Update(sshKey)
 }
+
+// GetUnsecured returns a key with the given name
+// This function is unsafe in a sense that it uses privileged account to get the ssh key
+func (p *PrivilegedSSHKeyProvider) GetUnsecured(keyName string) (*kubermaticapiv1.UserSSHKey, error) {
+	return p.clientPrivileged.Get(keyName, metav1.GetOptions{})
+}
