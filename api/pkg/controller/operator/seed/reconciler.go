@@ -10,6 +10,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common/vpa"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/seed/resources/kubermatic"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/seed/resources/nodeportproxy"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
@@ -246,6 +247,7 @@ func (r *Reconciler) reconcileServiceAccounts(cfg *operatorv1alpha1.KubermaticCo
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		kubermatic.ServiceAccountCreator(cfg, seed),
+		nodeportproxy.ServiceAccountCreator(cfg),
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
@@ -269,13 +271,15 @@ func (r *Reconciler) reconcileServiceAccounts(cfg *operatorv1alpha1.KubermaticCo
 }
 
 func (r *Reconciler) reconcileClusterRoles(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	log.Debug("reconciling VPA ClusterRoles")
+	log.Debug("reconciling ClusterRoles")
 
-	if !cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
-		return nil
+	creators := []reconciling.NamedClusterRoleCreatorGetter{
+		nodeportproxy.ClusterRoleCreator(cfg),
 	}
 
-	creators := vpa.ClusterRoleCreators()
+	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+		creators = append(creators, vpa.ClusterRoleCreators()...)
+	}
 
 	if err := reconciling.ReconcileClusterRoles(r.ctx, creators, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoles: %v", err)
@@ -289,6 +293,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(cfg *operatorv1alpha1.Kubermat
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		kubermatic.ClusterRoleBindingCreator(cfg, seed),
+		nodeportproxy.ClusterRoleBindingCreator(cfg),
 	}
 
 	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
@@ -361,6 +366,8 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		kubermatic.SeedControllerManagerDeploymentCreator(r.workerName, r.versions, cfg, seed),
+		nodeportproxy.ProxyDeploymentCreator(cfg),
+		nodeportproxy.UpdaterDeploymentCreator(cfg),
 	}
 
 	volumeLabelModifier := common.VolumeRevisionLabelsModifierFactory(r.ctx, client)
@@ -408,6 +415,7 @@ func (r *Reconciler) reconcileServices(cfg *operatorv1alpha1.KubermaticConfigura
 
 	creators := []reconciling.NamedServiceCreatorGetter{
 		common.SeedAdmissionServiceCreator(cfg, client),
+		nodeportproxy.ServiceCreator(cfg),
 	}
 
 	if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
