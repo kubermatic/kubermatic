@@ -438,6 +438,110 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 			),
 			ClusterToSync: "clusterAbcID",
 		},
+		// scenario 2
+		{
+			Name:                            "scenario 2: the admin John detaches one key from the Bob cluster",
+			Body:                            ``,
+			KeyToDelete:                     "key-c08aa5c7abf34504f18552846485267d-yafn",
+			ExpectedDeleteResponse:          `{}`,
+			ExpectedDeleteHTTPStatus:        http.StatusOK,
+			ExpectedGetHTTPStatus:           http.StatusOK,
+			ExpectedResponseOnGetAfterDelte: `[{"id":"key-abc-yafn","name":"key-display-name","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"","publicKey":""}}]`,
+			ProjectToSync:                   test.GenDefaultProject().Name,
+			ExistingAPIUser:                 test.GenAPIUser("John", "john@acme.com"),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", true),
+				// add a cluster
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+				// add ssh keys
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       test.GenDefaultProject().Name,
+							},
+						},
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Clusters: []string{"clusterAbcID"},
+					},
+				},
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-abc-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       test.GenDefaultProject().Name,
+							},
+						},
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Name:     "key-display-name",
+						Clusters: []string{"clusterAbcID"},
+					},
+				},
+			),
+			ClusterToSync: "clusterAbcID",
+		},
+		// scenario 3
+		{
+			Name:                            "scenario 3: the user John can not detach any key from the Bob cluster",
+			Body:                            ``,
+			KeyToDelete:                     "key-c08aa5c7abf34504f18552846485267d-yafn",
+			ExpectedDeleteResponse:          `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ExpectedDeleteHTTPStatus:        http.StatusForbidden,
+			ExpectedGetHTTPStatus:           http.StatusForbidden,
+			ExpectedResponseOnGetAfterDelte: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ProjectToSync:                   test.GenDefaultProject().Name,
+			ExistingAPIUser:                 test.GenAPIUser("John", "john@acme.com"),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", false),
+				// add a cluster
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+				// add ssh keys
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       test.GenDefaultProject().Name,
+							},
+						},
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Clusters: []string{"clusterAbcID"},
+					},
+				},
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-abc-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       test.GenDefaultProject().Name,
+							},
+						},
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Name:     "key-display-name",
+						Clusters: []string{"clusterAbcID"},
+					},
+				},
+			),
+			ClusterToSync: "clusterAbcID",
+		},
 	}
 
 	for _, tc := range testcases {
@@ -665,6 +769,70 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 								Name:       "differentProject",
 							},
 						},
+					},
+				},
+			),
+			ClusterToSync: test.GenDefaultCluster().Name,
+		},
+		// scenario 3
+		{
+			Name:             "scenario 3: the admin John can assign ssh key to the Bob's cluster",
+			SSHKeyID:         "key-c08aa5c7abf34504f18552846485267d-yafn",
+			ExpectedResponse: `{"id":"key-c08aa5c7abf34504f18552846485267d-yafn","name":"","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"","publicKey":""}}`,
+			HTTPStatus:       http.StatusCreated,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingAPIUser:  test.GenAPIUser("John", "john@acme.com"),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", true),
+				// add a cluster
+				test.GenDefaultCluster(),
+				// add a ssh key
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       test.GenDefaultProject().Name,
+							},
+						},
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Clusters: []string{test.GenDefaultCluster().Name},
+					},
+				},
+			),
+			ClusterToSync: test.GenDefaultCluster().Name,
+		},
+		// scenario 4
+		{
+			Name:             "scenario 4: the user John can not assign ssh key to the Bob's cluster",
+			SSHKeyID:         "key-c08aa5c7abf34504f18552846485267d-yafn",
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingAPIUser:  test.GenAPIUser("John", "john@acme.com"),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", false),
+				// add a cluster
+				test.GenDefaultCluster(),
+				// add a ssh key
+				&kubermaticv1.UserSSHKey{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "key-c08aa5c7abf34504f18552846485267d-yafn",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: "kubermatic.k8s.io/v1",
+								Kind:       "Project",
+								UID:        "",
+								Name:       test.GenDefaultProject().Name,
+							},
+						},
+					},
+					Spec: kubermaticv1.SSHKeySpec{
+						Clusters: []string{test.GenDefaultCluster().Name},
 					},
 				},
 			),
