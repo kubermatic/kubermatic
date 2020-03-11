@@ -979,6 +979,68 @@ func TestGetClusterHealth(t *testing.T) {
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
+		// scenario 2
+		{
+			Name:             "scenario 2: the admin Bob can get John's cluster health status",
+			Body:             ``,
+			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1}`,
+			HTTPStatus:       http.StatusOK,
+			ClusterToGet:     "keen-snyder",
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				// add admin user
+				genUser("John", "john@acme.com", true),
+				// add a cluster
+				test.GenCluster("clusterDefID", "clusterDef", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC)),
+				// add another cluster
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
+
+						Apiserver:                    kubermaticv1.HealthStatusUp,
+						Scheduler:                    kubermaticv1.HealthStatusDown,
+						Controller:                   kubermaticv1.HealthStatusUp,
+						MachineController:            kubermaticv1.HealthStatusDown,
+						Etcd:                         kubermaticv1.HealthStatusUp,
+						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
+						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
+					}
+					return cluster
+				}(),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		// scenario 3
+		{
+			Name:             "scenario 3: the user Bob can not get John's cluster health status",
+			Body:             ``,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ClusterToGet:     "keen-snyder",
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				// add regular user John
+				genUser("John", "john@acme.com", false),
+				// add a cluster
+				test.GenCluster("clusterDefID", "clusterDef", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC)),
+				// add another cluster
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+					cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
+
+						Apiserver:                    kubermaticv1.HealthStatusUp,
+						Scheduler:                    kubermaticv1.HealthStatusDown,
+						Controller:                   kubermaticv1.HealthStatusUp,
+						MachineController:            kubermaticv1.HealthStatusDown,
+						Etcd:                         kubermaticv1.HealthStatusUp,
+						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
+						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
+					}
+					return cluster
+				}(),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -1682,6 +1744,34 @@ func TestGetClusterEventsEndpoint(t *testing.T) {
 				test.GenTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed", "Cluster", "venus-1-machine"),
 			},
 			ExpectedResult: `[{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObject":{"type":"Cluster","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
+		},
+		// scenario 4
+		{
+			Name:                   "scenario 4: the admin John can list Bob's cluster events",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), genUser("John", "john@acme.com", true)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingEvents: []*corev1.Event{
+				test.GenTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started", "Cluster", "venus-1-machine"),
+				test.GenTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed", "Cluster", "venus-1-machine"),
+			},
+			ExpectedResult: `[{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObject":{"type":"Cluster","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1},{"name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObject":{"type":"Cluster","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
+		},
+		// scenario 5
+		{
+			Name:                   "scenario 5: the user John can not list Bob's cluster events",
+			HTTPStatus:             http.StatusForbidden,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), genUser("John", "john@acme.com", false)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingEvents: []*corev1.Event{
+				test.GenTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started", "Cluster", "venus-1-machine"),
+				test.GenTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed", "Cluster", "venus-1-machine"),
+			},
+			ExpectedResult: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
 		},
 	}
 
