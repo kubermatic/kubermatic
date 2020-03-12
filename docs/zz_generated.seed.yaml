@@ -227,7 +227,7 @@ spec:
     # EnvoyManager configures the Kubermatic-internal Envoy manager.
     envoy_manager:
       # DockerRepository is the repository containing the component's image.
-      docker_repository: quay.io/kubermatic/api
+      docker_repository: quay.io/kubermatic/nodeport-proxy
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.
@@ -246,7 +246,7 @@ spec:
     # service.
     updater:
       # DockerRepository is the repository containing the component's image.
-      docker_repository: quay.io/kubermatic/api
+      docker_repository: quay.io/kubermatic/nodeport-proxy
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.
