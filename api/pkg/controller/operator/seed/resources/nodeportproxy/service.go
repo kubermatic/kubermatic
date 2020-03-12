@@ -2,7 +2,6 @@ package nodeportproxy
 
 import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
-	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -17,21 +16,27 @@ const (
 	ServiceName = "nodeport-proxy"
 )
 
-func ServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return ServiceName, func(s *corev1.Service) (*corev1.Service, error) {
+			// We don't actually manage this service, that is done by the nodeport proxy, we just
+			// must make sure that it exists
+
 			s.Spec.Type = corev1.ServiceTypeLoadBalancer
 			s.Spec.Selector = map[string]string{
 				common.NameLabel: ServiceName,
 			}
 
-			s.Spec.Ports = []corev1.ServicePort{
-				{
-					Name:       "healthz",
-					Port:       EnvoyPort,
-					TargetPort: intstr.FromInt(EnvoyPort),
-					Protocol:   corev1.ProtocolTCP,
-				},
+			// Services need at least one port to be valid, so create it initially.
+			if len(s.Spec.Ports) == 0 {
+				s.Spec.Ports = []corev1.ServicePort{
+					{
+						Name:       "healthz",
+						Port:       EnvoyPort,
+						TargetPort: intstr.FromInt(EnvoyPort),
+						Protocol:   corev1.ProtocolTCP,
+					},
+				}
 			}
 
 			return s, nil

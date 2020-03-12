@@ -18,18 +18,18 @@ import (
 
 const (
 	ServiceAccountName    = "nodeport-proxy"
-	ProxyDeploymentName   = "nodeport-proxy"
+	EnvoyDeploymentName   = "nodeport-proxy-envoy"
 	UpdaterDeploymentName = "nodeport-proxy-updater"
 	EnvoyPort             = 8002
 )
 
-func ProxyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions common.Versions) reconciling.NamedDeploymentCreatorGetter {
+func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions common.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return ProxyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+		return EnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(3)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					common.NameLabel: ProxyDeploymentName,
+					common.NameLabel: EnvoyDeploymentName,
 				},
 			}
 

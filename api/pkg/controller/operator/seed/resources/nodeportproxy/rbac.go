@@ -11,7 +11,7 @@ import (
 )
 
 func ClusterRoleName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
-	return fmt.Sprintf("%s:nodeport-proxy:%s", cfg.Namespace, cfg.Name)
+	return fmt.Sprintf("%s:nodeport-proxy", cfg.Namespace)
 }
 
 func ClusterRoleCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedClusterRoleCreatorGetter {
@@ -31,7 +31,7 @@ func ClusterRoleCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcili
 }
 
 func ClusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
-	return fmt.Sprintf("%s:nodeport-proxy:%s", cfg.Namespace, cfg.Name)
+	return fmt.Sprintf("%s:nodeport-proxy", cfg.Namespace)
 }
 
 func ClusterRoleBindingCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingCreatorGetter {

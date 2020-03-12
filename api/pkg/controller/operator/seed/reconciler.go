@@ -371,7 +371,7 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		kubermatic.SeedControllerManagerDeploymentCreator(r.workerName, r.versions, cfg, seed),
-		nodeportproxy.ProxyDeploymentCreator(cfg, seed, r.versions),
+		nodeportproxy.EnvoyDeploymentCreator(cfg, seed, r.versions),
 		nodeportproxy.UpdaterDeploymentCreator(cfg, seed, r.versions),
 	}
 
@@ -420,7 +420,7 @@ func (r *Reconciler) reconcileServices(cfg *operatorv1alpha1.KubermaticConfigura
 
 	creators := []reconciling.NamedServiceCreatorGetter{
 		common.SeedAdmissionServiceCreator(cfg, client),
-		nodeportproxy.ServiceCreator(cfg),
+		nodeportproxy.ServiceCreator(),
 	}
 
 	if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
