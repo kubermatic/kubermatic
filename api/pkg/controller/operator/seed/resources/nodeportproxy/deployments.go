@@ -127,7 +127,7 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 					},
 					LivenessProbe: &corev1.Probe{
 						FailureThreshold: 3,
-						SuccessThreshold: 3,
+						SuccessThreshold: 1,
 						TimeoutSeconds:   1,
 						PeriodSeconds:    3,
 						Handler: corev1.Handler{
