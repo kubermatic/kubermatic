@@ -37,6 +37,7 @@ const (
 	DefaultVPARecommenderDockerRepository         = "gcr.io/google_containers/vpa-recommender"
 	DefaultVPAUpdaterDockerRepository             = "gcr.io/google_containers/vpa-updater"
 	DefaultVPAAdmissionControllerDockerRepository = "gcr.io/google_containers/vpa-admission-controller"
+	DefaultNodeportProxyDockerRepository          = "quay.io/kubermatic/nodeport-proxy"
 	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy-alpine"
 )
 
@@ -534,11 +535,11 @@ func DefaultSeed(seed *kubermaticv1.Seed, logger *zap.SugaredLogger) (*kubermati
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.NodeportProxy.EnvoyManager.DockerRepository, resources.DefaultKubermaticImage, "nodeportProxy.envoyManager.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.NodeportProxy.EnvoyManager.DockerRepository, DefaultNodeportProxyDockerRepository, "nodeportProxy.envoyManager.dockerRepository", logger); err != nil {
 		return copy, err
 	}
 
-	if err := defaultDockerRepo(&copy.Spec.NodeportProxy.Updater.DockerRepository, resources.DefaultKubermaticImage, "nodeportProxy.updater.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&copy.Spec.NodeportProxy.Updater.DockerRepository, DefaultNodeportProxyDockerRepository, "nodeportProxy.updater.dockerRepository", logger); err != nil {
 		return copy, err
 	}
 
