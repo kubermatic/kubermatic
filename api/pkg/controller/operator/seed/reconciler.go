@@ -442,6 +442,7 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(cfg *operatorv1alpha1.Kuberma
 
 	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
 		kubermatic.SeedControllerManagerPDBCreator(cfg),
+		nodeportproxy.EnvoyPDBCreator(),
 	}
 
 	if err := reconciling.ReconcilePodDisruptionBudgets(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
