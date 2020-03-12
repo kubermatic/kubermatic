@@ -898,17 +898,13 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, privilegedProj
 		req := request.(common.GetClusterReq)
 		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
-		}
 
 		cluster, err := GetCluster(ctx, req, projectProvider, privilegedProjectProvider, userInfoGetter)
 		if err != nil {
 			return nil, err
 		}
 
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		client, err := common.GetClusterClientForUser(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -922,13 +918,13 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, privilegedProj
 			availableResources[n.Name] = n.Status.Allocatable
 		}
 
-		dynamicCLient, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
+		dynamicClient, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		allNodeMetricsList := &v1beta1.NodeMetricsList{}
-		if err := dynamicCLient.List(ctx, allNodeMetricsList); err != nil {
+		if err := dynamicClient.List(ctx, allNodeMetricsList); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -1340,20 +1336,17 @@ func DecodeGetClusterEvents(c context.Context, r *http.Request) (interface{}, er
 	return req, nil
 }
 
-func ListNamespaceEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListNamespaceEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
-		}
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+
+		cluster, err := GetCluster(ctx, req, projectProvider, privilegedProjectProvider, userInfoGetter)
 		if err != nil {
 			return nil, err
 		}
 
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		client, err := common.GetClusterClientForUser(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
