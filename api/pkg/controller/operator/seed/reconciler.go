@@ -465,11 +465,21 @@ func (r *Reconciler) reconcileServices(cfg *operatorv1alpha1.KubermaticConfigura
 
 	creators := []reconciling.NamedServiceCreatorGetter{
 		common.SeedAdmissionServiceCreator(cfg, client),
-		nodeportproxy.ServiceCreator(),
 	}
 
 	if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
-		return fmt.Errorf("failed to reconcile Services: %v", err)
+		return fmt.Errorf("failed to reconcile Kubermatic Services: %v", err)
+	}
+
+	// The nodeport-proxy LoadBalancer is not given an owner reference, so in case someone accidentally deletes
+	// the Seed resource, the current LoadBalancer IP is not lost. To be truly destructive, users would need to
+	// remove the entire Kubermatic namespace.
+	creators = []reconciling.NamedServiceCreatorGetter{
+		nodeportproxy.ServiceCreator(),
+	}
+
+	if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client); err != nil {
+		return fmt.Errorf("failed to reconcile nodeport-proxy Services: %v", err)
 	}
 
 	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
