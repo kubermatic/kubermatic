@@ -198,6 +198,14 @@ func (r *Reconciler) reconcileResources(cfg *operatorv1alpha1.KubermaticConfigur
 		return err
 	}
 
+	if err := r.reconcileRoles(cfg, seed, client, log); err != nil {
+		return err
+	}
+
+	if err := r.reconcileRoleBindings(cfg, seed, client, log); err != nil {
+		return err
+	}
+
 	if err := r.reconcileClusterRoles(cfg, seed, client, log); err != nil {
 		return err
 	}
@@ -270,6 +278,34 @@ func (r *Reconciler) reconcileServiceAccounts(cfg *operatorv1alpha1.KubermaticCo
 		if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, metav1.NamespaceSystem, client); err != nil {
 			return fmt.Errorf("failed to reconcile VPA ServiceAccounts: %v", err)
 		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileRoles(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling Roles")
+
+	creators := []reconciling.NamedRoleCreatorGetter{
+		nodeportproxy.RoleCreator(cfg),
+	}
+
+	if err := reconciling.ReconcileRoles(r.ctx, creators, r.namespace, client); err != nil {
+		return fmt.Errorf("failed to reconcile Roles: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileRoleBindings(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling RoleBindings")
+
+	creators := []reconciling.NamedRoleBindingCreatorGetter{
+		nodeportproxy.RoleBindingCreator(cfg),
+	}
+
+	if err := reconciling.ReconcileRoleBindings(r.ctx, creators, r.namespace, client); err != nil {
+		return fmt.Errorf("failed to reconcile RoleBindings: %v", err)
 	}
 
 	return nil
