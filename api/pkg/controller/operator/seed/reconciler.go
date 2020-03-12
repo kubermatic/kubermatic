@@ -185,6 +185,11 @@ func (r *Reconciler) reconcileResources(cfg *operatorv1alpha1.KubermaticConfigur
 		return fmt.Errorf("failed to add finalizer to Seed: %v", err)
 	}
 
+	seed, err := common.DefaultSeed(seed, log)
+	if err != nil {
+		return fmt.Errorf("failed to apply default values to Seed:  %v", err)
+	}
+
 	if err := r.reconcileNamespaces(cfg, seed, client, log); err != nil {
 		return err
 	}

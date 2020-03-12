@@ -203,50 +203,64 @@ spec:
   nodeport_proxy:
     # Annotations are used to further tweak the LoadBalancer integration with the
     # cloud provider where the seed cluster is running.
-    annotations: null
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
     # Envoy configures the Envoy application itself.
     envoy:
       # DockerRepository is the repository containing the component's image.
-      dockerRepository: ""
+      dockerRepository: docker.io/envoyproxy/envoy-alpine
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
-        limits: null
+        limits:
+          cpu: 200m
+          memory: 64Mi
         # Requests describes the minimum amount of compute resources required.
         # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
         # otherwise to an implementation-defined value.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
-        requests: null
+        requests:
+          cpu: 50m
+          memory: 32Mi
     # EnvoyManager configures the Kubermatic-internal Envoy manager.
     envoyManager:
       # DockerRepository is the repository containing the component's image.
-      dockerRepository: ""
+      dockerRepository: quay.io/kubermatic/api
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
-        limits: null
+        limits:
+          cpu: 150m
+          memory: 48Mi
         # Requests describes the minimum amount of compute resources required.
         # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
         # otherwise to an implementation-defined value.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
-        requests: null
+        requests:
+          cpu: 50m
+          memory: 32Mi
     # Updater configures the component responsible for updating the LoadBalancer
     # service.
     updater:
       # DockerRepository is the repository containing the component's image.
-      dockerRepository: ""
+      dockerRepository: quay.io/kubermatic/api
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
-        limits: null
+        limits:
+          cpu: 150m
+          memory: 32Mi
         # Requests describes the minimum amount of compute resources required.
         # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
         # otherwise to an implementation-defined value.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
-        requests: null
+        requests:
+          cpu: 50m
+          memory: 32Mi
   # Optional: ProxySettings can be used to configure HTTP proxy settings on the
   # worker nodes in user clusters. However, proxy settings on nodes take precedence.
   proxy_settings:
