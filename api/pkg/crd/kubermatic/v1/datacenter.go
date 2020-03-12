@@ -79,7 +79,7 @@ type NodeportProxyConfig struct {
 	// Envoy configures the Envoy application itself.
 	Envoy NodeportProxyComponent `json:"envoy,omitempty"`
 	// EnvoyManager configures the Kubermatic-internal Envoy manager.
-	EnvoyManager NodeportProxyComponent `json:"envoyManager,omitempty"`
+	EnvoyManager NodeportProxyComponent `json:"envoy_manager,omitempty"`
 	// Updater configures the component responsible for updating the LoadBalancer
 	// service.
 	Updater NodeportProxyComponent `json:"updater,omitempty"`
@@ -87,7 +87,7 @@ type NodeportProxyConfig struct {
 
 type NodeportProxyComponent struct {
 	// DockerRepository is the repository containing the component's image.
-	DockerRepository string `json:"dockerRepository,omitempty"`
+	DockerRepository string `json:"docker_repository,omitempty"`
 	// Resources describes the requested and maximum allowed CPU/memory usage.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
