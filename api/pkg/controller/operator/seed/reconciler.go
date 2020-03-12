@@ -290,7 +290,7 @@ func (r *Reconciler) reconcileRoles(cfg *operatorv1alpha1.KubermaticConfiguratio
 		nodeportproxy.RoleCreator(cfg),
 	}
 
-	if err := reconciling.ReconcileRoles(r.ctx, creators, r.namespace, client); err != nil {
+	if err := reconciling.ReconcileRoles(r.ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Roles: %v", err)
 	}
 
@@ -304,7 +304,7 @@ func (r *Reconciler) reconcileRoleBindings(cfg *operatorv1alpha1.KubermaticConfi
 		nodeportproxy.RoleBindingCreator(cfg),
 	}
 
-	if err := reconciling.ReconcileRoleBindings(r.ctx, creators, r.namespace, client); err != nil {
+	if err := reconciling.ReconcileRoleBindings(r.ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings: %v", err)
 	}
 
