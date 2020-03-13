@@ -1138,11 +1138,10 @@ presubmits:
           privileged: true
         resources:
           requests:
-            cpu: 500m
+            cpu: 1
             memory: 1Gi
           limits:
-            cpu: 1
-            memory: 2Gi
+            memory: 3Gi
 
   - name: pre-kubermatic-test-integration
     run_if_changed: "^api/"
