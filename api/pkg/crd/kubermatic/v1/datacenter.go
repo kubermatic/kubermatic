@@ -73,6 +73,10 @@ type SeedSpec struct {
 }
 
 type NodeportProxyConfig struct {
+	// Disable will prevent the Kubermatic Operator from creating a nodeport-proxy
+	// setup on the seed cluster. This should only be used if a suitable replacement
+	// is installed (like the nodeport-proxy Helm chart).
+	Disable bool `json:"disable,omitempty"`
 	// Annotations are used to further tweak the LoadBalancer integration with the
 	// cloud provider where the seed cluster is running.
 	Annotations map[string]string `json:"annotations,omitempty"`

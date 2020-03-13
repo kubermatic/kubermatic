@@ -206,6 +206,10 @@ spec:
     annotations:
       service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
       service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    # Disable will prevent the Kubermatic Operator from creating a nodeport-proxy
+    # setup on the seed cluster. This should only be used if a suitable replacement
+    # is installed (like the nodeport-proxy Helm chart).
+    disable: false
     # Envoy configures the Envoy application itself.
     envoy:
       # DockerRepository is the repository containing the component's image.

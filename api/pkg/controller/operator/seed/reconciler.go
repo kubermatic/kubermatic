@@ -268,7 +268,10 @@ func (r *Reconciler) reconcileServiceAccounts(cfg *operatorv1alpha1.KubermaticCo
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		kubermatic.ServiceAccountCreator(cfg, seed),
-		nodeportproxy.ServiceAccountCreator(cfg),
+	}
+
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(creators, nodeportproxy.ServiceAccountCreator(cfg))
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
@@ -294,6 +297,10 @@ func (r *Reconciler) reconcileServiceAccounts(cfg *operatorv1alpha1.KubermaticCo
 func (r *Reconciler) reconcileRoles(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Roles")
 
+	if seed.Spec.NodeportProxy.Disable {
+		return nil
+	}
+
 	creators := []reconciling.NamedRoleCreatorGetter{
 		nodeportproxy.RoleCreator(cfg),
 	}
@@ -307,6 +314,10 @@ func (r *Reconciler) reconcileRoles(cfg *operatorv1alpha1.KubermaticConfiguratio
 
 func (r *Reconciler) reconcileRoleBindings(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling RoleBindings")
+
+	if seed.Spec.NodeportProxy.Disable {
+		return nil
+	}
 
 	creators := []reconciling.NamedRoleBindingCreatorGetter{
 		nodeportproxy.RoleBindingCreator(cfg),
@@ -322,8 +333,10 @@ func (r *Reconciler) reconcileRoleBindings(cfg *operatorv1alpha1.KubermaticConfi
 func (r *Reconciler) reconcileClusterRoles(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling ClusterRoles")
 
-	creators := []reconciling.NamedClusterRoleCreatorGetter{
-		nodeportproxy.ClusterRoleCreator(cfg),
+	creators := []reconciling.NamedClusterRoleCreatorGetter{}
+
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(creators, nodeportproxy.ClusterRoleCreator(cfg))
 	}
 
 	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
@@ -342,7 +355,10 @@ func (r *Reconciler) reconcileClusterRoleBindings(cfg *operatorv1alpha1.Kubermat
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		kubermatic.ClusterRoleBindingCreator(cfg, seed),
-		nodeportproxy.ClusterRoleBindingCreator(cfg),
+	}
+
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(creators, nodeportproxy.ClusterRoleBindingCreator(cfg))
 	}
 
 	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
@@ -415,8 +431,14 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		kubermatic.SeedControllerManagerDeploymentCreator(r.workerName, r.versions, cfg, seed),
-		nodeportproxy.EnvoyDeploymentCreator(cfg, seed, r.versions),
-		nodeportproxy.UpdaterDeploymentCreator(cfg, seed, r.versions),
+	}
+
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(
+			creators,
+			nodeportproxy.EnvoyDeploymentCreator(cfg, seed, r.versions),
+			nodeportproxy.UpdaterDeploymentCreator(cfg, seed, r.versions),
+		)
 	}
 
 	volumeLabelModifier := common.VolumeRevisionLabelsModifierFactory(r.ctx, client)
@@ -450,7 +472,10 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(cfg *operatorv1alpha1.Kuberma
 
 	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
 		kubermatic.SeedControllerManagerPDBCreator(cfg),
-		nodeportproxy.EnvoyPDBCreator(),
+	}
+
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(creators, nodeportproxy.EnvoyPDBCreator())
 	}
 
 	if err := reconciling.ReconcilePodDisruptionBudgets(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
@@ -474,12 +499,14 @@ func (r *Reconciler) reconcileServices(cfg *operatorv1alpha1.KubermaticConfigura
 	// The nodeport-proxy LoadBalancer is not given an owner reference, so in case someone accidentally deletes
 	// the Seed resource, the current LoadBalancer IP is not lost. To be truly destructive, users would need to
 	// remove the entire Kubermatic namespace.
-	creators = []reconciling.NamedServiceCreatorGetter{
-		nodeportproxy.ServiceCreator(),
-	}
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = []reconciling.NamedServiceCreatorGetter{
+			nodeportproxy.ServiceCreator(),
+		}
 
-	if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile nodeport-proxy Services: %v", err)
+		if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client); err != nil {
+			return fmt.Errorf("failed to reconcile nodeport-proxy Services: %v", err)
+		}
 	}
 
 	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
