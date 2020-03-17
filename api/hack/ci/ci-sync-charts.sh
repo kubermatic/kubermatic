@@ -155,7 +155,10 @@ cat << EOF > ${CRDS_MANIFEST}
 
 EOF
 
-sed -s '$a\\n---' ${CHARTS_DIR}/kubermatic/crd/*.yaml >> ${CRDS_MANIFEST}
+for file in ${CHARTS_DIR}/kubermatic/crd/*.yaml; do
+  cat "$file" >> ${CRDS_MANIFEST}
+  echo -e "\n---" >> ${CRDS_MANIFEST}
+done
 
 # commit and push
 cd ${TARGET_DIR}
