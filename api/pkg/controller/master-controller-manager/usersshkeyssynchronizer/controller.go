@@ -166,6 +166,21 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 		return fmt.Errorf("failed to list userSSHKeys: %v", err)
 	}
 
+	if cluster.DeletionTimestamp != nil {
+		if err := r.cleanupUserSSHKeys(userSSHKeys.Items, cluster.Name); err != nil {
+			return fmt.Errorf("failed reconciling usersshkey: %v", err)
+		}
+
+		if kubernetes.HasFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer) {
+			oldCluster := cluster.DeepCopy()
+			kubernetes.RemoveFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer)
+			if err := seedClient.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+				return fmt.Errorf("failed removing %s finalizer: %v", UserSSHKeysClusterIDsCleanupFinalizer, err)
+			}
+		}
+		return nil
+	}
+
 	keys := buildUserSSHKeysForCluster(cluster.Name, userSSHKeys)
 
 	if err := reconciling.ReconcileSecrets(
@@ -178,22 +193,10 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 	}
 
 	oldCluster := cluster.DeepCopy()
-	kubernetes.AddFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer)
-	if err := seedClient.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-		return fmt.Errorf("failed adding %s finalizer: %v", UserSSHKeysClusterIDsCleanupFinalizer, err)
-	}
-
-	if cluster.DeletionTimestamp != nil {
-		if err := r.cleanupUserSSHKeys(userSSHKeys.Items, cluster.Name); err != nil {
-			return fmt.Errorf("failed reconciling usersshkey: %v", err)
-		}
-
-		if kubernetes.HasFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer) {
-			oldCluster := cluster.DeepCopy()
-			kubernetes.RemoveFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer)
-			if err := seedClient.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-				return fmt.Errorf("failed removing %s finalizer: %v", UserSSHKeysClusterIDsCleanupFinalizer, err)
-			}
+	if !kubernetes.HasFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer) {
+		kubernetes.AddFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer)
+		if err := seedClient.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("failed adding %s finalizer: %v", UserSSHKeysClusterIDsCleanupFinalizer, err)
 		}
 	}
 
