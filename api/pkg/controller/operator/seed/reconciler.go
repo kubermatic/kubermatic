@@ -302,7 +302,7 @@ func (r *Reconciler) reconcileRoles(cfg *operatorv1alpha1.KubermaticConfiguratio
 	}
 
 	creators := []reconciling.NamedRoleCreatorGetter{
-		nodeportproxy.RoleCreator(cfg),
+		nodeportproxy.RoleCreator(),
 	}
 
 	if err := reconciling.ReconcileRoles(r.ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
@@ -436,8 +436,8 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 	if !seed.Spec.NodeportProxy.Disable {
 		creators = append(
 			creators,
-			nodeportproxy.EnvoyDeploymentCreator(cfg, seed, r.versions),
-			nodeportproxy.UpdaterDeploymentCreator(cfg, seed, r.versions),
+			nodeportproxy.EnvoyDeploymentCreator(seed, r.versions),
+			nodeportproxy.UpdaterDeploymentCreator(seed, r.versions),
 		)
 	}
 

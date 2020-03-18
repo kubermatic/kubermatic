@@ -15,7 +15,7 @@ const (
 	RoleBindingName = "nodeport-proxy"
 )
 
-func RoleCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedRoleCreatorGetter {
+func RoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return RoleName, func(cr *rbacv1.Role) (*rbacv1.Role, error) {
 			cr.Rules = []rbacv1.PolicyRule{
