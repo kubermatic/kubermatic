@@ -278,6 +278,19 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
     time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
   )
   (
+    # The operator automatically creates a nodeport-proxy, so it needs the
+    # Docker image to exist.
+    if [[ "${KUBERMATIC_USE_OPERATOR}" = "true" ]]; then
+      echodate "Building nodeport-proxy image"
+      TEST_NAME="Build nodeport-proxy Docker image"
+      cd api/cmd/nodeport-proxy
+      make build
+      IMAGE_NAME="quay.io/kubermatic/nodeport-proxy:$KUBERMATIC_VERSION"
+      time retry 5 docker build -t "${IMAGE_NAME}" .
+      time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
+    fi
+  )
+  (
     echodate "Building dnatcontroller image"
     TEST_NAME="Build dnatcontroller Docker image"
     cd api/cmd/kubeletdnat-controller

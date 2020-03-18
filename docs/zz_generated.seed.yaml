@@ -198,6 +198,73 @@ spec:
   # Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
   # For informational purposes in the Kubermatic dashboard only.
   location: ""
+  # NodeportProxy can be used to configure the NodePort proxy service that is
+  # responsible for making user-cluster control planes accessible from the outside.
+  nodeport_proxy:
+    # Annotations are used to further tweak the LoadBalancer integration with the
+    # cloud provider where the seed cluster is running.
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    # Disable will prevent the Kubermatic Operator from creating a nodeport-proxy
+    # setup on the seed cluster. This should only be used if a suitable replacement
+    # is installed (like the nodeport-proxy Helm chart).
+    disable: false
+    # Envoy configures the Envoy application itself.
+    envoy:
+      # DockerRepository is the repository containing the component's image.
+      docker_repository: docker.io/envoyproxy/envoy-alpine
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      resources:
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+        limits:
+          cpu: 200m
+          memory: 64Mi
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+        requests:
+          cpu: 50m
+          memory: 32Mi
+    # EnvoyManager configures the Kubermatic-internal Envoy manager.
+    envoy_manager:
+      # DockerRepository is the repository containing the component's image.
+      docker_repository: quay.io/kubermatic/nodeport-proxy
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      resources:
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+        limits:
+          cpu: 150m
+          memory: 48Mi
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+        requests:
+          cpu: 50m
+          memory: 32Mi
+    # Updater configures the component responsible for updating the LoadBalancer
+    # service.
+    updater:
+      # DockerRepository is the repository containing the component's image.
+      docker_repository: quay.io/kubermatic/nodeport-proxy
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      resources:
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+        limits:
+          cpu: 150m
+          memory: 32Mi
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
+        requests:
+          cpu: 50m
+          memory: 32Mi
   # Optional: ProxySettings can be used to configure HTTP proxy settings on the
   # worker nodes in user clusters. However, proxy settings on nodes take precedence.
   proxy_settings:
