@@ -10,7 +10,8 @@ import (
 	"github.com/ghodss/yaml"
 	"go.uber.org/zap"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
@@ -36,6 +37,8 @@ const (
 	DefaultVPARecommenderDockerRepository         = "gcr.io/google_containers/vpa-recommender"
 	DefaultVPAUpdaterDockerRepository             = "gcr.io/google_containers/vpa-updater"
 	DefaultVPAAdmissionControllerDockerRepository = "gcr.io/google_containers/vpa-admission-controller"
+	DefaultNodeportProxyDockerRepository          = "quay.io/kubermatic/nodeport-proxy"
+	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy-alpine"
 )
 
 var (
@@ -118,6 +121,47 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("200m"),
 			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		},
+	}
+
+	DefaultNodeportProxyEnvoyResources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("200m"),
+			corev1.ResourceMemory: resource.MustParse("64Mi"),
+		},
+	}
+
+	DefaultNodeportProxyEnvoyManagerResources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("150m"),
+			corev1.ResourceMemory: resource.MustParse("48Mi"),
+		},
+	}
+
+	DefaultNodeportProxyUpdaterResources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("150m"),
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+		},
+	}
+
+	DefaultNodeportProxyServiceAnnotations = map[string]string{
+		// If we're running on AWS, use an NLB. It has a fixed IP & we can use VPC endpoints
+		// https://docs.aws.amazon.com/de_de/eks/latest/userguide/load-balancing.html
+		"service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
+		// On AWS default timeout is 60s, which means: kubectl logs -f will receive EOF after 60s.
+		"service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout": "3600",
 	}
 
 	DefaultKubernetesVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
@@ -481,6 +525,44 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	return copy, nil
 }
 
+func DefaultSeed(seed *kubermaticv1.Seed, logger *zap.SugaredLogger) (*kubermaticv1.Seed, error) {
+	logger = logger.With("seed", seed.Name)
+	logger.Debug("Applying defaults to Seed")
+
+	copy := seed.DeepCopy()
+
+	if err := defaultDockerRepo(&copy.Spec.NodeportProxy.Envoy.DockerRepository, DefaultEnvoyDockerRepository, "nodeportProxy.envoy.dockerRepository", logger); err != nil {
+		return copy, err
+	}
+
+	if err := defaultDockerRepo(&copy.Spec.NodeportProxy.EnvoyManager.DockerRepository, DefaultNodeportProxyDockerRepository, "nodeportProxy.envoyManager.dockerRepository", logger); err != nil {
+		return copy, err
+	}
+
+	if err := defaultDockerRepo(&copy.Spec.NodeportProxy.Updater.DockerRepository, DefaultNodeportProxyDockerRepository, "nodeportProxy.updater.dockerRepository", logger); err != nil {
+		return copy, err
+	}
+
+	if err := defaultResources(&copy.Spec.NodeportProxy.Envoy.Resources, DefaultNodeportProxyEnvoyResources, "nodeportProxy.envoy.resources", logger); err != nil {
+		return copy, err
+	}
+
+	if err := defaultResources(&copy.Spec.NodeportProxy.EnvoyManager.Resources, DefaultNodeportProxyEnvoyManagerResources, "nodeportProxy.envoyManager.resources", logger); err != nil {
+		return copy, err
+	}
+
+	if err := defaultResources(&copy.Spec.NodeportProxy.Updater.Resources, DefaultNodeportProxyUpdaterResources, "nodeportProxy.updater.resources", logger); err != nil {
+		return copy, err
+	}
+
+	if len(copy.Spec.NodeportProxy.Annotations) == 0 {
+		copy.Spec.NodeportProxy.Annotations = DefaultNodeportProxyServiceAnnotations
+		logger.Debugw("Defaulting field", "field", "nodeportProxy.annotations", "value", copy.Spec.NodeportProxy.Annotations)
+	}
+
+	return copy, nil
+}
+
 func defaultDockerRepo(repo *string, defaultRepo string, key string, logger *zap.SugaredLogger) error {
 	if *repo == "" {
 		*repo = defaultRepo
@@ -720,8 +802,8 @@ func CreateVersionsYAML(config *operatorv1alpha1.KubermaticVersionsConfiguration
 		}
 	}
 
-	appendOrchestrator(&config.Kubernetes, kubermaticv1.KubernetesClusterType)
-	appendOrchestrator(&config.Openshift, kubermaticv1.OpenShiftClusterType)
+	appendOrchestrator(&config.Kubernetes, kubermaticapiv1.KubernetesClusterType)
+	appendOrchestrator(&config.Openshift, kubermaticapiv1.OpenShiftClusterType)
 
 	return toYAML(output)
 }
@@ -752,8 +834,8 @@ func CreateUpdatesYAML(config *operatorv1alpha1.KubermaticVersionsConfiguration)
 		}
 	}
 
-	appendOrchestrator(&config.Kubernetes, kubermaticv1.KubernetesClusterType)
-	appendOrchestrator(&config.Openshift, kubermaticv1.OpenShiftClusterType)
+	appendOrchestrator(&config.Kubernetes, kubermaticapiv1.KubernetesClusterType)
+	appendOrchestrator(&config.Openshift, kubermaticapiv1.OpenShiftClusterType)
 
 	return toYAML(output)
 }

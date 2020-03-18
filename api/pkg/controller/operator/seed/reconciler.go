@@ -10,6 +10,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common/vpa"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/seed/resources/kubermatic"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/seed/resources/nodeportproxy"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
@@ -163,6 +164,14 @@ func (r *Reconciler) cleanupDeletedSeed(cfg *operatorv1alpha1.KubermaticConfigur
 		return fmt.Errorf("failed to clean up ClusterRoleBinding: %v", err)
 	}
 
+	if err := common.CleanupClusterResource(client, &rbacv1.ClusterRoleBinding{}, nodeportproxy.ClusterRoleBindingName(cfg)); err != nil {
+		return fmt.Errorf("failed to clean up ClusterRoleBinding: %v", err)
+	}
+
+	if err := common.CleanupClusterResource(client, &rbacv1.ClusterRole{}, nodeportproxy.ClusterRoleName(cfg)); err != nil {
+		return fmt.Errorf("failed to clean up ClusterRole: %v", err)
+	}
+
 	if err := common.CleanupClusterResource(client, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(cfg)); err != nil {
 		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %v", err)
 	}
@@ -184,11 +193,24 @@ func (r *Reconciler) reconcileResources(cfg *operatorv1alpha1.KubermaticConfigur
 		return fmt.Errorf("failed to add finalizer to Seed: %v", err)
 	}
 
+	seed, err := common.DefaultSeed(seed, log)
+	if err != nil {
+		return fmt.Errorf("failed to apply default values to Seed:  %v", err)
+	}
+
 	if err := r.reconcileNamespaces(cfg, seed, client, log); err != nil {
 		return err
 	}
 
 	if err := r.reconcileServiceAccounts(cfg, seed, client, log); err != nil {
+		return err
+	}
+
+	if err := r.reconcileRoles(cfg, seed, client, log); err != nil {
+		return err
+	}
+
+	if err := r.reconcileRoleBindings(cfg, seed, client, log); err != nil {
 		return err
 	}
 
@@ -248,6 +270,10 @@ func (r *Reconciler) reconcileServiceAccounts(cfg *operatorv1alpha1.KubermaticCo
 		kubermatic.ServiceAccountCreator(cfg, seed),
 	}
 
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(creators, nodeportproxy.ServiceAccountCreator(cfg))
+	}
+
 	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Kubermatic ServiceAccounts: %v", err)
 	}
@@ -268,14 +294,54 @@ func (r *Reconciler) reconcileServiceAccounts(cfg *operatorv1alpha1.KubermaticCo
 	return nil
 }
 
-func (r *Reconciler) reconcileClusterRoles(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	log.Debug("reconciling VPA ClusterRoles")
+func (r *Reconciler) reconcileRoles(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling Roles")
 
-	if !cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+	if seed.Spec.NodeportProxy.Disable {
 		return nil
 	}
 
-	creators := vpa.ClusterRoleCreators()
+	creators := []reconciling.NamedRoleCreatorGetter{
+		nodeportproxy.RoleCreator(),
+	}
+
+	if err := reconciling.ReconcileRoles(r.ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+		return fmt.Errorf("failed to reconcile Roles: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileRoleBindings(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling RoleBindings")
+
+	if seed.Spec.NodeportProxy.Disable {
+		return nil
+	}
+
+	creators := []reconciling.NamedRoleBindingCreatorGetter{
+		nodeportproxy.RoleBindingCreator(cfg),
+	}
+
+	if err := reconciling.ReconcileRoleBindings(r.ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+		return fmt.Errorf("failed to reconcile RoleBindings: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileClusterRoles(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling ClusterRoles")
+
+	creators := []reconciling.NamedClusterRoleCreatorGetter{}
+
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(creators, nodeportproxy.ClusterRoleCreator(cfg))
+	}
+
+	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
+		creators = append(creators, vpa.ClusterRoleCreators()...)
+	}
 
 	if err := reconciling.ReconcileClusterRoles(r.ctx, creators, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoles: %v", err)
@@ -289,6 +355,10 @@ func (r *Reconciler) reconcileClusterRoleBindings(cfg *operatorv1alpha1.Kubermat
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		kubermatic.ClusterRoleBindingCreator(cfg, seed),
+	}
+
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(creators, nodeportproxy.ClusterRoleBindingCreator(cfg))
 	}
 
 	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {
@@ -363,6 +433,14 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 		kubermatic.SeedControllerManagerDeploymentCreator(r.workerName, r.versions, cfg, seed),
 	}
 
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(
+			creators,
+			nodeportproxy.EnvoyDeploymentCreator(seed, r.versions),
+			nodeportproxy.UpdaterDeploymentCreator(seed, r.versions),
+		)
+	}
+
 	volumeLabelModifier := common.VolumeRevisionLabelsModifierFactory(r.ctx, client)
 	modifiers := []reconciling.ObjectModifier{
 		common.OwnershipModifierFactory(seed, r.scheme),
@@ -396,6 +474,10 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(cfg *operatorv1alpha1.Kuberma
 		kubermatic.SeedControllerManagerPDBCreator(cfg),
 	}
 
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = append(creators, nodeportproxy.EnvoyPDBCreator())
+	}
+
 	if err := reconciling.ReconcilePodDisruptionBudgets(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
 	}
@@ -411,7 +493,20 @@ func (r *Reconciler) reconcileServices(cfg *operatorv1alpha1.KubermaticConfigura
 	}
 
 	if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
-		return fmt.Errorf("failed to reconcile Services: %v", err)
+		return fmt.Errorf("failed to reconcile Kubermatic Services: %v", err)
+	}
+
+	// The nodeport-proxy LoadBalancer is not given an owner reference, so in case someone accidentally deletes
+	// the Seed resource, the current LoadBalancer IP is not lost. To be truly destructive, users would need to
+	// remove the entire Kubermatic namespace.
+	if !seed.Spec.NodeportProxy.Disable {
+		creators = []reconciling.NamedServiceCreatorGetter{
+			nodeportproxy.ServiceCreator(),
+		}
+
+		if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client); err != nil {
+			return fmt.Errorf("failed to reconcile nodeport-proxy Services: %v", err)
+		}
 	}
 
 	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {

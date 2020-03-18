@@ -142,11 +142,16 @@ func createExampleSeed() *kubermaticv1.Seed {
 		},
 	}
 
-	if err := validateAllFieldsAreDefined(&seed.Spec); err != nil {
+	defaulted, err := common.DefaultSeed(seed, zap.NewNop().Sugar())
+	if err != nil {
+		log.Fatalf("Failed to default Seed: %v", err)
+	}
+
+	if err := validateAllFieldsAreDefined(&defaulted.Spec); err != nil {
 		log.Fatalf("Seed struct is incomplete: %v", err)
 	}
 
-	return seed
+	return defaulted
 }
 
 func createExampleKubermaticConfiguration() *operatorv1alpha1.KubermaticConfiguration {
