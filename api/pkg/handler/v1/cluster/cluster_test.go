@@ -1820,37 +1820,85 @@ func TestListClustersForProject(t *testing.T) {
 
 func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
 	t.Parallel()
-	// setup world view
-	expectedResponse := "{}"
-	kubermaticObjs := test.GenDefaultKubermaticObjects()
-	tester := test.GenDefaultAPIUser()
-	projectToSync := test.GenDefaultProject().Name
-	cluster := test.GenDefaultCluster()
-	kubermaticObjs = append(kubermaticObjs, cluster)
-	ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tester, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObjs, nil, nil, hack.NewTestRouting)
-	if err != nil {
-		t.Fatalf("failed to create test endpoint due to %v", err)
+
+	testcases := []struct {
+		name                   string
+		expectedResponse       string
+		httpStatus             int
+		clusterToGet           *kubermaticv1.Cluster
+		projectToSync          string
+		existingAPIUser        *apiv1.User
+		existingKubermaticObjs []runtime.Object
+		existingKubernrtesObjs []runtime.Object
+	}{
+		// scenario 1
+		{
+			name:             "scenario 1: the owner user revokes admin cluster token",
+			expectedResponse: `{}`,
+			clusterToGet:     test.GenDefaultCluster(),
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 2
+		{
+			name:             "scenario 2: the admin John revokes Bob's cluster token",
+			expectedResponse: `{}`,
+			clusterToGet:     test.GenDefaultCluster(),
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", true),
+				test.GenDefaultCluster(),
+			),
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		// scenario 3
+		{
+			name:             "scenario 3: the user John can not revoke Bob's cluster token",
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			clusterToGet:     test.GenDefaultCluster(),
+			httpStatus:       http.StatusForbidden,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", false),
+				test.GenDefaultCluster(),
+			),
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
 	}
 
-	// perform test
-	res := httptest.NewRecorder()
-	req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/token", projectToSync, cluster.Name), nil)
-	ep.ServeHTTP(res, req)
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
 
-	// check assertions
-	test.CheckStatusCode(http.StatusOK, res, t)
-	test.CompareWithResult(t, res, expectedResponse)
-	updatedCluster := &kubermaticv1.Cluster{}
-	if err := clientsSets.FakeClient.Get(context.Background(), types.NamespacedName{Name: test.DefaultClusterID}, updatedCluster); err != nil {
-		t.Fatalf("failed to get cluster from fake client: %v", err)
+			// perform test
+			res := httptest.NewRecorder()
+			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/token", test.ProjectName, tc.clusterToGet.Name), nil)
+			ep.ServeHTTP(res, req)
+
+			// check assertions
+			test.CheckStatusCode(tc.httpStatus, res, t)
+			test.CompareWithResult(t, res, tc.expectedResponse)
+			if tc.httpStatus == http.StatusOK {
+				updatedCluster := &kubermaticv1.Cluster{}
+				if err := clientsSets.FakeClient.Get(context.Background(), types.NamespacedName{Name: test.DefaultClusterID}, updatedCluster); err != nil {
+					t.Fatalf("failed to get cluster from fake client: %v", err)
+				}
+				updatedToken := updatedCluster.Address.AdminToken
+				if err := kuberneteshelper.ValidateKubernetesToken(updatedToken); err != nil {
+					t.Fatalf("generated token '%s' is malformed: %v", updatedToken, err)
+				}
+				if updatedToken == tc.clusterToGet.Address.AdminToken {
+					t.Fatalf("generated token '%s' is exactly the same as the old one : %s", updatedToken, tc.clusterToGet.Address.AdminToken)
+				}
+			}
+		})
 	}
-	updatedToken := updatedCluster.Address.AdminToken
-	if err := kuberneteshelper.ValidateKubernetesToken(updatedToken); err != nil {
-		t.Errorf("generated token '%s' is malformed: %v", updatedToken, err)
-	}
-	if updatedToken == cluster.Address.AdminToken {
-		t.Errorf("generated token '%s' is exactly the same as the old one : %s", updatedToken, cluster.Address.AdminToken)
-	}
+
 }
 
 func TestGetClusterEventsEndpoint(t *testing.T) {
