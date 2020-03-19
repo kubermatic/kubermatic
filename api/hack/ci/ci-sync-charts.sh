@@ -147,7 +147,7 @@ done < ${TARGET_VALUES_FILE} > ${TARGET_DIR}/values.example.tmp.yaml
 mv ${TARGET_DIR}/values.example.{tmp.,}yaml
 
 # assemble static manifests to make installing the Kubermatic Operator easier
-mkdir ${TARGET_DIR}/manifests
+mkdir -p ${TARGET_DIR}/manifests
 
 CRDS_MANIFEST=${TARGET_DIR}/manifests/kubermatic-crds.yaml
 cat << EOF > ${CRDS_MANIFEST}
