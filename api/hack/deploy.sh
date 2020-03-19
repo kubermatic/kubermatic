@@ -24,6 +24,7 @@ DEPLOY_NODEPORT_PROXY=${DEPLOY_NODEPORT_PROXY:-true}
 DEPLOY_ALERTMANAGER=${DEPLOY_ALERTMANAGER:-true}
 DEPLOY_MINIO=${DEPLOY_MINIO:-true}
 DEPLOY_LOKI=${DEPLOY_LOKI:-false}
+DEPLOY_ELASTIC=${DEPLOY_ELASTIC:-true}
 USE_KUBERMATIC_OPERATOR=${USE_KUBERMATIC_OPERATOR:-false}
 DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 TILLER_NAMESPACE=${TILLER_NAMESPACE:-kubermatic}
@@ -118,9 +119,11 @@ case "${DEPLOY_STACK}" in
 
   logging)
     initTiller
-    deploy "elasticsearch" "logging" ./config/logging/elasticsearch/
-    deploy "fluentbit" "logging" ./config/logging/fluentbit/
-    deploy "kibana" "logging" ./config/logging/kibana/
+    if [[ "${DEPLOY_ELASTIC}" = true ]]; then
+      deploy "elasticsearch" "logging" ./config/logging/elasticsearch/
+      deploy "fluentbit" "logging" ./config/logging/fluentbit/
+      deploy "kibana" "logging" ./config/logging/kibana/
+    fi
     if [[ "${DEPLOY_LOKI}" = true ]]; then
       deploy "loki" "logging" ./config/logging/loki/
       deploy "promtail" "logging" ./config/logging/promtail/
