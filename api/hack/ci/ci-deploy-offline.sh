@@ -56,8 +56,8 @@ helm template oauth | ../api/hack/retag-images.sh
 helm template iap | ../api/hack/retag-images.sh
 helm template minio | ../api/hack/retag-images.sh
 helm template s3-exporter | ../api/hack/retag-images.sh
-helm template nodeport-proxy --set=nodePortProxy.image.tag=${GIT_HEAD_HASH}	\
-	| ../api/hack/retag-images.sh
+helm template nodeport-proxy --set=nodePortProxy.image.tag=${GIT_HEAD_HASH} \
+  ../api/hack/retag-images.sh
 
 helm template monitoring/prometheus | ../api/hack/retag-images.sh
 helm template monitoring/node-exporter | ../api/hack/retag-images.sh
@@ -66,9 +66,8 @@ helm template monitoring/grafana | ../api/hack/retag-images.sh
 helm template monitoring/helm-exporter | ../api/hack/retag-images.sh
 helm template monitoring/alertmanager | ../api/hack/retag-images.sh
 
-helm template logging/elasticsearch | ../api/hack/retag-images.sh
-helm template logging/fluentbit | ../api/hack/retag-images.sh
-helm template logging/kibana | ../api/hack/retag-images.sh
+helm template logging/promtail | ../api/hack/retag-images.sh
+helm template logging/loki | ../api/hack/retag-images.sh
 
 # PULL_BASE_REF is the name of the current branch in case of a post-submit
 # or the name of the base branch in case of a PR.
@@ -92,8 +91,27 @@ retry 6 ./_build/image-loader \
 
 ## Deploy
 HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tiller:${HELM_VERSION}" \
+  DEPLOY_STACK=kubermatic \
   DEPLOY_NODEPORT_PROXY=false \
+  TILLER_NAMESPACE="kube-system" \
+  ./hack/deploy.sh \
+  master \
+  ${VALUES_FILE} \
+  ${HELM_EXTRA_ARGS}
+
+HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tiller:${HELM_VERSION}" \
+  DEPLOY_STACK=monitoring \
   DEPLOY_ALERTMANAGER=false \
+  TILLER_NAMESPACE="kube-system" \
+  ./hack/deploy.sh \
+  master \
+  ${VALUES_FILE} \
+  ${HELM_EXTRA_ARGS}
+
+HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tiller:${HELM_VERSION}" \
+  DEPLOY_STACK=logging \
+  DEPLOY_LOKI=true \
+  DEPLOY_ELASTIC=false \
   TILLER_NAMESPACE="kube-system" \
   ./hack/deploy.sh \
   master \
