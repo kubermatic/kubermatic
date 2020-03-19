@@ -1214,38 +1214,42 @@ func DecodeAdminTokenReq(c context.Context, r *http.Request) (interface{}, error
 	return req, nil
 }
 
-func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AdminTokenReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		clusterReq := common.GetClusterReq{
+			DCReq: common.DCReq{
+				ProjectReq: common.ProjectReq{ProjectID: req.ProjectID},
+			},
+			ClusterID: req.ClusterID,
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		cluster, err := GetCluster(ctx, clusterReq, projectProvider, privilegedProjectProvider, userInfoGetter)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
 		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeAdminKubeconfig(cluster))
 	}
 }
 
-func RevokeViewerTokenEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func RevokeViewerTokenEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AdminTokenReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		clusterReq := common.GetClusterReq{
+			DCReq: common.DCReq{
+				ProjectReq: common.ProjectReq{ProjectID: req.ProjectID},
+			},
+			ClusterID: req.ClusterID,
 		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		cluster, err := GetCluster(ctx, clusterReq, projectProvider, privilegedProjectProvider, userInfoGetter)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
 		return nil, common.KubernetesErrorToHTTPError(clusterProvider.RevokeViewerKubeconfig(cluster))
