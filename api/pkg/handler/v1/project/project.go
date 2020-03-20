@@ -68,7 +68,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		if req.DisplayAll {
+		if req.DisplayAll && userInfo.IsAdmin {
 			return getAllProjectsForAdmin(userInfo, projectProvider, memberProvider, userProvider, clusterProviderGetter, seedsGetter)
 		}
 		projects := []*apiv1.Project{}
