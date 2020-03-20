@@ -317,6 +317,44 @@ func TestListProjectEndpoint(t *testing.T) {
 				},
 			},
 		},
+		{
+			Name:       "scenario 3: regular user can not list all projects",
+			Body:       ``,
+			DisplayAll: true,
+			HTTPStatus: http.StatusOK,
+			ExistingKubermaticObjects: []runtime.Object{
+				// add some projects
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-second-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(time.Minute)),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
+				// add John
+				test.GenUser("JohnID", "John", "john@acme.com"),
+				genUser("Bob", "bob@acme.com", false),
+				// make John the owner of the first project and the editor of the second
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-second-project-ID", "john@acme.com", "editors"),
+				test.GenBinding("my-third-project-ID", "bob@acme.com", "owners"),
+			},
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+			ExpectedResponse: []apiv1.Project{
+				{
+					Status: "Active",
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "my-third-project-ID",
+						Name:              "my-third-project",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
+					},
+					Owners: []apiv1.User{
+						{
+							ObjectMeta: apiv1.ObjectMeta{
+								Name: "Bob",
+							},
+							Email: "bob@acme.com",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testcases {
