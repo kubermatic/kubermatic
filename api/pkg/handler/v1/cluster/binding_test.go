@@ -307,7 +307,7 @@ func TestListRoleBinding(t *testing.T) {
 	}{
 		{
 			name:             "scenario 1: list bindings",
-			expectedResponse: `[{"namespace":"default","subjects":[{"kind":"User","name":"test-1@example.com"}],"roleRefName":"role-1"},{"namespace":"default","subjects":[{"kind":"User","name":"test-2@example.com"},{"kind":"Group","name":"test"}],"roleRefName":"role-2"},{"namespace":"test","subjects":[{"kind":"User","name":"test-10@example.com"},{"kind":"Group","name":"test"}],"roleRefName":"role-10"}]`,
+			expectedResponse: `[{"namespace":"default","subjects":[{"kind":"User","name":"test-1@example.com"}],"roleRefName":"role-1"},{"namespace":"default","subjects":[{"kind":"User","name":"test-2@example.com"}],"roleRefName":"role-2"},{"namespace":"default","subjects":[{"kind":"Group","name":"test"}],"roleRefName":"role-2"},{"namespace":"test","subjects":[{"kind":"User","name":"test-10@example.com"}],"roleRefName":"role-10"},{"namespace":"test","subjects":[{"kind":"Group","name":"test"}],"roleRefName":"role-10"}]`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -587,7 +587,7 @@ func TestBindUserToClusterRole(t *testing.T) {
 			),
 			existingKubernrtesObjs: []runtime.Object{
 				genDefaultClusterRole("role-1"),
-				genDefaultGroupClusterRoleBinding("test", "role-1", "group"),
+				genDefaultGroupClusterRoleBinding("test", "role-1", "test"),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -710,7 +710,7 @@ func TestListClusterRoleBinding(t *testing.T) {
 		// scenario 1
 		{
 			name:             "scenario 1: list cluster role bindings",
-			expectedResponse: `[{"subjects":[{"kind":"User","name":"test-1"}],"roleRefName":"role-1"},{"subjects":[{"kind":"User","name":"test-2"}],"roleRefName":"role-1"},{"subjects":[{"kind":"User","name":"test-3"},{"subjects":[{"kind":"Group","name":"test-4"}],"roleRefName":"role-2"}]`,
+			expectedResponse: `[{"subjects":[{"kind":"User","name":"test-1"}],"roleRefName":"role-1"},{"subjects":[{"kind":"User","name":"test-2"}],"roleRefName":"role-1"},{"subjects":[{"kind":"User","name":"test-3"}],"roleRefName":"role-2"},{"subjects":[{"kind":"Group","name":"test-4"}],"roleRefName":"role-2"}]`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
