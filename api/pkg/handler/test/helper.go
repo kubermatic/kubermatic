@@ -149,7 +149,7 @@ type newRoutingFunc func(
 
 func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	if seedsGetter == nil {
-		seedsGetter = buildSeeds()
+		seedsGetter = BuildSeeds()
 	}
 	allObjects := kubeObjects
 	allObjects = append(allObjects, machineObjects...)
@@ -391,7 +391,7 @@ func GenTestSeed() *kubermaticv1.Seed {
 		}}
 }
 
-func buildSeeds() provider.SeedsGetter {
+func BuildSeeds() provider.SeedsGetter {
 	return func() (map[string]*kubermaticv1.Seed, error) {
 		seeds := make(map[string]*kubermaticv1.Seed)
 		seeds["us-central1"] = GenTestSeed()

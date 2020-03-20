@@ -56,7 +56,7 @@ func ConvertInternalEventToExternal(event corev1.Event) apiv1.Event {
 	}
 }
 
-func ConvertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project, projectOwners []apiv1.User) *apiv1.Project {
+func ConvertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project, projectOwners []apiv1.User, clustersNumber int) *apiv1.Project {
 	return &apiv1.Project{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                kubermaticProject.Name,
@@ -70,8 +70,9 @@ func ConvertInternalProjectToExternal(kubermaticProject *kubermaticapiv1.Project
 				return nil
 			}(),
 		},
-		Labels: label.FilterLabels(label.ProjectResourceType, kubermaticProject.Labels),
-		Status: kubermaticProject.Status.Phase,
-		Owners: projectOwners,
+		Labels:         label.FilterLabels(label.ProjectResourceType, kubermaticProject.Labels),
+		Status:         kubermaticProject.Status.Phase,
+		Owners:         projectOwners,
+		ClustersNumber: clustersNumber,
 	}
 }

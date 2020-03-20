@@ -1271,7 +1271,7 @@ func (r Routing) listProjects() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(project.ListEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.userProjectMapper, r.projectMemberProvider, r.userProvider)),
+		)(project.ListEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.userProjectMapper, r.projectMemberProvider, r.userProvider, r.clusterProviderGetter, r.seedsGetter)),
 		project.DecodeList,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1295,7 +1295,7 @@ func (r Routing) getProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(project.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.projectMemberProvider, r.userProvider, r.userInfoGetter)),
+		)(project.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.projectMemberProvider, r.userProvider, r.userInfoGetter, r.clusterProviderGetter, r.seedsGetter)),
 		common.DecodeGetProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1350,7 +1350,7 @@ func (r Routing) updateProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(project.UpdateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.projectMemberProvider, r.userProvider, r.userInfoGetter)),
+		)(project.UpdateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.projectMemberProvider, r.userProvider, r.userInfoGetter, r.clusterProviderGetter, r.seedsGetter)),
 		project.DecodeUpdateRq,
 		encodeJSON,
 		r.defaultServerOptions()...,
