@@ -500,7 +500,8 @@ type Project struct {
 	Status string            `json:"status"`
 	Labels map[string]string `json:"labels,omitempty"`
 	// Owners an optional owners list for the given project
-	Owners []User `json:"owners,omitempty"`
+	Owners         []User `json:"owners,omitempty"`
+	ClustersNumber int    `json:"clustersNumber,omitempty"`
 }
 
 // Kubeconfig is a clusters kubeconfig

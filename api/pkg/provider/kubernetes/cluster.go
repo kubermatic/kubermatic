@@ -425,3 +425,16 @@ func (p *ClusterProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster) error {
 func (p *ClusterProvider) SeedAdminConfig() *restclient.Config {
 	return p.seedKubeconfig
 }
+
+// ListAll gets all clusters
+//
+// Note that the admin privileges are used to list all clusters
+func (p *ClusterProvider) ListAll() (*kubermaticv1.ClusterList, error) {
+
+	projectClusters := &kubermaticv1.ClusterList{}
+	if err := p.client.List(context.Background(), projectClusters); err != nil {
+		return nil, fmt.Errorf("failed to list clusters: %v", err)
+	}
+
+	return projectClusters, nil
+}

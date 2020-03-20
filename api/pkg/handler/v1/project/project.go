@@ -57,7 +57,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider) endpoint.Endpoint 
 }
 
 // ListEndpoint defines an HTTP endpoint for listing projects
-func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) endpoint.Endpoint {
+func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(ListReq)
 		if !ok {
@@ -69,7 +69,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		}
 
 		if req.DisplayAll {
-			return getAllProjectsForAdmin(userInfo, projectProvider, memberProvider, userProvider)
+			return getAllProjectsForAdmin(userInfo, projectProvider, memberProvider, userProvider, clusterProviderGetter, seedsGetter)
 		}
 		projects := []*apiv1.Project{}
 		userMappings, err := memberMapper.MappingsFor(userInfo.Email)
@@ -99,7 +99,11 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			projects = append(projects, common.ConvertInternalProjectToExternal(projectInternal, projectOwners))
+			clustersNumber, err := getNumberOfClustersForProject(clusterProviderGetter, seedsGetter, projectInternal)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			projects = append(projects, common.ConvertInternalProjectToExternal(projectInternal, projectOwners, clustersNumber))
 
 		}
 
@@ -110,19 +114,24 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 	}
 }
 
-func getAllProjectsForAdmin(userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) ([]*apiv1.Project, error) {
+func getAllProjectsForAdmin(userInfo *provider.UserInfo, projectProvider provider.ProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) ([]*apiv1.Project, error) {
 	projects := []*apiv1.Project{}
 	projectList, err := projectProvider.List(nil)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
+	clustersNumbers, err := getNumberOfClusters(clusterProviderGetter, seedsGetter)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
 	for _, project := range projectList {
 		projectOwners, err := common.GetOwnersForProject(userInfo, project, memberProvider, userProvider)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		projects = append(projects, common.ConvertInternalProjectToExternal(project, projectOwners))
+
+		projects = append(projects, common.ConvertInternalProjectToExternal(project, projectOwners, clustersNumbers[project.Name]))
 	}
 
 	return projects, nil
@@ -174,7 +183,7 @@ func deleteProjectByRegularUser(ctx context.Context, userInfoGetter provider.Use
 
 // UpdateEndpoint defines an HTTP endpoint that updates an existing project in the system
 // in the current implementation only project renaming is supported
-func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, userInfoGetter provider.UserInfoGetter, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateRq)
 		if !ok {
@@ -206,7 +215,11 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return common.ConvertInternalProjectToExternal(project, projectOwners), nil
+		clustersNumber, err := getNumberOfClustersForProject(clusterProviderGetter, seedsGetter, project)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return common.ConvertInternalProjectToExternal(project, projectOwners, clustersNumber), nil
 	}
 }
 
@@ -227,7 +240,7 @@ func updateProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 }
 
 // GeEndpoint defines an HTTP endpoint for getting a project
-func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider, userInfoGetter provider.UserInfoGetter, clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetProjectRq)
 		if !ok {
@@ -251,7 +264,11 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return common.ConvertInternalProjectToExternal(kubermaticProject, projectOwners), nil
+		clustersNumber, err := getNumberOfClustersForProject(clusterProviderGetter, seedsGetter, kubermaticProject)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return common.ConvertInternalProjectToExternal(kubermaticProject, projectOwners, clustersNumber), nil
 	}
 }
 
@@ -351,4 +368,53 @@ func DecodeList(c context.Context, r *http.Request) (interface{}, error) {
 	req.DisplayAll = displayAll
 
 	return req, nil
+}
+
+func getNumberOfClustersForProject(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter, project *kubermaticapiv1.Project) (int, error) {
+	var clustersNumber int
+	seeds, err := seedsGetter()
+	if err != nil {
+		return clustersNumber, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
+
+	for datacenter, seed := range seeds {
+		clusterProvider, err := clusterProviderGetter(seed)
+		if err != nil {
+			return clustersNumber, errors.NewNotFound("cluster-provider", datacenter)
+		}
+		clusters, err := clusterProvider.List(project, nil)
+		if err != nil {
+			return clustersNumber, err
+		}
+		clustersNumber += len(clusters.Items)
+	}
+
+	return clustersNumber, nil
+}
+
+func getNumberOfClusters(clusterProviderGetter provider.ClusterProviderGetter, seedsGetter provider.SeedsGetter) (map[string]int, error) {
+	clustersNumber := map[string]int{}
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+	}
+
+	for datacenter, seed := range seeds {
+		clusterProvider, err := clusterProviderGetter(seed)
+		if err != nil {
+			return nil, errors.NewNotFound("cluster-provider", datacenter)
+		}
+		clusters, err := clusterProvider.ListAll()
+		if err != nil {
+			return clustersNumber, err
+		}
+		for _, cluster := range clusters.Items {
+			projectName, ok := cluster.Labels[kubermaticapiv1.ProjectIDLabelKey]
+			if ok {
+				clustersNumber[projectName]++
+			}
+		}
+	}
+
+	return clustersNumber, nil
 }

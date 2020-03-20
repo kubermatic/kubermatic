@@ -10965,6 +10965,11 @@
       "description": "Project is a top-level container for a set of resources",
       "type": "object",
       "properties": {
+        "clustersNumber": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ClustersNumber"
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created.",
           "type": "string",

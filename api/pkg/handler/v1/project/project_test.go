@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -21,6 +21,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
@@ -28,7 +29,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	fakerestclient "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestRenameProjectEndpoint(t *testing.T) {
@@ -427,11 +432,31 @@ func TestListProjectMethod(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, []runtime.Object{}...)
+			fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
+			kubernetesClient := fakerestclient.NewSimpleClientset([]runtime.Object{}...)
+			clusterProvider := kubernetes.NewClusterProvider(
+				&restclient.Config{},
+				fakeImpersonationClient,
+				fUserClusterConnection,
+				"",
+				rbac.ExtractGroupPrefix,
+				fakeClient,
+				kubernetesClient,
+				false,
+			)
+			clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
+			clusterProviderGetter := func(seed *kubermaticapiv1.Seed) (provider.ClusterProvider, error) {
+				if clusterProvider, exists := clusterProviders[seed.Name]; exists {
+					return clusterProvider, nil
+				}
+				return nil, fmt.Errorf("can not find clusterprovider for cluster %q", seed.Name)
+			}
 
 			kubermaticInformerFactory.Start(wait.NeverStop)
 			kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
 
-			endpointFun := project.ListEndpoint(userInfoGetter, test.NewFakeProjectProvider(), test.NewFakePrivilegedProjectProvider(), projectMemberProvider, projectMemberProvider, userProvider)
+			endpointFun := project.ListEndpoint(userInfoGetter, test.NewFakeProjectProvider(), test.NewFakePrivilegedProjectProvider(), projectMemberProvider, projectMemberProvider, userProvider, clusterProviderGetter, test.BuildSeeds())
 
 			ctx := context.WithValue(context.TODO(), middleware.UserCRContextKey, tc.ExistingAPIUser)
 
@@ -471,6 +496,14 @@ func TestListProjectMethod(t *testing.T) {
 			}
 		})
 	}
+}
+
+type fakeUserClusterConnection struct {
+	fakeDynamicClient ctrlruntimeclient.Client
+}
+
+func (f *fakeUserClusterConnection) GetClient(_ *kubermaticapiv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
+	return f.fakeDynamicClient, nil
 }
 
 func TestGetProjectEndpoint(t *testing.T) {
