@@ -8406,6 +8406,10 @@
       "description": "ClusterRoleUser defines associated user with cluster role",
       "type": "object",
       "properties": {
+        "group": {
+          "type": "string",
+          "x-go-name": "Group"
+        },
         "userEmail": {
           "type": "string",
           "x-go-name": "UserEmail"
@@ -11302,6 +11306,10 @@
       "description": "RoleUser defines associated user with role",
       "type": "object",
       "properties": {
+        "group": {
+          "type": "string",
+          "x-go-name": "Group"
+        },
         "userEmail": {
           "type": "string",
           "x-go-name": "UserEmail"

@@ -102,6 +102,93 @@ func TestBindUserToRole(t *testing.T) {
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
+		// group scenarios
+		{
+			name:             "scenario 5: bind group to role test-1",
+			roleName:         "role-1",
+			namespace:        "default",
+			body:             `{"group":"test"}`,
+			expectedResponse: `{"namespace":"default","subjects":[{"kind":"Group","apiGroup":"rbac.authorization.k8s.io","name":"test"}],"roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultRole("role-1", "default"),
+				genDefaultRole("role-1", "test"),
+				genDefaultClusterRole("role-1"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "scenario 6: create role binding when cluster role doesn't exist",
+			roleName:         "role-1",
+			namespace:        "default",
+			body:             `{"group":"test"}`,
+			expectedResponse: `{"error":{"code":404,"message":"roles.rbac.authorization.k8s.io \"role-1\" not found"}}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusNotFound,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultRole("role-1", "test"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 7
+		{
+			name:             "scenario 7: update existing binding for the new group",
+			roleName:         "role-1",
+			namespace:        "default",
+			body:             `{"group":"test"}`,
+			expectedResponse: `{"namespace":"default","subjects":[{"kind":"Group","name":"admins"},{"kind":"Group","apiGroup":"rbac.authorization.k8s.io","name":"test"}],"roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultRole("role-1", "default"),
+				genDefaultGroupRoleBinding("test", "default", "role-1", "admins"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "scenario 8: update existing binding for the new group",
+			roleName:         "role-1",
+			namespace:        "default",
+			body:             `{"group":"test"}`,
+			expectedResponse: `{"namespace":"default","subjects":[{"kind":"User","name":"bob@acme.com"},{"kind":"Group","apiGroup":"rbac.authorization.k8s.io","name":"test"}],"roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultRole("role-1", "default"),
+				genDefaultRoleBinding("test", "default", "role-1", "bob@acme.com"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "scenario 9: bind existing group",
+			roleName:         "role-1",
+			namespace:        "default",
+			body:             `{"group":"test"}`,
+			expectedResponse: `{"error":{"code":400,"message":"group test already connected to role role-1"}}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusBadRequest,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultRole("role-1", "default"),
+				genDefaultGroupRoleBinding("test", "default", "role-1", "test"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -162,6 +249,23 @@ func TestUnbindUserFromRoleBinding(t *testing.T) {
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
+		{
+			name:             "scenario 1: remove group from the binding",
+			roleName:         "role-1",
+			namespace:        "default",
+			body:             `{"group":"test"}`,
+			expectedResponse: `{"namespace":"default","roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultRole("role-1", "default"),
+				genDefaultGroupRoleBinding("test", "default", "role-1", "test"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -203,7 +307,7 @@ func TestListRoleBinding(t *testing.T) {
 	}{
 		{
 			name:             "scenario 1: list bindings",
-			expectedResponse: `[{"namespace":"default","subjects":[{"kind":"User","name":"test-1@example.com"}],"roleRefName":"role-1"},{"namespace":"default","subjects":[{"kind":"User","name":"test-2@example.com"}],"roleRefName":"role-2"},{"namespace":"test","subjects":[{"kind":"User","name":"test-10@example.com"}],"roleRefName":"role-10"}]`,
+			expectedResponse: `[{"namespace":"default","subjects":[{"kind":"User","name":"test-1@example.com"}],"roleRefName":"role-1"},{"namespace":"default","subjects":[{"kind":"User","name":"test-2@example.com"},{"kind":"Group","name":"test"}],"roleRefName":"role-2"},{"namespace":"test","subjects":[{"kind":"User","name":"test-10@example.com"},{"kind":"Group","name":"test"}],"roleRefName":"role-10"}]`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -215,7 +319,9 @@ func TestListRoleBinding(t *testing.T) {
 				genDefaultClusterRole("role-1"),
 				genDefaultRoleBinding("binding-1", "default", "role-1", "test-1@example.com"),
 				genDefaultRoleBinding("binding-2", "default", "role-2", "test-2@example.com"),
+				genDefaultGroupRoleBinding("binding-3", "default", "role-2", "test"),
 				genDefaultRoleBinding("binding-1", "test", "role-10", "test-10@example.com"),
+				genDefaultGroupRoleBinding("binding-2", "test", "role-10", "test"),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -266,6 +372,25 @@ func genDefaultRoleBinding(name, namespace, roleID, userEmail string) *rbacv1.Ro
 	}
 }
 
+func genDefaultGroupRoleBinding(name, namespace, roleID, group string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+			Namespace: namespace,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: "Group",
+				Name: group,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Name: roleID,
+		},
+	}
+}
+
 func genDefaultClusterRoleBinding(name, roleID, userEmail string) *rbacv1.ClusterRoleBinding {
 	return &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -276,6 +401,24 @@ func genDefaultClusterRoleBinding(name, roleID, userEmail string) *rbacv1.Cluste
 			{
 				Kind: "User",
 				Name: userEmail,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Name: roleID,
+		},
+	}
+}
+
+func genDefaultGroupClusterRoleBinding(name, roleID, group string) *rbacv1.ClusterRoleBinding {
+	return &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: "Group",
+				Name: group,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -364,6 +507,90 @@ func TestBindUserToClusterRole(t *testing.T) {
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
+		// group scenarios
+		// scenario 4
+		{
+			name:             "scenario 5: bind group to role-1, when cluster role binding doesn't exist",
+			roleName:         "role-1",
+			body:             `{"group":"test"}`,
+			expectedResponse: `{"error":{"code":500,"message":"the cluster role binding not found"}}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusInternalServerError,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultClusterRole("role-2"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "scenario 6: create cluster role binding when cluster role doesn't exist",
+			roleName:         "role-1",
+			body:             `{"group":"test"}`,
+			expectedResponse: `{"error":{"code":404,"message":"clusterroles.rbac.authorization.k8s.io \"role-1\" not found"}}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusNotFound,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-2"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 7
+		{
+			name:             "scenario 7: update existing binding for the new group",
+			roleName:         "role-1",
+			body:             `{"group":"test"}`,
+			expectedResponse: `{"subjects":[{"kind":"User","name":"bob@acme.com"},{"kind":"Group","apiGroup":"rbac.authorization.k8s.io","name":"test"}],"roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultClusterRole("role-2"),
+				genDefaultClusterRoleBinding("test", "role-1", "bob@acme.com"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "scenario 8: update existing binding for the new group",
+			roleName:         "role-1",
+			body:             `{"group":"test"}`,
+			expectedResponse: `{"subjects":[{"kind":"Group","name":"admins"},{"kind":"Group","apiGroup":"rbac.authorization.k8s.io","name":"test"}],"roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultClusterRole("role-2"),
+				genDefaultGroupClusterRoleBinding("test", "role-1", "admins"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "scenario 9: bind existing group",
+			roleName:         "role-1",
+			body:             `{"group":"test"}`,
+			expectedResponse: `{"error":{"code":400,"message":"group test already connected to role role-1"}}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusBadRequest,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultGroupClusterRoleBinding("test", "role-1", "group"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -423,6 +650,24 @@ func TestUnbindUserFromClusterRoleBinding(t *testing.T) {
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
+		// scenario 2
+		{
+			name:             "scenario 1: remove group from existing cluster role binding",
+			roleName:         "role-1",
+			body:             `{"group":"test"}`,
+			expectedResponse: `{"roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultClusterRole("role-2"),
+				genDefaultGroupClusterRoleBinding("test", "role-1", "test"),
+			},
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -465,7 +710,7 @@ func TestListClusterRoleBinding(t *testing.T) {
 		// scenario 1
 		{
 			name:             "scenario 1: list cluster role bindings",
-			expectedResponse: `[{"subjects":[{"kind":"User","name":"test-1"}],"roleRefName":"role-1"},{"subjects":[{"kind":"User","name":"test-2"}],"roleRefName":"role-1"},{"subjects":[{"kind":"User","name":"test-3"}],"roleRefName":"role-2"}]`,
+			expectedResponse: `[{"subjects":[{"kind":"User","name":"test-1"}],"roleRefName":"role-1"},{"subjects":[{"kind":"User","name":"test-2"}],"roleRefName":"role-1"},{"subjects":[{"kind":"User","name":"test-3"},{"subjects":[{"kind":"Group","name":"test-4"}],"roleRefName":"role-2"}]`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -477,6 +722,7 @@ func TestListClusterRoleBinding(t *testing.T) {
 				genDefaultClusterRoleBinding("binding-1-1", "role-1", "test-1"),
 				genDefaultClusterRoleBinding("binding-1-2", "role-1", "test-2"),
 				genDefaultClusterRoleBinding("binding-2-1", "role-2", "test-3"),
+				genDefaultGroupClusterRoleBinding("binding-2-2", "role-2", "test-4"),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
