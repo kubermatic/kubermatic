@@ -18,6 +18,9 @@ import (
 // swagger:model Project
 type Project struct {
 
+	// clusters number
+	ClustersNumber int64 `json:"clustersNumber,omitempty"`
+
 	// CreationTimestamp is a timestamp representing the server time when this object was created.
 	// Format: date-time
 	CreationTimestamp strfmt.DateTime `json:"creationTimestamp,omitempty"`
