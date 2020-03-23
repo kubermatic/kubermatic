@@ -1365,12 +1365,14 @@ type ClusterRoleName struct {
 // swagger:model RoleUser
 type RoleUser struct {
 	UserEmail string `json:"userEmail"`
+	Group     string `json:"group"`
 }
 
 // ClusterRoleUser defines associated user with cluster role
 // swagger:model ClusterRoleUser
 type ClusterRoleUser struct {
 	UserEmail string `json:"userEmail"`
+	Group     string `json:"group"`
 }
 
 // Role defines RBAC role for the user cluster
