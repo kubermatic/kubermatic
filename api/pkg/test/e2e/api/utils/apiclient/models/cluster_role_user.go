@@ -14,6 +14,9 @@ import (
 // swagger:model ClusterRoleUser
 type ClusterRoleUser struct {
 
+	// group
+	Group string `json:"group,omitempty"`
+
 	// user email
 	UserEmail string `json:"userEmail,omitempty"`
 }
