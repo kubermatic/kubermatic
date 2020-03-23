@@ -1,3 +1,4 @@
+{{- $port := .Variables.port | default 49100 -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -15,7 +16,6 @@ spec:
       app.kubernetes.io/name: node-exporter
   template:
     metadata:
-      name: node-exporter
       labels:
         app.kubernetes.io/name: node-exporter
     spec:
@@ -29,7 +29,7 @@ spec:
         - '--path.procfs=/host/proc'
         - '--path.sysfs=/host/sys'
         - '--path.rootfs=/host/root'
-        - '--web.listen-address=127.0.0.1:9100'
+        - '--web.listen-address=127.0.0.1:{{ $port }}'
         resources:
           requests:
             cpu: 10m
@@ -48,31 +48,28 @@ spec:
           readOnly: true
           mountPath: /host/root
           mountPropagation: HostToContainer
-
-      - name: kube-rbac-proxy
-        image: '{{ Registry "quay.io" }}/coreos/kube-rbac-proxy:v0.4.1'
+      - name: socat
+        image: '{{ Registry "docker.io" }}/alpine/socat:1.7.3.4-r0'
+        imagePullPolicy: IfNotPresent
+        command: [/bin/sh]
         args:
-        - '--logtostderr'
-        - '--secure-listen-address=$(IP):9100'
-        - '--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256'
-        - '--upstream=http://127.0.0.1:9100/'
-        env:
-        - name: IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        ports:
-        - containerPort: 9100
-          hostPort: 9100
-          name: https
-        resources:
-          requests:
-            cpu: 10m
-            memory: 24Mi
-          limits:
-            cpu: 20m
-            memory: 48Mi
+        - -c
+        - |
+          set -e
 
+          socket=/shared/node-exporter-socket
+          rm -f $socket
+
+          socat -d -d UNIX-LISTEN:$socket,fork,reuseaddr TCP4:127.0.0.1:{{ $port }}
+        requests:
+          cpu: 10m
+          memory: 24Mi
+        limits:
+          cpu: 100m
+          memory: 48Mi
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
       tolerations:
       - effect: NoExecute
         operator: Exists
@@ -88,6 +85,9 @@ spec:
       - name: root
         hostPath:
           path: /
+      - name: shared
+        hostPath:
+          path: /tmp
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534

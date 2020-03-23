@@ -1,0 +1,70 @@
+{{- $port := .Variables.port | default 49100 -}}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter-proxy
+  namespace: kube-system
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+    app.kubernetes.io/name: node-exporter-proxy
+    app.kubernetes.io/version: v0.18.0
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: node-exporter-proxy
+  template:
+    metadata:
+{{- with .ScrapeAnnotationPrefix }}
+      annotations:
+        {{ . }}/path: /metrics
+        {{ . }}/port: "{{ $port }}"
+{{- end }}
+      labels:
+        app.kubernetes.io/name: node-exporter-proxy
+    spec:
+      containers:
+      - name: socat
+        image: '{{ Registry "docker.io" }}/alpine/socat:1.7.3.4-r0'
+        imagePullPolicy: IfNotPresent
+        command: [/bin/sh]
+        args:
+        - -c
+        - |
+          set -e
+
+          socket=/shared/node-exporter-socket
+          if [ ! -S "$socket" ]; then
+            echo "Socket $socket has not yet been opened, exiting."
+            exit 1
+          fi
+
+          socat -d -d TCP4-LISTEN:{{ $port }},fork,reuseaddr UNIX:$socket
+        resources:
+          requests:
+            cpu: 10m
+            memory: 24Mi
+          limits:
+            cpu: 100m
+            memory: 48Mi
+        ports:
+        - containerPort: {{ $port }}
+          hostPort: {{ $port }}
+          name: http
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
+          mountPropagation: HostToContainer
+      tolerations:
+      - effect: NoExecute
+        operator: Exists
+      - effect: NoSchedule
+        operator: Exists
+      volumes:
+      - name: shared
+        hostPath:
+          path: /tmp
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
