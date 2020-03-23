@@ -56,8 +56,7 @@ helm template oauth | ../api/hack/retag-images.sh
 helm template iap | ../api/hack/retag-images.sh
 helm template minio | ../api/hack/retag-images.sh
 helm template s3-exporter | ../api/hack/retag-images.sh
-helm template nodeport-proxy --set=nodePortProxy.image.tag=${GIT_HEAD_HASH} \
-  ../api/hack/retag-images.sh
+helm template nodeport-proxy --set=nodePortProxy.image.tag=${GIT_HEAD_HASH} | ../api/hack/retag-images.sh
 
 helm template monitoring/prometheus | ../api/hack/retag-images.sh
 helm template monitoring/node-exporter | ../api/hack/retag-images.sh
