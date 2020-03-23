@@ -19,7 +19,7 @@ kubermatic:
   domain: ""
   # base64 encoded kubeconfig which gives admin access to all seed clusters
   kubeconfig: ""
-  # The prefix for monitoring annotations in the user cluster. Default: monitoring.kubermatic.io -> monitoring.kubermatic.io/scrape, monitoring.kubermatic.io/path
+  # The prefix for monitoring annotations in the user cluster. For example: monitoring.kubermatic.io -> monitoring.kubermatic.io/scrape, monitoring.kubermatic.io/path
   monitoringScrapeAnnotationPrefix: ""
   # The location from which to pull the Kubermatic docker image
   kubermaticImage: ""
