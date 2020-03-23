@@ -76,17 +76,30 @@ func BindUserToRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.End
 
 		oldBinding := existingRoleBinding.DeepCopy()
 		for _, subject := range existingRoleBinding.Subjects {
-			if subject.Name == roleUser.UserEmail {
+			if roleUser.UserEmail != "" && subject.Name == roleUser.UserEmail {
 				return nil, errors.NewBadRequest("user %s already connected to role %s", roleUser.UserEmail, req.RoleID)
+			}
+			if roleUser.Group != "" && subject.Name == roleUser.Group {
+				return nil, errors.NewBadRequest("group %s already connected to role %s", roleUser.Group, req.RoleID)
 			}
 		}
 
-		existingRoleBinding.Subjects = append(existingRoleBinding.Subjects,
-			rbacv1.Subject{
-				Kind:     rbacv1.UserKind,
-				APIGroup: rbacv1.GroupName,
-				Name:     roleUser.UserEmail,
-			})
+		if roleUser.UserEmail != "" {
+			existingRoleBinding.Subjects = append(existingRoleBinding.Subjects,
+				rbacv1.Subject{
+					Kind:     rbacv1.UserKind,
+					APIGroup: rbacv1.GroupName,
+					Name:     roleUser.UserEmail,
+				})
+		}
+		if roleUser.Group != "" {
+			existingRoleBinding.Subjects = append(existingRoleBinding.Subjects,
+				rbacv1.Subject{
+					Kind:     rbacv1.GroupKind,
+					APIGroup: rbacv1.GroupName,
+					Name:     roleUser.Group,
+				})
+		}
 
 		if err := client.Patch(ctx, existingRoleBinding, ctrlruntimeclient.MergeFrom(oldBinding)); err != nil {
 			return nil, fmt.Errorf("failed to update role binding: %v", err)
@@ -143,7 +156,10 @@ func UnbindUserFromRoleBindingEndpoint(userInfoGetter provider.UserInfoGetter) e
 		binding := existingRoleBinding.DeepCopy()
 		var newSubjects []rbacv1.Subject
 		for _, subject := range binding.Subjects {
-			if subject.Name == roleUser.UserEmail {
+			if roleUser.UserEmail != "" && subject.Name == roleUser.UserEmail {
+				continue
+			}
+			if roleUser.Group != "" && subject.Name == roleUser.Group {
 				continue
 			}
 			newSubjects = append(newSubjects, subject)
@@ -163,8 +179,8 @@ func (r roleUserReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the project ID and datacenter cannot be empty")
 	}
-	if r.Body.UserEmail == "" {
-		return fmt.Errorf("the user email cannot be empty")
+	if r.Body.UserEmail == "" && r.Body.Group == "" {
+		return fmt.Errorf("either user email or group must be set")
 	}
 	return nil
 }
@@ -294,17 +310,30 @@ func BindUserToClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpo
 
 		oldBinding := existingClusterRoleBinding.DeepCopy()
 		for _, subject := range existingClusterRoleBinding.Subjects {
-			if subject.Name == clusterRoleUser.UserEmail {
+			if clusterRoleUser.UserEmail != "" && subject.Name == clusterRoleUser.UserEmail {
 				return nil, errors.NewBadRequest("user %s already connected to role %s", clusterRoleUser.UserEmail, req.RoleID)
+			}
+			if clusterRoleUser.Group != "" && subject.Name == clusterRoleUser.Group {
+				return nil, errors.NewBadRequest("group %s already connected to role %s", clusterRoleUser.Group, req.RoleID)
 			}
 		}
 
-		existingClusterRoleBinding.Subjects = append(existingClusterRoleBinding.Subjects,
-			rbacv1.Subject{
-				Kind:     rbacv1.UserKind,
-				APIGroup: rbacv1.GroupName,
-				Name:     clusterRoleUser.UserEmail,
-			})
+		if clusterRoleUser.UserEmail != "" {
+			existingClusterRoleBinding.Subjects = append(existingClusterRoleBinding.Subjects,
+				rbacv1.Subject{
+					Kind:     rbacv1.UserKind,
+					APIGroup: rbacv1.GroupName,
+					Name:     clusterRoleUser.UserEmail,
+				})
+		}
+		if clusterRoleUser.Group != "" {
+			existingClusterRoleBinding.Subjects = append(existingClusterRoleBinding.Subjects,
+				rbacv1.Subject{
+					Kind:     rbacv1.GroupKind,
+					APIGroup: rbacv1.GroupName,
+					Name:     clusterRoleUser.Group,
+				})
+		}
 
 		if err := client.Patch(ctx, existingClusterRoleBinding, ctrlruntimeclient.MergeFrom(oldBinding)); err != nil {
 			return nil, fmt.Errorf("failed to update cluster role binding: %v", err)
@@ -361,7 +390,10 @@ func UnbindUserFromClusterRoleBindingEndpoint(userInfoGetter provider.UserInfoGe
 		binding := existingClusterRoleBinding.DeepCopy()
 		var newSubjects []rbacv1.Subject
 		for _, subject := range binding.Subjects {
-			if subject.Name == clusterRoleUser.UserEmail {
+			if clusterRoleUser.UserEmail != "" && subject.Name == clusterRoleUser.UserEmail {
+				continue
+			}
+			if clusterRoleUser.Group != "" && subject.Name == clusterRoleUser.Group {
 				continue
 			}
 			newSubjects = append(newSubjects, subject)
@@ -381,8 +413,8 @@ func (r clusterRoleUserReq) Validate() error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the project ID and datacenter cannot be empty")
 	}
-	if r.Body.UserEmail == "" {
-		return fmt.Errorf("the user email cannot be empty")
+	if r.Body.UserEmail == "" && r.Body.Group == "" {
+		return fmt.Errorf("either user email or group must be set")
 	}
 
 	return nil
