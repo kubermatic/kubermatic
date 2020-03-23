@@ -11,10 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	"github.com/go-test/deep"
-	"k8s.io/apimachinery/pkg/types"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -23,8 +20,10 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -241,6 +240,94 @@ func TestListNodesForCluster(t *testing.T) {
 				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
 			},
 			ExpectedResponse: []apiv1.Node{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "mars",
+						Name: "mars",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							AWS: &apiv1.AWSNodeSpec{
+								InstanceType:     "t2.micro",
+								VolumeSize:       50,
+								AvailabilityZone: "eu-central-1a",
+								SubnetID:         "subnet-2bff4f43",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: false,
+							},
+						},
+						SSHUserName: "ubuntu",
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "mars",
+						Capacity: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+						Allocatable: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+					},
+				},
+			},
+		},
+		// scenario 3
+		{
+			Name:                   "scenario 3: the admin John can list nodes that belong to the given Bob's cluster",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), genUser("John", "john@acme.com", true)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
+			},
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+			},
+			ExpectedResponse: []apiv1.Node{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "venus",
+						Name: "venus",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: true,
+							},
+						},
+						SSHUserName: "root",
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "venus",
+						Capacity: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+						Allocatable: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+					},
+				},
 				{
 					ObjectMeta: apiv1.ObjectMeta{
 						ID:   "mars",
@@ -614,6 +701,78 @@ func TestListNodeDeployments(t *testing.T) {
 			ProjectIDToSync:        test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
+			},
+			ExpectedResponse: []apiv1.NodeDeployment{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "venus",
+						Name: "venus",
+					},
+					Spec: apiv1.NodeDeploymentSpec{
+						Template: apiv1.NodeSpec{
+							Cloud: apiv1.NodeCloudSpec{
+								Digitalocean: &apiv1.DigitaloceanNodeSpec{
+									Size: "2GB",
+								},
+							},
+							OperatingSystem: apiv1.OperatingSystemSpec{
+								Ubuntu: &apiv1.UbuntuSpec{
+									DistUpgradeOnBoot: true,
+								},
+							},
+							Versions: apiv1.NodeVersionInfo{
+								Kubelet: "v9.9.9",
+							},
+						},
+						Replicas:      replicas,
+						Paused:        &paused,
+						DynamicConfig: boolPtr(false),
+					},
+					Status: clusterv1alpha1.MachineDeploymentStatus{},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "mars",
+						Name: "mars",
+					},
+					Spec: apiv1.NodeDeploymentSpec{
+						Template: apiv1.NodeSpec{
+							Cloud: apiv1.NodeCloudSpec{
+								AWS: &apiv1.AWSNodeSpec{
+									InstanceType:     "t2.micro",
+									VolumeSize:       50,
+									AvailabilityZone: "eu-central-1a",
+									SubnetID:         "subnet-2bff4f43",
+								},
+							},
+							OperatingSystem: apiv1.OperatingSystemSpec{
+								Ubuntu: &apiv1.UbuntuSpec{
+									DistUpgradeOnBoot: false,
+								},
+							},
+							Versions: apiv1.NodeVersionInfo{
+								Kubelet: "v9.9.9",
+							},
+						},
+						Replicas:      replicas,
+						Paused:        &paused,
+						DynamicConfig: boolPtr(false),
+					},
+					Status: clusterv1alpha1.MachineDeploymentStatus{},
+				},
+			},
+		},
+		// scenario 2
+		{
+			Name:                   "scenario 2: the admin John can list node deployments that belong to the given Bob's cluster",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), genUser("John", "john@acme.com", true)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
 				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
 				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
@@ -1481,4 +1640,10 @@ func genTestEvent(eventName, eventType, eventReason, eventMessage, kind, uid str
 		Count:   1,
 		Type:    eventType,
 	}
+}
+
+func genUser(name, email string, isAdmin bool) *kubermaticv1.User {
+	user := test.GenUser("", name, email)
+	user.Spec.IsAdmin = isAdmin
+	return user
 }
