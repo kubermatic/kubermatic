@@ -58,12 +58,13 @@ type KubeconfigProvider interface {
 
 // Reconciler stores necessary components that are required to manage in-cluster Add-On's
 type Reconciler struct {
-	log                *zap.SugaredLogger
-	workerName         string
-	addonVariables     map[string]interface{}
-	kubernetesAddonDir string
-	openshiftAddonDir  string
-	overwriteRegistry  string
+	log                    *zap.SugaredLogger
+	workerName             string
+	addonVariables         map[string]interface{}
+	scrapeAnnotationPrefix string
+	kubernetesAddonDir     string
+	openshiftAddonDir      string
+	overwriteRegistry      string
 	ctrlruntimeclient.Client
 	recorder                 record.EventRecorder
 	KubeconfigProvider       KubeconfigProvider
@@ -78,6 +79,7 @@ func Add(
 	numWorkers int,
 	workerName string,
 	addonCtxVariables map[string]interface{},
+	scrapeAnnotationPrefix string,
 	kubernetesAddonDir,
 	openshiftAddonDir,
 	overwriteRegistey string,
@@ -90,6 +92,7 @@ func Add(
 	reconciler := &Reconciler{
 		log:                      log,
 		addonVariables:           addonCtxVariables,
+		scrapeAnnotationPrefix:   scrapeAnnotationPrefix,
 		kubernetesAddonDir:       kubernetesAddonDir,
 		openshiftAddonDir:        openshiftAddonDir,
 		KubeconfigProvider:       kubeconfigProvider,
@@ -283,15 +286,16 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 	}
 
 	data := &addonutils.TemplateData{
-		Variables:         make(map[string]interface{}),
-		Cluster:           cluster,
-		Credentials:       credentials,
-		MajorMinorVersion: cluster.Spec.Version.MajorMinor(),
-		Addon:             addon,
-		Kubeconfig:        string(kubeconfig),
-		DNSClusterIP:      clusterIP,
-		DNSResolverIP:     dnsResolverIP,
-		ClusterCIDR:       cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
+		Variables:              make(map[string]interface{}),
+		Cluster:                cluster,
+		Credentials:            credentials,
+		MajorMinorVersion:      cluster.Spec.Version.MajorMinor(),
+		Addon:                  addon,
+		Kubeconfig:             string(kubeconfig),
+		DNSClusterIP:           clusterIP,
+		DNSResolverIP:          dnsResolverIP,
+		ClusterCIDR:            cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
+		ScrapeAnnotationPrefix: r.scrapeAnnotationPrefix,
 	}
 
 	// Add addon variables if available.
