@@ -37,8 +37,6 @@ type ClientService interface {
 
 	CreateNodeDeployment(params *CreateNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeDeploymentCreated, error)
 
-	CreateNodeForClusterLegacy(params *CreateNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeForClusterLegacyCreated, error)
-
 	CreateProject(params *CreateProjectParams, authInfo runtime.ClientAuthInfoWriter) (*CreateProjectCreated, error)
 
 	CreateRole(params *CreateRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateRoleCreated, error)
@@ -76,8 +74,6 @@ type ClientService interface {
 	GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterUpgradesOK, error)
 
 	GetNodeDeployment(params *GetNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeDeploymentOK, error)
-
-	GetNodeForClusterLegacy(params *GetNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeForClusterLegacyOK, error)
 
 	GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetOidcClusterKubeconfigOK, error)
 
@@ -341,43 +337,6 @@ func (a *Client) CreateNodeDeployment(params *CreateNodeDeploymentParams, authIn
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateNodeDeploymentDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
-  CreateNodeForClusterLegacy deprecateds creates a node that will belong to the given cluster
-
-  This endpoint is deprecated, please create a Node Deployment instead.
-Use POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments
-*/
-func (a *Client) CreateNodeForClusterLegacy(params *CreateNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeForClusterLegacyCreated, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewCreateNodeForClusterLegacyParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "createNodeForClusterLegacy",
-		Method:             "POST",
-		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &CreateNodeForClusterLegacyReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*CreateNodeForClusterLegacyCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*CreateNodeForClusterLegacyDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -1028,42 +987,6 @@ func (a *Client) GetNodeDeployment(params *GetNodeDeploymentParams, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetNodeDeploymentDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
-  GetNodeForClusterLegacy deprecateds gets a node that is assigned to the given cluster
-
-  This endpoint is deprecated, please create a Node Deployment instead.
-*/
-func (a *Client) GetNodeForClusterLegacy(params *GetNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*GetNodeForClusterLegacyOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewGetNodeForClusterLegacyParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "getNodeForClusterLegacy",
-		Method:             "GET",
-		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &GetNodeForClusterLegacyReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*GetNodeForClusterLegacyOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetNodeForClusterLegacyDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -2,7 +2,6 @@ package node
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -124,52 +123,6 @@ func ListNodesForClusterLegacyEndpoint(projectProvider provider.ProjectProvider,
 	}
 }
 
-func GetNodeForClusterLegacyEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(getNodeLegacyReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machine, node, err := findMachineAndNode(ctx, req.NodeID, client)
-		if err != nil {
-			return nil, err
-		}
-		if machine == nil && node == nil {
-			return nil, k8cerrors.NewNotFound("Node", req.NodeID)
-		}
-
-		if machine == nil {
-			return outputNode(node, req.HideInitialConditions), nil
-		}
-
-		return outputMachine(machine, node, req.HideInitialConditions)
-	}
-}
-
-func CreateNodeForClusterLegacyEndpoint() endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return nil, k8cerrors.NewWithDetails(http.StatusBadRequest, "Creating Nodes is deprecated. Please create a Node Deployment instead", []string{"If you are calling this API endpoint directly then use POST \"v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments\" instead"})
-	}
-}
-
 // deleteNodeForClusterLegacyReq defines HTTP request for deleteNodeForClusterLegacy
 // swagger:parameters deleteNodeForClusterLegacy
 type deleteNodeForClusterLegacyReq struct {
@@ -226,70 +179,6 @@ func DecodeListNodesForClusterLegacy(c context.Context, r *http.Request) (interf
 
 	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
 	req.ClusterID = clusterID
-	req.DCReq = dcr.(common.DCReq)
-
-	return req, nil
-}
-
-// createNodeReqLegacyReq defines HTTP request for createNodeForClusterLegacy
-// swagger:parameters createNodeForClusterLegacy
-type createNodeReqLegacyReq struct {
-	common.GetClusterReq
-	// in: body
-	Body apiv1.Node
-}
-
-func DecodeCreateNodeForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
-	var req createNodeReqLegacyReq
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.ClusterID = clusterID
-	req.DCReq = dcr.(common.DCReq)
-
-	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// getNodeLegacyReq defines HTTP request for getNodeForClusterLegacy
-// swagger:parameters getNodeForClusterLegacy
-type getNodeLegacyReq struct {
-	common.GetClusterReq
-	// in: path
-	NodeID string `json:"node_id"`
-	// in: query
-	HideInitialConditions bool `json:"hideInitialConditions"`
-}
-
-func DecodeGetNodeForClusterLegacy(c context.Context, r *http.Request) (interface{}, error) {
-	var req getNodeLegacyReq
-
-	clusterID, err := common.DecodeClusterID(c, r)
-	if err != nil {
-		return nil, err
-	}
-	nodeID := mux.Vars(r)["node_id"]
-	if nodeID == "" {
-		return nil, fmt.Errorf("'node_id' parameter is required but was not provided")
-	}
-
-	dcr, err := common.DecodeDcReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.ClusterID = clusterID
-	req.NodeID = nodeID
 	req.DCReq = dcr.(common.DCReq)
 
 	return req, nil
