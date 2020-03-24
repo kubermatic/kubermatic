@@ -6,13 +6,14 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // LegacyObjectMeta LegacyObjectMeta is an object storing common metadata for persistable objects.
 //
 // Deprecated: LegacyObjectMeta is deprecated use ObjectMeta instead.
+//
 // swagger:model LegacyObjectMeta
 type LegacyObjectMeta struct {
 

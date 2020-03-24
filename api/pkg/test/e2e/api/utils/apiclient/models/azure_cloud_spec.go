@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // AzureCloudSpec AzureCloudSpec specifies acceess credentials to Azure cloud.
+//
 // swagger:model AzureCloudSpec
 type AzureCloudSpec struct {
 

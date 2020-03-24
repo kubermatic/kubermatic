@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // VSphereCloudSpec VSphereCloudSpec specifies access data to VSphere cloud.
+//
 // swagger:model VSphereCloudSpec
 type VSphereCloudSpec struct {
 

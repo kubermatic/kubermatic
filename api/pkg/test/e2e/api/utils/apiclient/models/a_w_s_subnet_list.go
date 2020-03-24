@@ -9,11 +9,12 @@ import (
 	"strconv"
 
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // AWSSubnetList AWSSubnetList represents an array of AWS availability subnets.
+//
 // swagger:model AWSSubnetList
 type AWSSubnetList []*AWSSubnet
 

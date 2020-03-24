@@ -9,11 +9,12 @@ import (
 	"strconv"
 
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // DigitaloceanSizeList DigitaloceanSizeList represents a object of digitalocean sizes.
+//
 // swagger:model DigitaloceanSizeList
 type DigitaloceanSizeList struct {
 

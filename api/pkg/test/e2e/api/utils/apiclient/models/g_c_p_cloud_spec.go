@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // GCPCloudSpec GCPCloudSpec specifies access data to GCP.
+//
 // swagger:model GCPCloudSpec
 type GCPCloudSpec struct {
 

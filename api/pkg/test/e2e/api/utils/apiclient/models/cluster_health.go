@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // ClusterHealth ClusterHealth stores health information about the cluster's components.
+//
 // swagger:model ClusterHealth
 type ClusterHealth struct {
 

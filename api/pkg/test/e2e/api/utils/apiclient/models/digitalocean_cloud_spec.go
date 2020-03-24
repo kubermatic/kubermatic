@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // DigitaloceanCloudSpec DigitaloceanCloudSpec specifies access data to DigitalOcean.
+//
 // swagger:model DigitaloceanCloudSpec
 type DigitaloceanCloudSpec struct {
 

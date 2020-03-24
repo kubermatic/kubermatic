@@ -7,5 +7,6 @@ package models
 
 // Semver Semver is struct that encapsulates semver.Semver struct so we can use it in API
 // +k8s:deepcopy-gen=true
+//
 // swagger:model Semver
 type Semver interface{}

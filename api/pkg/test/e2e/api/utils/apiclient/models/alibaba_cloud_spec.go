@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // AlibabaCloudSpec AlibabaCloudSpec specifies the access data to Alibaba.
+//
 // swagger:model AlibabaCloudSpec
 type AlibabaCloudSpec struct {
 

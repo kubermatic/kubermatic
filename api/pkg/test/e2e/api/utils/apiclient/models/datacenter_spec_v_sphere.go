@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // DatacenterSpecVSphere DatacenterSpecVSphere describes a vSphere datacenter
+//
 // swagger:model DatacenterSpecVSphere
 type DatacenterSpecVSphere struct {
 

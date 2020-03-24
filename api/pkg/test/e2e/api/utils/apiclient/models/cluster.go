@@ -7,7 +7,7 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -17,6 +17,7 @@ import (
 // Note:
 // Cluster has a custom MarshalJSON method defined
 // and thus the output may vary
+//
 // swagger:model Cluster
 type Cluster struct {
 

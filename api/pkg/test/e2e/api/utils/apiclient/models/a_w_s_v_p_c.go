@@ -9,11 +9,12 @@ import (
 	"strconv"
 
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // AWSVPC AWSVPC represents a object of AWS VPC.
+//
 // swagger:model AWSVPC
 type AWSVPC struct {
 

@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // ClusterMetrics ClusterMetrics defines a metric for the given cluster
+//
 // swagger:model ClusterMetrics
 type ClusterMetrics struct {
 

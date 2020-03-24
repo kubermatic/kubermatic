@@ -6,5 +6,6 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 // DatacenterSpecBringYourOwn DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes
+//
 // swagger:model DatacenterSpecBringYourOwn
 type DatacenterSpecBringYourOwn interface{}

@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // NodeSettings NodeSettings are node specific flags which can be configured on datacenter level
+//
 // swagger:model NodeSettings
 type NodeSettings struct {
 

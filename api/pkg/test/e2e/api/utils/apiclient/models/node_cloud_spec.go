@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // NodeCloudSpec NodeCloudSpec represents the collection of cloud provider specific settings. Only one must be set at a time.
+//
 // swagger:model NodeCloudSpec
 type NodeCloudSpec struct {
 

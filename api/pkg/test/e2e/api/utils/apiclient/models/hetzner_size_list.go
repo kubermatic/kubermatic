@@ -9,11 +9,12 @@ import (
 	"strconv"
 
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // HetznerSizeList HetznerSizeList represents an array of Hetzner sizes.
+//
 // swagger:model HetznerSizeList
 type HetznerSizeList struct {
 

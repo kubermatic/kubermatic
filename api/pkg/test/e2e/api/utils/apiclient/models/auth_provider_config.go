@@ -6,11 +6,12 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // AuthProviderConfig AuthProviderConfig holds the configuration for a specified auth provider.
+//
 // swagger:model AuthProviderConfig
 type AuthProviderConfig struct {
 

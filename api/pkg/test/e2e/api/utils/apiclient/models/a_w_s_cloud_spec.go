@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // AWSCloudSpec AWSCloudSpec specifies access data to Amazon Web Services.
+//
 // swagger:model AWSCloudSpec
 type AWSCloudSpec struct {
 

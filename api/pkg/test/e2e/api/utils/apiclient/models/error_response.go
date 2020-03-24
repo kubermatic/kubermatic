@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // ErrorResponse ErrorResponse is the default representation of an error
+//
 // swagger:model ErrorResponse
 type ErrorResponse struct {
 
