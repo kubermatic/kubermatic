@@ -7,12 +7,13 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // ProxySettings ProxySettings allow configuring a HTTP proxy for the controlplanes
 // and nodes
+//
 // swagger:model ProxySettings
 type ProxySettings struct {
 

@@ -9,11 +9,12 @@ import (
 	"strconv"
 
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // GCPSubnetworkList GCPSubnetworkList represents an array of GCP subnetworks.
+//
 // swagger:model GCPSubnetworkList
 type GCPSubnetworkList []*GCPSubnetwork
 

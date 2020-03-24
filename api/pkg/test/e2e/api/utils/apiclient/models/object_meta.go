@@ -7,12 +7,13 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // ObjectMeta ObjectMeta defines the set of fields that objects returned from the API have
+//
 // swagger:model ObjectMeta
 type ObjectMeta struct {
 

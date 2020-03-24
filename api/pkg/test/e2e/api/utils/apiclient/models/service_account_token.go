@@ -7,12 +7,13 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // ServiceAccountToken ServiceAccountToken represent an API service account token
+//
 // swagger:model ServiceAccountToken
 type ServiceAccountToken struct {
 

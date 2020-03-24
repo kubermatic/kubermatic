@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // Datacenter Datacenter is the object representing a Kubernetes infra datacenter.
+//
 // swagger:model Datacenter
 type Datacenter struct {
 

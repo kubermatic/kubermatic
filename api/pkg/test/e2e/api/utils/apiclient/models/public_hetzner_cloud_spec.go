@@ -6,5 +6,6 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 // PublicHetznerCloudSpec PublicHetznerCloudSpec is a public counterpart of apiv1.HetznerCloudSpec.
+//
 // swagger:model PublicHetznerCloudSpec
 type PublicHetznerCloudSpec interface{}

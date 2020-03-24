@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // CloudSpec CloudSpec mutually stores access data to a cloud provider.
+//
 // swagger:model CloudSpec
 type CloudSpec struct {
 

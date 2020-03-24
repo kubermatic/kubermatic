@@ -6,5 +6,6 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 // PublicKubevirtCloudSpec PublicKubevirtCloudSpec is a public counterpart of apiv1.KubevirtCloudSpec.
+//
 // swagger:model PublicKubevirtCloudSpec
 type PublicKubevirtCloudSpec interface{}

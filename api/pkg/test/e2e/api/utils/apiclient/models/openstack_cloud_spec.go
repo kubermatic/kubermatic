@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // OpenstackCloudSpec OpenstackCloudSpec specifies access data to an OpenStack cloud.
+//
 // swagger:model OpenstackCloudSpec
 type OpenstackCloudSpec struct {
 

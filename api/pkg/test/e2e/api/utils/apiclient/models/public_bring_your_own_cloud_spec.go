@@ -6,5 +6,6 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 // PublicBringYourOwnCloudSpec PublicBringYourOwnCloudSpec is a public counterpart of apiv1.BringYourOwnCloudSpec.
+//
 // swagger:model PublicBringYourOwnCloudSpec
 type PublicBringYourOwnCloudSpec interface{}

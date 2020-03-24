@@ -50,5 +50,6 @@ package models
 // +k8s:deepcopy-gen=true
 // +protobuf=true
 // +k8s:openapi-gen=true
+//
 // swagger:model RawExtension
 type RawExtension interface{}

@@ -9,11 +9,12 @@ import (
 	"strconv"
 
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // AWSSubnet AWSSubnet represents a object of AWS availability subnet.
+//
 // swagger:model AWSSubnet
 type AWSSubnet struct {
 

@@ -6,11 +6,12 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // NodeVersionInfo NodeVersionInfo node version information
+//
 // swagger:model NodeVersionInfo
 type NodeVersionInfo struct {
 

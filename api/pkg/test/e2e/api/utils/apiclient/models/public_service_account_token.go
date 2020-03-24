@@ -7,12 +7,13 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // PublicServiceAccountToken PublicServiceAccountToken represent an API service account token without secret fields
+//
 // swagger:model PublicServiceAccountToken
 type PublicServiceAccountToken struct {
 

@@ -6,12 +6,13 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // UID UID is a type that holds unique ID values, including UUIDs.  Because we
 // don't ONLY use UUIDs, this is an alias to string.  Being a type captures
 // intent and helps make sure that UIDs and names do not get conflated.
+//
 // swagger:model UID
 type UID string
 

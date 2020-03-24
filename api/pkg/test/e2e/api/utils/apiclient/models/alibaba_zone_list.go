@@ -9,11 +9,12 @@ import (
 	"strconv"
 
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // AlibabaZoneList AlibabaZoneList represents an array of Alibaba zones.
+//
 // swagger:model AlibabaZoneList
 type AlibabaZoneList []*AlibabaZone
 

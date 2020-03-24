@@ -6,5 +6,6 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 // PublicVSphereCloudSpec PublicVSphereCloudSpec is a public counterpart of apiv1.VSphereCloudSpec.
+//
 // swagger:model PublicVSphereCloudSpec
 type PublicVSphereCloudSpec interface{}

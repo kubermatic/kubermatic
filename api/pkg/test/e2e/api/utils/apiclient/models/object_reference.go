@@ -7,13 +7,14 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // ObjectReference ObjectReference contains enough information to let you inspect or modify the referred object.
 //
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+//
 // swagger:model ObjectReference
 type ObjectReference struct {
 

@@ -6,5 +6,6 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 // KubevirtDatacenterSpec KubevirtDatacenterSpec specifies a datacenter of Kubevirt.
+//
 // swagger:model KubevirtDatacenterSpec
 type KubevirtDatacenterSpec interface{}

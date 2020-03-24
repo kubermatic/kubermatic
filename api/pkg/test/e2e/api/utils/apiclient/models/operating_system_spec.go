@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // OperatingSystemSpec OperatingSystemSpec represents the collection of os specific settings. Only one must be set at a time.
+//
 // swagger:model OperatingSystemSpec
 type OperatingSystemSpec struct {
 

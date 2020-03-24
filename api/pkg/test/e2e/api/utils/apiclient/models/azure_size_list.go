@@ -9,11 +9,12 @@ import (
 	"strconv"
 
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // AzureSizeList AzureSizeList represents an array of Azure VM sizes.
+//
 // swagger:model AzureSizeList
 type AzureSizeList []*AzureSize
 
