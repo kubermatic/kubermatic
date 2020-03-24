@@ -75,7 +75,7 @@ func ListNodesForClusterLegacyEndpoint(projectProvider provider.ProjectProvider,
 			return nil, err
 		}
 
-		client, err := common.GetClusterClientForUser(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
+		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

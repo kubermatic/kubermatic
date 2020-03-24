@@ -18,7 +18,7 @@ import (
 // CheckClusterVersionSkew returns a list of machines and/or machine deployments
 // that are running kubelet at a version incompatible with the cluster's control plane.
 func CheckClusterVersionSkew(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, cluster *kubermaticapiv1.Cluster, projectID string) ([]string, error) {
-	client, err := GetClusterClientForUser(ctx, userInfoGetter, clusterProvider, cluster, projectID)
+	client, err := GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a machine client: %v", err)
 	}

@@ -904,7 +904,7 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, privilegedProj
 			return nil, err
 		}
 
-		client, err := common.GetClusterClientForUser(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
+		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -1336,7 +1336,7 @@ func ListNamespaceEndpoint(projectProvider provider.ProjectProvider, privilegedP
 			return nil, err
 		}
 
-		client, err := common.GetClusterClientForUser(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
+		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
