@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // PublicCloudSpec PublicCloudSpec is a public counterpart of apiv1.CloudSpec.
+//
 // swagger:model PublicCloudSpec
 type PublicCloudSpec struct {
 

@@ -7,12 +7,13 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // DigitaloceanNodeSpec DigitaloceanNodeSpec digitalocean node settings
+//
 // swagger:model DigitaloceanNodeSpec
 type DigitaloceanNodeSpec struct {
 

@@ -9,11 +9,12 @@ import (
 	"strconv"
 
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // ClusterSpec ClusterSpec defines the cluster specification
+//
 // swagger:model ClusterSpec
 type ClusterSpec struct {
 

@@ -7,12 +7,13 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // GlobalObjectKeySelector GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector
 // because it is not cross namespace
+//
 // swagger:model GlobalObjectKeySelector
 type GlobalObjectKeySelector struct {
 

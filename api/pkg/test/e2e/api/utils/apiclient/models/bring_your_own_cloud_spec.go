@@ -6,5 +6,6 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 // BringYourOwnCloudSpec BringYourOwnCloudSpec specifies access data for a bring your own cluster.
+//
 // swagger:model BringYourOwnCloudSpec
 type BringYourOwnCloudSpec interface{}

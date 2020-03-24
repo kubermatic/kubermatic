@@ -7,10 +7,11 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // ResourceLabelMap ResourceLabelMap defines list of labels grouped by specific resource types.
+//
 // swagger:model ResourceLabelMap
 type ResourceLabelMap map[string]LabelKeyList
 

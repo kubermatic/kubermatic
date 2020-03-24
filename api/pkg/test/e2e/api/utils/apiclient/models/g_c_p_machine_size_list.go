@@ -9,11 +9,12 @@ import (
 	"strconv"
 
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // GCPMachineSizeList GCPMachineSizeList represents an array of GCP machine sizes.
+//
 // swagger:model GCPMachineSizeList
 type GCPMachineSizeList []*GCPMachineSize
 

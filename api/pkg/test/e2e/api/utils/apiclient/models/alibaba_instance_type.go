@@ -6,11 +6,12 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // AlibabaInstanceType AlibabaInstanceType represents a object of Alibaba instance type.
+//
 // swagger:model AlibabaInstanceType
 type AlibabaInstanceType struct {
 

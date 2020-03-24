@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // OpenstackDatacenterSpec OpenstackDatacenterSpec specifies a generic bare metal datacenter.
+//
 // swagger:model OpenstackDatacenterSpec
 type OpenstackDatacenterSpec struct {
 

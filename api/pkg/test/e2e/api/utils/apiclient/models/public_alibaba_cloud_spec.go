@@ -6,5 +6,6 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 // PublicAlibabaCloudSpec PublicAlibabaCloudSpec is a public counterpart of apiv1.AlibabaCloudSpec.
+//
 // swagger:model PublicAlibabaCloudSpec
 type PublicAlibabaCloudSpec interface{}

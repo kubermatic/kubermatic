@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // PacketCloudSpec PacketCloudSpec specifies access data to a Packet cloud.
+//
 // swagger:model PacketCloudSpec
 type PacketCloudSpec struct {
 

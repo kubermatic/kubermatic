@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // KubevirtCloudSpec KubevirtCloudSpec specifies the access data to Kubevirt.
+//
 // swagger:model KubevirtCloudSpec
 type KubevirtCloudSpec struct {
 

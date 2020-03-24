@@ -6,5 +6,6 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 // PublicPacketCloudSpec PublicPacketCloudSpec is a public counterpart of apiv1.PacketCloudSpec.
+//
 // swagger:model PublicPacketCloudSpec
 type PublicPacketCloudSpec interface{}

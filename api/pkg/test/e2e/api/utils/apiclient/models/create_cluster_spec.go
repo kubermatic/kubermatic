@@ -7,11 +7,12 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // CreateClusterSpec CreateClusterSpec is the structure that is used to create cluster with its initial node deployment
+//
 // swagger:model CreateClusterSpec
 type CreateClusterSpec struct {
 

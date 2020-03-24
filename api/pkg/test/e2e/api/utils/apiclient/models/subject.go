@@ -6,13 +6,14 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // Subject Subject contains a reference to the object or user identities a role binding applies to.  This can either hold a direct API object reference,
 //
 // or a value for non-objects such as user and group names.
+//
 // swagger:model Subject
 type Subject struct {
 

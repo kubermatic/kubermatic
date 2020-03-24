@@ -7,12 +7,13 @@ package models
 
 import (
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // HetznerNodeSpec HetznerNodeSpec Hetzner node settings
+//
 // swagger:model HetznerNodeSpec
 type HetznerNodeSpec struct {
 

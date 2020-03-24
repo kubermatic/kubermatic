@@ -9,11 +9,12 @@ import (
 	"strconv"
 
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // RoleBinding RoleBinding references a role, but does not contain it.
+//
 // swagger:model RoleBinding
 type RoleBinding struct {
 

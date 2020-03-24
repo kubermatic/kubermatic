@@ -6,10 +6,11 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // ImageList ImageList defines a map of operating system and the image to use
+//
 // swagger:model ImageList
 type ImageList map[string]string
 

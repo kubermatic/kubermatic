@@ -6,5 +6,6 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 // Version Version represents a single semantic version.
+//
 // swagger:model Version
 type Version interface{}
