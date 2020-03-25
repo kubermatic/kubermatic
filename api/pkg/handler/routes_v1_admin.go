@@ -27,6 +27,10 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 		Path("/admin/settings").
 		Handler(r.getKubermaticSettings())
 
+	mux.Methods(http.MethodGet).
+		Path("/admin/settings/customlinks").
+		Handler(r.getKubermaticCustomLinks())
+
 	mux.Methods(http.MethodPatch).
 		Path("/admin/settings").
 		Handler(r.patchKubermaticSettings())
@@ -84,6 +88,27 @@ func (r Routing) getKubermaticSettings() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 		)(admin.KubermaticSettingsEndpoint(r.settingsProvider)),
+		decodeEmptyReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/admin/settings/customlinks admin getKubermaticCustomLinks
+//
+//     Gets the custom links.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GlobalCustomLinks
+//       401: empty
+//       403: empty
+func (r Routing) getKubermaticCustomLinks() http.Handler {
+	return httptransport.NewServer(
+		admin.KubermaticCustomLinksEndpoint(r.settingsProvider),
 		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

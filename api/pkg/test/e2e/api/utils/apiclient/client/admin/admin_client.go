@@ -33,6 +33,8 @@ type ClientService interface {
 
 	GetAdmissionPlugin(params *GetAdmissionPluginParams, authInfo runtime.ClientAuthInfoWriter) (*GetAdmissionPluginOK, error)
 
+	GetKubermaticCustomLinks(params *GetKubermaticCustomLinksParams, authInfo runtime.ClientAuthInfoWriter) (*GetKubermaticCustomLinksOK, error)
+
 	GetKubermaticSettings(params *GetKubermaticSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetKubermaticSettingsOK, error)
 
 	GetSeed(params *GetSeedParams, authInfo runtime.ClientAuthInfoWriter) (*GetSeedOK, error)
@@ -185,6 +187,40 @@ func (a *Client) GetAdmissionPlugin(params *GetAdmissionPluginParams, authInfo r
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetAdmissionPluginDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetKubermaticCustomLinks gets the custom links
+*/
+func (a *Client) GetKubermaticCustomLinks(params *GetKubermaticCustomLinksParams, authInfo runtime.ClientAuthInfoWriter) (*GetKubermaticCustomLinksOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetKubermaticCustomLinksParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getKubermaticCustomLinks",
+		Method:             "GET",
+		PathPattern:        "/api/v1/admin/settings/customlinks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetKubermaticCustomLinksReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetKubermaticCustomLinksOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetKubermaticCustomLinksDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
