@@ -588,6 +588,38 @@
         }
       }
     },
+    "/api/v1/admin/settings/customlinks": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "admin"
+        ],
+        "summary": "Gets the custom links.",
+        "operationId": "getKubermaticCustomLinks",
+        "responses": {
+          "200": {
+            "description": "GlobalCustomLinks",
+            "schema": {
+              "$ref": "#/definitions/GlobalCustomLinks"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admission/plugins/{version}": {
       "get": {
         "produces": [
@@ -9506,6 +9538,14 @@
       "title": "GCPZoneList represents an array of GCP zones.",
       "items": {
         "$ref": "#/definitions/GCPZone"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "GlobalCustomLinks": {
+      "description": "GlobalCustomLinks defines custom links for global settings",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/CustomLink"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },

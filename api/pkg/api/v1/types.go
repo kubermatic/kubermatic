@@ -1439,6 +1439,10 @@ type ResourceLabelMap map[ResourceType]LabelKeyList
 // swagger:model GlobalSettings
 type GlobalSettings kubermaticv1.SettingSpec
 
+// GlobalCustomLinks defines custom links for global settings
+// swagger:model GlobalCustomLinks
+type GlobalCustomLinks []kubermaticv1.CustomLink
+
 // AdmissionPluginList represents a list of admission plugins
 // swagger:model AdmissionPluginList
 type AdmissionPluginList []string
