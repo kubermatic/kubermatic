@@ -28,6 +28,18 @@ func KubermaticSettingsEndpoint(settingsProvider provider.SettingsProvider) endp
 	}
 }
 
+// KubermaticCustomLinksEndpoint returns custom links
+func KubermaticCustomLinksEndpoint(settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		globalSettings, err := settingsProvider.GetGlobalSettings()
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return v1.GlobalCustomLinks(globalSettings.Spec.CustomLinks), nil
+	}
+}
+
 // UpdateKubermaticSettingsEndpoint updates global settings
 func UpdateKubermaticSettingsEndpoint(userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
