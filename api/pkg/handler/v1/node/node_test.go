@@ -1137,6 +1137,82 @@ func TestListNodeDeploymentNodes(t *testing.T) {
 				},
 			},
 		},
+		// scenario 2
+		{
+			Name:                   "scenario 2: the admin John can list any nodes that belong to the given node deployment",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), genUser("John", "john@acme.com", true)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}, false),
+				genTestMachineDeployment("mars", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+			},
+			NodeDeploymentID: "venus",
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil),
+				genTestMachine("mars-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "345", "xyz": "abc"}, nil),
+				genTestMachine("mars-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, nil),
+			},
+			ExpectedResponse: []apiv1.Node{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "venus-1",
+						Name: "",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: true,
+							},
+						},
+						SSHUserName: "root",
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "venus-1",
+						Capacity:    apiv1.NodeResources{},
+						Allocatable: apiv1.NodeResources{},
+					},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "venus-2",
+						Name: "",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: true,
+							},
+						},
+						SSHUserName: "root",
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "venus-2",
+						Capacity:    apiv1.NodeResources{},
+						Allocatable: apiv1.NodeResources{},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testcases {
@@ -1262,6 +1338,48 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed", "Machine", "venus-1-machine"),
 			},
 			ExpectedResult: `[{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObject":{"type":"Node","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1},{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObject":{"type":"Node","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
+		},
+		// scenario 4
+		{
+			Name:                   "scenario 4: the admin John can list any events",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), genUser("John", "john@acme.com", true)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}, false),
+			},
+			NodeDeploymentID: "venus",
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+			},
+			ExistingEvents: []*corev1.Event{
+				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started", "Machine", "venus-1-machine"),
+				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed", "Machine", "venus-1-machine"),
+			},
+			ExpectedResult: `[{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObject":{"type":"Node","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1},{"name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObject":{"type":"Node","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1},{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObject":{"type":"Node","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1},{"name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObject":{"type":"Node","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
+		},
+		// scenario 5
+		{
+			Name:                   "scenario 5: the user John can not list Bob's events",
+			HTTPStatus:             http.StatusForbidden,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), genUser("John", "john@acme.com", false)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}, false),
+			},
+			NodeDeploymentID: "venus",
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+			},
+			ExistingEvents: []*corev1.Event{
+				genTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started", "Machine", "venus-1-machine"),
+				genTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed", "Machine", "venus-1-machine"),
+			},
+			ExpectedResult: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
 		},
 	}
 
@@ -1561,6 +1679,62 @@ func TestNodeDeploymentMetrics(t *testing.T) {
 				},
 			},
 			ExpectedResponse: `[{"name":"venus-1","memoryTotalBytes":655,"memoryAvailableBytes":655,"memoryUsedPercentage":100,"cpuTotalMillicores":290104582000,"cpuAvailableMillicores":290104582000,"cpuUsedPercentage":100}]`,
+		},
+		// scenario 2
+		{
+			Name:                   "scenario 2: the admin John can get any metrics for the node deployment nodes",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), genUser("John", "john@acme.com", true)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus-1"}, Status: corev1.NodeStatus{Allocatable: map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity}}},
+			},
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}, false),
+				genTestMachineDeployment("mars", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+			},
+			NodeDeploymentID: "venus",
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil),
+			},
+			ExistingMetrics: []*v1beta1.NodeMetrics{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "venus-1"},
+					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
+				},
+			},
+			ExpectedResponse: `[{"name":"venus-1","memoryTotalBytes":655,"memoryAvailableBytes":655,"memoryUsedPercentage":100,"cpuTotalMillicores":290104582000,"cpuAvailableMillicores":290104582000,"cpuUsedPercentage":100}]`,
+		},
+		// scenario 3
+		{
+			Name:                   "scenario 3: the user John can not get Bob's metrics",
+			HTTPStatus:             http.StatusForbidden,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), genUser("John", "john@acme.com", false)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus-1"}, Status: corev1.NodeStatus{Allocatable: map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity}}},
+			},
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}, false),
+				genTestMachineDeployment("mars", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+			},
+			NodeDeploymentID: "venus",
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil),
+			},
+			ExistingMetrics: []*v1beta1.NodeMetrics{
+				{
+					ObjectMeta: metav1.ObjectMeta{Name: "venus-1"},
+					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
+				},
+			},
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
 		},
 	}
 
