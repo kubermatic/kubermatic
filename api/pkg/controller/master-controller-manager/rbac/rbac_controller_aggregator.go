@@ -3,16 +3,22 @@ package rbac
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
+	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	k8scorev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/klog"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // Metrics contains metrics that this controller will collect and expose
@@ -59,8 +65,48 @@ type projectResource struct {
 	shouldEnqueue func(obj metav1.Object) bool
 }
 
+func restConfigToInformer(cfg *rest.Config, name string, labelSelectorFunc func(*metav1.ListOptions)) (*ClusterProvider, error) {
+	kubeClient, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create kubeClient: %v", err)
+	}
+	kubermaticClient, err := kubermaticclientset.NewForConfig(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create kubermaticClient: %v", err)
+	}
+	kubermaticInformerFactory := externalversions.NewFilteredSharedInformerFactory(kubermaticClient, time.Minute*5, metav1.NamespaceAll, labelSelectorFunc)
+	kubeInformerProvider := NewInformerProvider(kubeClient, time.Minute*5)
+
+	return NewClusterProvider(name, kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory), nil
+}
+
+func managersToInformers(mgr manager.Manager, seedManagerMap map[string]manager.Manager, selectorOps func(*metav1.ListOptions)) (*ClusterProvider, []*ClusterProvider, error) {
+	seedClusterProviders := []*ClusterProvider{}
+
+	for seedName, seedMgr := range seedManagerMap {
+		clusterProvider, err := restConfigToInformer(seedMgr.GetConfig(), seedName, selectorOps)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to create rbac provider for seed %q: %v", seedName, err)
+		}
+		seedClusterProviders = append(seedClusterProviders, clusterProvider)
+	}
+
+	masterClusterProvider, err := restConfigToInformer(mgr.GetConfig(), "master", selectorOps)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create master rbac provider: %v", err)
+	}
+
+	return masterClusterProvider, seedClusterProviders, nil
+}
+
 // New creates a new controller aggregator for managing RBAC for resources
-func New(metrics *Metrics, masterClusterProvider *ClusterProvider, seedClusterProviders []*ClusterProvider, workerCount int) (*ControllerAggregator, error) {
+func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, labelSelectorFunc func(*metav1.ListOptions), workerCount int) (*ControllerAggregator, error) {
+	// Convert the controller-runtime's managers to old-school informers.
+	masterClusterProvider, seedClusterProviders, err := managersToInformers(mgr, seedManagerMap, labelSelectorFunc)
+	if err != nil {
+		return nil, err
+	}
+
 	projectResources := []projectResource{
 		{
 			gvr: schema.GroupVersionResource{
