@@ -291,6 +291,9 @@ var (
 		},
 	}
 
+	// DefaultOpenshiftVersioning contains the supported versions for openshift clusters. The OpenShift 4
+	// minor release is: Kubernetes minor - 12, since we only support openshift v4.1.9 and v4.1.18 only
+	// only cri-o 1.13.x is installed to the provisioned machines.
 	DefaultOpenshiftVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
 		Default: semver.MustParse("v4.1.18"),
 		Versions: []*semver.Version{
