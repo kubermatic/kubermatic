@@ -358,9 +358,9 @@ func DecodeListNodeDeploymentNodes(c context.Context, r *http.Request) (interfac
 	return req, nil
 }
 
-func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
+func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
 
-	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -377,8 +377,8 @@ func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.
 	return machines, nil
 }
 
-func getMachineSetsForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, nodeDeploymentID string) (*clusterv1alpha1.MachineSetList, error) {
-	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+func getMachineSetsForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, nodeDeploymentID string) (*clusterv1alpha1.MachineSetList, error) {
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -396,8 +396,8 @@ func getMachineSetsForNodeDeployment(ctx context.Context, clusterProvider provid
 	return machineSets, nil
 }
 
-func getMachineDeploymentForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, nodeDeploymentID string) (*clusterv1alpha1.MachineDeployment, error) {
-	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+func getMachineDeploymentForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, nodeDeploymentID string) (*clusterv1alpha1.MachineDeployment, error) {
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -410,26 +410,17 @@ func getMachineDeploymentForNodeDeployment(ctx context.Context, clusterProvider 
 	return machineDeployment, nil
 }
 
-func ListNodeDeploymentNodes(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListNodeDeploymentNodes(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentNodesReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+
+		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
-		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
+		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfoGetter, cluster, req.ProjectID, req.NodeDeploymentID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -487,28 +478,19 @@ func DecodeListNodeDeploymentMetrics(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
-func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentMetricsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
 
-		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
 		// check if logged user has privileges to list node deployments. If yes then we can use privileged client to
 		// get metrics
-		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
+		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfoGetter, cluster, req.ProjectID, req.NodeDeploymentID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -838,18 +820,14 @@ func DecodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (in
 	return req, nil
 }
 
-func ListNodeDeploymentNodesEvents(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListNodeDeploymentNodesEvents(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentNodesEventsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
 
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
+		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
 		client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
@@ -857,17 +835,17 @@ func ListNodeDeploymentNodesEvents(userInfoGetter provider.UserInfoGetter) endpo
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
+		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfoGetter, cluster, req.ProjectID, req.NodeDeploymentID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineSets, err := getMachineSetsForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
+		machineSets, err := getMachineSetsForNodeDeployment(ctx, clusterProvider, userInfoGetter, cluster, req.ProjectID, req.NodeDeploymentID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		machineDeployment, err := getMachineDeploymentForNodeDeployment(ctx, clusterProvider, userInfo, cluster, req.NodeDeploymentID)
+		machineDeployment, err := getMachineDeploymentForNodeDeployment(ctx, clusterProvider, userInfoGetter, cluster, req.ProjectID, req.NodeDeploymentID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
