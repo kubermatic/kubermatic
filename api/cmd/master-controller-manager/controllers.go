@@ -78,17 +78,17 @@ func rbacControllerFactoryCreator(
 			return "", fmt.Errorf("failed to create master rbac provider: %v", err)
 		}
 
-		allClusterProviders := []*rbac.ClusterProvider{masterClusterProvider}
+		seedClusterProviders := []*rbac.ClusterProvider{}
 
 		for seedName, seedMgr := range seedManagerMap {
 			clusterProvider, err := rbacClusterProvider(seedMgr.GetConfig(), seedName, false, selectorOps)
 			if err != nil {
 				return "", fmt.Errorf("failed to create rbac provider for seed %q: %v", seedName, err)
 			}
-			allClusterProviders = append(allClusterProviders, clusterProvider)
+			seedClusterProviders = append(seedClusterProviders, clusterProvider)
 		}
 
-		ctrl, err := rbac.New(rbacMetrics, allClusterProviders, workerCount)
+		ctrl, err := rbac.New(rbacMetrics, masterClusterProvider, seedClusterProviders, workerCount)
 		if err != nil {
 			return "", fmt.Errorf("failed to create rbac controller: %v", err)
 		}
@@ -98,11 +98,6 @@ func rbacControllerFactoryCreator(
 }
 
 func rbacClusterProvider(cfg *rest.Config, name string, master bool, labelSelectorFunc func(*metav1.ListOptions)) (*rbac.ClusterProvider, error) {
-	clusterPrefix := rbac.SeedProviderPrefix
-	if master {
-		clusterPrefix = rbac.MasterProviderPrefix
-	}
-
 	kubeClient, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create kubeClient: %v", err)
@@ -114,7 +109,7 @@ func rbacClusterProvider(cfg *rest.Config, name string, master bool, labelSelect
 	kubermaticInformerFactory := externalversions.NewFilteredSharedInformerFactory(kubermaticClient, time.Minute*5, metav1.NamespaceAll, labelSelectorFunc)
 	kubeInformerProvider := rbac.NewInformerProvider(kubeClient, time.Minute*5)
 
-	return rbac.NewClusterProvider(fmt.Sprintf("%s/%s", clusterPrefix, name), kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory), nil
+	return rbac.NewClusterProvider(name, kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory), nil
 }
 
 func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {

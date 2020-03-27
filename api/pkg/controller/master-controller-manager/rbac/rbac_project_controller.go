@@ -3,7 +3,6 @@ package rbac
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -19,11 +18,6 @@ import (
 const (
 	metricNamespace = "kubermatic"
 	destinationSeed = "seed"
-
-	// MasterProviderPrefix denotes prefix a master cluster has in its name
-	MasterProviderPrefix = "master"
-	// SeedProviderPrefix denotes prefix a seed cluster has in its name
-	SeedProviderPrefix = "seed"
 )
 
 type projectController struct {
@@ -45,20 +39,13 @@ type projectController struct {
 
 // The controller will also set proper ownership chain through OwnerReferences
 // so that whenever a project is deleted dependants object will be garbage collected.
-func newProjectRBACController(metrics *Metrics, allClusterProviders []*ClusterProvider, resources []projectResource) (*projectController, error) {
+func newProjectRBACController(metrics *Metrics, masterClusterProvider *ClusterProvider, seedClusterProviders []*ClusterProvider, resources []projectResource) (*projectController, error) {
 	c := &projectController{
-		projectQueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_for_project"),
-		metrics:          metrics,
-		projectResources: resources,
-	}
-
-	for _, clusterProvider := range allClusterProviders {
-		if strings.HasPrefix(clusterProvider.providerName, MasterProviderPrefix) {
-			c.masterClusterProvider = clusterProvider
-		}
-		if strings.HasPrefix(clusterProvider.providerName, SeedProviderPrefix) {
-			c.seedClusterProviders = append(c.seedClusterProviders, clusterProvider)
-		}
+		projectQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_for_project"),
+		metrics:               metrics,
+		projectResources:      resources,
+		masterClusterProvider: masterClusterProvider,
+		seedClusterProviders:  seedClusterProviders,
 	}
 
 	if c.masterClusterProvider == nil {

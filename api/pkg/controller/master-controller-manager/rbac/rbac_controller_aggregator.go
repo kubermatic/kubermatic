@@ -43,8 +43,9 @@ type ControllerAggregator struct {
 	rbacProjectController  *projectController
 	rbacResourceController *resourcesController
 
-	metrics             *Metrics
-	allClusterProviders []*ClusterProvider
+	metrics               *Metrics
+	masterClusterProvider *ClusterProvider
+	seedClusterProviders  []*ClusterProvider
 }
 
 type projectResource struct {
@@ -59,7 +60,7 @@ type projectResource struct {
 }
 
 // New creates a new controller aggregator for managing RBAC for resources
-func New(metrics *Metrics, allClusterProviders []*ClusterProvider, workerCount int) (*ControllerAggregator, error) {
+func New(metrics *Metrics, masterClusterProvider *ClusterProvider, seedClusterProviders []*ClusterProvider, workerCount int) (*ControllerAggregator, error) {
 	projectResources := []projectResource{
 		{
 			gvr: schema.GroupVersionResource{
@@ -117,12 +118,12 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider, workerCount i
 		},
 	}
 
-	projectRBACCtrl, err := newProjectRBACController(metrics, allClusterProviders, projectResources)
+	projectRBACCtrl, err := newProjectRBACController(metrics, masterClusterProvider, seedClusterProviders, projectResources)
 	if err != nil {
 		return nil, err
 	}
 
-	resourcesRBACCtrl, err := newResourcesController(metrics, allClusterProviders, projectResources)
+	resourcesRBACCtrl, err := newResourcesController(metrics, masterClusterProvider, seedClusterProviders, projectResources)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +133,8 @@ func New(metrics *Metrics, allClusterProviders []*ClusterProvider, workerCount i
 		rbacProjectController:  projectRBACCtrl,
 		rbacResourceController: resourcesRBACCtrl,
 		metrics:                metrics,
-		allClusterProviders:    allClusterProviders,
+		masterClusterProvider:  masterClusterProvider,
+		seedClusterProviders:   seedClusterProviders,
 	}, nil
 }
 
@@ -142,7 +144,7 @@ func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
 	defer runtime.HandleCrash()
 
 	// wait for all caches in all clusters to get in-sync
-	for _, clusterProvider := range a.allClusterProviders {
+	for _, clusterProvider := range append(a.seedClusterProviders, a.masterClusterProvider) {
 		clusterProvider.StartInformers(stopCh)
 		if err := clusterProvider.WaitForCachesToSync(stopCh); err != nil {
 			return fmt.Errorf("failed to sync cache: %v", err)
