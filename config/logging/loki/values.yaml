@@ -64,7 +64,7 @@ loki:
   nodeSelector: {}
   
   persistence:
-    size: 10Gi
+    size: 15Gi
     storageClassName: kubermatic-fast
   
   podLabels: {}
