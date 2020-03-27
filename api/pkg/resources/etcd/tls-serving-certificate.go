@@ -66,7 +66,13 @@ func TLSCertificateCreator(data tlsCertificateCreatorData) reconciling.NamedSecr
 			config := certutil.Config{
 				CommonName: "etcd",
 				AltNames:   altNames,
-				Usages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+				Usages: []x509.ExtKeyUsage{
+					x509.ExtKeyUsageServerAuth,
+					// etcd needs even the server cert to allow client authentication, see
+					// https://github.com/openshift/kubecsr/commit/aad75d333646da657e788db93f2ff75da850b542
+					// not having it does not cause etcd to fail, but produces lots of warnings and errors
+					x509.ExtKeyUsageClientAuth,
+				},
 			}
 
 			cert, err := triple.NewSignedCert(config, key, ca.Cert, ca.Key)
