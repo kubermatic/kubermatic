@@ -19,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 func createAllControllers(ctrlCtx *controllerContext) error {
@@ -27,7 +28,9 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.seedsGetter,
 		ctrlCtx.seedKubeconfigGetter,
 		ctrlCtx.workerCount,
-		ctrlCtx.labelSelectorFunc)
+		ctrlCtx.labelSelectorFunc,
+		ctrlCtx.workerNamePredicate,
+	)
 	projectLabelSynchronizerFactory := projectLabelSynchronizerFactoryCreator(ctrlCtx)
 	userSSHKeysSynchronizerFactory := userSSHKeysSynchronizerFactoryCreator(ctrlCtx)
 
@@ -64,12 +67,13 @@ func rbacControllerFactoryCreator(
 	seedKubeconfigGetter provider.SeedKubeconfigGetter,
 	workerCount int,
 	selectorOps func(*metav1.ListOptions),
+	workerNamePredicate predicate.Predicate,
 ) seedcontrollerlifecycle.ControllerFactory {
 	rbacMetrics := rbac.NewMetrics()
 	prometheus.MustRegister(rbacMetrics.Workers)
 
 	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
-		ctrl, err := rbac.New(rbacMetrics, mgr, seedManagerMap, selectorOps, workerCount)
+		ctrl, err := rbac.New(rbacMetrics, mgr, seedManagerMap, selectorOps, workerNamePredicate, workerCount)
 		if err != nil {
 			return "", fmt.Errorf("failed to create rbac controller: %v", err)
 		}

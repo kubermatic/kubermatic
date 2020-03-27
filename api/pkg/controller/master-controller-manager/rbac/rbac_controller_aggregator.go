@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // Metrics contains metrics that this controller will collect and expose
@@ -46,7 +47,6 @@ func NewMetrics() *Metrics {
 // ControllerAggregator type holds controllers for managing RBAC for projects and theirs resources
 type ControllerAggregator struct {
 	workerCount            int
-	rbacProjectController  *projectController
 	rbacResourceController *resourcesController
 
 	metrics               *Metrics
@@ -100,7 +100,7 @@ func managersToInformers(mgr manager.Manager, seedManagerMap map[string]manager.
 }
 
 // New creates a new controller aggregator for managing RBAC for resources
-func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, labelSelectorFunc func(*metav1.ListOptions), workerCount int) (*ControllerAggregator, error) {
+func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, labelSelectorFunc func(*metav1.ListOptions), workerPredicate predicate.Predicate, workerCount int) (*ControllerAggregator, error) {
 	// Convert the controller-runtime's managers to old-school informers.
 	masterClusterProvider, seedClusterProviders, err := managersToInformers(mgr, seedManagerMap, labelSelectorFunc)
 	if err != nil {
@@ -164,7 +164,7 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 		},
 	}
 
-	projectRBACCtrl, err := newProjectRBACController(metrics, masterClusterProvider, seedClusterProviders, projectResources)
+	err = newProjectRBACController(metrics, mgr, seedManagerMap, masterClusterProvider, seedClusterProviders, projectResources, workerPredicate)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,6 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 
 	return &ControllerAggregator{
 		workerCount:            workerCount,
-		rbacProjectController:  projectRBACCtrl,
 		rbacResourceController: resourcesRBACCtrl,
 		metrics:                metrics,
 		masterClusterProvider:  masterClusterProvider,
@@ -197,7 +196,6 @@ func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
 		}
 	}
 
-	go a.rbacProjectController.run(a.workerCount, stopCh)
 	go a.rbacResourceController.run(a.workerCount, stopCh)
 
 	klog.Info("RBAC generator aggregator controller started")

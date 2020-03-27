@@ -18,22 +18,20 @@ import (
 	"k8s.io/client-go/kubernetes"
 	rbaclister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/klog"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	CleanupFinalizerName = "kubermatic.io/controller-manager-rbac-cleanup"
 )
 
-func (c *projectController) sync(key string) error {
-	listerProject, err := c.projectLister.Get(key)
-	if err != nil {
-		if kerrors.IsNotFound(err) {
-			klog.V(4).Infof("project '%s' in queue no longer exists", key)
-			return nil
-		}
+func (c *projectController) sync(key client.ObjectKey) error {
+	var originalProject kubermaticv1.Project
+	if err := c.client.Get(c.ctx, key, &originalProject); err != nil {
 		return err
 	}
-	project := listerProject.DeepCopy()
+
+	project := originalProject.DeepCopy()
 
 	if c.shouldDeleteProject(project) {
 		if err := c.ensureProjectCleanup(project); err != nil {
@@ -42,28 +40,28 @@ func (c *projectController) sync(key string) error {
 		return nil
 	}
 
-	if err = c.ensureCleanupFinalizerExists(project); err != nil {
+	if err := c.ensureCleanupFinalizerExists(project); err != nil {
 		return fmt.Errorf("failed to ensure that the cleanup finalizer exists on the project: %v", err)
 	}
-	if err = c.ensureProjectOwner(project); err != nil {
+	if err := c.ensureProjectOwner(project); err != nil {
 		return fmt.Errorf("failed to ensure that the project owner exists in the owners group: %v", err)
 	}
-	if err = ensureClusterRBACRoleForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
+	if err := ensureClusterRBACRoleForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Role for the project exists: %v", err)
 	}
-	if err = ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
+	if err := ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RoleBinding for the project exists: %v", err)
 	}
-	if err = c.ensureClusterRBACRoleForResources(); err != nil {
+	if err := c.ensureClusterRBACRoleForResources(); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC ClusterRoles for the project's resources exists: %v", err)
 	}
-	if err = c.ensureClusterRBACRoleBindingForResources(project.Name); err != nil {
+	if err := c.ensureClusterRBACRoleBindingForResources(project.Name); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC ClusterRoleBindings for the project's resources exists: %v", err)
 	}
-	if err = c.ensureRBACRoleForResources(); err != nil {
+	if err := c.ensureRBACRoleForResources(); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Roles for the project's resources exists: %v", err)
 	}
-	if err = c.ensureRBACRoleBindingForResources(project.Name); err != nil {
+	if err := c.ensureRBACRoleBindingForResources(project.Name); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RolesBindings for the project's resources exists: %v", err)
 	}
 	if err := c.ensureProjectIsInActivePhase(project); err != nil {

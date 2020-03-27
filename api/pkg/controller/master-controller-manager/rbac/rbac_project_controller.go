@@ -1,18 +1,20 @@
 package rbac
 
 import (
-	"errors"
-	"fmt"
-	"time"
+	"context"
 
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
-	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/klog"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -32,6 +34,9 @@ type projectController struct {
 	masterClusterProvider *ClusterProvider
 
 	projectResources []projectResource
+	client           client.Client
+	seedClientMap    map[string]client.Client
+	ctx              context.Context
 }
 
 // newProjectRBACController creates a new controller that is responsible for
@@ -39,108 +44,43 @@ type projectController struct {
 
 // The controller will also set proper ownership chain through OwnerReferences
 // so that whenever a project is deleted dependants object will be garbage collected.
-func newProjectRBACController(metrics *Metrics, masterClusterProvider *ClusterProvider, seedClusterProviders []*ClusterProvider, resources []projectResource) (*projectController, error) {
+func newProjectRBACController(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, masterClusterProvider *ClusterProvider, seedClusterProviders []*ClusterProvider, resources []projectResource, workerPredicate predicate.Predicate) error {
+	seedClientMap := make(map[string]client.Client)
+	for k, v := range seedManagerMap {
+		seedClientMap[k] = v.GetClient()
+	}
+
 	c := &projectController{
 		projectQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_for_project"),
 		metrics:               metrics,
 		projectResources:      resources,
 		masterClusterProvider: masterClusterProvider,
 		seedClusterProviders:  seedClusterProviders,
+		client:                mgr.GetClient(),
+		seedClientMap:         seedClientMap,
+		ctx:                   context.TODO(),
 	}
 
-	if c.masterClusterProvider == nil {
-		return nil, errors.New("cannot create controller because master cluster provider has not been found")
-	}
-
-	projectInformer := c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().Projects()
-	userInformer := c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().Users()
-
-	projectInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			c.enqueueProject(obj.(*kubermaticv1.Project))
-		},
-		UpdateFunc: func(old, cur interface{}) {
-			c.enqueueProject(cur.(*kubermaticv1.Project))
-		},
-		DeleteFunc: func(obj interface{}) {
-			project, ok := obj.(*kubermaticv1.Project)
-			if !ok {
-				tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("couldn't get object from tombstone %#v", obj))
-					return
-				}
-				project, ok = tombstone.Obj.(*kubermaticv1.Project)
-				if !ok {
-					runtime.HandleError(fmt.Errorf("tombstone contained object that is not a Project %#v", obj))
-					return
-				}
-			}
-			c.enqueueProject(project)
-		},
-	})
-
-	c.projectLister = projectInformer.Lister()
-	c.userLister = userInformer.Lister()
-	c.userProjectBindingLister = c.masterClusterProvider.kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister()
-
-	return c, nil
-}
-
-// run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
-func (c *projectController) run(workerCount int, stopCh <-chan struct{}) {
-	defer runtime.HandleCrash()
-
-	for i := 0; i < workerCount; i++ {
-		go wait.Until(c.runProjectWorker, time.Second, stopCh)
-		c.metrics.Workers.Inc()
-	}
-
-	klog.Info("RBAC generator for project controller started")
-	<-stopCh
-}
-
-func (c *projectController) runProjectWorker() {
-	for c.processProjectNextItem() {
-	}
-}
-
-func (c *projectController) processProjectNextItem() bool {
-	key, quit := c.projectQueue.Get()
-	if quit {
-		return false
-	}
-	defer c.projectQueue.Done(key)
-
-	err := c.sync(key.(string))
-
-	handleErr(err, key, c.projectQueue)
-	return true
-}
-
-func (c *projectController) enqueueProject(project *kubermaticv1.Project) {
-	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(project)
+	// Create a new controller
+	cc, err := controller.New("rbac_generator_for_project", mgr, controller.Options{Reconciler: c})
 	if err != nil {
-		runtime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", project, err))
-		return
+		return err
 	}
 
-	c.projectQueue.Add(key)
+	// Watch for changes to UserProjectBinding
+	err = cc.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}, workerPredicate)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// handleErr checks if an error happened and makes sure we will retry later.
-func handleErr(err error, key interface{}, queue workqueue.RateLimitingInterface) {
-	if err == nil {
-		// Forget about the #AddRateLimited history of the key on every successful synchronization.
-		// This ensures that future processing of updates for this key is not delayed because of
-		// an outdated error history.
-		queue.Forget(key)
-		return
+func (c *projectController) Reconcile(req reconcile.Request) (reconcile.Result, error) {
+	err := c.sync(req.NamespacedName)
+	if err != nil {
+		return reconcile.Result{}, err
 	}
 
-	klog.Errorf("Error syncing %v: %v", key, err)
-
-	// Re-enqueue an item, based on the rate limiter on the
-	// queue and the re-enqueueProject history, the key will be processed later again.
-	queue.AddRateLimited(key)
+	return reconcile.Result{}, nil
 }
