@@ -49,30 +49,29 @@ spec:
           mountPath: /host/root
           mountPropagation: HostToContainer
 
-      - name: kube-rbac-proxy
-        image: '{{ Registry "quay.io" }}/coreos/kube-rbac-proxy:v0.4.1'
-        args:
-        - '--logtostderr'
-        - '--secure-listen-address=$(IP):9100'
-        - '--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256'
-        - '--upstream=http://127.0.0.1:9100/'
-        env:
-        - name: IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        ports:
-        - containerPort: 9100
-          hostPort: 9100
-          name: https
-        resources:
-          requests:
-            cpu: 10m
-            memory: 24Mi
-          limits:
-            cpu: 20m
-            memory: 48Mi
-
+      - command:
+        - bash
+        - -c
+        - |
+          while sleep 15; do
+            echo 1 > /proc/sys/net/ipv4/conf/all/route_localnet
+            iptables -t nat -C PREROUTING -p tcp --dport 9100 -j DNAT --to 127.0.0.1:9100
+            STATUS=$?
+            if [ $STATUS -ne 0 ]; then
+              iptables -t nat -A PREROUTING -p tcp --dport 9100 -j DNAT --to 127.0.0.1:9100
+              echo "Rule added"
+            fi
+          done
+        image: quay.io/kubermatic/openvpn:v2.4.8-r1
+        imagePullPolicy: IfNotPresent
+        name: dnat-controller-9100
+        resources: {}
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
       tolerations:
       - effect: NoExecute
         operator: Exists
@@ -88,6 +87,4 @@ spec:
       - name: root
         hostPath:
           path: /
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 65534
+      securityContext: {}
