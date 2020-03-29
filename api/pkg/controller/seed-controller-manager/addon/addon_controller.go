@@ -203,8 +203,8 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
-		log.Debug("Skipping because the API server is not running")
-		return nil, nil
+		log.Debug("API server is not running, trying again in 10 seconds")
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	reqeueAfter, err := r.ensureRequiredResourceTypesExist(ctx, log, addon, cluster)
