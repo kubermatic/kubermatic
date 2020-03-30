@@ -1549,6 +1549,32 @@ func TestPatchNodeDeployment(t *testing.T) {
 			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)},
 			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
 		},
+		// Scenario 6: The admin John can update any node deployment.
+		{
+			Name:                       "Scenario 6: The admin John can update any node deployment",
+			Body:                       fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
+			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":false},"status":{}}`, replicasUpdated),
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusOK,
+			project:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:            test.GenAPIUser("John", "john@acme.com"),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)},
+			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true), genUser("John", "john@acme.com", true)),
+		},
+		// Scenario 7: The user John can not update Bob's node deployment.
+		{
+			Name:                       "Scenario 7: The user John can not update Bob's node deployment",
+			Body:                       fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
+			ExpectedResponse:           `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusForbidden,
+			project:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:            test.GenAPIUser("John", "john@acme.com"),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)},
+			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true), genUser("John", "john@acme.com", false)),
+		},
 	}
 
 	for _, tc := range testcases {
