@@ -28,7 +28,7 @@ function retag {
   echo "Done retagging ${IMAGE}"
 }
 
-IMAGES=$(cat /dev/stdin | grep "image: " | cut -d : -f 2,3)
+IMAGES=$(cat /dev/stdin | (grep "image: " || true) | cut -d : -f 2,3)
 for IMAGE in ${IMAGES}; do
   # Make sure we strip all quotes
   IMAGE="${IMAGE%\'}"
