@@ -102,10 +102,13 @@ SystemMaxUse=5G
 }
 
 type dockerConfig struct {
-	ExecOpts           []string `json:"exec-opts"`
-	StorageDriver      string   `json:"storage-driver"`
-	InsecureRegistries []string `json:"insecure-registries"`
-	RegistryMirrors    []string `json:"registry-mirrors"`
+	ExecOpts           []string          `json:"exec-opts,omitempty"`
+	StorageDriver      string            `json:"storage-driver,omitempty"`
+	StorageOpts        []string          `json:"storage-opts,omitempty"`
+	LogDriver          string            `json:"log-driver,omitempty"`
+	LogOpts            map[string]string `json:"log-opts,omitempty"`
+	InsecureRegistries []string          `json:"insecure-registries,omitempty"`
+	RegistryMirrors    []string          `json:"registry-mirrors,omitempty"`
 }
 
 // DockerConfig returns the docker daemon.json.
@@ -113,6 +116,8 @@ func DockerConfig(insecureRegistries, registryMirrors []string) (string, error) 
 	cfg := dockerConfig{
 		ExecOpts:           []string{"native.cgroupdriver=systemd"},
 		StorageDriver:      "overlay2",
+		LogDriver:          "json-file",
+		LogOpts:            map[string]string{"max-size": "100m"},
 		InsecureRegistries: insecureRegistries,
 		RegistryMirrors:    registryMirrors,
 	}
