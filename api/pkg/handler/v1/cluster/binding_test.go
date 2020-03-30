@@ -325,6 +325,48 @@ func TestListRoleBinding(t *testing.T) {
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
+		{
+			name:             "scenario 2: the admin John can list bindings for any cluster",
+			expectedResponse: `[{"namespace":"default","subjects":[{"kind":"User","name":"test-1@example.com"}],"roleRefName":"role-1"},{"namespace":"default","subjects":[{"kind":"User","name":"test-2@example.com"}],"roleRefName":"role-2"},{"namespace":"default","subjects":[{"kind":"Group","name":"test"}],"roleRefName":"role-2"},{"namespace":"test","subjects":[{"kind":"User","name":"test-10@example.com"}],"roleRefName":"role-10"},{"namespace":"test","subjects":[{"kind":"Group","name":"test"}],"roleRefName":"role-10"}]`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genUser("John", "john@acme.com", true),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultRole("role-1", "default"),
+				genDefaultRole("role-2", "default"),
+				genDefaultClusterRole("role-1"),
+				genDefaultRoleBinding("binding-1", "default", "role-1", "test-1@example.com"),
+				genDefaultRoleBinding("binding-2", "default", "role-2", "test-2@example.com"),
+				genDefaultGroupRoleBinding("binding-3", "default", "role-2", "test"),
+				genDefaultRoleBinding("binding-1", "test", "role-10", "test-10@example.com"),
+				genDefaultGroupRoleBinding("binding-2", "test", "role-10", "test"),
+			},
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		{
+			name:             "scenario 3: the user John can not list Bob's bindings",
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusForbidden,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genUser("John", "john@acme.com", false),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultRole("role-1", "default"),
+				genDefaultRole("role-2", "default"),
+				genDefaultClusterRole("role-1"),
+				genDefaultRoleBinding("binding-1", "default", "role-1", "test-1@example.com"),
+				genDefaultRoleBinding("binding-2", "default", "role-2", "test-2@example.com"),
+				genDefaultGroupRoleBinding("binding-3", "default", "role-2", "test"),
+				genDefaultRoleBinding("binding-1", "test", "role-10", "test-10@example.com"),
+				genDefaultGroupRoleBinding("binding-2", "test", "role-10", "test"),
+			},
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -725,6 +767,46 @@ func TestListClusterRoleBinding(t *testing.T) {
 				genDefaultGroupClusterRoleBinding("binding-2-2", "role-2", "test-4"),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 2
+		{
+			name:             "scenario 2: the admin John can list cluster role bindings for any cluster",
+			expectedResponse: `[{"subjects":[{"kind":"User","name":"test-1"}],"roleRefName":"role-1"},{"subjects":[{"kind":"User","name":"test-2"}],"roleRefName":"role-1"},{"subjects":[{"kind":"User","name":"test-3"}],"roleRefName":"role-2"},{"subjects":[{"kind":"Group","name":"test-4"}],"roleRefName":"role-2"}]`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genUser("John", "john@acme.com", true),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultClusterRole("role-2"),
+				genDefaultClusterRoleBinding("binding-1-1", "role-1", "test-1"),
+				genDefaultClusterRoleBinding("binding-1-2", "role-1", "test-2"),
+				genDefaultClusterRoleBinding("binding-2-1", "role-2", "test-3"),
+				genDefaultGroupClusterRoleBinding("binding-2-2", "role-2", "test-4"),
+			},
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		// scenario 3
+		{
+			name:             "scenario 3: the user John can not list Bob's cluster role bindings",
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusForbidden,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genUser("John", "john@acme.com", false),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultClusterRole("role-2"),
+				genDefaultClusterRoleBinding("binding-1-1", "role-1", "test-1"),
+				genDefaultClusterRoleBinding("binding-1-2", "role-1", "test-2"),
+				genDefaultClusterRoleBinding("binding-2-1", "role-2", "test-3"),
+				genDefaultGroupClusterRoleBinding("binding-2-2", "role-2", "test-4"),
+			},
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
 	}
 
