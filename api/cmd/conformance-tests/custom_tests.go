@@ -350,7 +350,7 @@ func (r *testRunner) testUserClusterMetrics(log *zap.SugaredLogger, cluster *kub
 
 		if !fetchedMetricsSet.HasAll("machine_controller_machines", "kubelet_runtime_operations_latency_microseconds_count",
 			"replicaset_controller_rate_limiter_use", "workqueue_retries_total", "ssh_tunnel_open_count", "scheduler_e2e_scheduling_duration_seconds_count",
-			"kube_daemonset_labels", "etcd_disk_backend_defrag_duration_seconds_sum", "cloudprovider_aws_api_request_duration_seconds_sum") {
+			"kube_daemonset_labels", "etcd_disk_backend_defrag_duration_seconds_sum") {
 			return errors.New("failed to get all expected metrics")
 		}
 
