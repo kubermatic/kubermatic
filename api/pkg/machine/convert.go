@@ -2,7 +2,6 @@ package machine
 
 import (
 	"fmt"
-	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -19,7 +18,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
-	_ "github.com/kubermatic/machine-controller/pkg/userdata/rhel"
+	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
 	"github.com/kubermatic/machine-controller/pkg/userdata/sles"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
 
@@ -75,7 +74,7 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 	case providerconfig.OperatingSystemRHEL:
 		config := &rhel.Config{}
 		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse sles config: %v", err)
+			return nil, fmt.Errorf("failed to parse rhel config: %v", err)
 		}
 		operatingSystemSpec.RHEL = &apiv1.RHELSpec{
 			DistUpgradeOnBoot:               config.DistUpgradeOnBoot,
