@@ -1100,7 +1100,8 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			expectedClusterRolesForSeeds: []*rbacv1.ClusterRole{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:owners",
+						Name:            "kubermatic:clusters:owners",
+						ResourceVersion: "1",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1113,25 +1114,14 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:editors",
+						Name:            "kubermatic:clusters:editors",
+						ResourceVersion: "1",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
 							Resources: []string{"clusters"},
 							Verbs:     []string{"create"},
-						},
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:clusters:viewers",
-					},
-					Rules: []rbacv1.PolicyRule{
-						{
-							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{"clusters"},
-							Verbs:     []string{},
 						},
 					},
 				},
@@ -1140,7 +1130,8 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			expectedClusterRolesForMaster: []*rbacv1.ClusterRole{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:usersshkeies:owners",
+						Name:            "kubermatic:usersshkeies:owners",
+						ResourceVersion: "1",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1153,7 +1144,8 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:usersshkeies:editors",
+						Name:            "kubermatic:usersshkeies:editors",
+						ResourceVersion: "1",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1187,7 +1179,8 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			expectedClusterRolesForMaster: []*rbacv1.ClusterRole{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:userprojectbindings:owners",
+						Name:            "kubermatic:userprojectbindings:owners",
+						ResourceVersion: "1",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -1205,6 +1198,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			// setup the test scenario
 			objs := []runtime.Object{}
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
+			fakeMasterClient := fakeruntime.NewFakeClient(objs...)
 			roleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 
 			// manually set lister as we don't want to start informers in the tests
@@ -1219,94 +1213,74 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			}
 
 			seedClusterProviders := make([]*ClusterProvider, test.seedClusters)
+			seedClients := make(map[string]client.Client)
 			for i := 0; i < test.seedClusters; i++ {
 				objs := []runtime.Object{}
 				fakeSeedKubeClient := fake.NewSimpleClientset(objs...)
 				fakeKubeInformerProvider := NewInformerProvider(fakeSeedKubeClient, time.Minute*5)
 				fakeProvider := NewClusterProvider(strconv.Itoa(i), fakeSeedKubeClient, fakeKubeInformerProvider, nil, nil)
 				seedClusterProviders[i] = fakeProvider
+				seedClients[strconv.Itoa(i)] = fakeruntime.NewFakeClient(objs...)
 			}
 
 			// act
-			target := projectController{}
-			target.masterClusterProvider = fakeMasterClusterProvider
-			target.projectResources = test.projectResourcesToSync
-			target.seedClusterProviders = seedClusterProviders
+			target := projectController{
+				ctx:                   context.Background(),
+				masterClusterProvider: fakeMasterClusterProvider,
+				projectResources:      test.projectResourcesToSync,
+				seedClusterProviders:  seedClusterProviders,
+				client:                fakeMasterClient,
+				seedClientMap:         seedClients,
+			}
 			err := target.ensureClusterRBACRoleForResources()
+			assert.Nil(t, err)
 
 			// validate master cluster
 			{
-				if err != nil {
-					t.Fatal(err)
+				var clusterRoleList rbacv1.ClusterRoleList
+				err = fakeMasterClient.List(context.Background(), &clusterRoleList)
+				assert.NoError(t, err)
+
+			expectedClusterRoleLoop:
+				for _, expectedClusterRole := range test.expectedClusterRolesForMaster {
+					// double-iterating over both slices might not be the most efficient way
+					// but it spares the trouble of converting pointers to values
+					// and then sorting everything for the comparison.
+
+					for _, existingClusterRole := range clusterRoleList.Items {
+						if reflect.DeepEqual(*expectedClusterRole, existingClusterRole) {
+							continue expectedClusterRoleLoop
+						}
+					}
+					t.Fatalf("expected ClusterRole %q not found in cluster", expectedClusterRole.Name)
 				}
 
-				if len(test.expectedClusterRolesForMaster) == 0 {
-					if len(fakeKubeClient.Actions()) != 0 {
-						t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
-					}
-					return
-				}
-
-				if len(fakeKubeClient.Actions()) != len(test.expectedActionsForMaster) {
-					t.Fatalf("unexpected number of actions, expected to get %d but got %d, actions %v", len(test.expectedActionsForMaster), len(fakeKubeClient.Actions()), fakeKubeClient.Actions())
-				}
-
-				createActionIndex := 0
-				for index, action := range fakeKubeClient.Actions() {
-					if !action.Matches(test.expectedActionsForMaster[index], "clusterroles") {
-						t.Fatalf("unexpected action %#v", action)
-					}
-					if action.GetVerb() == "get" {
-						continue
-					}
-					// TODO: figure out why action.(clienttesting.GenericAction) does not work
-					createAction, ok := action.(clienttesting.CreateAction)
-					if !ok {
-						t.Fatalf("unexpected action %#v", action)
-					}
-					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRole), test.expectedClusterRolesForMaster[createActionIndex]) {
-						t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRolesForMaster[createActionIndex], createAction.GetObject().(*rbacv1.ClusterRole)))
-					}
-					createActionIndex++
-				}
+				assert.Len(t, clusterRoleList.Items, len(test.expectedClusterRolesForMaster),
+					"cluster contains more ClusterRoles than expected (%d > %d)", len(clusterRoleList.Items), len(test.expectedClusterRolesForMaster))
 			}
 
 			// validate seed clusters
-			for i := 0; i < test.seedClusters; i++ {
+			for _, fakeSeedClient := range seedClients {
+				var clusterRoleList rbacv1.ClusterRoleList
+				err = fakeSeedClient.List(context.Background(), &clusterRoleList)
+				assert.NoError(t, err)
 
-				seedKubeClient, ok := seedClusterProviders[i].kubeClient.(*fake.Clientset)
-				if !ok {
-					t.Fatal("expected thatt seedClusterRESTClient will hold *fake.Clientset")
-				}
-				if len(test.expectedClusterRolesForSeeds) == 0 {
-					if len(seedKubeClient.Actions()) != 0 {
-						t.Fatalf("unexpected actions %#v", seedKubeClient.Actions())
+			expectedSeecClusterRoleLoop:
+				for _, expectedClusterRole := range test.expectedClusterRolesForSeeds {
+					// double-iterating over both slices might not be the most efficient way
+					// but it spares the trouble of converting pointers to values
+					// and then sorting everything for the comparison.
+
+					for _, existingClusterRole := range clusterRoleList.Items {
+						if reflect.DeepEqual(*expectedClusterRole, existingClusterRole) {
+							continue expectedSeecClusterRoleLoop
+						}
 					}
-					return
+					t.Fatalf("expected ClusterRole %q not found in cluster", expectedClusterRole.Name)
 				}
 
-				if len(seedKubeClient.Actions()) != len(test.expectedActionsForSeeds) {
-					t.Fatalf("unexpected number of actions, got %d, but expected to get %d, actions %v", len(seedKubeClient.Actions()), len(test.expectedActionsForSeeds), seedKubeClient.Actions())
-				}
-
-				createActionIndex := 0
-				for index, action := range seedKubeClient.Actions() {
-					if !action.Matches(test.expectedActionsForSeeds[index], "clusterroles") {
-						t.Fatalf("unexpected action %#v", action)
-					}
-					if action.GetVerb() == "get" {
-						continue
-					}
-					// TODO: figure out why action.(clienttesting.GenericAction) does not work
-					createAction, ok := action.(clienttesting.CreateAction)
-					if !ok {
-						t.Fatalf("unexpected action %#v", action)
-					}
-					if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRole), test.expectedClusterRolesForSeeds[createActionIndex]) {
-						t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRolesForSeeds[createActionIndex], createAction.GetObject().(*rbacv1.ClusterRole)))
-					}
-					createActionIndex++
-				}
+				assert.Len(t, clusterRoleList.Items, len(test.expectedClusterRolesForSeeds),
+					"cluster contains more ClusterRoles than expected (%d > %d)", len(clusterRoleList.Items), len(test.expectedClusterRolesForSeeds))
 			}
 		})
 	}
