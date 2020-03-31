@@ -189,6 +189,44 @@ func TestBindUserToRole(t *testing.T) {
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
+		{
+			name:             "scenario 10: the admin John can bind user to role test-1 for any cluster",
+			roleName:         "role-1",
+			namespace:        "default",
+			body:             `{"userEmail":"test@example.com"}`,
+			expectedResponse: `{"namespace":"default","subjects":[{"kind":"User","apiGroup":"rbac.authorization.k8s.io","name":"test@example.com"}],"roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genUser("John", "john@acme.com", true),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultRole("role-1", "default"),
+				genDefaultRole("role-1", "test"),
+				genDefaultClusterRole("role-1"),
+			},
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		{
+			name:             "scenario 11: the user John can not bind user to role test-1 for Bob's cluster",
+			roleName:         "role-1",
+			namespace:        "default",
+			body:             `{"userEmail":"test@example.com"}`,
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusForbidden,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genUser("John", "john@acme.com", false),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultRole("role-1", "default"),
+				genDefaultRole("role-1", "test"),
+				genDefaultClusterRole("role-1"),
+			},
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -231,7 +269,6 @@ func TestUnbindUserFromRoleBinding(t *testing.T) {
 		existingKubermaticObjs []runtime.Object
 		existingKubernrtesObjs []runtime.Object
 	}{
-
 		{
 			name:             "scenario 1: remove user from the binding",
 			roleName:         "role-1",
@@ -250,7 +287,7 @@ func TestUnbindUserFromRoleBinding(t *testing.T) {
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
 		{
-			name:             "scenario 1: remove group from the binding",
+			name:             "scenario 2: remove group from the binding",
 			roleName:         "role-1",
 			namespace:        "default",
 			body:             `{"group":"test"}`,
@@ -265,6 +302,42 @@ func TestUnbindUserFromRoleBinding(t *testing.T) {
 				genDefaultGroupRoleBinding("test", "default", "role-1", "test"),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "scenario 3: the admin John can remove user from the binding for the any cluster",
+			roleName:         "role-1",
+			namespace:        "default",
+			body:             `{"userEmail":"bob@acme.com"}`,
+			expectedResponse: `{"namespace":"default","roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genUser("John", "john@acme.com", true),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultRole("role-1", "default"),
+				genDefaultRoleBinding("test", "default", "role-1", "bob@acme.com"),
+			},
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		{
+			name:             "scenario 4: the user John can not remove user from the binding for the Bob's cluster",
+			roleName:         "role-1",
+			namespace:        "default",
+			body:             `{"userEmail":"bob@acme.com"}`,
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusForbidden,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genUser("John", "john@acme.com", false),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultRole("role-1", "default"),
+				genDefaultRoleBinding("test", "default", "role-1", "bob@acme.com"),
+			},
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
 	}
 
