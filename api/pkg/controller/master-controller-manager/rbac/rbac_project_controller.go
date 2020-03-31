@@ -27,7 +27,6 @@ type projectController struct {
 	metrics      *Metrics
 
 	projectLister kubermaticv1lister.ProjectLister
-	userLister    kubermaticv1lister.UserLister
 
 	seedClusterProviders  []*ClusterProvider
 	masterClusterProvider *ClusterProvider

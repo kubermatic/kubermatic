@@ -719,8 +719,6 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 					index++
 				}
 			}
-			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			userLister := kubermaticv1lister.NewUserLister(userIndexer)
 			fakeKubermaticMasterClient := kubermaticfakeclientset.NewSimpleClientset(test.projectToSync)
 			fakeMasterClusterClient := fakeruntime.NewFakeClient(test.projectToSync)
 			fakeMasterClusterProvider := &ClusterProvider{
@@ -730,7 +728,6 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 			// act
 			target := projectController{
 				ctx:                   context.Background(),
-				userLister:            userLister,
 				seedClusterProviders:  seedClusterProviders,
 				masterClusterProvider: fakeMasterClusterProvider,
 				client:                fakeMasterClusterClient,
@@ -969,7 +966,6 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				}
 				kubermaticObjs = append(kubermaticObjs, test.projectToSync)
 			}
-			userLister := kubermaticv1lister.NewUserLister(userIndexer)
 
 			for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForMaster {
 				objs = append(objs, existingClusterRoleBinding)
@@ -1010,7 +1006,6 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				projectResources:      test.projectResourcesToSync,
 				seedClusterProviders:  seedClusterProviders,
 				projectLister:         projectLister,
-				userLister:            userLister,
 				client:                fakeMasterClusterClient,
 				seedClientMap:         seedClusterClientMap,
 			}
@@ -2135,8 +2130,6 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			}
 			kubermaticObjs = append(kubermaticObjs, test.projectToSync)
 			projectLister := kubermaticv1lister.NewProjectLister(projectIndexer)
-			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-			userLister := kubermaticv1lister.NewUserLister(userIndexer)
 
 			roleBindingsIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			for _, existingRoleBinding := range test.existingRoleBindingsForMaster {
@@ -2209,7 +2202,6 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 				projectResources:      test.projectResourcesToSync,
 				seedClusterProviders:  seedClusterProviders,
 				projectLister:         projectLister,
-				userLister:            userLister,
 			}
 			err = target.ensureProjectCleanup(test.projectToSync)
 			assert.NoError(t, err)
