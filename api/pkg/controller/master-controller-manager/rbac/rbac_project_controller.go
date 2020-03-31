@@ -26,9 +26,8 @@ type projectController struct {
 	projectQueue workqueue.RateLimitingInterface
 	metrics      *Metrics
 
-	projectLister            kubermaticv1lister.ProjectLister
-	userLister               kubermaticv1lister.UserLister
-	userProjectBindingLister kubermaticv1lister.UserProjectBindingLister
+	projectLister kubermaticv1lister.ProjectLister
+	userLister    kubermaticv1lister.UserLister
 
 	seedClusterProviders  []*ClusterProvider
 	masterClusterProvider *ClusterProvider

@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -91,25 +90,28 @@ func (c *projectController) ensureProjectIsInActivePhase(project *kubermaticv1.P
 
 // ensureProjectOwner makes sure that the owner of the project is assign to "owners" group
 func (c *projectController) ensureProjectOwner(project *kubermaticv1.Project) error {
-	var sharedOwner *kubermaticv1.User
+	var sharedOwnerPtr *kubermaticv1.User
 	for _, ref := range project.OwnerReferences {
 		if ref.Kind == kubermaticv1.UserKindName {
-			var err error
-			if sharedOwner, err = c.userLister.Get(ref.Name); err != nil {
+			var sharedOwner kubermaticv1.User
+			key := types.NamespacedName{Name: ref.Name}
+			if err := c.client.Get(c.ctx, key, &sharedOwner); err != nil {
 				return err
 			}
+			sharedOwnerPtr = &sharedOwner
 		}
 	}
-	if sharedOwner == nil {
+	if sharedOwnerPtr == nil {
 		return fmt.Errorf("the given project %s doesn't have associated owner/user", project.Name)
 	}
-	owner := sharedOwner.DeepCopy()
+	owner := sharedOwnerPtr.DeepCopy()
 
-	bindings, err := c.userProjectBindingLister.List(labels.Everything())
-	if err != nil {
+	var bindings kubermaticv1.UserProjectBindingList
+	if err := c.client.List(c.ctx, &bindings); err != nil {
 		return err
 	}
-	for _, binding := range bindings {
+
+	for _, binding := range bindings.Items {
 		if binding.Spec.ProjectID == project.Name && strings.EqualFold(binding.Spec.UserEmail, owner.Spec.Email) &&
 			binding.Spec.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
 			return nil
@@ -135,8 +137,7 @@ func (c *projectController) ensureProjectOwner(project *kubermaticv1.Project) er
 		},
 	}
 
-	_, err = c.masterClusterProvider.kubermaticClient.KubermaticV1().UserProjectBindings().Create(ownerBinding)
-	return err
+	return c.client.Create(c.ctx, ownerBinding)
 }
 
 func (c *projectController) ensureClusterRBACRoleForResources() error {
