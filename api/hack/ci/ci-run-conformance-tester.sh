@@ -7,7 +7,7 @@ source ./api/hack/lib.sh
 
 ### Defaults
 export VERSIONS=${VERSIONS_TO_TEST:-"v1.12.4"}
-export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos,sles}
+export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos,sles,rhel}
 export ONLY_TEST_CREATION=${ONLY_TEST_CREATION:-false}
 provider=${PROVIDER:-"aws"}
 export WORKER_NAME=${BUILD_ID}

@@ -243,6 +243,8 @@ func main() {
 				opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] = true
 			case "sles":
 				opts.excludeSelector.Distributions[providerconfig.OperatingSystemSLES] = true
+			case "rhel":
+				opts.excludeSelector.Distributions[providerconfig.OperatingSystemRHEL] = true
 			default:
 				log.Fatalf("Unknown distribution '%s' in '-exclude-distributions' param", excludedDistribution)
 			}
@@ -425,6 +427,7 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] = true
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] = false
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemSLES] = true
+		opts.excludeSelector.Distributions[providerconfig.OperatingSystemRHEL] = true
 	}
 
 	scenarioOptions := strings.Split(opts.scenarioOptions, ",")
@@ -491,6 +494,11 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 		}
 		if osspec.Sles != nil {
 			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemSLES] {
+				filteredScenarios = append(filteredScenarios, scenario)
+			}
+		}
+		if osspec.Rhel != nil {
+			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemRHEL] {
 				filteredScenarios = append(filteredScenarios, scenario)
 			}
 		}

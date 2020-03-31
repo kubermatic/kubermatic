@@ -39,5 +39,4 @@ type RawConfig struct {
 	EBSVolumeEncrypted providerconfigtypes.ConfigVarBool     `json:"ebsVolumeEncrypted"`
 	Tags               map[string]string                     `json:"tags,omitempty"`
 	AssignPublicIP     *bool                                 `json:"assignPublicIP,omitempty"`
-	RHSMOfflineToken   providerconfigtypes.ConfigVarString   `json:"rhsmOfflineToken,omitempty"`
 }

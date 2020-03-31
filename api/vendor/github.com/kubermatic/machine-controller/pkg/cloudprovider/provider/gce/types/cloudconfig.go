@@ -44,14 +44,15 @@ const cloudConfigTemplate = "[global]\n" +
 
 // GlobalOpts contains the values of the global section of the cloud configuration.
 type GlobalOpts struct {
-	ProjectID      string
-	LocalZone      string
-	NetworkName    string
-	SubnetworkName string
-	TokenURL       string
-	MultiZone      bool
-	Regional       bool
-	NodeTags       []string
+	ProjectID        string
+	LocalZone        string
+	NetworkName      string
+	SubnetworkName   string
+	TokenURL         string
+	MultiZone        bool
+	Regional         bool
+	NodeTags         []string
+	RHSMOfflineToken string
 }
 
 // CloudConfig contains only the section global.

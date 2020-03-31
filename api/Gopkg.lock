@@ -869,7 +869,7 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:bba62c1cab7a8fd6c2afd2c7f8c859a4fc1cbb478597e3e904b203c7ca37c15e"
+  digest = "1:d077fd746628faf13c9dd222b297b40ac7844cd9dc588c76878418f6a9515edf"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/cluster/common",
@@ -892,12 +892,13 @@
     "pkg/userdata/coreos",
     "pkg/userdata/helper",
     "pkg/userdata/plugin",
+    "pkg/userdata/rhel",
     "pkg/userdata/sles",
     "pkg/userdata/ubuntu",
   ]
   pruneopts = "NUT"
-  revision = "04c3f2ab0fe688858b8ac124ce17cf686cd6d9c7"
-  version = "v1.10.2"
+  revision = "7a512dbeb74d0af4f4c373b54178b40d29095dde"
+  version = "v1.11.2"
 
 [[projects]]
   digest = "1:d244f8666a838fe6ad70ec8fe77f50ebc29fdc3331a2729ba5886bef8435d10d"
@@ -2044,6 +2045,14 @@
   revision = "0317810137be915b9cf888946c6e115c1bfac693"
 
 [[projects]]
+  digest = "1:41760f7c6602822eb3a6d581d156d6daa28d2e8164973c77bdc32f864b24260c"
+  name = "k8s.io/kubelet"
+  packages = ["config/v1beta1"]
+  pruneopts = "NUT"
+  revision = "f0d06ae44a2e7ef0c05aecb6e7773222947dd156"
+  version = "v0.18.0"
+
+[[projects]]
   branch = "release-1.16"
   digest = "1:0cc7b4ff105e1f8214de108e1fb4fd2d0bf96ca75ec5766ca22ddaab1dbf44ae"
   name = "k8s.io/metrics"
@@ -2238,6 +2247,7 @@
     "github.com/kubermatic/machine-controller/pkg/userdata/coreos",
     "github.com/kubermatic/machine-controller/pkg/userdata/helper",
     "github.com/kubermatic/machine-controller/pkg/userdata/plugin",
+    "github.com/kubermatic/machine-controller/pkg/userdata/rhel",
     "github.com/kubermatic/machine-controller/pkg/userdata/sles",
     "github.com/kubermatic/machine-controller/pkg/userdata/ubuntu",
     "github.com/minio/minio-go",

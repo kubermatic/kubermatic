@@ -21,6 +21,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
+	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
 	"github.com/kubermatic/machine-controller/pkg/userdata/sles"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
 
@@ -41,6 +42,9 @@ func getOsName(nodeSpec apiv1.NodeSpec) (providerconfig.OperatingSystem, error) 
 	}
 	if nodeSpec.OperatingSystem.SLES != nil {
 		return providerconfig.OperatingSystemSLES, nil
+	}
+	if nodeSpec.OperatingSystem.RHEL != nil {
+		return providerconfig.OperatingSystemRHEL, nil
 	}
 
 	return "", errors.New("unknown operating system")
@@ -421,6 +425,24 @@ func getUbuntuOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtensio
 func getSLESOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
 	config := sles.Config{
 		DistUpgradeOnBoot: nodeSpec.OperatingSystem.SLES.DistUpgradeOnBoot,
+	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func getRHELOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
+	config := rhel.Config{
+		DistUpgradeOnBoot:               nodeSpec.OperatingSystem.RHEL.DistUpgradeOnBoot,
+		RHELSubscriptionManagerUser:     nodeSpec.OperatingSystem.RHEL.RHELSubscriptionManagerUser,
+		RHELSubscriptionManagerPassword: nodeSpec.OperatingSystem.RHEL.RHELSubscriptionManagerPassword,
+		RHSMOfflineToken:                nodeSpec.OperatingSystem.RHEL.RHSMOfflineToken,
 	}
 
 	ext := &runtime.RawExtension{}

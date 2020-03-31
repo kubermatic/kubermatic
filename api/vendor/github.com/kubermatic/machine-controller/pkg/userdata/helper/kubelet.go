@@ -24,6 +24,10 @@ import (
 	"text/template"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubeletv1b1 "k8s.io/kubelet/config/v1beta1"
+	"k8s.io/utils/pointer"
+	kyaml "sigs.k8s.io/yaml"
 )
 
 const (
@@ -129,6 +133,47 @@ func KubeletSystemdUnit(kubeletVersion, cloudProvider, hostname string, dnsIPs [
 	}
 
 	return b.String(), nil
+}
+
+// kubeletConfiguration returns marshaled kubelet.config.k8s.io/v1beta1 KubeletConfiguration
+func kubeletConfiguration(clusterDomain string, clusterDNS []net.IP) (string, error) {
+	clusterDNSstr := make([]string, 0, len(clusterDNS))
+	for _, ip := range clusterDNS {
+		clusterDNSstr = append(clusterDNSstr, ip.String())
+	}
+
+	cfg := kubeletv1b1.KubeletConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "KubeletConfiguration",
+			APIVersion: "kubelet.config.k8s.io/v1beta1",
+		},
+		Authentication: kubeletv1b1.KubeletAuthentication{
+			X509: kubeletv1b1.KubeletX509Authentication{
+				ClientCAFile: "/etc/kubernetes/pki/ca.crt",
+			},
+			Webhook: kubeletv1b1.KubeletWebhookAuthentication{
+				Enabled: pointer.BoolPtr(true),
+			},
+			Anonymous: kubeletv1b1.KubeletAnonymousAuthentication{
+				Enabled: pointer.BoolPtr(false),
+			},
+		},
+		Authorization: kubeletv1b1.KubeletAuthorization{
+			Mode: kubeletv1b1.KubeletAuthorizationModeWebhook,
+		},
+		CgroupDriver:          "systemd",
+		ClusterDNS:            clusterDNSstr,
+		ClusterDomain:         clusterDomain,
+		FeatureGates:          map[string]bool{"RotateKubeletServerCertificate": true},
+		ProtectKernelDefaults: true,
+		ReadOnlyPort:          0,
+		RotateCertificates:    true,
+		ServerTLSBootstrap:    true,
+		StaticPodPath:         "/etc/kubernetes/manifests",
+	}
+
+	buf, err := kyaml.Marshal(cfg)
+	return string(buf), err
 }
 
 // KubeletFlags returns the kubelet flags

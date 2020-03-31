@@ -121,7 +121,7 @@ required = [
 
 [[constraint]]
   name = "github.com/kubermatic/machine-controller"
-	version = "v1.10.2"
+  version = "v1.11.2"
 
 [[override]]
   name = "sigs.k8s.io/controller-runtime"
