@@ -16,8 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes"
-	rbaclister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -180,15 +178,22 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(projectName
 			}
 
 			if projectResource.destination == destinationSeed {
-				for _, seedClusterProvider := range c.seedClusterProviders {
-					seedClusterRESTClient := seedClusterProvider.kubeClient
-					err := ensureClusterRBACRoleBindingForResource(seedClusterRESTClient, groupName, projectResource.gvr.Resource, seedClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister())
+				for _, seedClusterRESTClient := range c.seedClientMap {
+					err := ensureClusterRBACRoleBindingForResource(
+						c.ctx,
+						seedClusterRESTClient,
+						groupName,
+						projectResource.gvr.Resource)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := ensureClusterRBACRoleBindingForResource(c.masterClusterProvider.kubeClient, groupName, projectResource.gvr.Resource, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister())
+				err := ensureClusterRBACRoleBindingForResource(
+					c.ctx,
+					c.client,
+					groupName,
+					projectResource.gvr.Resource)
 				if err != nil {
 					return err
 				}
@@ -226,46 +231,42 @@ func ensureClusterRBACRoleForResource(ctx context.Context, c client.Client, grou
 	return c.Update(ctx, existingClusterRole)
 }
 
-func ensureClusterRBACRoleBindingForResource(kubeClient kubernetes.Interface, groupName, resource string, rbacLister rbaclister.ClusterRoleBindingLister) error {
+func ensureClusterRBACRoleBindingForResource(ctx context.Context, c client.Client, groupName, resource string) error {
 	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
 
-	sharedExistingClusterRoleBinding, err := rbacLister.Get(generatedClusterRoleBinding.Name)
-	if err != nil {
-		if !kerrors.IsNotFound(err) {
-			return err
-		}
-		// the resource has not been found but for some reason sharedExistingClusterRoleBinding is not nil
-		sharedExistingClusterRoleBinding = nil
-	}
+	var sharedExistingClusterRoleBinding rbacv1.ClusterRoleBinding
+	key := types.NamespacedName{Name: generatedClusterRoleBinding.Name}
+	if err := c.Get(ctx, key, &sharedExistingClusterRoleBinding); err != nil {
+		if kerrors.IsNotFound(err) {
+			return c.Create(ctx, generatedClusterRoleBinding)
 
-	if sharedExistingClusterRoleBinding != nil {
-		subjectsToAdd := []rbacv1.Subject{}
-
-		for _, generatedRoleBindingSubject := range generatedClusterRoleBinding.Subjects {
-			shouldAdd := true
-			for _, existingRoleBindingSubject := range sharedExistingClusterRoleBinding.Subjects {
-				if equality.Semantic.DeepEqual(existingRoleBindingSubject, generatedRoleBindingSubject) {
-					shouldAdd = false
-					break
-				}
-			}
-			if shouldAdd {
-				subjectsToAdd = append(subjectsToAdd, generatedRoleBindingSubject)
-			}
 		}
 
-		if len(subjectsToAdd) == 0 {
-			return nil
-		}
-
-		existingClusterRoleBinding := sharedExistingClusterRoleBinding.DeepCopy()
-		existingClusterRoleBinding.Subjects = append(existingClusterRoleBinding.Subjects, subjectsToAdd...)
-		_, err = kubeClient.RbacV1().ClusterRoleBindings().Update(existingClusterRoleBinding)
 		return err
 	}
 
-	_, err = kubeClient.RbacV1().ClusterRoleBindings().Create(generatedClusterRoleBinding)
-	return err
+	subjectsToAdd := []rbacv1.Subject{}
+
+	for _, generatedRoleBindingSubject := range generatedClusterRoleBinding.Subjects {
+		shouldAdd := true
+		for _, existingRoleBindingSubject := range sharedExistingClusterRoleBinding.Subjects {
+			if equality.Semantic.DeepEqual(existingRoleBindingSubject, generatedRoleBindingSubject) {
+				shouldAdd = false
+				break
+			}
+		}
+		if shouldAdd {
+			subjectsToAdd = append(subjectsToAdd, generatedRoleBindingSubject)
+		}
+	}
+
+	if len(subjectsToAdd) == 0 {
+		return nil
+	}
+
+	existingClusterRoleBinding := sharedExistingClusterRoleBinding.DeepCopy()
+	existingClusterRoleBinding.Subjects = append(existingClusterRoleBinding.Subjects, subjectsToAdd...)
+	return c.Update(ctx, existingClusterRoleBinding)
 }
 
 func (c *projectController) ensureRBACRoleForResources() error {
