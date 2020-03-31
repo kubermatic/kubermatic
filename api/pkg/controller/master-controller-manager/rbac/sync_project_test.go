@@ -11,7 +11,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac/test"
 	fakeInformerProvider "github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac/test/fake"
 	kubermaticfakeclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	k8scorev1 "k8s.io/api/core/v1"
@@ -956,7 +955,6 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				}
 				kubermaticObjs = append(kubermaticObjs, test.projectToSync)
 			}
-			projectLister := kubermaticv1lister.NewProjectLister(projectIndexer)
 
 			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			if test.existingUser != nil {
@@ -1005,7 +1003,6 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				masterClusterProvider: fakeMasterClusterProvider,
 				projectResources:      test.projectResourcesToSync,
 				seedClusterProviders:  seedClusterProviders,
-				projectLister:         projectLister,
 				client:                fakeMasterClusterClient,
 				seedClientMap:         seedClusterClientMap,
 			}
@@ -2129,7 +2126,6 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 				t.Fatal(err)
 			}
 			kubermaticObjs = append(kubermaticObjs, test.projectToSync)
-			projectLister := kubermaticv1lister.NewProjectLister(projectIndexer)
 
 			roleBindingsIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			for _, existingRoleBinding := range test.existingRoleBindingsForMaster {
@@ -2201,7 +2197,6 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 				seedClientMap:         seedClusterClientMap,
 				projectResources:      test.projectResourcesToSync,
 				seedClusterProviders:  seedClusterProviders,
-				projectLister:         projectLister,
 			}
 			err = target.ensureProjectCleanup(test.projectToSync)
 			assert.NoError(t, err)

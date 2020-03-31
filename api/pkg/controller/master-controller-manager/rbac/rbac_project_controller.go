@@ -3,7 +3,6 @@ package rbac
 import (
 	"context"
 
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
 	"k8s.io/client-go/util/workqueue"
@@ -25,8 +24,6 @@ const (
 type projectController struct {
 	projectQueue workqueue.RateLimitingInterface
 	metrics      *Metrics
-
-	projectLister kubermaticv1lister.ProjectLister
 
 	seedClusterProviders  []*ClusterProvider
 	masterClusterProvider *ClusterProvider
