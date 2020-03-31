@@ -5,6 +5,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -15,7 +16,7 @@ import (
 
 const (
 	name = "prometheus"
-	tag  = "v2.16.0"
+	tag  = "v2.17.1"
 
 	volumeConfigName = "config"
 	volumeDataName   = "data"
@@ -69,16 +70,21 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 				Labels: podLabels,
 			}
 			set.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyAlways
-			set.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				FSGroup:      resources.Int64(2000),
-				RunAsNonRoot: resources.Bool(true),
-				RunAsUser:    resources.Int64(1000),
-			}
 			set.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			set.Spec.Template.Spec.ServiceAccountName = resources.PrometheusServiceAccountName
 			// We don't persist data, so there's no need for a graceful shutdown.
 			// The faster restart time is preferable
 			set.Spec.Template.Spec.TerminationGracePeriodSeconds = resources.Int64(0)
+
+			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+			if err != nil {
+				return nil, fmt.Errorf("failed to get openvpn-client sidecar: %v", err)
+			}
+
+			dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(data, "dnat-controller", "")
+			if err != nil {
+				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
+			}
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -151,6 +157,8 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 						},
 					},
 				},
+				*openvpnSidecar,
+				*dnatControllerSidecar,
 			}
 			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), set.Annotations)
 			if err != nil {
@@ -194,6 +202,22 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.PrometheusApiserverClientCertificateSecretName,
+				},
+			},
+		},
+		{
+			Name: resources.OpenVPNClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.OpenVPNClientCertificatesSecretName,
+				},
+			},
+		},
+		{
+			Name: resources.KubeletDnatControllerKubeconfigSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
 				},
 			},
 		},
