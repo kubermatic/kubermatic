@@ -346,23 +346,24 @@ func (c *projectController) ensureRBACRoleBindingForResources(projectName string
 			}
 
 			if projectResource.destination == destinationSeed {
-				for _, seedClusterProvider := range c.seedClusterProviders {
-					seedClusterRESTClient := seedClusterProvider.kubeClient
-					err := ensureRBACRoleBindingForResource(seedClusterRESTClient,
+				for _, seedClusterRESTClient := range c.seedClientMap {
+					err := ensureRBACRoleBindingForResource(
+						c.ctx,
+						seedClusterRESTClient,
 						groupName,
 						projectResource.gvr.Resource,
-						projectResource.namespace,
-						seedClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(projectResource.namespace).Rbac().V1().RoleBindings().Lister().RoleBindings(projectResource.namespace))
+						projectResource.namespace)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := ensureRBACRoleBindingForResource(c.masterClusterProvider.kubeClient,
+				err := ensureRBACRoleBindingForResource(
+					c.ctx,
+					c.client,
 					groupName,
 					projectResource.gvr.Resource,
-					projectResource.namespace,
-					c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(projectResource.namespace).Rbac().V1().RoleBindings().Lister().RoleBindings(projectResource.namespace))
+					projectResource.namespace)
 				if err != nil {
 					return err
 				}
@@ -372,46 +373,40 @@ func (c *projectController) ensureRBACRoleBindingForResources(projectName string
 	return nil
 }
 
-func ensureRBACRoleBindingForResource(kubeClient kubernetes.Interface, groupName, resource, namespace string, rbacLister rbaclister.RoleBindingNamespaceLister) error {
+func ensureRBACRoleBindingForResource(ctx context.Context, c client.Client, groupName, resource, namespace string) error {
 	generatedRoleBinding := generateRBACRoleBindingForResource(resource, groupName, namespace)
 
-	sharedExistingRoleBinding, err := rbacLister.Get(generatedRoleBinding.Name)
-	if err != nil {
-		if !kerrors.IsNotFound(err) {
-			return err
+	var sharedExistingRoleBinding rbacv1.RoleBinding
+	key := types.NamespacedName{Name: generatedRoleBinding.Name, Namespace: generatedRoleBinding.Namespace}
+	if err := c.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
+		if kerrors.IsNotFound(err) {
+			return c.Create(ctx, generatedRoleBinding)
 		}
-		// the resource has not been found but for some reason sharedExistingRoleBinding is not nil
-		sharedExistingRoleBinding = nil
-	}
-
-	if sharedExistingRoleBinding != nil {
-		subjectsToAdd := []rbacv1.Subject{}
-
-		for _, generatedRoleBindingSubject := range generatedRoleBinding.Subjects {
-			shouldAdd := true
-			for _, existingRoleBindingSubject := range sharedExistingRoleBinding.Subjects {
-				if equality.Semantic.DeepEqual(existingRoleBindingSubject, generatedRoleBindingSubject) {
-					shouldAdd = false
-					break
-				}
-			}
-			if shouldAdd {
-				subjectsToAdd = append(subjectsToAdd, generatedRoleBindingSubject)
-			}
-		}
-
-		if len(subjectsToAdd) == 0 {
-			return nil
-		}
-
-		existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
-		existingRoleBinding.Subjects = append(existingRoleBinding.Subjects, subjectsToAdd...)
-		_, err = kubeClient.RbacV1().RoleBindings(namespace).Update(existingRoleBinding)
 		return err
 	}
 
-	_, err = kubeClient.RbacV1().RoleBindings(namespace).Create(generatedRoleBinding)
-	return err
+	subjectsToAdd := []rbacv1.Subject{}
+
+	for _, generatedRoleBindingSubject := range generatedRoleBinding.Subjects {
+		shouldAdd := true
+		for _, existingRoleBindingSubject := range sharedExistingRoleBinding.Subjects {
+			if equality.Semantic.DeepEqual(existingRoleBindingSubject, generatedRoleBindingSubject) {
+				shouldAdd = false
+				break
+			}
+		}
+		if shouldAdd {
+			subjectsToAdd = append(subjectsToAdd, generatedRoleBindingSubject)
+		}
+	}
+
+	if len(subjectsToAdd) == 0 {
+		return nil
+	}
+
+	existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
+	existingRoleBinding.Subjects = append(existingRoleBinding.Subjects, subjectsToAdd...)
+	return c.Update(ctx, existingRoleBinding)
 }
 
 // ensureProjectCleanup ensures proper clean up of dependent resources upon deletion
