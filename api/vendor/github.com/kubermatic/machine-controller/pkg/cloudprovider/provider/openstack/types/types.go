@@ -42,7 +42,6 @@ type RawConfig struct {
 	TrustDevicePath       providerconfigtypes.ConfigVarBool     `json:"trustDevicePath"`
 	RootDiskSizeGB        *int                                  `json:"rootDiskSizeGB"`
 	NodeVolumeAttachLimit *uint                                 `json:"nodeVolumeAttachLimit"`
-	RHSMOfflineToken      providerconfigtypes.ConfigVarString   `json:"rhsmOfflineToken"`
 	// This tag is related to server metadata, not compute server's tag
 	Tags map[string]string `json:"tags,omitempty"`
 }

@@ -15,10 +15,10 @@ limitations under the License.
 */
 
 //
-// UserData plugin for CentOS.
+// UserData plugin for RHEL.
 //
 
-package centos
+package rhel
 
 import (
 	"bytes"
@@ -45,7 +45,7 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 
 	kubeletVersion, err := semver.NewVersion(req.MachineSpec.Versions.Kubelet)
 	if err != nil {
-		return "", fmt.Errorf("invalid kubelet version: '%v'", err)
+		return "", fmt.Errorf("invalid kubelet version: %v", err)
 	}
 
 	pconfig, err := providerconfigtypes.GetConfig(req.MachineSpec.ProviderSpec)
@@ -58,12 +58,12 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 	}
 
 	if pconfig.Network != nil {
-		return "", errors.New("static IP config is not supported with CentOS")
+		return "", errors.New("static IP config is not supported with RHEL")
 	}
 
-	centosConfig, err := LoadConfig(pconfig.OperatingSystemSpec)
+	rhelConfig, err := LoadConfig(pconfig.OperatingSystemSpec)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse OperatingSystemSpec: '%v'", err)
+		return "", fmt.Errorf("failed to parse OperatingSystemSpec: %v", err)
 	}
 
 	serverAddr, err := userdatahelper.GetServerAddressFromKubeconfig(req.Kubeconfig)
@@ -92,7 +92,7 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 	}{
 		UserDataRequest:  req,
 		ProviderSpec:     pconfig,
-		OSConfig:         centosConfig,
+		OSConfig:         rhelConfig,
 		KubeletVersion:   kubeletVersion.String(),
 		ServerAddr:       serverAddr,
 		Kubeconfig:       kubeconfigString,
@@ -184,10 +184,15 @@ write_files:
     hostnamectl set-hostname {{ .MachineSpec.Name }}
     {{ end }}
 
-    yum install -y yum-utils
-    yum-config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+    subscription-manager clean
+    subscription-manager register --username='{{.OSConfig.RHELSubscriptionManagerUser}}' --password='{{.OSConfig.RHELSubscriptionManagerPassword}}'
+    subscription-manager attach --auto
+    yum clean all
+    yum repolist
 
-    yum install -y docker-ce-18.09.9-3.el7 \
+    yum config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+
+    yum install -y docker-ce-18.09.1-3.el7 \
       ebtables \
       ethtool \
       nfs-utils \
@@ -204,6 +209,7 @@ write_files:
     {{- if eq .CloudProviderName "vsphere" }}
     systemctl enable --now vmtoolsd.service
     {{ end -}}
+{{- /* Without this, the conformance tests fail with differing tests causing it, the common denominator: They look for some string in container logs and get an empty log */ -}}
     systemctl enable --now docker
     systemctl enable --now kubelet
     systemctl enable --now --no-block kubelet-healthcheck.service
@@ -265,7 +271,7 @@ write_files:
   permissions: "0644"
   content: |
 {{ dockerConfig .InsecureRegistries .RegistryMirrors | indent 4 }}
-
+  
 - path: /etc/systemd/system/kubelet-healthcheck.service
   permissions: "0644"
   content: |

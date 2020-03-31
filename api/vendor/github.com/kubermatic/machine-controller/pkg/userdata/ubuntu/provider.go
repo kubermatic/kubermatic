@@ -152,7 +152,7 @@ write_files:
 
 - path: "/etc/apt/sources.list.d/docker.list"
   permissions: "0644"
-  content: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
+  content: deb https://download.docker.com/linux/ubuntu bionic stable
 
 - path: "/opt/docker.asc"
   permissions: "0400"
@@ -241,7 +241,7 @@ write_files:
     mv /etc/fstab.noswap /etc/fstab
     swapoff -a
 
-    export CR_PKG='docker-ce=5:18.09.2~3-0~ubuntu-bionic'
+    export CR_PKG='docker-ce=5:18.09.9~3-0~ubuntu-bionic'
 
     DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y \
       curl \
@@ -348,31 +348,7 @@ write_files:
 
 - path: "/etc/kubernetes/kubelet.conf"
   content: |
-    kind: KubeletConfiguration
-    apiVersion: kubelet.config.k8s.io/v1beta1
-    cgroupDriver: systemd
-    clusterDomain: cluster.local
-    clusterDNS:
-    {{- range .DNSIPs }}
-      - "{{ . }}"
-    {{- end }}
-    rotateCertificates: true
-    podManifestPath: /etc/kubernetes/manifests
-    readOnlyPort: 0
-    featureGates:
-      RotateKubeletServerCertificate: true
-    serverTLSBootstrap: true
-    rotateCertificates: true
-    authorization:
-      mode: Webhook
-    authentication:
-      x509:
-        clientCAFile: /etc/kubernetes/pki/ca.crt
-      webhook:
-        enabled: true
-      anonymous:
-        enabled: false
-    protectKernelDefaults: true
+{{ kubeletConfiguration "cluster.local" .DNSIPs | indent 4 }}
 
 - path: /etc/docker/daemon.json
   permissions: "0644"

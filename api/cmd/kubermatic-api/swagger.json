@@ -10798,6 +10798,9 @@
         "containerLinux": {
           "$ref": "#/definitions/ContainerLinuxSpec"
         },
+        "rhel": {
+          "$ref": "#/definitions/RHELSpec"
+        },
         "sles": {
           "$ref": "#/definitions/SLESSpec"
         },
@@ -11236,6 +11239,30 @@
     "PublicVSphereCloudSpec": {
       "type": "object",
       "title": "PublicVSphereCloudSpec is a public counterpart of apiv1.VSphereCloudSpec.",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "RHELSpec": {
+      "description": "RHELSpec contains rhel specific settings",
+      "type": "object",
+      "properties": {
+        "distUpgradeOnBoot": {
+          "description": "do a dist-upgrade on boot and reboot it required afterwards",
+          "type": "boolean",
+          "x-go-name": "DistUpgradeOnBoot"
+        },
+        "rhelSubscriptionManagerPassword": {
+          "type": "string",
+          "x-go-name": "RHELSubscriptionManagerPassword"
+        },
+        "rhelSubscriptionManagerUser": {
+          "type": "string",
+          "x-go-name": "RHELSubscriptionManagerUser"
+        },
+        "rhsmOfflineToken": {
+          "type": "string",
+          "x-go-name": "RHSMOfflineToken"
+        }
+      },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "RawExtension": {

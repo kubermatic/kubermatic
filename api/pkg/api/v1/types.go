@@ -980,6 +980,16 @@ type SLESSpec struct {
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
 }
 
+// RHELSpec contains rhel specific settings
+// swagger:model RHELSpec
+type RHELSpec struct {
+	// do a dist-upgrade on boot and reboot it required afterwards
+	DistUpgradeOnBoot               bool   `json:"distUpgradeOnBoot"`
+	RHELSubscriptionManagerUser     string `json:"rhelSubscriptionManagerUser,omitempty"`
+	RHELSubscriptionManagerPassword string `json:"rhelSubscriptionManagerPassword,omitempty"`
+	RHSMOfflineToken                string `json:"rhsmOfflineToken,omitempty"`
+}
+
 // OperatingSystemSpec represents the collection of os specific settings. Only one must be set at a time.
 // swagger:model OperatingSystemSpec
 type OperatingSystemSpec struct {
@@ -987,6 +997,7 @@ type OperatingSystemSpec struct {
 	ContainerLinux *ContainerLinuxSpec `json:"containerLinux,omitempty"`
 	CentOS         *CentOSSpec         `json:"centos,omitempty"`
 	SLES           *SLESSpec           `json:"sles,omitempty"`
+	RHEL           *RHELSpec           `json:"rhel,omitempty"`
 }
 
 // NodeVersionInfo node version information

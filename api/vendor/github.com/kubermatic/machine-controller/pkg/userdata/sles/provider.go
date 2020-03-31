@@ -230,31 +230,7 @@ write_files:
 
 - path: "/etc/kubernetes/kubelet.conf"
   content: |
-    kind: KubeletConfiguration
-    apiVersion: kubelet.config.k8s.io/v1beta1
-    cgroupDriver: systemd
-    clusterDomain: cluster.local
-    clusterDNS:
-    {{- range .DNSIPs }}
-      - "{{ . }}"
-    {{- end }}
-    rotateCertificates: true
-    podManifestPath: /etc/kubernetes/manifests
-    readOnlyPort: 0
-    featureGates:
-      RotateKubeletServerCertificate: true
-    serverTLSBootstrap: true
-    rotateCertificates: true
-    authorization:
-      mode: Webhook
-    authentication:
-      x509:
-        clientCAFile: /etc/kubernetes/pki/ca.crt
-      webhook:
-        enabled: true
-      anonymous:
-        enabled: false
-    protectKernelDefaults: true
+{{ kubeletConfiguration "cluster.local" .DNSIPs | indent 4 }}
 
 - path: "/etc/profile.d/opt-bin-path.sh"
   permissions: "0644"
