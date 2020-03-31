@@ -1,6 +1,7 @@
 package rbac
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
@@ -433,18 +435,15 @@ func ensureRBACRoleBindingForResource(kubeClient kubernetes.Interface, groupName
 // - removes cleanupFinalizer
 func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	// cluster resources don't have OwnerReferences set thus we need to manually remove them
-	for _, clusterProvider := range c.seedClusterProviders {
-		if clusterProvider.clusterResourceLister == nil {
-			return fmt.Errorf("there is no lister for cluster resources for cluster provider %s", clusterProvider.providerName)
-		}
-		clusterResources, err := clusterProvider.clusterResourceLister.List(labels.Everything())
-		if err != nil {
+	for _, seedClient := range c.seedClientMap {
+		var listObj kubermaticv1.ClusterList
+		if err := seedClient.List(c.ctx, &listObj); err != nil {
 			return err
 		}
-		for _, clusterResource := range clusterResources {
-			if clusterProject := clusterResource.Labels[kubermaticv1.ProjectIDLabelKey]; clusterProject == project.Name {
-				err := clusterProvider.kubermaticClient.KubermaticV1().Clusters().Delete(clusterResource.Name, &metav1.DeleteOptions{})
-				if err != nil {
+
+		for _, cluster := range listObj.Items {
+			if clusterProject := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; clusterProject == project.Name {
+				if err := seedClient.Delete(c.ctx, &cluster); err != nil {
 					return err
 				}
 			}
@@ -465,15 +464,14 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 			}
 
 			if projectResource.destination == destinationSeed {
-				for _, seedClusterProvider := range c.seedClusterProviders {
-					seedClusterRESTClient := seedClusterProvider.kubeClient
-					err := cleanUpClusterRBACRoleBindingFor(seedClusterRESTClient, groupName, projectResource.gvr.Resource)
+				for _, seedClient := range c.seedClientMap {
+					err := cleanUpClusterRBACRoleBindingFor(c.ctx, seedClient, groupName, projectResource.gvr.Resource)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := cleanUpClusterRBACRoleBindingFor(c.masterClusterProvider.kubeClient, groupName, projectResource.gvr.Resource)
+				err := cleanUpClusterRBACRoleBindingFor(c.ctx, c.client, groupName, projectResource.gvr.Resource)
 				if err != nil {
 					return err
 				}
@@ -495,15 +493,14 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 			}
 
 			if projectResource.destination == destinationSeed {
-				for _, seedClusterProvider := range c.seedClusterProviders {
-					seedClusterRESTClient := seedClusterProvider.kubeClient
-					err := cleanUpRBACRoleBindingFor(seedClusterRESTClient, groupName, projectResource.gvr.Resource, projectResource.namespace)
+				for _, seedClient := range c.seedClientMap {
+					err := cleanUpRBACRoleBindingFor(c.ctx, seedClient, groupName, projectResource.gvr.Resource, projectResource.namespace)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := cleanUpRBACRoleBindingFor(c.masterClusterProvider.kubeClient, groupName, projectResource.gvr.Resource, projectResource.namespace)
+				err := cleanUpRBACRoleBindingFor(c.ctx, c.client, groupName, projectResource.gvr.Resource, projectResource.namespace)
 				if err != nil {
 					return err
 				}
@@ -512,14 +509,14 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 	}
 
 	kuberneteshelper.RemoveFinalizer(project, CleanupFinalizerName)
-	_, err := c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project)
-	return err
+	return c.client.Update(c.ctx, project)
 }
 
-func cleanUpClusterRBACRoleBindingFor(kubeClient kubernetes.Interface, groupName, resource string) error {
+func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c client.Client, groupName, resource string) error {
 	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
-	sharedExistingClusterRoleBinding, err := kubeClient.RbacV1().ClusterRoleBindings().Get(generatedClusterRoleBinding.Name, metav1.GetOptions{})
-	if err != nil {
+	var sharedExistingClusterRoleBinding rbacv1.ClusterRoleBinding
+	key := types.NamespacedName{Name: generatedClusterRoleBinding.Name}
+	if err := c.Get(ctx, key, &sharedExistingClusterRoleBinding); err != nil {
 		return err
 	}
 
@@ -539,14 +536,15 @@ func cleanUpClusterRBACRoleBindingFor(kubeClient kubernetes.Interface, groupName
 
 	existingClusterRoleBinding := sharedExistingClusterRoleBinding.DeepCopy()
 	existingClusterRoleBinding.Subjects = updatedListOfSubjectes
-	_, err = kubeClient.RbacV1().ClusterRoleBindings().Update(existingClusterRoleBinding)
-	return err
+
+	return c.Update(ctx, existingClusterRoleBinding)
 }
 
-func cleanUpRBACRoleBindingFor(kubeClient kubernetes.Interface, groupName, resource, namespace string) error {
+func cleanUpRBACRoleBindingFor(ctx context.Context, c client.Client, groupName, resource, namespace string) error {
 	generatedRoleBinding := generateRBACRoleBindingForResource(resource, groupName, namespace)
-	sharedExistingRoleBinding, err := kubeClient.RbacV1().RoleBindings(namespace).Get(generatedRoleBinding.Name, metav1.GetOptions{})
-	if err != nil {
+	var sharedExistingRoleBinding rbacv1.RoleBinding
+	key := types.NamespacedName{Name: generatedRoleBinding.Name, Namespace: namespace}
+	if err := c.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
 		return err
 	}
 
@@ -566,8 +564,7 @@ func cleanUpRBACRoleBindingFor(kubeClient kubernetes.Interface, groupName, resou
 
 	existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
 	existingRoleBinding.Subjects = updatedListOfSubjectes
-	_, err = kubeClient.RbacV1().RoleBindings(namespace).Update(existingRoleBinding)
-	return err
+	return c.Update(ctx, existingRoleBinding)
 }
 
 func (c *projectController) shouldDeleteProject(project *kubermaticv1.Project) bool {
