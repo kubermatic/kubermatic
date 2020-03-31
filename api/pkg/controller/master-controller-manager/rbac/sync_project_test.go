@@ -104,6 +104,7 @@ func TestEnsureProjectInitialized(t *testing.T) {
 			expectedProject: func() *kubermaticv1.Project {
 				project := test.CreateProject("thunderball", test.CreateUser("James Bond"))
 				project.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				project.ObjectMeta.ResourceVersion = "1"
 				return project
 			}(),
 		},
@@ -114,41 +115,23 @@ func TestEnsureProjectInitialized(t *testing.T) {
 			// setup the test scenario
 			objs := []runtime.Object{}
 			objs = append(objs, test.expectedProject)
-			kubermaticFakeClient := kubermaticfakeclientset.NewSimpleClientset(objs...)
-			fakeMasterClusterProvider := &ClusterProvider{
-				kubermaticClient: kubermaticFakeClient,
-			}
+			masterClient := fakeruntime.NewFakeClient(objs...)
 
 			// act
-			target := projectController{}
-			target.masterClusterProvider = fakeMasterClusterProvider
+			target := projectController{
+				ctx:    context.Background(),
+				client: masterClient,
+			}
 			err := target.ensureCleanupFinalizerExists(test.projectToSync)
+			assert.NoError(t, err)
 
 			// validate
-			if err != nil {
-				t.Fatal(err)
-			}
-			if test.expectedProject == nil {
-				if len(kubermaticFakeClient.Actions()) != 0 {
-					t.Fatalf("unexpected actions %#v", kubermaticFakeClient.Actions())
-				}
-				return
-			}
-			if len(kubermaticFakeClient.Actions()) != 1 {
-				t.Fatalf("unexpected actions %#v", kubermaticFakeClient.Actions())
-			}
+			var projectList kubermaticv1.ProjectList
+			err = masterClient.List(context.Background(), &projectList)
+			assert.NoError(t, err)
 
-			action := kubermaticFakeClient.Actions()[0]
-			if !action.Matches("update", "projects") {
-				t.Fatalf("unexpected action %#v", action)
-			}
-			updateAction, ok := action.(clienttesting.UpdateAction)
-			if !ok {
-				t.Fatalf("unexpected action %#v", action)
-			}
-			if !equality.Semantic.DeepEqual(updateAction.GetObject().(*kubermaticv1.Project), test.expectedProject) {
-				t.Fatalf("%v", diff.ObjectDiff(test.expectedProject, updateAction.GetObject().(*kubermaticv1.Project)))
-			}
+			assert.Len(t, projectList.Items, 1)
+			assert.Equal(t, projectList.Items[0], *test.expectedProject)
 		})
 	}
 }

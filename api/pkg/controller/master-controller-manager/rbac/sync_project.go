@@ -76,9 +76,7 @@ func (c *projectController) sync(key client.ObjectKey) error {
 func (c *projectController) ensureCleanupFinalizerExists(project *kubermaticv1.Project) error {
 	if !kuberneteshelper.HasFinalizer(project, CleanupFinalizerName) {
 		kuberneteshelper.AddFinalizer(project, CleanupFinalizerName)
-		if _, err := c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project); err != nil {
-			return err
-		}
+		return c.client.Update(c.ctx, project)
 	}
 	return nil
 }
