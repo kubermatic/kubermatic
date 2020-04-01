@@ -1,0 +1,130 @@
+apiVersion: kubermatic.k8s.io/v1
+kind: Cluster
+metadata:
+  annotations:
+    kubermatic.io/openshift: "true"
+  creationTimestamp: "2020-04-01T20:05:53Z"
+  finalizers:
+  - kubermatic.io/cleanup-backups
+  - kubermatic.io/cleanup-credentials-requests
+  - kubermatic.io/cleanup-credentials-secrets
+  - kubermatic.io/cleanup-image-registry-configs
+  - kubermatic.io/cleanup-usersshkeys-cluster-ids
+  - kubermatic.io/cleanup-vsphere-folder
+  - kubermatic.io/delete-nodes
+  labels:
+    project-id: 6lvrtz8qm2
+    user: exampleuser
+  name: m7x6hnnptb
+address:
+  adminToken: ""
+  externalName: m7x6hnnptb.europe-west3-c.dev.kubermatic.io
+  internalURL: apiserver-external.cluster-m7x6hnnptb.svc.cluster.local.
+  ip: 35.198.93.90
+  openshiftConsoleCallback: https://dev.kubermatic.io/api/v1/projects/6lvrtz8qm2/dc/europe-west3-c/clusters/m7x6hnnptb/openshift/console/proxy/auth/callback
+  port: 31473
+  url: https://m7x6hnnptb.europe-west3-c.dev.kubermatic.io:31473
+spec:
+  auditLogging: {}
+  cloud:
+    dc: vsphere-hamburg
+    vsphere:
+      credentialsReference:
+        name: credential-vsphere-m7x6hnnptb
+        namespace: kubermatic
+      folder: /dc-1/vm/kubermatic/m7x6hnnptb
+      infraManagementUser: {}
+      vmNetName: ""
+  clusterNetwork:
+    dnsDomain: cluster.local
+    pods:
+      cidrBlocks:
+      - 172.25.0.0/16
+    proxyMode: ""
+    services:
+      cidrBlocks:
+      - 10.240.16.0/20
+  componentsOverride:
+    apiserver:
+      endpointReconcilingDisabled: false
+      replicas: 2
+    controllerManager:
+      replicas: 1
+    etcd: {}
+    prometheus: {}
+    scheduler:
+      replicas: 1
+  exposeStrategy: NodePort
+  humanReadableName: nifty-curran
+  oidc: {}
+  openshift:
+    imagePullSecret: |
+      {
+        "auths": {}
+      }
+  pause: false
+  version: 4.3.2
+status:
+  cloudMigrationRevision: 2
+  conditions:
+  - kubermatic_version: weekly-2019-46-366-gebffe161a-f6f8d34f876c6ebd32872306f1d410118e7f29fc
+    lastHeartbeatTime: "2020-04-01T20:10:15Z"
+    lastTransitionTime: "2020-04-01T20:10:15Z"
+    status: "True"
+    type: AddonControllerReconciledSuccessfully
+  - kubermatic_version: weekly-2019-46-366-gebffe161a-f6f8d34f876c6ebd32872306f1d410118e7f29fc
+    lastHeartbeatTime: "2020-04-01T20:08:28Z"
+    lastTransitionTime: "2020-04-01T20:08:28Z"
+    status: "True"
+    type: AddonInstallerControllerReconciledSuccessfully
+  - kubermatic_version: weekly-2019-46-366-gebffe161a-f6f8d34f876c6ebd32872306f1d410118e7f29fc
+    lastHeartbeatTime: "2020-04-01T20:05:57Z"
+    status: "True"
+    type: BackupControllerReconciledSuccessfully
+  - kubermatic_version: weekly-2019-46-366-gebffe161a-f6f8d34f876c6ebd32872306f1d410118e7f29fc
+    lastHeartbeatTime: "2020-04-01T20:06:27Z"
+    status: "True"
+    type: CloudControllerReconcilledSuccessfully
+  - kubermatic_version: weekly-2019-46-366-gebffe161a-f6f8d34f876c6ebd32872306f1d410118e7f29fc
+    lastHeartbeatTime: "2020-04-01T20:12:18Z"
+    message: Cluster has been initialized successfully
+    status: "True"
+    type: ClusterInitialized
+  - kubermatic_version: weekly-2019-46-366-gebffe161a-f6f8d34f876c6ebd32872306f1d410118e7f29fc
+    lastHeartbeatTime: "2020-04-01T20:05:56Z"
+    status: "True"
+    type: ComponentDefaulterReconciledSuccessfully
+  - kubermatic_version: weekly-2019-46-366-gebffe161a-f6f8d34f876c6ebd32872306f1d410118e7f29fc
+    lastHeartbeatTime: "2020-04-01T20:11:01Z"
+    status: "True"
+    type: MonitoringControllerReconciledSuccessfully
+  - kubermatic_version: weekly-2019-46-366-gebffe161a-f6f8d34f876c6ebd32872306f1d410118e7f29fc
+    lastHeartbeatTime: "2020-04-01T20:06:25Z"
+    status: "True"
+    type: OpenshiftControllerReconciledSuccessfully
+  - kubermatic_version: weekly-2019-46-366-gebffe161a-f6f8d34f876c6ebd32872306f1d410118e7f29fc
+    lastHeartbeatTime: "2020-04-01T20:12:17Z"
+    lastTransitionTime: "2020-04-01T20:12:17Z"
+    message: All control plane components are up to date
+    reason: ClusterUpdateSuccessful
+    status: "True"
+    type: SeedResourcesUpToDate
+  - kubermatic_version: weekly-2019-46-366-gebffe161a-f6f8d34f876c6ebd32872306f1d410118e7f29fc
+    lastHeartbeatTime: "2020-04-01T20:05:58Z"
+    status: "True"
+    type: UpdateControllerReconciledSuccessfully
+  extendedHealth:
+    apiserver: 1
+    cloudProviderInfrastructure: 1
+    controller: 1
+    etcd: 1
+    machineController: 1
+    openvpn: 1
+    scheduler: 1
+    userClusterControllerManager: 1
+  inheritedLabels:
+    user: exampleuser
+  kubermatic_version: ebffe161ae0d7efa1a367b2eacd54a01b6a6843b
+  lastUpdated: null
+  namespaceName: cluster-m7x6hnnptb
+  userEmail: user@example.com
