@@ -10,14 +10,17 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/semver"
 	"github.com/Masterminds/sprig"
 	"go.uber.org/zap"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	kyaml "k8s.io/apimachinery/pkg/util/yaml"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
+	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func txtFuncMap(overwriteRegistry string) template.FuncMap {
@@ -32,16 +35,100 @@ func txtFuncMap(overwriteRegistry string) template.FuncMap {
 	return funcs
 }
 
+// This alias exists purely because it makes the go doc we generate easier to
+// read, as it does not hint at a different package anymore.
+type Credentials = resources.Credentials
+
+// TemplateData is injected into templates.
 type TemplateData struct {
-	Addon             *kubermaticv1.Addon
-	Kubeconfig        string
-	MajorMinorVersion string
-	Cluster           *kubermaticv1.Cluster
-	Credentials       resources.Credentials
-	Variables         map[string]interface{}
+	SeedName       string
+	DatacenterName string
+	Cluster        ClusterData
+	Addon          AddonData
+	Credentials    Credentials
+	Variables      map[string]interface{}
+}
+
+func NewTemplateData(
+	cluster *kubermaticv1.Cluster,
+	addon *kubermaticv1.Addon,
+	credentials resources.Credentials,
+	kubeconfig string,
+	dnsClusterIP string,
+	dnsResolverIP string,
+	variables map[string]interface{},
+) (*TemplateData, error) {
+	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine cloud provider name: %v", err)
+	}
+
+	if variables == nil {
+		variables = make(map[string]interface{})
+	}
+
+	return &TemplateData{
+		DatacenterName: cluster.Spec.Cloud.DatacenterName,
+		Variables:      variables,
+		Addon: AddonData{
+			Name:      addon.Name,
+			IsDefault: addon.Spec.IsDefault,
+		},
+		Cluster: ClusterData{
+			Name:                 cluster.Name,
+			HumanReadableName:    cluster.Spec.HumanReadableName,
+			Namespace:            cluster.Status.NamespaceName,
+			Kubeconfig:           kubeconfig,
+			OwnerName:            cluster.Status.UserName,
+			OwnerEmail:           cluster.Status.UserEmail,
+			ApiserverExternalURL: cluster.Address.URL,
+			ApiserverInternalURL: fmt.Sprintf("https://%s:%d", cluster.Address.InternalName, cluster.Address.Port),
+			AdminToken:           cluster.Address.AdminToken,
+			CloudProviderName:    providerName,
+			Version:              semver.MustParse(cluster.Spec.Version.String()),
+			MajorMinorVersion:    cluster.Spec.Version.MajorMinor(),
+			Network: ClusterNetwork{
+				DNSClusterIP:      dnsClusterIP,
+				DNSResolverIP:     dnsResolverIP,
+				PodCIDRBlocks:     cluster.Spec.ClusterNetwork.Pods.CIDRBlocks,
+				ServiceCIDRBlocks: cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
+				ProxyMode:         cluster.Spec.ClusterNetwork.ProxyMode,
+			},
+		},
+		Credentials: credentials,
+	}, nil
+}
+
+// ClusterData contains data related to the user cluster
+// the addon is rendered for.
+type ClusterData struct {
+	Name                 string
+	HumanReadableName    string
+	Namespace            string
+	OwnerName            string
+	OwnerEmail           string
+	Kubeconfig           string
+	ApiserverExternalURL string
+	ApiserverInternalURL string
+	AdminToken           string
+	CloudProviderName    string
+	Version              *semver.Version
+	MajorMinorVersion    string
+	Network              ClusterNetwork
+	Features             sets.String
+}
+
+type ClusterNetwork struct {
 	DNSClusterIP      string
 	DNSResolverIP     string
-	ClusterCIDR       string
+	PodCIDRBlocks     []string
+	ServiceCIDRBlocks []string
+	ProxyMode         string
+}
+
+type AddonData struct {
+	Name      string
+	IsDefault bool
 }
 
 func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]runtime.RawExtension, error) {

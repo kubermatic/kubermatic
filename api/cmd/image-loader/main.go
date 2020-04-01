@@ -419,12 +419,14 @@ func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kuberm
 }
 
 func getImagesFromAddons(log *zap.Logger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
-	addonData := &addonutil.TemplateData{
-		Cluster:           cluster,
-		MajorMinorVersion: cluster.Spec.Version.MajorMinor(),
-		Addon:             &kubermaticv1.Addon{},
-		Variables:         map[string]interface{}{},
+	addon := kubermaticv1.Addon{}
+	credentials := resources.Credentials{}
+
+	addonData, err := addonutil.NewTemplateData(cluster, &addon, credentials, "", "", "", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create addon template data: %v", err)
 	}
+
 	infos, err := ioutil.ReadDir(addonsPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to list addons: %v", err)

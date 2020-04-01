@@ -25,7 +25,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . {{.DNSClusterIP}} {
+        forward . {{ .Cluster.Network.DNSClusterIP }} {
                 force_tcp
         }
         prometheus :9253
@@ -37,7 +37,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . {{.DNSClusterIP}} {
+        forward . {{ .Cluster.Network.DNSClusterIP }} {
                 force_tcp
         }
         prometheus :9253
@@ -48,7 +48,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . {{.DNSClusterIP}} {
+        forward . {{ .Cluster.Network.DNSClusterIP }} {
                 force_tcp
         }
         prometheus :9253
