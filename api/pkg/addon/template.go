@@ -126,6 +126,7 @@ type ClusterNetwork struct {
 	ProxyMode         string
 }
 
+//nolint:golint
 type AddonData struct {
 	Name      string
 	IsDefault bool
