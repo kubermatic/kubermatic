@@ -11,8 +11,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/kubermatic/kubermatic/api/pkg/addon"
 	"golang.org/x/tools/go/packages"
+
+	"github.com/kubermatic/kubermatic/api/pkg/addon"
 )
 
 var packageCache = map[string]*packages.Package{}

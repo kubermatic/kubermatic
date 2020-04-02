@@ -297,7 +297,6 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 
 	data, err := addonutils.NewTemplateData(
 		cluster,
-		addon,
 		credentials,
 		string(kubeconfig),
 		clusterIP,

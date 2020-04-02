@@ -419,10 +419,9 @@ func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kuberm
 }
 
 func getImagesFromAddons(log *zap.Logger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
-	addon := kubermaticv1.Addon{}
 	credentials := resources.Credentials{}
 
-	addonData, err := addonutil.NewTemplateData(cluster, &addon, credentials, "", "", "", nil)
+	addonData, err := addonutil.NewTemplateData(cluster, credentials, "", "", "", nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create addon template data: %v", err)
 	}

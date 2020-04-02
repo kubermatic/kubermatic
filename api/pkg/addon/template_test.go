@@ -28,10 +28,16 @@ func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
 
 	clusters := []kubermaticv1.Cluster{}
 	for _, filename := range clusterFiles {
-		content, _ := ioutil.ReadFile(filename)
+		content, err := ioutil.ReadFile(filename)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		cluster := kubermaticv1.Cluster{}
-		yaml.Unmarshal(content, &cluster)
+		err = yaml.Unmarshal(content, &cluster)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		clusters = append(clusters, cluster)
 	}
@@ -66,7 +72,7 @@ func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
 
 	for _, cluster := range clusters {
 		for _, addon := range addons {
-			data, err := NewTemplateData(&cluster, &addon, credentials, "kubeconfig", "1.2.3.4", "5.6.7.8", variables)
+			data, err := NewTemplateData(&cluster, credentials, "kubeconfig", "1.2.3.4", "5.6.7.8", variables)
 			if err != nil {
 				t.Fatalf("Rendering %s addon %s for cluster %s failed: %v", orchestrator, addon.Name, cluster.Name, err)
 			}
