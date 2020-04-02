@@ -86,9 +86,10 @@ func (d *Deletion) cleanupPVCUsingPods(ctx context.Context, userClusterClient co
 	}
 
 	pvUsingPods := []*corev1.Pod{}
-	for _, pod := range podList.Items {
-		if podUsesPV(&pod) {
-			pvUsingPods = append(pvUsingPods, &pod)
+	for idx := range podList.Items {
+		pod := &podList.Items[idx]
+		if podUsesPV(pod) {
+			pvUsingPods = append(pvUsingPods, pod)
 		}
 	}
 
