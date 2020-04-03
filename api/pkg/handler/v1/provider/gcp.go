@@ -494,8 +494,8 @@ func listGCPNetworks(ctx context.Context, sa string) (apiv1.GCPNetworkList, erro
 
 	req := computeService.Networks.List(project)
 	err = req.Pages(ctx, func(page *compute.NetworkList) error {
+		networkRegex := regexp.MustCompile(`(global\/.+)$`)
 		for _, network := range page.Items {
-			networkRegex := regexp.MustCompile(`(global\/.+)$`)
 			networkPath := networkRegex.FindString(network.SelfLink)
 
 			net := apiv1.GCPNetwork{
