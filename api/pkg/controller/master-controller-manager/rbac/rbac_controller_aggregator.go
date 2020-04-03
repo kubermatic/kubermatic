@@ -164,7 +164,7 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 		},
 	}
 
-	err = newProjectRBACController(metrics, mgr, seedManagerMap, masterClusterProvider, seedClusterProviders, projectResources, workerPredicate)
+	err = newProjectRBACController(metrics, mgr, seedManagerMap, masterClusterProvider, projectResources, workerPredicate)
 	if err != nil {
 		return nil, err
 	}
