@@ -27,6 +27,9 @@ type GCPNetwork struct {
 	// name
 	Name string `json:"name,omitempty"`
 
+	// path
+	Path string `json:"path,omitempty"`
+
 	// subnetworks
 	Subnetworks []string `json:"subnetworks"`
 }

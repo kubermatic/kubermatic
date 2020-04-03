@@ -298,6 +298,7 @@ type GCPNetwork struct {
 	AutoCreateSubnetworks bool     `json:"autoCreateSubnetworks"`
 	Subnetworks           []string `json:"subnetworks"`
 	Kind                  string   `json:"kind"`
+	Path                  string   `json:"path"`
 }
 
 // GCPSubnetworkList represents an array of GCP subnetworks.
