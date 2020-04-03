@@ -706,6 +706,42 @@ func TestBindUserToClusterRole(t *testing.T) {
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
+		{
+			name:             "scenario 10: admin can update existing binding for the new user for any cluster",
+			roleName:         "role-1",
+			body:             `{"userEmail":"test@example.com"}`,
+			expectedResponse: `{"subjects":[{"kind":"User","name":"bob@acme.com"},{"kind":"User","apiGroup":"rbac.authorization.k8s.io","name":"test@example.com"}],"roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genUser("John", "john@acme.com", true),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultClusterRole("role-2"),
+				genDefaultClusterRoleBinding("test", "role-1", "bob@acme.com"),
+			},
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		{
+			name:             "scenario 11: user John can not update existing binding for the new user for Bob's cluster",
+			roleName:         "role-1",
+			body:             `{"userEmail":"test@example.com"}`,
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusForbidden,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genUser("John", "john@acme.com", false),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultClusterRole("role-2"),
+				genDefaultClusterRoleBinding("test", "role-1", "bob@acme.com"),
+			},
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -767,7 +803,7 @@ func TestUnbindUserFromClusterRoleBinding(t *testing.T) {
 		},
 		// scenario 2
 		{
-			name:             "scenario 1: remove group from existing cluster role binding",
+			name:             "scenario 2: remove group from existing cluster role binding",
 			roleName:         "role-1",
 			body:             `{"group":"test"}`,
 			expectedResponse: `{"roleRefName":"role-1"}`,
@@ -782,6 +818,42 @@ func TestUnbindUserFromClusterRoleBinding(t *testing.T) {
 				genDefaultGroupClusterRoleBinding("test", "role-1", "test"),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "scenario 3: the admin can remove user from existing cluster role binding for any cluster",
+			roleName:         "role-1",
+			body:             `{"userEmail":"bob@acme.com"}`,
+			expectedResponse: `{"roleRefName":"role-1"}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genUser("John", "john@acme.com", true),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultClusterRole("role-2"),
+				genDefaultClusterRoleBinding("test", "role-1", "bob@acme.com"),
+			},
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		{
+			name:             "scenario 4: the user can not remove user from existing cluster role binding for Bob's cluster",
+			roleName:         "role-1",
+			body:             `{"userEmail":"bob@acme.com"}`,
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			clusterToGet:     test.GenDefaultCluster().Name,
+			httpStatus:       http.StatusForbidden,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genUser("John", "john@acme.com", false),
+			),
+			existingKubernrtesObjs: []runtime.Object{
+				genDefaultClusterRole("role-1"),
+				genDefaultClusterRole("role-2"),
+				genDefaultClusterRoleBinding("test", "role-1", "bob@acme.com"),
+			},
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
 	}
 
