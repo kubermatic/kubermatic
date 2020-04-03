@@ -232,8 +232,9 @@ func azureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tena
 
 			if okSKU && okVMContainer {
 				s := apiv1.AzureSize{
-					Name:                 *v.Name,
-					NumberOfCores:        *v.NumberOfCores,
+					Name:          *v.Name,
+					NumberOfCores: *v.NumberOfCores,
+					// TODO: Use this to validate user-defined disk size.
 					OsDiskSizeInMB:       *v.OsDiskSizeInMB,
 					ResourceDiskSizeInMB: *v.ResourceDiskSizeInMB,
 					MemoryInMB:           *v.MemoryInMB,

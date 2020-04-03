@@ -8113,6 +8113,18 @@
           "type": "boolean",
           "x-go-name": "AssignPublicIP"
         },
+        "dataDiskSize": {
+          "description": "Data disk size in GB",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "DataDiskSize"
+        },
+        "osDiskSize": {
+          "description": "OS disk size in GB",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "OSDiskSize"
+        },
         "size": {
           "description": "VM size",
           "type": "string",
