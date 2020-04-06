@@ -7,6 +7,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
+	restclient "k8s.io/client-go/rest"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
@@ -100,6 +101,27 @@ func (p *AddonProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.
 	}
 
 	addonList, err := seedImpersonatedClient.Addons(cluster.Status.NamespaceName).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := []*kubermaticv1.Addon{}
+	for _, addon := range addonList.Items {
+		if p.accessibleAddons.Has(addon.Name) {
+			result = append(result, addon.DeepCopy())
+		}
+	}
+
+	return result, nil
+}
+
+func (p *AddonProvider) ListUnsecured(cluster *kubermaticv1.Cluster) ([]*kubermaticv1.Addon, error) {
+	client, err := p.createSeedImpersonatedClient(restclient.ImpersonationConfig{})
+	if err != nil {
+		return nil, err
+	}
+
+	addonList, err := client.Addons(cluster.Status.NamespaceName).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
