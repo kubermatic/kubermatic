@@ -528,6 +528,15 @@ type AddonProvider interface {
 	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string) error
 }
 
+type PrivilegedAddonProvider interface {
+	// ListUnsecured gets all addons that belong to the given cluster
+	// If you want to filter the result please take a look at ClusterListOptions
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resources
+	ListUnsecured(cluster *kubermaticv1.Cluster) ([]*kubermaticv1.Addon, error)
+}
+
 type AddonConfigProvider interface {
 	Get(addonName string) (*kubermaticv1.AddonConfig, error)
 	List() (*kubermaticv1.AddonConfigList, error)
