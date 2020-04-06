@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"fmt"
+
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,9 +46,43 @@ func (p *AddonProvider) New(userInfo *provider.UserInfo, cluster *kubermaticv1.C
 		return nil, err
 	}
 
-	gv := kubermaticv1.SchemeGroupVersion
+	addon := genAddon(cluster, addonName, variables)
 
-	addon := &kubermaticv1.Addon{
+	addon, err = seedImpersonatedClient.Addons(cluster.Status.NamespaceName).Create(addon)
+	if err != nil {
+		return nil, err
+	}
+
+	return addon, nil
+}
+
+// NewUnsecured creates a new addon in the given cluster
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to create the resource
+func (p *AddonProvider) NewUnsecured(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension) (*kubermaticv1.Addon, error) {
+	if !p.accessibleAddons.Has(addonName) {
+		return nil, kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
+	}
+
+	client, err := p.createSeedImpersonatedClient(restclient.ImpersonationConfig{})
+	if err != nil {
+		return nil, err
+	}
+
+	addon := genAddon(cluster, addonName, variables)
+
+	addon, err = client.Addons(cluster.Status.NamespaceName).Create(addon)
+	if err != nil {
+		return nil, err
+	}
+
+	return addon, nil
+}
+
+func genAddon(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension) *kubermaticv1.Addon {
+	gv := kubermaticv1.SchemeGroupVersion
+	return &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            addonName,
 			Namespace:       cluster.Status.NamespaceName,
@@ -66,13 +101,6 @@ func (p *AddonProvider) New(userInfo *provider.UserInfo, cluster *kubermaticv1.C
 			Variables: *variables,
 		},
 	}
-
-	addon, err = seedImpersonatedClient.Addons(cluster.Status.NamespaceName).Create(addon)
-	if err != nil {
-		return nil, err
-	}
-
-	return addon, nil
 }
 
 // Get returns the given addon, it uses the projectInternalName to determine the group the user belongs to
