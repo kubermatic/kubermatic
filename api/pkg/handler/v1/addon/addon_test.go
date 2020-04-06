@@ -3,16 +3,18 @@ package addon_test
 import (
 	"encoding/json"
 	"fmt"
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
-	"k8s.io/apimachinery/pkg/runtime"
-	k8sjson "k8s.io/apimachinery/pkg/util/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	k8sjson "k8s.io/apimachinery/pkg/util/json"
 )
 
 func TestGetAddon(t *testing.T) {
@@ -216,6 +218,44 @@ func TestListAddons(t *testing.T) {
 				test.GenTestAddon("addon4", nil, cluster, creationTime),
 			},
 			ExistingAPIUser: test.GenAPIUser("john", "john@acme.com"),
+		},
+		// scenario 3
+		{
+			Name: "scenario 3: the admin Bob gets a list of addons added to any cluster",
+			ExpectedResponse: []apiv1.Addon{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "addon1",
+						Name:              "addon1",
+						CreationTimestamp: apiv1.NewTime(creationTime),
+					},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "addon2",
+						Name:              "addon2",
+						CreationTimestamp: apiv1.NewTime(creationTime),
+					},
+					Spec: apiv1.AddonSpec{
+						Variables: testVariables,
+					},
+				},
+			},
+			ExpectedHTTPStatus: http.StatusOK,
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				/*add cluster*/
+				cluster,
+				test.GenTestAddon("addon1", nil, cluster, creationTime),
+				test.GenTestAddon("addon2", createRawVariables(t, testVariables), cluster, creationTime),
+				genUser("bob", "bob@acme.com", true),
+			},
+			ExistingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 		},
 	}
 
@@ -465,4 +505,10 @@ func createRawVariables(t *testing.T, in map[string]interface{}) *runtime.RawExt
 	}
 	result.Raw = raw
 	return result
+}
+
+func genUser(name, email string, isAdmin bool) *kubermaticv1.User {
+	user := test.GenUser("", name, email)
+	user.Spec.IsAdmin = isAdmin
+	return user
 }
