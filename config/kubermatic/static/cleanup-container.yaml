@@ -7,7 +7,15 @@ command:
 - -c
 - |
   set -euo pipefail
-  s3-storeuploader delete-all --endpoint minio.minio.svc.cluster.local:9000 --bucket kubermatic-etcd-backups --prefix $CLUSTER
+
+  endpoint=minio.minio.svc.cluster.local:9000
+  bucket=kubermatic-etcd-backups
+
+  # by default, we keep the most recent backup for every user cluster
+  s3-storeuploader delete-old-revisions --max-revisions 1 --endpoint "$endpoint" --bucket "$bucket" --prefix $CLUSTER
+
+  # alternatively, delete all backups for this cluster
+  #s3-storeuploader delete-all --endpoint "$endpoint" --bucket "$bucket" --prefix $CLUSTER
 env:
 - name: ACCESS_KEY_ID
   valueFrom:
