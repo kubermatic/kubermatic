@@ -541,6 +541,12 @@ type PrivilegedAddonProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
 	NewUnsecured(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension) (*kubermaticv1.Addon, error)
+
+	// GetUnsecured returns the given addon
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	GetUnsecured(cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error)
 }
 
 type AddonConfigProvider interface {

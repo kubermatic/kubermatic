@@ -114,11 +114,24 @@ func (p *AddonProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.C
 		return nil, err
 	}
 
-	addon, err := seedImpersonatedClient.Addons(cluster.Status.NamespaceName).Get(addonName, metav1.GetOptions{})
+	return seedImpersonatedClient.Addons(cluster.Status.NamespaceName).Get(addonName, metav1.GetOptions{})
+}
+
+// GetUnsecured returns the given addon
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to get the resource
+func (p *AddonProvider) GetUnsecured(cluster *kubermaticv1.Cluster, addonName string) (*kubermaticv1.Addon, error) {
+	if !p.accessibleAddons.Has(addonName) {
+		return nil, kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
+	}
+
+	client, err := p.createSeedImpersonatedClient(restclient.ImpersonationConfig{})
 	if err != nil {
 		return nil, err
 	}
-	return addon, nil
+
+	return client.Addons(cluster.Status.NamespaceName).Get(addonName, metav1.GetOptions{})
 }
 
 // List returns all addons in the given cluster
