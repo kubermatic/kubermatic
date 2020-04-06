@@ -110,7 +110,7 @@ func main() {
 				bucketFlag,
 				prefixFlag,
 				maxRevisionsFlag,
-				fileFlag,
+				fileFlag, // unused but kept for BC compatibility with old cleanup scripts
 			},
 		},
 		{
