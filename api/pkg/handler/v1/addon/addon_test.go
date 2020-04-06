@@ -349,6 +349,35 @@ func TestCreateAddon(t *testing.T) {
 			},
 			ExistingAPIUser: test.GenAPIUser("john", "john@acme.com"),
 		},
+		// scenario 3
+		{
+			Name: "scenario 3: the admin Bob can create addon for John's cluster",
+			Body: `{
+				"name": "addon1",
+				"spec": {
+					"variables": null
+				}
+			}`,
+			ExpectedResponse: apiv1.Addon{
+				ObjectMeta: apiv1.ObjectMeta{
+					ID:   "addon1",
+					Name: "addon1",
+				},
+			},
+			ExpectedHTTPStatus: http.StatusCreated,
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("bob", "bob@acme.com", true),
+				/*add cluster*/
+				cluster,
+			},
+			ExistingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
+		},
 	}
 
 	for _, tc := range testcases {
