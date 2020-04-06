@@ -19,7 +19,7 @@ logging:
         Logstash_Format On
         Replace_Dots    On
         Generate_ID     On
-        Retry_Limit     False
+        Retry_Limit     10
     resources:
       requests:
         cpu: 10m
