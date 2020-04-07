@@ -9422,6 +9422,10 @@
           "type": "string",
           "x-go-name": "Name"
         },
+        "path": {
+          "type": "string",
+          "x-go-name": "Path"
+        },
         "subnetworks": {
           "type": "array",
           "items": {
