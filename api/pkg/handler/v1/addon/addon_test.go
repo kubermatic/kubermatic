@@ -95,6 +95,29 @@ func TestGetAddon(t *testing.T) {
 			ExpectedHTTPStatus: http.StatusUnauthorized,
 			ExpectedResponse:   apiv1.Addon{},
 		},
+		// scenario 4
+		{
+			Name:                   "scenario 4: the admin John can get addon with variables that belongs to the Bob's cluster",
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), genUser("John", "john@acme.com", true)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingAddons: []*kubermaticv1.Addon{
+				test.GenTestAddon("addon1", createRawVariables(t, testVariables), test.GenDefaultCluster(), creationTime),
+			},
+			AddonToGet:         "addon1",
+			ExpectedHTTPStatus: http.StatusOK,
+			ExpectedResponse: apiv1.Addon{
+				ObjectMeta: apiv1.ObjectMeta{
+					ID:                "addon1",
+					Name:              "addon1",
+					CreationTimestamp: apiv1.NewTime(creationTime),
+				},
+				Spec: apiv1.AddonSpec{
+					Variables: testVariables,
+				},
+			},
+		},
 	}
 
 	for _, tc := range testcases {
