@@ -210,6 +210,45 @@ func (p *AddonProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv
 	return seedImpersonatedClient.Addons(cluster.Status.NamespaceName).Delete(addonName, &metav1.DeleteOptions{})
 }
 
+// UpdateUnsecured updates an addon
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to update the resource
+func (p *AddonProvider) UpdateUnsecured(cluster *kubermaticv1.Cluster, addon *kubermaticv1.Addon) (*kubermaticv1.Addon, error) {
+	if !p.accessibleAddons.Has(addon.Name) {
+		return nil, kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addon.Name))
+	}
+
+	client, err := p.createSeedImpersonatedClient(restclient.ImpersonationConfig{})
+	if err != nil {
+		return nil, err
+	}
+
+	addon, err = client.Addons(cluster.Status.NamespaceName).Update(addon)
+	if err != nil {
+		return nil, err
+	}
+
+	return addon, nil
+}
+
+// DeleteUnsecured deletes the given addon
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to delete the resource
+func (p *AddonProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster, addonName string) error {
+	if !p.accessibleAddons.Has(addonName) {
+		return kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
+	}
+
+	client, err := p.createSeedImpersonatedClient(restclient.ImpersonationConfig{})
+	if err != nil {
+		return err
+	}
+
+	return client.Addons(cluster.Status.NamespaceName).Delete(addonName, &metav1.DeleteOptions{})
+}
+
 func AddonProviderFactory(seedKubeconfigGetter provider.SeedKubeconfigGetter, accessibleAddons sets.String) provider.AddonProviderGetter {
 	return func(seed *kubermaticv1.Seed) (provider.AddonProvider, error) {
 		cfg, err := seedKubeconfigGetter(seed)
