@@ -122,6 +122,42 @@ func (r *runner) GetProject(id string, attempts int) (*apiv1.Project, error) {
 	return convertProject(project.Payload)
 }
 
+// ListProjects gets projects
+func (r *runner) ListProjects(displayAll bool, attempts int) ([]*apiv1.Project, error) {
+	params := &project.ListProjectsParams{
+		DisplayAll: &displayAll,
+	}
+	params.WithTimeout(timeout)
+
+	var errListProjects error
+	var projects *project.ListProjectsOK
+	duration := time.Duration(attempts) * time.Second
+	if err := wait.PollImmediate(time.Second, duration, func() (bool, error) {
+		projects, errListProjects = r.client.Project.ListProjects(params, r.bearerToken)
+		if errListProjects != nil {
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		// first check error from ListProjects
+		if errListProjects != nil {
+			return nil, errListProjects
+		}
+		return nil, err
+	}
+
+	projectList := make([]*apiv1.Project, 0)
+	for _, project := range projects.Payload {
+		apiProject, err := convertProject(project)
+		if err != nil {
+			return nil, err
+		}
+		projectList = append(projectList, apiProject)
+	}
+
+	return projectList, nil
+}
+
 // UpdateProject updates the given project
 func (r *runner) UpdateProject(projectToUpdate *apiv1.Project) (*apiv1.Project, error) {
 	params := &project.UpdateProjectParams{ProjectID: projectToUpdate.ID, Body: &models.Project{Name: projectToUpdate.Name}}
