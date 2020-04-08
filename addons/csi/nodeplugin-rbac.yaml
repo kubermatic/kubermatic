@@ -1,11 +1,11 @@
-{{ if (.Cluster.Spec.Features.externalCloudProvider) }}
-
-{{ if .Cluster.Spec.Cloud.Openstack }}
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+{{ if eq .Cluster.CloudProviderName "openstack" }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: csi-cinder-node-sa
   namespace: kube-system
+
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1

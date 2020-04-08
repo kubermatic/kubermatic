@@ -4,6 +4,8 @@ set -euo pipefail
 
 cd $(dirname $0)/..
 
+go run cmd/addon-godoc-generator/main.go > ../docs/zz_generated.addondata.go
+
 dummy=kubermaticNoOmitPlease
 
 # remove omitempty tags from structs so that genyaml will not skip fields

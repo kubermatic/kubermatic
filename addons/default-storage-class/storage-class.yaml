@@ -1,5 +1,5 @@
 {{/* Template must only emit data in case its valid for a given provider. That way we can ensure we don't install it when not needed */}}
-{{ if .Cluster.Spec.Cloud.Azure }}
+{{ if eq .Cluster.CloudProviderName "azure" }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -14,7 +14,7 @@ parameters:
   storageaccounttype: Standard_LRS
 {{ end }}
 
-{{ if .Cluster.Spec.Cloud.AWS }}
+{{ if eq .Cluster.CloudProviderName "aws" }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -29,7 +29,7 @@ parameters:
 volumeBindingMode: WaitForFirstConsumer
 {{ end }}
 
-{{ if .Cluster.Spec.Cloud.VSphere }}
+{{ if eq .Cluster.CloudProviderName "vsphere" }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -43,8 +43,8 @@ parameters:
   diskformat: thin
 {{ end }}
 
-{{ if .Cluster.Spec.Cloud.Openstack }}
-{{ if (.Cluster.Spec.Features.externalCloudProvider) }}
+{{ if eq .Cluster.CloudProviderName "openstack" }}
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -68,7 +68,7 @@ provisioner: kubernetes.io/cinder
 {{ end }}
 {{ end }}
 
-{{ if .Cluster.Spec.Cloud.GCP }}
+{{ if eq .Cluster.CloudProviderName "gcp" }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -82,14 +82,14 @@ parameters:
   type: pd-ssd
 {{ end }}
 
-{{ if .Cluster.Spec.Cloud.Hetzner }}
+{{ if eq .Cluster.CloudProviderName "hetzner" }}
 apiVersion: v1
 kind: Secret
 metadata:
   name: hcloud-csi
   namespace: kube-system
 data:
-  token: {{ .Credentials.Hetzner.Token|b64enc }}
+  token: {{ .Credentials.Hetzner.Token | b64enc }}
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1

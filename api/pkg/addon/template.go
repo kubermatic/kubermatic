@@ -10,14 +10,22 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/semver"
 	"github.com/Masterminds/sprig"
 	"go.uber.org/zap"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	kyaml "k8s.io/apimachinery/pkg/util/yaml"
-
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
+	kyaml "k8s.io/apimachinery/pkg/util/yaml"
+)
+
+const (
+	ClusterTypeKubernetes = "kubernetes"
+	ClusterTypeOpenshift  = "openshift"
 )
 
 func txtFuncMap(overwriteRegistry string) template.FuncMap {
@@ -32,16 +40,119 @@ func txtFuncMap(overwriteRegistry string) template.FuncMap {
 	return funcs
 }
 
+// This alias exists purely because it makes the go doc we generate easier to
+// read, as it does not hint at a different package anymore.
+type Credentials = resources.Credentials
+
+// TemplateData is the root context injected into each addon manifest file.
 type TemplateData struct {
-	Addon             *kubermaticv1.Addon
-	Kubeconfig        string
+	SeedName       string
+	DatacenterName string
+	Cluster        ClusterData
+	Credentials    Credentials
+	Variables      map[string]interface{}
+}
+
+func NewTemplateData(
+	cluster *kubermaticv1.Cluster,
+	credentials resources.Credentials,
+	kubeconfig string,
+	dnsClusterIP string,
+	dnsResolverIP string,
+	variables map[string]interface{},
+) (*TemplateData, error) {
+	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine cloud provider name: %v", err)
+	}
+
+	if variables == nil {
+		variables = make(map[string]interface{})
+	}
+
+	clusterType := ClusterTypeKubernetes
+	if cluster.IsOpenshift() {
+		clusterType = ClusterTypeOpenshift
+	}
+
+	return &TemplateData{
+		DatacenterName: cluster.Spec.Cloud.DatacenterName,
+		Variables:      variables,
+		Credentials:    credentials,
+		Cluster: ClusterData{
+			Type:                 clusterType,
+			Name:                 cluster.Name,
+			HumanReadableName:    cluster.Spec.HumanReadableName,
+			Namespace:            cluster.Status.NamespaceName,
+			Kubeconfig:           kubeconfig,
+			OwnerName:            cluster.Status.UserName,
+			OwnerEmail:           cluster.Status.UserEmail,
+			ApiserverExternalURL: cluster.Address.URL,
+			ApiserverInternalURL: fmt.Sprintf("https://%s:%d", cluster.Address.InternalName, cluster.Address.Port),
+			AdminToken:           cluster.Address.AdminToken,
+			CloudProviderName:    providerName,
+			Version:              semver.MustParse(cluster.Spec.Version.String()),
+			MajorMinorVersion:    cluster.Spec.Version.MajorMinor(),
+			Network: ClusterNetwork{
+				DNSClusterIP:      dnsClusterIP,
+				DNSResolverIP:     dnsResolverIP,
+				PodCIDRBlocks:     cluster.Spec.ClusterNetwork.Pods.CIDRBlocks,
+				ServiceCIDRBlocks: cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
+				ProxyMode:         cluster.Spec.ClusterNetwork.ProxyMode,
+			},
+		},
+	}, nil
+}
+
+// ClusterData contains data related to the user cluster
+// the addon is rendered for.
+type ClusterData struct {
+	// Type is either "kubernetes" or "openshift".
+	Type string
+	// Name is the auto-generated, internal cluster name, e.g. "bbc8sc24wb".
+	Name string
+	// HumanReadableName is the user-specified cluster name.
+	HumanReadableName string
+	// Namespace is the full namespace for the cluster's control plane.
+	Namespace string
+	// OwnerName is the owner's full name.
+	OwnerName string
+	// OwnerEmail is the owner's e-mail address.
+	OwnerEmail string
+	// Kubeconfig is a YAML-encoded kubeconfig with cluster-admin permissions
+	// inside the user-cluster. The kubeconfig uses the external URL to reach
+	// the apiserver.
+	Kubeconfig string
+	// ApiserverExternalURL is the full URL to the apiserver service from the
+	// outside, including protocol and port number. It does not contain any
+	// trailing slashes.
+	ApiserverExternalURL string
+	// ApiserverExternalURL is the full URL to the apiserver from within the
+	// seed cluster itself. It does not contain any trailing slashes.
+	ApiserverInternalURL string
+	// AdminToken is the cluster's admin token.
+	AdminToken string
+	// CloudProviderName is the name of the cloud provider used, one of
+	// "alibaba", "aws", "azure", "bringyourown", "digitalocean", "gcp",
+	// "hetzner", "kubevirt", "openstack", "packet", "vsphere" depending on
+	// the configured datacenters.
+	CloudProviderName string
+	// Version is the exact cluster version.
+	Version *semver.Version
+	// MajorMinorVersion is a shortcut for common testing on "Major.Minor".
 	MajorMinorVersion string
-	Cluster           *kubermaticv1.Cluster
-	Credentials       resources.Credentials
-	Variables         map[string]interface{}
+	// Network contains DNS and CIDR settings for the cluster.
+	Network ClusterNetwork
+	// Features is a set of enabled features for this cluster.
+	Features sets.String
+}
+
+type ClusterNetwork struct {
 	DNSClusterIP      string
 	DNSResolverIP     string
-	ClusterCIDR       string
+	PodCIDRBlocks     []string
+	ServiceCIDRBlocks []string
+	ProxyMode         string
 }
 
 func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]runtime.RawExtension, error) {

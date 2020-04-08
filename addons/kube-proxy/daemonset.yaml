@@ -21,7 +21,7 @@ spec:
       priorityClassName: system-node-critical
       containers:
       - name: kube-proxy
-        image: '{{ Registry "gcr.io" }}/google_containers/hyperkube-amd64:v{{ .Cluster.Spec.Version }}'
+        image: '{{ Registry "gcr.io" }}/google_containers/hyperkube-amd64:v{{ .Cluster.Version }}'
         imagePullPolicy: IfNotPresent
         command:
         - /usr/local/bin/kube-proxy

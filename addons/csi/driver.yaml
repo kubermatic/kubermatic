@@ -1,6 +1,5 @@
-{{ if (.Cluster.Spec.Features.externalCloudProvider) }}
-
-{{ if .Cluster.Spec.Cloud.Openstack }}
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+{{ if eq .Cluster.CloudProviderName "openstack" }}
 apiVersion: storage.k8s.io/v1beta1
 kind: CSIDriver
 metadata:

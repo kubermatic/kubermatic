@@ -2276,6 +2276,7 @@
     "golang.org/x/crypto/ssh",
     "golang.org/x/oauth2",
     "golang.org/x/oauth2/google",
+    "golang.org/x/tools/go/packages",
     "google.golang.org/api/compute/v1",
     "google.golang.org/api/googleapi",
     "google.golang.org/grpc",

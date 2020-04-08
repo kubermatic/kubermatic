@@ -93,7 +93,7 @@ presubmits:
             memory: 128Mi
             cpu: 250m
 
-  - name: pre-kubermatic-verify-yaml-examples
+  - name: pre-kubermatic-verify-docs
     run_if_changed: "^(api|docs)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -101,11 +101,11 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/go-docker:12.12-1806-3
         command:
-        - "./api/hack/verify-yaml-examples.sh"
+        - "./api/hack/verify-docs.sh"
         resources:
           requests:
-            memory: 128Mi
-            cpu: 250m
+            memory: 1Gi
+            cpu: 1
 
   - name: pre-kubermatic-lint
     run_if_changed: "^api/"

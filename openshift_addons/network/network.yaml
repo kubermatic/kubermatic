@@ -3,9 +3,9 @@ kind: Network
 metadata:
   name: cluster
 spec:
-  clusterNetwork:{{ range .Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks }}
+  clusterNetwork:{{ range .Cluster.Network.PodCIDRBlocks }}
   - cidr: {{ . }}
     hostPrefix: 23{{ end }}
   networkType: OpenShiftSDN
-  serviceNetwork:{{ range .Cluster.Spec.ClusterNetwork.Services.CIDRBlocks }}
+  serviceNetwork:{{ range .Cluster.Network.ServiceCIDRBlocks }}
   - {{ . }}{{ end }}

@@ -1,4 +1,4 @@
-{{ if .Cluster.Spec.Cloud.AWS }}
+{{ if eq .Cluster.CloudProviderName "aws" }}
 #apiVersion: imageregistry.operator.openshift.io/v1
 #kind: Config
 #metadata:

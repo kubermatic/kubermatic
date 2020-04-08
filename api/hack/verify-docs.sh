@@ -14,11 +14,11 @@ trap "cleanup" EXIT SIGINT
 
 cleanup
 
-echodate "Recreating example YAMLs..."
+echodate "Recreating documentation..."
 
 cp -ar docs $tmpdir
 rm -f docs/zz_generated.*.yaml
-./api/hack/update-yaml-examples.sh
+./api/hack/update-docs.sh
 diff -rdu docs $tmpdir
 
-echodate "Example YAMLs are in-sync with Go structs."
+echodate "Documentation is in-sync with Go code."

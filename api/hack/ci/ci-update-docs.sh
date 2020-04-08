@@ -22,6 +22,7 @@ cd $TARGET_DIR
 # copy interesting files over
 cp ../docs/zz_generated.seed.yaml data/seed.yaml
 cp ../docs/zz_generated.kubermaticConfiguration.yaml data/kubermaticConfiguration.yaml
+cp ../docs/zz_generated.addondata.go data/addondata.go
 
 # re-create Prometheus runbook
 make runbook

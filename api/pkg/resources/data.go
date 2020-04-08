@@ -316,25 +316,23 @@ func (d *TemplateData) CloudCredentialSecretTemplate() ([]byte, error) {
 }
 
 func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
-	if cluster.Spec.Cloud.AWS != nil {
+	switch {
+	case cluster.Spec.Cloud.AWS != nil:
 		return "aws"
-	}
-	if cluster.Spec.Cloud.Openstack != nil {
-		if flag := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
+	case cluster.Spec.Cloud.VSphere != nil:
+		return "vsphere"
+	case cluster.Spec.Cloud.Azure != nil:
+		return "azure"
+	case cluster.Spec.Cloud.GCP != nil:
+		return "gce"
+	case cluster.Spec.Cloud.Openstack != nil:
+		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 			return "external"
 		}
 		return "openstack"
+	default:
+		return ""
 	}
-	if cluster.Spec.Cloud.VSphere != nil {
-		return "vsphere"
-	}
-	if cluster.Spec.Cloud.Azure != nil {
-		return "azure"
-	}
-	if cluster.Spec.Cloud.GCP != nil {
-		return "gce"
-	}
-	return ""
 }
 
 func (d *TemplateData) Seed() *kubermaticv1.Seed {
