@@ -11884,6 +11884,10 @@
           "type": "boolean",
           "x-go-name": "CollapseSidenav"
         },
+        "displayAllProjectsForAdmin": {
+          "type": "boolean",
+          "x-go-name": "DisplayAllProjectsForAdmin"
+        },
         "itemsPerPage": {
           "type": "integer",
           "format": "int8",
