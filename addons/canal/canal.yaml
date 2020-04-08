@@ -60,7 +60,7 @@ data:
   # Flannel network configuration. Mounted into the flannel container.
   net-conf.json: |
     {
-      "Network": "{{first .Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks}}",
+      "Network": "{{ first .Cluster.Network.PodCIDRBlocks }}",
       "Backend": {
         "Type": "vxlan"
       }

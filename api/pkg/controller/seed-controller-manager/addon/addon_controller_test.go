@@ -79,7 +79,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: {{Registry "foo.io" }}/test:1.2.3
+        image: {{ Registry "foo.io" }}/test:1.2.3
 `
 
 	testManifestKubeDNS = `apiVersion: v1
@@ -95,8 +95,8 @@ metadata:
 spec:
   selector:
     k8s-app: kube-dns
-  clusterIP: {{.DNSClusterIP}}
-  clusterCIDR: "{{first .Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks}}"
+  clusterIP: {{ .Cluster.Network.DNSClusterIP }}
+  clusterCIDR: "{{ first .Cluster.Network.PodCIDRBlocks }}"
 `
 )
 

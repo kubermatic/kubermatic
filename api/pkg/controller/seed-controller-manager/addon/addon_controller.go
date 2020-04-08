@@ -282,28 +282,31 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 		return nil, fmt.Errorf("failed to get credentials: %v", err)
 	}
 
-	data := &addonutils.TemplateData{
-		Variables:         make(map[string]interface{}),
-		Cluster:           cluster,
-		Credentials:       credentials,
-		MajorMinorVersion: cluster.Spec.Version.MajorMinor(),
-		Addon:             addon,
-		Kubeconfig:        string(kubeconfig),
-		DNSClusterIP:      clusterIP,
-		DNSResolverIP:     dnsResolverIP,
-		ClusterCIDR:       cluster.Spec.ClusterNetwork.Pods.CIDRBlocks[0],
-	}
-
 	// Add addon variables if available.
+	variables := make(map[string]interface{})
+
 	if sub := r.addonVariables[addon.Spec.Name]; sub != nil {
-		data.Variables = sub.(map[string]interface{})
+		variables = sub.(map[string]interface{})
 	}
 
 	if len(addon.Spec.Variables.Raw) > 0 {
-		if err = json.Unmarshal(addon.Spec.Variables.Raw, &data.Variables); err != nil {
+		if err = json.Unmarshal(addon.Spec.Variables.Raw, &variables); err != nil {
 			return nil, err
 		}
 	}
+
+	data, err := addonutils.NewTemplateData(
+		cluster,
+		credentials,
+		string(kubeconfig),
+		clusterIP,
+		dnsResolverIP,
+		variables,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create template data for addon manifests: %v", err)
+	}
+
 	manifestPath := path.Join(addonDir, addon.Spec.Name)
 
 	allManifests, err := addonutils.ParseFromFolder(log, r.overwriteRegistry, manifestPath, data)

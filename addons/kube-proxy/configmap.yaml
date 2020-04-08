@@ -15,7 +15,7 @@ data:
       contentType: application/vnd.kubernetes.protobuf
       kubeconfig: /var/lib/kube-proxy/kubeconfig.conf
       qps: 5
-    clusterCIDR: "{{ index .Cluster.Spec.ClusterNetwork.Pods.CIDRBlocks 0 }}"
+    clusterCIDR: "{{ first .Cluster.Network.PodCIDRBlocks }}"
     configSyncPeriod: 15m0s
     conntrack:
       max: null
@@ -39,7 +39,7 @@ data:
       syncPeriod: 30s
     kind: KubeProxyConfiguration
     metricsBindAddress: 127.0.0.1:10249
-    mode: {{ .Cluster.Spec.ClusterNetwork.ProxyMode }}
+    mode: {{ .Cluster.Network.ProxyMode }}
     nodePortAddresses: null
     oomScoreAdj: -999
     portRange: ""
@@ -51,7 +51,7 @@ data:
     clusters:
     - cluster:
         certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-        server: {{ .Cluster.Address.URL }}
+        server: {{ .Cluster.ApiserverExternalURL }}
       name: default
     contexts:
     - context:

@@ -1,6 +1,5 @@
-{{ if (.Cluster.Spec.Features.externalCloudProvider) }}
-
-{{ if .Cluster.Spec.Cloud.Openstack }}
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+{{ if eq .Cluster.CloudProviderName "openstack" }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -26,7 +25,6 @@ rules:
   - apiGroups: ["storage.k8s.io"]
     resources: ["csinodes"]
     verbs: ["get", "list", "watch"]
-
 
 ---
 kind: ClusterRoleBinding
@@ -208,5 +206,4 @@ roleRef:
   name: external-resizer-cfg
   apiGroup: rbac.authorization.k8s.io
 {{ end }}
-
 {{ end }}

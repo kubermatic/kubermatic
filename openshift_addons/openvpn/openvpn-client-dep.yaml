@@ -68,7 +68,7 @@ spec:
           iptables -t nat -D PREROUTING -j host_dnat || true
           iptables -t nat -D PREROUTING -j host_dnat_inactive || true
 
-          virtualnodenet='{{.Variables.NodeAccessNetwork}}'
+          virtualnodenet='{{ .Variables.NodeAccessNetwork }}'
 
           # access node list via kubectl and generate iptables rules
           # for DNAT from it.
