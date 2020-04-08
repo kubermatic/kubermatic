@@ -18,6 +18,9 @@ type UserSettings struct {
 	// collapse sidenav
 	CollapseSidenav bool `json:"collapseSidenav,omitempty"`
 
+	// display all projects for admin
+	DisplayAllProjectsForAdmin bool `json:"displayAllProjectsForAdmin,omitempty"`
+
 	// items per page
 	ItemsPerPage int8 `json:"itemsPerPage,omitempty"`
 
