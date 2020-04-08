@@ -85,7 +85,7 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 					},
 					{
 						Name:  "KUBERNETES_SERVICE_PORT",
-						Value: strconv.Itoa(int(data.Cluster().Address.Port)),
+						Value: "443",
 					},
 					{
 						Name:  "KUBECONFIG",

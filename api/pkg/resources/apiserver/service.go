@@ -11,29 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// InternalServiceCreator returns the function to reconcile the internal API server service
-func InternalServiceCreator() reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
-		return resources.ApiserverInternalServiceName, func(se *corev1.Service) (*corev1.Service, error) {
-			se.Name = resources.ApiserverInternalServiceName
-			se.Labels = resources.BaseAppLabels(name, nil)
-			se.Spec.Type = corev1.ServiceTypeClusterIP
-			se.Spec.Selector = map[string]string{
-				resources.AppLabelKey: name,
-			}
-			se.Spec.Ports = []corev1.ServicePort{
-				{
-					Name:       "insecure",
-					Port:       8080,
-					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(8080),
-				},
-			}
-			return se, nil
-		}
-	}
-}
-
 // ExternalServiceCreator returns the function to reconcile the external API server service
 func ExternalServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
@@ -68,7 +45,7 @@ func ExternalServiceCreator(exposeStrategy corev1.ServiceType) reconciling.Named
 						Name:       "secure",
 						Port:       443,
 						Protocol:   corev1.ProtocolTCP,
-						TargetPort: intstr.FromInt(443),
+						TargetPort: intstr.FromInt(resources.ApiServerSecurePort),
 					},
 				}
 
@@ -77,8 +54,7 @@ func ExternalServiceCreator(exposeStrategy corev1.ServiceType) reconciling.Named
 
 			se.Spec.Ports[0].Name = "secure"
 			se.Spec.Ports[0].Protocol = corev1.ProtocolTCP
-			se.Spec.Ports[0].Port = se.Spec.Ports[0].NodePort
-			se.Spec.Ports[0].TargetPort = intstr.FromInt(int(se.Spec.Ports[0].NodePort))
+			se.Spec.Ports[0].TargetPort = intstr.FromInt(resources.ApiServerSecurePort)
 
 			return se, nil
 		}

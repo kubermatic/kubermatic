@@ -3,6 +3,8 @@ package apiserver
 import (
 	"testing"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -40,10 +42,9 @@ func TestExternalServiceCreatorRequiresExposeStrategy(t *testing.T) {
 
 func TestExternalServiceCreatorSetsPort(t *testing.T) {
 	testCases := []struct {
-		name               string
-		inService          *corev1.Service
-		expectedPort       int32
-		expectedTargetPort intstr.IntOrString
+		name         string
+		inService    *corev1.Service
+		expectedPort int32
 	}{
 		{
 			name: "Empty LoadBalancer service, port 443",
@@ -52,8 +53,7 @@ func TestExternalServiceCreatorSetsPort(t *testing.T) {
 					Type: corev1.ServiceTypeNodePort,
 				},
 			},
-			expectedPort:       int32(443),
-			expectedTargetPort: intstr.FromInt(443),
+			expectedPort: int32(443),
 		},
 		{
 			name: "Empty NodePort service, port 443",
@@ -62,8 +62,7 @@ func TestExternalServiceCreatorSetsPort(t *testing.T) {
 					Type: corev1.ServiceTypeNodePort,
 				},
 			},
-			expectedPort:       int32(443),
-			expectedTargetPort: intstr.FromInt(443),
+			expectedPort: int32(443),
 		},
 		{
 			name: "NodePort service with allocation, allocation is used everywhere",
@@ -81,8 +80,7 @@ func TestExternalServiceCreatorSetsPort(t *testing.T) {
 					},
 				},
 			},
-			expectedPort:       int32(32000),
-			expectedTargetPort: intstr.FromInt(32000),
+			expectedPort: int32(8080),
 		},
 	}
 
@@ -105,8 +103,8 @@ func TestExternalServiceCreatorSetsPort(t *testing.T) {
 			if svc.Spec.Ports[0].Port != tc.expectedPort {
 				t.Errorf("Expected port to be %d but was %d", tc.expectedPort, svc.Spec.Ports[0].Port)
 			}
-			if svc.Spec.Ports[0].TargetPort.String() != tc.expectedTargetPort.String() {
-				t.Errorf("Expected targetPort to be %q but was %q", tc.expectedTargetPort.String(), svc.Spec.Ports[0].TargetPort.String())
+			if svc.Spec.Ports[0].TargetPort.IntVal != resources.ApiServerSecurePort {
+				t.Errorf("Expected targetPort to be %d but was %d", resources.ApiServerSecurePort, svc.Spec.Ports[0].Port)
 			}
 		})
 	}

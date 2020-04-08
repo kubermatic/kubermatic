@@ -266,16 +266,6 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 			ClusterIP: "192.0.2.10",
 		},
 	}
-	apiserverService := corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.ApiserverInternalServiceName,
-			Namespace: mockNamespaceName,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports:     []corev1.ServicePort{{NodePort: 98}},
-			ClusterIP: "192.0.2.11",
-		},
-	}
 	openvpnserverService := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.OpenVPNServerServiceName,
@@ -299,7 +289,6 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 	serviceList := &corev1.ServiceList{
 		Items: []corev1.Service{
 			apiServerExternalService,
-			apiserverService,
 			openvpnserverService,
 			dnsService,
 		},

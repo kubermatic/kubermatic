@@ -9,6 +9,7 @@ import (
 	"github.com/Masterminds/sprig"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/etcd"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -83,7 +84,7 @@ func OpenshiftKubeAPIServerConfigMapCreator(data masterConfigData) reconciling.N
 			}{
 				PodCIDR:          podCIDR,
 				ServiceCIDR:      serviceCIDR,
-				ListenPort:       fmt.Sprint(data.Cluster().Address.Port),
+				ListenPort:       fmt.Sprint(resources.ApiServerSecurePort),
 				ETCDEndpoints:    etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
 				AdvertiseAddress: data.Cluster().Address.IP,
 				CloudProvider:    data.GetKubernetesCloudProviderName(),

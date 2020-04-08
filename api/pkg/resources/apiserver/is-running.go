@@ -131,7 +131,7 @@ func wrapContainer(data isRunningInitContainerData, container corev1.Container, 
 	})
 	container.Command = []string{"/http-prober-bin/http-prober"}
 	container.Args = []string{
-		"-endpoint", fmt.Sprintf("https://%s:%d/healthz", data.Cluster().Address.InternalName, data.Cluster().Address.Port),
+		"-endpoint", fmt.Sprintf("https://%s/healthz", data.Cluster().Address.InternalName),
 		"-insecure",
 		"-retries", "100",
 		"-retry-wait", "2",

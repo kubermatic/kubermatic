@@ -469,20 +469,6 @@ func TestLoadFiles(t *testing.T) {
 					},
 					&corev1.Service{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      resources.ApiserverInternalServiceName,
-							Namespace: cluster.Status.NamespaceName,
-						},
-						Spec: corev1.ServiceSpec{
-							Ports: []corev1.ServicePort{
-								{
-									NodePort: 30001,
-								},
-							},
-							ClusterIP: "192.0.2.11",
-						},
-					},
-					&corev1.Service{
-						ObjectMeta: metav1.ObjectMeta{
 							Name:      resources.OpenVPNServerServiceName,
 							Namespace: cluster.Status.NamespaceName,
 						},
