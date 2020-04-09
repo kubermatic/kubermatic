@@ -20,9 +20,12 @@ git clone git@github.com:kubermatic/docs.git $TARGET_DIR
 cd $TARGET_DIR
 
 # copy interesting files over
-cp ../docs/zz_generated.seed.yaml data/seed.yaml
-cp ../docs/zz_generated.kubermaticConfiguration.yaml data/kubermaticConfiguration.yaml
-cp ../docs/zz_generated.addondata.go data/addondata.go
+mkdir -p data/kubermatic/master
+mkdir -p content/kubermatic/master/data
+
+cp ../docs/zz_generated.seed.yaml data/kubermatic/master/seed.yaml
+cp ../docs/zz_generated.kubermaticConfiguration.yaml data/kubermatic/master/kubermaticConfiguration.yaml
+cp ../docs/zz_generated.addondata.go content/kubermatic/master/data/addondata.go
 
 # re-create Prometheus runbook
 make runbook
