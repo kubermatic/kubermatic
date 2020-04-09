@@ -288,6 +288,54 @@ func TestGetClusterUpgrades(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "the admin John can get available upgrades for Bob cluster",
+			cluster: func() *kubermaticv1.Cluster {
+				c := test.GenCluster("foo", "foo", "project", time.Now())
+				c.Labels = map[string]string{"user": test.UserName, kubermaticv1.ProjectIDLabelKey: "my-first-project-ID"}
+				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
+				return c
+			}(),
+			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(genUser("John", "john@acme.com", true)),
+			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
+			apiUser:                    *test.GenAPIUser("John", "john@acme.com"),
+			wantUpdates: []*apiv1.MasterVersion{
+				{
+					Version: semver.MustParse("1.6.1"),
+				},
+				{
+					Version: semver.MustParse("1.7.0"),
+				},
+			},
+			versions: []*version.Version{
+				{
+					Version: semver.MustParse("1.6.0"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("1.6.1"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+				{
+					Version: semver.MustParse("1.7.0"),
+					Type:    apiv1.KubernetesClusterType,
+				},
+			},
+			updates: []*version.Update{
+				{
+					From:      "1.6.0",
+					To:        "1.6.1",
+					Automatic: false,
+					Type:      apiv1.KubernetesClusterType,
+				},
+				{
+					From:      "1.6.x",
+					To:        "1.7.0",
+					Automatic: false,
+					Type:      apiv1.KubernetesClusterType,
+				},
+			},
+		},
 	}
 	for _, testStruct := range tests {
 		t.Run(testStruct.name, func(t *testing.T) {
@@ -367,6 +415,24 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.1.1")
 				return cluster
 			}()), ExistingAPIUser: test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []runtime.Object{
+				test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+				test.GenTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
+			},
+		},
+		{
+			Name:            "scenario 3: the admin John can upgrade Bob's node deployments",
+			Body:            `{"version":"1.11.1"}`,
+			HTTPStatus:      http.StatusOK,
+			ExpectedVersion: "1.11.1",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
+				cluster := test.GenDefaultCluster()
+				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
+				return cluster
+			}(), genUser("John", "john@acme.com", true)),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			ExistingMachineDeployments: []runtime.Object{
 				test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
 				test.GenTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
