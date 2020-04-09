@@ -2060,7 +2060,7 @@ func (r Routing) addServiceAccountToProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(serviceaccount.CreateEndpoint(r.projectProvider, r.serviceAccountProvider, r.userInfoGetter)),
+		)(serviceaccount.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.userInfoGetter)),
 		serviceaccount.DecodeAddReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
