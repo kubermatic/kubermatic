@@ -462,6 +462,22 @@ type ServiceAccountProvider interface {
 	Delete(userInfo *UserInfo, name string) error
 }
 
+// PrivilegedServiceAccountProvider declares the set of methods for interacting with kubermatic service account
+type PrivilegedServiceAccountProvider interface {
+	// CreateUnsecured creates a service accounts
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to create the resources
+	CreateUnsecured(project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
+
+	// ListUnsecured gets all service accounts
+	// If you want to filter the result please take a look at ServiceAccountListOptions
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resources
+	ListUnsecured(project *kubermaticv1.Project, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
+}
+
 // ServiceAccountGetOptions allows to set filters that will be applied to filter the get result.
 type ServiceAccountGetOptions struct {
 	// RemovePrefix when set to false will NOT remove "serviceaccount-" prefix from the ID

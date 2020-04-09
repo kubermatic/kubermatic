@@ -165,6 +165,7 @@ type providers struct {
 	privilegedSSHKeyProvider              provider.PrivilegedSSHKeyProvider
 	user                                  provider.UserProvider
 	serviceAccountProvider                provider.ServiceAccountProvider
+	privilegedServiceAccountProvider      provider.PrivilegedServiceAccountProvider
 	serviceAccountTokenProvider           provider.ServiceAccountTokenProvider
 	privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider
 	project                               provider.ProjectProvider

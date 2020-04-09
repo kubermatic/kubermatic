@@ -101,6 +101,47 @@ func TestCreateServiceAccountProject(t *testing.T) {
 			projectToSync:    "my-first-project-ID",
 			expectedResponse: `{"error":{"code":409,"message":"service account \"test\" already exists"}}`,
 		},
+		{
+			name:       "scenario 5: the admin Bob can create service account 'test' for editors group",
+			body:       `{"name":"test", "group":"editors"}`,
+			httpStatus: http.StatusCreated,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("bob", "bob@acme.com", true),
+			},
+			existingAPIUser: *test.GenAPIUser("bob", "bob@acme.com"),
+			projectToSync:   "plan9-ID",
+			expectedSAName:  "test",
+			expectedGroup:   "editors-plan9-ID",
+		},
+		{
+			name:       "scenario 6: the user Bob can not create service account 'test' for editors group for John project",
+			body:       `{"name":"test", "group":"editors"}`,
+			httpStatus: http.StatusForbidden,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("bob", "bob@acme.com", false),
+			},
+			existingAPIUser:  *test.GenAPIUser("bob", "bob@acme.com"),
+			projectToSync:    "plan9-ID",
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't belong to the given project = plan9-ID"}}`,
+		},
 	}
 
 	for _, tc := range testcases {
@@ -433,4 +474,10 @@ func TestDelete(t *testing.T) {
 			}
 		})
 	}
+}
+
+func genUser(name, email string, isAdmin bool) *kubermaticapiv1.User {
+	user := test.GenUser("", name, email)
+	user.Spec.IsAdmin = isAdmin
+	return user
 }
