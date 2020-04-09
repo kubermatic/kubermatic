@@ -23,29 +23,19 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		req, ok := request.(common.GetClusterReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
 		}
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
-		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -195,26 +185,16 @@ func DecodeUpgradeNodeDeploymentsReq(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
-func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		req, ok := request.(UpgradeNodeDeploymentsReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
 		}
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
 		requestedKubeletVersion, err := semver.NewVersion(req.Body.Version.String())
