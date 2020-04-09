@@ -25,25 +25,21 @@ var serviceAccountGroupsPrefixes = []string{
 }
 
 // CreateEndpoint adds the given service account to the given project
-func CreateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addReq)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		err = req.Validate()
+		err := req.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
 		saFromRequest := req.Body
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		// check if service account name is already reserved in the project
-		existingSAList, err := serviceAccountProvider.List(userInfo, project, &provider.ServiceAccountListOptions{ServiceAccountName: saFromRequest.Name})
+		existingSAList, err := listSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, saFromRequest)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -52,14 +48,46 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProv
 			return nil, errors.NewAlreadyExists("service account", saFromRequest.Name)
 		}
 
-		groupName := rbac.GenerateActualGroupNameFor(project.Name, saFromRequest.Group)
-		sa, err := serviceAccountProvider.Create(userInfo, project, saFromRequest.Name, groupName)
+		sa, err := createSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, saFromRequest)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		return convertInternalServiceAccountToExternal(sa), nil
 	}
+}
+
+func listSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, sa apiv1.ServiceAccount) ([]*kubermaticapiv1.User, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedServiceAccount.ListUnsecured(project, &provider.ServiceAccountListOptions{ServiceAccountName: sa.Name})
+	}
+
+	userInfo, err := userInfoGetter(ctx, project.Name)
+	if err != nil {
+		return nil, err
+	}
+	return serviceAccountProvider.List(userInfo, project, &provider.ServiceAccountListOptions{ServiceAccountName: sa.Name})
+}
+
+func createSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, sa apiv1.ServiceAccount) (*kubermaticapiv1.User, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	groupName := rbac.GenerateActualGroupNameFor(project.Name, sa.Group)
+	if adminUserInfo.IsAdmin {
+		return privilegedServiceAccount.CreateUnsecured(project, sa.Name, groupName)
+	}
+
+	userInfo, err := userInfoGetter(ctx, project.Name)
+	if err != nil {
+		return nil, err
+	}
+	return serviceAccountProvider.Create(userInfo, project, sa.Name, groupName)
 }
 
 // ListEndpoint returns service accounts of the given project

@@ -205,7 +205,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to create service account token provider due to %v", err)
 	}
 	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, userMasterLister, options.domain)
-
 	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userMasterLister, kubernetesprovider.IsServiceAccount)
 	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
@@ -241,6 +240,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		privilegedSSHKeyProvider:              privilegedSSHKeyProvider,
 		user:                                  userProvider,
 		serviceAccountProvider:                serviceAccountProvider,
+		privilegedServiceAccountProvider:      serviceAccountProvider,
 		serviceAccountTokenProvider:           serviceAccountTokenProvider,
 		privilegedServiceAccountTokenProvider: serviceAccountTokenProvider,
 		project:                               projectProvider,
@@ -336,6 +336,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.privilegedSSHKeyProvider,
 		prov.user,
 		prov.serviceAccountProvider,
+		prov.privilegedServiceAccountProvider,
 		prov.serviceAccountTokenProvider,
 		prov.project,
 		prov.privilegedProject,

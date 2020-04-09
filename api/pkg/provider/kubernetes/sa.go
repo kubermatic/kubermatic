@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/labels"
-
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
+	restclient "k8s.io/client-go/rest"
 )
 
 const (
@@ -48,12 +49,55 @@ func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *ku
 		return nil, kerrors.NewBadRequest("Service account name and group cannot be empty when creating a new SA resource")
 	}
 
+	sa := genServiceAccount(project, name, group, p.domain)
+
+	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	createdSA, err := masterImpersonatedClient.Users().Create(sa)
+	if err != nil {
+		return nil, err
+	}
+	createdSA.Name = removeSAPrefix(createdSA.Name)
+	return createdSA, nil
+}
+
+// CreateUnsecured creates a new service accounts
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to create the resources
+func (p *ServiceAccountProvider) CreateUnsecured(project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error) {
+	if project == nil {
+		return nil, kerrors.NewBadRequest("Project cannot be nil")
+	}
+	if len(name) == 0 || len(group) == 0 {
+		return nil, kerrors.NewBadRequest("Service account name and group cannot be empty when creating a new SA resource")
+	}
+
+	sa := genServiceAccount(project, name, group, p.domain)
+
+	masterImpersonatedClient, err := p.createMasterImpersonatedClient(restclient.ImpersonationConfig{})
+	if err != nil {
+		return nil, err
+	}
+
+	createdSA, err := masterImpersonatedClient.Users().Create(sa)
+	if err != nil {
+		return nil, err
+	}
+	createdSA.Name = removeSAPrefix(createdSA.Name)
+	return createdSA, nil
+}
+
+func genServiceAccount(project *kubermaticv1.Project, name, group, domain string) *kubermaticv1.User {
 	uniqueID := rand.String(10)
 	uniqueName := fmt.Sprintf("%s%s", saPrefix, uniqueID)
 
-	sa := kubermaticv1.User{}
+	sa := &kubermaticv1.User{}
 	sa.Name = uniqueName
-	sa.Spec.Email = fmt.Sprintf("%s@%s", uniqueName, p.domain)
+	sa.Spec.Email = fmt.Sprintf("%s@%s", uniqueName, domain)
 	sa.Spec.Name = name
 	sa.Spec.ID = uniqueID
 	sa.OwnerReferences = []metav1.OwnerReference{
@@ -65,18 +109,7 @@ func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *ku
 		},
 	}
 	sa.Labels = map[string]string{ServiceAccountLabelGroup: group}
-
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
-	if err != nil {
-		return nil, err
-	}
-
-	createdSA, err := masterImpersonatedClient.Users().Create(&sa)
-	if err != nil {
-		return nil, err
-	}
-	createdSA.Name = removeSAPrefix(createdSA.Name)
-	return createdSA, nil
+	return sa
 }
 
 // List gets service accounts for the project
@@ -91,20 +124,9 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kube
 		options = &provider.ServiceAccountListOptions{}
 	}
 
-	serviceAccounts, err := p.serviceAccountLister.List(labels.Everything())
+	resultList, err := p.listSA(project)
 	if err != nil {
 		return nil, err
-	}
-
-	resultList := make([]*kubermaticv1.User, 0)
-	for _, sa := range serviceAccounts {
-		if hasSAPrefix(sa.Name) {
-			for _, owner := range sa.GetOwnerReferences() {
-				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName && owner.Name == project.Name {
-					resultList = append(resultList, sa.DeepCopy())
-				}
-			}
-		}
 	}
 
 	// Note:
@@ -141,6 +163,62 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kube
 	}
 
 	return filteredList, nil
+}
+
+// ListUnsecured gets all service accounts
+// If you want to filter the result please take a look at ServiceAccountListOptions
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to get the resources
+func (p *ServiceAccountProvider) ListUnsecured(project *kubermaticv1.Project, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
+	if project == nil {
+		return nil, kerrors.NewBadRequest("project cannot be nil")
+	}
+	if options == nil {
+		options = &provider.ServiceAccountListOptions{}
+	}
+
+	resultList, err := p.listSA(project)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, sa := range resultList {
+		sa.Name = removeSAPrefix(sa.Name)
+	}
+
+	if len(options.ServiceAccountName) == 0 {
+		return resultList, nil
+	}
+
+	filteredList := make([]*kubermaticv1.User, 0)
+	for _, sa := range resultList {
+		if sa.Spec.Name == options.ServiceAccountName {
+			filteredList = append(filteredList, sa)
+			break
+		}
+	}
+
+	return filteredList, nil
+}
+
+func (p *ServiceAccountProvider) listSA(project *kubermaticv1.Project) ([]*kubermaticv1.User, error) {
+	serviceAccounts, err := p.serviceAccountLister.List(labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	resultList := make([]*kubermaticv1.User, 0)
+	for _, sa := range serviceAccounts {
+		if hasSAPrefix(sa.Name) {
+			for _, owner := range sa.GetOwnerReferences() {
+				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName && owner.Name == project.Name {
+					resultList = append(resultList, sa.DeepCopy())
+				}
+			}
+		}
+	}
+	return resultList, nil
 }
 
 // Get method returns service account with given name
