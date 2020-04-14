@@ -144,7 +144,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 }
 
 // UpdateEndpoint changes the service account group and/or name in the given project
-func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, memberMapper provider.ProjectMemberMapper, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, memberMapper provider.ProjectMemberMapper, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(updateReq)
 		if !ok {
@@ -155,16 +155,13 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProv
 			return nil, errors.NewBadRequest(err.Error())
 		}
 		saFromRequest := req.Body
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		sa, err := serviceAccountProvider.Get(userInfo, req.ServiceAccountID, nil)
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		sa, err := getSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, req.ServiceAccountID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -172,7 +169,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProv
 		// update the service account name
 		if sa.Spec.Name != saFromRequest.Name {
 			// check if service account name is already reserved in the project
-			existingSAList, err := serviceAccountProvider.List(userInfo, project, &provider.ServiceAccountListOptions{ServiceAccountName: saFromRequest.Name})
+			existingSAList, err := listSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, &saFromRequest)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -194,7 +191,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProv
 			sa.Labels[serviceaccount.ServiceAccountLabelGroup] = newGroup
 		}
 
-		updatedSA, err := serviceAccountProvider.Update(userInfo, sa)
+		updatedSA, err := updateSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, sa)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -205,8 +202,42 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, serviceAccountProv
 	}
 }
 
+func updateSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, sa *kubermaticapiv1.User) (*kubermaticapiv1.User, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+
+	if adminUserInfo.IsAdmin {
+		return privilegedServiceAccount.UpdateUnsecured(sa)
+	}
+
+	userInfo, err := userInfoGetter(ctx, project.Name)
+	if err != nil {
+		return nil, err
+	}
+	return serviceAccountProvider.Update(userInfo, sa)
+}
+
+func getSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, serviceAccountID string) (*kubermaticapiv1.User, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+
+	if adminUserInfo.IsAdmin {
+		return privilegedServiceAccount.GetUnsecured(serviceAccountID, nil)
+	}
+
+	userInfo, err := userInfoGetter(ctx, project.Name)
+	if err != nil {
+		return nil, err
+	}
+	return serviceAccountProvider.Get(userInfo, serviceAccountID, nil)
+}
+
 // DeleteEndpoint deletes the service account for the given project
-func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(deleteReq)
 		if !ok {
@@ -216,26 +247,42 @@ func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, proj
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
+
 		// check if project exist
-		if _, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{}); err != nil {
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		// check if service account exist before deleting it
-		if _, err := serviceAccountProvider.Get(userInfo, req.ServiceAccountID, nil); err != nil {
+		_, err = getSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, req.ServiceAccountID)
+		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		if err := serviceAccountProvider.Delete(userInfo, req.ServiceAccountID); err != nil {
+		if err := deleteSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, req.ServiceAccountID); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		return nil, nil
 	}
+}
+
+func deleteSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, serviceAccountID string) error {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return err
+	}
+
+	if adminUserInfo.IsAdmin {
+		return privilegedServiceAccount.DeleteUnsecured(serviceAccountID)
+	}
+
+	userInfo, err := userInfoGetter(ctx, project.Name)
+	if err != nil {
+		return err
+	}
+	return serviceAccountProvider.Delete(userInfo, serviceAccountID)
 }
 
 // addReq defines HTTP request for addServiceAccountToProject

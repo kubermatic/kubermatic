@@ -476,6 +476,24 @@ type PrivilegedServiceAccountProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
 	ListUnsecured(project *kubermaticv1.Project, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
+
+	// GetUnsecured gets all service accounts
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	GetUnsecured(name string, options *ServiceAccountGetOptions) (*kubermaticv1.User, error)
+
+	// UpdateUnsecured gets all service accounts
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	UpdateUnsecured(serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error)
+
+	// DeleteUnsecured gets all service accounts
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to delete the resource
+	DeleteUnsecured(name string) error
 }
 
 // ServiceAccountGetOptions allows to set filters that will be applied to filter the get result.
