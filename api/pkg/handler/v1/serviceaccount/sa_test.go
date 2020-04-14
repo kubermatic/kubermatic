@@ -410,6 +410,31 @@ func TestEdit(t *testing.T) {
 			saToUpdate:            "19840801",
 			expectedErrorResponse: `{"error":{"code":409,"message":"service account \"test-2\" already exists"}}`,
 		},
+		{
+			name:       "scenario 3: the admin Bob can update service account for any project",
+			body:       `{"id":"19840801", "name":"newName", "group":"editors"}`,
+			httpStatus: http.StatusOK,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
+				test.GenBinding("plan9-ID", "serviceaccount-19840801@sa.kubermatic.io", "viewers"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("bob", "bob@acme.com", true),
+				/*add service account*/
+				test.GenServiceAccount("19840801", "test", "viewers", "plan9-ID"),
+			},
+			existingAPIUser: *test.GenAPIUser("bob", "bob@acme.com"),
+			projectToSync:   "plan9-ID",
+			expectedSAName:  "newName",
+			expectedGroup:   "editors-plan9-ID",
+			saToUpdate:      "19840801",
+		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -486,6 +511,44 @@ func TestDelete(t *testing.T) {
 				test.GenDefaultProject(),
 				// add a user
 				test.GenDefaultUser(),
+				// make a user the owner of the default project
+				test.GenDefaultOwnerBinding(),
+				test.GenBinding("my-first-project-ID", "serviceaccount-1@sa.kubermatic.io", "viewers"),
+				/*add service account*/
+				test.GenServiceAccount("19840801", "test", "viewers", "my-first-project-ID"),
+			},
+			saToDelete: "19840801",
+		},
+		{
+			name:            "scenario 2: the admin can delete any service account",
+			httpStatus:      http.StatusOK,
+			projectToSync:   test.GenDefaultProject().Name,
+			existingAPIUser: test.GenAPIUser("john", "john@acme.com"),
+			existingKubermaticObjs: []runtime.Object{
+				// add a project
+				test.GenDefaultProject(),
+				// add a user
+				test.GenDefaultUser(),
+				genUser("john", "john@acme.com", true),
+				// make a user the owner of the default project
+				test.GenDefaultOwnerBinding(),
+				test.GenBinding("my-first-project-ID", "serviceaccount-1@sa.kubermatic.io", "viewers"),
+				/*add service account*/
+				test.GenServiceAccount("19840801", "test", "viewers", "my-first-project-ID"),
+			},
+			saToDelete: "19840801",
+		},
+		{
+			name:            "scenario 2: the user John can delete Bob's service account",
+			httpStatus:      http.StatusForbidden,
+			projectToSync:   test.GenDefaultProject().Name,
+			existingAPIUser: test.GenAPIUser("john", "john@acme.com"),
+			existingKubermaticObjs: []runtime.Object{
+				// add a project
+				test.GenDefaultProject(),
+				// add a user
+				test.GenDefaultUser(),
+				genUser("john", "john@acme.com", false),
 				// make a user the owner of the default project
 				test.GenDefaultOwnerBinding(),
 				test.GenBinding("my-first-project-ID", "serviceaccount-1@sa.kubermatic.io", "viewers"),

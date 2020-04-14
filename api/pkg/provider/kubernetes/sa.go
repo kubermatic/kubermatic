@@ -250,6 +250,35 @@ func (p *ServiceAccountProvider) Get(userInfo *provider.UserInfo, name string, o
 	return serviceAccount, nil
 }
 
+// GetUnsecured gets all service accounts
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to get the resource
+func (p *ServiceAccountProvider) GetUnsecured(name string, options *provider.ServiceAccountGetOptions) (*kubermaticv1.User, error) {
+	if len(name) == 0 {
+		return nil, kerrors.NewBadRequest("service account name cannot be empty")
+	}
+	if options == nil {
+		options = &provider.ServiceAccountGetOptions{RemovePrefix: true}
+	}
+
+	masterImpersonatedClient, err := p.createMasterImpersonatedClient(restclient.ImpersonationConfig{})
+	if err != nil {
+		return nil, err
+	}
+
+	name = addSAPrefix(name)
+	serviceAccount, err := masterImpersonatedClient.Users().Get(name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	if options.RemovePrefix {
+		serviceAccount.Name = removeSAPrefix(serviceAccount.Name)
+	}
+	return serviceAccount, nil
+}
+
 // Update simply updates the given service account
 func (p *ServiceAccountProvider) Update(userInfo *provider.UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error) {
 	if userInfo == nil {
@@ -274,6 +303,30 @@ func (p *ServiceAccountProvider) Update(userInfo *provider.UserInfo, serviceAcco
 	return updatedSA, nil
 }
 
+// UpdateUnsecured gets all service accounts
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to update the resource
+func (p *ServiceAccountProvider) UpdateUnsecured(serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error) {
+	if serviceAccount == nil {
+		return nil, kerrors.NewBadRequest("service account name cannot be nil")
+	}
+
+	masterImpersonatedClient, err := p.createMasterImpersonatedClient(restclient.ImpersonationConfig{})
+	if err != nil {
+		return nil, err
+	}
+
+	serviceAccount.Name = addSAPrefix(serviceAccount.Name)
+
+	updatedSA, err := masterImpersonatedClient.Users().Update(serviceAccount)
+	if err != nil {
+		return nil, err
+	}
+	updatedSA.Name = removeSAPrefix(updatedSA.Name)
+	return updatedSA, nil
+}
+
 // Delete simply deletes the given service account
 func (p *ServiceAccountProvider) Delete(userInfo *provider.UserInfo, name string) error {
 	if userInfo == nil {
@@ -284,6 +337,24 @@ func (p *ServiceAccountProvider) Delete(userInfo *provider.UserInfo, name string
 	}
 
 	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	if err != nil {
+		return err
+	}
+
+	name = addSAPrefix(name)
+	return masterImpersonatedClient.Users().Delete(name, &metav1.DeleteOptions{})
+}
+
+// DeleteUnsecured gets all service accounts
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to delete the resource
+func (p *ServiceAccountProvider) DeleteUnsecured(name string) error {
+	if len(name) == 0 {
+		return kerrors.NewBadRequest("service account name cannot be empty")
+	}
+
+	masterImpersonatedClient, err := p.createMasterImpersonatedClient(restclient.ImpersonationConfig{})
 	if err != nil {
 		return err
 	}
