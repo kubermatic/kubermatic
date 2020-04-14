@@ -7,26 +7,38 @@ items:
   kind: Addon
   metadata:
     name: canal
+    labels:
+      addons.kubermatic.io/ensure: true
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
     name: csi
+    labels:
+      addons.kubermatic.io/ensure: true
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
     name: dns
+    labels:
+      addons.kubermatic.io/ensure: true
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
     name: kube-proxy
+    labels:
+      addons.kubermatic.io/ensure: true
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
     name: openvpn
+    labels:
+      addons.kubermatic.io/ensure: true
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
     name: rbac
+    labels:
+      addons.kubermatic.io/ensure: true
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
@@ -39,11 +51,17 @@ items:
   kind: Addon
   metadata:
     name: nodelocal-dns-cache
+    labels:
+      addons.kubermatic.io/ensure: true
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
     name: pod-security-policy
+    labels:
+      addons.kubermatic.io/ensure: true
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
     name: logrotate
+    labels:
+      addons.kubermatic.io/ensure: true
