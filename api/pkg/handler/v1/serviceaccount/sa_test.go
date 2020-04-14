@@ -277,6 +277,44 @@ func TestList(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:          "scenario 3: the admin Bob can list active service accounts for any project",
+			projectToSync: "plan9-ID",
+			httpStatus:    http.StatusOK,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				test.GenBinding("plan9-ID", "serviceaccount-3@sa.kubermatic.io", "viewers"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("bob", "bob@acme.com", true),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("2", "test-2", "editors", "test-ID"),
+				test.GenServiceAccount("3", "test-3", "viewers", "plan9-ID"),
+			},
+			existingAPIUser: *test.GenAPIUser("bob", "bob@acme.com"),
+			expectedSA: []apiv1.ServiceAccount{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "1",
+						Name: "test-1",
+					},
+					Group:  "editors-plan9-ID",
+					Status: "Active",
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "3",
+						Name: "test-3",
+					},
+					Group:  "viewers-plan9-ID",
+					Status: "Active",
+				},
+			},
+		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {

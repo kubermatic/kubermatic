@@ -39,7 +39,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		}
 
 		// check if service account name is already reserved in the project
-		existingSAList, err := listSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, saFromRequest)
+		existingSAList, err := listSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, &saFromRequest)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -57,20 +57,27 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
-func listSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, sa apiv1.ServiceAccount) ([]*kubermaticapiv1.User, error) {
+func listSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, sa *apiv1.ServiceAccount) ([]*kubermaticapiv1.User, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
 	}
+
+	var options *provider.ServiceAccountListOptions
+
+	if sa != nil {
+		options = &provider.ServiceAccountListOptions{ServiceAccountName: sa.Name}
+	}
+
 	if adminUserInfo.IsAdmin {
-		return privilegedServiceAccount.ListUnsecured(project, &provider.ServiceAccountListOptions{ServiceAccountName: sa.Name})
+		return privilegedServiceAccount.ListUnsecured(project, options)
 	}
 
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
 		return nil, err
 	}
-	return serviceAccountProvider.List(userInfo, project, &provider.ServiceAccountListOptions{ServiceAccountName: sa.Name})
+	return serviceAccountProvider.List(userInfo, project, options)
 }
 
 func createSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, sa apiv1.ServiceAccount) (*kubermaticapiv1.User, error) {
@@ -91,7 +98,7 @@ func createSA(ctx context.Context, serviceAccountProvider provider.ServiceAccoun
 }
 
 // ListEndpoint returns service accounts of the given project
-func ListEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, memberMapper provider.ProjectMemberMapper, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, memberMapper provider.ProjectMemberMapper, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetProjectRq)
 		if !ok {
@@ -102,16 +109,11 @@ func ListEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvid
 			return nil, errors.NewBadRequest("the name of the project cannot be empty")
 		}
 
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		saList, err := serviceAccountProvider.List(userInfo, project, nil)
+		saList, err := listSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
