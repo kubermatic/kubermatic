@@ -32,11 +32,6 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		return nil, err
 	}
 
-	// synchronize cluster.status.health for Kubernetes clusters
-	if err := r.syncHealth(ctx, cluster); err != nil {
-		return nil, err
-	}
-
 	if cluster.Status.ExtendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
 		// Controlling of user-cluster resources
 		reachable, err := r.clusterIsReachable(ctx, cluster)

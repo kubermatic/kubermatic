@@ -227,6 +227,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	// synchronize cluster.status.health for Kubernetes clusters
+	if err := r.syncHealth(ctx, cluster); err != nil {
+		return nil, err
+	}
+
 	if cluster.DeletionTimestamp != nil {
 		log.Debug("Cleaning up cluster")
 
