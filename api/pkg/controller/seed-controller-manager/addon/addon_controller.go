@@ -202,11 +202,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	if result == nil {
 		// we check for this after the ClusterReconcileWrapper() call because otherwise the cluster would never reconcile since we always requeue
-		if r.addonEnforceInterval == 0 { // addon enforce is disabled.
-			result = &reconcile.Result{}
-		} else {
+		result = &reconcile.Result{}
+		if r.addonEnforceInterval != 0 { // addon enforce is enabled
 			// All is well, requeue in addonEnforceInterval minutes. We do this to enforce default addons and prevent cluster admins from disabling them.
-			result = &reconcile.Result{RequeueAfter: time.Duration(r.addonEnforceInterval) * time.Minute}
+			result.RequeueAfter = time.Duration(r.addonEnforceInterval) * time.Minute
 		}
 
 	}
