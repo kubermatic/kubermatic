@@ -56,6 +56,31 @@ users:
         refresh-token: fakeRefreshToken
       name: oidc
 `
+const testAdminKubeconfig = `apiVersion: v1
+clusters:
+- cluster:
+    server: test.fake.io
+  name: AbcClusterID
+contexts:
+- context:
+    cluster: AbcClusterID
+    user: john@acme.com
+  name: default
+current-context: default
+kind: Config
+preferences: {}
+users:
+- name: john@acme.com
+  user:
+    auth-provider:
+      config:
+        client-id: kubermatic
+        client-secret: secret
+        id-token: fakeTokenId
+        idp-issuer-url: url://dex
+        refresh-token: fakeRefreshToken
+      name: oidc
+`
 
 type ExpectedKubeconfigResp struct {
 	BodyResponse string
@@ -133,6 +158,32 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			ExistingAPIUser:     test.GenDefaultAPIUser(),
 			ExpectedExchangeCodePhase: ExpectedKubeconfigResp{
 				BodyResponse: testKubeconfig,
+				HTTPStatus:   http.StatusOK,
+			},
+		},
+		{
+			Name:                      "scenario 5, the admin can get kubeconfig for Bob cluster",
+			ClusterID:                 test.ClusterID,
+			ProjectID:                 test.GenDefaultProject().Name,
+			UserID:                    genUser("john", "john@acme.com", true).Name,
+			Datacenter:                test.TestSeedDatacenter,
+			HTTPStatusInitPhase:       http.StatusSeeOther,
+			ExistingKubermaticObjects: genTestKubeconfigKubermaticObjects(),
+			ExistingObjects: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "cluster-" + test.ClusterID,
+						Name:      "admin-kubeconfig",
+					},
+					Data: map[string][]byte{
+						"kubeconfig": []byte(test.GenerateTestKubeconfig(test.ClusterID, test.IDToken)),
+					},
+				},
+			},
+			ExpectedRedirectURI: testExpectedRedirectURI,
+			ExistingAPIUser:     test.GenAPIUser("john", "john@acme.com"),
+			ExpectedExchangeCodePhase: ExpectedKubeconfigResp{
+				BodyResponse: testAdminKubeconfig,
 				HTTPStatus:   http.StatusOK,
 			},
 		},
@@ -301,6 +352,66 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ExistingAPIUser:        *test.GenAPIUser("john", "john@acme.com"),
 			ExpectedResponseString: genToken(test.IDViewerToken),
 		},
+		{
+			Name:         "scenario 3: the admin gets master kubeconfig for any cluster",
+			HTTPStatus:   http.StatusOK,
+			ProjectToGet: "foo-ID",
+			ClusterToGet: "cluster-foo",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("foo-ID", "john@acme.com", "owners"),
+
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("bob", "bob@acme.com", true),
+				test.GenCluster("cluster-foo", "cluster-foo", "foo-ID", test.DefaultCreationTimestamp()),
+			},
+			ExistingObjects: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "cluster-cluster-foo",
+						Name:      "admin-kubeconfig",
+					},
+					Data: map[string][]byte{
+						"kubeconfig": []byte(test.GenerateTestKubeconfig("cluster-foo", test.IDToken)),
+					},
+				},
+			},
+			ExistingAPIUser:        *test.GenAPIUser("bob", "bob@acme.com"),
+			ExpectedResponseString: genToken(test.IDToken),
+		},
+		{
+			Name:         "scenario 4: the user Bob can not get John's kubeconfig",
+			HTTPStatus:   http.StatusForbidden,
+			ProjectToGet: "foo-ID",
+			ClusterToGet: "cluster-foo",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("foo-ID", "john@acme.com", "owners"),
+
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("bob", "bob@acme.com", false),
+				test.GenCluster("cluster-foo", "cluster-foo", "foo-ID", test.DefaultCreationTimestamp()),
+			},
+			ExistingObjects: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "cluster-cluster-foo",
+						Name:      "admin-kubeconfig",
+					},
+					Data: map[string][]byte{
+						"kubeconfig": []byte(test.GenerateTestKubeconfig("cluster-foo", test.IDToken)),
+					},
+				},
+			},
+			ExistingAPIUser:        *test.GenAPIUser("bob", "bob@acme.com"),
+			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't belong to the given project = foo-ID"}}`,
+		},
 	}
 
 	for _, tc := range testcases {
@@ -332,6 +443,7 @@ func genTestKubeconfigKubermaticObjects() []runtime.Object {
 		test.GenDefaultProject(),
 		// add a user
 		test.GenDefaultUser(),
+		genUser("john", "john@acme.com", true),
 		// make the user the owner of the first project and the editor of the second
 		test.GenDefaultOwnerBinding(),
 		// add a cluster
