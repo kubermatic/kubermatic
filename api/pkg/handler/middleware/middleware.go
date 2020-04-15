@@ -140,6 +140,10 @@ func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userPr
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 
+			if user.Spec.IsAdmin {
+				uInfo := &provider.UserInfo{Email: user.Spec.Email, IsAdmin: true}
+				return next(context.WithValue(ctx, UserInfoContextKey, uInfo), request)
+			}
 			uInfo, err := createUserInfo(user, projectID, userProjectMapper)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
