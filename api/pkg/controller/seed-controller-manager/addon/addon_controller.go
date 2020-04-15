@@ -611,10 +611,5 @@ func addonResourcesCreated(addon *kubermaticv1.Addon) bool {
 }
 
 func hasEnsureResoucesLabel(addon *kubermaticv1.Addon) bool {
-	if len(addon.Labels) != 0 {
-		if ensure := addon.Labels[addonEnsureLabelKey]; ensure == "true" {
-			return true
-		}
-	}
-	return false
+	return addon.Labels[addonEnsureLabelKey] == "true"
 }
