@@ -247,8 +247,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	}
 	// This is true when the addon: 1) is fully deployed, 2) doesn't have a `addonEnsureLabelKey` set to true.
 	// we do this to allow users to "edit/delete" resources deployed by unlabeled addons,
-	// while we enforce the labeled ones
-	if addonResourcesCreated(addon) && !hasEnsureResoucesLabel(addon) {
+	// while we enfornce the labeled ones
+	if addonResourcesCreated(addon) && !hasEnsureResourcesLabel(addon) {
 		return nil, nil
 	}
 
@@ -609,6 +609,6 @@ func addonResourcesCreated(addon *kubermaticv1.Addon) bool {
 	return false
 }
 
-func hasEnsureResoucesLabel(addon *kubermaticv1.Addon) bool {
+func hasEnsureResourcesLabel(addon *kubermaticv1.Addon) bool {
 	return addon.Labels[addonEnsureLabelKey] == "true"
 }
