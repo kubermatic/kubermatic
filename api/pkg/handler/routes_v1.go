@@ -2165,7 +2165,7 @@ func (r Routing) addTokenToServiceAccount() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(serviceaccount.CreateTokenEndpoint(r.projectProvider, r.serviceAccountProvider, r.serviceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
+		)(serviceaccount.CreateTokenEndpoint(r.projectProvider, r.privilegedProjectProvider, r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.serviceAccountTokenProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
 		serviceaccount.DecodeAddTokenReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,

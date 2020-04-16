@@ -12,39 +12,37 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
 
 	"k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 // CreateTokenEndpoint creates a token for the given service account
-func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func CreateTokenEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addTokenReq)
 		err := req.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		sa, err := serviceAccountProvider.Get(userInfo, req.ServiceAccountID, &provider.ServiceAccountGetOptions{RemovePrefix: false})
+		sa, err := getSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, req.ServiceAccountID, &provider.ServiceAccountGetOptions{RemovePrefix: false})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		// check if token name is already reserved for service account
-		existingTokenList, err := serviceAccountTokenProvider.List(userInfo, project, sa, &provider.ServiceAccountTokenListOptions{TokenID: req.Body.Name})
+		existingTokenList, err := listSAToken(ctx, userInfoGetter, serviceAccountTokenProvider, privilegedServiceAccountTokenProvider, project, sa, req.Body.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -59,7 +57,7 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccoun
 			return nil, errors.New(http.StatusInternalServerError, "can not generate token data")
 		}
 
-		secret, err := serviceAccountTokenProvider.Create(userInfo, sa, project.Name, req.Body.Name, tokenID, token)
+		secret, err := createSAToken(ctx, userInfoGetter, serviceAccountTokenProvider, privilegedServiceAccountTokenProvider, sa, project.Name, req.Body.Name, tokenID, token)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -71,6 +69,47 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccoun
 
 		return externalToken, nil
 	}
+}
+
+func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, project *kubermaticapiv1.Project, sa *kubermaticapiv1.User, tokenID string) ([]*v1.Secret, error) {
+	var options *provider.ServiceAccountTokenListOptions
+	if tokenID != "" {
+		options = &provider.ServiceAccountTokenListOptions{TokenID: tokenID}
+	}
+
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	if adminUserInfo.IsAdmin {
+		tokens, err := privilegedServiceAccountTokenProvider.ListUnsecured(options)
+		if kerrors.IsNotFound(err) {
+			return make([]*v1.Secret, 0), nil
+		}
+		return tokens, err
+	}
+
+	userInfo, err := userInfoGetter(ctx, project.Name)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	return serviceAccountTokenProvider.List(userInfo, project, sa, options)
+}
+
+func createSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, sa *kubermaticapiv1.User, projectID, tokenName, tokenID, tokenData string) (*v1.Secret, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedServiceAccountTokenProvider.CreateUnsecured(sa, projectID, tokenName, tokenID, tokenData)
+	}
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	return serviceAccountTokenProvider.Create(userInfo, sa, projectID, tokenName, tokenID, tokenData)
 }
 
 // ListTokenEndpoint gets token for the service account

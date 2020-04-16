@@ -56,6 +56,46 @@ func (p *ServiceAccountTokenProvider) Create(userInfo *provider.UserInfo, sa *ku
 		return nil, kerrors.NewBadRequest("service account cannot be nil")
 	}
 
+	secret := genToken(sa, projectID, tokenName, tokenID, token)
+
+	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
+	if err != nil {
+		return nil, kerrors.NewInternalError(err)
+	}
+
+	createdToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Create(secret)
+	if err != nil {
+		return nil, err
+	}
+	createdToken.Name = removeTokenPrefix(createdToken.Name)
+	return createdToken, nil
+}
+
+// CreateUnsecured creates a new token
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to create the resource
+func (p *ServiceAccountTokenProvider) CreateUnsecured(sa *kubermaticv1.User, projectID, tokenName, tokenID, token string) (*v1.Secret, error) {
+	if sa == nil {
+		return nil, kerrors.NewBadRequest("service account cannot be nil")
+	}
+
+	secret := genToken(sa, projectID, tokenName, tokenID, token)
+
+	kubernetesImpersonatedClient, err := p.kubernetesImpersonationClient(rest.ImpersonationConfig{})
+	if err != nil {
+		return nil, kerrors.NewInternalError(err)
+	}
+
+	createdToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Create(secret)
+	if err != nil {
+		return nil, err
+	}
+	createdToken.Name = removeTokenPrefix(createdToken.Name)
+	return createdToken, nil
+}
+
+func genToken(sa *kubermaticv1.User, projectID, tokenName, tokenID, token string) *v1.Secret {
 	secret := &v1.Secret{}
 	secret.Name = addTokenPrefix(tokenID)
 	secret.OwnerReferences = []metav1.OwnerReference{
@@ -73,18 +113,7 @@ func (p *ServiceAccountTokenProvider) Create(userInfo *provider.UserInfo, sa *ku
 	secret.Data = make(map[string][]byte)
 	secret.Data[labelTokenName] = []byte(token)
 	secret.Type = "Opaque"
-
-	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
-	if err != nil {
-		return nil, kerrors.NewInternalError(err)
-	}
-
-	createdToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Create(secret)
-	if err != nil {
-		return nil, err
-	}
-	createdToken.Name = removeTokenPrefix(createdToken.Name)
-	return createdToken, nil
+	return secret
 }
 
 // List  gets tokens for the given service account and project
