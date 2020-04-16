@@ -13,6 +13,8 @@ const (
 
 	// AddonKindName represents "Kind" defined in Kubernetes
 	AddonKindName = "Addon"
+
+	AddonResourcesCreated AddonConditionType = "AddonResourcesCreatedSuccessfully"
 )
 
 //+genclient
@@ -23,7 +25,8 @@ type Addon struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec AddonSpec `json:"spec"`
+	Spec   AddonSpec   `json:"spec"`
+	Status AddonStatus `json:"status,omitempty"`
 }
 
 // AddonSpec specifies details of an addon
@@ -50,4 +53,23 @@ type AddonList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []Addon `json:"items"`
+}
+
+type AddonStatus struct {
+	Conditions []AddonCondition `json:"conditions,omitempty"`
+}
+
+type AddonConditionType string
+
+type AddonCondition struct {
+	// Type of addon condition.
+	Type AddonConditionType `json:"type"`
+	// Status of the condition, one of True, False, Unknown.
+	Status corev1.ConditionStatus `json:"status"`
+	// Last time we got an update on a given condition.
+	// +optional
+	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty"`
+	// Last time the condition transit from one status to another.
+	// +optional
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 }
