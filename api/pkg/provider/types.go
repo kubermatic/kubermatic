@@ -534,6 +534,12 @@ type PrivilegedServiceAccountTokenProvider interface {
 	// is unsafe in a sense that it uses privileged account to get the resource
 	// gets resources from the cache
 	ListUnsecured(*ServiceAccountTokenListOptions) ([]*corev1.Secret, error)
+
+	// CreateUnsecured creates a new token
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to create the resource
+	CreateUnsecured(sa *kubermaticv1.User, projectID, tokenName, tokenID, tokenData string) (*corev1.Secret, error)
 }
 
 // EventRecorderProvider allows to record events for objects that can be read using K8S API.

@@ -161,7 +161,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		sa, err := getSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, req.ServiceAccountID)
+		sa, err := getSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, req.ServiceAccountID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -219,21 +219,21 @@ func updateSA(ctx context.Context, serviceAccountProvider provider.ServiceAccoun
 	return serviceAccountProvider.Update(userInfo, sa)
 }
 
-func getSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, serviceAccountID string) (*kubermaticapiv1.User, error) {
+func getSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, serviceAccountID string, options *provider.ServiceAccountGetOptions) (*kubermaticapiv1.User, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
 	}
 
 	if adminUserInfo.IsAdmin {
-		return privilegedServiceAccount.GetUnsecured(serviceAccountID, nil)
+		return privilegedServiceAccount.GetUnsecured(serviceAccountID, options)
 	}
 
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
 		return nil, err
 	}
-	return serviceAccountProvider.Get(userInfo, serviceAccountID, nil)
+	return serviceAccountProvider.Get(userInfo, serviceAccountID, options)
 }
 
 // DeleteEndpoint deletes the service account for the given project
@@ -255,7 +255,7 @@ func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, priv
 		}
 
 		// check if service account exist before deleting it
-		_, err = getSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, req.ServiceAccountID)
+		_, err = getSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, req.ServiceAccountID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
