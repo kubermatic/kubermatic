@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/backup"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
@@ -68,6 +69,7 @@ type controllerRunOptions struct {
 	schedulerDefaultReplicas                         int
 	seedValidationHook                               seedvalidation.WebhookOpts
 	concurrentClusterUpdate                          int
+	addonEnforceInterval                             int
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -132,6 +134,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
 	c.seedValidationHook.AddFlags(flag.CommandLine)
+	flag.IntVar(&c.addonEnforceInterval, "addon-enforce-interval", 5, "Check and ensure default usercluster addons are deployed every interval in minutes. Set to 0 to disable.")
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)
@@ -279,7 +282,11 @@ func loadAddons(listOpt, fileOpt string) (kubermaticv1.AddonList, error) {
 	}
 	if listOpt != "" {
 		for _, addonName := range strings.Split(listOpt, ",") {
-			addonList.Items = append(addonList.Items, kubermaticv1.Addon{ObjectMeta: metav1.ObjectMeta{Name: addonName}})
+			labels, err := getAddonDefaultLabels(addonName)
+			if err != nil {
+				return addonList, fmt.Errorf("failed to get default addon labels: %v", err)
+			}
+			addonList.Items = append(addonList.Items, kubermaticv1.Addon{ObjectMeta: metav1.ObjectMeta{Name: addonName, Labels: labels}})
 		}
 	}
 	if fileOpt != "" {
@@ -293,4 +300,17 @@ func loadAddons(listOpt, fileOpt string) (kubermaticv1.AddonList, error) {
 	}
 
 	return addonList, nil
+}
+
+func getAddonDefaultLabels(addonName string) (map[string]string, error) {
+	defaultAddonList := kubermaticv1.AddonList{}
+	if err := yaml.Unmarshal([]byte(common.DefaultKubernetesAddons), &defaultAddonList); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal default addon list: %v", err)
+	}
+	for _, addon := range defaultAddonList.Items {
+		if addon.Name == addonName {
+			return addon.Labels, nil
+		}
+	}
+	return nil, nil
 }
