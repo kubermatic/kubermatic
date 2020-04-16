@@ -80,6 +80,30 @@ func TestCreateTokenProject(t *testing.T) {
 			saToSync:              "1",
 			expectedErrorResponse: `{"error":{"code":409,"message":"token \"test\" already exists"}}`,
 		},
+		{
+			name:       "scenario 3: the admin can create token for any SA",
+			body:       `{"name":"test"}`,
+			httpStatus: http.StatusCreated,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				test.GenBinding("plan9-ID", "serviceaccount-3@sa.kubermatic.io", "viewers"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("bob", "bob@acme.com", true),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenServiceAccount("2", "test-2", "editors", "test-ID"),
+				test.GenServiceAccount("3", "test-3", "viewers", "plan9-ID"),
+			},
+			existingKubernetesObjs: []runtime.Object{},
+			existingAPIUser:        *test.GenAPIUser("bob", "bob@acme.com"),
+			projectToSync:          "plan9-ID",
+			saToSync:               "1",
+			expectedName:           "test",
+		},
 	}
 
 	for _, tc := range testcases {

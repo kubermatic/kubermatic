@@ -338,6 +338,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.serviceAccountProvider,
 		prov.privilegedServiceAccountProvider,
 		prov.serviceAccountTokenProvider,
+		prov.privilegedServiceAccountTokenProvider,
 		prov.project,
 		prov.privilegedProject,
 		oidcIssuerVerifier,
