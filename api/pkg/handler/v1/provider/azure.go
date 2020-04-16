@@ -248,6 +248,75 @@ func azureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tena
 	return sizeList, nil
 }
 
+func AzureAvailabilityZonesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AvailabilityZonesReq)
+
+		subscriptionID := req.SubscriptionID
+		clientID := req.ClientID
+		clientSecret := req.ClientSecret
+		tenantID := req.TenantID
+		location := req.Location
+		skuName := req.SKUName
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if len(req.Credential) > 0 {
+			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.Azure; credentials != nil {
+				subscriptionID = credentials.SubscriptionID
+				clientID = credentials.ClientID
+				clientSecret = credentials.ClientSecret
+				tenantID = credentials.TenantID
+			}
+		}
+		return azureSKUAvailabilityZones(ctx, subscriptionID, clientID, clientSecret, tenantID, location, skuName)
+	}
+}
+
+// AvailabilityZonesReq represent a request for Azure VM Multi-AvailabilityZones support
+type AvailabilityZonesReq struct {
+	SubscriptionID string
+	TenantID       string
+	ClientID       string
+	ClientSecret   string
+	Location       string
+	SKUName        string
+	Credential     string
+}
+
+func azureSKUAvailabilityZones(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, skuName string) ([]string, error) {
+	azSKUClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer for sku client: %v", err)
+	}
+
+	skuList, err := azSKUClient.ListSKU(ctx, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list sku resource: %v", err)
+	}
+
+	for _, sku := range skuList {
+		if skuName == *sku.Name {
+			for _, l := range *sku.LocationInfo {
+				if location == *l.Location {
+					if *l.Zones != nil && len(*l.Zones) > 0 {
+						return *l.Zones, nil
+					}
+				}
+			}
+		}
+	}
+
+	return nil, nil
+}
+
 // AzureSizeNoCredentialsReq represent a request for Azure VM sizes
 // note that the request doesn't have credentials for authN
 // swagger:parameters listAzureSizesNoCredentials
