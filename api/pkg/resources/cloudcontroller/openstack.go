@@ -149,6 +149,7 @@ func getOSFlags(data *resources.TemplateData) []string {
 		"--v=1",
 		"--cloud-config=/etc/kubernetes/cloud/config",
 		"--cloud-provider=openstack",
+		"--cluster-name=" + data.Cluster().Name,
 	}
 	return flags
 }
