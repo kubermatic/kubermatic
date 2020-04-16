@@ -6516,6 +6516,29 @@
         }
       }
     },
+    "/api/v1/providers/azure/availabilityzones": {
+      "get": {
+        "description": "Lists VM availability zones in an Azure region",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "azure"
+        ],
+        "operationId": "listAzureAvailabilityZones",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/AzureAvailabilityZonesList"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/azure/sizes": {
       "get": {
         "description": "Lists available VM sizes in an Azure region",
