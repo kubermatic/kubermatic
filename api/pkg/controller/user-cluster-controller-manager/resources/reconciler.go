@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
@@ -20,12 +21,14 @@ import (
 	systembasicuser "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
 	userauth "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -384,8 +387,12 @@ func (r *reconciler) reconcileServices(ctx context.Context) error {
 
 	if !r.openshift {
 		// Kubernetes Dashboard and related resources
+		cidrBlocks, err := r.getClusterCIDRBlocks(ctx, strings.ReplaceAll(r.namespace, "cluster-", ""))
+		if err != nil {
+			return fmt.Errorf("failed to get cluster CIDRBlocks: %v", err)
+		}
 		creators := []reconciling.NamedServiceCreatorGetter{
-			kubernetesdashboard.ServiceCreator(),
+			kubernetesdashboard.ServiceCreator(cidrBlocks),
 		}
 
 		if err := reconciling.ReconcileServices(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
@@ -561,4 +568,12 @@ type reconcileData struct {
 	openVPNCACert *resources.ECDSAKeyPair
 	userSSHKeys   map[string][]byte
 	cloudConfig   []byte
+}
+
+func (r *reconciler) getClusterCIDRBlocks(ctx context.Context, clusterName string) ([]string, error) {
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.seedClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
+		return nil, fmt.Errorf("failed to get cluster from seed: %v", err)
+	}
+	return cluster.Spec.ClusterNetwork.Services.CIDRBlocks, nil
 }
