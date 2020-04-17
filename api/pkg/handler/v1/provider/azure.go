@@ -281,7 +281,6 @@ func AzureAvailabilityZonesEndpoint(presetsProvider provider.PresetProvider, use
 }
 
 // AvailabilityZonesReq represent a request for Azure VM Multi-AvailabilityZones support
-// swagger:model listAzureSKUAvailabilityZones
 type AvailabilityZonesReq struct {
 	SubscriptionID string
 	TenantID       string
@@ -292,7 +291,7 @@ type AvailabilityZonesReq struct {
 	Credential     string
 }
 
-func azureSKUAvailabilityZones(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, skuName string) ([]string, error) {
+func azureSKUAvailabilityZones(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, skuName string) (*apiv1.AzureAvailabilityZonesList, error) {
 	azSKUClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authorizer for sku client: %v", err)
@@ -303,12 +302,14 @@ func azureSKUAvailabilityZones(ctx context.Context, subscriptionID, clientID, cl
 		return nil, fmt.Errorf("failed to list sku resource: %v", err)
 	}
 
+	var azZones = &apiv1.AzureAvailabilityZonesList{}
 	for _, sku := range skuList {
 		if skuName == *sku.Name {
 			for _, l := range *sku.LocationInfo {
 				if location == *l.Location {
 					if *l.Zones != nil && len(*l.Zones) > 0 {
-						return *l.Zones, nil
+						azZones.Zones = *l.Zones
+						return azZones, nil
 					}
 				}
 			}

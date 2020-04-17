@@ -6528,7 +6528,10 @@
         "operationId": "listAzureAvailabilityZones",
         "responses": {
           "200": {
-            "$ref": "#/responses/AzureAvailabilityZonesList"
+            "description": "AzureAvailabilityZonesList",
+            "schema": {
+              "$ref": "#/definitions/AzureAvailabilityZonesList"
+            }
           },
           "default": {
             "description": "errorResponse",
@@ -8062,6 +8065,20 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+    },
+    "AzureAvailabilityZonesList": {
+      "description": "AzureAvailabilityZonesList is the object representing the availability zones for vms in azure cloud provider",
+      "type": "object",
+      "properties": {
+        "zones": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Zones"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "AzureCloudSpec": {
       "type": "object",
@@ -12089,35 +12106,6 @@
       },
       "x-go-name": "ErrorResponse",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler"
-    },
-    "listAzureSKUAvailabilityZones": {
-      "description": "AvailabilityZonesReq represent a request for Azure VM Multi-AvailabilityZones support",
-      "type": "object",
-      "properties": {
-        "ClientID": {
-          "type": "string"
-        },
-        "ClientSecret": {
-          "type": "string"
-        },
-        "Credential": {
-          "type": "string"
-        },
-        "Location": {
-          "type": "string"
-        },
-        "SKUName": {
-          "type": "string"
-        },
-        "SubscriptionID": {
-          "type": "string"
-        },
-        "TenantID": {
-          "type": "string"
-        }
-      },
-      "x-go-name": "AvailabilityZonesReq",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
     }
   },
   "responses": {
