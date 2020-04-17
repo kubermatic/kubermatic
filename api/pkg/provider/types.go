@@ -9,6 +9,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
@@ -524,6 +525,12 @@ type ServiceAccountTokenProvider interface {
 type ServiceAccountTokenListOptions struct {
 	// TokenID list only tokens with the specified name
 	TokenID string
+
+	// LabelSelector list only tokens with the specified label
+	LabelSelector labels.Selector
+
+	// TokenID list only tokens which belong to the SA
+	ServiceAccountID string
 }
 
 // PrivilegedServiceAccountTokenProvider declares the set of method for interacting with kubermatic's sa's tokens and uses privileged account for it

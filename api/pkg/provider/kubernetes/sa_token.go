@@ -195,7 +195,13 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 // is unsafe in a sense that it uses privileged account to get the resource
 // gets resources from the cache
 func (p *ServiceAccountTokenProvider) ListUnsecured(options *provider.ServiceAccountTokenListOptions) ([]*v1.Secret, error) {
-	allSecrets, err := p.secretLister.List(labels.Everything())
+	labelSelector := labels.Everything()
+	if options != nil {
+		if options.LabelSelector != nil {
+			labelSelector = options.LabelSelector
+		}
+	}
+	allSecrets, err := p.secretLister.List(labelSelector)
 	if err != nil {
 		return nil, err
 	}
@@ -210,12 +216,29 @@ func (p *ServiceAccountTokenProvider) ListUnsecured(options *provider.ServiceAcc
 	if options == nil {
 		return allTokens, nil
 	}
-	for _, token := range allTokens {
-		if token.Name == options.TokenID {
-			return []*v1.Secret{token}, nil
+	if options.TokenID != "" {
+		for _, token := range allTokens {
+			if token.Name == options.TokenID {
+				return []*v1.Secret{token}, nil
+			}
 		}
+		return nil, kerrors.NewNotFound(v1.SchemeGroupVersion.WithResource("secret").GroupResource(), options.TokenID)
 	}
-	return nil, kerrors.NewNotFound(v1.SchemeGroupVersion.WithResource("secret").GroupResource(), options.TokenID)
+
+	if options.ServiceAccountID != "" {
+		resultList := make([]*v1.Secret, 0)
+		for _, token := range allTokens {
+			for _, owner := range token.GetOwnerReferences() {
+				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.UserKindName &&
+					owner.Name == options.ServiceAccountID {
+					resultList = append(resultList, token.DeepCopy())
+				}
+			}
+		}
+		return resultList, nil
+	}
+
+	return allTokens, nil
 }
 
 func isToken(secret *v1.Secret) bool {
