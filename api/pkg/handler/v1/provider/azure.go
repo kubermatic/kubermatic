@@ -281,6 +281,7 @@ func AzureAvailabilityZonesEndpoint(presetsProvider provider.PresetProvider, use
 }
 
 // AvailabilityZonesReq represent a request for Azure VM Multi-AvailabilityZones support
+// swagger:model listAzureSKUAvailabilityZones
 type AvailabilityZonesReq struct {
 	SubscriptionID string
 	TenantID       string

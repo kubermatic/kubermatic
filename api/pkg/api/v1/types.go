@@ -1075,6 +1075,9 @@ type AzureNodeSpec struct {
 	// Data disk size in GB
 	// required: false
 	DataDiskSize int32 `json:"dataDiskSize"`
+	// Zones represents the availability zones for azure vms
+	// required: false
+	Zones []string `json:"zones"`
 }
 
 // VSphereNodeSpec VSphere node settings
