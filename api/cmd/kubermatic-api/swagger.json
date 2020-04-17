@@ -6516,6 +6516,32 @@
         }
       }
     },
+    "/api/v1/providers/azure/availabilityzones": {
+      "get": {
+        "description": "Lists VM availability zones in an Azure region",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "azure"
+        ],
+        "operationId": "listAzureAvailabilityZones",
+        "responses": {
+          "200": {
+            "description": "AzureAvailabilityZonesList",
+            "schema": {
+              "$ref": "#/definitions/AzureAvailabilityZonesList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/azure/sizes": {
       "get": {
         "description": "Lists available VM sizes in an Azure region",
@@ -8040,6 +8066,20 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
+    "AzureAvailabilityZonesList": {
+      "description": "AzureAvailabilityZonesList is the object representing the availability zones for vms in azure cloud provider",
+      "type": "object",
+      "properties": {
+        "zones": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Zones"
+        }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
     "AzureCloudSpec": {
       "type": "object",
       "title": "AzureCloudSpec specifies acceess credentials to Azure cloud.",
@@ -8137,6 +8177,14 @@
             "type": "string"
           },
           "x-go-name": "Tags"
+        },
+        "zones": {
+          "description": "Zones represents the availability zones for azure vms",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Zones"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
