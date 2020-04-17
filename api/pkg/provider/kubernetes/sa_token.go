@@ -271,6 +271,29 @@ func (p *ServiceAccountTokenProvider) Get(userInfo *provider.UserInfo, name stri
 	return token, nil
 }
 
+// GetUnsecured gets the token by name
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to get the resource
+func (p *ServiceAccountTokenProvider) GetUnsecured(name string) (*v1.Secret, error) {
+	if len(name) == 0 {
+		return nil, kerrors.NewBadRequest("token name cannot be empty")
+	}
+	name = addTokenPrefix(name)
+
+	kubernetesImpersonatedClient, err := p.kubernetesImpersonationClient(rest.ImpersonationConfig{})
+	if err != nil {
+		return nil, kerrors.NewInternalError(err)
+	}
+
+	token, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	token.Name = removeTokenPrefix(token.Name)
+	return token, nil
+}
+
 // Update method updates given token
 func (p *ServiceAccountTokenProvider) Update(userInfo *provider.UserInfo, secret *v1.Secret) (*v1.Secret, error) {
 	if userInfo == nil {
@@ -295,6 +318,30 @@ func (p *ServiceAccountTokenProvider) Update(userInfo *provider.UserInfo, secret
 	return updatedToken, nil
 }
 
+// UpdateUnsecured updates the token
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to get the resource
+func (p *ServiceAccountTokenProvider) UpdateUnsecured(secret *v1.Secret) (*v1.Secret, error) {
+	if secret == nil {
+		return nil, kerrors.NewBadRequest("secret cannot be empty")
+	}
+	secretCpy := *secret
+	secretCpy.Name = addTokenPrefix(secretCpy.Name)
+
+	kubernetesImpersonatedClient, err := p.kubernetesImpersonationClient(rest.ImpersonationConfig{})
+	if err != nil {
+		return nil, kerrors.NewInternalError(err)
+	}
+
+	updatedToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Update(&secretCpy)
+	if err != nil {
+		return nil, err
+	}
+	updatedToken.Name = removeTokenPrefix(updatedToken.Name)
+	return updatedToken, nil
+}
+
 // Delete method deletes given token
 func (p *ServiceAccountTokenProvider) Delete(userInfo *provider.UserInfo, name string) error {
 	if userInfo == nil {
@@ -306,6 +353,23 @@ func (p *ServiceAccountTokenProvider) Delete(userInfo *provider.UserInfo, name s
 	name = addTokenPrefix(name)
 
 	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
+	if err != nil {
+		return kerrors.NewInternalError(err)
+	}
+	return kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Delete(name, &metav1.DeleteOptions{})
+}
+
+// DeleteUnsecured deletes the token
+//
+// Note that this function:
+// is unsafe in a sense that it uses privileged account to delete the resource
+func (p *ServiceAccountTokenProvider) DeleteUnsecured(name string) error {
+	if len(name) == 0 {
+		return kerrors.NewBadRequest("token name cannot be empty")
+	}
+	name = addTokenPrefix(name)
+
+	kubernetesImpersonatedClient, err := p.kubernetesImpersonationClient(rest.ImpersonationConfig{})
 	if err != nil {
 		return kerrors.NewInternalError(err)
 	}
