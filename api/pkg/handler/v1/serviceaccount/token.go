@@ -98,7 +98,7 @@ func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, se
 
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, err
 	}
 	return serviceAccountTokenProvider.List(userInfo, project, sa, options)
 }
@@ -106,7 +106,7 @@ func listSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, se
 func createSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, sa *kubermaticapiv1.User, projectID, tokenName, tokenID, tokenData string) (*v1.Secret, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
 		return privilegedServiceAccountTokenProvider.CreateUnsecured(sa, projectID, tokenName, tokenID, tokenData)
@@ -114,7 +114,7 @@ func createSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, err
 	}
 	return serviceAccountTokenProvider.Create(userInfo, sa, projectID, tokenName, tokenID, tokenData)
 }
@@ -164,18 +164,15 @@ func ListTokenEndpoint(projectProvider provider.ProjectProvider, privilegedProje
 }
 
 // UpdateTokenEndpoint updates and regenerates the token for the given service account
-func UpdateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func UpdateTokenEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateTokenReq)
 		err := req.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		secret, err := updateToken(projectProvider, serviceAccountProvider, serviceAccountTokenProvider, userInfo, tokenGenerator, req.ProjectID, req.ServiceAccountID, req.TokenID, req.Body.Name, true)
+
+		secret, err := updateEndpoint(ctx, projectProvider, privilegedProjectProvider, serviceAccountProvider, privilegedServiceAccount, serviceAccountTokenProvider, privilegedServiceAccountTokenProvider, userInfoGetter, tokenGenerator, req.ProjectID, req.ServiceAccountID, req.TokenID, req.Body.Name, true)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -190,17 +187,14 @@ func UpdateTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccoun
 }
 
 // PatchTokenEndpoint patches the token name
-func PatchTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func PatchTokenEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchTokenReq)
 		err := req.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
+
 		tokenReq := &apiv1.PublicServiceAccountToken{}
 		if err := json.Unmarshal(req.Body, tokenReq); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
@@ -209,7 +203,7 @@ func PatchTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccount
 			return nil, errors.NewBadRequest("new name can not be empty")
 		}
 
-		secret, err := updateToken(projectProvider, serviceAccountProvider, serviceAccountTokenProvider, userInfo, tokenGenerator, req.ProjectID, req.ServiceAccountID, req.TokenID, tokenReq.Name, false)
+		secret, err := updateEndpoint(ctx, projectProvider, privilegedProjectProvider, serviceAccountProvider, privilegedServiceAccount, serviceAccountTokenProvider, privilegedServiceAccountTokenProvider, userInfoGetter, tokenGenerator, req.ProjectID, req.ServiceAccountID, req.TokenID, tokenReq.Name, false)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -224,49 +218,78 @@ func PatchTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccount
 }
 
 // DeleteTokenEndpoint deletes the token from service account
-func DeleteTokenEndpoint(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func DeleteTokenEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteTokenReq)
 		err := req.Validate()
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		_, err = projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		_, err = serviceAccountProvider.Get(userInfo, req.ServiceAccountID, nil)
+		_, err = getSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, req.ServiceAccountID, &provider.ServiceAccountGetOptions{RemovePrefix: false})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		if err := serviceAccountTokenProvider.Delete(userInfo, req.TokenID); err != nil {
+		if err := deleteSAToken(ctx, userInfoGetter, serviceAccountTokenProvider, privilegedServiceAccountTokenProvider, req.ProjectID, req.TokenID); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return nil, nil
 	}
 }
 
-func updateToken(projectProvider provider.ProjectProvider, serviceAccountProvider provider.ServiceAccountProvider,
-	serviceAccountTokenProvider provider.ServiceAccountTokenProvider, userInfo *provider.UserInfo, tokenGenerator serviceaccount.TokenGenerator,
+func deleteSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, projectID, tokenID string) error {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedServiceAccountTokenProvider.DeleteUnsecured(tokenID)
+	}
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return err
+	}
+	return serviceAccountTokenProvider.Delete(userInfo, tokenID)
+}
+
+func getSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, projectID, tokenID string) (*v1.Secret, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedServiceAccountTokenProvider.GetUnsecured(tokenID)
+	}
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return serviceAccountTokenProvider.Get(userInfo, tokenID)
+}
+
+func updateEndpoint(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, serviceAccountProvider provider.ServiceAccountProvider,
+	privilegedServiceAccount provider.PrivilegedServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, userInfoGetter provider.UserInfoGetter, tokenGenerator serviceaccount.TokenGenerator,
 	projectID, saID, tokenID, newName string, regenerateToken bool) (*v1.Secret, error) {
 
-	project, err := projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{})
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID)
 	if err != nil {
 		return nil, err
 	}
 
-	sa, err := serviceAccountProvider.Get(userInfo, saID, &provider.ServiceAccountGetOptions{RemovePrefix: false})
+	sa, err := getSA(ctx, serviceAccountProvider, privilegedServiceAccount, userInfoGetter, project, saID, &provider.ServiceAccountGetOptions{RemovePrefix: false})
 	if err != nil {
 		return nil, err
 	}
 
-	existingSecret, err := serviceAccountTokenProvider.Get(userInfo, tokenID)
+	existingSecret, err := getSAToken(ctx, userInfoGetter, serviceAccountTokenProvider, privilegedServiceAccountTokenProvider, projectID, tokenID)
 	if err != nil {
 		return nil, err
 	}
@@ -281,7 +304,7 @@ func updateToken(projectProvider provider.ProjectProvider, serviceAccountProvide
 
 	if newName != existingName {
 		// check if token name is already reserved for service account
-		existingTokenList, err := serviceAccountTokenProvider.List(userInfo, project, sa, &provider.ServiceAccountTokenListOptions{TokenID: newName})
+		existingTokenList, err := listSAToken(ctx, userInfoGetter, serviceAccountTokenProvider, privilegedServiceAccountTokenProvider, project, sa, newName)
 		if err != nil {
 			return nil, err
 		}
@@ -300,12 +323,28 @@ func updateToken(projectProvider provider.ProjectProvider, serviceAccountProvide
 		existingSecret.Data["token"] = []byte(token)
 	}
 
-	secret, err := serviceAccountTokenProvider.Update(userInfo, existingSecret)
+	secret, err := updateSAToken(ctx, userInfoGetter, serviceAccountTokenProvider, privilegedServiceAccountTokenProvider, existingSecret, projectID)
 	if err != nil {
 		return nil, err
 	}
 
 	return secret, nil
+}
+
+func updateSAToken(ctx context.Context, userInfoGetter provider.UserInfoGetter, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, token *v1.Secret, projectID string) (*v1.Secret, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedServiceAccountTokenProvider.UpdateUnsecured(token)
+	}
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return serviceAccountTokenProvider.Update(userInfo, token)
 }
 
 // addTokenReq defines HTTP request for addTokenToServiceAccount
