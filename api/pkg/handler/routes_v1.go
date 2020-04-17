@@ -89,6 +89,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAzureSizes())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/azure/availabilityzones").
+		Handler(r.listAzureSKUAvailabilityZones())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/openstack/sizes").
 		Handler(r.listOpenstackSizes())
 
@@ -897,6 +901,28 @@ func (r Routing) listAzureSizes() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 		)(provider.AzureSizeEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeAzureSizesReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/azure/availabilityzones azure listAzureAvailabilityZones
+//
+// Lists VM availability zones in an Azure region
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AzureAvailabilityZonesList
+func (r Routing) listAzureSKUAvailabilityZones() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AzureAvailabilityZonesEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeAzureSizesReq,
 		encodeJSON,
 		r.defaultServerOptions()...,

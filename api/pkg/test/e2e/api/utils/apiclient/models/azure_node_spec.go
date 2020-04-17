@@ -32,6 +32,9 @@ type AzureNodeSpec struct {
 
 	// Additional metadata to set
 	Tags map[string]string `json:"tags,omitempty"`
+
+	// Zones represents the availability zones for azure vms
+	Zones []string `json:"zones"`
 }
 
 // Validate validates this azure node spec

@@ -25,11 +25,47 @@ type Client struct {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	ListAzureAvailabilityZones(params *ListAzureAvailabilityZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureAvailabilityZonesOK, error)
+
 	ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesOK, error)
 
 	ListAzureSizesNoCredentials(params *ListAzureSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesNoCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  ListAzureAvailabilityZones Lists VM availability zones in an Azure region
+*/
+func (a *Client) ListAzureAvailabilityZones(params *ListAzureAvailabilityZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureAvailabilityZonesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAzureAvailabilityZonesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAzureAvailabilityZones",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/azure/availabilityzones",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAzureAvailabilityZonesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAzureAvailabilityZonesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAzureAvailabilityZonesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
