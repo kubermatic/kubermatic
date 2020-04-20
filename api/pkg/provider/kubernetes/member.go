@@ -119,7 +119,7 @@ func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kuber
 	return filteredMembers, nil
 }
 
-// Delete simply deletes the given binding
+// Delete deletes the given binding
 // Note:
 // Use List to get binding for the specific member of the given project
 func (p *ProjectMemberProvider) Delete(userInfo *provider.UserInfo, bindingName string) error {
@@ -130,7 +130,7 @@ func (p *ProjectMemberProvider) Delete(userInfo *provider.UserInfo, bindingName 
 	return masterImpersonatedClient.UserProjectBindings().Delete(bindingName, &metav1.DeleteOptions{})
 }
 
-// Update simply updates the given binding
+// Update updates the given binding
 func (p *ProjectMemberProvider) Update(userInfo *provider.UserInfo, binding *kubermaticapiv1.UserProjectBinding) (*kubermaticapiv1.UserProjectBinding, error) {
 	if rbac.ExtractGroupPrefix(binding.Spec.Group) == rbac.OwnerGroupNamePrefix && !kuberneteshelper.HasFinalizer(binding, rbac.CleanupFinalizerName) {
 		kuberneteshelper.AddFinalizer(binding, rbac.CleanupFinalizerName)
@@ -193,7 +193,7 @@ func (p *ProjectMemberProvider) CreateUnsecured(project *kubermaticapiv1.Project
 	return masterImpersonatedClient.UserProjectBindings().Create(binding)
 }
 
-// DeleteUnsecured simply deletes the given binding
+// DeleteUnsecured deletes the given binding
 // Note:
 // Use List to get binding for the specific member of the given project
 // This function is unsafe in a sense that it uses privileged account to delete the resource
@@ -205,7 +205,7 @@ func (p *ProjectMemberProvider) DeleteUnsecured(bindingName string) error {
 	return masterImpersonatedClient.UserProjectBindings().Delete(bindingName, &metav1.DeleteOptions{})
 }
 
-// UpdateUnsecured simply updates the given binding
+// UpdateUnsecured updates the given binding
 // This function is unsafe in a sense that it uses privileged account to update the resource
 func (p *ProjectMemberProvider) UpdateUnsecured(binding *kubermaticapiv1.UserProjectBinding) (*kubermaticapiv1.UserProjectBinding, error) {
 	if rbac.ExtractGroupPrefix(binding.Spec.Group) == rbac.OwnerGroupNamePrefix && !kuberneteshelper.HasFinalizer(binding, rbac.CleanupFinalizerName) {
