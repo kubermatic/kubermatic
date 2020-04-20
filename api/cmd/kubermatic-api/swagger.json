@@ -8119,6 +8119,10 @@
           "format": "int32",
           "x-go-name": "DataDiskSize"
         },
+        "imageID": {
+          "type": "string",
+          "x-go-name": "ImageID"
+        },
         "osDiskSize": {
           "description": "OS disk size in GB",
           "type": "integer",
@@ -9448,6 +9452,10 @@
       "description": "GCPNodeSpec gcp specific node settings",
       "type": "object",
       "properties": {
+        "customImage": {
+          "type": "string",
+          "x-go-name": "CustomImage"
+        },
         "diskSize": {
           "type": "integer",
           "format": "int64",
