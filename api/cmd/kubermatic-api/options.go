@@ -171,6 +171,7 @@ type providers struct {
 	project                               provider.ProjectProvider
 	privilegedProject                     provider.PrivilegedProjectProvider
 	projectMember                         provider.ProjectMemberProvider
+	privilegedProjectMemberProvider       provider.PrivilegedProjectMemberProvider
 	memberMapper                          provider.ProjectMemberMapper
 	eventRecorderProvider                 provider.EventRecorderProvider
 	clusterProviderGetter                 provider.ClusterProviderGetter
