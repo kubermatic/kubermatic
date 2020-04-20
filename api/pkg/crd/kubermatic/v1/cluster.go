@@ -403,7 +403,6 @@ type AzureCloudSpec struct {
 	RouteTableName  string `json:"routeTable"`
 	SecurityGroup   string `json:"securityGroup"`
 	AvailabilitySet string `json:"availabilitySet"`
-	ImageID         string `json:"imageID"`
 }
 
 // VSphereCredentials credentials represents a credential for accessing vSphere
@@ -490,7 +489,6 @@ type GCPCloudSpec struct {
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	Network        string `json:"network"`
 	Subnetwork     string `json:"subnetwork"`
-	CustomImage    string `json:"customImage"`
 }
 
 // KubevirtCloudSpec specifies the access data to Kubevirt.

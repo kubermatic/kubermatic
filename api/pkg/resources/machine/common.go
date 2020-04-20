@@ -114,7 +114,7 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *
 		RouteTableName:    providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.RouteTableName},
 		AvailabilitySet:   providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.AvailabilitySet},
 		SecurityGroupName: providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.SecurityGroup},
-		ImageID:           providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ImageID},
+		ImageID:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Azure.ImageID},
 
 		// https://github.com/kubermatic/kubermatic/issues/5013#issuecomment-580357280
 		AssignPublicIP: providerconfig.ConfigVarBool{Value: nodeSpec.Cloud.Azure.AssignPublicIP},
@@ -306,7 +306,7 @@ func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 		Network:               providerconfig.ConfigVarString{Value: c.Spec.Cloud.GCP.Network},
 		Subnetwork:            providerconfig.ConfigVarString{Value: c.Spec.Cloud.GCP.Subnetwork},
 		AssignPublicIPAddress: &providerconfig.ConfigVarBool{Value: true},
-		CustomImage:           providerconfig.ConfigVarString{Value: c.Spec.Cloud.GCP.CustomImage},
+		CustomImage:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.CustomImage},
 	}
 
 	tags := sets.NewString(nodeSpec.Cloud.GCP.Tags...)

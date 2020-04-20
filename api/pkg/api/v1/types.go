@@ -1074,7 +1074,8 @@ type AzureNodeSpec struct {
 	OSDiskSize int32 `json:"osDiskSize"`
 	// Data disk size in GB
 	// required: false
-	DataDiskSize int32 `json:"dataDiskSize"`
+	DataDiskSize int32  `json:"dataDiskSize"`
+	ImageID      string `json:"imageID"`
 }
 
 // VSphereNodeSpec VSphere node settings
@@ -1156,6 +1157,7 @@ type GCPNodeSpec struct {
 	Preemptible bool              `json:"preemptible"`
 	Labels      map[string]string `json:"labels"`
 	Tags        []string          `json:"tags"`
+	CustomImage string            `json:"customImage"`
 }
 
 // KubevirtNodeSpec kubevirt specific node settings

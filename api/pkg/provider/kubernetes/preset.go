@@ -217,7 +217,6 @@ func (m *PresetsProvider) setGCPCredentials(userInfo *provider.UserInfo, presetN
 	cloud.GCP.ServiceAccount = credentials.ServiceAccount
 	cloud.GCP.Network = credentials.Network
 	cloud.GCP.Subnetwork = credentials.Subnetwork
-	// TODO CustomImage?
 	return &cloud, nil
 
 }
@@ -314,7 +313,6 @@ func (m *PresetsProvider) setAzureCredentials(userInfo *provider.UserInfo, prese
 	cloud.Azure.SecurityGroup = credentials.SecurityGroup
 	cloud.Azure.SubnetName = credentials.SubnetName
 	cloud.Azure.VNetName = credentials.VNetName
-	// TODO ImageID?
 	return &cloud, nil
 
 }
