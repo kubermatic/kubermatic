@@ -1083,7 +1083,8 @@ type AzureNodeSpec struct {
 	DataDiskSize int32 `json:"dataDiskSize"`
 	// Zones represents the availability zones for azure vms
 	// required: false
-	Zones []string `json:"zones"`
+	Zones   []string `json:"zones"`
+	ImageID string   `json:"imageID"`
 }
 
 // VSphereNodeSpec VSphere node settings
@@ -1165,6 +1166,7 @@ type GCPNodeSpec struct {
 	Preemptible bool              `json:"preemptible"`
 	Labels      map[string]string `json:"labels"`
 	Tags        []string          `json:"tags"`
+	CustomImage string            `json:"customImage"`
 }
 
 // KubevirtNodeSpec kubevirt specific node settings
