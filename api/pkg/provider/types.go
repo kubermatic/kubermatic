@@ -315,12 +315,12 @@ type ProjectMemberProvider interface {
 	// List gets all members of the given project
 	List(userInfo *UserInfo, project *kubermaticv1.Project, options *ProjectMemberListOptions) ([]*kubermaticv1.UserProjectBinding, error)
 
-	// Delete simply deletes the given binding
+	// Delete deletes the given binding
 	// Note:
 	// Use List to get binding for the specific member of the given project
 	Delete(userInfo *UserInfo, bindinName string) error
 
-	// Update simply updates the given binding
+	// Update updates the given binding
 	Update(userInfo *UserInfo, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
 }
 
@@ -330,13 +330,13 @@ type PrivilegedProjectMemberProvider interface {
 	// This function is unsafe in a sense that it uses privileged account to create the resource
 	CreateUnsecured(project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
 
-	// DeleteUnsecured simply deletes the given binding
+	// DeleteUnsecured deletes the given binding
 	// Note:
 	// Use List to get binding for the specific member of the given project
 	// This function is unsafe in a sense that it uses privileged account to delete the resource
 	DeleteUnsecured(bindingName string) error
 
-	// UpdateUnsecured simply updates the given binding
+	// UpdateUnsecured updates the given binding
 	// This function is unsafe in a sense that it uses privileged account to update the resource
 	UpdateUnsecured(binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
 }
