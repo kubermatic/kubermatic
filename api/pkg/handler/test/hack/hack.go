@@ -47,6 +47,7 @@ func NewTestRouting(
 	tokenExtractors auth.TokenExtractor,
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider *kubernetes.ProjectMemberProvider,
+	privilegedProjectMemberProvider provider.PrivilegedProjectMemberProvider,
 	versions []*version.Version,
 	updates []*version.Update,
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
@@ -80,6 +81,7 @@ func NewTestRouting(
 		updateManager,
 		prometheusClient,
 		projectMemberProvider,
+		privilegedProjectMemberProvider,
 		projectMemberProvider, /*satisfies also a different interface*/
 		saTokenAuthenticator,
 		saTokenGenerator,

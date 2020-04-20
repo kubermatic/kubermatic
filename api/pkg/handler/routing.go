@@ -44,6 +44,7 @@ type Routing struct {
 	updateManager                         common.UpdateManager
 	prometheusClient                      prometheusapi.Client
 	projectMemberProvider                 provider.ProjectMemberProvider
+	privilegedProjectMemberProvider       provider.PrivilegedProjectMemberProvider
 	userProjectMapper                     provider.ProjectMemberMapper
 	saTokenAuthenticator                  serviceaccount.TokenAuthenticator
 	saTokenGenerator                      serviceaccount.TokenGenerator
@@ -81,6 +82,7 @@ func NewRouting(
 	updateManager common.UpdateManager,
 	prometheusClient prometheusapi.Client,
 	projectMemberProvider provider.ProjectMemberProvider,
+	privilegedProjectMemberProvider provider.PrivilegedProjectMemberProvider,
 	userProjectMapper provider.ProjectMemberMapper,
 	saTokenAuthenticator serviceaccount.TokenAuthenticator,
 	saTokenGenerator serviceaccount.TokenGenerator,
@@ -117,17 +119,19 @@ func NewRouting(
 		updateManager:                         updateManager,
 		prometheusClient:                      prometheusClient,
 		projectMemberProvider:                 projectMemberProvider,
-		userProjectMapper:                     userProjectMapper,
-		saTokenAuthenticator:                  saTokenAuthenticator,
-		saTokenGenerator:                      saTokenGenerator,
-		eventRecorderProvider:                 eventRecorderProvider,
-		exposeStrategy:                        exposeStrategy,
-		accessibleAddons:                      accessibleAddons,
-		userInfoGetter:                        userInfoGetter,
-		settingsProvider:                      settingsProvider,
-		adminProvider:                         adminProvider,
-		admissionPluginProvider:               admissionPluginProvider,
-		settingsWatcher:                       settingsWatcher,
+		privilegedProjectMemberProvider:       privilegedProjectMemberProvider,
+
+		userProjectMapper:       userProjectMapper,
+		saTokenAuthenticator:    saTokenAuthenticator,
+		saTokenGenerator:        saTokenGenerator,
+		eventRecorderProvider:   eventRecorderProvider,
+		exposeStrategy:          exposeStrategy,
+		accessibleAddons:        accessibleAddons,
+		userInfoGetter:          userInfoGetter,
+		settingsProvider:        settingsProvider,
+		adminProvider:           adminProvider,
+		admissionPluginProvider: admissionPluginProvider,
+		settingsWatcher:         settingsWatcher,
 	}
 }
 

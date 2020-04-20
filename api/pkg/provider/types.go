@@ -324,6 +324,23 @@ type ProjectMemberProvider interface {
 	Update(userInfo *UserInfo, binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
 }
 
+// PrivilegedProjectMemberProvider binds users with projects and uses privileged account for it
+type PrivilegedProjectMemberProvider interface {
+	// CreateUnsecured creates a binding for the given member and the given project
+	// This function is unsafe in a sense that it uses privileged account to create the resource
+	CreateUnsecured(project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
+
+	// DeleteUnsecured simply deletes the given binding
+	// Note:
+	// Use List to get binding for the specific member of the given project
+	// This function is unsafe in a sense that it uses privileged account to delete the resource
+	DeleteUnsecured(bindingName string) error
+
+	// UpdateUnsecured simply updates the given binding
+	// This function is unsafe in a sense that it uses privileged account to update the resource
+	UpdateUnsecured(binding *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
+}
+
 // ProjectMemberMapper exposes method that knows how to map
 // a user to a group for a project
 type ProjectMemberMapper interface {
