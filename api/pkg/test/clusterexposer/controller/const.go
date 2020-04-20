@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	UserClusterAPIServerServiceName         = "apiserver-external"
+	UserClusterAPIServerServiceName         = "apiserver"
 	UserClusterAPIServerServiceSuffixLength = 6
 
 	// Amount of time to wait until at least one pod is running

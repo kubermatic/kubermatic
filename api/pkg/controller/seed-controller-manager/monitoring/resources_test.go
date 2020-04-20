@@ -75,7 +75,7 @@ func TestCreateConfigMap(t *testing.T) {
 			objects := []runtime.Object{
 				&corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      resources.ApiserverExternalServiceName,
+						Name:      resources.ApiserverServiceName,
 						Namespace: "cluster-nico1",
 					},
 					Spec: corev1.ServiceSpec{

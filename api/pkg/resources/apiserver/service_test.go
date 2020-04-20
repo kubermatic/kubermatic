@@ -31,7 +31,7 @@ func TestExternalServiceCreatorRequiresExposeStrategy(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, creator := ExternalServiceCreator(tc.exposeStrategy)()
+			_, creator := ServiceCreator(tc.exposeStrategy)()
 			_, err := creator(&corev1.Service{})
 			if (err != nil) != tc.errExpected {
 				t.Errorf("Expected err: %t, but got err %v", tc.errExpected, err)
@@ -86,7 +86,7 @@ func TestExternalServiceCreatorSetsPort(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, creator := ExternalServiceCreator(tc.inService.Spec.Type)()
+			_, creator := ServiceCreator(tc.inService.Spec.Type)()
 			svc, err := creator(tc.inService)
 			if err != nil {
 				t.Fatalf("Unexpected error: %v", err)

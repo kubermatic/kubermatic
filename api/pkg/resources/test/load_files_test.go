@@ -234,7 +234,7 @@ func TestLoadFiles(t *testing.T) {
 						ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",
 						IP:           "35.198.93.90",
 						AdminToken:   "6hzr76.u8txpkk4vhgmtgdp",
-						InternalName: "apiserver-external.cluster-de-test-01.svc.cluster.local.",
+						InternalName: "apiserver.cluster-de-test-01.svc.cluster.local.",
 						Port:         30000,
 					},
 					Status: kubermaticv1.ClusterStatus{
@@ -455,7 +455,7 @@ func TestLoadFiles(t *testing.T) {
 					},
 					&corev1.Service{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:      resources.ApiserverExternalServiceName,
+							Name:      resources.ApiserverServiceName,
 							Namespace: cluster.Status.NamespaceName,
 						},
 						Spec: corev1.ServiceSpec{

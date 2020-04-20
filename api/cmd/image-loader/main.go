@@ -258,7 +258,7 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 	}
 	apiServerExternalService := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.ApiserverExternalServiceName,
+			Name:      resources.ApiserverServiceName,
 			Namespace: mockNamespaceName,
 		},
 		Spec: corev1.ServiceSpec{

@@ -32,7 +32,7 @@ spec:
       containers:
       - args:
         - -endpoint
-        - https://apiserver-external.test-cluster-ns.svc.cluster.local./healthz
+        - https://apiserver.test-cluster-ns.svc.cluster.local./healthz
         - -insecure
         - -retries
         - "100"

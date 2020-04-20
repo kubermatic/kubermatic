@@ -62,7 +62,7 @@ func SyncClusterAddress(ctx context.Context,
 	}
 
 	// Internal name
-	internalName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.ApiserverExternalServiceName, cluster.Status.NamespaceName)
+	internalName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.ApiserverServiceName, cluster.Status.NamespaceName)
 	if cluster.Address.InternalName != internalName {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.InternalName = internalName
@@ -90,7 +90,7 @@ func SyncClusterAddress(ctx context.Context,
 	}
 
 	service := &corev1.Service{}
-	serviceKey := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ApiserverExternalServiceName}
+	serviceKey := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ApiserverServiceName}
 	if err := client.Get(ctx, serviceKey, service); err != nil {
 		return nil, err
 	}

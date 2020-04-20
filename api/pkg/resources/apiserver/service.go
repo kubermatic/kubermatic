@@ -11,10 +11,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ExternalServiceCreator returns the function to reconcile the external API server service
-func ExternalServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
+// ServiceCreator returns the function to reconcile the external API server service
+func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
-		return resources.ApiserverExternalServiceName, func(se *corev1.Service) (*corev1.Service, error) {
+		return resources.ApiserverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			// Always set it to NodePort. Even when using exposeStrategy==LoadBalancer, we create
 			// one LoadBalancer for two Services (APIServer and openVPN) and use the nodePortProxy in
 			// namespaced mode to redirect the traffic to the right service depending on its port.

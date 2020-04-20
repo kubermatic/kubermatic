@@ -163,7 +163,7 @@ func TestSyncClusterAddress(t *testing.T) {
 			}
 
 			apiserverService := &tc.apiserverService
-			apiserverService.Name = resources.ApiserverExternalServiceName
+			apiserverService.Name = resources.ApiserverServiceName
 			apiserverService.Namespace = fakeClusterNamespaceName
 			lbService := &tc.frontproxyService
 			lbService.Name = resources.FrontLoadBalancerServiceName
@@ -196,7 +196,7 @@ func TestSyncClusterAddress(t *testing.T) {
 				t.Errorf("expected external name to be %q but was %q", tc.expectedExternalName, cluster.Address.ExternalName)
 			}
 
-			if expectedInternalName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.ApiserverExternalServiceName, fakeClusterNamespaceName); cluster.Address.InternalName != expectedInternalName {
+			if expectedInternalName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.ApiserverServiceName, fakeClusterNamespaceName); cluster.Address.InternalName != expectedInternalName {
 				t.Errorf("Expected internal name to be %q but was %q", expectedInternalName, cluster.Address.InternalName)
 			}
 

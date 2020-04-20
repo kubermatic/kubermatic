@@ -36,7 +36,7 @@ spec:
       containers:
       - args:
         - -endpoint
-        - https://apiserver-external.cluster-de-test-01.svc.cluster.local./healthz
+        - https://apiserver.cluster-de-test-01.svc.cluster.local./healthz
         - -insecure
         - -retries
         - "100"
