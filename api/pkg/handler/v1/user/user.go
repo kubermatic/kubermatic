@@ -25,7 +25,7 @@ import (
 )
 
 // DeleteEndpoint deletes the given user/member from the given project
-func DeleteEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(DeleteReq)
 		if !ok {
@@ -34,12 +34,8 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, userProvider provi
 		if len(req.UserID) == 0 {
 			return nil, k8cerrors.NewBadRequest("the user ID cannot be empty")
 		}
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
 
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -47,7 +43,8 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, userProvider provi
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		memberList, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{MemberEmail: user.Spec.Email})
+
+		memberList, err := getMemberList(ctx, userInfoGetter, memberProvider, project, user.Spec.Email)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -58,13 +55,16 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, userProvider provi
 			return nil, k8cerrors.New(http.StatusInternalServerError, fmt.Sprintf("cannot delete the user user %s from the project, inconsistent state in database", user.Spec.Email))
 		}
 
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 		bindingForRequestedMember := memberList[0]
 		if strings.EqualFold(bindingForRequestedMember.Spec.UserEmail, userInfo.Email) {
 			return nil, k8cerrors.New(http.StatusForbidden, "you cannot delete yourself from the project")
 		}
 
-		err = memberProvider.Delete(userInfo, bindingForRequestedMember.Name)
-		if err != nil {
+		if err = deleteBinding(ctx, userInfoGetter, memberProvider, privilegedMemberProvider, req.ProjectID, bindingForRequestedMember.Name); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -72,14 +72,55 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, userProvider provi
 	}
 }
 
+func deleteBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, projectID, bindingID string) error {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedMemberProvider.DeleteUnsecured(bindingID)
+	}
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return err
+	}
+	return memberProvider.Delete(userInfo, bindingID)
+}
+
+func getMemberList(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, project *kubermaticapiv1.Project, userEmail string) ([]*kubermaticapiv1.UserProjectBinding, error) {
+	skipPrivilegeVerification := true
+
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if !userInfo.IsAdmin {
+		userInfo, err = userInfoGetter(ctx, project.Name)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		skipPrivilegeVerification = false
+	}
+
+	options := &provider.ProjectMemberListOptions{SkipPrivilegeVerification: skipPrivilegeVerification}
+	if userEmail != "" {
+		options = &provider.ProjectMemberListOptions{MemberEmail: userEmail, SkipPrivilegeVerification: skipPrivilegeVerification}
+	}
+
+	return memberProvider.List(userInfo, project, options)
+
+}
+
 // EditEndpoint changes the group the given user/member belongs in the given project
-func EditEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(EditReq)
 		if !ok {
 			return nil, k8cerrors.NewBadRequest("invalid request")
 		}
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -90,7 +131,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 		currentMemberFromRequest := req.Body
 		projectFromRequest := currentMemberFromRequest.Projects[0]
 
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -101,7 +142,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		memberList, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{MemberEmail: currentMemberFromRequest.Email})
+		memberList, err := getMemberList(ctx, userInfoGetter, memberProvider, project, currentMemberFromRequest.Email)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -115,7 +156,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 		currentMemberBinding := memberList[0]
 		generatedGroupName := rbac.GenerateActualGroupNameFor(project.Name, projectFromRequest.GroupPrefix)
 		currentMemberBinding.Spec.Group = generatedGroupName
-		updatedMemberBinding, err := memberProvider.Update(userInfo, currentMemberBinding)
+		updatedMemberBinding, err := updateBinding(ctx, userInfoGetter, memberProvider, privilegedMemberProvider, req.ProjectID, currentMemberBinding)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -126,8 +167,24 @@ func EditEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 	}
 }
 
+func updateBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, projectID string, binding *kubermaticapiv1.UserProjectBinding) (*kubermaticapiv1.UserProjectBinding, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedMemberProvider.UpdateUnsecured(binding)
+	}
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return memberProvider.Update(userInfo, binding)
+}
+
 // ListEndpoint returns user/members of the given project
-func ListEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(common.GetProjectRq)
 		if !ok {
@@ -136,17 +193,13 @@ func ListEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 		if len(req.ProjectID) == 0 {
 			return nil, k8cerrors.NewBadRequest("the name of the project cannot be empty")
 		}
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		membersOfProjectBindings, err := memberProvider.List(userInfo, project, nil)
+		membersOfProjectBindings, err := getMemberList(ctx, userInfoGetter, memberProvider, project, "")
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -167,10 +220,10 @@ func ListEndpoint(projectProvider provider.ProjectProvider, userProvider provide
 }
 
 // AddEndpoint adds the given user to the given group within the given project
-func AddEndpoint(projectProvider provider.ProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userProvider provider.UserProvider, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddReq)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		userInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -187,12 +240,12 @@ func AddEndpoint(projectProvider provider.ProjectProvider, userProvider provider
 		} else if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		project, err := projectProvider.Get(userInfo, projectFromRequest.ID, &provider.ProjectGetOptions{})
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		memberList, err := memberProvider.List(userInfo, project, &provider.ProjectMemberListOptions{MemberEmail: userToInvite.Spec.Email})
+		memberList, err := getMemberList(ctx, userInfoGetter, memberProvider, project, userToInvite.Spec.Email)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -201,7 +254,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, userProvider provider
 		}
 
 		generatedGroupName := rbac.GenerateActualGroupNameFor(project.Name, projectFromRequest.GroupPrefix)
-		generatedBinding, err := memberProvider.Create(userInfo, project, userToInvite.Spec.Email, generatedGroupName)
+		generatedBinding, err := createBinding(ctx, userInfoGetter, memberProvider, privilegedMemberProvider, project, userToInvite.Spec.Email, generatedGroupName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -210,6 +263,22 @@ func AddEndpoint(projectProvider provider.ProjectProvider, userProvider provider
 		externalUser = filterExternalUser(externalUser, project.Name)
 		return externalUser, nil
 	}
+}
+
+func createBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, project *kubermaticapiv1.Project, email, group string) (*kubermaticapiv1.UserProjectBinding, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedMemberProvider.CreateUnsecured(project, email, group)
+	}
+
+	userInfo, err := userInfoGetter(ctx, project.Name)
+	if err != nil {
+		return nil, err
+	}
+	return memberProvider.Create(userInfo, project, email, group)
 }
 
 // GetEndpoint returns info about the current user

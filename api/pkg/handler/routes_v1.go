@@ -1908,7 +1908,7 @@ func (r Routing) addUserToProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(user.AddEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider, r.userInfoGetter)),
+		)(user.AddEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userProvider, r.projectMemberProvider, r.privilegedProjectMemberProvider, r.userInfoGetter)),
 		user.DecodeAddReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -1935,7 +1935,7 @@ func (r Routing) getUsersForProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(user.ListEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider, r.userInfoGetter)),
+		)(user.ListEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userProvider, r.projectMemberProvider, r.userInfoGetter)),
 		common.DecodeGetProject,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1962,7 +1962,7 @@ func (r Routing) editUserInProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(user.EditEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider, r.userInfoGetter)),
+		)(user.EditEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userProvider, r.projectMemberProvider, r.privilegedProjectMemberProvider, r.userInfoGetter)),
 		user.DecodeEditReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -1989,7 +1989,7 @@ func (r Routing) deleteUserFromProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(user.DeleteEndpoint(r.projectProvider, r.userProvider, r.projectMemberProvider, r.userInfoGetter)),
+		)(user.DeleteEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userProvider, r.projectMemberProvider, r.privilegedProjectMemberProvider, r.userInfoGetter)),
 		user.DecodeDeleteReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
