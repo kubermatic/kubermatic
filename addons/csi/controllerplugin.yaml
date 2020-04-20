@@ -109,7 +109,7 @@ spec:
             - name: CLOUD_CONFIG
               value: /etc/config/config
             - name: CLUSTER_NAME
-              value: kubernetes
+              value: {{ .Cluster.Name }}
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: socket-dir
