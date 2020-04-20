@@ -45,7 +45,7 @@ const (
 )
 
 // ApiServer secure port
-const ApiServerSecurePort = 6443
+const APIServerSecurePort = 6443
 
 const (
 	// ApiserverDeploymentName is the name of the apiserver deployment

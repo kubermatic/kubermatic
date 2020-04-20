@@ -45,7 +45,7 @@ func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceC
 						Name:       "secure",
 						Port:       443,
 						Protocol:   corev1.ProtocolTCP,
-						TargetPort: intstr.FromInt(resources.ApiServerSecurePort),
+						TargetPort: intstr.FromInt(resources.APIServerSecurePort),
 					},
 				}
 
@@ -54,7 +54,12 @@ func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceC
 
 			se.Spec.Ports[0].Name = "secure"
 			se.Spec.Ports[0].Protocol = corev1.ProtocolTCP
-			se.Spec.Ports[0].TargetPort = intstr.FromInt(resources.ApiServerSecurePort)
+			se.Spec.Ports[0].Port = 443
+			// We assign the target port the same value as the NodePort port.
+			// The reason is that we need  both access the apiserver using
+			// this service (i.e. from seed cluster) and from the kubernetes
+			// nodeport service in the default namespace of the user cluster.
+			se.Spec.Ports[0].TargetPort = intstr.FromInt(int(se.Spec.Ports[0].NodePort))
 
 			return se, nil
 		}

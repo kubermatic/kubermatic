@@ -13,7 +13,7 @@ spec:
     metadata:
       annotations:
         prometheus.io/path: /metrics
-        prometheus.io/port: "6443"
+        prometheus.io/port: "30000"
         prometheus.io/scrape_with_kube_cert: "true"
       creationTimestamp: null
       labels:
@@ -110,7 +110,7 @@ spec:
         - -node-access-network
         - 192.0.2.0/24
         - -master
-        - https://127.0.0.1:6443
+        - https://127.0.0.1:30000
         command:
         - /usr/local/bin/kubeletdnat-controller
         image: 'quay.io/kubermatic/kubeletdnat-controller:'
@@ -136,7 +136,7 @@ spec:
         - --advertise-address
         - 35.198.93.90
         - --secure-port
-        - "6443"
+        - "30000"
         - --kubernetes-service-node-port
         - "30000"
         - --etcd-servers
@@ -235,7 +235,7 @@ spec:
           failureThreshold: 8
           httpGet:
             path: /healthz
-            port: 6443
+            port: 30000
             scheme: HTTPS
           initialDelaySeconds: 15
           periodSeconds: 10
@@ -243,13 +243,13 @@ spec:
           timeoutSeconds: 15
         name: apiserver
         ports:
-        - containerPort: 6443
+        - containerPort: 30000
           protocol: TCP
         readinessProbe:
           failureThreshold: 3
           httpGet:
             path: /healthz
-            port: 6443
+            port: 30000
             scheme: HTTPS
           periodSeconds: 5
           successThreshold: 1

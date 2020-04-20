@@ -93,7 +93,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				Annotations: map[string]string{
 					"prometheus.io/scrape_with_kube_cert": "true",
 					"prometheus.io/path":                  "/metrics",
-					"prometheus.io/port":                  fmt.Sprint(resources.ApiServerSecurePort),
+					"prometheus.io/port":                  fmt.Sprint(data.Cluster().Address.Port),
 				},
 			}
 
@@ -117,7 +117,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			dnatControllerSidecar, err := vpnsidecar.DnatControllerContainer(
 				data,
 				"dnat-controller",
-				fmt.Sprintf("https://127.0.0.1:%d", resources.ApiServerSecurePort),
+				fmt.Sprintf("https://127.0.0.1:%d", data.Cluster().Address.Port),
 			)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
@@ -148,7 +148,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 					Args:    flags,
 					Ports: []corev1.ContainerPort{
 						{
-							ContainerPort: resources.ApiServerSecurePort,
+							ContainerPort: data.Cluster().Address.Port,
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
@@ -156,7 +156,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
-								Port:   intstr.FromInt(resources.ApiServerSecurePort),
+								Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
 								Scheme: "HTTPS",
 							},
 						},
@@ -169,7 +169,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
-								Port:   intstr.FromInt(resources.ApiServerSecurePort),
+								Port:   intstr.FromInt(int(data.Cluster().Address.Port)),
 								Scheme: "HTTPS",
 							},
 						},
@@ -256,7 +256,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	flags := []string{
 		"--advertise-address", data.Cluster().Address.IP,
-		"--secure-port", fmt.Sprint(resources.ApiServerSecurePort),
+		"--secure-port", fmt.Sprint(data.Cluster().Address.Port),
 		"--kubernetes-service-node-port", fmt.Sprint(data.Cluster().Address.Port),
 		"--etcd-servers", strings.Join(etcdEndpoints, ","),
 		"--etcd-cafile", "/etc/etcd/pki/client/ca.crt",

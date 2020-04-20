@@ -84,7 +84,7 @@ func OpenshiftKubeAPIServerConfigMapCreator(data masterConfigData) reconciling.N
 			}{
 				PodCIDR:          podCIDR,
 				ServiceCIDR:      serviceCIDR,
-				ListenPort:       fmt.Sprint(resources.ApiServerSecurePort),
+				ListenPort:       fmt.Sprint(resources.APIServerSecurePort),
 				ETCDEndpoints:    etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName),
 				AdvertiseAddress: data.Cluster().Address.IP,
 				CloudProvider:    data.GetKubernetesCloudProviderName(),
