@@ -2,7 +2,6 @@ package rbac
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	kubermaticsharedinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
@@ -48,22 +47,38 @@ func (i *resourceToProcess) String() string {
 }
 
 // newResourcesController creates a new controller for managing RBAC for named resources that belong to project
-func newResourcesController(metrics *Metrics, allClusterProviders []*ClusterProvider, resources []projectResource) (*resourcesController, error) {
+func newResourcesController(metrics *Metrics, masterClusterProvider *ClusterProvider, seedClusterProviders []*ClusterProvider, resources []projectResource) (*resourcesController, error) {
 	c := &resourcesController{
 		projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_resources"),
 		metrics:               metrics,
 		projectResources:      resources,
 	}
 
-	for _, clusterProvider := range allClusterProviders {
+	klog.V(4).Infof("considering %s master cluster provider for resources", masterClusterProvider.providerName)
+	for _, resource := range c.projectResources {
+		if resource.destination == destinationSeed {
+			klog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the seed cluster provider", resource.gvr.String(), masterClusterProvider.providerName)
+			continue
+		}
+		if resource.gvr.Group == kubermaticv1.GroupName {
+			indexer, err := c.registerInformerIndexerForKubermaticResource(masterClusterProvider.kubermaticInformerFactory, resource, masterClusterProvider)
+			if err != nil {
+				return nil, err
+			}
+			masterClusterProvider.AddIndexerFor(indexer, resource.gvr)
+			continue
+		}
+		err := c.registerInformerForKubeResource(masterClusterProvider.kubeInformerProvider, resource, masterClusterProvider)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for _, clusterProvider := range seedClusterProviders {
 		klog.V(4).Infof("considering %s provider for resources", clusterProvider.providerName)
 		for _, resource := range c.projectResources {
-			if len(resource.destination) == 0 && !strings.HasPrefix(clusterProvider.providerName, MasterProviderPrefix) {
+			if len(resource.destination) == 0 {
 				klog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the master cluster provider", resource.gvr.String(), clusterProvider.providerName)
-				continue
-			}
-			if resource.destination == destinationSeed && !strings.HasPrefix(clusterProvider.providerName, SeedProviderPrefix) {
-				klog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the seed cluster provider", resource.gvr.String(), clusterProvider.providerName)
 				continue
 			}
 			if resource.gvr.Group == kubermaticv1.GroupName {

@@ -1,6 +1,7 @@
 package rbac
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -11,29 +12,25 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes"
-	rbaclister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/klog"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	CleanupFinalizerName = "kubermatic.io/controller-manager-rbac-cleanup"
 )
 
-func (c *projectController) sync(key string) error {
-	listerProject, err := c.projectLister.Get(key)
-	if err != nil {
-		if kerrors.IsNotFound(err) {
-			klog.V(4).Infof("project '%s' in queue no longer exists", key)
-			return nil
-		}
+func (c *projectController) sync(key client.ObjectKey) error {
+	var originalProject kubermaticv1.Project
+	if err := c.client.Get(c.ctx, key, &originalProject); err != nil {
 		return err
 	}
-	project := listerProject.DeepCopy()
+
+	project := originalProject.DeepCopy()
 
 	if c.shouldDeleteProject(project) {
 		if err := c.ensureProjectCleanup(project); err != nil {
@@ -42,28 +39,28 @@ func (c *projectController) sync(key string) error {
 		return nil
 	}
 
-	if err = c.ensureCleanupFinalizerExists(project); err != nil {
+	if err := c.ensureCleanupFinalizerExists(project); err != nil {
 		return fmt.Errorf("failed to ensure that the cleanup finalizer exists on the project: %v", err)
 	}
-	if err = c.ensureProjectOwner(project); err != nil {
+	if err := c.ensureProjectOwner(project); err != nil {
 		return fmt.Errorf("failed to ensure that the project owner exists in the owners group: %v", err)
 	}
-	if err = ensureClusterRBACRoleForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
+	if err := ensureClusterRBACRoleForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Role for the project exists: %v", err)
 	}
-	if err = ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
+	if err := ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RoleBinding for the project exists: %v", err)
 	}
-	if err = c.ensureClusterRBACRoleForResources(); err != nil {
+	if err := c.ensureClusterRBACRoleForResources(); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC ClusterRoles for the project's resources exists: %v", err)
 	}
-	if err = c.ensureClusterRBACRoleBindingForResources(project.Name); err != nil {
+	if err := c.ensureClusterRBACRoleBindingForResources(project.Name); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC ClusterRoleBindings for the project's resources exists: %v", err)
 	}
-	if err = c.ensureRBACRoleForResources(); err != nil {
+	if err := c.ensureRBACRoleForResources(); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Roles for the project's resources exists: %v", err)
 	}
-	if err = c.ensureRBACRoleBindingForResources(project.Name); err != nil {
+	if err := c.ensureRBACRoleBindingForResources(project.Name); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RolesBindings for the project's resources exists: %v", err)
 	}
 	if err := c.ensureProjectIsInActivePhase(project); err != nil {
@@ -76,9 +73,7 @@ func (c *projectController) sync(key string) error {
 func (c *projectController) ensureCleanupFinalizerExists(project *kubermaticv1.Project) error {
 	if !kuberneteshelper.HasFinalizer(project, CleanupFinalizerName) {
 		kuberneteshelper.AddFinalizer(project, CleanupFinalizerName)
-		if _, err := c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project); err != nil {
-			return err
-		}
+		return c.client.Update(c.ctx, project)
 	}
 	return nil
 }
@@ -86,36 +81,35 @@ func (c *projectController) ensureCleanupFinalizerExists(project *kubermaticv1.P
 func (c *projectController) ensureProjectIsInActivePhase(project *kubermaticv1.Project) error {
 	if project.Status.Phase == kubermaticv1.ProjectInactive {
 		project.Status.Phase = kubermaticv1.ProjectActive
-		newProject, err := c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project)
-		if err != nil {
-			return err
-		}
-		*project = *newProject
+		return c.client.Update(c.ctx, project)
 	}
 	return nil
 }
 
 // ensureProjectOwner makes sure that the owner of the project is assign to "owners" group
 func (c *projectController) ensureProjectOwner(project *kubermaticv1.Project) error {
-	var sharedOwner *kubermaticv1.User
+	var sharedOwnerPtr *kubermaticv1.User
 	for _, ref := range project.OwnerReferences {
 		if ref.Kind == kubermaticv1.UserKindName {
-			var err error
-			if sharedOwner, err = c.userLister.Get(ref.Name); err != nil {
+			var sharedOwner kubermaticv1.User
+			key := types.NamespacedName{Name: ref.Name}
+			if err := c.client.Get(c.ctx, key, &sharedOwner); err != nil {
 				return err
 			}
+			sharedOwnerPtr = &sharedOwner
 		}
 	}
-	if sharedOwner == nil {
+	if sharedOwnerPtr == nil {
 		return fmt.Errorf("the given project %s doesn't have associated owner/user", project.Name)
 	}
-	owner := sharedOwner.DeepCopy()
+	owner := sharedOwnerPtr.DeepCopy()
 
-	bindings, err := c.userProjectBindingLister.List(labels.Everything())
-	if err != nil {
+	var bindings kubermaticv1.UserProjectBindingList
+	if err := c.client.List(c.ctx, &bindings); err != nil {
 		return err
 	}
-	for _, binding := range bindings {
+
+	for _, binding := range bindings.Items {
 		if binding.Spec.ProjectID == project.Name && strings.EqualFold(binding.Spec.UserEmail, owner.Spec.Email) &&
 			binding.Spec.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
 			return nil
@@ -141,8 +135,7 @@ func (c *projectController) ensureProjectOwner(project *kubermaticv1.Project) er
 		},
 	}
 
-	_, err = c.masterClusterProvider.kubermaticClient.KubermaticV1().UserProjectBindings().Create(ownerBinding)
-	return err
+	return c.client.Create(c.ctx, ownerBinding)
 }
 
 func (c *projectController) ensureClusterRBACRoleForResources() error {
@@ -153,15 +146,14 @@ func (c *projectController) ensureClusterRBACRoleForResources() error {
 		for _, groupPrefix := range AllGroupsPrefixes {
 
 			if projectResource.destination == destinationSeed {
-				for _, seedClusterProvider := range c.seedClusterProviders {
-					seedClusterRESTClient := seedClusterProvider.kubeClient
-					err := ensureClusterRBACRoleForResource(seedClusterRESTClient, groupPrefix, projectResource.gvr.Resource, projectResource.kind, seedClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister())
+				for _, seedClusterRESTClient := range c.seedClientMap {
+					err := ensureClusterRBACRoleForResource(c.ctx, seedClusterRESTClient, groupPrefix, projectResource.gvr.Resource, projectResource.kind)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := ensureClusterRBACRoleForResource(c.masterClusterProvider.kubeClient, groupPrefix, projectResource.gvr.Resource, projectResource.kind, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister())
+				err := ensureClusterRBACRoleForResource(c.ctx, c.client, groupPrefix, projectResource.gvr.Resource, projectResource.kind)
 				if err != nil {
 					return err
 				}
@@ -186,15 +178,22 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(projectName
 			}
 
 			if projectResource.destination == destinationSeed {
-				for _, seedClusterProvider := range c.seedClusterProviders {
-					seedClusterRESTClient := seedClusterProvider.kubeClient
-					err := ensureClusterRBACRoleBindingForResource(seedClusterRESTClient, groupName, projectResource.gvr.Resource, seedClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister())
+				for _, seedClusterRESTClient := range c.seedClientMap {
+					err := ensureClusterRBACRoleBindingForResource(
+						c.ctx,
+						seedClusterRESTClient,
+						groupName,
+						projectResource.gvr.Resource)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := ensureClusterRBACRoleBindingForResource(c.masterClusterProvider.kubeClient, groupName, projectResource.gvr.Resource, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister())
+				err := ensureClusterRBACRoleBindingForResource(
+					c.ctx,
+					c.client,
+					groupName,
+					projectResource.gvr.Resource)
 				if err != nil {
 					return err
 				}
@@ -204,7 +203,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(projectName
 	return nil
 }
 
-func ensureClusterRBACRoleForResource(kubeClient kubernetes.Interface, groupName, resource, kind string, rbacLister rbaclister.ClusterRoleLister) error {
+func ensureClusterRBACRoleForResource(ctx context.Context, c client.Client, groupName, resource, kind string) error {
 	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, resource, kubermaticv1.SchemeGroupVersion.Group, kind)
 	if err != nil {
 		return err
@@ -213,68 +212,61 @@ func ensureClusterRBACRoleForResource(kubeClient kubernetes.Interface, groupName
 		klog.V(4).Infof("skipping ClusterRole generation because the resource for group %q and resource %q will not be created", groupName, resource)
 		return nil
 	}
-	sharedExistingClusterRole, err := rbacLister.Get(generatedClusterRole.Name)
-	if err != nil {
-		if !kerrors.IsNotFound(err) {
-			return err
+	var sharedExistingClusterRole rbacv1.ClusterRole
+	key := types.NamespacedName{Name: generatedClusterRole.Name}
+	if err := c.Get(ctx, key, &sharedExistingClusterRole); err != nil {
+		if kerrors.IsNotFound(err) {
+			return c.Create(ctx, generatedClusterRole)
+
 		}
-		// the resource has not been found but for some reason sharedExistingClusterRoles is not nil
-		sharedExistingClusterRole = nil
-	}
-	if sharedExistingClusterRole != nil {
-		if equality.Semantic.DeepEqual(sharedExistingClusterRole.Rules, generatedClusterRole.Rules) {
-			return nil
-		}
-		existingClusterRole := sharedExistingClusterRole.DeepCopy()
-		existingClusterRole.Rules = generatedClusterRole.Rules
-		_, err = kubeClient.RbacV1().ClusterRoles().Update(existingClusterRole)
+
 		return err
 	}
 
-	_, err = kubeClient.RbacV1().ClusterRoles().Create(generatedClusterRole)
-	return err
+	if equality.Semantic.DeepEqual(sharedExistingClusterRole.Rules, generatedClusterRole.Rules) {
+		return nil
+	}
+	existingClusterRole := sharedExistingClusterRole.DeepCopy()
+	existingClusterRole.Rules = generatedClusterRole.Rules
+	return c.Update(ctx, existingClusterRole)
 }
 
-func ensureClusterRBACRoleBindingForResource(kubeClient kubernetes.Interface, groupName, resource string, rbacLister rbaclister.ClusterRoleBindingLister) error {
+func ensureClusterRBACRoleBindingForResource(ctx context.Context, c client.Client, groupName, resource string) error {
 	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
 
-	sharedExistingClusterRoleBinding, err := rbacLister.Get(generatedClusterRoleBinding.Name)
-	if err != nil {
-		if !kerrors.IsNotFound(err) {
-			return err
-		}
-		// the resource has not been found but for some reason sharedExistingClusterRoleBinding is not nil
-		sharedExistingClusterRoleBinding = nil
-	}
+	var sharedExistingClusterRoleBinding rbacv1.ClusterRoleBinding
+	key := types.NamespacedName{Name: generatedClusterRoleBinding.Name}
+	if err := c.Get(ctx, key, &sharedExistingClusterRoleBinding); err != nil {
+		if kerrors.IsNotFound(err) {
+			return c.Create(ctx, generatedClusterRoleBinding)
 
-	if sharedExistingClusterRoleBinding != nil {
-		subjectsToAdd := []rbacv1.Subject{}
-
-		for _, generatedRoleBindingSubject := range generatedClusterRoleBinding.Subjects {
-			shouldAdd := true
-			for _, existingRoleBindingSubject := range sharedExistingClusterRoleBinding.Subjects {
-				if equality.Semantic.DeepEqual(existingRoleBindingSubject, generatedRoleBindingSubject) {
-					shouldAdd = false
-					break
-				}
-			}
-			if shouldAdd {
-				subjectsToAdd = append(subjectsToAdd, generatedRoleBindingSubject)
-			}
 		}
 
-		if len(subjectsToAdd) == 0 {
-			return nil
-		}
-
-		existingClusterRoleBinding := sharedExistingClusterRoleBinding.DeepCopy()
-		existingClusterRoleBinding.Subjects = append(existingClusterRoleBinding.Subjects, subjectsToAdd...)
-		_, err = kubeClient.RbacV1().ClusterRoleBindings().Update(existingClusterRoleBinding)
 		return err
 	}
 
-	_, err = kubeClient.RbacV1().ClusterRoleBindings().Create(generatedClusterRoleBinding)
-	return err
+	subjectsToAdd := []rbacv1.Subject{}
+
+	for _, generatedRoleBindingSubject := range generatedClusterRoleBinding.Subjects {
+		shouldAdd := true
+		for _, existingRoleBindingSubject := range sharedExistingClusterRoleBinding.Subjects {
+			if equality.Semantic.DeepEqual(existingRoleBindingSubject, generatedRoleBindingSubject) {
+				shouldAdd = false
+				break
+			}
+		}
+		if shouldAdd {
+			subjectsToAdd = append(subjectsToAdd, generatedRoleBindingSubject)
+		}
+	}
+
+	if len(subjectsToAdd) == 0 {
+		return nil
+	}
+
+	existingClusterRoleBinding := sharedExistingClusterRoleBinding.DeepCopy()
+	existingClusterRoleBinding.Subjects = append(existingClusterRoleBinding.Subjects, subjectsToAdd...)
+	return c.Update(ctx, existingClusterRoleBinding)
 }
 
 func (c *projectController) ensureRBACRoleForResources() error {
@@ -285,25 +277,26 @@ func (c *projectController) ensureRBACRoleForResources() error {
 		for _, groupPrefix := range AllGroupsPrefixes {
 
 			if projectResource.destination == destinationSeed {
-				for _, seedClusterProvider := range c.seedClusterProviders {
-					seedClusterRESTClient := seedClusterProvider.kubeClient
-					err := ensureRBACRoleForResource(seedClusterRESTClient,
+				for _, seedClusterRESTClient := range c.seedClientMap {
+					err := ensureRBACRoleForResource(
+						c.ctx,
+						seedClusterRESTClient,
 						groupPrefix,
 						projectResource.gvr,
 						projectResource.kind,
-						projectResource.namespace,
-						seedClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(projectResource.namespace).Rbac().V1().Roles().Lister().Roles(projectResource.namespace))
+						projectResource.namespace)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := ensureRBACRoleForResource(c.masterClusterProvider.kubeClient,
+				err := ensureRBACRoleForResource(
+					c.ctx,
+					c.client,
 					groupPrefix,
 					projectResource.gvr,
 					projectResource.kind,
-					projectResource.namespace,
-					c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(projectResource.namespace).Rbac().V1().Roles().Lister().Roles(projectResource.namespace))
+					projectResource.namespace)
 				if err != nil {
 					return err
 				}
@@ -313,7 +306,7 @@ func (c *projectController) ensureRBACRoleForResources() error {
 	return nil
 }
 
-func ensureRBACRoleForResource(kubeClient kubernetes.Interface, groupName string, gvr schema.GroupVersionResource, kind string, namespace string, rbacLister rbaclister.RoleNamespaceLister) error {
+func ensureRBACRoleForResource(ctx context.Context, c client.Client, groupName string, gvr schema.GroupVersionResource, kind string, namespace string) error {
 	generatedRole, err := generateRBACRoleForResource(groupName, gvr.Resource, gvr.Group, kind, namespace)
 	if err != nil {
 		return err
@@ -322,26 +315,21 @@ func ensureRBACRoleForResource(kubeClient kubernetes.Interface, groupName string
 		klog.V(4).Infof("skipping Role generation because the resource for group %q and resource %q in namespace %q will not be created", groupName, gvr.Resource, namespace)
 		return nil
 	}
-	sharedExistingRole, err := rbacLister.Get(generatedRole.Name)
-	if err != nil {
-		if !kerrors.IsNotFound(err) {
-			return err
+	var sharedExistingRole rbacv1.Role
+	key := types.NamespacedName{Name: generatedRole.Name, Namespace: generatedRole.Namespace}
+	if err := c.Get(ctx, key, &sharedExistingRole); err != nil {
+		if kerrors.IsNotFound(err) {
+			return c.Create(ctx, generatedRole)
 		}
-		// the resource has not been found but for some reason sharedExistingRoles is not nil
-		sharedExistingRole = nil
-	}
-	if sharedExistingRole != nil {
-		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
-			return nil
-		}
-		existingRole := sharedExistingRole.DeepCopy()
-		existingRole.Rules = generatedRole.Rules
-		_, err = kubeClient.RbacV1().Roles(namespace).Update(existingRole)
 		return err
 	}
 
-	_, err = kubeClient.RbacV1().Roles(namespace).Create(generatedRole)
-	return err
+	if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+		return nil
+	}
+	existingRole := sharedExistingRole.DeepCopy()
+	existingRole.Rules = generatedRole.Rules
+	return c.Update(ctx, existingRole)
 }
 
 func (c *projectController) ensureRBACRoleBindingForResources(projectName string) error {
@@ -359,23 +347,24 @@ func (c *projectController) ensureRBACRoleBindingForResources(projectName string
 			}
 
 			if projectResource.destination == destinationSeed {
-				for _, seedClusterProvider := range c.seedClusterProviders {
-					seedClusterRESTClient := seedClusterProvider.kubeClient
-					err := ensureRBACRoleBindingForResource(seedClusterRESTClient,
+				for _, seedClusterRESTClient := range c.seedClientMap {
+					err := ensureRBACRoleBindingForResource(
+						c.ctx,
+						seedClusterRESTClient,
 						groupName,
 						projectResource.gvr.Resource,
-						projectResource.namespace,
-						seedClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(projectResource.namespace).Rbac().V1().RoleBindings().Lister().RoleBindings(projectResource.namespace))
+						projectResource.namespace)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := ensureRBACRoleBindingForResource(c.masterClusterProvider.kubeClient,
+				err := ensureRBACRoleBindingForResource(
+					c.ctx,
+					c.client,
 					groupName,
 					projectResource.gvr.Resource,
-					projectResource.namespace,
-					c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(projectResource.namespace).Rbac().V1().RoleBindings().Lister().RoleBindings(projectResource.namespace))
+					projectResource.namespace)
 				if err != nil {
 					return err
 				}
@@ -385,46 +374,40 @@ func (c *projectController) ensureRBACRoleBindingForResources(projectName string
 	return nil
 }
 
-func ensureRBACRoleBindingForResource(kubeClient kubernetes.Interface, groupName, resource, namespace string, rbacLister rbaclister.RoleBindingNamespaceLister) error {
+func ensureRBACRoleBindingForResource(ctx context.Context, c client.Client, groupName, resource, namespace string) error {
 	generatedRoleBinding := generateRBACRoleBindingForResource(resource, groupName, namespace)
 
-	sharedExistingRoleBinding, err := rbacLister.Get(generatedRoleBinding.Name)
-	if err != nil {
-		if !kerrors.IsNotFound(err) {
-			return err
+	var sharedExistingRoleBinding rbacv1.RoleBinding
+	key := types.NamespacedName{Name: generatedRoleBinding.Name, Namespace: generatedRoleBinding.Namespace}
+	if err := c.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
+		if kerrors.IsNotFound(err) {
+			return c.Create(ctx, generatedRoleBinding)
 		}
-		// the resource has not been found but for some reason sharedExistingRoleBinding is not nil
-		sharedExistingRoleBinding = nil
-	}
-
-	if sharedExistingRoleBinding != nil {
-		subjectsToAdd := []rbacv1.Subject{}
-
-		for _, generatedRoleBindingSubject := range generatedRoleBinding.Subjects {
-			shouldAdd := true
-			for _, existingRoleBindingSubject := range sharedExistingRoleBinding.Subjects {
-				if equality.Semantic.DeepEqual(existingRoleBindingSubject, generatedRoleBindingSubject) {
-					shouldAdd = false
-					break
-				}
-			}
-			if shouldAdd {
-				subjectsToAdd = append(subjectsToAdd, generatedRoleBindingSubject)
-			}
-		}
-
-		if len(subjectsToAdd) == 0 {
-			return nil
-		}
-
-		existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
-		existingRoleBinding.Subjects = append(existingRoleBinding.Subjects, subjectsToAdd...)
-		_, err = kubeClient.RbacV1().RoleBindings(namespace).Update(existingRoleBinding)
 		return err
 	}
 
-	_, err = kubeClient.RbacV1().RoleBindings(namespace).Create(generatedRoleBinding)
-	return err
+	subjectsToAdd := []rbacv1.Subject{}
+
+	for _, generatedRoleBindingSubject := range generatedRoleBinding.Subjects {
+		shouldAdd := true
+		for _, existingRoleBindingSubject := range sharedExistingRoleBinding.Subjects {
+			if equality.Semantic.DeepEqual(existingRoleBindingSubject, generatedRoleBindingSubject) {
+				shouldAdd = false
+				break
+			}
+		}
+		if shouldAdd {
+			subjectsToAdd = append(subjectsToAdd, generatedRoleBindingSubject)
+		}
+	}
+
+	if len(subjectsToAdd) == 0 {
+		return nil
+	}
+
+	existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
+	existingRoleBinding.Subjects = append(existingRoleBinding.Subjects, subjectsToAdd...)
+	return c.Update(ctx, existingRoleBinding)
 }
 
 // ensureProjectCleanup ensures proper clean up of dependent resources upon deletion
@@ -435,18 +418,15 @@ func ensureRBACRoleBindingForResource(kubeClient kubernetes.Interface, groupName
 // - removes cleanupFinalizer
 func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) error {
 	// cluster resources don't have OwnerReferences set thus we need to manually remove them
-	for _, clusterProvider := range c.seedClusterProviders {
-		if clusterProvider.clusterResourceLister == nil {
-			return fmt.Errorf("there is no lister for cluster resources for cluster provider %s", clusterProvider.providerName)
-		}
-		clusterResources, err := clusterProvider.clusterResourceLister.List(labels.Everything())
-		if err != nil {
+	for _, seedClient := range c.seedClientMap {
+		var listObj kubermaticv1.ClusterList
+		if err := seedClient.List(c.ctx, &listObj); err != nil {
 			return err
 		}
-		for _, clusterResource := range clusterResources {
-			if clusterProject := clusterResource.Labels[kubermaticv1.ProjectIDLabelKey]; clusterProject == project.Name {
-				err := clusterProvider.kubermaticClient.KubermaticV1().Clusters().Delete(clusterResource.Name, &metav1.DeleteOptions{})
-				if err != nil {
+
+		for _, cluster := range listObj.Items {
+			if clusterProject := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; clusterProject == project.Name {
+				if err := seedClient.Delete(c.ctx, &cluster); err != nil {
 					return err
 				}
 			}
@@ -467,15 +447,14 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 			}
 
 			if projectResource.destination == destinationSeed {
-				for _, seedClusterProvider := range c.seedClusterProviders {
-					seedClusterRESTClient := seedClusterProvider.kubeClient
-					err := cleanUpClusterRBACRoleBindingFor(seedClusterRESTClient, groupName, projectResource.gvr.Resource)
+				for _, seedClient := range c.seedClientMap {
+					err := cleanUpClusterRBACRoleBindingFor(c.ctx, seedClient, groupName, projectResource.gvr.Resource)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := cleanUpClusterRBACRoleBindingFor(c.masterClusterProvider.kubeClient, groupName, projectResource.gvr.Resource)
+				err := cleanUpClusterRBACRoleBindingFor(c.ctx, c.client, groupName, projectResource.gvr.Resource)
 				if err != nil {
 					return err
 				}
@@ -497,15 +476,14 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 			}
 
 			if projectResource.destination == destinationSeed {
-				for _, seedClusterProvider := range c.seedClusterProviders {
-					seedClusterRESTClient := seedClusterProvider.kubeClient
-					err := cleanUpRBACRoleBindingFor(seedClusterRESTClient, groupName, projectResource.gvr.Resource, projectResource.namespace)
+				for _, seedClient := range c.seedClientMap {
+					err := cleanUpRBACRoleBindingFor(c.ctx, seedClient, groupName, projectResource.gvr.Resource, projectResource.namespace)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := cleanUpRBACRoleBindingFor(c.masterClusterProvider.kubeClient, groupName, projectResource.gvr.Resource, projectResource.namespace)
+				err := cleanUpRBACRoleBindingFor(c.ctx, c.client, groupName, projectResource.gvr.Resource, projectResource.namespace)
 				if err != nil {
 					return err
 				}
@@ -514,14 +492,14 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 	}
 
 	kuberneteshelper.RemoveFinalizer(project, CleanupFinalizerName)
-	_, err := c.masterClusterProvider.kubermaticClient.KubermaticV1().Projects().Update(project)
-	return err
+	return c.client.Update(c.ctx, project)
 }
 
-func cleanUpClusterRBACRoleBindingFor(kubeClient kubernetes.Interface, groupName, resource string) error {
+func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c client.Client, groupName, resource string) error {
 	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
-	sharedExistingClusterRoleBinding, err := kubeClient.RbacV1().ClusterRoleBindings().Get(generatedClusterRoleBinding.Name, metav1.GetOptions{})
-	if err != nil {
+	var sharedExistingClusterRoleBinding rbacv1.ClusterRoleBinding
+	key := types.NamespacedName{Name: generatedClusterRoleBinding.Name}
+	if err := c.Get(ctx, key, &sharedExistingClusterRoleBinding); err != nil {
 		return err
 	}
 
@@ -541,14 +519,15 @@ func cleanUpClusterRBACRoleBindingFor(kubeClient kubernetes.Interface, groupName
 
 	existingClusterRoleBinding := sharedExistingClusterRoleBinding.DeepCopy()
 	existingClusterRoleBinding.Subjects = updatedListOfSubjectes
-	_, err = kubeClient.RbacV1().ClusterRoleBindings().Update(existingClusterRoleBinding)
-	return err
+
+	return c.Update(ctx, existingClusterRoleBinding)
 }
 
-func cleanUpRBACRoleBindingFor(kubeClient kubernetes.Interface, groupName, resource, namespace string) error {
+func cleanUpRBACRoleBindingFor(ctx context.Context, c client.Client, groupName, resource, namespace string) error {
 	generatedRoleBinding := generateRBACRoleBindingForResource(resource, groupName, namespace)
-	sharedExistingRoleBinding, err := kubeClient.RbacV1().RoleBindings(namespace).Get(generatedRoleBinding.Name, metav1.GetOptions{})
-	if err != nil {
+	var sharedExistingRoleBinding rbacv1.RoleBinding
+	key := types.NamespacedName{Name: generatedRoleBinding.Name, Namespace: namespace}
+	if err := c.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
 		return err
 	}
 
@@ -568,8 +547,7 @@ func cleanUpRBACRoleBindingFor(kubeClient kubernetes.Interface, groupName, resou
 
 	existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
 	existingRoleBinding.Subjects = updatedListOfSubjectes
-	_, err = kubeClient.RbacV1().RoleBindings(namespace).Update(existingRoleBinding)
-	return err
+	return c.Update(ctx, existingRoleBinding)
 }
 
 func (c *projectController) shouldDeleteProject(project *kubermaticv1.Project) bool {

@@ -29,6 +29,7 @@ import (
 	"k8s.io/klog"
 	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -54,6 +55,7 @@ type controllerContext struct {
 	workerCount             int
 	workerName              string
 	workerNameLabelSelector labels.Selector
+	workerNamePredicate     predicate.Predicate
 	seedsGetter             provider.SeedsGetter
 	seedKubeconfigGetter    provider.SeedKubeconfigGetter
 	labelSelectorFunc       func(*metav1.ListOptions)
@@ -92,11 +94,14 @@ func main() {
 	ctrlCtx.log = log
 	ctrlCtx.workerName = runOpts.workerName
 
+	// TODO remove label selector when everything is migrated to controller-runtime
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)
 	if err != nil {
 		log.Fatalw("failed to create the label selector for the given worker", "workerName", runOpts.workerName, zap.Error(err))
 	}
 	ctrlCtx.workerNameLabelSelector = selector
+
+	ctrlCtx.workerNamePredicate = workerlabel.Predicates(runOpts.workerName)
 
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_master_controller_manager", prometheus.DefaultRegisterer)
