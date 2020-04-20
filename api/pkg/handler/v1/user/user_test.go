@@ -133,6 +133,88 @@ func TestGetUsersForProject(t *testing.T) {
 			ExistingAPIUser:        *genAPIUser("alice2", "alice2@acme.com"),
 			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: \"alice2@acme.com\" doesn't belong to the given project = foo2InternalName"}}`,
 		},
+		{
+			Name:         "scenario 2: the admin can get a list of user for any project",
+			HTTPStatus:   http.StatusOK,
+			ProjectToGet: "foo-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("bar", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("zorg", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("foo-ID", "john@acme.com", "owners"),
+				test.GenBinding("bar-ID", "john@acme.com", "editors"),
+				test.GenBinding("foo-ID", "alice@acme.com", "viewers"),
+				test.GenBinding("foo-ID", "bob@acme.com", "editors"),
+				test.GenBinding("bar-ID", "bob@acme.com", "editors"),
+				test.GenBinding("zorg-ID", "bob@acme.com", "editors"),
+				/*add users*/
+				func() *kubermaticapiv1.User {
+					user := genUser("", "john", "john@acme.com")
+					user.CreationTimestamp = metav1.NewTime(time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+					return user
+				}(),
+				func() *kubermaticapiv1.User {
+					user := genUser("", "alice", "alice@acme.com")
+					user.CreationTimestamp = metav1.NewTime(time.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC))
+					return user
+				}(),
+				func() *kubermaticapiv1.User {
+					user := genUser("", "bob", "bob@acme.com")
+					user.CreationTimestamp = metav1.NewTime(time.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC))
+					return user
+				}(),
+				genDefaultAdminUser(),
+			},
+			ExistingAPIUser: *genAPIUser("admin", "admin@acme.com"),
+			ExpectedResponse: []apiv1.User{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "4b2d8785b49bad23638b17d8db76857a79bf79441241a78a97d88cc64bbf766e",
+						Name:              "john",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+					},
+					Email: "john@acme.com",
+					Projects: []apiv1.ProjectGroup{
+						{
+							GroupPrefix: "owners",
+							ID:          "foo-ID",
+						},
+					},
+				},
+
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "0a0a58273565a8f3dcf779375d9debd0f685d94dc56651a16bff3bf901c0b127",
+						Name:              "alice",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
+					},
+					Email: "alice@acme.com",
+					Projects: []apiv1.ProjectGroup{
+						{
+							GroupPrefix: "viewers",
+							ID:          "foo-ID",
+						},
+					},
+				},
+
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6",
+						Name:              "bob",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 56, 0, 0, time.UTC),
+					},
+					Email: "bob@acme.com",
+					Projects: []apiv1.ProjectGroup{
+						{
+							GroupPrefix: "editors",
+							ID:          "foo-ID",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testcases {
@@ -273,6 +355,32 @@ func TestDeleteUserFromProject(t *testing.T) {
 			},
 			UserIDToDelete:               genDefaultUser().Name,
 			ExistingAPIUser:              *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse:             `{}`,
+			ExpectedBindingIDAfterDelete: test.GenBinding("plan9-ID", "bob@acme.com", "viewers").Name,
+		},
+
+		// scenario 5
+		{
+			Name:          "scenario 5: the admin can remove any member from the project",
+			Body:          `{"id":"bobID", "email":"bob@acme.com", "projects":[{"id":"plan9", "group":"editors"}]}`,
+			HTTPStatus:    http.StatusOK,
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "bob@acme.com", "viewers"),
+				test.GenBinding("planX-ID", "bob@acme.com", "viewers"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
+				genDefaultAdminUser(),
+			},
+			UserIDToDelete:               genDefaultUser().Name,
+			ExistingAPIUser:              *genAPIUser("admin", "admin@acme.com"),
 			ExpectedResponse:             `{}`,
 			ExpectedBindingIDAfterDelete: test.GenBinding("plan9-ID", "bob@acme.com", "viewers").Name,
 		},
@@ -454,6 +562,36 @@ func TestEditUserInProject(t *testing.T) {
 			},
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedBindingAfterUpdate: func() *kubermaticapiv1.UserProjectBinding {
+				binding := test.GenBinding("plan9-ID", "bob@acme.com", "editors")
+				// the name of the original binding was derived from projectID, email and group
+				binding.Name = test.GenBinding("plan9-ID", "bob@acme.com", "viewers").Name
+				return binding
+			}(),
+		},
+		// scenario 6
+		{
+			Name:          "scenario 6: the admin changes the group for bob from viewers to editors",
+			Body:          `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6", "email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
+			HTTPStatus:    http.StatusOK,
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "bob@acme.com", "viewers"),
+				test.GenBinding("my-third-project-ID", "bob@acme.com", "viewers"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
+				genDefaultAdminUser(),
+			},
+			UserIDToUpdate:   genDefaultUser().Name,
+			ExistingAPIUser:  *genAPIUser("admin", "admin@acme.com"),
 			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
 			ExpectedBindingAfterUpdate: func() *kubermaticapiv1.UserProjectBinding {
 				binding := test.GenBinding("plan9-ID", "bob@acme.com", "editors")
@@ -728,6 +866,44 @@ func TestAddUserToProject(t *testing.T) {
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the given member serviceaccount-1@sa.kubermatic.io to the project plan9 because the email indicates a service account"}}`,
 		},
+		{
+			Name:          "scenario 9: the admin invites bob to the project as an editor",
+			Body:          `{"email":"bob@acme.com", "projects":[{"id":"plan9-ID", "group":"editors"}]}`,
+			HTTPStatus:    http.StatusCreated,
+			ProjectToSync: "plan9-ID",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
+				test.GenBinding("placeX-ID", "bob@acme.com", "editors"),
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+				genDefaultUser(), /*bob*/
+				genDefaultAdminUser(),
+			},
+			ExistingAPIUser:  *genAPIUser("admin", "admin@acme.com"),
+			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
+			ExpectedBindingAfterInvitation: &kubermaticapiv1.UserProjectBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticapiv1.ProjectKindName,
+							Name:       "plan9-ID",
+						},
+					},
+				},
+				Spec: kubermaticapiv1.UserProjectBindingSpec{
+					UserEmail: "bob@acme.com",
+					Group:     "editors-plan9-ID",
+					ProjectID: "plan9-ID",
+				},
+			},
+		},
 	}
 
 	for _, tc := range testcases {
@@ -932,4 +1108,10 @@ func genAPIUser(name, email string) *apiv1.User {
 
 func genDefaultAPIUser() *apiv1.User {
 	return test.GenDefaultAPIUser()
+}
+
+func genDefaultAdminUser() *kubermaticapiv1.User {
+	user := test.GenUser("", "admin", "admin@acme.com")
+	user.Spec.IsAdmin = true
+	return user
 }
