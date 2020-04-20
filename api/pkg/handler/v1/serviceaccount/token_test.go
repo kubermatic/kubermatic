@@ -423,6 +423,30 @@ func TestPatchToken(t *testing.T) {
 			tokenToSync:      "sa-token-1",
 			expectedErrorMsg: `{"error":{"code":409,"message":"token \"test-2\" already exists"}}`,
 		},
+		{
+			name:       "scenario 4: the admin can change any token name successfully",
+			httpStatus: http.StatusOK,
+			body:       `{"name":"test-new-name"}`,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("bob", "bob@acme.com", true),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+			},
+			existingKubernetesObjs: []runtime.Object{
+				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
+			},
+			existingAPIUser: *test.GenAPIUser("bob", "bob@acme.com"),
+			projectToSync:   "plan9-ID",
+			saToSync:        "1",
+			tokenToSync:     "1",
+			expectedToken:   genPublicServiceAccountToken("1", "test-new-name", expiry),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -553,6 +577,54 @@ func TestUpdateToken(t *testing.T) {
 			tokenToSync:      "sa-token-1",
 			expectedErrorMsg: `{"error":{"code":409,"message":"token \"test-2\" already exists"}}`,
 		},
+		{
+			name:       "scenario 4: the admin can change any token name successfully and regenerate token",
+			httpStatus: http.StatusOK,
+			body:       `{"name":"test-new-name", "id":"1"}`,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("bob", "bob@acme.com", true),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+			},
+			existingKubernetesObjs: []runtime.Object{
+				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
+			},
+			existingAPIUser: *test.GenAPIUser("bob", "bob@acme.com"),
+			projectToSync:   "plan9-ID",
+			saToSync:        "1",
+			tokenToSync:     "1",
+			expectedToken:   genPublicServiceAccountToken("1", "test-new-name", expiry),
+		},
+		{
+			name:       "scenario 5: the user Bob can change John's token name and regenerate token",
+			httpStatus: http.StatusForbidden,
+			body:       `{"name":"test-new-name", "id":"1"}`,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("bob", "bob@acme.com", false),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+			},
+			existingKubernetesObjs: []runtime.Object{
+				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
+			},
+			existingAPIUser:  *test.GenAPIUser("bob", "bob@acme.com"),
+			projectToSync:    "plan9-ID",
+			saToSync:         "1",
+			tokenToSync:      "1",
+			expectedErrorMsg: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't belong to the given project = plan9-ID"}}`,
+		},
 	}
 
 	for _, tc := range testcases {
@@ -631,6 +703,32 @@ func TestDeleteToken(t *testing.T) {
 				test.GenDefaultSaToken("plan11-ID", "serviceaccount-3", "test-4", "4"),
 			},
 			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
+			projectToSync:    "plan9-ID",
+			saToSync:         "1",
+			tokenToDelete:    "sa-token-3",
+			expectedResponse: "{}",
+		},
+		{
+			name:       "scenario 2: the admin can delete any token",
+			httpStatus: http.StatusOK,
+			existingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("bob", "bob@acme.com", true),
+				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+			},
+			existingKubernetesObjs: []runtime.Object{
+				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
+				test.GenDefaultSaToken("plan10-ID", "serviceaccount-2", "test-2", "2"),
+				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-3", "3"),
+				test.GenDefaultSaToken("plan11-ID", "serviceaccount-3", "test-4", "4"),
+			},
+			existingAPIUser:  *test.GenAPIUser("bob", "bob@acme.com"),
 			projectToSync:    "plan9-ID",
 			saToSync:         "1",
 			tokenToDelete:    "sa-token-3",

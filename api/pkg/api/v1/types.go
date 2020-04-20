@@ -346,6 +346,12 @@ type DigitaloceanSize struct {
 	Regions      []string `json:"regions"`
 }
 
+// AzureAvailabilityZonesList is the object representing the availability zones for vms in azure cloud provider
+// swagger:model AzureAvailabilityZonesList
+type AzureAvailabilityZonesList struct {
+	Zones []string `json:"zones"`
+}
+
 // AzureSizeList represents an array of Azure VM sizes.
 // swagger:model AzureSizeList
 type AzureSizeList []AzureSize
@@ -1074,8 +1080,11 @@ type AzureNodeSpec struct {
 	OSDiskSize int32 `json:"osDiskSize"`
 	// Data disk size in GB
 	// required: false
-	DataDiskSize int32  `json:"dataDiskSize"`
-	ImageID      string `json:"imageID"`
+	DataDiskSize int32 `json:"dataDiskSize"`
+	// Zones represents the availability zones for azure vms
+	// required: false
+	Zones   []string `json:"zones"`
+	ImageID string   `json:"imageID"`
 }
 
 // VSphereNodeSpec VSphere node settings

@@ -30,6 +30,7 @@ type RawConfig struct {
 	Datacenter     providerconfigtypes.ConfigVarString `json:"datacenter"`
 	Cluster        providerconfigtypes.ConfigVarString `json:"cluster"`
 	Folder         providerconfigtypes.ConfigVarString `json:"folder"`
+	ResourcePool   providerconfigtypes.ConfigVarString `json:"resourcePool"`
 
 	// Either Datastore or DatastoreCluster have to be provided.
 	DatastoreCluster providerconfigtypes.ConfigVarString `json:"datastoreCluster"`
