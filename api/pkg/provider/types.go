@@ -241,6 +241,14 @@ type PrivilegedSSHKeyProvider interface {
 	// UpdateUnsecured update a specific ssh key and returns the updated ssh key
 	// This function is unsafe in a sense that it uses privileged account to update the ssh key
 	UpdateUnsecured(sshKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
+
+	// Create creates a ssh key that belongs to the given project
+	// This function is unsafe in a sense that it uses privileged account to create the ssh key
+	CreateUnsecured(project *kubermaticv1.Project, keyName, pubKey string) (*kubermaticv1.UserSSHKey, error)
+
+	// Delete deletes the given ssh key
+	// This function is unsafe in a sense that it uses privileged account to delete the ssh key
+	DeleteUnsecured(keyName string) error
 }
 
 // UserProvider declares the set of methods for interacting with kubermatic users
