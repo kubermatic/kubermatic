@@ -1,0 +1,12 @@
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: hourly-cluster
+spec:
+  schedule: 0 * * * *
+  template:
+    includeClusterResources: true
+    includedNamespaces:
+    - '*'
+    snapshotVolumes: false
+    ttl: 168h # 7 days  
