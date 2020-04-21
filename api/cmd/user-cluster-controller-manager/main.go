@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+
 	"github.com/go-logr/zapr"
 	"github.com/heptiolabs/healthcheck"
 	"github.com/oklog/run"
@@ -61,6 +63,8 @@ type controllerRunOptions struct {
 	seedKubeconfig                string
 	openshiftConsoleCallbackURI   string
 	ownerEmail                    string
+	updateWindowStart             string
+	updateWindowLength            string
 }
 
 func main() {
@@ -86,6 +90,8 @@ func main() {
 	flag.StringVar(&runOp.seedKubeconfig, "seed-kubeconfig", "", "Path to the seed kubeconfig. In-Cluster config will be used if unset")
 	flag.StringVar(&runOp.openshiftConsoleCallbackURI, "openshift-console-callback-uri", "", "The callback uri for the openshift console")
 	flag.StringVar(&runOp.ownerEmail, "owner-email", "", "An email address of the user who created the cluster. Used as default subject for the admin cluster role binding")
+	flag.StringVar(&runOp.updateWindowStart, "update-window-start", "", "The start time of the update window, e.g. 02:00")
+	flag.StringVar(&runOp.updateWindowLength, "update-window-length", "", "The length of the update window, e.g. 1h")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -246,7 +252,11 @@ func main() {
 		log.Info("Registered openshiftseedsyncer controller")
 	}
 
-	if err := containerlinux.Add(mgr, runOp.overwriteRegistry); err != nil {
+	updateWindow := kubermaticv1.UpdateWindow{
+		Start:  runOp.updateWindowStart,
+		Length: runOp.updateWindowLength,
+	}
+	if err := containerlinux.Add(mgr, runOp.overwriteRegistry, updateWindow); err != nil {
 		log.Fatalw("Failed to register the ContainerLinux controller", zap.Error(err))
 	}
 	log.Info("Registered ContainerLinux controller")

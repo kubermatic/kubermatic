@@ -7,6 +7,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/container-linux/resources"
 	nodelabelerapi "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -27,13 +28,15 @@ const (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 	overwriteRegistry string
+	updateWindow      kubermaticv1.UpdateWindow
 }
 
-func Add(mgr manager.Manager, overwriteRegistry string) error {
+func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow) error {
 
 	reconciler := &Reconciler{
 		Client:            mgr.GetClient(),
 		overwriteRegistry: overwriteRegistry,
+		updateWindow:      updateWindow,
 	}
 
 	ctrlOptions := controller.Options{
@@ -87,7 +90,7 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		return fmt.Errorf("failed to reconcile the ClusterRoleBindings: %v", err)
 	}
 
-	depCreators := GetDeploymentCreators(r.overwriteRegistry)
+	depCreators := GetDeploymentCreators(r.overwriteRegistry, r.updateWindow)
 	if err := reconciling.ReconcileDeployments(ctx, depCreators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %v", err)
 	}
@@ -109,9 +112,9 @@ func getRegistryDefaultFunc(overwriteRegistry string) func(defaultRegistry strin
 	}
 }
 
-func GetDeploymentCreators(overwriteRegistry string) []reconciling.NamedDeploymentCreatorGetter {
+func GetDeploymentCreators(overwriteRegistry string, updateWindow kubermaticv1.UpdateWindow) []reconciling.NamedDeploymentCreatorGetter {
 	return []reconciling.NamedDeploymentCreatorGetter{
-		resources.DeploymentCreator(getRegistryDefaultFunc(overwriteRegistry)),
+		resources.DeploymentCreator(getRegistryDefaultFunc(overwriteRegistry), updateWindow),
 	}
 }
 func GetDaemonSetCreators(overwriteRegistry string) []reconciling.NamedDaemonSetCreatorGetter {
