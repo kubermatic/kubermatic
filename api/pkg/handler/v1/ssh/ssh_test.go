@@ -49,6 +49,48 @@ func TestDeleteSSHKey(t *testing.T) {
 			},
 			ExistingAPIUser: test.GenAPIUser("john", "john@acme.com"),
 		},
+		// scenario 2
+		{
+			Name:           "scenario 2: the admin user can delete SSH key from any project",
+			HTTPStatus:     http.StatusOK,
+			SSHKeyToDelete: "key-abc-second-key",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("admin", "admin@acme.com", true),
+				/*add cluster*/
+				test.GenDefaultCluster(),
+				/*add ssh keys*/
+				genSSHKey(test.DefaultCreationTimestamp(), "c08aa5c7abf34504f18552846485267d", "first-key", "my-first-project-ID", test.GenDefaultCluster().Name),
+				genSSHKey(test.DefaultCreationTimestamp(), "abc", "second-key", "my-first-project-ID", "abcd-ID"),
+			},
+			ExistingAPIUser: test.GenAPIUser("admin", "admin@acme.com"),
+		},
+		// scenario 3
+		{
+			Name:           "scenario 3: the user who doesn't belong to the project can not delete SSH key from the project",
+			HTTPStatus:     http.StatusForbidden,
+			SSHKeyToDelete: "key-abc-second-key",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("user", "user@acme.com", false),
+				/*add cluster*/
+				test.GenDefaultCluster(),
+				/*add ssh keys*/
+				genSSHKey(test.DefaultCreationTimestamp(), "c08aa5c7abf34504f18552846485267d", "first-key", "my-first-project-ID", test.GenDefaultCluster().Name),
+				genSSHKey(test.DefaultCreationTimestamp(), "abc", "second-key", "my-first-project-ID", "abcd-ID"),
+			},
+			ExistingAPIUser: test.GenAPIUser("user", "user@acme.com"),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -148,6 +190,43 @@ func TestListSSHKeys(t *testing.T) {
 			},
 			ExistingAPIUser: test.GenAPIUser("john", "john@acme.com"),
 		},
+		// scenario 2
+		{
+			Name: "scenario 2: the admin can gets a list of ssh keys assigned to cluster for any project",
+			Body: ``,
+			ExpectedKeys: []apiv1.SSHKey{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "key-c08aa5c7abf34504f18552846485267d-first-key",
+						Name:              "first-key",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+					},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "key-abc-second-key",
+						Name:              "second-key",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 55, 0, 0, time.UTC),
+					},
+				},
+			},
+			HTTPStatus: http.StatusOK,
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				/*add cluster*/
+				test.GenDefaultCluster(),
+				genUser("admin", "admin@acme.com", true),
+				/*add ssh keys*/
+				genSSHKey(creationTime, "c08aa5c7abf34504f18552846485267d", "first-key", "my-first-project-ID", test.GenDefaultCluster().Name),
+				genSSHKey(creationTime.Add(time.Minute), "abc", "second-key", "my-first-project-ID", "abcd-ID"),
+			},
+			ExistingAPIUser: test.GenAPIUser("admin", "admin@acme.com"),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -231,6 +310,27 @@ func TestCreateSSHKeysEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: test.GenAPIUser("john", "john@acme.com"),
 		},
+		// scenario 3
+		{
+			Name:             "scenario 3: the admin can create ssh key that will be assigned to any project",
+			Body:             `{"name":"my-second-ssh-key","spec":{"publicKey":"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== lukasz@loodse.com "}}`,
+			RewriteSSHKeyID:  true,
+			ExpectedResponse: `{"id":"%s","name":"my-second-ssh-key","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"fingerprint":"c0:8a:a5:c7:ab:f3:45:04:f1:85:52:84:64:85:26:7d","publicKey":"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== lukasz@loodse.com "}}`,
+			HTTPStatus:       http.StatusCreated,
+			ExistingProject:  test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				genUser("admin", "admin@acme.com", true),
+				/*add cluster*/
+				test.GenDefaultCluster(),
+			},
+			ExistingAPIUser: test.GenAPIUser("admin", "admin@acme.com"),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -285,4 +385,10 @@ func genSSHKey(creationTime time.Time, keyID string, keyName string, projectID s
 			Clusters: clusters,
 		},
 	}
+}
+
+func genUser(name, email string, isAdmin bool) *kubermaticv1.User {
+	user := test.GenUser("", name, email)
+	user.Spec.IsAdmin = isAdmin
+	return user
 }

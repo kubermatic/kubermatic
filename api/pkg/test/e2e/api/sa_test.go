@@ -123,7 +123,7 @@ func TestTokenAccessForProject(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create project due error: %v", GetErrorResponse(err))
 			}
-			teardownNotOwnedProject := cleanUpProject(notOwnedProject.ID, 1)
+			teardownNotOwnedProject := cleanUpProject(notOwnedProject.ID, 3)
 			defer teardownNotOwnedProject(t)
 
 			_, err = apiRunnerWithSAToken.GetProject(notOwnedProject.ID, 1)
