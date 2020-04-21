@@ -39,6 +39,11 @@ const (
 	DefaultVPAAdmissionControllerDockerRepository = "gcr.io/google_containers/vpa-admission-controller"
 	DefaultNodeportProxyDockerRepository          = "quay.io/kubermatic/nodeport-proxy"
 	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy-alpine"
+
+	// DefaultNoProxy is a set of domains/networks that should never be
+	// routed through a proxy. All user-supplied values are appended to
+	// this constant.
+	DefaultNoProxy = "127.0.0.1/8,localhost,.local,.local.,kubernetes,.default,.svc"
 )
 
 var (

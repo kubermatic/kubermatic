@@ -105,6 +105,23 @@ spec:
       requests:
         cpu: 50m
         memory: 128Mi
+  # Proxy allows to configure Kubermatic to use proxies to talk to the
+  # world outside of its cluster.
+  proxy:
+    # HTTP is the full URL to the proxy to use for plaintext HTTP
+    # connections, e.g. "http://internalproxy.example.com:8080".
+    http: ""
+    # HTTPS is the full URL to the proxy to use for encrypted HTTPS
+    # connections, e.g. "http://secureinternalproxy.example.com:8080".
+    https: ""
+    # NoProxy is a comma-separated list of hostnames / network masks
+    # for which no proxy shall be used. If you make use of proxies,
+    # this list should contain all local and cluster-internal domains
+    # and networks, e.g. "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,mydomain".
+    # The operator will always prepend the following elements to this
+    # list if proxying is configured (i.e. HTTP/HTTPS are not empty):
+    # "127.0.0.1/8", "localhost", ".local", ".local.", "kubernetes", ".default", ".svc"
+    noProxy: ""
   # SeedController configures the seed-controller-manager.
   seedController:
     # BackupCleanupContainer is the container used for removing expired backups from the storage location.
