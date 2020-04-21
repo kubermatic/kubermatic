@@ -225,10 +225,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.14.9"
+          value: "v1.14.10"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -260,7 +260,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.14.8"
@@ -303,10 +303,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.15.6"
+          value: "v1.15.11"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -339,7 +339,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -376,7 +376,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -417,7 +417,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -457,7 +457,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -496,7 +496,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -533,7 +533,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -572,7 +572,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -614,7 +614,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -653,7 +653,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -691,7 +691,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.15.5"
@@ -735,10 +735,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.16.3"
+          value: "v1.16.9"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -770,10 +770,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.16.3"
+          value: "v1.16.9"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -811,10 +811,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.16.3"
+          value: "v1.16.9"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -852,10 +852,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.16.3"
+          value: "v1.16.9"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -895,10 +895,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.17.0"
+          value: "v1.17.5"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -936,7 +936,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: OPENSHIFT
           value: "true"
@@ -978,10 +978,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.15.6"
+          value: "v1.15.11"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -1019,7 +1019,7 @@ presubmits:
       preset-vault: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         imagePullPolicy: Always
         command:
         - "./api/hack/ci/ci_run_api_e2e.sh"
@@ -1056,7 +1056,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
         - name: VERSIONS_TO_TEST
           value: "v1.17.0"
