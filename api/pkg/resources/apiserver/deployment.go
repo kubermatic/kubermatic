@@ -255,7 +255,12 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	admissionPlugins.Insert(data.Cluster().Spec.AdmissionPlugins...)
 
 	flags := []string{
+		// The advertise address is used as endpoint address for the kubernetes
+		// service in the default namespace of the user cluster.
 		"--advertise-address", data.Cluster().Address.IP,
+		// The secure port is used as target port for the kubernetes service in
+		// the default namespace of the user cluster, we use the NodePort value
+		// for being able to access the apiserver from the usercluster side.
 		"--secure-port", fmt.Sprint(data.Cluster().Address.Port),
 		"--kubernetes-service-node-port", fmt.Sprint(data.Cluster().Address.Port),
 		"--etcd-servers", strings.Join(etcdEndpoints, ","),
