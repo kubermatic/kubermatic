@@ -67,3 +67,51 @@ func TestGetProjectByAdmin(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateProjectByAdmin(t *testing.T) {
+	tests := []struct {
+		name           string
+		newProjectName string
+	}{
+		{
+			name:           "admin can update other users projects",
+			newProjectName: "admin-test-project",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			masterToken, err := retrieveMasterToken()
+			if err != nil {
+				t.Fatalf("can not get master token due error: %v", err)
+			}
+
+			apiRunner := createRunner(masterToken, t)
+			project, err := apiRunner.CreateProject(rand.String(10))
+			if err != nil {
+				t.Fatalf("can not create project due error: %v", err)
+			}
+			teardown := cleanUpProject(project.ID, 1)
+			defer teardown(t)
+
+			// change for admin user
+			adminMasterToken, err := retrieveAdminMasterToken()
+			if err != nil {
+				t.Fatalf("can not get admin master token due error: %v", err)
+			}
+
+			adminAPIRunner := createRunner(adminMasterToken, t)
+			project.Name = tc.newProjectName
+			_, err = adminAPIRunner.UpdateProject(project)
+			if err != nil {
+				t.Fatalf("admin can not update other user project: %v", err)
+			}
+			updatedProject, err := adminAPIRunner.GetProject(project.ID, 1)
+			if err != nil {
+				t.Fatalf("admin can not get other user project: %v", err)
+			}
+			if updatedProject.Name != tc.newProjectName {
+				t.Fatalf("expected new name %s got %s", tc.newProjectName, updatedProject.Name)
+			}
+		})
+	}
+}
