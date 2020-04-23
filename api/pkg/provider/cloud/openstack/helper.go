@@ -448,7 +448,7 @@ func getRouterIDForSubnet(netClient *gophercloud.ServiceClient, subnetID, networ
 	}
 
 	for _, port := range ports {
-		if port.DeviceOwner == "network:router_interface" {
+		if port.DeviceOwner == "network:router_interface" || port.DeviceOwner == "network:router_interface_distributed" {
 			// Check IP for the interface & check if the IP belongs to the subnet
 			for _, ip := range port.FixedIPs {
 				if ip.SubnetID == subnetID {
