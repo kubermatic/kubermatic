@@ -640,6 +640,8 @@ const (
 	OpenShiftClusterType string = "openshift"
 	// KubernetesClusterType defines the Kubernetes cluster type
 	KubernetesClusterType string = "kubernetes"
+	// AllClusterTypes defines support for all cluster types
+	AllClusterTypes string = "all"
 )
 
 // Cluster defines the cluster resource
@@ -1592,3 +1594,13 @@ const (
 	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup
 	UserClusterRoleCleanupFinalizer = "kubermatic.io/user-cluster-role"
 )
+
+func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType {
+	if externalClusterType == KubernetesClusterType {
+		return kubermaticv1.ClusterTypeKubernetes
+	}
+	if externalClusterType == OpenShiftClusterType {
+		return kubermaticv1.ClusterTypeOpenShift
+	}
+	return kubermaticv1.ClusterTypeAll
+}
