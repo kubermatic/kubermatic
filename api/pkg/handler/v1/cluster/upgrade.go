@@ -254,10 +254,8 @@ type TypeReq struct {
 }
 
 func (r TypeReq) Validate() error {
-	for _, clusterType := range clusterTypes {
-		if clusterType == r.Type {
-			return nil
-		}
+	if clusterTypes.Has(r.Type) {
+		return nil
 	}
 	return fmt.Errorf("invalid cluster type %s", r.Type)
 }
