@@ -7,13 +7,11 @@ rules:
 - apiGroups:
   - ""
   resourceNames:
-  - kubelet-config-1.11
-  - kubelet-config-1.12
-  - kubelet-config-1.13
   - kubelet-config-1.14
   - kubelet-config-1.15
   - kubelet-config-1.16
   - kubelet-config-1.17
+  - kubelet-config-1.18
   - kube-proxy
   - kubeadm-config
   resources:

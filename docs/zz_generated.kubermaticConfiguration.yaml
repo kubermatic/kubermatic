@@ -402,7 +402,7 @@ spec:
     # Kubernetes configures the Kubernetes versions and updates.
     kubernetes:
       # Default is the default version to offer users.
-      default: 1.15.10
+      default: 1.17.5
       # Updates is a list of available and automatic upgrades.
       # All 'to' versions must be configured in the version list for this orchestrator.
       # Each update may optionally be configured to be 'automatic: true', in which case the
@@ -419,16 +419,9 @@ spec:
         # Automatic controls whether this update is executed automatically
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
-        # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.12.*".
-        from: 1.12.*
-        # From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.13.*".
-        to: 1.13.*
-      - automatic: true
-        from: <= 1.13.9, >= 1.13.0
-        to: 1.13.10
-      - from: 1.13.*
-        to: 1.14.*
-      - from: 1.14.*
+        # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
+        from: 1.14.*
+        # From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
         to: 1.14.*
       - automatic: true
         from: <= 1.14.7, >= 1.14.0
@@ -462,6 +455,8 @@ spec:
         to: 1.17.2
       - from: 1.17.*
         to: 1.18.*
+      - from: 1.18.*
+        to: 1.18.*
       # Versions lists the available versions.
       versions:
       - 1.15.5
@@ -469,14 +464,18 @@ spec:
       - 1.15.7
       - 1.15.9
       - 1.15.10
+      - 1.15.11
       - 1.16.2
       - 1.16.3
       - 1.16.4
       - 1.16.6
       - 1.16.7
+      - 1.16.9
       - 1.17.0
       - 1.17.2
       - 1.17.3
+      - 1.17.5
+      - 1.18.2
     # Openshift configures the Openshift versions and updates.
     openshift:
       # Default is the default version to offer users.
@@ -497,9 +496,9 @@ spec:
         # Automatic controls whether this update is executed automatically
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
-        # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.12.*".
+        # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
         from: 4.1.*
-        # From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.13.*".
+        # From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
         to: 4.1.*
       - from: 4.1.*
         to: 2.2.*
