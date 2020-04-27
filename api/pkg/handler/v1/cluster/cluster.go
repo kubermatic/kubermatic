@@ -36,6 +36,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog"
@@ -54,17 +55,18 @@ const (
 )
 
 // clusterTypes holds a list of supported cluster types
-var clusterTypes = []string{
-	apiv1.OpenShiftClusterType,
-	apiv1.KubernetesClusterType,
-}
+var clusterTypes = sets.NewString(apiv1.OpenShiftClusterType, apiv1.KubernetesClusterType)
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter,
 	initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager provider.PresetProvider,
-	exposeStrategy corev1.ServiceType, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	exposeStrategy corev1.ServiceType, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
-		err := req.Validate()
+		globalSettings, err := settingsProvider.GetGlobalSettings()
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		err = req.Validate(globalSettings.Spec.ClusterTypeOptions)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -1043,17 +1045,20 @@ type CreateReq struct {
 }
 
 // Validate validates DeleteEndpoint request
-func (r CreateReq) Validate() error {
+func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType) error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the service account ID and datacenter cannot be empty")
 	}
 
-	for _, clusterType := range clusterTypes {
-		if clusterType == r.Body.Cluster.Type {
-			return nil
-		}
+	if !clusterTypes.Has(r.Body.Cluster.Type) {
+		return fmt.Errorf("invalid cluster type %s", r.Body.Cluster.Type)
 	}
-	return fmt.Errorf("invalid cluster type %s", r.Body.Cluster.Type)
+
+	if clusterType != kubermaticv1.ClusterTypeAll && clusterType != apiv1.ToInternalClusterType(r.Body.Cluster.Type) {
+		return fmt.Errorf("disabled cluster type %s", r.Body.Cluster.Type)
+	}
+
+	return nil
 }
 
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {

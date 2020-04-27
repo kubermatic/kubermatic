@@ -814,7 +814,7 @@ func convertGlobalSettings(gSettings *models.GlobalSettings) *apiv1.GlobalSettin
 			Enforced: gSettings.CleanupOptions.Enforced,
 		},
 		DefaultNodeCount:      gSettings.DefaultNodeCount,
-		ClusterTypeOptions:    gSettings.ClusterTypeOptions,
+		ClusterTypeOptions:    kubermaticv1.ClusterType(gSettings.ClusterTypeOptions),
 		DisplayDemoInfo:       gSettings.DisplayDemoInfo,
 		DisplayAPIDocs:        gSettings.DisplayAPIDocs,
 		DisplayTermsOfService: gSettings.DisplayTermsOfService,
