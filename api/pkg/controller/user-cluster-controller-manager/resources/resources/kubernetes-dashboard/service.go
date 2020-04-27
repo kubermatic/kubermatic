@@ -56,7 +56,7 @@ func getMetricsScraperServiceIP(clusterCIDRBlocks []string) (string, error) {
 
 	ip[len(ip)-1] = ip[len(ip)-1] + byte((rand.Intn(200) + 20))
 	if !ipnet.Contains(ip) { // highly unlikely, but checking anyway.
-		return "", fmt.Errorf("failed to get a valid service IP, retrying..")
+		return "", fmt.Errorf("failed to get a valid service IP")
 	}
 
 	return ip.String(), nil

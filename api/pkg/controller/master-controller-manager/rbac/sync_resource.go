@@ -40,11 +40,19 @@ func (c *resourcesController) syncProjectResource(item *resourceToProcess) error
 		return fmt.Errorf("unable to find owing project for the object name = %s, gvr = %s", item.metaObject.GetName(), item.gvr.String())
 	}
 
+	kubeClient := item.clusterProvider.kubeClient
+	rbacClusterRoleLister := item.clusterProvider.kubeInformerProvider.
+		KubeInformerFactoryFor(metav1.NamespaceAll).
+		Rbac().V1().ClusterRoles().Lister()
+	rbacClusterRoleBindingLister := item.clusterProvider.kubeInformerProvider.
+		KubeInformerFactoryFor(metav1.NamespaceAll).
+		Rbac().V1().ClusterRoleBindings().Lister()
+
 	if len(item.metaObject.GetNamespace()) == 0 {
-		if err := ensureClusterRBACRoleForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
+		if err := ensureClusterRBACRoleForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, kubeClient, rbacClusterRoleLister); err != nil {
 			return fmt.Errorf("failed to sync RBAC ClusterRole for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
 		}
-		if err := ensureClusterRBACRoleBindingForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
+		if err := ensureClusterRBACRoleBindingForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, kubeClient, rbacClusterRoleBindingLister); err != nil {
 			return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
 		}
 		if item.kind == kubermaticv1.ClusterKindName {
@@ -53,6 +61,12 @@ func (c *resourcesController) syncProjectResource(item *resourceToProcess) error
 			}
 			if err := c.ensureRBACRoleBindingForClusterAddons(projectName, item.metaObject, item.clusterProvider); err != nil {
 				return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
+			}
+			if err := ensureClusterRBACRoleForUserControllerWatcher(projectName, item.metaObject, kubeClient, rbacClusterRoleLister); err != nil {
+				return err
+			}
+			if err := ensureClusterRBACRoleBindingForUserControllerWatcher(projectName, item.metaObject, kubeClient, rbacClusterRoleBindingLister); err != nil {
+				return err
 			}
 		}
 
@@ -64,7 +78,7 @@ func (c *resourcesController) syncProjectResource(item *resourceToProcess) error
 		item.kind,
 		item.metaObject.GetNamespace(),
 		item.metaObject,
-		item.clusterProvider.kubeClient,
+		kubeClient,
 		item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(item.metaObject.GetNamespace()).Rbac().V1().Roles().Lister().Roles(item.metaObject.GetNamespace()))
 	if err != nil {
 		return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
@@ -75,7 +89,7 @@ func (c *resourcesController) syncProjectResource(item *resourceToProcess) error
 		item.kind,
 		item.metaObject.GetNamespace(),
 		item.metaObject,
-		item.clusterProvider.kubeClient,
+		kubeClient,
 		item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(item.metaObject.GetNamespace()).Rbac().V1().RoleBindings().Lister().RoleBindings(item.metaObject.GetNamespace()))
 	if err != nil {
 		return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
@@ -435,4 +449,86 @@ func shouldSkipRBACRoleForClusterNamespaceResource(projectName string, cluster *
 		return true, nil, nil
 	}
 	return false, generatedRole, nil
+}
+
+// ensureClusterRBACRoleForUserControllerWatcher ensures the ClusterRole required to allow the UserContollerManager watch access to Clusters on the Seed
+func ensureClusterRBACRoleForUserControllerWatcher(projectName string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleLister rbaclister.ClusterRoleLister) error {
+	cluster, ok := object.(*kubermaticv1.Cluster)
+	if !ok {
+		return fmt.Errorf("ensureClusterRBACRoleForUserControllerWatcher called with non-cluster: %+v", object)
+	}
+	generatedRole, err := generateClusterRBACRoleForResourceWithName(GenerateActualGroupNameFor(projectName, WatcherGroupNamePrefix),
+		kubermaticv1.ClusterResourceName,
+		kubermaticv1.GroupName,
+		kubermaticv1.ClusterKindName,
+		cluster.Name,
+		metav1.OwnerReference{
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			Kind:       kubermaticv1.ClusterKindName,
+			UID:        object.GetUID(),
+			Name:       object.GetName(),
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to generate ClusterRole for UserContollerWatcher: %v", err)
+	}
+
+	existingRole, err := rbacClusterRoleLister.Get(generatedRole.Name)
+	if err != nil {
+		if !kerrors.IsNotFound(err) {
+			return err
+		}
+	}
+	if existingRole != nil {
+		if equality.Semantic.DeepEqual(existingRole.Rules, generatedRole.Rules) {
+			return nil
+		}
+		updatedRole := existingRole.DeepCopy()
+		updatedRole.Rules = generatedRole.Rules
+		_, err = kubeClient.RbacV1().ClusterRoles().Update(existingRole)
+		return err
+	}
+
+	_, err = kubeClient.RbacV1().ClusterRoles().Create(generatedRole)
+	return err
+}
+
+// ensureClusterRBACRoleBindingForUserControllerWatcher ensures the ClusterRoleBinding required to allow the UserContollerManager watch access to Clusters on the Seed
+func ensureClusterRBACRoleBindingForUserControllerWatcher(projectName string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleBindingLister rbaclister.ClusterRoleBindingLister) error {
+	cluster, ok := object.(*kubermaticv1.Cluster)
+	if !ok {
+		return fmt.Errorf("ensureClusterRBACRoleBindingForUserControllerWatcher called with non-cluster: %+v", object)
+	}
+	generatedRoleBinding := generateClusterRBACRoleBindingForResourceWithServiceAccount(
+		cluster.Name,
+		kubermaticv1.ClusterKindName,
+		GenerateActualGroupNameFor(projectName, WatcherGroupNamePrefix),
+		userControllerServiceAccountName,
+		cluster.Status.NamespaceName,
+		metav1.OwnerReference{
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			Kind:       kubermaticv1.ClusterKindName,
+			UID:        object.GetUID(),
+			Name:       object.GetName(),
+		},
+	)
+
+	existingRoleBinding, err := rbacClusterRoleBindingLister.Get(generatedRoleBinding.Name)
+	if err != nil {
+		if !kerrors.IsNotFound(err) {
+			return err
+		}
+	}
+	if existingRoleBinding != nil {
+		if equality.Semantic.DeepEqual(existingRoleBinding.Subjects, generatedRoleBinding.Subjects) {
+			return nil
+		}
+		updatedRoleBinding := existingRoleBinding.DeepCopy()
+		updatedRoleBinding.Subjects = generatedRoleBinding.Subjects
+		_, err = kubeClient.RbacV1().ClusterRoleBindings().Update(updatedRoleBinding)
+		return err
+	}
+
+	_, err = kubeClient.RbacV1().ClusterRoleBindings().Create(generatedRoleBinding)
+	return err
 }

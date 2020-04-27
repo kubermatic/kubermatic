@@ -20,12 +20,16 @@ const (
 	// ViewerGroupNamePrefix represents viewers group prefix
 	ViewerGroupNamePrefix = "viewers"
 
+	// WatcherGroupNamePrefix represents watchers group prefix, this doesn't need to be added to AllGroupsPrefixes
+	WatcherGroupNamePrefix = "watchers"
+
 	// RBACResourcesNamePrefix represents kubermatic group prefix
 	RBACResourcesNamePrefix = "kubermatic"
 )
 
 const (
-	saSecretsNamespaceName = "kubermatic"
+	saSecretsNamespaceName           = "kubermatic"
+	userControllerServiceAccountName = "kubermatic-usercluster-controller-manager"
 )
 
 // AllGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for.
@@ -101,7 +105,7 @@ func generateClusterRBACRoleNamedResource(kind, groupName, policyResource, polic
 	return role, nil
 }
 
-// generateClusterRBACRoleBindingNamedResource generates ClusterRoleBiding for the given group
+// generateClusterRBACRoleBindingNamedResource generates ClusterRoleBinding for the given group
 // that will be bound to the corresponding ClusterRole
 func generateClusterRBACRoleBindingNamedResource(kind, resourceName, groupName string, oRef metav1.OwnerReference) *rbacv1.ClusterRoleBinding {
 	binding := &rbacv1.ClusterRoleBinding{
@@ -150,6 +154,31 @@ func generateClusterRBACRoleForResource(groupName, policyResource, policyAPIGrou
 	return role, nil
 }
 
+// generateClusterRBACRoleForResourceWithName a ClusterRole for the policyResource type, but Doesn't specify resourceNames in the rules list
+func generateClusterRBACRoleForResourceWithName(groupName, policyResource, policyAPIGroups, kind, resourceName string, oRef metav1.OwnerReference) (*rbacv1.ClusterRole, error) {
+	verbs, err := generateVerbsForResource(groupName, kind)
+	if err != nil {
+		return nil, err
+	}
+	if len(verbs) == 0 {
+		return nil, nil
+	}
+	role := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            generateRBACRoleNameForNamedResource(kind, resourceName, groupName),
+			OwnerReferences: []metav1.OwnerReference{oRef},
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{policyAPIGroups},
+				Resources: []string{policyResource},
+				Verbs:     verbs,
+			},
+		},
+	}
+	return role, nil
+}
+
 func generateClusterRBACRoleBindingForResource(resourceName, groupName string) *rbacv1.ClusterRoleBinding {
 	binding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -166,6 +195,30 @@ func generateClusterRBACRoleBindingForResource(resourceName, groupName string) *
 			APIGroup: rbacv1.GroupName,
 			Kind:     "ClusterRole",
 			Name:     generateRBACRoleNameForResources(resourceName, groupName),
+		},
+	}
+	return binding
+}
+
+// generateClusterRBACRoleBindingForResourceWithServiceAccount creates a ClusterRoleBinding with a ServiceAccount as a subject, instead of a group
+func generateClusterRBACRoleBindingForResourceWithServiceAccount(resourceName, kind, groupName, sa, namespace string, oRef metav1.OwnerReference) *rbacv1.ClusterRoleBinding {
+	binding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            generateRBACRoleNameForNamedResource(kind, resourceName, groupName),
+			OwnerReferences: []metav1.OwnerReference{oRef},
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup:  "",
+				Kind:      rbacv1.ServiceAccountKind,
+				Name:      sa,
+				Namespace: namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "ClusterRole",
+			Name:     generateRBACRoleNameForNamedResource(kind, resourceName, groupName),
 		},
 	}
 	return binding
@@ -413,6 +466,9 @@ func generateVerbsForResource(groupName, resourceKind string) ([]string, error) 
 		return nil, nil
 	}
 
+	if strings.HasPrefix(groupName, WatcherGroupNamePrefix) {
+		return []string{"get", "list", "watch"}, nil
+	}
 	// unknown group passed
 	return nil, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
 }
