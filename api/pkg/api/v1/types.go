@@ -640,8 +640,6 @@ const (
 	OpenShiftClusterType string = "openshift"
 	// KubernetesClusterType defines the Kubernetes cluster type
 	KubernetesClusterType string = "kubernetes"
-	// AllClusterTypes defines support for all cluster types
-	AllClusterTypes string = "all"
 )
 
 // Cluster defines the cluster resource
