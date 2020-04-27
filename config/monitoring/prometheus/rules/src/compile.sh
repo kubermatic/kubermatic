@@ -15,5 +15,5 @@ comment="# This file has been generated, do not edit."
 for file in */*.yaml; do
   newfile=$(dirname $file)-$(basename $file)
   echo "$file => $newfile"
-  yq r $file -j | jq 'del(.groups[].rules[].runbook)' | (echo "$comment"; yq r -) > ../$newfile
+  yq r $file --tojson | jq 'del(.groups[].rules[].runbook)' | (echo "$comment"; yq r --prettyPrint -) > ../$newfile
 done
