@@ -1013,14 +1013,14 @@ func (r *testRunner) getGinkgoRuns(
 			ginkgoFocus:   `\[Conformance\]`,
 			ginkgoSkip:    ginkgoSkipParallel,
 			parallelTests: int(nodeNumberTotal) * 10,
-			timeout:       15 * time.Minute,
+			timeout:       30 * time.Minute,
 		},
 		{
 			name:          "serial",
 			ginkgoFocus:   `\[Serial\].*\[Conformance\]`,
 			ginkgoSkip:    `should not cause race condition when used for configmap`,
 			parallelTests: 1,
-			timeout:       10 * time.Minute,
+			timeout:       30 * time.Minute,
 		},
 	}
 	versionRoot := path.Join(repoRoot, MajorMinor)
@@ -1142,6 +1142,11 @@ func executeGinkgoRun(parentLog *zap.SugaredLogger, run *ginkgoRun, client ctrlr
 	cmd.Stdout = writer
 	cmd.Stderr = writer
 	if err := cmd.Run(); err != nil {
+		// did the context's timeout kick in?
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, ctxErr
+		}
+
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			log.Debugf("Ginkgo exited with a non 0 return code: %v", exitErr)
 		} else {
