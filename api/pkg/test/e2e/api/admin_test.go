@@ -115,3 +115,94 @@ func TestUpdateProjectByAdmin(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteProjectByAdmin(t *testing.T) {
+	tests := []struct {
+		name string
+	}{
+		{
+			name: "admin can delete other users projects",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			masterToken, err := retrieveMasterToken()
+			if err != nil {
+				t.Fatalf("can not get master token due error: %v", err)
+			}
+
+			apiRunner := createRunner(masterToken, t)
+			project, err := apiRunner.CreateProject(rand.String(10))
+			if err != nil {
+				t.Fatalf("can not create project due error: %v", err)
+			}
+
+			// change for admin user
+			adminMasterToken, err := retrieveAdminMasterToken()
+			if err != nil {
+				t.Fatalf("can not get admin master token due error: %v", err)
+			}
+
+			adminAPIRunner := createRunner(adminMasterToken, t)
+			err = adminAPIRunner.DeleteProject(project.ID)
+			if err != nil {
+				t.Fatalf("admin can not delete other user project: %v", err)
+			}
+		})
+	}
+}
+
+func TestCreateAndDeleteServiceAccountByAdmin(t *testing.T) {
+	tests := []struct {
+		name  string
+		group string
+	}{
+		{
+			name:  "admin can create SA for other users projects",
+			group: "editors",
+		},
+		{
+			name:  "admin can create SA for other users projects",
+			group: "viewers",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			masterToken, err := retrieveMasterToken()
+			if err != nil {
+				t.Fatalf("can not get master token due error: %v", err)
+			}
+
+			apiRunner := createRunner(masterToken, t)
+			project, err := apiRunner.CreateProject(rand.String(10))
+			if err != nil {
+				t.Fatalf("can not create project due error: %v", err)
+			}
+			teardown := cleanUpProject(project.ID, 1)
+			defer teardown(t)
+
+			// change for admin user
+			adminMasterToken, err := retrieveAdminMasterToken()
+			if err != nil {
+				t.Fatalf("can not get admin master token due error: %v", err)
+			}
+
+			adminAPIRunner := createRunner(adminMasterToken, t)
+			sa, err := adminAPIRunner.CreateServiceAccount(rand.String(10), tc.group, project.ID)
+			if err != nil {
+				t.Fatalf("can not create service account due error: %v", err)
+			}
+			saToken, err := apiRunner.AddTokenToServiceAccount(rand.String(10), sa.ID, project.ID)
+			if err != nil {
+				t.Fatalf("can not create token due error: %v", err)
+			}
+
+			if err := adminAPIRunner.DeleteTokenForServiceAccount(saToken.ID, sa.ID, project.ID); err != nil {
+				t.Fatalf("can not delete token due error: %v", err)
+			}
+			if err := adminAPIRunner.DeleteServiceAccount(sa.ID, project.ID); err != nil {
+				t.Fatalf("can not delete service account due error: %v", err)
+			}
+		})
+	}
+}
