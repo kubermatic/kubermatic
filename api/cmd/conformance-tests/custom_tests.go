@@ -112,7 +112,7 @@ func (r *testRunner) testPVC(log *zap.SugaredLogger, userClusterClient ctrlrunti
 		currentSet := &appsv1.StatefulSet{}
 		name := types.NamespacedName{Namespace: ns.Name, Name: set.Name}
 		if err := userClusterClient.Get(context.Background(), name, currentSet); err != nil {
-			log.Warnf("failed to load StatefulSet %s/%s from API server during PVC test: %v", ns.Name, set.Name, err)
+			log.Warnf("Failed to load StatefulSet %s/%s from API server during PVC test: %v", ns.Name, set.Name, err)
 			return false, nil
 		}
 
@@ -195,7 +195,7 @@ func (r *testRunner) testLB(log *zap.SugaredLogger, userClusterClient ctrlruntim
 	err := wait.Poll(10*time.Second, defaultTimeout, func() (done bool, err error) {
 		currentService := &corev1.Service{}
 		if err := userClusterClient.Get(context.Background(), types.NamespacedName{Namespace: ns.Name, Name: service.Name}, currentService); err != nil {
-			log.Warnf("failed to load Service %s/%s from API server during LB test: %v", ns.Name, service.Name, err)
+			log.Warnf("Failed to load Service %s/%s from API server during LB test: %v", ns.Name, service.Name, err)
 			return false, nil
 		}
 		if len(currentService.Status.LoadBalancer.Ingress) > 0 {
@@ -224,7 +224,7 @@ func (r *testRunner) testLB(log *zap.SugaredLogger, userClusterClient ctrlruntim
 	err = wait.Poll(30*time.Second, defaultTimeout, func() (done bool, err error) {
 		resp, err := http.Get(hostURL)
 		if err != nil {
-			log.Warnf("Failed to call Pod via LB(%s) during LB test: %v", hostURL, err)
+			log.Warnf("Failed to call Pod via LB (%s) during LB test: %v", hostURL, err)
 			return false, nil
 		}
 		defer func() {
