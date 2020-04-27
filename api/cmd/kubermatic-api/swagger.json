@@ -8579,6 +8579,11 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
+    "ClusterType": {
+      "type": "integer",
+      "format": "int8",
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+    },
     "Config": {
       "description": "Config holds the information needed to build connect to remote kubernetes clusters as a given user\n+k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object",
       "type": "object",
@@ -11779,9 +11784,7 @@
           "$ref": "#/definitions/CleanupOptions"
         },
         "clusterTypeOptions": {
-          "type": "integer",
-          "format": "int8",
-          "x-go-name": "ClusterTypeOptions"
+          "$ref": "#/definitions/ClusterType"
         },
         "customLinks": {
           "$ref": "#/definitions/CustomLinks"

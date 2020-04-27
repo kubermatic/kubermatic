@@ -16,9 +16,6 @@ import (
 // swagger:model SettingSpec
 type SettingSpec struct {
 
-	// cluster type options
-	ClusterTypeOptions int8 `json:"clusterTypeOptions,omitempty"`
-
 	// default node count
 	DefaultNodeCount int8 `json:"defaultNodeCount,omitempty"`
 
@@ -40,6 +37,9 @@ type SettingSpec struct {
 	// cleanup options
 	CleanupOptions *CleanupOptions `json:"cleanupOptions,omitempty"`
 
+	// cluster type options
+	ClusterTypeOptions ClusterType `json:"clusterTypeOptions,omitempty"`
+
 	// custom links
 	CustomLinks CustomLinks `json:"customLinks,omitempty"`
 }
@@ -49,6 +49,10 @@ func (m *SettingSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCleanupOptions(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateClusterTypeOptions(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -75,6 +79,22 @@ func (m *SettingSpec) validateCleanupOptions(formats strfmt.Registry) error {
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *SettingSpec) validateClusterTypeOptions(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ClusterTypeOptions) { // not required
+		return nil
+	}
+
+	if err := m.ClusterTypeOptions.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("clusterTypeOptions")
+		}
+		return err
 	}
 
 	return nil
