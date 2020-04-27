@@ -89,7 +89,7 @@ const (
 	EtcdStatefulSetName = "etcd"
 
 	//ApiserverServiceName is the name for the apiserver service
-	ApiserverServiceName = "apiserver"
+	ApiserverServiceName = "apiserver-external"
 	// FrontLoadBalancerServiceName is the name of the LoadBalancer service that fronts everything
 	// when using exposeStrategy "LoadBalancer"
 	FrontLoadBalancerServiceName = "front-loadbalancer"

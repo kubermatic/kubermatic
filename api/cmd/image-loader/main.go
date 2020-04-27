@@ -256,7 +256,7 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 	configMapList := &corev1.ConfigMapList{
 		Items: []corev1.ConfigMap{cloudConfigConfigMap, prometheusConfigMap, dnsResolverConfigMap, openvpnClientConfigsConfigMap, auditConfigMap},
 	}
-	apiServerExternalService := corev1.Service{
+	apiServerService := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.ApiserverServiceName,
 			Namespace: mockNamespaceName,
@@ -288,7 +288,7 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 	}
 	serviceList := &corev1.ServiceList{
 		Items: []corev1.Service{
-			apiServerExternalService,
+			apiServerService,
 			openvpnserverService,
 			dnsService,
 		},
