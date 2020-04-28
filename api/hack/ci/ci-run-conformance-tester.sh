@@ -93,4 +93,5 @@ timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   ${OPENSHIFT_ARG:-} \
   -kubermatic-delete-cluster=${kubermatic_delete_cluster} \
-  -print-ginkgo-logs=true
+  -print-ginkgo-logs=true \
+  -pushgateway-endpoint="pushgateway.monitoring.svc.cluster.local.:9091"

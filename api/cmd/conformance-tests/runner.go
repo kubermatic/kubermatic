@@ -13,11 +13,13 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-openapi/runtime"
 	"github.com/onsi/ginkgo/reporters"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -158,22 +160,27 @@ func (t *testResult) Passed() bool {
 
 func (r *testRunner) worker(scenarios <-chan testScenario, results chan<- testResult) {
 	for s := range scenarios {
+		var report *reporters.JUnitTestSuite
+
 		scenarioLog := r.log.With("scenario", s.Name())
 		scenarioLog.Info("Starting to test scenario...")
 
-		report, err := r.executeScenario(scenarioLog, s)
-		res := testResult{
-			report:   report,
-			scenario: s,
-			err:      err,
-		}
+		err := measureTime(scenarioRuntimeMetric.With(prometheus.Labels{"scenario": s.Name()}), scenarioLog, func() error {
+			var err error
+			report, err = r.executeScenario(scenarioLog, s)
+			return err
+		})
 		if err != nil {
-			scenarioLog.Infow("Finished with error", zap.Error(err))
+			scenarioLog.Warnw("Finished with error", zap.Error(err))
 		} else {
 			scenarioLog.Info("Finished")
 		}
 
-		results <- res
+		results <- testResult{
+			report:   report,
+			scenario: s,
+			err:      err,
+		}
 	}
 }
 
@@ -295,20 +302,24 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for successful reconciliation",
 		report,
-		func() error {
-			return wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
-				if err := r.seedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-					log.Errorw("Failed to get cluster when waiting for successful reconciliation", zap.Error(err))
-					return false, nil
-				}
+		timeMeasurementWrapper(
+			kubermaticReconciliationDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
+			log,
+			func() error {
+				return wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
+					if err := r.seedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
+						log.Errorw("Failed to get cluster when waiting for successful reconciliation", zap.Error(err))
+						return false, nil
+					}
 
-				missingConditions, success := kubermaticv1helper.ClusterReconciliationSuccessful(cluster)
-				if len(missingConditions) > 0 {
-					log.Infof("Waiting for the following conditions: %v", missingConditions)
-				}
-				return success, nil
-			})
-		},
+					missingConditions, success := kubermaticv1helper.ClusterReconciliationSuccessful(cluster)
+					if len(missingConditions) > 0 {
+						log.Infof("Waiting for the following conditions: %v", missingConditions)
+					}
+					return success, nil
+				})
+			},
+		),
 	); err != nil {
 		return report, fmt.Errorf("failed to wait for successful reconciliation: %v", err)
 	}
@@ -343,10 +354,14 @@ func (r *testRunner) executeTests(
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for control plane",
 		report,
-		func() error {
-			cluster, err = r.waitForControlPlane(log, clusterName)
-			return err
-		},
+		timeMeasurementWrapper(
+			seedControlplaneDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
+			log,
+			func() error {
+				cluster, err = r.waitForControlPlane(log, clusterName)
+				return err
+			},
+		),
 	); err != nil {
 		return fmt.Errorf("failed waiting for control plane to become ready: %v", err)
 	}
@@ -433,11 +448,15 @@ func (r *testRunner) executeTests(
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for machines to get a node",
 		report,
-		func() error {
-			var err error
-			timeoutLeft, err = waitForMachinesToJoinCluster(log, userClusterClient, overallTimeout)
-			return err
-		},
+		timeMeasurementWrapper(
+			nodeCreationDuration.With(prometheus.Labels{"scenario": scenario.Name()}),
+			log,
+			func() error {
+				var err error
+				timeoutLeft, err = waitForMachinesToJoinCluster(log, userClusterClient, overallTimeout)
+				return err
+			},
+		),
 	); err != nil {
 		return fmt.Errorf("failed to wait for machines to get a node: %v", err)
 	}
@@ -445,13 +464,17 @@ func (r *testRunner) executeTests(
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for nodes to be ready",
 		report,
-		func() error {
-			// Getting ready just implies starting the CNI deamonset, so that should
-			// be quick.
-			var err error
-			timeoutLeft, err = waitForNodesToBeReady(log, userClusterClient, timeoutLeft)
-			return err
-		},
+		timeMeasurementWrapper(
+			nodeRadinessDuration.With(prometheus.Labels{"scenario": scenario.Name()}),
+			log,
+			func() error {
+				// Getting ready just implies starting the CNI deamonset, so that should
+				// be quick.
+				var err error
+				timeoutLeft, err = waitForNodesToBeReady(log, userClusterClient, timeoutLeft)
+				return err
+			},
+		),
 	); err != nil {
 		return fmt.Errorf("failed to wait for all nodes to be ready: %v", err)
 	}
@@ -459,9 +482,13 @@ func (r *testRunner) executeTests(
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for Pods inside usercluster to be ready",
 		report,
-		func() error {
-			return r.waitUntilAllPodsAreReady(log, userClusterClient, timeoutLeft)
-		},
+		timeMeasurementWrapper(
+			seedControlplaneDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
+			log,
+			func() error {
+				return r.waitUntilAllPodsAreReady(log, userClusterClient, timeoutLeft)
+			},
+		),
 	); err != nil {
 		return fmt.Errorf("failed to wait for all pods to get ready: %v", err)
 	}
@@ -486,7 +513,6 @@ func (r *testRunner) executeTests(
 }
 
 func (r *testRunner) deleteCluster(report *reporters.JUnitTestSuite, cluster *kubermaticv1.Cluster, log *zap.SugaredLogger) error {
-
 	deleteParms := &projectclient.DeleteClusterParams{
 		ProjectID: r.kubermatcProjectID,
 		DC:        r.seed.Name,
@@ -556,6 +582,35 @@ func retryNAttempts(maxAttempts int, f func(attempt int) error) error {
 	return fmt.Errorf("function did not succeed after %d attempts: %v", maxAttempts, err)
 }
 
+// measuredRetryNAttempts wraps retryNAttempts with code that counts
+// the executed number of attempts and the runtimes for each
+// attempt.
+func measuredRetryNAttempts(
+	runtimeMetric *prometheus.GaugeVec,
+	attemptsMetric prometheus.Gauge,
+	log *zap.SugaredLogger,
+	maxAttempts int,
+	f func(attempt int) error,
+) func() error {
+	return func() error {
+		attempts := 0
+
+		err := retryNAttempts(maxAttempts, func(attempt int) error {
+			attempts++
+			metric := runtimeMetric.With(prometheus.Labels{"attempt": strconv.Itoa(attempt)})
+
+			return measureTime(metric, log, func() error {
+				return f(attempt)
+			})
+		})
+
+		attemptsMetric.Set(float64(attempts))
+		updateMetrics(log)
+
+		return err
+	}
+}
+
 func (r *testRunner) testCluster(
 	log *zap.SugaredLogger,
 	scenario testScenario,
@@ -583,7 +638,7 @@ func (r *testRunner) testCluster(
 			fmt.Sprintf("[Ginkgo] Run ginkgo tests %q", run.name),
 			report,
 			func() error {
-				ginkgoRes, err := r.executeGinkgoRunWithRetries(log, run, userClusterClient)
+				ginkgoRes, err := r.executeGinkgoRunWithRetries(log, scenario, run, userClusterClient)
 				if ginkgoRes != nil {
 					// We append the report from Ginkgo to our scenario wide report
 					appendReport(report, ginkgoRes.report)
@@ -597,15 +652,24 @@ func (r *testRunner) testCluster(
 		}
 	}
 
+	defaultLabels := prometheus.Labels{
+		"scenario": scenario.Name(),
+	}
+
 	// Do a simple PVC test - with retries
 	if supportsStorage(cluster) {
 		if err := junitReporterWrapper(
 			"[Kubermatic] [CloudProvider] Test PersistentVolumes",
 			report,
-			func() error {
-				return retryNAttempts(maxTestAttempts,
-					func(attempt int) error { return r.testPVC(log, userClusterClient, attempt) })
-			},
+			measuredRetryNAttempts(
+				pvctestRuntimeMetric.MustCurryWith(defaultLabels),
+				pvctestAttemptsMetric.With(defaultLabels),
+				log,
+				maxTestAttempts,
+				func(attempt int) error {
+					return r.testPVC(log, userClusterClient, attempt)
+				},
+			),
 		); err != nil {
 			log.Errorf("Failed to verify that PVC's work: %v", err)
 		}
@@ -616,10 +680,15 @@ func (r *testRunner) testCluster(
 		if err := junitReporterWrapper(
 			"[Kubermatic] [CloudProvider] Test LoadBalancers",
 			report,
-			func() error {
-				return retryNAttempts(maxTestAttempts,
-					func(attempt int) error { return r.testLB(log, userClusterClient, attempt) })
-			},
+			measuredRetryNAttempts(
+				lbtestRuntimeMetric.MustCurryWith(defaultLabels),
+				lbtestAttemptsMetric.With(defaultLabels),
+				log,
+				maxTestAttempts,
+				func(attempt int) error {
+					return r.testLB(log, userClusterClient, attempt)
+				},
+			),
 		); err != nil {
 			log.Errorf("Failed to verify that LB's work: %v", err)
 		}
@@ -653,11 +722,30 @@ func (r *testRunner) testCluster(
 // executeGinkgoRunWithRetries executes the passed GinkgoRun and retries if it failed hard(Failed to execute the Ginkgo binary for example)
 // Or if the JUnit report from Ginkgo contains failed tests.
 // Only if Ginkgo failed hard, an error will be returned. If some tests still failed after retrying the run, the report will reflect that.
-func (r *testRunner) executeGinkgoRunWithRetries(log *zap.SugaredLogger, run *ginkgoRun, client ctrlruntimeclient.Client) (ginkgoRes *ginkgoResult, err error) {
+func (r *testRunner) executeGinkgoRunWithRetries(log *zap.SugaredLogger, scenario testScenario, run *ginkgoRun, client ctrlruntimeclient.Client) (ginkgoRes *ginkgoResult, err error) {
 	const maxAttempts = 3
 
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
+	attempts := 1
+	defer func() {
+		ginkgoAttemptsMetric.With(prometheus.Labels{
+			"scenario": scenario.Name(),
+			"run":      run.name,
+		}).Set(float64(attempts))
+		updateMetrics(log)
+	}()
+
+	for attempts = 1; attempts <= maxAttempts; attempts++ {
 		ginkgoRes, err = executeGinkgoRun(log, run, client)
+
+		if ginkgoRes != nil {
+			ginkgoRuntimeMetric.With(prometheus.Labels{
+				"scenario": scenario.Name(),
+				"run":      run.name,
+				"attempt":  strconv.Itoa(attempts),
+			}).Set(ginkgoRes.duration.Seconds())
+			updateMetrics(log)
+		}
+
 		if err != nil {
 			// Something critical happened and we don't have a valid result
 			log.Errorf("Failed to execute the Ginkgo run '%s': %v", run.name, err)
@@ -666,7 +754,7 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *zap.SugaredLogger, run *gi
 
 		if ginkgoRes.report.Errors > 0 || ginkgoRes.report.Failures > 0 {
 			msg := fmt.Sprintf("Ginkgo run '%s' had failed tests.", run.name)
-			if attempt < maxAttempts {
+			if attempts < maxAttempts {
 				msg = fmt.Sprintf("%s. Retrying...", msg)
 			}
 			log.Info(msg)
@@ -1083,7 +1171,6 @@ func (r *testRunner) getGinkgoRuns(
 }
 
 func executeGinkgoRun(parentLog *zap.SugaredLogger, run *ginkgoRun, client ctrlruntimeclient.Client) (*ginkgoResult, error) {
-	started := time.Now()
 	log := parentLog.With("reports-dir", run.reportsDir)
 
 	if err := deleteAllNonDefaultNamespaces(log, client); err != nil {
@@ -1109,6 +1196,7 @@ func executeGinkgoRun(parentLog *zap.SugaredLogger, run *ginkgoRun, client ctrlr
 	writer := bufio.NewWriter(file)
 	defer writer.Flush()
 
+	started := time.Now()
 	ctx, cancel := context.WithTimeout(context.Background(), run.timeout)
 	defer cancel()
 
