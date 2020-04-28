@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
@@ -63,7 +62,10 @@ func appendReport(report, toAppend *reporters.JUnitTestSuite) {
 }
 
 func printDetailedReport(report *reporters.JUnitTestSuite) {
-	testBuf := &bytes.Buffer{}
+	const separator = "============================================================="
+
+	fmt.Println(separator)
+	fmt.Printf("Test results for: %s\n", report.Name)
 
 	// Only print details errors in case we have a testcase which failed.
 	// Printing everything which has an error will print the errors from retried tests as for each attempt a TestCase entry exists.
@@ -73,22 +75,13 @@ func printDetailedReport(report *reporters.JUnitTestSuite) {
 				continue
 			}
 
-			fmt.Fprintln(testBuf, fmt.Sprintf("[FAIL] - %s", t.Name))
-			fmt.Fprintln(testBuf, fmt.Sprintf("      %s", t.FailureMessage.Message))
+			fmt.Printf("[FAIL] - %s\n", t.Name)
+			fmt.Printf("      %s\n", t.FailureMessage.Message)
 		}
 	}
 
-	buf := &bytes.Buffer{}
-	const separator = "============================================================="
-	fmt.Fprintln(buf, separator)
-	fmt.Fprintln(buf, fmt.Sprintf("Test results for: %s", report.Name))
-
-	fmt.Fprint(buf, testBuf.String())
-
-	fmt.Fprintln(buf, "----------------------------")
-	fmt.Fprintln(buf, fmt.Sprintf("Passed: %d", report.Tests-report.Failures))
-	fmt.Fprintln(buf, fmt.Sprintf("Failed: %d", report.Failures))
-	fmt.Fprintln(buf, separator)
-
-	fmt.Println(buf.String())
+	fmt.Println("----------------------------")
+	fmt.Printf("Passed: %d\n", report.Tests-report.Failures)
+	fmt.Printf("Failed: %d\n", report.Failures)
+	fmt.Println(separator)
 }
