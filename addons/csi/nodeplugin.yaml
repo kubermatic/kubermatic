@@ -8,6 +8,9 @@
 {{ if eq .Cluster.MajorMinorVersion "1.17" }}
 {{ $version = "v1.17.0 "}}
 {{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.18" }}
+{{ $version = "v1.18.0 "}}
+{{ end }}
 
 kind: DaemonSet
 apiVersion: apps/v1

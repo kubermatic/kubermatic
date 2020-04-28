@@ -305,16 +305,6 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
 	}
 
-	var featureGates []string
-
-	if data.Cluster().Spec.Version.Semver().Minor() == 10 {
-		featureGates = append(featureGates, "CustomResourceSubresources=true")
-	}
-	if len(featureGates) > 0 {
-		flags = append(flags, "--feature-gates")
-		flags = append(flags, strings.Join(featureGates, ","))
-	}
-
 	cloudProviderName := data.GetKubernetesCloudProviderName()
 	if cloudProviderName != "" && cloudProviderName != "external" {
 		flags = append(flags, "--cloud-provider", cloudProviderName)

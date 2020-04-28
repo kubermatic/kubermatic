@@ -1,15 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -25,8 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/tools/portforward"
-	"k8s.io/client-go/transport/spdy"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -117,7 +112,7 @@ func (r *testRunner) testPVC(log *zap.SugaredLogger, userClusterClient ctrlrunti
 		currentSet := &appsv1.StatefulSet{}
 		name := types.NamespacedName{Namespace: ns.Name, Name: set.Name}
 		if err := userClusterClient.Get(context.Background(), name, currentSet); err != nil {
-			log.Warnf("failed to load StatefulSet %s/%s from API server during PVC test: %v", ns.Name, set.Name, err)
+			log.Warnf("Failed to load StatefulSet %s/%s from API server during PVC test: %v", ns.Name, set.Name, err)
 			return false, nil
 		}
 
@@ -200,7 +195,7 @@ func (r *testRunner) testLB(log *zap.SugaredLogger, userClusterClient ctrlruntim
 	err := wait.Poll(10*time.Second, defaultTimeout, func() (done bool, err error) {
 		currentService := &corev1.Service{}
 		if err := userClusterClient.Get(context.Background(), types.NamespacedName{Namespace: ns.Name, Name: service.Name}, currentService); err != nil {
-			log.Warnf("failed to load Service %s/%s from API server during LB test: %v", ns.Name, service.Name, err)
+			log.Warnf("Failed to load Service %s/%s from API server during LB test: %v", ns.Name, service.Name, err)
 			return false, nil
 		}
 		if len(currentService.Status.LoadBalancer.Ingress) > 0 {
@@ -229,7 +224,7 @@ func (r *testRunner) testLB(log *zap.SugaredLogger, userClusterClient ctrlruntim
 	err = wait.Poll(30*time.Second, defaultTimeout, func() (done bool, err error) {
 		resp, err := http.Get(hostURL)
 		if err != nil {
-			log.Warnf("Failed to call Pod via LB(%s) during LB test: %v", hostURL, err)
+			log.Warnf("Failed to call Pod via LB (%s) during LB test: %v", hostURL, err)
 			return false, nil
 		}
 		defer func() {
@@ -261,113 +256,63 @@ type metricsData struct {
 	Data   []string `json:"data"`
 }
 
+// testUserClusterMetrics ensures all expected metrics are actually collected
+// in Prometheus. Note that this assumes that some time has passed between
+// Prometheus' eployment and this test, so it can scrape all targets. This
+// includes kubelets, so nodes must have been ready for at least 30 seconds
+// before this can succeed.
 func (r *testRunner) testUserClusterMetrics(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, seedClient ctrlruntimeclient.Client) error {
 	log.Info("Testing user cluster metrics availability...")
 
-	namespacedPod := types.NamespacedName{
-		Namespace: cluster.Status.NamespaceName,
-		Name:      "prometheus-0",
+	res := r.seedGeneratedClient.CoreV1().RESTClient().Get().
+		Namespace(cluster.Status.NamespaceName).
+		Resource("pods").
+		Name("prometheus-0:9090").
+		SubResource("proxy").
+		Suffix("api/v1/label/__name__/values").
+		Do()
+
+	if err := res.Error(); err != nil {
+		return fmt.Errorf("request to Prometheus failed: %v", err)
 	}
 
-	prometheusPod := &corev1.Pod{}
-	if err := seedClient.Get(context.Background(), namespacedPod, prometheusPod); err != nil {
-		return fmt.Errorf("failed to get prometheus pod: %v", err)
+	code := 0
+	res.StatusCode(&code)
+	if code != http.StatusOK {
+		return fmt.Errorf("Prometheus returned HTTP %d", code)
 	}
 
-	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", cluster.Status.NamespaceName, prometheusPod.Name)
-	hostIP := strings.TrimLeft(r.seedRestConfig.Host, "htps:/")
-	podURL := url.URL{Scheme: "https", Path: path, Host: hostIP}
-
-	roundTripper, upgrader, err := spdy.RoundTripperFor(r.seedRestConfig)
+	body, err := res.Raw()
 	if err != nil {
-		return fmt.Errorf("failed to create a roundTripper: %v", err)
+		return fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, &podURL)
-
-	stopChan, readyChan := make(chan struct{}, 1), make(chan struct{}, 1)
-	out, errOut := new(bytes.Buffer), new(bytes.Buffer)
-
-	forwarder, err := portforward.New(dialer, []string{"9090", "9090"}, stopChan, readyChan, out, errOut)
-	if err != nil {
-		return fmt.Errorf("failed creating a new port-forwarder: %v", err)
+	data := &metricsData{}
+	if err := json.Unmarshal(body, data); err != nil {
+		return fmt.Errorf("failed to unmarshal metrics response: %v", err)
 	}
 
-	go handlePortForwardChan(r.log, readyChan, out, errOut)
+	if data.Status != "success" {
+		return fmt.Errorf("failed to get prometheus metrics with data status: %s", data.Status)
+	}
 
-	go func(logger *zap.SugaredLogger) {
-		if err = forwarder.ForwardPorts(); err != nil {
-			logger.Errorf("failed port-forwarding pod: %s with error: %v", prometheusPod.Name, err)
-		}
-	}(log)
-
-	var (
-		retries    = 0
-		requestErr error
+	expected := sets.NewString(
+		"etcd_disk_backend_defrag_duration_seconds_sum",
+		"kube_daemonset_labels",
+		"kubelet_runtime_operations_duration_seconds_count",
+		"machine_controller_machines",
+		"replicaset_controller_rate_limiter_use",
+		"scheduler_e2e_scheduling_duration_seconds_count",
+		"ssh_tunnel_open_count",
+		"workqueue_retries_total",
 	)
+	fetched := sets.NewString(data.Data...)
+	missing := expected.Difference(fetched)
 
-	for {
-		if retries >= 15 {
-			return fmt.Errorf("failed to request metrics forever: %v", requestErr)
-		}
-
-		res, err := http.Get("http://localhost:9090/api/v1/label/__name__/values")
-		if err != nil {
-			requestErr = fmt.Errorf("failed to get prometheus metrics: %v", err)
-			retries++
-			time.Sleep(5 * time.Second)
-			continue
-		}
-
-		if res.StatusCode != http.StatusOK {
-			return fmt.Errorf("failed to get a proper response: response status code is %v", res.StatusCode)
-		}
-
-		data := &metricsData{}
-
-		metricsBytes, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			return fmt.Errorf("failed reading metrics response: %v", err)
-		}
-
-		if err := res.Body.Close(); err != nil {
-			return fmt.Errorf("failed closing response: %v", err)
-		}
-
-		if err := json.Unmarshal(metricsBytes, data); err != nil {
-			return fmt.Errorf("failed to unmarshal metrics response: %v", err)
-		}
-
-		if data.Status != "success" {
-			return fmt.Errorf("failed to get prometheus metrics with data status: %s", data.Status)
-		}
-
-		if len(data.Data) == 0 {
-			return errors.New("failed to get prometheus metrics: no metrics found")
-		}
-
-		fetchedMetricsSet := sets.NewString(data.Data...)
-
-		if !fetchedMetricsSet.HasAll("machine_controller_machines", "kubelet_runtime_operations_latency_microseconds_count",
-			"replicaset_controller_rate_limiter_use", "workqueue_retries_total", "ssh_tunnel_open_count", "scheduler_e2e_scheduling_duration_seconds_count",
-			"kube_daemonset_labels", "etcd_disk_backend_defrag_duration_seconds_sum") {
-			return errors.New("failed to get all expected metrics")
-		}
-
-		close(stopChan)
-
-		return nil
-	}
-}
-
-func handlePortForwardChan(logger *zap.SugaredLogger, readyChan chan struct{}, out, errOut fmt.Stringer) {
-	for range readyChan {
-	}
-	if len(errOut.String()) != 0 {
-		logger.Errorf("Error while port-forwarding: %s", errOut.String())
+	if missing.Len() > 0 {
+		return fmt.Errorf("failed to get all expected metrics: got: %v, %v are missing", fetched.List(), missing.List())
 	}
 
-	if len(out.String()) != 0 {
-		logger.Infof("Port-forwarder returned: %s", errOut.String())
-	}
+	log.Info("Successfully validated user cluster metrics.")
+	return nil
 }
