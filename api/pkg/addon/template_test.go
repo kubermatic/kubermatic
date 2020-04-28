@@ -11,6 +11,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -84,5 +85,29 @@ func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
 				t.Fatalf("Rendering %s addon %s for cluster %s failed: %v", orchestrator, addon.Name, cluster.Name, err)
 			}
 		}
+	}
+}
+
+func TestNewTemplateData(t *testing.T) {
+	version := semver.NewSemverOrDie("v1.18.0")
+	feature := "myfeature"
+	cluster := kubermaticv1.Cluster{
+		Spec: kubermaticv1.ClusterSpec{
+			Version: *version,
+			Features: map[string]bool{
+				feature: true,
+			},
+		},
+	}
+
+	credentials := resources.Credentials{}
+
+	templateData, err := NewTemplateData(&cluster, credentials, "", "", "", nil)
+	if err != nil {
+		t.Fatalf("Failed to create template data: %v", err)
+	}
+
+	if !templateData.Cluster.Features.Has(feature) {
+		t.Fatalf("Expected cluster features to contain %q, but does not.", feature)
 	}
 }

@@ -1,21 +1,21 @@
 groups:
 - name: kube-apiserver
   rules:
-  - record: cluster_quantile:apiserver_request_latencies:histogram_quantile
+  - record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
     expr: |
-      histogram_quantile(0.99, sum(rate(apiserver_request_latencies_bucket{job="apiserver"}[5m])) without(instance, pod)) / 1e+06
+      histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver"}[5m])) without(instance, pod))
     labels:
       quantile: "0.99"
 
-  - record: cluster_quantile:apiserver_request_latencies:histogram_quantile
+  - record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
     expr: |
-      histogram_quantile(0.9, sum(rate(apiserver_request_latencies_bucket{job="apiserver"}[5m])) without(instance, pod)) / 1e+06
+      histogram_quantile(0.9, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver"}[5m])) without(instance, pod))
     labels:
       quantile: "0.9"
 
-  - record: cluster_quantile:apiserver_request_latencies:histogram_quantile
+  - record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
     expr: |
-      histogram_quantile(0.5, sum(rate(apiserver_request_latencies_bucket{job="apiserver"}[5m])) without(instance, pod)) / 1e+06
+      histogram_quantile(0.5, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver"}[5m])) without(instance, pod))
     labels:
       quantile: "0.5"
 
@@ -38,7 +38,7 @@ groups:
         The API server has a 99th percentile latency of {{ $value }} seconds
         for {{ $labels.verb }} {{ $labels.resource }}.
       runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeapilatencyhigh
-    expr: cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 1
+    expr: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 1
     for: 10m
     labels:
       severity: warning
@@ -49,7 +49,7 @@ groups:
         The API server has a 99th percentile latency of {{ $value }} seconds
         for {{ $labels.verb }} {{ $labels.resource }}.
       runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeapilatencyhigh
-    expr: cluster_quantile:apiserver_request_latencies:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 4
+    expr: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile{job="apiserver",quantile="0.99",subresource!="log",verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} > 4
     for: 10m
     labels:
       severity: critical
@@ -59,9 +59,9 @@ groups:
       message: API server is returning errors for {{ $value }}% of requests.
       runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeapierrorshigh
     expr: |
-      sum(rate(apiserver_request_count{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
+      sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
         /
-      sum(rate(apiserver_request_count{job="apiserver"}[5m])) without(instance, pod) * 100 > 10
+      sum(rate(apiserver_request_total{job="apiserver"}[5m])) without(instance, pod) * 100 > 10
     for: 10m
     labels:
       severity: critical
@@ -71,9 +71,9 @@ groups:
       message: API server is returning errors for {{ $value }}% of requests.
       runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeapierrorshigh
     expr: |
-      sum(rate(apiserver_request_count{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
+      sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
         /
-      sum(rate(apiserver_request_count{job="apiserver"}[5m])) without(instance, pod) * 100 > 5
+      sum(rate(apiserver_request_total{job="apiserver"}[5m])) without(instance, pod) * 100 > 5
     for: 10m
     labels:
       severity: warning

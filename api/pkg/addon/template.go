@@ -93,6 +93,7 @@ func NewTemplateData(
 			CloudProviderName:    providerName,
 			Version:              semver.MustParse(cluster.Spec.Version.String()),
 			MajorMinorVersion:    cluster.Spec.Version.MajorMinor(),
+			Features:             sets.StringKeySet(cluster.Spec.Features),
 			Network: ClusterNetwork{
 				DNSClusterIP:      dnsClusterIP,
 				DNSResolverIP:     dnsResolverIP,
