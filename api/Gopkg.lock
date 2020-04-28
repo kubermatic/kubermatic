@@ -1092,13 +1092,14 @@
   revision = "1555304b9b35fdd2b425bccf1a5613677705e7d0"
 
 [[projects]]
-  digest = "1:2de002edc9ab7a840c4aada81cd2fa11e279e04aa4903193941d352440062e06"
+  digest = "1:a1633dcf6f344c67025d88f6db418b2109db3f2f5fde9c071159dc6c096938b7"
   name = "github.com/prometheus/client_golang"
   packages = [
     "api",
     "prometheus",
     "prometheus/internal",
     "prometheus/promhttp",
+    "prometheus/push",
   ]
   pruneopts = "NUT"
   revision = "170205fb58decfd011f1550d4cfb737230d7ae4f"
@@ -2268,6 +2269,7 @@
     "github.com/prometheus/client_golang/api",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",
+    "github.com/prometheus/client_golang/prometheus/push",
     "github.com/robfig/cron",
     "github.com/spf13/cobra",
     "github.com/spf13/pflag",

@@ -82,6 +82,7 @@ type Opts struct {
 	kubermaticClient             *apiclient.Kubermatic
 	kubermaticAuthenticator      runtime.ClientAuthInfoWriter
 	scenarioOptions              string
+	pushgatewayEndpoint          string
 
 	secrets secrets
 }
@@ -196,6 +197,7 @@ func main() {
 	// instead the KUBERMATIC_DEX_VALUES_FILE env variable will be used.
 	flag.StringVar(&opts.dexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
 	flag.StringVar(&opts.scenarioOptions, "scenario-options", "", "Additional options to be passed to scenarios, e.g. to configure specific features to be tested.")
+	flag.StringVar(&opts.pushgatewayEndpoint, "pushgateway-endpoint", "", "host:port of a Prometheus Pushgateway to send runtime metrics to")
 
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
 	flag.StringVar(&opts.secrets.AWS.SecretAccessKey, "aws-secret-access-key", "", "AWS: SecretAccessKey")
@@ -271,6 +273,9 @@ func main() {
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	defer rootCancel()
 
+	initMetrics(opts.pushgatewayEndpoint, os.Getenv("JOB_NAME"), os.Getenv("PROW_JOB_ID"))
+	defer updateMetrics(log)
+
 	if !opts.createOIDCToken {
 		if opts.kubermatcProjectID == "" {
 			log.Fatal("Kubermatic project id must be set via KUBERMATIC_PROJECT_ID env var")
@@ -292,13 +297,21 @@ func main() {
 			log.Fatalw("Failed to create OIDC client", zap.Error(err))
 		}
 
-		login, password := apitest.OIDCCredentials()
+		var login, password, token string
 
-		token, err := dexClient.Login(rootCtx, login, password)
-		if err != nil {
+		if err := measureTime(
+			kubermaticLoginDurationMetric,
+			log,
+			func() error {
+				login, password = apitest.OIDCCredentials()
+				token, err = dexClient.Login(rootCtx, login, password)
+				return err
+			},
+		); err != nil {
 			log.Fatalw("Failed to get master token", zap.Error(err))
 		}
-		log.Info("Successfully got master token")
+
+		log.Info("Successfully retrieved master token")
 
 		opts.kubermaticAuthenticator = httptransport.BearerToken(token)
 
