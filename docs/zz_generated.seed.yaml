@@ -54,6 +54,7 @@ spec:
           images:
             centos: ""
             coreos: ""
+            flatcar: ""
             rhel: ""
             sles: ""
             ubuntu: ""
@@ -106,6 +107,7 @@ spec:
           images:
             centos: ""
             coreos: ""
+            flatcar: ""
             rhel: ""
             sles: ""
             ubuntu: ""
@@ -161,6 +163,7 @@ spec:
           templates:
             centos: ""
             coreos: ""
+            flatcar: ""
             rhel: ""
             sles: ""
             ubuntu: ""
