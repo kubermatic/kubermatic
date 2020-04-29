@@ -4,7 +4,11 @@ package api
 
 import (
 	"testing"
+	"time"
 
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -259,6 +263,137 @@ func TestManageProjectMembersByAdmin(t *testing.T) {
 			if err != nil {
 				t.Fatalf("admin can not delete user from the project %v", err)
 			}
+
+		})
+	}
+}
+
+func TestManageClusterByAdmin(t *testing.T) {
+	tests := []struct {
+		name           string
+		dc             string
+		location       string
+		version        string
+		credential     string
+		replicas       int32
+		patch          PatchCluster
+		expectedName   string
+		expectedLabels map[string]string
+	}{
+		{
+			name:       "create cluster on DigitalOcean",
+			dc:         "prow-build-cluster",
+			location:   "do-fra1",
+			version:    "v1.15.6",
+			credential: "e2e-digitalocean",
+			replicas:   1,
+			patch: PatchCluster{
+				Name:   "newName",
+				Labels: map[string]string{"a": "b"},
+			},
+			expectedName:   "newName",
+			expectedLabels: map[string]string{"a": "b"},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var maxAttempts = 24
+			masterToken, err := retrieveMasterToken()
+			if err != nil {
+				t.Fatalf("can not get master token %v", err)
+			}
+
+			apiRunner := createRunner(masterToken, t)
+			project, err := apiRunner.CreateProject(rand.String(10))
+			if err != nil {
+				t.Fatalf("can not create project %v", err)
+			}
+			teardown := cleanUpProject(project.ID, 5)
+			defer teardown(t)
+
+			cluster, err := apiRunner.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
+			if err != nil {
+				t.Fatalf("can not create cluster due to error: %v", err)
+			}
+			// change for admin user
+			adminMasterToken, err := retrieveAdminMasterToken()
+			if err != nil {
+				t.Fatalf("can not get admin master token due error: %v", err)
+			}
+
+			adminAPIRunner := createRunner(adminMasterToken, t)
+			var clusterReady bool
+			for attempt := 1; attempt <= maxAttempts; attempt++ {
+				healthStatus, err := adminAPIRunner.GetClusterHealthStatus(project.ID, tc.dc, cluster.ID)
+				if err != nil {
+					t.Fatalf("can not get health status %v", GetErrorResponse(err))
+				}
+
+				if IsHealthyCluster(healthStatus) {
+					clusterReady = true
+					break
+				}
+				time.Sleep(30 * time.Second)
+			}
+
+			if !clusterReady {
+				t.Fatalf("cluster not ready after %d attempts", maxAttempts)
+			}
+
+			var ndReady bool
+			for attempt := 1; attempt <= maxAttempts; attempt++ {
+				ndList, err := adminAPIRunner.GetClusterNodeDeployment(project.ID, tc.dc, cluster.ID)
+				if err != nil {
+					t.Fatalf("can not get node deployments %v", GetErrorResponse(err))
+				}
+
+				if len(ndList) == 1 {
+					ndReady = true
+					break
+				}
+				time.Sleep(30 * time.Second)
+			}
+			if !ndReady {
+				t.Fatalf("node deployment is not redy after %d attempts", maxAttempts)
+			}
+
+			var replicasReady bool
+			var ndList []apiv1.NodeDeployment
+			for attempt := 1; attempt <= maxAttempts; attempt++ {
+				ndList, err = adminAPIRunner.GetClusterNodeDeployment(project.ID, tc.dc, cluster.ID)
+				if err != nil {
+					t.Fatalf("can not get node deployments %v", GetErrorResponse(err))
+				}
+
+				if ndList[0].Status.AvailableReplicas == tc.replicas {
+					replicasReady = true
+					break
+				}
+				time.Sleep(30 * time.Second)
+			}
+			if !replicasReady {
+				t.Fatalf("the number of nodes is not as expected, available replicas %d", ndList[0].Status.AvailableReplicas)
+			}
+
+			_, err = adminAPIRunner.UpdateCluster(project.ID, tc.dc, cluster.ID, tc.patch)
+			if err != nil {
+				t.Fatalf("can not update cluster %v", GetErrorResponse(err))
+			}
+
+			updatedCluster, err := adminAPIRunner.GetCluster(project.ID, tc.dc, cluster.ID)
+			if err != nil {
+				t.Fatalf("can not get cluster %v", GetErrorResponse(err))
+			}
+
+			if updatedCluster.Name != tc.expectedName {
+				t.Fatalf("expected new name %s got %s", tc.expectedName, updatedCluster.Name)
+			}
+
+			if !equality.Semantic.DeepEqual(updatedCluster.Labels, tc.expectedLabels) {
+				t.Fatalf("expected labels %v got %v", tc.expectedLabels, updatedCluster.Labels)
+			}
+
+			cleanUpCluster(t, apiRunner, project.ID, tc.dc, cluster.ID)
 
 		})
 	}
