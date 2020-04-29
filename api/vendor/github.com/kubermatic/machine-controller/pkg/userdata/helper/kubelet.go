@@ -59,6 +59,7 @@ const (
 {{- if .InitialTaints }}
 --register-with-taints={{- .InitialTaints }} \
 {{- end }}
+--volume-plugin-dir=/var/lib/kubelet/volumeplugins \
 --kube-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi \
 --system-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi`
 
