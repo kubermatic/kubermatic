@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestGetProjectByAdmin(t *testing.T) {
@@ -203,6 +204,62 @@ func TestCreateAndDeleteServiceAccountByAdmin(t *testing.T) {
 			if err := adminAPIRunner.DeleteServiceAccount(sa.ID, project.ID); err != nil {
 				t.Fatalf("can not delete service account due error: %v", err)
 			}
+		})
+	}
+}
+
+func TestManageProjectMembersByAdmin(t *testing.T) {
+	tests := []struct {
+		name          string
+		group         string
+		expectedUsers sets.String
+	}{
+		{
+			name:          "admin can manage project members for any project",
+			expectedUsers: sets.NewString("roxy@loodse.com"),
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			masterToken, err := retrieveMasterToken()
+			if err != nil {
+				t.Fatalf("can not get master token due error: %v", err)
+			}
+
+			apiRunner := createRunner(masterToken, t)
+			project, err := apiRunner.CreateProject(rand.String(10))
+			if err != nil {
+				t.Fatalf("can not create project due error: %v", err)
+			}
+			teardown := cleanUpProject(project.ID, 1)
+			defer teardown(t)
+
+			// change for admin user
+			adminMasterToken, err := retrieveAdminMasterToken()
+			if err != nil {
+				t.Fatalf("can not get admin master token due error: %v", err)
+			}
+
+			adminAPIRunner := createRunner(adminMasterToken, t)
+			projectUsers, err := adminAPIRunner.GetProjectUsers(project.ID)
+			if err != nil {
+				t.Fatalf("can not get the project user due error: %v", err)
+			}
+
+			if len(projectUsers) != len(tc.expectedUsers) {
+				t.Fatalf("expected %d got %d: %v", len(tc.expectedUsers), len(projectUsers), projectUsers)
+			}
+
+			for _, user := range projectUsers {
+				if !tc.expectedUsers.Has(user.Email) {
+					t.Fatalf("the user %s doesn't belong to the expected user list", user.Email)
+				}
+			}
+			err = adminAPIRunner.DeleteUserFromProject(project.ID, projectUsers[0].ID)
+			if err != nil {
+				t.Fatalf("admin can not delete user from the project %v", err)
+			}
+
 		})
 	}
 }
