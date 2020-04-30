@@ -51,6 +51,7 @@ func TestCreateSA(t *testing.T) {
 }
 
 func TestTokenAccessForProject(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		group string
