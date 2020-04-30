@@ -140,14 +140,22 @@ else
   TEST_NAME="Create kind cluster"
   echodate "Creating the kind cluster"
   export KUBECONFIG=~/.kube/config
-  kind create cluster --name ${SEED_NAME} --image=kindest/node:v1.15.6
+
+  beforeKindCreate=$(nowms)
+  nodeVersion=v1.15.6
+  kind create cluster --name ${SEED_NAME} --image=kindest/node:$nodeVersion
+  pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate "node_version=\"$nodeVersion\""
 fi
 
 if ls /var/log/clusterexposer.log &>/dev/null; then
   echodate "Cluster-Exposer already running"
 else
   echodate "Starting clusterexposer"
+
+  beforeGocache=$(nowms)
   make -C api download-gocache
+  pushElapsed gocache_download_duration_milliseconds $beforeGocache
+
   CGO_ENABLED=0 go build -v -o /tmp/clusterexposer ./api/pkg/test/clusterexposer/cmd
   CGO_ENABLED=0 /tmp/clusterexposer \
     --kubeconfig-inner "$KUBECONFIG" \
@@ -251,7 +259,12 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   echodate "Building containers with tag $KUBERMATIC_VERSION"
   echodate "Building binaries"
   TEST_NAME="Build Kubermatic binaries"
+
+  beforeGoBuild=$(nowms)
   time retry 1 make -C api build
+  pushElapsed kubermatic_go_build_duration_milliseconds $beforeGoBuild
+
+  beforeDockerBuild=$(nowms)
 
   (
     echodate "Building docker image"
@@ -313,6 +326,9 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
       time retry 5 docker push "quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
     fi
   )
+
+  pushElapsed kubermatic_docker_build_duration_milliseconds $beforeDockerBuild
+
   git checkout ${OLD_HEAD}
   echodate "Successfully built and loaded all images"
 fi
@@ -355,6 +371,8 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
     git checkout "$CHARTS_VERSION"
   fi
 
+  beforeDeployment=$(nowms)
+
   # --force is needed in case the first attempt at installing didn't succeed
   # see https://github.com/helm/helm/pull/3597
   retry 3 helm upgrade --install --force --wait --timeout 300 \
@@ -387,6 +405,8 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
     kubermatic \
     ./config/kubermatic/
 
+  pushElapsed kubermatic_deployment_duration_milliseconds $beforeDeployment "method=helm"
+
   # Return repo to previous state if we checked out older charts before.
   if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
     git checkout ${KUBERMATIC_VERSION}
@@ -394,6 +414,8 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
 else
   TEST_NAME="Deploy Kubermatic"
   echodate "Installing Kubermatic using operator..."
+
+  beforeDeployment=$(nowms)
 
   # --force is needed in case the first attempt at installing didn't succeed
   # see https://github.com/helm/helm/pull/3597
@@ -447,6 +469,8 @@ EOF
   retry 10 check_all_deployments_ready kubermatic
 
   echodate "Kubermatic Master is ready."
+
+  pushElapsed kubermatic_deployment_duration_milliseconds $beforeDeployment "method=operator"
 fi
 
 echodate "Finished installing Kubermatic"
