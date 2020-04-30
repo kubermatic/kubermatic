@@ -78,8 +78,12 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			}
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels:      podLabels,
-				Annotations: getPodAnnotations(data),
+				Labels: podLabels,
+				Annotations: map[string]string{
+					"prometheus.io/path":                  "/metrics",
+					"prometheus.io/scrape_with_kube_cert": "true",
+					"prometheus.io/port":                  "10257",
+				},
 			}
 
 			// Configure user cluster DNS resolver for this pod.
@@ -141,6 +145,12 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				return nil, err
 			}
 
+			healthAction := &corev1.HTTPGetAction{
+				Path:   "/healthz",
+				Scheme: corev1.URISchemeHTTPS,
+				Port:   intstr.FromInt(10257),
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
@@ -151,7 +161,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					Env:     envVars,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
-							HTTPGet: getHealthGetAction(data),
+							HTTPGet: healthAction,
 						},
 						FailureThreshold: 3,
 						PeriodSeconds:    10,
@@ -161,7 +171,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					LivenessProbe: &corev1.Probe{
 						FailureThreshold: 8,
 						Handler: corev1.Handler{
-							HTTPGet: getHealthGetAction(data),
+							HTTPGet: healthAction,
 						},
 						InitialDelaySeconds: 15,
 						PeriodSeconds:       10,
@@ -208,18 +218,9 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 
 	featureGates := []string{"RotateKubeletClientCertificate=true",
 		"RotateKubeletServerCertificate=true"}
-	// This is required for Kubelets < 1.11, they don't start DaemonSet
-	// pods scheduled by the scheduler: https://github.com/kubernetes/kubernetes/issues/69346
-	// TODO: Remove once we don't support Kube 1.10 anymore
-	// TODO: Before removing, add check that prevents upgrading to 1.12 when
-	// there is still a node < 1.11
-	if data.Cluster().Spec.Version.Semver().Minor() >= 12 && data.Cluster().Spec.Version.Semver().Minor() < 17 {
-		featureGates = append(featureGates, "ScheduleDaemonSetPods=false")
-	}
-	if len(featureGates) > 0 {
-		flags = append(flags, "--feature-gates")
-		flags = append(flags, strings.Join(featureGates, ","))
-	}
+
+	flags = append(flags, "--feature-gates")
+	flags = append(flags, strings.Join(featureGates, ","))
 
 	cloudProviderName := data.GetKubernetesCloudProviderName()
 	if cloudProviderName != "" && cloudProviderName != "external" {
@@ -236,33 +237,18 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 		flags = append(flags, fmt.Sprintf("--configure-cloud-routes=%t", *val))
 	}
 
-	if data.Cluster().Spec.Version.Semver().Minor() >= 12 {
-		// New flag in v1.12 which gets used to perform permission checks for tokens
-		flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
-		// New flag in v1.12 which gets used to perform permission checks for certs
-		flags = append(flags, "--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt")
-	}
+	// New flag in v1.12 which gets used to perform permission checks for tokens
+	flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
+	// New flag in v1.12 which gets used to perform permission checks for certs
+	flags = append(flags, "--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt")
 
 	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
-	if data.Cluster().Spec.Version.Semver().Minor() >= 13 {
-		flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
-		flags = append(flags, "--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
-		// We're going to use the https endpoints for scraping the metrics starting from 1.12. Thus we can deactivate the http endpoint
-		flags = append(flags, "--port", "0")
-		// Force the authentication lookup to succeed, otherwise if it fails all requests will be treated as anonymous and thus fail
-		if data.Cluster().Spec.Version.Semver().Patch() > 0 {
-			// Force the authentication lookup to succeed, otherwise if it fails all requests will be treated as anonymous and thus fail
-			// Both the flag and the issue only exist in 1.13.1 and above
-			flags = append(flags, "--authentication-tolerate-lookup-failure=false")
-		}
-	}
-
-	// This is required in 1.12.0 as a workaround for
-	// https://github.com/kubernetes/kubernetes/issues/68986, the patch
-	// got cherry-picked onto 1.12.1
-	if data.Cluster().Spec.Version.Semver().Minor() == 12 && data.Cluster().Spec.Version.Semver().Patch() == 0 {
-		flags = append(flags, "--authentication-skip-lookup=true")
-	}
+	flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
+	flags = append(flags, "--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
+	// We're going to use the https endpoints for scraping the metrics starting from 1.12. Thus we can deactivate the http endpoint
+	flags = append(flags, "--port", "0")
+	// Force the authentication lookup to succeed, otherwise if it fails all requests will be treated as anonymous and thus fail
+	flags = append(flags, "--authentication-tolerate-lookup-failure=false")
 
 	return flags, nil
 }
@@ -337,37 +323,6 @@ func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
 	}
 	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
 	return vars, nil
-}
-
-func getPodAnnotations(data *resources.TemplateData) map[string]string {
-	annotations := map[string]string{
-		"prometheus.io/path": "/metrics",
-	}
-	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
-	if data.Cluster().Spec.Version.Minor() >= 13 {
-		annotations["prometheus.io/scrape_with_kube_cert"] = "true"
-		annotations["prometheus.io/port"] = "10257"
-	} else {
-		annotations["prometheus.io/scrape"] = "true"
-		annotations["prometheus.io/port"] = "10252"
-	}
-
-	return annotations
-}
-
-func getHealthGetAction(data *resources.TemplateData) *corev1.HTTPGetAction {
-	action := &corev1.HTTPGetAction{
-		Path: "/healthz",
-	}
-	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
-	if data.Cluster().Spec.Version.Minor() >= 13 {
-		action.Scheme = corev1.URISchemeHTTPS
-		action.Port = intstr.FromInt(10257)
-	} else {
-		action.Scheme = corev1.URISchemeHTTP
-		action.Port = intstr.FromInt(10252)
-	}
-	return action
 }
 
 func CloudRoutesFlagVal(cloudSpec kubermaticv1.CloudSpec) *bool {

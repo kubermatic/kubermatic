@@ -148,7 +148,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(kubelet_runtime_operations_errors{instance=\"$node\"}[5m])",
+          "expr": "rate(kubelet_runtime_operations_errors_total{instance=\"$node\"}[5m])",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ operation_type }}",
@@ -227,7 +227,7 @@
       "links": [],
       "targets": [
         {
-          "expr": "sum(increase(rest_client_request_latency_seconds_bucket{job=\"kubelet\",instance=\"$node\"}[5m])) by (le)",
+          "expr": "sum(increase(rest_client_request_duration_seconds_bucket{job=\"kubelet\",instance=\"$node\"}[5m])) by (le)",
           "format": "heatmap",
           "instant": false,
           "interval": "",
@@ -237,7 +237,7 @@
         }
       ],
       "timeRegions": [],
-      "title": "Request Latency",
+      "title": "Request Duration",
       "tooltip": {
         "show": true,
         "showHistogram": false
@@ -272,7 +272,7 @@
       },
       "id": 24,
       "panels": [],
-      "title": "Pod Worker Latency",
+      "title": "Pod Worker Duration",
       "type": "row"
     },
     {
@@ -321,7 +321,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_pod_worker_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"create\"}",
+          "expr": "kubelet_pod_worker_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"create\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -329,7 +329,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_pod_worker_latency_microseconds{instance=\"$node\",operation_type=\"create\"})",
+          "expr": "max(kubelet_pod_worker_duration_seconds{instance=\"$node\",operation_type=\"create\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -337,7 +337,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_pod_worker_latency_microseconds{instance=\"$node\",operation_type=\"create\"})",
+          "expr": "min(kubelet_pod_worker_duration_seconds{instance=\"$node\",operation_type=\"create\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -345,7 +345,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_pod_worker_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"create\"}",
+          "expr": "kubelet_pod_worker_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"create\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -374,7 +374,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -440,7 +440,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_pod_worker_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"update\"}",
+          "expr": "kubelet_pod_worker_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"update\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -448,7 +448,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_pod_worker_latency_microseconds{instance=\"$node\",operation_type=\"update\"})",
+          "expr": "max(kubelet_pod_worker_duration_seconds{instance=\"$node\",operation_type=\"update\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -456,7 +456,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_pod_worker_latency_microseconds{instance=\"$node\",operation_type=\"update\"})",
+          "expr": "min(kubelet_pod_worker_duration_seconds{instance=\"$node\",operation_type=\"update\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -464,7 +464,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_pod_worker_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"update\"}",
+          "expr": "kubelet_pod_worker_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"update\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -493,7 +493,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -559,7 +559,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_pod_worker_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"sync\"}",
+          "expr": "kubelet_pod_worker_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"sync\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -567,7 +567,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_pod_worker_latency_microseconds{instance=\"$node\",operation_type=\"sync\"})",
+          "expr": "max(kubelet_pod_worker_duration_seconds{instance=\"$node\",operation_type=\"sync\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -575,7 +575,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_pod_worker_latency_microseconds{instance=\"$node\",operation_type=\"sync\"})",
+          "expr": "min(kubelet_pod_worker_duration_seconds{instance=\"$node\",operation_type=\"sync\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -583,7 +583,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_pod_worker_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"sync\"}",
+          "expr": "kubelet_pod_worker_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"sync\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -612,7 +612,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -678,7 +678,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_pod_worker_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"kill\"}",
+          "expr": "kubelet_pod_worker_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"kill\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -686,7 +686,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_pod_worker_latency_microseconds{instance=\"$node\",operation_type=\"kill\"})",
+          "expr": "max(kubelet_pod_worker_duration_seconds{instance=\"$node\",operation_type=\"kill\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -694,7 +694,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_pod_worker_latency_microseconds{instance=\"$node\",operation_type=\"kill\"})",
+          "expr": "min(kubelet_pod_worker_duration_seconds{instance=\"$node\",operation_type=\"kill\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -702,7 +702,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_pod_worker_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"kill\"}",
+          "expr": "kubelet_pod_worker_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"kill\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -731,7 +731,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -762,7 +762,7 @@
       },
       "id": 26,
       "panels": [],
-      "title": "cgroup Manager Latency",
+      "title": "cgroup Manager Duration",
       "type": "row"
     },
     {
@@ -810,7 +810,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"create\"}",
+          "expr": "kubelet_cgroup_manager_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"create\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -818,7 +818,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",operation_type=\"create\"})",
+          "expr": "max(kubelet_cgroup_manager_duration_seconds{instance=\"$node\",operation_type=\"create\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -826,7 +826,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",operation_type=\"create\"})",
+          "expr": "min(kubelet_cgroup_manager_duration_seconds{instance=\"$node\",operation_type=\"create\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -834,7 +834,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"create\"}",
+          "expr": "kubelet_cgroup_manager_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"create\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -863,7 +863,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -929,7 +929,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"update\"}",
+          "expr": "kubelet_cgroup_manager_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"update\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -937,7 +937,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",operation_type=\"update\"})",
+          "expr": "max(kubelet_cgroup_manager_duration_seconds{instance=\"$node\",operation_type=\"update\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -945,7 +945,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",operation_type=\"update\"})",
+          "expr": "min(kubelet_cgroup_manager_duration_seconds{instance=\"$node\",operation_type=\"update\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -953,7 +953,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"update\"}",
+          "expr": "kubelet_cgroup_manager_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"update\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -982,7 +982,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -1048,7 +1048,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"sync\"}",
+          "expr": "kubelet_cgroup_manager_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"sync\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1056,7 +1056,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",operation_type=\"sync\"})",
+          "expr": "max(kubelet_cgroup_manager_duration_seconds{instance=\"$node\",operation_type=\"sync\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1064,7 +1064,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",operation_type=\"sync\"})",
+          "expr": "min(kubelet_cgroup_manager_duration_seconds{instance=\"$node\",operation_type=\"sync\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1072,7 +1072,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"sync\"}",
+          "expr": "kubelet_cgroup_manager_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"sync\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1101,7 +1101,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -1167,7 +1167,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"kill\"}",
+          "expr": "kubelet_cgroup_manager_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"kill\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1175,7 +1175,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",operation_type=\"kill\"})",
+          "expr": "max(kubelet_cgroup_manager_duration_seconds{instance=\"$node\",operation_type=\"kill\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1183,7 +1183,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",operation_type=\"kill\"})",
+          "expr": "min(kubelet_cgroup_manager_duration_seconds{instance=\"$node\",operation_type=\"kill\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1191,7 +1191,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_cgroup_manager_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"kill\"}",
+          "expr": "kubelet_cgroup_manager_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"kill\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1220,7 +1220,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -1251,7 +1251,7 @@
       },
       "id": 32,
       "panels": [],
-      "title": "Runtime Operations Latency",
+      "title": "Runtime Operations Duration",
       "type": "row"
     },
     {
@@ -1299,7 +1299,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_runtime_operations_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"create\"}",
+          "expr": "kubelet_runtime_operations_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"create\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1307,7 +1307,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_runtime_operations_latency_microseconds{instance=\"$node\",operation_type=\"create\"})",
+          "expr": "max(kubelet_runtime_operations_duration_seconds{instance=\"$node\",operation_type=\"create\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1315,7 +1315,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_runtime_operations_latency_microseconds{instance=\"$node\",operation_type=\"create\"})",
+          "expr": "min(kubelet_runtime_operations_duration_seconds{instance=\"$node\",operation_type=\"create\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1323,7 +1323,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_runtime_operations_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"create\"}",
+          "expr": "kubelet_runtime_operations_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"create\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1352,7 +1352,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -1418,7 +1418,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_runtime_operations_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"update\"}",
+          "expr": "kubelet_runtime_operations_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"update\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1426,7 +1426,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_runtime_operations_latency_microseconds{instance=\"$node\",operation_type=\"update\"})",
+          "expr": "max(kubelet_runtime_operations_duration_seconds{instance=\"$node\",operation_type=\"update\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1434,7 +1434,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_runtime_operations_latency_microseconds{instance=\"$node\",operation_type=\"update\"})",
+          "expr": "min(kubelet_runtime_operations_duration_seconds{instance=\"$node\",operation_type=\"update\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1442,7 +1442,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_runtime_operations_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"update\"}",
+          "expr": "kubelet_runtime_operations_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"update\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1471,7 +1471,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -1537,7 +1537,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_runtime_operations_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"sync\"}",
+          "expr": "kubelet_runtime_operations_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"sync\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1545,7 +1545,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_runtime_operations_latency_microseconds{instance=\"$node\",operation_type=\"sync\"})",
+          "expr": "max(kubelet_runtime_operations_duration_seconds{instance=\"$node\",operation_type=\"sync\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1553,7 +1553,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_runtime_operations_latency_microseconds{instance=\"$node\",operation_type=\"sync\"})",
+          "expr": "min(kubelet_runtime_operations_duration_seconds{instance=\"$node\",operation_type=\"sync\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1561,7 +1561,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_runtime_operations_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"sync\"}",
+          "expr": "kubelet_runtime_operations_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"sync\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1590,7 +1590,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -1656,7 +1656,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_runtime_operations_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"kill\"}",
+          "expr": "kubelet_runtime_operations_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"kill\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1664,7 +1664,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_runtime_operations_latency_microseconds{instance=\"$node\",operation_type=\"kill\"})",
+          "expr": "max(kubelet_runtime_operations_duration_seconds{instance=\"$node\",operation_type=\"kill\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1672,7 +1672,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_runtime_operations_latency_microseconds{instance=\"$node\",operation_type=\"kill\"})",
+          "expr": "min(kubelet_runtime_operations_duration_seconds{instance=\"$node\",operation_type=\"kill\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1680,7 +1680,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_runtime_operations_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"kill\"}",
+          "expr": "kubelet_runtime_operations_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"kill\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1709,7 +1709,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -1740,7 +1740,7 @@
       },
       "id": 38,
       "panels": [],
-      "title": "PLEG Relist Latency",
+      "title": "PLEG Relist Duration",
       "type": "row"
     },
     {
@@ -1788,7 +1788,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_pleg_relist_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"create\"}",
+          "expr": "kubelet_pleg_relist_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"create\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1796,7 +1796,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_pleg_relist_latency_microseconds{instance=\"$node\",operation_type=\"create\"})",
+          "expr": "max(kubelet_pleg_relist_duration_seconds{instance=\"$node\",operation_type=\"create\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1804,7 +1804,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_pleg_relist_latency_microseconds{instance=\"$node\",operation_type=\"create\"})",
+          "expr": "min(kubelet_pleg_relist_duration_seconds{instance=\"$node\",operation_type=\"create\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1812,7 +1812,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_pleg_relist_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"create\"}",
+          "expr": "kubelet_pleg_relist_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"create\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1841,7 +1841,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -1907,7 +1907,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_pleg_relist_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"update\"}",
+          "expr": "kubelet_pleg_relist_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"update\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1915,7 +1915,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_pleg_relist_latency_microseconds{instance=\"$node\",operation_type=\"update\"})",
+          "expr": "max(kubelet_pleg_relist_duration_seconds{instance=\"$node\",operation_type=\"update\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1923,7 +1923,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_pleg_relist_latency_microseconds{instance=\"$node\",operation_type=\"update\"})",
+          "expr": "min(kubelet_pleg_relist_duration_seconds{instance=\"$node\",operation_type=\"update\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1931,7 +1931,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_pleg_relist_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"update\"}",
+          "expr": "kubelet_pleg_relist_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"update\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -1960,7 +1960,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -2026,7 +2026,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_pleg_relist_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"sync\"}",
+          "expr": "kubelet_pleg_relist_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"sync\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -2034,7 +2034,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_pleg_relist_latency_microseconds{instance=\"$node\",operation_type=\"sync\"})",
+          "expr": "max(kubelet_pleg_relist_duration_seconds{instance=\"$node\",operation_type=\"sync\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -2042,7 +2042,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_pleg_relist_latency_microseconds{instance=\"$node\",operation_type=\"sync\"})",
+          "expr": "min(kubelet_pleg_relist_duration_seconds{instance=\"$node\",operation_type=\"sync\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -2050,7 +2050,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_pleg_relist_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"sync\"}",
+          "expr": "kubelet_pleg_relist_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"sync\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -2079,7 +2079,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -2145,7 +2145,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_pleg_relist_latency_microseconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"kill\"}",
+          "expr": "kubelet_pleg_relist_duration_seconds{instance=\"$node\",quantile=\"0.99\",operation_type=\"kill\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -2153,7 +2153,7 @@
           "refId": "A"
         },
         {
-          "expr": "max(kubelet_pleg_relist_latency_microseconds{instance=\"$node\",operation_type=\"kill\"})",
+          "expr": "max(kubelet_pleg_relist_duration_seconds{instance=\"$node\",operation_type=\"kill\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -2161,7 +2161,7 @@
           "refId": "B"
         },
         {
-          "expr": "min(kubelet_pleg_relist_latency_microseconds{instance=\"$node\",operation_type=\"kill\"})",
+          "expr": "min(kubelet_pleg_relist_duration_seconds{instance=\"$node\",operation_type=\"kill\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -2169,7 +2169,7 @@
           "refId": "C"
         },
         {
-          "expr": "kubelet_pleg_relist_latency_microseconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"kill\"}",
+          "expr": "kubelet_pleg_relist_duration_seconds{instance=\"$node\",quantile=\"0.9\",operation_type=\"kill\"}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -2198,7 +2198,7 @@
       },
       "yaxes": [
         {
-          "format": "µs",
+          "format": "s",
           "label": null,
           "logBase": 1,
           "max": null,

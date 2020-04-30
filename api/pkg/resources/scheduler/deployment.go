@@ -2,12 +2,10 @@ package scheduler
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
 
@@ -43,9 +41,17 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Name = resources.SchedulerDeploymentName
 			dep.Labels = resources.BaseAppLabels(name, nil)
 
-			flags, err := getFlags(data.Cluster())
-			if err != nil {
-				return nil, err
+			flags := []string{
+				"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				// These are used to validate tokens
+				"--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				// This is used to validate certs
+				"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
+				// We're going to use the https endpoints for scraping the metrics starting from 1.13. Thus we can deactivate the http endpoint
+				"--port", "0",
+				// Force the authentication lookup to succeed, otherwise if it fails all requests will be treated as anonymous and thus fail
+				"--authentication-tolerate-lookup-failure", "false",
 			}
 
 			dep.Spec.Replicas = resources.Int32(1)
@@ -66,8 +72,12 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels:      podLabels,
-				Annotations: getPodAnnotations(data),
+				Labels: podLabels,
+				Annotations: map[string]string{
+					"prometheus.io/path":                  "/metrics",
+					"prometheus.io/scrape_with_kube_cert": "true",
+					"prometheus.io/port":                  "10259",
+				},
 			}
 
 			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
@@ -82,6 +92,12 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			}
 
 			dep.Spec.Template.Spec.Volumes = volumes
+
+			healthAction := &corev1.HTTPGetAction{
+				Path:   "/healthz",
+				Scheme: corev1.URISchemeHTTPS,
+				Port:   intstr.FromInt(10259),
+			}
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
@@ -104,7 +120,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					},
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
-							HTTPGet: getHealthGetAction(data),
+							HTTPGet: healthAction,
 						},
 						FailureThreshold: 3,
 						PeriodSeconds:    10,
@@ -114,7 +130,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 					LivenessProbe: &corev1.Probe{
 						FailureThreshold: 8,
 						Handler: corev1.Handler{
-							HTTPGet: getHealthGetAction(data),
+							HTTPGet: healthAction,
 						},
 						InitialDelaySeconds: 15,
 						PeriodSeconds:       10,
@@ -178,74 +194,4 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 	}
-}
-
-func getFlags(cluster *kubermaticv1.Cluster) ([]string, error) {
-	flags := []string{
-		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-	}
-
-	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
-	if cluster.Spec.Version.Semver().Minor() >= 13 {
-		// These are used to validate tokens
-		flags = append(flags, "--authentication-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
-		flags = append(flags, "--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
-		// This is used to validate certs
-		flags = append(flags, "--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt")
-		// We're going to use the https endpoints for scraping the metrics starting from 1.13. Thus we can deactivate the http endpoint
-		flags = append(flags, "--port", "0")
-		if cluster.Spec.Version.Semver().Patch() > 0 {
-			// Force the authentication lookup to succeed, otherwise if it fails all requests will be treated as anonymous and thus fail
-			// Both the flag and the issue only exist in 1.13.1 and above
-			flags = append(flags, "--authentication-tolerate-lookup-failure", "false")
-		}
-	}
-
-	var featureGates []string
-	// This is required for Kubelets < 1.11, they don't start DaemonSet
-	// pods scheduled by the scheduler: https://github.com/kubernetes/kubernetes/issues/69346
-	// TODO: Remove once we don't support Kube 1.10 anymore
-	// TODO: Before removing, add check that prevents upgrading to 1.12 when
-	// there is still a node < 1.11
-	if cluster.Spec.Version.Semver().Minor() >= 12 && cluster.Spec.Version.Semver().Minor() < 17 {
-		featureGates = append(featureGates, "ScheduleDaemonSetPods=false")
-	}
-
-	if len(featureGates) > 0 {
-		flags = append(flags, "--feature-gates")
-		flags = append(flags, strings.Join(featureGates, ","))
-	}
-
-	return flags, nil
-}
-
-func getPodAnnotations(data *resources.TemplateData) map[string]string {
-	annotations := map[string]string{
-		"prometheus.io/path": "/metrics",
-	}
-	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
-	if data.Cluster().Spec.Version.Minor() >= 13 {
-		annotations["prometheus.io/scrape_with_kube_cert"] = "true"
-		annotations["prometheus.io/port"] = "10259"
-	} else {
-		annotations["prometheus.io/scrape"] = "true"
-		annotations["prometheus.io/port"] = "10251"
-	}
-
-	return annotations
-}
-
-func getHealthGetAction(data *resources.TemplateData) *corev1.HTTPGetAction {
-	action := &corev1.HTTPGetAction{
-		Path: "/healthz",
-	}
-	// With 1.13 we're using the secure port for scraping metrics as the insecure port got marked deprecated
-	if data.Cluster().Spec.Version.Minor() >= 13 {
-		action.Scheme = corev1.URISchemeHTTPS
-		action.Port = intstr.FromInt(10259)
-	} else {
-		action.Scheme = corev1.URISchemeHTTP
-		action.Port = intstr.FromInt(10251)
-	}
-	return action
 }
