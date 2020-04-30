@@ -236,6 +236,7 @@ func apiSpec(dc *kubermaticv1.Datacenter) (*apiv1.DatacenterSpec, error) {
 	spec.RequiredEmailDomain = dc.Spec.RequiredEmailDomain
 	spec.RequiredEmailDomains = dc.Spec.RequiredEmailDomains
 	spec.EnforceAuditLogging = dc.Spec.EnforceAuditLogging
+	spec.EnforcePodSecurityPolicy = dc.Spec.EnforcePodSecurityPolicy
 
 	return spec, nil
 }
