@@ -6,7 +6,7 @@ cd "$(git rev-parse --show-toplevel)"
 . ./api/hack/lib.sh
 
 GIT_HEAD_HASH="$(git rev-parse HEAD)"
-GIT_HEAD_TAG="$(git tag -l --points-at HEAD)"
+GIT_HEAD_TAG="$(git tag -l "$PULL_BASE_REF")"
 GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 TAGS="$GIT_HEAD_HASH $GIT_HEAD_TAG"
 
