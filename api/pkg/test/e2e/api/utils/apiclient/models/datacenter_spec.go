@@ -23,6 +23,10 @@ type DatacenterSpec struct {
 	// ignoring cluster-specific settings.
 	EnforceAuditLogging bool `json:"enforceAuditLogging,omitempty"`
 
+	// EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
+	// ignoring cluster-specific settings
+	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy,omitempty"`
+
 	// location
 	Location string `json:"location,omitempty"`
 
