@@ -33,11 +33,12 @@ import (
 type OperatingSystem string
 
 const (
-	OperatingSystemCoreos OperatingSystem = "coreos"
-	OperatingSystemUbuntu OperatingSystem = "ubuntu"
-	OperatingSystemCentOS OperatingSystem = "centos"
-	OperatingSystemSLES   OperatingSystem = "sles"
-	OperatingSystemRHEL   OperatingSystem = "rhel"
+	OperatingSystemCoreos  OperatingSystem = "coreos"
+	OperatingSystemUbuntu  OperatingSystem = "ubuntu"
+	OperatingSystemCentOS  OperatingSystem = "centos"
+	OperatingSystemSLES    OperatingSystem = "sles"
+	OperatingSystemRHEL    OperatingSystem = "rhel"
+	OperatingSystemFlatcar OperatingSystem = "flatcar"
 )
 
 type CloudProvider string
@@ -67,6 +68,7 @@ var (
 		OperatingSystemCentOS,
 		OperatingSystemSLES,
 		OperatingSystemRHEL,
+		OperatingSystemFlatcar,
 	}
 
 	// AllCloudProviders is a slice containing all supported cloud providers.
