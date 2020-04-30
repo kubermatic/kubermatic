@@ -638,14 +638,15 @@ func cleanUpProject(id string, attempts int) func(t *testing.T) {
 	return func(t *testing.T) {
 		masterToken, err := retrieveMasterToken()
 		if err != nil {
-			t.Fatalf("can not get master token due error: %v", err)
+			t.Fatalf("can not get master token: %v", err)
 		}
 		runner := createRunner(masterToken, t)
 
+		t.Log("deleting project...")
 		if err := runner.DeleteProject(id); err != nil {
-			t.Fatalf("can not delete project due error: %v", err)
+			t.Fatalf("can not delete project: %v", err)
 		}
-		t.Log("project deleting ...")
+
 		for attempt := 1; attempt <= attempts; attempt++ {
 			_, err := runner.GetProject(id, 5)
 			if err != nil {
@@ -653,10 +654,12 @@ func cleanUpProject(id string, attempts int) func(t *testing.T) {
 			}
 			time.Sleep(3 * time.Second)
 		}
+
 		_, err = runner.GetProject(id, 5)
 		if err == nil {
 			t.Fatalf("can not delete the project")
 		}
+
 		t.Log("project deleted successfully")
 	}
 }
