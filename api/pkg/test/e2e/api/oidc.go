@@ -52,8 +52,14 @@ func retrieveMasterToken() (string, error) {
 	return masterToken, nil
 }
 
+var adminMasterToken = ""
+
 // this is just a helper to make the tests more readable
 func retrieveAdminMasterToken() (string, error) {
+	// re-use the previous token
+	if adminMasterToken != "" {
+		return adminMasterToken, nil
+	}
 
 	valuesFile := os.Getenv("KUBERMATIC_DEX_VALUES_FILE")
 	if len(valuesFile) == 0 {
@@ -69,5 +75,10 @@ func retrieveAdminMasterToken() (string, error) {
 
 	login, password := OIDCAdminCredentials()
 
-	return client.Login(context.Background(), login, password)
+	adminMasterToken, err = client.Login(context.Background(), login, password)
+	if err != nil {
+		return "", err
+	}
+
+	return adminMasterToken, nil
 }
