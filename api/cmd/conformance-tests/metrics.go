@@ -15,83 +15,83 @@ const (
 var (
 	metricsPusher *push.Pusher
 
-	kubermaticLoginDurationMetric = prometheus.NewGauge(prometheus.GaugeOpts{
+	kubermaticLoginDurationMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
-		Name:      "kubermatic_login_duration_seconds_total",
+		Name:      "kubermatic_login_duration_seconds",
 		Help:      "Time it took to perform the Kubermatic login, in seconds",
-	})
+	}, []string{"prowjob"})
 
 	kubermaticReconciliationDurationMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
-		Name:      "kubermatic_reconciliation_duration_seconds_total",
+		Name:      "kubermatic_reconciliation_duration_seconds",
 		Help:      "Time it took for Kubermatic to fully reconcile the test cluster",
-	}, []string{"scenario"})
+	}, []string{"prowjob", "scenario"})
 
 	seedControlplaneDurationMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
-		Name:      "seed_controlplane_duration_seconds_total",
+		Name:      "seed_controlplane_duration_seconds",
 		Help:      "Time it took the user-cluser's controlplane pods in the seed cluster to become ready",
-	}, []string{"scenario"})
+	}, []string{"prowjob", "scenario"})
 
 	clusterControlplaneDurationMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
-		Name:      "cluster_controlplane_duration_seconds_total",
+		Name:      "cluster_controlplane_duration_seconds",
 		Help:      "Time it took for all pods to be ready in a user cluster after all worker nodes have become ready",
-	}, []string{"scenario"})
+	}, []string{"prowjob", "scenario"})
 
 	nodeCreationDuration = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
-		Name:      "node_creation_duration_seconds_total",
+		Name:      "node_creation_duration_seconds",
 		Help:      "Time it took for all nodes to spawn after the NodeDeployments were created",
-	}, []string{"scenario"})
+	}, []string{"prowjob", "scenario"})
 
 	nodeRadinessDuration = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
-		Name:      "node_readiness_duration_seconds_total",
+		Name:      "node_readiness_duration_seconds",
 		Help:      "Time it took for all nodes to become ready they appeared",
-	}, []string{"scenario"})
+	}, []string{"prowjob", "scenario"})
 
 	scenarioRuntimeMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
-		Name:      "scenario_runtime_seconds_total",
+		Name:      "scenario_runtime_seconds",
 		Help:      "Total duration of a scenario test run",
-	}, []string{"scenario"})
+	}, []string{"prowjob", "scenario"})
 
 	ginkgoRuntimeMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
-		Name:      "ginkgo_runtime_seconds_total",
+		Name:      "ginkgo_runtime_seconds",
 		Help:      "Number of seconds a Ginkgo run took",
-	}, []string{"scenario", "run", "attempt"})
+	}, []string{"prowjob", "scenario", "run", "attempt"})
 
 	ginkgoAttemptsMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
-		Name:      "ginkgo_attempts_total",
+		Name:      "ginkgo_attempts",
 		Help:      "Number of times a job has been run for a given scenario",
-	}, []string{"scenario", "run"})
+	}, []string{"prowjob", "scenario", "run"})
 
 	pvctestRuntimeMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
-		Name:      "pvctest_runtime_seconds_total",
+		Name:      "pvctest_runtime_seconds",
 		Help:      "Number of seconds a pvctest run took",
-	}, []string{"scenario", "attempt"})
+	}, []string{"prowjob", "scenario", "attempt"})
 
 	pvctestAttemptsMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
-		Name:      "pvctest_attempts_total",
+		Name:      "pvctest_attempts",
 		Help:      "Number of times a job has been run for a given scenario",
-	}, []string{"scenario"})
+	}, []string{"prowjob", "scenario"})
 
 	lbtestRuntimeMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
-		Name:      "lbtest_runtime_seconds_total",
+		Name:      "lbtest_runtime_seconds",
 		Help:      "Number of seconds a lbtest run took",
-	}, []string{"scenario", "attempt"})
+	}, []string{"prowjob", "scenario", "attempt"})
 
 	lbtestAttemptsMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metricNamespace,
-		Name:      "lbtest_attempts_total",
+		Name:      "lbtest_attempts",
 		Help:      "Number of times a job has been run for a given scenario",
-	}, []string{"scenario"})
+	}, []string{"prowjob", "scenario"})
 )
 
 func initMetrics(endpoint string, prowjob string, instance string) {
@@ -114,8 +114,25 @@ func initMetrics(endpoint string, prowjob string, instance string) {
 	registry.MustRegister(lbtestRuntimeMetric)
 	registry.MustRegister(lbtestAttemptsMetric)
 
+	prowjobLabel := prometheus.Labels{
+		"prowjob": prowjob,
+	}
+
+	kubermaticLoginDurationMetric = kubermaticLoginDurationMetric.MustCurryWith(prowjobLabel)
+	kubermaticReconciliationDurationMetric = kubermaticReconciliationDurationMetric.MustCurryWith(prowjobLabel)
+	seedControlplaneDurationMetric = seedControlplaneDurationMetric.MustCurryWith(prowjobLabel)
+	clusterControlplaneDurationMetric = clusterControlplaneDurationMetric.MustCurryWith(prowjobLabel)
+	nodeCreationDuration = nodeCreationDuration.MustCurryWith(prowjobLabel)
+	nodeRadinessDuration = nodeRadinessDuration.MustCurryWith(prowjobLabel)
+	scenarioRuntimeMetric = scenarioRuntimeMetric.MustCurryWith(prowjobLabel)
+	ginkgoRuntimeMetric = ginkgoRuntimeMetric.MustCurryWith(prowjobLabel)
+	ginkgoAttemptsMetric = ginkgoAttemptsMetric.MustCurryWith(prowjobLabel)
+	pvctestRuntimeMetric = pvctestRuntimeMetric.MustCurryWith(prowjobLabel)
+	pvctestAttemptsMetric = pvctestAttemptsMetric.MustCurryWith(prowjobLabel)
+	lbtestRuntimeMetric = lbtestRuntimeMetric.MustCurryWith(prowjobLabel)
+	lbtestAttemptsMetric = lbtestAttemptsMetric.MustCurryWith(prowjobLabel)
+
 	metricsPusher = push.New(endpoint, "conformancetest")
-	metricsPusher.Grouping("prowjob", prowjob)
 	metricsPusher.Grouping("instance", instance)
 	metricsPusher.Gatherer(registry)
 }
