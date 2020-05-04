@@ -38,3 +38,4 @@ This covers the existing, developer focusing, documentation:
 
 
 Customer facing documentation can be found at https://github.com/kubermatic/docs which gets published at https://docs.kubermatic.io
+foo
