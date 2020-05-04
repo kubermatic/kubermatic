@@ -121,6 +121,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			Size:           config.VMSize.Value,
 			AssignPublicIP: config.AssignPublicIP.Value,
 			Tags:           config.Tags,
+			ImageID:        config.ImageID.Value,
 		}
 	case providerconfig.CloudProviderDigitalocean:
 		config := &digitalocean.RawConfig{}
@@ -193,6 +194,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			Preemptible: config.Preemptible.Value,
 			Labels:      config.Labels,
 			Tags:        config.Tags,
+			CustomImage: config.CustomImage.Value,
 		}
 	case providerconfig.CloudProviderKubeVirt:
 		config := &kubevirt.RawConfig{}
