@@ -188,3 +188,44 @@ appendTrap() {
     trap $command $signal
   fi
 }
+
+# returns the current time as a number of milliseconds
+nowms() {
+  echo $(( $(date +%s%N) / 1000000 ))
+}
+
+# returns the number of milliseconds elapsed since the given time
+elapsed() {
+  echo $(( $(nowms) - $1 ))
+}
+
+# pushes a Prometheus metric to a pushgateway
+pushMetric() {
+  local metric="$1"
+  local value="$2"
+  local labels="${3:-}"
+  local kind="${4:-gauge}"
+  local help="${5:-}"
+  local pushgateway="pushgateway.monitoring.svc.cluster.local.:9091"
+  local job="ci"
+  local instance="$PROW_JOB_ID"
+  local prowjob="$JOB_NAME"
+
+  local payload="# TYPE $metric $kind"
+
+  if [ -n "$help" ]; then
+    payload="$payload\n# HELP $metric $help"
+  fi
+
+  if [ -n "$labels" ]; then
+    labels=",$labels"
+  fi
+
+  payload="$payload\n$metric{prowjob=\"$prowjob\"$labels} $value\n"
+
+  echo -e "$payload" | curl --data-binary @- -s "http://$pushgateway/metrics/job/$job/instance/$instance"
+}
+
+pushElapsed() {
+  pushMetric "$1" $(elapsed $2) "${3:-}" "${4:-}" "${5:-}"
+}

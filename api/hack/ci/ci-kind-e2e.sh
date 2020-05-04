@@ -10,7 +10,11 @@ export GIT_HEAD_HASH="$(git rev-parse HEAD)"
 
 export KUBERMATIC_VERSION="${UPGRADE_TEST_BASE_HASH:-$GIT_HEAD_HASH}"
 echodate "Setting up kubermatic in kind on revision ${KUBERMATIC_VERSION}"
+
+beforeKubermaticSetup=$(nowms)
 source ./api/hack/ci/ci-setup-kubermatic-in-kind.sh
+pushElapsed kind_kubermatic_setup_duration_milliseconds $beforeKubermaticSetup
+
 echodate "Done setting up kubermatic in kind"
 
 # We can safely assume that the base version got tested already
