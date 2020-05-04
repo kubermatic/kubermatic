@@ -168,11 +168,12 @@ func TestLoadFiles(t *testing.T) {
 			},
 			AWS: &kubermaticv1.DatacenterSpecAWS{
 				Images: kubermaticv1.ImageList{
-					providerconfig.OperatingSystemUbuntu: "ubuntu-ami",
-					providerconfig.OperatingSystemCentOS: "centos-ami",
-					providerconfig.OperatingSystemCoreos: "coreos-ami",
-					providerconfig.OperatingSystemSLES:   "sles-ami",
-					providerconfig.OperatingSystemRHEL:   "rhel-ami",
+					providerconfig.OperatingSystemUbuntu:  "ubuntu-ami",
+					providerconfig.OperatingSystemCentOS:  "centos-ami",
+					providerconfig.OperatingSystemCoreos:  "coreos-ami",
+					providerconfig.OperatingSystemSLES:    "sles-ami",
+					providerconfig.OperatingSystemRHEL:    "rhel-ami",
+					providerconfig.OperatingSystemFlatcar: "flatcar-ami",
 				},
 				Region: "us-central1",
 			},

@@ -36,6 +36,16 @@ func getAWSScenarios(versions []*semver.Semver) []testScenario {
 				},
 			},
 		})
+		// CoreOS
+		scenarios = append(scenarios, &awsScenario{
+			version: v,
+			nodeOsSpec: apimodels.OperatingSystemSpec{
+				Flatcar: &apimodels.FlatcarSpec{
+					// Otherwise the nodes restart directly after creation - bad for tests
+					DisableAutoUpdate: true,
+				},
+			},
+		})
 		scenarios = append(scenarios, &awsScenario{
 			version: v,
 			nodeOsSpec: apimodels.OperatingSystemSpec{
