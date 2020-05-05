@@ -84,6 +84,8 @@ func NewTemplateData(
 			Name:                 cluster.Name,
 			HumanReadableName:    cluster.Spec.HumanReadableName,
 			Namespace:            cluster.Status.NamespaceName,
+			Labels:               cluster.Labels,
+			Annotations:          cluster.Annotations,
 			Kubeconfig:           kubeconfig,
 			OwnerName:            cluster.Status.UserName,
 			OwnerEmail:           cluster.Status.UserEmail,
@@ -120,6 +122,12 @@ type ClusterData struct {
 	OwnerName string
 	// OwnerEmail is the owner's e-mail address.
 	OwnerEmail string
+	// Labels are the labels users have configured for their cluster, including
+	// system-defined labels like the project ID.
+	Labels map[string]string
+	// Annotations are the annotations on the cluster resource, usually
+	// cloud-provider related information like regions.
+	Annotations map[string]string
 	// Kubeconfig is a YAML-encoded kubeconfig with cluster-admin permissions
 	// inside the user-cluster. The kubeconfig uses the external URL to reach
 	// the apiserver.
