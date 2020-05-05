@@ -18,12 +18,6 @@ items:
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
-    name: dns
-    labels:
-      addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8s.io/v1
-  kind: Addon
-  metadata:
     name: kube-proxy
     labels:
       addons.kubermatic.io/ensure: true
