@@ -90,10 +90,6 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 		return "", errors.New("dockercfg must not be empty")
 	}
 
-	// The OpenShift 4 minor release is: Kubernetes minor - 12
-	// We require it to download some tooling which follows the Kubernetes versioning
-	kubernetesMinor := openShiftVersion.Minor() + 12
-
 	data := struct {
 		plugin.UserDataRequest
 		ProviderSpec          *providerconfig.Config
@@ -104,7 +100,7 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 		Kubeconfig            string
 		KubernetesCACert      string
 		DockerPullSecret      string
-		CRIORepo              string
+		CRIORPMPackage        string
 	}{
 		UserDataRequest:       req,
 		ProviderSpec:          pconfig,
@@ -115,8 +111,8 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 		Kubeconfig:            kubeconfigString,
 		KubernetesCACert:      kubernetesCACert,
 		DockerPullSecret:      dockerPullSecret,
-		// There is a CRI-O release for every Kubernetes release.
-		CRIORepo: fmt.Sprintf("https://cbs.centos.org/repos/paas7-crio-1%d-candidate/x86_64/os/", kubernetesMinor),
+		// TODO(MQ): for now we only use 4.1.x openshift clusters once we support more versions we should make this field dynamic.
+		CRIORPMPackage: "https://cbs.centos.org/kojifiles/packages/cri-o/1.13.11/1.el7/x86_64/cri-o-1.13.11-1.el7.x86_64.rpm",
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -152,15 +148,6 @@ write_files:
   content: |
     net.ipv4.ip_forward=1
 
-- path: "/etc/yum.repos.d/crio.repo"
-  content: |
-    [crio]
-    name=CRI-O
-    baseurl={{ .CRIORepo }}
-    enabled=1
-    {{- /* The repo has no publickey. The Kubernetes docs also disable the gpg check: https://kubernetes.io/docs/setup/production-environment/container-runtimes/ */}}
-    gpgcheck=0
-
 - path: "/opt/bin/setup"
   permissions: "0777"
   content: |
@@ -184,6 +171,8 @@ write_files:
 
     if systemctl is-active firewalld; then systemctl stop firewalld; fi;
     systemctl mask firewalld
+
+    yum install -y {{ .CRIORPMPackage }}
 
     # Coming from the upstream ansible playbook
     # https://github.com/openshift/openshift-ansible/blob/release-4.1/roles/openshift_node/defaults/main.yml#L19
@@ -241,8 +230,6 @@ write_files:
       container-storage-setup \
       cloud-utils-growpart \
       ceph-common \
-      cri-o \
-      cri-tools \
       podman \ {{- /* # We install podman to be able to fetch the hyperkube image from the image */}}
       glusterfs-fuse{{ if eq .CloudProviderName "vsphere" }} \
       open-vm-tools{{ end }}

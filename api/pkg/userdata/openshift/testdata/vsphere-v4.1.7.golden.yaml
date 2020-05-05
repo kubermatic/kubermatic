@@ -16,14 +16,6 @@ write_files:
   content: |
     net.ipv4.ip_forward=1
 
-- path: "/etc/yum.repos.d/crio.repo"
-  content: |
-    [crio]
-    name=CRI-O
-    baseurl=https://cbs.centos.org/repos/paas7-crio-113-candidate/x86_64/os/
-    enabled=1
-    gpgcheck=0
-
 - path: "/opt/bin/setup"
   permissions: "0777"
   content: |
@@ -44,6 +36,8 @@ write_files:
 
     if systemctl is-active firewalld; then systemctl stop firewalld; fi;
     systemctl mask firewalld
+
+    yum install -y https://cbs.centos.org/kojifiles/packages/cri-o/1.13.11/1.el7/x86_64/cri-o-1.13.11-1.el7.x86_64.rpm
 
     # Coming from the upstream ansible playbook
     # https://github.com/openshift/openshift-ansible/blob/release-4.1/roles/openshift_node/defaults/main.yml#L19
@@ -101,8 +95,6 @@ write_files:
       container-storage-setup \
       cloud-utils-growpart \
       ceph-common \
-      cri-o \
-      cri-tools \
       podman \
       glusterfs-fuse \
       open-vm-tools
