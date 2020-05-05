@@ -56,7 +56,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 			dep.Name = resources.UserClusterControllerDeploymentName
 			dep.Labels = resources.BaseAppLabels(name, nil)
 
-			dep.Spec.Replicas = resources.Int32(1)
+			dep.Spec.Replicas = resources.Int32(0)
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabels(name, nil),
 			}
@@ -97,12 +97,17 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
+			dnsClusterIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
+			if err != nil {
+				return nil, err
+			}
 			args := append([]string{
 				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				"-metrics-listen-address", "0.0.0.0:8085",
 				"-health-listen-address", "0.0.0.0:8086",
 				"-namespace", "$(NAMESPACE)",
 				"-cluster-url", data.Cluster().Address.URL,
+				"-dns-cluster-ip", dnsClusterIP,
 				"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
 				"-overwrite-registry", data.ImageRegistry(""),
 				fmt.Sprintf("-openshift=%t", openshift),

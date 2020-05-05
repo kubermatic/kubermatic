@@ -327,7 +327,6 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 	}
 
 	manifestPath := path.Join(addonDir, addon.Spec.Name)
-
 	allManifests, err := addonutils.ParseFromFolder(log, r.overwriteRegistry, manifestPath, data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse addon templates in %s: %v", manifestPath, err)
