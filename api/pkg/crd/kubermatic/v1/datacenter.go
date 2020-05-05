@@ -215,6 +215,8 @@ type DatacenterSpecVSphere struct {
 	AllowInsecure bool `json:"allow_insecure"`
 	// The name of the datastore to use.
 	Datastore string `json:"datastore"`
+	// The name of the datastore cluster.
+	DatastoreCluster string `json:"datastore_cluster"`
 	// The name of the datacenter to use.
 	Datacenter string `json:"datacenter"`
 	// The name of the Kubernetes cluster to use.

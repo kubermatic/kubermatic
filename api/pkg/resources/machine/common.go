@@ -147,16 +147,17 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *
 
 func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
 	config := vsphere.RawConfig{
-		TemplateVMName: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VSphere.Template},
-		VMNetName:      providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.VMNetName},
-		CPUs:           int32(nodeSpec.Cloud.VSphere.CPUs),
-		MemoryMB:       int64(nodeSpec.Cloud.VSphere.Memory),
-		DiskSizeGB:     nodeSpec.Cloud.VSphere.DiskSizeGB,
-		Datacenter:     providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datacenter},
-		Datastore:      providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datastore},
-		Cluster:        providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Cluster},
-		Folder:         providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.Folder},
-		AllowInsecure:  providerconfig.ConfigVarBool{Value: dc.Spec.VSphere.AllowInsecure},
+		TemplateVMName:   providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VSphere.Template},
+		VMNetName:        providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.VMNetName},
+		CPUs:             int32(nodeSpec.Cloud.VSphere.CPUs),
+		MemoryMB:         int64(nodeSpec.Cloud.VSphere.Memory),
+		DiskSizeGB:       nodeSpec.Cloud.VSphere.DiskSizeGB,
+		Datacenter:       providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datacenter},
+		Datastore:        providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datastore},
+		DatastoreCluster: providerconfig.ConfigVarString{Value: dc.Spec.VSphere.DatastoreCluster},
+		Cluster:          providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Cluster},
+		Folder:           providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.Folder},
+		AllowInsecure:    providerconfig.ConfigVarBool{Value: dc.Spec.VSphere.AllowInsecure},
 	}
 
 	ext := &runtime.RawExtension{}
