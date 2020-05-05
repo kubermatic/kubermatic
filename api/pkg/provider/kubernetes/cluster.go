@@ -91,6 +91,43 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 		return nil, errors.New("can not set OIDC for the cluster when share config feature is enabled")
 	}
 
+	newCluster := genAPICluster(project, cluster, userInfo.Email, p.workerName)
+
+	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+	newCluster, err = seedImpersonatedClient.Clusters().Create(newCluster)
+	if err != nil {
+		return nil, err
+	}
+
+	return newCluster, nil
+}
+
+// NewUnsecured creates a brand new cluster that is bound to the given project.
+//
+// Note that the admin privileges are used to create cluster
+func (p *ClusterProvider) NewUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, userEmail string) (*kubermaticv1.Cluster, error) {
+	if project == nil || cluster == nil {
+		return nil, errors.New("project and/or cluster is missing but required")
+	}
+	// share kubeconfig feature is contrary to cluster OIDC setting
+	if p.oidcKubeConfEndpoint && !reflect.DeepEqual(cluster.Spec.OIDC, kubermaticv1.OIDCSettings{}) {
+		return nil, errors.New("can not set OIDC for the cluster when share config feature is enabled")
+	}
+
+	newCluster := genAPICluster(project, cluster, userEmail, p.workerName)
+
+	err := p.client.Create(context.Background(), newCluster)
+	if err != nil {
+		return nil, err
+	}
+
+	return newCluster, nil
+}
+
+func genAPICluster(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, email, workerName string) *kubermaticv1.Cluster {
 	cluster.Spec.HumanReadableName = strings.TrimSpace(cluster.Spec.HumanReadableName)
 
 	var name string
@@ -100,16 +137,16 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 		name = rand.String(10)
 	}
 
-	newCluster := &kubermaticv1.Cluster{
+	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: cluster.Annotations,
 			Finalizers:  cluster.Finalizers,
-			Labels:      getClusterLabels(cluster.Labels, project.Name, p.workerName),
+			Labels:      getClusterLabels(cluster.Labels, project.Name, workerName),
 			Name:        name,
 		},
 		Spec: cluster.Spec,
 		Status: kubermaticv1.ClusterStatus{
-			UserEmail:              userInfo.Email,
+			UserEmail:              email,
 			NamespaceName:          NamespaceName(name),
 			CloudMigrationRevision: cloud.CurrentMigrationRevision,
 			KubermaticVersion:      resources.KUBERMATICCOMMIT,
@@ -126,17 +163,6 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 		},
 		Address: kubermaticv1.ClusterAddress{},
 	}
-
-	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
-	if err != nil {
-		return nil, err
-	}
-	newCluster, err = seedImpersonatedClient.Clusters().Create(newCluster)
-	if err != nil {
-		return nil, err
-	}
-
-	return newCluster, nil
 }
 
 func getClusterLabels(specifiedLabels map[string]string, projectName, workerName string) map[string]string {
@@ -189,6 +215,9 @@ func (p *ClusterProvider) List(project *kubermaticv1.Project, options *provider.
 
 // Get returns the given cluster, it uses the projectInternalName to determine the group the user belongs to
 func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
+	if options == nil {
+		options = &provider.ClusterGetOptions{}
+	}
 	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -375,9 +404,12 @@ func (p *ClusterProvider) withImpersonation(userInfo *provider.UserInfo) k8cuser
 // GetUnsecured returns a cluster for the project and given name.
 //
 // Note that the admin privileges are used to get cluster
-func (p *ClusterProvider) GetUnsecured(project *kubermaticv1.Project, clusterName string) (*kubermaticv1.Cluster, error) {
+func (p *ClusterProvider) GetUnsecured(project *kubermaticv1.Project, clusterName string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	if project == nil {
 		return nil, errors.New("project is missing but required")
+	}
+	if options == nil {
+		options = &provider.ClusterGetOptions{}
 	}
 
 	cluster := &kubermaticv1.Cluster{}
@@ -385,6 +417,11 @@ func (p *ClusterProvider) GetUnsecured(project *kubermaticv1.Project, clusterNam
 		return nil, err
 	}
 	if cluster.Labels[kubermaticv1.ProjectIDLabelKey] == project.Name {
+		if options.CheckInitStatus {
+			if !cluster.Status.ExtendedHealth.AllHealthy() {
+				return nil, kerrors.NewServiceUnavailable("Cluster components are not ready yet")
+			}
+		}
 		return cluster, nil
 	}
 

@@ -10,6 +10,7 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
@@ -42,10 +43,10 @@ func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, presetsProvider pro
 	}
 }
 
-func OpenstackSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func OpenstackSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
-		cluster, err := getClusterForOpenstack(ctx, projectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := getClusterForOpenstack(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -131,10 +132,10 @@ func OpenstackTenantEndpoint(seedsGetter provider.SeedsGetter, presetsProvider p
 	}
 }
 
-func OpenstackTenantWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func OpenstackTenantWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
-		cluster, err := getClusterForOpenstack(ctx, projectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := getClusterForOpenstack(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -203,10 +204,10 @@ func OpenstackNetworkEndpoint(seedsGetter provider.SeedsGetter, presetsProvider 
 	}
 }
 
-func OpenstackNetworkWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func OpenstackNetworkWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
-		cluster, err := getClusterForOpenstack(ctx, projectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := getClusterForOpenstack(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -276,10 +277,10 @@ func OpenstackSecurityGroupEndpoint(seedsGetter provider.SeedsGetter, presetsPro
 	}
 }
 
-func OpenstackSecurityGroupWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func OpenstackSecurityGroupWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackNoCredentialsReq)
-		cluster, err := getClusterForOpenstack(ctx, projectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := getClusterForOpenstack(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -348,10 +349,10 @@ func OpenstackSubnetsEndpoint(seedsGetter provider.SeedsGetter, presetsProvider 
 	}
 }
 
-func OpenstackSubnetsWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func OpenstackSubnetsWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(OpenstackSubnetNoCredentialsReq)
-		cluster, err := getClusterForOpenstack(ctx, projectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := getClusterForOpenstack(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
@@ -400,19 +401,10 @@ func getOpenstackSubnets(userInfo *provider.UserInfo, seedsGetter provider.Seeds
 	return apiSubnetIDs, nil
 }
 
-func getClusterForOpenstack(ctx context.Context, projectProvider provider.ProjectProvider, userInfoGetter provider.UserInfoGetter, projectID string, clusterID string) (*kubermaticv1.Cluster, error) {
-	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-	userInfo, err := userInfoGetter(ctx, projectID)
+func getClusterForOpenstack(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, projectID string, clusterID string) (*kubermaticv1.Cluster, error) {
+	cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	_, err = projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{})
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	cluster, err := clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{})
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, err
 	}
 	if cluster.Spec.Cloud.Openstack == nil {
 		return nil, errors.NewNotFound("cloud spec for ", clusterID)
