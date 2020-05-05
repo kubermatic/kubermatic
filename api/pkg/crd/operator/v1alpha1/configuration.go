@@ -57,6 +57,9 @@ type KubermaticConfigurationSpec struct {
 	Versions KubermaticVersionsConfiguration `json:"versions,omitempty"`
 	// VerticalPodAutoscaler configures the Kubernetes VPA integration.
 	VerticalPodAutoscaler KubermaticVPAConfiguration `json:"verticalPodAutoscaler,omitempty"`
+	// Proxy allows to configure Kubermatic to use proxies to talk to the
+	// world outside of its cluster.
+	Proxy KubermaticProxyConfiguration `json:"proxy,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
@@ -295,6 +298,27 @@ type KubermaticVPAComponent struct {
 	DockerRepository string `json:"dockerRepository,omitempty"`
 	// Resources describes the requested and maximum allowed CPU/memory usage.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+// KubermaticProxyConfiguration can be used to control how the various
+// Kubermatic components reach external services / the Internet. These
+// settings are reflected as environment variables for the Kubermatic
+// pods.
+type KubermaticProxyConfiguration struct {
+	// HTTP is the full URL to the proxy to use for plaintext HTTP
+	// connections, e.g. "http://internalproxy.example.com:8080".
+	HTTP string `json:"http,omitempty"`
+	// HTTPS is the full URL to the proxy to use for encrypted HTTPS
+	// connections, e.g. "http://secureinternalproxy.example.com:8080".
+	HTTPS string `json:"https,omitempty"`
+	// NoProxy is a comma-separated list of hostnames / network masks
+	// for which no proxy shall be used. If you make use of proxies,
+	// this list should contain all local and cluster-internal domains
+	// and networks, e.g. "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,mydomain".
+	// The operator will always prepend the following elements to this
+	// list if proxying is configured (i.e. HTTP/HTTPS are not empty):
+	// "127.0.0.1/8", "localhost", ".local", ".local.", "kubernetes", ".default", ".svc"
+	NoProxy string `json:"noProxy,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
