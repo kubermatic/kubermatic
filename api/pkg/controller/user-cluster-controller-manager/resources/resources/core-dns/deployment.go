@@ -45,7 +45,7 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			if dep.Spec.Selector == nil {
 				dep.Spec.Selector = &metav1.LabelSelector{
 					MatchLabels: resources.BaseAppLabels(resources.CoreDNSDeploymentName,
-						map[string]string{"k8s-app": "kube-dns", "kubermatic-addon": "dns"}),
+						map[string]string{"app.kubernetes.io/name": "kube-dns"}),
 				}
 			}
 
@@ -60,7 +60,7 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			if dep.Spec.Template.ObjectMeta.Labels == nil {
 				dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 					Labels: resources.BaseAppLabels(resources.CoreDNSDeploymentName,
-						map[string]string{"k8s-app": "kube-dns", "kubermatic-addon": "dns"}),
+						map[string]string{"app.kubernetes.io/name": "kube-dns"}),
 				}
 			}
 

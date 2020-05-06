@@ -8,17 +8,17 @@ import (
 )
 
 // ServiceCreator creates the service for the CoreDNS
-func ServiceCreator(DNSClusterIP string) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(dnsClusterIP string) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		labels := map[string]string{
 			"kubernetes.io/cluster-service": "true",
-			"kubernetes.io/name":            "KubeDNS",
+			"app.kubernetes.io/name":        "KubeDNS",
 		}
 		return resources.CoreDNSServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Name = resources.CoreDNSServiceName
 			s.Labels = resources.BaseAppLabels(resources.CoreDNSDeploymentName, labels)
 			s.Spec.Selector = resources.BaseAppLabels(resources.CoreDNSDeploymentName, nil)
-			s.Spec.ClusterIP = DNSClusterIP
+			s.Spec.ClusterIP = dnsClusterIP
 			s.Spec.Ports = []corev1.ServicePort{
 				{
 					Name:     "dns-tcp",

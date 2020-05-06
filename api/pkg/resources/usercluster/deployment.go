@@ -56,7 +56,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 			dep.Name = resources.UserClusterControllerDeploymentName
 			dep.Labels = resources.BaseAppLabels(name, nil)
 
-			dep.Spec.Replicas = resources.Int32(0)
+			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabels(name, nil),
 			}
