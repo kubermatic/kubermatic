@@ -607,7 +607,7 @@ func (r Routing) listSSHKeys() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(ssh.ListEndpoint(r.sshKeyProvider, r.projectProvider, r.userInfoGetter)),
+		)(ssh.ListEndpoint(r.sshKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		ssh.DecodeListReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -634,7 +634,7 @@ func (r Routing) createSSHKey() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(ssh.CreateEndpoint(r.sshKeyProvider, r.projectProvider, r.userInfoGetter)),
+		)(ssh.CreateEndpoint(r.sshKeyProvider, r.privilegedSSHKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		ssh.DecodeCreateReq,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,
@@ -658,7 +658,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
-		)(ssh.DeleteEndpoint(r.sshKeyProvider, r.projectProvider, r.userInfoGetter)),
+		)(ssh.DeleteEndpoint(r.sshKeyProvider, r.privilegedSSHKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		ssh.DecodeDeleteReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
