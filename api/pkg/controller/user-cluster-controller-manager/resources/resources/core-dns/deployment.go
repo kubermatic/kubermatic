@@ -40,8 +40,13 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			dep.Labels = resources.BaseAppLabels(resources.CoreDNSDeploymentName, nil)
 
 			dep.Spec.Replicas = resources.Int32(2)
-			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(resources.CoreDNSDeploymentName, nil),
+			// The Selector is immutable, so we don't change it if it's set. This happens in upgrade cases
+			// where coredns is switched from a manifest based addon to a user-cluster-controller-manager resource
+			if dep.Spec.Selector == nil {
+				dep.Spec.Selector = &metav1.LabelSelector{
+					MatchLabels: resources.BaseAppLabels(resources.CoreDNSDeploymentName,
+						map[string]string{"k8s-app": "kube-dns", "kubermatic-addon": "dns"}),
+				}
 			}
 
 			iptr := intstr.FromInt(1)
@@ -51,8 +56,12 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 					MaxUnavailable: &iptr,
 				},
 			}
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: resources.BaseAppLabels(resources.CoreDNSDeploymentName, nil),
+			// has to be the same as the selector
+			if dep.Spec.Template.ObjectMeta.Labels == nil {
+				dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
+					Labels: resources.BaseAppLabels(resources.CoreDNSDeploymentName,
+						map[string]string{"k8s-app": "kube-dns", "kubermatic-addon": "dns"}),
+				}
 			}
 
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
