@@ -7,14 +7,24 @@ source $(dirname $0)/../lib.sh
 cd $(dirname $0)/../../..
 git fetch --tags
 
-# we only synchronize charts for tags
-if ! git tag -l | grep -q "^$PULL_BASE_REF\$"; then
-  echo "Base ref $PULL_BASE_REF is not a tag! Exiting..."
+# we only synchronize charts for the master branch and tagged versions
+if [ "$PULL_BASE_REF" != "master" ] && ! (git tag -l | grep -q "^$PULL_BASE_REF\$"); then
+  echo "Base ref $PULL_BASE_REF is neither master nor a tag! Exiting..."
   exit 1
 fi
 
+# The dashboard tag should match the Kubermatic tag for tagged releases
+KUBERMATIC_VERSION="$PULL_BASE_REF"
+DASHBOARD_VERSION="$KUBERMATIC_VERSION"
+
 # find out which kubermatic-installer branch to synchronize to
-if grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+.*' <<< "$PULL_BASE_REF"; then
+if [ "$PULL_BASE_REF" == "master" ]; then
+  INSTALLER_BRANCH="master"
+  # do not use the actual head hash to avoid spamming the installer
+  # repo for every new commit on master branch
+  KUBERMATIC_VERSION="latest"
+  DASHBOARD_VERSION="master"
+elif grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+.*' <<< "$PULL_BASE_REF"; then
   # e.g. 'release/v2.12'
   INSTALLER_BRANCH="release/$(grep -o -E '^v[0-9]+\.[0-9]+' <<< "$PULL_BASE_REF")"
 elif grep -E '^weekly-[0-9]{4}-.*' <<< "$PULL_BASE_REF"; then
@@ -24,9 +34,8 @@ else
   exit 1
 fi
 
-# The dashboard tag should match the Kubermatic tag
-sed -i "s/__KUBERMATIC_TAG__/$PULL_BASE_REF/g" config/*/*.yaml
-sed -i "s/__DASHBOARD_TAG__/$PULL_BASE_REF/g" config/*/*.yaml
+sed -i "s/__KUBERMATIC_TAG__/$KUBERMATIC_VERSION/g" config/*/*.yaml
+sed -i "s/__DASHBOARD_TAG__/$DASHBOARD_VERSION/g" config/*/*.yaml
 
 git config --global user.email "dev@loodse.com"
 git config --global user.name "Prow CI Robot"
@@ -41,11 +50,6 @@ export CHARTS_DIR=$(pwd)/config
 export TARGET_DIR='sync_target'
 export TARGET_VALUES_FILE=${TARGET_DIR}/values.example.yaml
 export TARGET_VALUES_SEED_FILE=${TARGET_DIR}/values.seed.example.yaml
-COMMIT=${3:-}
-
-if [ ! -z "${COMMIT}" ]; then
-  COMMIT="local folder"
-fi
 
 # create fresh clone of the installer repository
 rm -rf ${TARGET_DIR}
@@ -164,9 +168,15 @@ done
 cd ${TARGET_DIR}
 git add .
 if ! git status|grep 'nothing to commit'; then
-  git commit -m "Syncing charts from release ${PULL_BASE_REF}"
-  # $PULL_BASE_REF must be a tag, but we've verified it earlier
-  git tag $PULL_BASE_REF
+  if [ "$INSTALLER_BRANCH" == "master" ]; then
+    SHORT_HASH="$(git rev-parse --short HEAD | tr -d '\n')"
+    git commit -m "Syncing charts from master branch @ $SHORT_HASH"
+  else
+    git commit -m "Syncing charts from release ${PULL_BASE_REF}"
+    # $PULL_BASE_REF is a tag, we've checked that earlier
+    git tag $PULL_BASE_REF
+  fi
+
   git push --tags origin ${INSTALLER_BRANCH}
 fi
 
