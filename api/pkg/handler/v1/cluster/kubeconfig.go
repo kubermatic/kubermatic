@@ -36,7 +36,7 @@ func GetAdminKubeconfigEndpoint(projectProvider provider.ProjectProvider, privil
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -79,7 +79,7 @@ func GetOidcKubeconfigEndpoint(projectProvider provider.ProjectProvider, privile
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +125,7 @@ func getClusterForOIDCEndpoint(ctx context.Context, projectProvider provider.Pro
 	}
 
 	if userInfo.IsAdmin {
-		return privilegedClusterProvider.GetUnsecured(project, clusterID)
+		return privilegedClusterProvider.GetUnsecured(project, clusterID, nil)
 	}
 
 	return clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{})
