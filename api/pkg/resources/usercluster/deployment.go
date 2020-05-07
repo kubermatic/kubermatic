@@ -115,6 +115,10 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				args = append(args, "-openshift-console-callback-uri", openshiftConsoleCallbackURI)
 			}
 
+			if data.Cluster().Spec.UpdateWindow != nil && data.Cluster().Spec.UpdateWindow.Length != "" && data.Cluster().Spec.UpdateWindow.Start != "" {
+				args = append(args, "-update-window-start", data.Cluster().Spec.UpdateWindow.Start, "-update-window-length", data.Cluster().Spec.UpdateWindow.Length)
+			}
+
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())
 			if err != nil {
 				return nil, fmt.Errorf("faild to get label args value: %v", err)

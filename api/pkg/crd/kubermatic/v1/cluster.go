@@ -98,6 +98,8 @@ type ClusterSpec struct {
 	// can not cope with string types
 	Features map[string]bool `json:"features,omitempty"`
 
+	UpdateWindow *UpdateWindow `json:"updateWindow,omitempty"`
+
 	// Openshift holds all openshift-specific settings
 	Openshift *Openshift `json:"openshift,omitempty"`
 
@@ -126,6 +128,11 @@ const (
 // types, the `true` value must indicate success. All condition types must be registered within
 // the `AllClusterConditionTypes` variable.
 type ClusterConditionType string
+
+type UpdateWindow struct {
+	Start  string `json:"start,omitempty"`
+	Length string `json:"length,omitempty"`
+}
 
 const (
 	// ClusterConditionSeedResourcesUpToDate indicates that all controllers have finished setting up the

@@ -2,6 +2,7 @@ package resources
 
 import (
 	nodelabelerapi "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler/api"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 
@@ -23,7 +24,7 @@ var (
 
 type GetImageRegistry func(reg string) string
 
-func DeploymentCreator(getRegistry GetImageRegistry) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(getRegistry GetImageRegistry, updateWindow kubermaticv1.UpdateWindow) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return DeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Spec.Replicas = &deploymentReplicas
@@ -44,22 +45,38 @@ func DeploymentCreator(getRegistry GetImageRegistry) reconciling.NamedDeployment
 			// The operator should only run on ContainerLinux nodes
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{nodelabelerapi.DistributionLabelKey: nodelabelerapi.ContainerLinuxLabelValue}
 
+			env := []corev1.EnvVar{
+				{
+					Name: "POD_NAMESPACE",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							APIVersion: "v1",
+							FieldPath:  "metadata.namespace",
+						},
+					},
+				},
+			}
+
+			if updateWindow.Start != "" {
+				env = append(env, corev1.EnvVar{
+					Name:  "UPDATE_OPERATOR_REBOOT_WINDOW_START",
+					Value: updateWindow.Start,
+				})
+			}
+
+			if updateWindow.Length != "" {
+				env = append(env, corev1.EnvVar{
+					Name:  "UPDATE_OPERATOR_REBOOT_WINDOW_LENGTH",
+					Value: updateWindow.Length,
+				})
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "update-operator",
 					Image:   getRegistry(resources.RegistryQuay) + "/coreos/container-linux-update-operator:v0.7.0",
 					Command: []string{"/bin/update-operator"},
-					Env: []corev1.EnvVar{
-						{
-							Name: "POD_NAMESPACE",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									APIVersion: "v1",
-									FieldPath:  "metadata.namespace",
-								},
-							},
-						},
-					},
+					Env:     env,
 				},
 			}
 
