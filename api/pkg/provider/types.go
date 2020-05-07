@@ -188,7 +188,7 @@ type PrivilegedClusterProvider interface {
 	// GetUnsecured returns a cluster for the project and given name.
 	//
 	// Note that the admin privileges are used to get cluster
-	GetUnsecured(project *kubermaticv1.Project, clusterName string) (*kubermaticv1.Cluster, error)
+	GetUnsecured(project *kubermaticv1.Project, clusterName string, options *ClusterGetOptions) (*kubermaticv1.Cluster, error)
 
 	// UpdateUnsecured updates a cluster.
 	//
@@ -199,6 +199,11 @@ type PrivilegedClusterProvider interface {
 	//
 	// Note that the admin privileges are used to delete cluster
 	DeleteUnsecured(cluster *kubermaticv1.Cluster) error
+
+	// NewUnsecured creates a brand new cluster that is bound to the given project.
+	//
+	// Note that the admin privileges are used to create cluster
+	NewUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, userEmail string) (*kubermaticv1.Cluster, error)
 }
 
 // SSHKeyListOptions allows to set filters that will be applied to filter the result.

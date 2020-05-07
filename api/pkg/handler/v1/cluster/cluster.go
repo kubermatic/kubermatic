@@ -57,7 +57,7 @@ const (
 // clusterTypes holds a list of supported cluster types
 var clusterTypes = sets.NewString(apiv1.OpenShiftClusterType, apiv1.KubernetesClusterType)
 
-func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter,
+func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter,
 	initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager provider.PresetProvider,
 	exposeStrategy corev1.ServiceType, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -70,30 +70,27 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
+
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		adminUserInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		project, err := projectProvider.Get(userInfo, req.ProjectID, &provider.ProjectGetOptions{})
+		project, err := getProjectForTheNewCluster(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		k8sClient := privilegedClusterProvider.GetSeedClusterAdminClient()
 
-		if req.Body.Cluster.ID != "" {
-			return nil, errors.New(int(http.StatusBadRequest), "cluster.ID is read-only")
-		}
-
-		seed, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, req.Body.Cluster.Spec.Cloud.DatacenterName)
+		seed, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, req.Body.Cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		credentialName := req.Body.Cluster.Credential
 		if len(credentialName) > 0 {
-			cloudSpec, err := credentialManager.SetCloudCredentials(userInfo, credentialName, req.Body.Cluster.Spec.Cloud, dc)
+			cloudSpec, err := credentialManager.SetCloudCredentials(adminUserInfo, credentialName, req.Body.Cluster.Spec.Cloud, dc)
 			if err != nil {
 				return nil, errors.NewBadRequest("invalid credentials: %v", err)
 			}
@@ -161,7 +158,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		}
 		kuberneteshelper.AddFinalizer(partialCluster, apiv1.CredentialsSecretsCleanupFinalizer)
 
-		newCluster, err := clusterProvider.New(project, userInfo, partialCluster)
+		newCluster, err := createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, partialCluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -178,7 +175,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 					defer utilruntime.HandleCrash()
 					ndName := getNodeDeploymentDisplayName(req.Body.NodeDeployment)
 					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationStart), "Started creation of initial node deployment %s", ndName)
-					err := createInitialNodeDeploymentWithRetries(req.Body.NodeDeployment, newCluster, project, sshKeyProvider, seedsGetter, clusterProvider, userInfo)
+					err := createInitialNodeDeploymentWithRetries(ctx, req.Body.NodeDeployment, newCluster, project, sshKeyProvider, seedsGetter, clusterProvider, privilegedClusterProvider, userInfoGetter)
 					if err != nil {
 						eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(nodeDeploymentCreationFail), "Failed to create initial node deployment %s: %v", ndName, err)
 						klog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
@@ -198,7 +195,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		// Block for up to 10 seconds to give the rbac controller time to create the bindings.
 		// During that time we swallow all errors
 		if err := wait.PollImmediate(time.Second, 10*time.Second, func() (bool, error) {
-			_, err := clusterProvider.Get(userInfo, newCluster.Name, &provider.ClusterGetOptions{})
+			_, err := getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, newCluster.Name, &provider.ClusterGetOptions{})
 			if err != nil {
 				log.Debugw("Error when waiting for cluster to become ready after creation", zap.Error(err))
 				return false, nil
@@ -213,11 +210,44 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 	}
 }
 
-func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
+func getProjectForTheNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) (*kubermaticv1.Project, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+
+	if adminUserInfo.IsAdmin {
+		// get any project for admin
+		return privilegedProjectProvider.GetUnsecured(projectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+	}
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+}
+
+func createNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedClusterProvider.NewUnsecured(project, cluster, adminUserInfo.Email)
+	}
+	userInfo, err := userInfoGetter(ctx, project.Name)
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+	}
+	return clusterProvider.New(project, userInfo, cluster)
+}
+
+func createInitialNodeDeploymentWithRetries(endpointContext context.Context, nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
 	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider,
-	seedsGetter provider.SeedsGetter, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
+	seedsGetter provider.SeedsGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, userInfoGetter provider.UserInfoGetter) error {
 	return wait.Poll(5*time.Second, 30*time.Minute, func() (bool, error) {
-		err := createInitialNodeDeployment(nodeDeployment, cluster, project, sshKeyProvider, seedsGetter, clusterProvider, userInfo)
+		err := createInitialNodeDeployment(endpointContext, nodeDeployment, cluster, project, sshKeyProvider, seedsGetter, clusterProvider, privilegedClusterProvider, userInfoGetter)
 		if err != nil {
 			// unrecoverable
 			if strings.Contains(err.Error(), `admission webhook "machine-controller.kubermatic.io-machinedeployments" denied the request`) {
@@ -232,9 +262,9 @@ func createInitialNodeDeploymentWithRetries(nodeDeployment *apiv1.NodeDeployment
 	})
 }
 
-func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
+func createInitialNodeDeployment(endpointContext context.Context, nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
 	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider,
-	seedsGetter provider.SeedsGetter, clusterProvider provider.ClusterProvider, userInfo *provider.UserInfo) error {
+	seedsGetter provider.SeedsGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, userInfoGetter provider.UserInfoGetter) error {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
 
@@ -243,7 +273,7 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 		return fmt.Errorf("node deployment is not valid: %v", err)
 	}
 
-	cluster, err = clusterProvider.Get(userInfo, cluster.Name, &provider.ClusterGetOptions{CheckInitStatus: true})
+	cluster, err = getInternalCluster(endpointContext, userInfoGetter, clusterProvider, privilegedClusterProvider, project, project.Name, cluster.Name, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
 		return err
 	}
@@ -253,12 +283,16 @@ func createInitialNodeDeployment(nodeDeployment *apiv1.NodeDeployment, cluster *
 		return err
 	}
 
-	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+	client, err := common.GetClusterClient(endpointContext, userInfoGetter, clusterProvider, cluster, project.Name)
 	if err != nil {
 		return err
 	}
 
-	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
+	adminUserInfo, err := userInfoGetter(endpointContext, "")
+	if err != nil {
+		return err
+	}
+	_, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
 		return fmt.Errorf("error getting dc: %v", err)
 	}
@@ -292,7 +326,7 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 
-		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -302,7 +336,7 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 }
 
 // GetCluster returns the cluster for a given request
-func GetCluster(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, projectID, clusterID string) (*kubermaticv1.Cluster, error) {
+func GetCluster(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	if !ok {
 		return nil, errors.New(http.StatusInternalServerError, "no cluster in request")
@@ -313,31 +347,31 @@ func GetCluster(ctx context.Context, projectProvider provider.ProjectProvider, p
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID)
+	return getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, options)
 }
 
-func getInternalCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string) (*kubermaticv1.Cluster, error) {
+func getInternalCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
 	}
 	if adminUserInfo.IsAdmin {
-		cluster, err := privilegedClusterProvider.GetUnsecured(project, clusterID)
+		cluster, err := privilegedClusterProvider.GetUnsecured(project, clusterID, options)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return cluster, nil
 	}
 
-	return getClusterForRegularUser(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID)
+	return getClusterForRegularUser(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, options)
 }
 
-func getClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string) (*kubermaticv1.Cluster, error) {
+func getClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
 	}
-	cluster, err := clusterProvider.Get(userInfo, clusterID, &provider.ClusterGetOptions{})
+	cluster, err := clusterProvider.Get(userInfo, clusterID, options)
 	if err != nil {
 
 		// Request came from the specified user. Instead `Not found` error status the `Forbidden` is returned.
@@ -346,7 +380,7 @@ func getClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserI
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		// Check if cluster really doesn't exist or some other error occurred.
-		if _, errGetUnsecured := privilegedClusterProvider.GetUnsecured(project, clusterID); errGetUnsecured != nil {
+		if _, errGetUnsecured := privilegedClusterProvider.GetUnsecured(project, clusterID, options); errGetUnsecured != nil {
 			return nil, common.KubernetesErrorToHTTPError(errGetUnsecured)
 		}
 		// Cluster is not ready yet, return original error
@@ -383,7 +417,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPr
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		oldInternalCluster, err := getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID)
+		oldInternalCluster, err := getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -564,7 +598,7 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProv
 			}
 		}
 
-		existingCluster, err := getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID)
+		existingCluster, err := getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -656,7 +690,7 @@ func GetClusterEventsEndpoint(projectProvider provider.ProjectProvider, privileg
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		cluster, err := getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID)
+		cluster, err := getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -692,7 +726,7 @@ func HealthEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		existingCluster, err := getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID)
+		existingCluster, err := getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -725,7 +759,7 @@ func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHK
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		_, err = getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID)
+		_, err = getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -799,7 +833,7 @@ func ListSSHKeysEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		_, err = getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID)
+		_, err = getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -875,7 +909,7 @@ func DetachSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHK
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		_, err = getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID)
+		_, err = getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{})
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -919,7 +953,7 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, privilegedProj
 		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -1058,6 +1092,9 @@ type CreateReq struct {
 func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType) error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the service account ID and datacenter cannot be empty")
+	}
+	if r.Body.Cluster.ID != "" {
+		return fmt.Errorf("cluster.ID is read-only")
 	}
 
 	if !clusterTypes.Has(r.Body.Cluster.Type) {
@@ -1242,7 +1279,7 @@ func RevokeAdminTokenEndpoint(projectProvider provider.ProjectProvider, privileg
 		req := request.(AdminTokenReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -1256,7 +1293,7 @@ func RevokeViewerTokenEndpoint(projectProvider provider.ProjectProvider, privile
 		req := request.(AdminTokenReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -1354,7 +1391,7 @@ func ListNamespaceEndpoint(projectProvider provider.ProjectProvider, privilegedP
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -1393,7 +1430,7 @@ func GetClusterProviderFromRequest(
 		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")
 	}
 
-	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 	if err != nil {
 		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
 	}

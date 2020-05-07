@@ -156,7 +156,7 @@ func ListInstallableAddonEndpoint(projectProvider provider.ProjectProvider, priv
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listReq)
 
-		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -195,7 +195,7 @@ func listAddons(ctx context.Context, userInfoGetter provider.UserInfoGetter, clu
 func GetAddonEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addonReq)
-		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -234,7 +234,7 @@ func ListAddonEndpoint(projectProvider provider.ProjectProvider, privilegedProje
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listReq)
 
-		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -256,7 +256,7 @@ func CreateAddonEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createReq)
 
-		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -300,7 +300,7 @@ func createAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 func PatchAddonEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchReq)
-		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -348,7 +348,7 @@ func updateAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cl
 func DeleteAddonEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addonReq)
-		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
