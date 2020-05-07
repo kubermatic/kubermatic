@@ -36,7 +36,7 @@ func getAWSScenarios(versions []*semver.Semver) []testScenario {
 				},
 			},
 		})
-		// CoreOS
+		// Flatcar
 		scenarios = append(scenarios, &awsScenario{
 			version: v,
 			nodeOsSpec: apimodels.OperatingSystemSpec{

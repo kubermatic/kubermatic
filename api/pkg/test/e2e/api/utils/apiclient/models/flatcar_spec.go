@@ -15,7 +15,7 @@ import (
 // swagger:model FlatcarSpec
 type FlatcarSpec struct {
 
-	// disable container linux auto-update feature
+	// disable flatcar linux auto-update feature
 	DisableAutoUpdate bool `json:"disableAutoUpdate,omitempty"`
 }
 
