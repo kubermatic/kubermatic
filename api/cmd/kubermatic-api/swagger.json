@@ -9145,6 +9145,11 @@
           "type": "boolean",
           "x-go-name": "EnforceAuditLogging"
         },
+        "enforcePodSecurityPolicy": {
+          "description": "EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,\nignoring cluster-specific settings",
+          "type": "boolean",
+          "x-go-name": "EnforcePodSecurityPolicy"
+        },
         "gcp": {
           "$ref": "#/definitions/DatacenterSpecGCP"
         },
@@ -11871,6 +11876,11 @@
           "description": "EnforceAuditLogging enforces audit logging on every cluster within the DC,\nignoring cluster-specific settings.",
           "type": "boolean",
           "x-go-name": "EnforceAuditLogging"
+        },
+        "enforcePodSecurityPolicy": {
+          "description": "EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,\nignoring cluster-specific settings",
+          "type": "boolean",
+          "x-go-name": "EnforcePodSecurityPolicy"
         },
         "fake": {
           "$ref": "#/definitions/DatacenterSpecFake"

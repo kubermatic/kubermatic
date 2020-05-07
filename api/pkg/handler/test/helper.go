@@ -413,6 +413,14 @@ func GenTestSeed() *kubermaticv1.Seed {
 						EnforceAuditLogging: true,
 					},
 				},
+				"psp-dc": {
+					Location: "Alexandria",
+					Country:  "Egypt",
+					Spec: kubermaticv1.DatacenterSpec{
+						Fake:                     &kubermaticv1.DatacenterSpecFake{},
+						EnforcePodSecurityPolicy: true,
+					},
+				},
 				"node-dc": {
 					Location: "Santiago",
 					Country:  "Chile",
@@ -427,8 +435,7 @@ func GenTestSeed() *kubermaticv1.Seed {
 						PauseImage:         "pause-image",
 						HyperkubeImage:     "hyperkube-image",
 					},
-				},
-			},
+				}},
 		}}
 }
 

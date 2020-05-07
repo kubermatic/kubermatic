@@ -586,6 +586,7 @@ func apiSpec(dc *kubermaticv1.Datacenter, seedName string) (*apiv1.DatacenterSpe
 		RequiredEmailDomain:      dc.Spec.RequiredEmailDomain,
 		RequiredEmailDomains:     dc.Spec.RequiredEmailDomains,
 		EnforceAuditLogging:      dc.Spec.EnforceAuditLogging,
+		EnforcePodSecurityPolicy: dc.Spec.EnforcePodSecurityPolicy,
 	}, nil
 }
 
@@ -595,20 +596,21 @@ func apiToKubermatic(datacenter *apiv1.DatacenterSpec) kubermaticv1.Datacenter {
 		Location: datacenter.Location,
 		Node:     datacenter.Node,
 		Spec: kubermaticv1.DatacenterSpec{
-			Digitalocean:         datacenter.Digitalocean,
-			BringYourOwn:         datacenter.BringYourOwn,
-			AWS:                  datacenter.AWS,
-			Azure:                datacenter.Azure,
-			Openstack:            datacenter.Openstack,
-			Packet:               datacenter.Packet,
-			Hetzner:              datacenter.Hetzner,
-			VSphere:              datacenter.VSphere,
-			GCP:                  datacenter.GCP,
-			Kubevirt:             datacenter.Kubevirt,
-			Alibaba:              datacenter.Alibaba,
-			RequiredEmailDomain:  datacenter.RequiredEmailDomain,
-			RequiredEmailDomains: datacenter.RequiredEmailDomains,
-			EnforceAuditLogging:  datacenter.EnforceAuditLogging,
+			Digitalocean:             datacenter.Digitalocean,
+			BringYourOwn:             datacenter.BringYourOwn,
+			AWS:                      datacenter.AWS,
+			Azure:                    datacenter.Azure,
+			Openstack:                datacenter.Openstack,
+			Packet:                   datacenter.Packet,
+			Hetzner:                  datacenter.Hetzner,
+			VSphere:                  datacenter.VSphere,
+			GCP:                      datacenter.GCP,
+			Kubevirt:                 datacenter.Kubevirt,
+			Alibaba:                  datacenter.Alibaba,
+			RequiredEmailDomain:      datacenter.RequiredEmailDomain,
+			RequiredEmailDomains:     datacenter.RequiredEmailDomains,
+			EnforceAuditLogging:      datacenter.EnforceAuditLogging,
+			EnforcePodSecurityPolicy: datacenter.EnforcePodSecurityPolicy,
 		},
 	}
 }

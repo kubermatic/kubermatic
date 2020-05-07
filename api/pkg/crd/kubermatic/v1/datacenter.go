@@ -159,6 +159,10 @@ type DatacenterSpec struct {
 	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
 	// ignoring cluster-specific settings.
 	EnforceAuditLogging bool `json:"enforceAuditLogging"`
+
+	// EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
+	// ignoring cluster-specific settings
+	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy"`
 }
 
 // ImageList defines a map of operating system and the image to use

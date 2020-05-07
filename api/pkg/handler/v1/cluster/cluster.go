@@ -157,6 +157,11 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			}
 		}
 
+		// Enforce PodSecurityPolicy
+		if dc.Spec.EnforcePodSecurityPolicy {
+			partialCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = true
+		}
+
 		// generate the name here so that it can be used in the secretName below
 		partialCluster.Name = rand.String(10)
 
@@ -484,6 +489,11 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPr
 			newInternalCluster.Spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
 				Enabled: true,
 			}
+		}
+
+		// Enforce PodSecurityPolicy
+		if dc.Spec.EnforcePodSecurityPolicy {
+			newInternalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = true
 		}
 
 		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
