@@ -5,8 +5,6 @@ tags
 .env
 .idea
 *.iml*
-/api/go.mod
-/api/go.sum
 api/.cover
 api/_build
 api/_cache
