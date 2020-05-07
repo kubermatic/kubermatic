@@ -393,6 +393,14 @@ func GenTestSeed() *kubermaticv1.Seed {
 						EnforceAuditLogging: true,
 					},
 				},
+				"psp-dc": {
+					Location: "Alexandria",
+					Country:  "Egypt",
+					Spec: kubermaticv1.DatacenterSpec{
+						Fake:                     &kubermaticv1.DatacenterSpecFake{},
+						EnforcePodSecurityPolicy: true,
+					},
+				},
 			},
 		}}
 }
