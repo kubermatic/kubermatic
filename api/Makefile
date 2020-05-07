@@ -1,4 +1,6 @@
 export CGO_ENABLED?=0
+export GOFLAGS?=-mod=readonly -trimpath
+export GO111MODULE=on
 REPO=quay.io/kubermatic/api
 CMD=$(filter-out OWNERS nodeport-proxy kubeletdnat-controller, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS?=-v
@@ -10,12 +12,10 @@ KUBERMATICCOMMIT?=$(shell git log -1 --format=%H)
 KUBERMATICDOCKERTAG?=$(KUBERMATICCOMMIT)
 UIDOCKERTAG?=NA
 LDFLAGS += -extldflags '-static' \
-  -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICCOMMIT=$(KUBERMATICCOMMIT) \
-  -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICGITTAG=$(GITTAG) \
-  -X github.com/kubermatic/kubermatic/api/pkg/controller/operator/common.KUBERMATICDOCKERTAG=$(KUBERMATICDOCKERTAG) \
-  -X github.com/kubermatic/kubermatic/api/pkg/controller/operator/common.UIDOCKERTAG=$(UIDOCKERTAG)
-HAS_DEP:= $(shell command -v dep 2> /dev/null)
-HAS_GIT:= $(shell command -v git 2> /dev/null)
+	-X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICCOMMIT=$(KUBERMATICCOMMIT) \
+	-X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICGITTAG=$(GITTAG) \
+	-X github.com/kubermatic/kubermatic/api/pkg/controller/operator/common.KUBERMATICDOCKERTAG=$(KUBERMATICDOCKERTAG) \
+	-X github.com/kubermatic/kubermatic/api/pkg/controller/operator/common.UIDOCKERTAG=$(UIDOCKERTAG)
 BUILD_DEST?=_build
 GOTOOLFLAGS?=$(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)'
 
@@ -26,7 +26,7 @@ all: check vendor build test
 .PHONY: $(CMD)
 build: $(CMD)
 
-$(CMD): download-gocache
+$(CMD):
 	go build $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/$@
 
 install:
@@ -37,12 +37,7 @@ showenv:
 
 check: gofmt lint
 
-download-gocache:
-	@./hack/ci/ci-download-gocache.sh
-	@# Prevent this from getting executed multiple times
-	@touch download-gocache
-
-test: download-gocache
+test:
 	CGO_ENABLED=1 go test -tags=unit -race ./...
 	@# Make sure all e2e tests compile with their individual build tag
 	@# without actually running them by using `-run` with a non-existing test.
@@ -53,8 +48,7 @@ test: download-gocache
 	go test -tags e2e -run nope ./pkg/test/e2e/api/...
 	go test -tags integration -run nope ./...
 
-test-integration : CGO_ENABLED = 1
-test-integration: download-gocache
+test-integration:
 	@# Run integration tests and only integration tests by:
 	@# * Finding all files that contain the build tag via grep
 	@# * Extracting the dirname as the `go test` command doesn't play well with individual files as args
@@ -80,7 +74,7 @@ docker-push:
 	done
 
 vendor:
-	dep ensure -v
+	@# NOOP
 
 gittag:
 	@echo $(GITTAG)
@@ -119,14 +113,11 @@ verify: gofmt
 	./hack/verify-api-client.sh
 
 check-dependencies:
-	# We need mercurial for bitbucket.org/ww/goautoneg, otherwise dep hangs forever
-	which hg >/dev/null 2>&1 || apt update && apt install -y mercurial
-	dep version || go get -u github.com/golang/dep/cmd/dep
-	dep check
+	go mod verify
 	git diff --exit-code
 
 license-validation:
-	wwhrd check -f ../allowed_licensed.yaml
+	@#TODO: Look for alternatives
 
 gen-api-client:
 	./hack/gen-api-client.sh

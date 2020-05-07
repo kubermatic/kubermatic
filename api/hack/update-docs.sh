@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-cd $(dirname $0)/..
+cd "$(dirname "$0")/.."
 
 go run cmd/addon-godoc-generator/main.go > ../docs/zz_generated.addondata.go
 

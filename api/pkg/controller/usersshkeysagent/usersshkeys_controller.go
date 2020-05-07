@@ -10,8 +10,7 @@ import (
 	"strings"
 	"syscall"
 
-	"gopkg.in/fsnotify.v1"
-
+	"github.com/fsnotify/fsnotify"
 	"go.uber.org/zap"
 
 	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"

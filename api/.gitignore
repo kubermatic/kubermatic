@@ -19,3 +19,4 @@ handler/swagger/api/index.json
 /deepcopy-gen
 download-gocache
 /pkg/handler/routes_v1.go-e
+/vendor

@@ -1,13 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
 function cleanup() {
-    rm -f $TMP_SWAGGER
+    rm -f "$TMP_SWAGGER"
 
-    cd ${API_DIR}/cmd/kubermatic-api/
+    cd "${API_DIR}"/cmd/kubermatic-api/
     sed -i -e '1,16d' ../../pkg/handler/routes_v1.go
 }
 trap cleanup EXIT SIGINT SIGTERM
@@ -29,20 +29,12 @@ SWAGGER_META="// Kubermatic API.
 //
 // swagger:meta
 "
-API_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api"
+API_DIR="$(realpath "$(dirname "$0")"/..)"
 SWAGGER_FILE="swagger.json"
 TMP_SWAGGER="${SWAGGER_FILE}.tmp"
+SWAGGER_BIN="go run github.com/go-swagger/go-swagger/cmd/swagger"
 
-# install swagger to temp dir
-TMP_DIR=$(mktemp -d)
-mkdir -p "${TMP_DIR}/bin"
-
-cd ${API_DIR}/vendor/github.com/go-swagger/go-swagger/cmd/swagger
-env "GOBIN=${TMP_DIR}/bin" go install
-export PATH="${TMP_DIR}/bin:${PATH}"
-cd ${API_DIR}/cmd/kubermatic-api/
-
-echo "${SWAGGER_META}$(cat ../../pkg/handler/routes_v1.go)" > ../../pkg/handler/routes_v1.go
-swagger generate spec --scan-models -o ${TMP_SWAGGER}
+echo "${SWAGGER_META}$(cat ../../pkg/handler/routes_v1.go)" >../../pkg/handler/routes_v1.go
+$SWAGGER_BIN generate spec --scan-models -o ${TMP_SWAGGER}
 mkdir -p ../../pkg/test/e2e/api/utils/apiclient/
-swagger generate client -q --skip-validation -f ${TMP_SWAGGER} -t ../../pkg/test/e2e/api/utils/apiclient/
+$SWAGGER_BIN generate client -q --skip-validation -f ${TMP_SWAGGER} -t ../../pkg/test/e2e/api/utils/apiclient/
