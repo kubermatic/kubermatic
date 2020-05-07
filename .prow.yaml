@@ -230,7 +230,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.15.11"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar"
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -267,7 +267,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.16.9"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar"
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -304,7 +304,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.17.5"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar"
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -341,7 +341,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar"
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -378,7 +378,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,coreos"
+          value: "centos,ubuntu,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -419,7 +419,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar"
+          value: "centos,ubuntu,flatcar,rhel"
         - name: PROVIDER
           value: "azure"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -463,7 +463,7 @@ presubmits:
         - name: PROVIDER
           value: "gcp"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar"
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -502,7 +502,7 @@ presubmits:
         - name: PROVIDER
           value: "gcp"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar"
+          value: "centos,ubuntu,flatcar,rhel"
         - name: KUBERMATIC_PSP_ENABLED
           value: "true"
         - name: ONLY_TEST_CREATION
@@ -544,7 +544,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "ubuntu,coreos,flatcar"
+          value: "ubuntu,coreos,flatcar,rhel"
         - name: PROVIDER
           value: "digitalocean"
         - name: SERVICE_ACCOUNT_KEY
@@ -585,7 +585,7 @@ presubmits:
         - name: PROVIDER
           value: "packet"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar"
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -624,7 +624,7 @@ presubmits:
         - name: PROVIDER
           value: "kubevirt"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "ubuntu,coreos,flatcar"
+          value: "ubuntu,coreos,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -664,7 +664,7 @@ presubmits:
           value: "hetzner"
         # Hetzner doesn't support coreos
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,coreos,flatcar"
+          value: "centos,coreos,flatcar,rhel"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         - name: SERVICE_ACCOUNT_KEY
@@ -705,7 +705,7 @@ presubmits:
         - name: PROVIDER
           value: "openstack"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar"
+          value: "centos,ubuntu,flatcar,rhel"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         - name: SERVICE_ACCOUNT_KEY
@@ -748,7 +748,7 @@ presubmits:
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "coreos,ubuntu,flatcar"
+          value: "coreos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -789,7 +789,7 @@ presubmits:
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "coreos,centos,flatcar"
+          value: "coreos,centos,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -828,7 +828,7 @@ presubmits:
         - name: PROVIDER
           value: "vsphere"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar"
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -868,7 +868,7 @@ presubmits:
         - name: PROVIDER
           value: "vsphere"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar"
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SCENARIO_OPTIONS
           value: "custom-folder"
         - name: SERVICE_ACCOUNT_KEY
