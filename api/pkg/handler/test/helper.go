@@ -401,6 +401,21 @@ func GenTestSeed() *kubermaticv1.Seed {
 						EnforcePodSecurityPolicy: true,
 					},
 				},
+				"node-dc": {
+					Location: "Santiago",
+					Country:  "Chile",
+					Spec: kubermaticv1.DatacenterSpec{
+						Fake: &kubermaticv1.DatacenterSpecFake{},
+					},
+					Node: kubermaticv1.NodeSettings{
+						ProxySettings: kubermaticv1.ProxySettings{
+							HTTPProxy: kubermaticv1.NewProxyValue("HTTPProxy"),
+						},
+						InsecureRegistries: []string{"incsecure-registry"},
+						PauseImage:         "pause-image",
+						HyperkubeImage:     "hyperkube-image",
+					},
+				},
 			},
 		}}
 }

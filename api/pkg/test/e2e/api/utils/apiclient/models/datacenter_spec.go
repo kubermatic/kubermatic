@@ -43,37 +43,40 @@ type DatacenterSpec struct {
 	Seed string `json:"seed,omitempty"`
 
 	// alibaba
-	Alibaba *AlibabaDatacenterSpec `json:"alibaba,omitempty"`
+	Alibaba *DatacenterSpecAlibaba `json:"alibaba,omitempty"`
 
 	// aws
-	Aws *AWSDatacenterSpec `json:"aws,omitempty"`
+	Aws *DatacenterSpecAWS `json:"aws,omitempty"`
 
 	// azure
-	Azure *AzureDatacenterSpec `json:"azure,omitempty"`
+	Azure *DatacenterSpecAzure `json:"azure,omitempty"`
 
 	// bringyourown
-	Bringyourown BringYourOwnDatacenterSpec `json:"bringyourown,omitempty"`
+	Bringyourown DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
 
 	// digitalocean
-	Digitalocean *DigitialoceanDatacenterSpec `json:"digitalocean,omitempty"`
+	Digitalocean *DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
 
 	// gcp
-	Gcp *GCPDatacenterSpec `json:"gcp,omitempty"`
+	Gcp *DatacenterSpecGCP `json:"gcp,omitempty"`
 
 	// hetzner
-	Hetzner *HetznerDatacenterSpec `json:"hetzner,omitempty"`
+	Hetzner *DatacenterSpecHetzner `json:"hetzner,omitempty"`
 
 	// kubevirt
-	Kubevirt KubevirtDatacenterSpec `json:"kubevirt,omitempty"`
+	Kubevirt DatacenterSpecKubevirt `json:"kubevirt,omitempty"`
+
+	// node
+	Node *NodeSettings `json:"node,omitempty"`
 
 	// openstack
-	Openstack *OpenstackDatacenterSpec `json:"openstack,omitempty"`
+	Openstack *DatacenterSpecOpenstack `json:"openstack,omitempty"`
 
 	// packet
-	Packet *PacketDatacenterSpec `json:"packet,omitempty"`
+	Packet *DatacenterSpecPacket `json:"packet,omitempty"`
 
 	// vsphere
-	Vsphere *VSphereDatacenterSpec `json:"vsphere,omitempty"`
+	Vsphere *DatacenterSpecVSphere `json:"vsphere,omitempty"`
 }
 
 // Validate validates this datacenter spec
@@ -101,6 +104,10 @@ func (m *DatacenterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateHetzner(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNode(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -222,6 +229,24 @@ func (m *DatacenterSpec) validateHetzner(formats strfmt.Registry) error {
 		if err := m.Hetzner.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("hetzner")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *DatacenterSpec) validateNode(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Node) { // not required
+		return nil
+	}
+
+	if m.Node != nil {
+		if err := m.Node.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("node")
 			}
 			return err
 		}

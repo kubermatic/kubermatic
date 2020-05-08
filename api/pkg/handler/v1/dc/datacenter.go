@@ -160,85 +160,32 @@ func getAPIDCsFromSeedMap(seeds map[string]*kubermaticv1.Seed) []apiv1.Datacente
 	return foundDCs
 }
 
-func imagesMap(images kubermaticv1.ImageList) map[string]string {
-	m := map[string]string{}
-	for os, image := range images {
-		m[string(os)] = image
-	}
-	return m
-}
-
 func apiSpec(dc *kubermaticv1.Datacenter) (*apiv1.DatacenterSpec, error) {
 	p, err := provider.DatacenterCloudProviderName(dc.Spec.DeepCopy())
 	if err != nil {
 		return nil, err
 	}
-	spec := &apiv1.DatacenterSpec{
-		Location: dc.Location,
-		Country:  dc.Country,
-		Provider: p,
-	}
-
-	switch {
-	case dc.Spec.Digitalocean != nil:
-		spec.Digitalocean = &apiv1.DigitialoceanDatacenterSpec{
-			Region: dc.Spec.Digitalocean.Region,
-		}
-	case dc.Spec.AWS != nil:
-		spec.AWS = &apiv1.AWSDatacenterSpec{
-			Region: dc.Spec.AWS.Region,
-		}
-	case dc.Spec.BringYourOwn != nil:
-		spec.BringYourOwn = &apiv1.BringYourOwnDatacenterSpec{}
-	case dc.Spec.Openstack != nil:
-		spec.Openstack = &apiv1.OpenstackDatacenterSpec{
-			AuthURL:           dc.Spec.Openstack.AuthURL,
-			AvailabilityZone:  dc.Spec.Openstack.AvailabilityZone,
-			Region:            dc.Spec.Openstack.Region,
-			Images:            imagesMap(dc.Spec.Openstack.Images),
-			EnforceFloatingIP: dc.Spec.Openstack.EnforceFloatingIP,
-		}
-	case dc.Spec.Hetzner != nil:
-		spec.Hetzner = &apiv1.HetznerDatacenterSpec{
-			Datacenter: dc.Spec.Hetzner.Datacenter,
-			Location:   dc.Spec.Hetzner.Location,
-		}
-	case dc.Spec.VSphere != nil:
-		spec.VSphere = &apiv1.VSphereDatacenterSpec{
-			Endpoint:   dc.Spec.VSphere.Endpoint,
-			Datacenter: dc.Spec.VSphere.Datacenter,
-			Datastore:  dc.Spec.VSphere.Datastore,
-			Cluster:    dc.Spec.VSphere.Cluster,
-			Templates:  imagesMap(dc.Spec.VSphere.Templates),
-		}
-	case dc.Spec.Azure != nil:
-		spec.Azure = &apiv1.AzureDatacenterSpec{
-			Location: dc.Spec.Azure.Location,
-		}
-	case dc.Spec.Packet != nil:
-		spec.Packet = &apiv1.PacketDatacenterSpec{
-			Facilities: dc.Spec.Packet.Facilities,
-		}
-	case dc.Spec.GCP != nil:
-		spec.GCP = &apiv1.GCPDatacenterSpec{
-			Region:       dc.Spec.GCP.Region,
-			ZoneSuffixes: dc.Spec.GCP.ZoneSuffixes,
-			Regional:     dc.Spec.GCP.Regional,
-		}
-	case dc.Spec.Kubevirt != nil:
-		spec.Kubevirt = &apiv1.KubevirtDatacenterSpec{}
-	case dc.Spec.Alibaba != nil:
-		spec.Alibaba = &apiv1.AlibabaDatacenterSpec{
-			Region: dc.Spec.Alibaba.Region,
-		}
-	}
-
-	spec.RequiredEmailDomain = dc.Spec.RequiredEmailDomain
-	spec.RequiredEmailDomains = dc.Spec.RequiredEmailDomains
-	spec.EnforceAuditLogging = dc.Spec.EnforceAuditLogging
-	spec.EnforcePodSecurityPolicy = dc.Spec.EnforcePodSecurityPolicy
-
-	return spec, nil
+	return &apiv1.DatacenterSpec{
+		Location:                 dc.Location,
+		Country:                  dc.Country,
+		Provider:                 p,
+		Node:                     dc.Node,
+		Digitalocean:             dc.Spec.Digitalocean,
+		AWS:                      dc.Spec.AWS,
+		BringYourOwn:             dc.Spec.BringYourOwn,
+		Openstack:                dc.Spec.Openstack,
+		Hetzner:                  dc.Spec.Hetzner,
+		VSphere:                  dc.Spec.VSphere,
+		Azure:                    dc.Spec.Azure,
+		Packet:                   dc.Spec.Packet,
+		GCP:                      dc.Spec.GCP,
+		Kubevirt:                 dc.Spec.Kubevirt,
+		Alibaba:                  dc.Spec.Alibaba,
+		RequiredEmailDomain:      dc.Spec.RequiredEmailDomain,
+		RequiredEmailDomains:     dc.Spec.RequiredEmailDomains,
+		EnforceAuditLogging:      dc.Spec.EnforceAuditLogging,
+		EnforcePodSecurityPolicy: dc.Spec.EnforcePodSecurityPolicy,
+	}, nil
 }
 
 // DCsReq represent a request for datacenters specific data
