@@ -194,7 +194,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		kubermaticProject, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		kubermaticProject, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -255,7 +255,7 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		kubermaticProject, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		kubermaticProject, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
