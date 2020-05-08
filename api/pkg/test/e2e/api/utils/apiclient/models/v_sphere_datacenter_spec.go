@@ -25,6 +25,9 @@ type VSphereDatacenterSpec struct {
 	// datastore
 	Datastore string `json:"datastore,omitempty"`
 
+	// datastore cluster
+	DatastoreCluster string `json:"datastoreCluster,omitempty"`
+
 	// endpoint
 	Endpoint string `json:"endpoint,omitempty"`
 

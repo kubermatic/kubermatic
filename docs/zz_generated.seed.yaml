@@ -148,6 +148,8 @@ spec:
           datacenter: ""
           # The name of the datastore to use.
           datastore: ""
+          # The name of the datastore cluster.
+          datastore_cluster: ""
           # Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
           endpoint: ""
           # Optional: Infra management user is the user that will be used for everything

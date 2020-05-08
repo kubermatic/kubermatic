@@ -9426,6 +9426,11 @@
           "type": "string",
           "x-go-name": "Datastore"
         },
+        "datastore_cluster": {
+          "description": "The name of the datastore cluster.",
+          "type": "string",
+          "x-go-name": "DatastoreCluster"
+        },
         "endpoint": {
           "description": "Endpoint URL to use, including protocol, for example \"https://vcenter.example.com\".",
           "type": "string",
