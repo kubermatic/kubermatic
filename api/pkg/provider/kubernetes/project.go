@@ -138,6 +138,9 @@ func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName s
 	if userInfo == nil {
 		return nil, errors.New("a user is missing but required")
 	}
+	if options == nil {
+		options = &provider.ProjectGetOptions{IncludeUninitialized: true}
+	}
 	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
@@ -156,6 +159,9 @@ func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName s
 // GetUnsecured returns the project with the given name
 // This function is unsafe in a sense that it uses privileged account to get project with the given name
 func (p *PrivilegedProjectProvider) GetUnsecured(projectInternalName string, options *provider.ProjectGetOptions) (*kubermaticapiv1.Project, error) {
+	if options == nil {
+		options = &provider.ProjectGetOptions{IncludeUninitialized: true}
+	}
 	project, err := p.clientPrivileged.Get(projectInternalName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
