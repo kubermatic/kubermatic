@@ -7367,17 +7367,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
-    "AWSDatacenterSpec": {
-      "type": "object",
-      "title": "AWSDatacenterSpec specifies a data center of Amazon Web Services.",
-      "properties": {
-        "region": {
-          "type": "string",
-          "x-go-name": "Region"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "AWSNodeSpec": {
       "description": "AWSNodeSpec aws specific node settings",
       "type": "object",
@@ -7902,17 +7891,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
-    "AlibabaDatacenterSpec": {
-      "type": "object",
-      "title": "AlibabaDatacenterSpec specifies a datacenter of Alibaba.",
-      "properties": {
-        "region": {
-          "type": "string",
-          "x-go-name": "Region"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "AlibabaInstanceType": {
       "type": "object",
       "title": "AlibabaInstanceType represents a object of Alibaba instance type.",
@@ -8184,17 +8162,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
-    "AzureDatacenterSpec": {
-      "type": "object",
-      "title": "AzureDatacenterSpec specifies a datacenter of Azure.",
-      "properties": {
-        "location": {
-          "type": "string",
-          "x-go-name": "Location"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "AzureNodeSpec": {
       "description": "AzureNodeSpec describes settings for an Azure node",
       "type": "object",
@@ -8295,11 +8262,6 @@
       "type": "object",
       "title": "BringYourOwnCloudSpec specifies access data for a bring your own cluster.",
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "BringYourOwnDatacenterSpec": {
-      "type": "object",
-      "title": "BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "CentOSSpec": {
       "description": "CentOSSpec contains CentOS specific settings",
@@ -8842,23 +8804,23 @@
       "title": "DatacenterSpec specifies the data for a datacenter.",
       "properties": {
         "alibaba": {
-          "$ref": "#/definitions/AlibabaDatacenterSpec"
+          "$ref": "#/definitions/DatacenterSpecAlibaba"
         },
         "aws": {
-          "$ref": "#/definitions/AWSDatacenterSpec"
+          "$ref": "#/definitions/DatacenterSpecAWS"
         },
         "azure": {
-          "$ref": "#/definitions/AzureDatacenterSpec"
+          "$ref": "#/definitions/DatacenterSpecAzure"
         },
         "bringyourown": {
-          "$ref": "#/definitions/BringYourOwnDatacenterSpec"
+          "$ref": "#/definitions/DatacenterSpecBringYourOwn"
         },
         "country": {
           "type": "string",
           "x-go-name": "Country"
         },
         "digitalocean": {
-          "$ref": "#/definitions/DigitialoceanDatacenterSpec"
+          "$ref": "#/definitions/DatacenterSpecDigitalocean"
         },
         "enforceAuditLogging": {
           "description": "EnforceAuditLogging enforces audit logging on every cluster within the DC,\nignoring cluster-specific settings.",
@@ -8866,23 +8828,26 @@
           "x-go-name": "EnforceAuditLogging"
         },
         "gcp": {
-          "$ref": "#/definitions/GCPDatacenterSpec"
+          "$ref": "#/definitions/DatacenterSpecGCP"
         },
         "hetzner": {
-          "$ref": "#/definitions/HetznerDatacenterSpec"
+          "$ref": "#/definitions/DatacenterSpecHetzner"
         },
         "kubevirt": {
-          "$ref": "#/definitions/KubevirtDatacenterSpec"
+          "$ref": "#/definitions/DatacenterSpecKubevirt"
         },
         "location": {
           "type": "string",
           "x-go-name": "Location"
         },
+        "node": {
+          "$ref": "#/definitions/NodeSettings"
+        },
         "openstack": {
-          "$ref": "#/definitions/OpenstackDatacenterSpec"
+          "$ref": "#/definitions/DatacenterSpecOpenstack"
         },
         "packet": {
-          "$ref": "#/definitions/PacketDatacenterSpec"
+          "$ref": "#/definitions/DatacenterSpecPacket"
         },
         "provider": {
           "type": "string",
@@ -8905,7 +8870,7 @@
           "x-go-name": "Seed"
         },
         "vsphere": {
-          "$ref": "#/definitions/VSphereDatacenterSpec"
+          "$ref": "#/definitions/DatacenterSpecVSphere"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -9260,17 +9225,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "DigitialoceanDatacenterSpec": {
-      "type": "object",
-      "title": "DigitialoceanDatacenterSpec specifies a datacenter of DigitalOcean.",
-      "properties": {
-        "region": {
-          "type": "string",
-          "x-go-name": "Region"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "ErrorDetails": {
       "description": "ErrorDetails contains details about the error",
       "type": "object",
@@ -9448,28 +9402,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "GCPDatacenterSpec": {
-      "type": "object",
-      "title": "GCPDatacenterSpec specifies a datacenter of GCP.",
-      "properties": {
-        "region": {
-          "type": "string",
-          "x-go-name": "Region"
-        },
-        "regional": {
-          "type": "boolean",
-          "x-go-name": "Regional"
-        },
-        "zone_suffixes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "ZoneSuffixes"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "GCPDiskType": {
       "type": "object",
@@ -9765,21 +9697,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
-    "HetznerDatacenterSpec": {
-      "type": "object",
-      "title": "HetznerDatacenterSpec specifies a datacenter of Hetzner.",
-      "properties": {
-        "datacenter": {
-          "type": "string",
-          "x-go-name": "Datacenter"
-        },
-        "location": {
-          "type": "string",
-          "x-go-name": "Location"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "HetznerNodeSpec": {
       "description": "HetznerNodeSpec Hetzner node settings",
       "type": "object",
@@ -9884,11 +9801,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "KubevirtDatacenterSpec": {
-      "type": "object",
-      "title": "KubevirtDatacenterSpec specifies a datacenter of Kubevirt.",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "KubevirtNodeSpec": {
       "description": "KubevirtNodeSpec kubevirt specific node settings",
@@ -10726,32 +10638,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
     },
-    "OpenstackDatacenterSpec": {
-      "type": "object",
-      "title": "OpenstackDatacenterSpec specifies a generic bare metal datacenter.",
-      "properties": {
-        "auth_url": {
-          "type": "string",
-          "x-go-name": "AuthURL"
-        },
-        "availability_zone": {
-          "type": "string",
-          "x-go-name": "AvailabilityZone"
-        },
-        "enforce_floating_ip": {
-          "type": "boolean",
-          "x-go-name": "EnforceFloatingIP"
-        },
-        "images": {
-          "$ref": "#/definitions/ImageList"
-        },
-        "region": {
-          "type": "string",
-          "x-go-name": "Region"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "OpenstackNetwork": {
       "type": "object",
       "title": "OpenstackNetwork is the object representing a openstack network.",
@@ -10996,20 +10882,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "PacketDatacenterSpec": {
-      "type": "object",
-      "title": "PacketDatacenterSpec specifies a datacenter of Packet.",
-      "properties": {
-        "facilities": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "Facilities"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "PacketDrive": {
       "type": "object",
@@ -12096,32 +11968,6 @@
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-    },
-    "VSphereDatacenterSpec": {
-      "type": "object",
-      "title": "VSphereDatacenterSpec specifies a datacenter of VSphere.",
-      "properties": {
-        "cluster": {
-          "type": "string",
-          "x-go-name": "Cluster"
-        },
-        "datacenter": {
-          "type": "string",
-          "x-go-name": "Datacenter"
-        },
-        "datastore": {
-          "type": "string",
-          "x-go-name": "Datastore"
-        },
-        "endpoint": {
-          "type": "string",
-          "x-go-name": "Endpoint"
-        },
-        "templates": {
-          "$ref": "#/definitions/ImageList"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
     "VSphereFolder": {
       "type": "object",

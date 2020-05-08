@@ -43,8 +43,7 @@ func TestDatacentersEndpoint(t *testing.T) {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	test.CompareWithResult(t, res, ` [{"metadata":{"name":"audited-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","enforceAuditLogging":true}},{"metadata":{"name":"fake-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"Germany","location":"Henriks basement","provider":"fake","enforceAuditLogging":false}},{"metadata":{"name":"private-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"enforceAuditLogging":false}},{"metadata":{"name":"regular-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"enforceAuditLogging":false}},{"metadata":{"name":"us-central1","resourceVersion":"1"},"spec":{"seed":"","enforceAuditLogging":false},"seed":true}]
-`)
+	test.CompareWithResult(t, res, `[{"metadata":{"name":"audited-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","node":{},"enforceAuditLogging":true}},{"metadata":{"name":"fake-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"Germany","location":"Henriks basement","provider":"fake","node":{},"enforceAuditLogging":false}},{"metadata":{"name":"node-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","node":{"http_proxy":"HTTPProxy","insecure_registries":["incsecure-registry"],"pause_image":"pause-image","hyperkube_image":"hyperkube-image"},"enforceAuditLogging":false}},{"metadata":{"name":"private-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false}},{"metadata":{"name":"regular-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false}},{"metadata":{"name":"us-central1","resourceVersion":"1"},"spec":{"seed":"","node":{},"enforceAuditLogging":false},"seed":true}]`)
 }
 
 func TestDatacenterEndpointNotFound(t *testing.T) {
@@ -120,7 +119,7 @@ func TestDatacenterEndpointFilteredByEmail(t *testing.T) {
 			t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 		}
 
-		test.CompareWithResult(t, res, `{"metadata":{"name":"restricted-fake-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","requiredEmailDomain":"example.com","enforceAuditLogging":false}}`)
+		test.CompareWithResult(t, res, `{"metadata":{"name":"restricted-fake-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false}}`)
 	}
 }
 
@@ -140,7 +139,7 @@ func TestDatacenterEndpointAdmin(t *testing.T) {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	test.CompareWithResult(t, res, `{"metadata":{"name":"private-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"enforceAuditLogging":false}}`)
+	test.CompareWithResult(t, res, `{"metadata":{"name":"private-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false}}`)
 
 }
 
@@ -160,5 +159,5 @@ func TestDatacenterEndpointFound(t *testing.T) {
 		t.Fatalf("Expected route to return code 200, got %d: %s", res.Code, res.Body.String())
 	}
 
-	test.CompareWithResult(t, res, `{"metadata":{"name":"regular-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"enforceAuditLogging":false}}`)
+	test.CompareWithResult(t, res, `{"metadata":{"name":"regular-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false}}`)
 }
