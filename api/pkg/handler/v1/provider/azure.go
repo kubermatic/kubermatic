@@ -244,6 +244,47 @@ func azureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tena
 	return sizeList, nil
 }
 
+func AzureAvailabilityZonesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AzureAvailabilityZonesNoCredentialsReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		if err != nil {
+			return nil, err
+		}
+		if cluster.Spec.Cloud.Azure == nil {
+			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		dc, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		if dc.Spec.Azure == nil {
+			return nil, errors.NewNotFound("cloud spec (dc) for ", req.ClusterID)
+		}
+
+		azureLocation := dc.Spec.Azure.Location
+		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+		if !ok {
+			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+		}
+
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+		creds, err := azure.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+		if err != nil {
+			return nil, err
+		}
+		return azureSKUAvailabilityZones(ctx, creds.SubscriptionID, creds.ClientID, creds.ClientSecret, creds.TenantID, azureLocation, req.SKUName)
+	}
+}
+
 func AzureAvailabilityZonesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AvailabilityZonesReq)
@@ -352,5 +393,37 @@ func DecodeAzureSizesReq(c context.Context, r *http.Request) (interface{}, error
 	req.ClientSecret = r.Header.Get("ClientSecret")
 	req.Location = r.Header.Get("Location")
 	req.Credential = r.Header.Get("Credential")
+	return req, nil
+}
+
+func DecodeAzureAvailabilityZonesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AvailabilityZonesReq
+
+	req.SubscriptionID = r.Header.Get("SubscriptionID")
+	req.TenantID = r.Header.Get("TenantID")
+	req.ClientID = r.Header.Get("ClientID")
+	req.ClientSecret = r.Header.Get("ClientSecret")
+	req.Location = r.Header.Get("Location")
+	req.SKUName = r.Header.Get("SKUName")
+	req.Credential = r.Header.Get("Credential")
+	return req, nil
+}
+
+type AzureAvailabilityZonesNoCredentialsReq struct {
+	common.GetClusterReq
+	// in: header
+	// name: SKUName
+	SKUName string
+}
+
+func DecodeAzureAvailabilityZonesNoCredentialsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AzureAvailabilityZonesNoCredentialsReq
+	cr, err := common.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.GetClusterReq = cr.(common.GetClusterReq)
+	req.SKUName = r.Header.Get("SKUName")
 	return req, nil
 }
