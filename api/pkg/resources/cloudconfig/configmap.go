@@ -164,10 +164,19 @@ func CloudConfig(
 
 		tag := fmt.Sprintf("kubernetes-cluster-%s", cluster.Name)
 		localZone := dc.Spec.GCP.Region + "-" + dc.Spec.GCP.ZoneSuffixes[0]
-		var multizone bool
-		if len(dc.Spec.GCP.ZoneSuffixes) > 1 {
-			multizone = true
-		}
+
+		// By default, all GCP clusters are assumed to be the in the same zone. If the control plane
+		// and worker nodes are not it the same zone (localZone), the GCP cloud controller fails
+		// to find nodes that are not in the localZone: https://github.com/kubermatic/kubermatic/issues/5025
+		// to avoid this, we should enable multizone or regional configuration.
+		// It's not easily possible to access the MachineDeployment object from here to compare
+		// localZone with the user cluster zone. Additionally, ZoneSuffixes are not used
+		// to limit available zones for the user. So, we will just enable multizone support as a workaround.
+
+		// FIXME: Compare localZone to MachineDeployment.Zone and set multizone to true
+		// when they differ, or if len(dc.Spec.GCP.ZoneSuffixes) > 1
+		multizone := true
+
 		if cloud.GCP.Network == "" || cloud.GCP.Network == gcp.DefaultNetwork {
 			// NetworkName is used by the gce cloud provider to populate the provider's NetworkURL.
 			// This value can be provided in the config as a name or a url. Internally,
