@@ -1592,3 +1592,13 @@ const (
 	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup
 	UserClusterRoleCleanupFinalizer = "kubermatic.io/user-cluster-role"
 )
+
+func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType {
+	if externalClusterType == KubernetesClusterType {
+		return kubermaticv1.ClusterTypeKubernetes
+	}
+	if externalClusterType == OpenShiftClusterType {
+		return kubermaticv1.ClusterTypeOpenShift
+	}
+	return kubermaticv1.ClusterTypeAll
+}
