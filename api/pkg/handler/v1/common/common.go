@@ -256,7 +256,7 @@ func GetOwnersForProject(userInfo *provider.UserInfo, project *kubermaticv1.Proj
 	return projectOwners, nil
 }
 
-func GetProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) (*kubermaticv1.Project, error) {
+func GetProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string, options *provider.ProjectGetOptions) (*kubermaticv1.Project, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
@@ -264,14 +264,14 @@ func GetProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, pro
 
 	if adminUserInfo.IsAdmin {
 		// get any project for admin
-		return privilegedProjectProvider.GetUnsecured(projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+		return privilegedProjectProvider.GetUnsecured(projectID, options)
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
-	return projectProvider.Get(userInfo, projectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+	return projectProvider.Get(userInfo, projectID, options)
 }
 
 func GetClusterClient(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, cluster *kubermaticv1.Cluster, projectID string) (ctrlruntimeclient.Client, error) {

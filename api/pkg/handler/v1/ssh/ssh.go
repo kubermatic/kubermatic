@@ -23,7 +23,7 @@ func CreateEndpoint(keyProvider provider.SSHKeyProvider, privilegedSSHKeyProvide
 			return nil, errors.NewBadRequest("invalid request")
 		}
 
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -77,7 +77,7 @@ func DeleteEndpoint(keyProvider provider.SSHKeyProvider, privilegedSSHKeyProvide
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -114,7 +114,7 @@ func ListEndpoint(keyProvider provider.SSHKeyProvider, projectProvider provider.
 			return nil, errors.NewBadRequest("the name of the project to delete cannot be empty")
 		}
 
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

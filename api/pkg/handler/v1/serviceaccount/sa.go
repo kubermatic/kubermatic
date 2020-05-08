@@ -33,7 +33,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, errors.NewBadRequest(err.Error())
 		}
 		saFromRequest := req.Body
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -109,7 +109,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			return nil, errors.NewBadRequest("the name of the project cannot be empty")
 		}
 
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -156,7 +156,7 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		}
 		saFromRequest := req.Body
 
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -249,7 +249,7 @@ func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, priv
 		}
 
 		// check if project exist
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
