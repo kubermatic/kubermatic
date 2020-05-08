@@ -43,89 +43,28 @@ type ObjectMeta struct {
 	CreationTimestamp Time `json:"creationTimestamp,omitempty"`
 }
 
-// DigitialoceanDatacenterSpec specifies a datacenter of DigitalOcean.
-type DigitialoceanDatacenterSpec struct {
-	Region string `json:"region"`
-}
-
-// HetznerDatacenterSpec specifies a datacenter of Hetzner.
-type HetznerDatacenterSpec struct {
-	Datacenter string `json:"datacenter"`
-	Location   string `json:"location"`
-}
-
-// ImageList defines a map of operating system and the image to use
-type ImageList map[string]string
-
-// VSphereDatacenterSpec specifies a datacenter of VSphere.
-type VSphereDatacenterSpec struct {
-	Endpoint   string    `json:"endpoint"`
-	Datacenter string    `json:"datacenter"`
-	Datastore  string    `json:"datastore"`
-	Cluster    string    `json:"cluster"`
-	Templates  ImageList `json:"templates"`
-}
-
-// KubevirtDatacenterSpec specifies a datacenter of Kubevirt.
-type KubevirtDatacenterSpec struct {
-}
-
-// AlibabaDatacenterSpec specifies a datacenter of Alibaba.
-type AlibabaDatacenterSpec struct {
-	Region string `json:"region"`
-}
-
-// BringYourOwnDatacenterSpec specifies a data center with bring-your-own nodes.
-type BringYourOwnDatacenterSpec struct{}
-
-// AWSDatacenterSpec specifies a data center of Amazon Web Services.
-type AWSDatacenterSpec struct {
-	Region string `json:"region"`
-}
-
-// AzureDatacenterSpec specifies a datacenter of Azure.
-type AzureDatacenterSpec struct {
-	Location string `json:"location"`
-}
-
-// OpenstackDatacenterSpec specifies a generic bare metal datacenter.
-type OpenstackDatacenterSpec struct {
-	AvailabilityZone  string    `json:"availability_zone"`
-	Region            string    `json:"region"`
-	AuthURL           string    `json:"auth_url"`
-	Images            ImageList `json:"images"`
-	EnforceFloatingIP bool      `json:"enforce_floating_ip"`
-}
-
-// PacketDatacenterSpec specifies a datacenter of Packet.
-type PacketDatacenterSpec struct {
-	Facilities []string `json:"facilities"`
-}
-
-// GCPDatacenterSpec specifies a datacenter of GCP.
-type GCPDatacenterSpec struct {
-	Region       string   `json:"region"`
-	ZoneSuffixes []string `json:"zone_suffixes"`
-	Regional     bool     `json:"regional"`
-}
-
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
-	Seed         string                       `json:"seed"`
-	Country      string                       `json:"country,omitempty"`
-	Location     string                       `json:"location,omitempty"`
-	Provider     string                       `json:"provider,omitempty"`
-	Digitalocean *DigitialoceanDatacenterSpec `json:"digitalocean,omitempty"`
-	BringYourOwn *BringYourOwnDatacenterSpec  `json:"bringyourown,omitempty"`
-	AWS          *AWSDatacenterSpec           `json:"aws,omitempty"`
-	Azure        *AzureDatacenterSpec         `json:"azure,omitempty"`
-	Openstack    *OpenstackDatacenterSpec     `json:"openstack,omitempty"`
-	Packet       *PacketDatacenterSpec        `json:"packet,omitempty"`
-	GCP          *GCPDatacenterSpec           `json:"gcp,omitempty"`
-	Hetzner      *HetznerDatacenterSpec       `json:"hetzner,omitempty"`
-	VSphere      *VSphereDatacenterSpec       `json:"vsphere,omitempty"`
-	Kubevirt     *KubevirtDatacenterSpec      `json:"kubevirt,omitempty"`
-	Alibaba      *AlibabaDatacenterSpec       `json:"alibaba,omitempty"`
+	Seed         string                                   `json:"seed"`
+	Country      string                                   `json:"country,omitempty"`
+	Location     string                                   `json:"location,omitempty"`
+	Provider     string                                   `json:"provider,omitempty"`
+	Digitalocean *kubermaticv1.DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
+	BringYourOwn *kubermaticv1.DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
+	AWS          *kubermaticv1.DatacenterSpecAWS          `json:"aws,omitempty"`
+	Azure        *kubermaticv1.DatacenterSpecAzure        `json:"azure,omitempty"`
+	Openstack    *kubermaticv1.DatacenterSpecOpenstack    `json:"openstack,omitempty"`
+	Packet       *kubermaticv1.DatacenterSpecPacket       `json:"packet,omitempty"`
+	GCP          *kubermaticv1.DatacenterSpecGCP          `json:"gcp,omitempty"`
+	Hetzner      *kubermaticv1.DatacenterSpecHetzner      `json:"hetzner,omitempty"`
+	VSphere      *kubermaticv1.DatacenterSpecVSphere      `json:"vsphere,omitempty"`
+	Kubevirt     *kubermaticv1.DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
+	Alibaba      *kubermaticv1.DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
+
+	// Node holds node-specific settings, like e.g. HTTP proxy, Docker
+	// registries and the like. Proxy settings are inherited from the seed if
+	// not specified here.
+	Node kubermaticv1.NodeSettings `json:"node"`
 
 	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
 	RequiredEmailDomain  string   `json:"requiredEmailDomain,omitempty"`
