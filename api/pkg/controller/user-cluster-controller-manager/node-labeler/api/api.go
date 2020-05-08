@@ -19,7 +19,7 @@ const (
 	// RHELLabelValue is the value of the label for RHEL
 	RHELLabelValue = "rhel"
 
-	// FlatcarLabelValue is the value of the label for RHEL
+	// FlatcarLabelValue is the value of the label for Flatcar Linux
 	FlatcarLabelValue = "flatcar"
 )
 
