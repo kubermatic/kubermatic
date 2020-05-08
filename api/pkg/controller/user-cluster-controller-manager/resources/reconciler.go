@@ -13,6 +13,7 @@ import (
 	kubestatemetrics "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
 	kubernetesdashboard "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	machinecontroller "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
+	nodelocaldns "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/openvpn"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/prometheus"
@@ -164,7 +165,10 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 		if err := reconciling.ReconcileServiceAccounts(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", kubernetesdashboard.Namespace, err)
 		}
-		creators = []reconciling.NamedServiceAccountCreatorGetter{coredns.ServiceAccountCreator()}
+		creators = []reconciling.NamedServiceAccountCreatorGetter{
+			coredns.ServiceAccountCreator(),
+			nodelocaldns.ServiceAccountCreator(),
+		}
 		if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", metav1.NamespaceSystem, err)
 		}
@@ -429,7 +433,10 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 	if r.openshift {
 		creators = append(creators, openshift.ControlplaneConfigCreator(r.platform))
 	} else {
-		creators = append(creators, coredns.ConfigMapCreator())
+		creators = append(creators, []reconciling.NamedConfigMapCreatorGetter{
+			coredns.ConfigMapCreator(),
+			nodelocaldns.ConfigMapCreator(r.dnsClusterIP),
+		}...)
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -480,6 +487,9 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
 	dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
 		usersshkeys.DaemonSetCreator(),
+	}
+	if !r.openshift {
+		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator())
 	}
 
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
