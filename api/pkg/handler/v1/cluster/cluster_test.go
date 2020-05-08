@@ -150,6 +150,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		ExistingAPIUser               *apiv1.User
 		ExpectedSSHKeys               []*kubermaticv1.UserSSHKey
 		ExpectedListClusterKeysStatus int
+		PrivilegedOperation           bool
 	}{
 		{
 			Name:             "scenario 1: tests deletion of a cluster and its dependant resources",
@@ -313,6 +314,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 				},
 			},
 			ExpectedListClusterKeysStatus: http.StatusNotFound,
+			PrivilegedOperation:           true,
 		},
 	}
 
@@ -338,26 +340,28 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 			}
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
 
-			validatedActions := 0
-			for _, action := range kubermaticClient.Actions() {
-				if action.Matches("update", "usersshkeies") {
-					updateAction, ok := action.(clienttesting.CreateAction)
-					if !ok {
-						t.Fatalf("unexpected action %#v", action)
-					}
-					for _, expectedSSHKey := range tc.ExpectedSSHKeys {
-						sshKeyFromAction := updateAction.GetObject().(*kubermaticv1.UserSSHKey)
-						if sshKeyFromAction.Name == expectedSSHKey.Name {
-							if !equality.Semantic.DeepEqual(updateAction.GetObject().(*kubermaticv1.UserSSHKey), expectedSSHKey) {
-								t.Fatalf("%v", diff.ObjectDiff(expectedSSHKey, updateAction.GetObject().(*kubermaticv1.UserSSHKey)))
+			if !tc.PrivilegedOperation {
+				validatedActions := 0
+				for _, action := range kubermaticClient.Actions() {
+					if action.Matches("update", "usersshkeies") {
+						updateAction, ok := action.(clienttesting.CreateAction)
+						if !ok {
+							t.Fatalf("unexpected action %#v", action)
+						}
+						for _, expectedSSHKey := range tc.ExpectedSSHKeys {
+							sshKeyFromAction := updateAction.GetObject().(*kubermaticv1.UserSSHKey)
+							if sshKeyFromAction.Name == expectedSSHKey.Name {
+								if !equality.Semantic.DeepEqual(updateAction.GetObject().(*kubermaticv1.UserSSHKey), expectedSSHKey) {
+									t.Fatalf("%v", diff.ObjectDiff(expectedSSHKey, updateAction.GetObject().(*kubermaticv1.UserSSHKey)))
+								}
 							}
 						}
+						validatedActions++
 					}
-					validatedActions++
 				}
-			}
-			if validatedActions != len(tc.ExpectedSSHKeys) {
-				t.Fatalf("not all update actions were validated, expected to validate %d but validated only %d", len(tc.ExpectedSSHKeys), validatedActions)
+				if validatedActions != len(tc.ExpectedSSHKeys) {
+					t.Fatalf("not all update actions were validated, expected to validate %d but validated only %d", len(tc.ExpectedSSHKeys), validatedActions)
+				}
 			}
 
 			// validate if the cluster was deleted
@@ -564,20 +568,6 @@ func TestDetachSSHKeyFromClusterEndpoint(t *testing.T) {
 					t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedDeleteHTTPStatus, res.Code, res.Body.String())
 				}
 				test.CompareWithResult(t, res, tc.ExpectedDeleteResponse)
-			}
-
-			// GET request list the keys from the cache, thus we wait 1 s before firing the request . . . I know :)
-			time.Sleep(time.Second)
-			{
-				req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/sshkeys", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(tc.Body))
-				res := httptest.NewRecorder()
-
-				ep.ServeHTTP(res, req)
-
-				if res.Code != tc.ExpectedGetHTTPStatus {
-					t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedGetHTTPStatus, res.Code, res.Body.String())
-				}
-				test.CompareWithResult(t, res, tc.ExpectedResponseOnGetAfterDelte)
 			}
 		})
 	}
