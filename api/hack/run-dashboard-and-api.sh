@@ -21,4 +21,4 @@ echo "starting api"
 echo "finished starting api"
 
 echo "Starting dashboard"
-$(go env GOPATH)/src/github.com/kubermatic/dashboard-v2/hack/run-local-dashboard.sh
+$(go env GOPATH)/src/github.com/kubermatic/dashboard/hack/run-local-dashboard.sh

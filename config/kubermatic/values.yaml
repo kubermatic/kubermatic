@@ -184,7 +184,7 @@ kubermatic:
   ui:
     replicas: 2
     image:
-      repository: "quay.io/kubermatic/ui-v2"
+      repository: "quay.io/kubermatic/dashboard"
       tag: "__DASHBOARD_TAG__"
       pullPolicy: "IfNotPresent"
     # Config options for the dashboard, a JSON document. If this is not set, the
@@ -215,7 +215,7 @@ kubermatic:
         - podAffinityTerm:
             labelSelector:
               matchLabels:
-                role: kubermatic-ui
+                role: kubermatic-dashboard
             topologyKey: kubernetes.io/hostname
           weight: 10
     nodeSelector: {}

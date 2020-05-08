@@ -89,7 +89,7 @@ get_latest_dashboard_hash() {
 
   ensure_github_host_pubkey
   git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
-  local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
+  local DASHBOARD_URL="git@github.com:kubermatic/dashboard.git"
 
   # `local` always sets the rc to 0, so declare as local _before_ doing the substitution
   # which may fail
@@ -107,7 +107,7 @@ get_latest_dashboard_tag() {
 
   ensure_github_host_pubkey
   git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
-  local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
+  local DASHBOARD_URL="git@github.com:kubermatic/dashboard.git"
 
   local TMPDIR
   TMPDIR=$(mktemp -d dashboard.XXXXX)
@@ -128,7 +128,7 @@ check_dashboard_tag() {
 
   ensure_github_host_pubkey
   git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
-  local DASHBOARD_URL="git@github.com:kubermatic/dashboard-v2.git"
+  local DASHBOARD_URL="git@github.com:kubermatic/dashboard.git"
 
   retry 5 git ls-remote "$DASHBOARD_URL" "refs/tags/$TAG"
 }

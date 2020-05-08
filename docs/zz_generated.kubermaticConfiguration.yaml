@@ -213,7 +213,7 @@ spec:
         "share_kubeconfig": false
       }
     # DockerRepository is the repository containing the Kubermatic dashboard image.
-    dockerRepository: quay.io/kubermatic/ui-v2
+    dockerRepository: quay.io/kubermatic/dashboard
     # Replicas sets the number of pod replicas for the UI deployment.
     replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
