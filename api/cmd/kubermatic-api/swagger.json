@@ -3685,6 +3685,34 @@
           "azure"
         ],
         "operationId": "listAzureAvailabilityZonesNoCredentials",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "SKUName",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "AzureAvailabilityZonesList",

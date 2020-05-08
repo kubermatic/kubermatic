@@ -413,6 +413,9 @@ func DecodeAzureAvailabilityZonesReq(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
+// AzureAvailabilityZonesNoCredentialsReq represent a request for Azure Availability Zones
+// note that the request doesn't have credentials for authN
+// swagger:parameters listAzureAvailabilityZonesNoCredentials
 type AzureAvailabilityZonesNoCredentialsReq struct {
 	common.GetClusterReq
 	// in: header

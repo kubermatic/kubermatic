@@ -19,7 +19,7 @@ import (
 // NewListAzureAvailabilityZonesNoCredentialsParams creates a new ListAzureAvailabilityZonesNoCredentialsParams object
 // with the default values initialized.
 func NewListAzureAvailabilityZonesNoCredentialsParams() *ListAzureAvailabilityZonesNoCredentialsParams {
-
+	var ()
 	return &ListAzureAvailabilityZonesNoCredentialsParams{
 
 		timeout: cr.DefaultTimeout,
@@ -29,7 +29,7 @@ func NewListAzureAvailabilityZonesNoCredentialsParams() *ListAzureAvailabilityZo
 // NewListAzureAvailabilityZonesNoCredentialsParamsWithTimeout creates a new ListAzureAvailabilityZonesNoCredentialsParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListAzureAvailabilityZonesNoCredentialsParamsWithTimeout(timeout time.Duration) *ListAzureAvailabilityZonesNoCredentialsParams {
-
+	var ()
 	return &ListAzureAvailabilityZonesNoCredentialsParams{
 
 		timeout: timeout,
@@ -39,7 +39,7 @@ func NewListAzureAvailabilityZonesNoCredentialsParamsWithTimeout(timeout time.Du
 // NewListAzureAvailabilityZonesNoCredentialsParamsWithContext creates a new ListAzureAvailabilityZonesNoCredentialsParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListAzureAvailabilityZonesNoCredentialsParamsWithContext(ctx context.Context) *ListAzureAvailabilityZonesNoCredentialsParams {
-
+	var ()
 	return &ListAzureAvailabilityZonesNoCredentialsParams{
 
 		Context: ctx,
@@ -49,7 +49,7 @@ func NewListAzureAvailabilityZonesNoCredentialsParamsWithContext(ctx context.Con
 // NewListAzureAvailabilityZonesNoCredentialsParamsWithHTTPClient creates a new ListAzureAvailabilityZonesNoCredentialsParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListAzureAvailabilityZonesNoCredentialsParamsWithHTTPClient(client *http.Client) *ListAzureAvailabilityZonesNoCredentialsParams {
-
+	var ()
 	return &ListAzureAvailabilityZonesNoCredentialsParams{
 		HTTPClient: client,
 	}
@@ -59,6 +59,16 @@ func NewListAzureAvailabilityZonesNoCredentialsParamsWithHTTPClient(client *http
 for the list azure availability zones no credentials operation typically these are written to a http.Request
 */
 type ListAzureAvailabilityZonesNoCredentialsParams struct {
+
+	/*SKUName*/
+	SKUName *string
+	/*ClusterID*/
+	ClusterID string
+	/*Dc*/
+	DC string
+	/*ProjectID*/
+	ProjectID string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -97,6 +107,50 @@ func (o *ListAzureAvailabilityZonesNoCredentialsParams) SetHTTPClient(client *ht
 	o.HTTPClient = client
 }
 
+// WithSKUName adds the sKUName to the list azure availability zones no credentials params
+func (o *ListAzureAvailabilityZonesNoCredentialsParams) WithSKUName(sKUName *string) *ListAzureAvailabilityZonesNoCredentialsParams {
+	o.SetSKUName(sKUName)
+	return o
+}
+
+// SetSKUName adds the sKUName to the list azure availability zones no credentials params
+func (o *ListAzureAvailabilityZonesNoCredentialsParams) SetSKUName(sKUName *string) {
+	o.SKUName = sKUName
+}
+
+// WithClusterID adds the clusterID to the list azure availability zones no credentials params
+func (o *ListAzureAvailabilityZonesNoCredentialsParams) WithClusterID(clusterID string) *ListAzureAvailabilityZonesNoCredentialsParams {
+	o.SetClusterID(clusterID)
+	return o
+}
+
+// SetClusterID adds the clusterId to the list azure availability zones no credentials params
+func (o *ListAzureAvailabilityZonesNoCredentialsParams) SetClusterID(clusterID string) {
+	o.ClusterID = clusterID
+}
+
+// WithDC adds the dc to the list azure availability zones no credentials params
+func (o *ListAzureAvailabilityZonesNoCredentialsParams) WithDC(dc string) *ListAzureAvailabilityZonesNoCredentialsParams {
+	o.SetDC(dc)
+	return o
+}
+
+// SetDC adds the dc to the list azure availability zones no credentials params
+func (o *ListAzureAvailabilityZonesNoCredentialsParams) SetDC(dc string) {
+	o.DC = dc
+}
+
+// WithProjectID adds the projectID to the list azure availability zones no credentials params
+func (o *ListAzureAvailabilityZonesNoCredentialsParams) WithProjectID(projectID string) *ListAzureAvailabilityZonesNoCredentialsParams {
+	o.SetProjectID(projectID)
+	return o
+}
+
+// SetProjectID adds the projectId to the list azure availability zones no credentials params
+func (o *ListAzureAvailabilityZonesNoCredentialsParams) SetProjectID(projectID string) {
+	o.ProjectID = projectID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListAzureAvailabilityZonesNoCredentialsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -104,6 +158,30 @@ func (o *ListAzureAvailabilityZonesNoCredentialsParams) WriteToRequest(r runtime
 		return err
 	}
 	var res []error
+
+	if o.SKUName != nil {
+
+		// header param SKUName
+		if err := r.SetHeaderParam("SKUName", *o.SKUName); err != nil {
+			return err
+		}
+
+	}
+
+	// path param cluster_id
+	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {
+		return err
+	}
+
+	// path param dc
+	if err := r.SetPathParam("dc", o.DC); err != nil {
+		return err
+	}
+
+	// path param project_id
+	if err := r.SetPathParam("project_id", o.ProjectID); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
