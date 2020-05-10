@@ -532,7 +532,8 @@ spec:
         vsphere:
           endpoint: "https://vcenter.loodse.io"
           datacenter: "dc-1"
-          datastore: "dsc-1"
+          datastore: ""
+          datastore_cluster: "dsc-1"
           cluster: "cl-1"
           root_path: "/dc-1/vm/e2e-tests"
           templates:
