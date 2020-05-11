@@ -156,7 +156,7 @@ else
   make -C api download-gocache
   pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
-  CGO_ENABLED=0 go build -v -o /tmp/clusterexposer ./api/pkg/test/clusterexposer/cmd
+  CGO_ENABLED=0 go build --tags "$KUBERMATIC_EDITION" -v -o /tmp/clusterexposer ./api/pkg/test/clusterexposer/cmd
   CGO_ENABLED=0 /tmp/clusterexposer \
     --kubeconfig-inner "$KUBECONFIG" \
     --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \

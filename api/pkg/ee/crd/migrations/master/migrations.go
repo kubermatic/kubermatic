@@ -1,3 +1,5 @@
+// +build ee
+
 package master
 
 import (
@@ -8,35 +10,19 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master/options"
 	"github.com/kubermatic/kubermatic/api/pkg/crd/migrations/util"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	eeprovider "github.com/kubermatic/kubermatic/api/pkg/ee/provider"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type MigrationOptions struct {
-	DatacentersFile    string
-	DynamicDatacenters bool
-	Kubeconfig         *clientcmdapi.Config
-}
-
-// MigrationEnabled returns true if at least one migration is enabled.
-func (o MigrationOptions) MigrationEnabled() bool {
-	return o.SeedMigrationEnabled()
-}
-
-// SeedMigrationEnabled returns true if the datacenters->seed migration is enabled.
-func (o MigrationOptions) SeedMigrationEnabled() bool {
-	return o.DatacentersFile != "" && o.DynamicDatacenters
-}
-
 // RunAll runs all migrations that should be run inside a master cluster.
-func RunAll(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, opt MigrationOptions) error {
+func RunAll(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, opt options.MigrationOptions) error {
 	if err := waitForWebhook(ctx, log, client, kubermaticNamespace); err != nil {
 		return fmt.Errorf("failed to wait for webhook: %v", err)
 	}
@@ -82,8 +68,8 @@ func waitForWebhook(ctx context.Context, log *zap.SugaredLogger, client ctrlrunt
 // Seeds are only ever created and never updated/reconciled to match the
 // datacenters.yaml, because the validation webhook prevents any modifications
 // while the migration is enabled.
-func migrateDatacenters(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, opt MigrationOptions) error {
-	seeds, err := provider.LoadSeeds(opt.DatacentersFile)
+func migrateDatacenters(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, opt options.MigrationOptions) error {
+	seeds, err := eeprovider.LoadSeeds(opt.DatacentersFile)
 	if err != nil {
 		return fmt.Errorf("failed to load %s: %v", opt.DatacentersFile, err)
 	}
@@ -127,7 +113,7 @@ func migrateDatacenters(ctx context.Context, log *zap.SugaredLogger, client ctrl
 }
 
 // migrateDatacenterEmailRestrictions removes the `requiredEmailDomain` field of DCs and move its value to `requiredEmailDomains`
-func migrateAllDatacenterEmailRestrictions(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, opt MigrationOptions) error {
+func migrateAllDatacenterEmailRestrictions(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, kubermaticNamespace string, opt options.MigrationOptions) error {
 	seedList := &kubermaticv1.SeedList{}
 	if err := client.List(ctx, seedList); err != nil {
 		return fmt.Errorf("failed to list seeds: %s", err)
@@ -151,7 +137,7 @@ func migrateAllDatacenterEmailRestrictions(ctx context.Context, log *zap.Sugared
 			dc.Spec.RequiredEmailDomain = ""
 			seed.Spec.Datacenters[dcName] = dc
 			anyDCchanged = true
-			log.Warn("datacenter %q is using the deprecated field `requiredEmailDomain` - plese migrate to `requiredEmailDomains` instead", dcName)
+			log.Warnf("datacenter %q is using the deprecated field `requiredEmailDomain` - plese migrate to `requiredEmailDomains` instead", dcName)
 		}
 
 		// Update the seed object only if any of the DCs were actually migrated.
@@ -167,7 +153,7 @@ func migrateAllDatacenterEmailRestrictions(ctx context.Context, log *zap.Sugared
 
 // createSeedKubeconfig creates a new Secret with a kubeconfig contains only the credentials
 // required for connecting to the given seed. If the Secret already exists, nothing happens.
-func createSeedKubeconfig(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, opt MigrationOptions) (*corev1.ObjectReference, error) {
+func createSeedKubeconfig(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, opt options.MigrationOptions) (*corev1.ObjectReference, error) {
 	kubeconfig, err := util.SingleSeedKubeconfig(opt.Kubeconfig, seed.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create kubeconfig: %v", err)

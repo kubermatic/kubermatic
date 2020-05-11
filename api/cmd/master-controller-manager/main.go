@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	mastermigrations "github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master"
+	"github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master/options"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
@@ -115,7 +116,7 @@ func main() {
 	ctrlCtx.ctx = ctx
 
 	// prepare migration options
-	migrationOptions := mastermigrations.MigrationOptions{
+	migrationOptions := options.MigrationOptions{
 		DatacentersFile:    runOpts.dcFile,
 		DynamicDatacenters: runOpts.dynamicDatacenters,
 	}
