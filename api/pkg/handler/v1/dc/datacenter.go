@@ -31,11 +31,16 @@ func ListEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.User
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		// Get the DCs and immediately filter out the ones restricted by e-mail domain.
-		dcs, err := filterDCsByEmail(userInfo, getAPIDCsFromSeedMap(seeds))
-		if err != nil {
-			return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list datacenters: %v", err))
+		// Get the DCs and immediately filter out the ones restricted by e-mail domain if user is not admin
+		dcs := getAPIDCsFromSeedMap(seeds)
+		if !userInfo.IsAdmin {
+			dcs, err = filterDCsByEmail(userInfo, dcs)
+			if err != nil {
+				return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+					fmt.Sprintf("failed to filter datacenters by email: %v", err))
+			}
 		}
+
 		// Maintain a stable order. We do not check for duplicate names here
 		sort.SliceStable(dcs, func(i, j int) bool {
 			return dcs[i].Metadata.Name < dcs[j].Metadata.Name
@@ -116,10 +121,14 @@ func GetDatacenter(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter
 		return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
 
-	// Get the DCs and immediately filter out the ones restricted by e-mail domain.
-	dcs, err := filterDCsByEmail(userInfo, getAPIDCsFromSeedMap(seeds))
-	if err != nil {
-		return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list datacenters: %v", err))
+	// Get the DCs and immediately filter out the ones restricted by e-mail domain if user is not admin
+	dcs := getAPIDCsFromSeedMap(seeds)
+	if !userInfo.IsAdmin {
+		dcs, err = filterDCsByEmail(userInfo, dcs)
+		if err != nil {
+			return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+				fmt.Sprintf("failed to filter datacenters by email: %v", err))
+		}
 	}
 
 	// The datacenter endpoints return both node and seed dcs, so we have to iterate through
