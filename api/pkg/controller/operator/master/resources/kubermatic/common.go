@@ -19,9 +19,9 @@ const (
 	uiConfigConfigMapName = "ui-config"
 	ingressName           = "kubermatic"
 	apiDeploymentName     = "kubermatic-api"
-	uiDeploymentName      = "kubermatic-ui"
+	uiDeploymentName      = "kubermatic-dashboard"
 	apiServiceName        = "kubermatic-api"
-	uiServiceName         = "kubermatic-ui"
+	uiServiceName         = "kubermatic-dashboard"
 	certificateName       = "kubermatic"
 	certificateSecretName = "kubermatic-tls"
 )

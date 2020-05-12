@@ -262,7 +262,7 @@ kubectl -n nodeport-exposer describe service nodeport-exposer | grep "LoadBalanc
 [8]: https://kubernetes.io/docs/concepts/storage/storage-classes/
 [9]: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
 [10]: https://hub.docker.com/r/kubermatic/api/tags/
-[11]: https://hub.docker.com/r/kubermatic/ui-v2/tags/
+[11]: https://hub.docker.com/r/kubermatic/dashboard/tags/
 [12]: https://hub.docker.com/r/kubermatic/bare-metal-provider/tags/
 [13]: https://hub.docker.com/r/kubermatic/k8sniff-internal/tags/
 [13]: https://hub.docker.com/r/kubermatic/nodeport-exposer/tags/

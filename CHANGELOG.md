@@ -3,7 +3,7 @@
 
 - Fixed swagger and API client for ssh key creation. [#5069](https://github.com/kubermatic/kubermatic/issues/5069) ([kdomanski](https://github.com/kdomanski))
 - Added Kubernetes v1.15.10, v1.16.7, v1.17.3 [#5102](https://github.com/kubermatic/kubermatic/issues/5102) ([kdomanski](https://github.com/kdomanski))
-- AddonConfig's shortDescription field is now used in the accessible addons overview. [#2050](https://github.com/kubermatic/dashboard-v2/issues/2050) ([maciaszczykm](https://github.com/maciaszczykm))
+- AddonConfig's shortDescription field is now used in the accessible addons overview. [#2050](https://github.com/kubermatic/dashboard/issues/2050) ([maciaszczykm](https://github.com/maciaszczykm))
 
 
 
@@ -28,10 +28,10 @@ Supported Kubernetes versions:
 - End-of-Life Kubernetes v1.14 is no longer supported. [#4987](https://github.com/kubermatic/kubermatic/issues/4987) ([kdomanski](https://github.com/kdomanski))
 - The `authorized_keys` files on nodes are now updated whenever the SSH keys for a cluster are changed [#4531](https://github.com/kubermatic/kubermatic/issues/4531) ([moadqassem](https://github.com/moadqassem))
 - Added support for custom CA for OpenID provider in Kubermatic API. [#4994](https://github.com/kubermatic/kubermatic/issues/4994) ([xrstf](https://github.com/xrstf))
-- Added user settings panel. [#1738](https://github.com/kubermatic/dashboard-v2/issues/1738) ([maciaszczykm](https://github.com/maciaszczykm))
+- Added user settings panel. [#1738](https://github.com/kubermatic/dashboard/issues/1738) ([maciaszczykm](https://github.com/maciaszczykm))
 - Added cluster addon UI
 - MachineDeployments can now be configured to enable dynamic kubelet config [#4946](https://github.com/kubermatic/kubermatic/issues/4946) ([kdomanski](https://github.com/kdomanski))
-- Added RBAC management functionality to UI [#1815](https://github.com/kubermatic/dashboard-v2/issues/1815) ([kgroschoff](https://github.com/kgroschoff))
+- Added RBAC management functionality to UI [#1815](https://github.com/kubermatic/dashboard/issues/1815) ([kgroschoff](https://github.com/kgroschoff))
 - Added RedHat Enterprise Linux as an OS option (#669)
 - Added SUSE Linux Enterprise Server as an OS option (#659)
 
@@ -42,8 +42,8 @@ Supported Kubernetes versions:
 - vSphere: Fixed a bug which cased custom VM folder paths not to be put in cloud-configs [#4737](https://github.com/kubermatic/kubermatic/issues/4737) ([kdomanski](https://github.com/kdomanski))
 - vSphere: The robustness of machine reconciliation has been improved. [#4651](https://github.com/kubermatic/kubermatic/issues/4651) ([alvaroaleman](https://github.com/alvaroaleman))
 - vSphere: Added support for datastore clusters (#671)
-- Azure: Node sizes are displayed in size dropdown when creating/updating a node deployment [#1908](https://github.com/kubermatic/dashboard-v2/issues/1908) ([bashofmann](https://github.com/bashofmann))
-- GCP: Networks are fetched from API now [#1913](https://github.com/kubermatic/dashboard-v2/issues/1913) ([kgroschoff](https://github.com/kgroschoff))
+- Azure: Node sizes are displayed in size dropdown when creating/updating a node deployment [#1908](https://github.com/kubermatic/dashboard/issues/1908) ([bashofmann](https://github.com/bashofmann))
+- GCP: Networks are fetched from API now [#1913](https://github.com/kubermatic/dashboard/issues/1913) ([kgroschoff](https://github.com/kgroschoff))
 
 
 **Bugfixes:**
@@ -60,28 +60,28 @@ Supported Kubernetes versions:
 - Prevented removing system labels during cluster edit [#4986](https://github.com/kubermatic/kubermatic/issues/4986) ([zreigz](https://github.com/zreigz))
 - Fixed FluentbitManyRetries Prometheus alert being too sensitive to harmless backpressure. [#5011](https://github.com/kubermatic/kubermatic/issues/5011) ([xrstf](https://github.com/xrstf))
 - Fixed deleting user-selectable addons from clusters. [#5022](https://github.com/kubermatic/kubermatic/issues/5022) ([xrstf](https://github.com/xrstf))
-- Fixed node name validation while creating clusters and node deployments [#1783](https://github.com/kubermatic/dashboard-v2/issues/1783) ([chrkl](https://github.com/chrkl))
+- Fixed node name validation while creating clusters and node deployments [#1783](https://github.com/kubermatic/dashboard/issues/1783) ([chrkl](https://github.com/chrkl))
 
 **UI:**
-- ACTION REQUIRED: Added logos and descriptions for the addons. In order to see the logos and descriptions addons have to be configured with AddonConfig CRDs with the same names as addons. [#1824](https://github.com/kubermatic/dashboard-v2/issues/1824) ([maciaszczykm](https://github.com/maciaszczykm))
-- ACTION REQUIRED: Added application settings view. Some of the settings were moved from config map to the `KubermaticSettings` CRD. In order to use them in the UI it is required to manually update the CRD or do it from newly added UI. [#1772](https://github.com/kubermatic/dashboard-v2/issues/1772) ([maciaszczykm](https://github.com/maciaszczykm))
-- Fixed label form validator. [#1710](https://github.com/kubermatic/dashboard-v2/issues/1710) ([maciaszczykm](https://github.com/maciaszczykm))
-- Removed `Edit Settings` option from cluster detail view and instead combine everything under `Edit Cluster`. [#1718](https://github.com/kubermatic/dashboard-v2/issues/1718) ([kgroschoff](https://github.com/kgroschoff))
-- Enabled edit options for kubeAdm [#1735](https://github.com/kubermatic/dashboard-v2/issues/1735) ([kgroschoff](https://github.com/kgroschoff))
-- Switched flag proportions to 4:3. [#1742](https://github.com/kubermatic/dashboard-v2/issues/1742) ([maciaszczykm](https://github.com/maciaszczykm))
-- Added new project view [#1766](https://github.com/kubermatic/dashboard-v2/issues/1766) ([kgroschoff](https://github.com/kgroschoff))
-- Added custom links to admin settings. [#1800](https://github.com/kubermatic/dashboard-v2/issues/1800) ([maciaszczykm](https://github.com/maciaszczykm))
-- Blocked option to edit cluster labels inherited from the project. [#1801](https://github.com/kubermatic/dashboard-v2/issues/1801) ([floreks](https://github.com/floreks))
-- Moved pod security policy configuration to the edit cluster dialog. [#1837](https://github.com/kubermatic/dashboard-v2/issues/1837) ([maciaszczykm](https://github.com/maciaszczykm))
-- Restyled some elements in the admin panel. [#1850](https://github.com/kubermatic/dashboard-v2/issues/1850) ([maciaszczykm](https://github.com/maciaszczykm))
-- Added separate save indicators for custom links in the admin panel. [#1862](https://github.com/kubermatic/dashboard-v2/issues/1862) ([maciaszczykm](https://github.com/maciaszczykm))
+- ACTION REQUIRED: Added logos and descriptions for the addons. In order to see the logos and descriptions addons have to be configured with AddonConfig CRDs with the same names as addons. [#1824](https://github.com/kubermatic/dashboard/issues/1824) ([maciaszczykm](https://github.com/maciaszczykm))
+- ACTION REQUIRED: Added application settings view. Some of the settings were moved from config map to the `KubermaticSettings` CRD. In order to use them in the UI it is required to manually update the CRD or do it from newly added UI. [#1772](https://github.com/kubermatic/dashboard/issues/1772) ([maciaszczykm](https://github.com/maciaszczykm))
+- Fixed label form validator. [#1710](https://github.com/kubermatic/dashboard/issues/1710) ([maciaszczykm](https://github.com/maciaszczykm))
+- Removed `Edit Settings` option from cluster detail view and instead combine everything under `Edit Cluster`. [#1718](https://github.com/kubermatic/dashboard/issues/1718) ([kgroschoff](https://github.com/kgroschoff))
+- Enabled edit options for kubeAdm [#1735](https://github.com/kubermatic/dashboard/issues/1735) ([kgroschoff](https://github.com/kgroschoff))
+- Switched flag proportions to 4:3. [#1742](https://github.com/kubermatic/dashboard/issues/1742) ([maciaszczykm](https://github.com/maciaszczykm))
+- Added new project view [#1766](https://github.com/kubermatic/dashboard/issues/1766) ([kgroschoff](https://github.com/kgroschoff))
+- Added custom links to admin settings. [#1800](https://github.com/kubermatic/dashboard/issues/1800) ([maciaszczykm](https://github.com/maciaszczykm))
+- Blocked option to edit cluster labels inherited from the project. [#1801](https://github.com/kubermatic/dashboard/issues/1801) ([floreks](https://github.com/floreks))
+- Moved pod security policy configuration to the edit cluster dialog. [#1837](https://github.com/kubermatic/dashboard/issues/1837) ([maciaszczykm](https://github.com/maciaszczykm))
+- Restyled some elements in the admin panel. [#1850](https://github.com/kubermatic/dashboard/issues/1850) ([maciaszczykm](https://github.com/maciaszczykm))
+- Added separate save indicators for custom links in the admin panel. [#1862](https://github.com/kubermatic/dashboard/issues/1862) ([maciaszczykm](https://github.com/maciaszczykm))
 
 **Addons:**
 - The dashboard addon was removed as it's now deployed in the seed and can be used via its proxy endpoint [#4567](https://github.com/kubermatic/kubermatic/issues/4567) ([alvaroaleman](https://github.com/alvaroaleman))
 - Added default namespace/cluster roles for addons [#4695](https://github.com/kubermatic/kubermatic/issues/4695) ([zreigz](https://github.com/zreigz))
 - Introduced addon configurations. [#4702](https://github.com/kubermatic/kubermatic/issues/4702) ([maciaszczykm](https://github.com/maciaszczykm))
 - Fixed addon config get and list endpoints. [#4734](https://github.com/kubermatic/kubermatic/issues/4734) ([maciaszczykm](https://github.com/maciaszczykm))
-- Added forms for addon variables. [#1846](https://github.com/kubermatic/dashboard-v2/issues/1846) ([maciaszczykm](https://github.com/maciaszczykm))
+- Added forms for addon variables. [#1846](https://github.com/kubermatic/dashboard/issues/1846) ([maciaszczykm](https://github.com/maciaszczykm))
 
 **Misc:**
 - ACTION REQUIRED: Updated cert-manager to 0.12.0. This requires a full reinstall of the chart. See https://cert-manager.io/docs/installation/upgrading/upgrading-0.10-0.11/ [#4857](https://github.com/kubermatic/kubermatic/issues/4857) ([xrstf](https://github.com/xrstf))
@@ -117,7 +117,7 @@ Supported Kubernetes versions:
 - Access to Kubernetes Dashboard can be now enabled/disabled by the global settings. [#4889](https://github.com/kubermatic/kubermatic/issues/4889) ([floreks](https://github.com/floreks))
 - Added support for dynamic presets [#4903](https://github.com/kubermatic/kubermatic/issues/4903) ([zreigz](https://github.com/zreigz))
 - Presets can now be filtered by datacenter [#4991](https://github.com/kubermatic/kubermatic/issues/4991) ([zreigz](https://github.com/zreigz))
-- Revoking the viewer token is possible via UI now. [#1708](https://github.com/kubermatic/dashboard-v2/issues/1708) ([kgroschoff](https://github.com/kgroschoff))
+- Revoking the viewer token is possible via UI now. [#1708](https://github.com/kubermatic/dashboard/issues/1708) ([kgroschoff](https://github.com/kgroschoff))
 
 
 
@@ -139,7 +139,7 @@ Supported Kubernetes versions:
 
 - A bug that occasionally resulted in a `Error: no matches for kind "MachineDeployment" in version "cluster.k8s.io/v1alpha1"` visible in the UI was fixed. [#4870](https://github.com/kubermatic/kubermatic/issues/4870) ([alvaroaleman](https://github.com/alvaroaleman))
 - A memory leak in the port-forwarding of the Kubernetes dashboard and Openshift console endpoints was fixed [#4879](https://github.com/kubermatic/kubermatic/issues/4879) ([alvaroaleman](https://github.com/alvaroaleman))
-- Enabled edit options for kubeAdm [#1873](https://github.com/kubermatic/dashboard-v2/issues/1873) ([kgroschoff](https://github.com/kgroschoff))
+- Enabled edit options for kubeAdm [#1873](https://github.com/kubermatic/dashboard/issues/1873) ([kgroschoff](https://github.com/kgroschoff))
 
 
 
@@ -147,7 +147,7 @@ Supported Kubernetes versions:
 ### [v2.12.4]()
 
 
-- Fixed an issue with adding new node deployments on Openstack [#1836](https://github.com/kubermatic/dashboard-v2/issues/1836) ([floreks](https://github.com/floreks))
+- Fixed an issue with adding new node deployments on Openstack [#1836](https://github.com/kubermatic/dashboard/issues/1836) ([floreks](https://github.com/floreks))
 - Added migration for cluster user labels [#4744](https://github.com/kubermatic/kubermatic/issues/4744) ([zreigz](https://github.com/zreigz))
 - Added Kubernetes `v1.14.9`, `v1.15.6` and `v1.16.3` [#4752](https://github.com/kubermatic/kubermatic/issues/4752) ([kdomanski](https://github.com/kdomanski))
 - Openstack: A bug that caused cluster reconciliation to fail if the controller crashed at the wrong time was fixed [#4754](https://github.com/kubermatic/kubermatic/issues/4754) ([alvaroaleman](https://github.com/alvaroaleman))
@@ -158,7 +158,7 @@ Supported Kubernetes versions:
 ### [v2.12.3]()
 
 
-- Fixed extended cluster options not being properly applied [#1812](https://github.com/kubermatic/dashboard-v2/issues/1812) ([kgroschoff](https://github.com/kgroschoff))
+- Fixed extended cluster options not being properly applied [#1812](https://github.com/kubermatic/dashboard/issues/1812) ([kgroschoff](https://github.com/kgroschoff))
 - A panic that could occur on clusters that lack both credentials and a credentialsSecret was fixed. [#4742](https://github.com/kubermatic/kubermatic/issues/4742) ([alvaroaleman](https://github.com/alvaroaleman))
 
 
@@ -201,9 +201,9 @@ Supported Kubernetes versions:
 - An option to use AWS Route53 DNS validation was added to the `certs` chart. [#4397](https://github.com/kubermatic/kubermatic/issues/4397) ([alvaroaleman](https://github.com/alvaroaleman))
 - Added possibility to add labels to projects and clusters and have these labels inherited by node objects.
 - Added support for Kubernetes audit logging [#4151](https://github.com/kubermatic/kubermatic/issues/4151) ([eqrx](https://github.com/eqrx))
-- Connect button on cluster details will now open Kubernetes Dashboard/Openshift Console [#1667](https://github.com/kubermatic/dashboard-v2/issues/1667) ([floreks](https://github.com/floreks))
+- Connect button on cluster details will now open Kubernetes Dashboard/Openshift Console [#1667](https://github.com/kubermatic/dashboard/issues/1667) ([floreks](https://github.com/floreks))
 - Pod Security Policies can now be enabled [#4062](https://github.com/kubermatic/kubermatic/issues/4062) ([bashofmann](https://github.com/bashofmann))
-- Added support for optional cluster addons [#1683](https://github.com/kubermatic/dashboard-v2/issues/1683) ([maciaszczykm](https://github.com/maciaszczykm)) 
+- Added support for optional cluster addons [#1683](https://github.com/kubermatic/dashboard/issues/1683) ([maciaszczykm](https://github.com/maciaszczykm)) 
 
 **Installation and updating:**
 - ACTION REQUIRED: the `zone_character` field must be removed from all AWS datacenters in `datacenters.yaml` [#3986](https://github.com/kubermatic/kubermatic/issues/3986) ([kdomanski](https://github.com/kdomanski))
@@ -241,19 +241,19 @@ Supported Kubernetes versions:
 - Openstack: Disk size of nodes is now configurable [#4153](https://github.com/kubermatic/kubermatic/issues/4153) ([bashofmann](https://github.com/bashofmann))
 - Openstack: Added a security group API compatibility workaround for very old versions of Openstack. [#4479](https://github.com/kubermatic/kubermatic/issues/4479) ([kdomanski](https://github.com/kdomanski))
 - Openstack: Fixed fetching the list of tenants on some OpenStack configurations with one region [#4182](https://github.com/kubermatic/kubermatic/issues/4182) ([zreigz](https://github.com/zreigz))
-- Openstack: Added support for Project ID to the wizard [#1386](https://github.com/kubermatic/dashboard-v2/issues/1386) ([floreks](https://github.com/floreks))
-- Openstack: The project name can now be provided manually [#1423](https://github.com/kubermatic/dashboard-v2/issues/1423) ([floreks](https://github.com/floreks))
+- Openstack: Added support for Project ID to the wizard [#1386](https://github.com/kubermatic/dashboard/issues/1386) ([floreks](https://github.com/floreks))
+- Openstack: The project name can now be provided manually [#1423](https://github.com/kubermatic/dashboard/issues/1423) ([floreks](https://github.com/floreks))
 - Openstack: Fixed API usage for datacenters with only one region [#4538](https://github.com/kubermatic/kubermatic/issues/4538) ([zreigz](https://github.com/zreigz))
 - Openstack: Fixed a bug that resulted in the router not being attached to the subnet when the subnet was manually created [#4521](https://github.com/kubermatic/kubermatic/issues/4521) ([alvaroaleman](https://github.com/alvaroaleman))
 - AWS: MachineDeployments can now be created in any availability zone of the cluster&#39;s region [#3870](https://github.com/kubermatic/kubermatic/issues/3870) ([kdomanski](https://github.com/kdomanski))
 - AWS: Reduced the role permissions for the control-plane &amp; worker role to the minimum [#3995](https://github.com/kubermatic/kubermatic/issues/3995) ([mrIncompetent](https://github.com/mrIncompetent))
-- AWS: The subnet can now be selected [#1499](https://github.com/kubermatic/dashboard-v2/issues/1499) ([kgroschoff](https://github.com/kgroschoff))
-- AWS: Setting `Control plane role (ARN)` now is possible [#1512](https://github.com/kubermatic/dashboard-v2/issues/1512) ([kgroschoff](https://github.com/kgroschoff))
-- AWS: VM sizes are fetched from the API now. [#1513](https://github.com/kubermatic/dashboard-v2/issues/1513) ([maciaszczykm](https://github.com/maciaszczykm))
-- AWS: Worker nodes can now be provisioned without a public IP. [#1591](https://github.com/kubermatic/dashboard-v2/issues/1591) ([maciaszczykm](https://github.com/maciaszczykm))
-- GCP: machine and disk types are now fetched from GCP. [#1363](https://github.com/kubermatic/dashboard-v2/issues/1363) ([maciaszczykm](https://github.com/maciaszczykm))
+- AWS: The subnet can now be selected [#1499](https://github.com/kubermatic/dashboard/issues/1499) ([kgroschoff](https://github.com/kgroschoff))
+- AWS: Setting `Control plane role (ARN)` now is possible [#1512](https://github.com/kubermatic/dashboard/issues/1512) ([kgroschoff](https://github.com/kgroschoff))
+- AWS: VM sizes are fetched from the API now. [#1513](https://github.com/kubermatic/dashboard/issues/1513) ([maciaszczykm](https://github.com/maciaszczykm))
+- AWS: Worker nodes can now be provisioned without a public IP. [#1591](https://github.com/kubermatic/dashboard/issues/1591) ([maciaszczykm](https://github.com/maciaszczykm))
+- GCP: machine and disk types are now fetched from GCP. [#1363](https://github.com/kubermatic/dashboard/issues/1363) ([maciaszczykm](https://github.com/maciaszczykm))
 - vSphere: the VM folder can now be configured
-- Added support for KubeVirt provider. [#1608](https://github.com/kubermatic/dashboard-v2/issues/1608) ([maciaszczykm](https://github.com/maciaszczykm))
+- Added support for KubeVirt provider. [#1608](https://github.com/kubermatic/dashboard/issues/1608) ([maciaszczykm](https://github.com/maciaszczykm))
 
 **Bugfixes:**
 - A bug that sometimes resulted in the creation of the initial NodeDeployment failing was fixed [#3894](https://github.com/kubermatic/kubermatic/issues/3894) ([alvaroaleman](https://github.com/alvaroaleman))
@@ -297,18 +297,18 @@ Supported Kubernetes versions:
 
 
 **Dashboard:**
-- Added Swagger UI for Kubermatic API [#1418](https://github.com/kubermatic/dashboard-v2/issues/1418) ([bashofmann](https://github.com/bashofmann))
-- Redesign dialog to manage SSH keys on cluster [#1353](https://github.com/kubermatic/dashboard-v2/issues/1353) ([kgroschoff](https://github.com/kgroschoff))
-- GCP zones are now fetched from API. [#1379](https://github.com/kubermatic/dashboard-v2/issues/1379) ([maciaszczykm](https://github.com/maciaszczykm))
-- Redesign Wizard: Summary [#1409](https://github.com/kubermatic/dashboard-v2/issues/1409) ([kgroschoff](https://github.com/kgroschoff))
-- Cluster type toggle in wizard is now hidden if only one cluster type is active [#1425](https://github.com/kubermatic/dashboard-v2/issues/1425) ([bashofmann](https://github.com/bashofmann))
-- Disabled the possibility of adding new node deployments until the cluster is fully ready. [#1439](https://github.com/kubermatic/dashboard-v2/issues/1439) ([maciaszczykm](https://github.com/maciaszczykm))
-- The cluster name is now editable from the dashboard [#1455](https://github.com/kubermatic/dashboard-v2/issues/1455) ([bashofmann](https://github.com/bashofmann))
-- Added warning about node deployment changes that will recreate all nodes. [#1479](https://github.com/kubermatic/dashboard-v2/issues/1479) ([maciaszczykm](https://github.com/maciaszczykm))
-- OIDC client id is now configurable [#1505](https://github.com/kubermatic/dashboard-v2/issues/1505) ([bashofmann](https://github.com/bashofmann))
-- Replaced particles with a static background. [#1578](https://github.com/kubermatic/dashboard-v2/issues/1578) ([maciaszczykm](https://github.com/maciaszczykm))
-- Pod Security Policy can now be activated from the wizard. [#1647](https://github.com/kubermatic/dashboard-v2/issues/1647) ([maciaszczykm](https://github.com/maciaszczykm))
-- Redesigned extended options in wizard [#1609](https://github.com/kubermatic/dashboard-v2/issues/1609) ([kgroschoff](https://github.com/kgroschoff))
+- Added Swagger UI for Kubermatic API [#1418](https://github.com/kubermatic/dashboard/issues/1418) ([bashofmann](https://github.com/bashofmann))
+- Redesign dialog to manage SSH keys on cluster [#1353](https://github.com/kubermatic/dashboard/issues/1353) ([kgroschoff](https://github.com/kgroschoff))
+- GCP zones are now fetched from API. [#1379](https://github.com/kubermatic/dashboard/issues/1379) ([maciaszczykm](https://github.com/maciaszczykm))
+- Redesign Wizard: Summary [#1409](https://github.com/kubermatic/dashboard/issues/1409) ([kgroschoff](https://github.com/kgroschoff))
+- Cluster type toggle in wizard is now hidden if only one cluster type is active [#1425](https://github.com/kubermatic/dashboard/issues/1425) ([bashofmann](https://github.com/bashofmann))
+- Disabled the possibility of adding new node deployments until the cluster is fully ready. [#1439](https://github.com/kubermatic/dashboard/issues/1439) ([maciaszczykm](https://github.com/maciaszczykm))
+- The cluster name is now editable from the dashboard [#1455](https://github.com/kubermatic/dashboard/issues/1455) ([bashofmann](https://github.com/bashofmann))
+- Added warning about node deployment changes that will recreate all nodes. [#1479](https://github.com/kubermatic/dashboard/issues/1479) ([maciaszczykm](https://github.com/maciaszczykm))
+- OIDC client id is now configurable [#1505](https://github.com/kubermatic/dashboard/issues/1505) ([bashofmann](https://github.com/bashofmann))
+- Replaced particles with a static background. [#1578](https://github.com/kubermatic/dashboard/issues/1578) ([maciaszczykm](https://github.com/maciaszczykm))
+- Pod Security Policy can now be activated from the wizard. [#1647](https://github.com/kubermatic/dashboard/issues/1647) ([maciaszczykm](https://github.com/maciaszczykm))
+- Redesigned extended options in wizard [#1609](https://github.com/kubermatic/dashboard/issues/1609) ([kgroschoff](https://github.com/kgroschoff))
 - Various security improvements in authentication
 - Various other visual improvements
 
@@ -413,9 +413,9 @@ Supported Kubernetes versions:
 
 **Dashboard:**
 
-- Fixed an issue with handling resources refresh on error conditions [#1452](https://github.com/kubermatic/dashboard-v2/issues/1452) ([floreks](https://github.com/floreks))
-- Openstack: the project name can now be provided manually [#1426](https://github.com/kubermatic/dashboard-v2/issues/1426) ([floreks](https://github.com/floreks))
-- JS dependencies have been updated to address potential vulnerabilities in some of them. [#1388](https://github.com/kubermatic/dashboard-v2/issues/1388) ([kgroschoff](https://github.com/kgroschoff)
+- Fixed an issue with handling resources refresh on error conditions [#1452](https://github.com/kubermatic/dashboard/issues/1452) ([floreks](https://github.com/floreks))
+- Openstack: the project name can now be provided manually [#1426](https://github.com/kubermatic/dashboard/issues/1426) ([floreks](https://github.com/floreks))
+- JS dependencies have been updated to address potential vulnerabilities in some of them. [#1388](https://github.com/kubermatic/dashboard/issues/1388) ([kgroschoff](https://github.com/kgroschoff)
 
 
 
@@ -481,25 +481,25 @@ Supported Kubernetes versions:
 
 
 **Dashboard:**
-- The project menu has been redesigned. [#1195](https://github.com/kubermatic/dashboard-v2/issues/1195) ([maciaszczykm](https://github.com/maciaszczykm))
-- Fixed changing default OpenStack image on operating system change [#1215](https://github.com/kubermatic/dashboard-v2/issues/1215) ([bashofmann](https://github.com/bashofmann))
-- `containerRuntimeVersion` and `kernelVersion` are now displayed on NodeDeployment detail page [#1216](https://github.com/kubermatic/dashboard-v2/issues/1216) ([bashofmann](https://github.com/bashofmann))
-- Custom links can now be added to the footer. [#1220](https://github.com/kubermatic/dashboard-v2/issues/1220) ([maciaszczykm](https://github.com/maciaszczykm))
-- The OIDC provider URL is now configurable via &#34;oidc_provider_url&#34; variable. [#1222](https://github.com/kubermatic/dashboard-v2/issues/1222) ([maciaszczykm](https://github.com/maciaszczykm))
-- The application logo has been changed. [#1232](https://github.com/kubermatic/dashboard-v2/issues/1232) ([maciaszczykm](https://github.com/maciaszczykm))
-- The breadcrumbs component has been removed. The dialogs and buttons have been redesigned. [#1233](https://github.com/kubermatic/dashboard-v2/issues/1233) ([maciaszczykm](https://github.com/maciaszczykm))
-- Packet cloud provider is now supported. [#1238](https://github.com/kubermatic/dashboard-v2/issues/1238) ([maciaszczykm](https://github.com/maciaszczykm))
-- Tables have been redesigned. [#1240](https://github.com/kubermatic/dashboard-v2/issues/1240) ([kgroschoff](https://github.com/kgroschoff))
-- Added option to specify taints when creating/updating NodeDeployments [#1244](https://github.com/kubermatic/dashboard-v2/issues/1244) ([bashofmann](https://github.com/bashofmann))
-- Styling of the cluster details view has been improved. [#1270](https://github.com/kubermatic/dashboard-v2/issues/1270) ([maciaszczykm](https://github.com/maciaszczykm))
-- Missing parameters for OIDC providers have been added. [#1273](https://github.com/kubermatic/dashboard-v2/issues/1273) ([maciaszczykm](https://github.com/maciaszczykm))
-- Dates are now displayed using relative format, i.e. 3 days ago. [#1303](https://github.com/kubermatic/dashboard-v2/issues/1303) ([maciaszczykm](https://github.com/maciaszczykm))
-- Redesigned dialogs and cluster details page. [#1305](https://github.com/kubermatic/dashboard-v2/issues/1305) ([maciaszczykm](https://github.com/maciaszczykm))
-- Add provider GCP to UI [#1307](https://github.com/kubermatic/dashboard-v2/issues/1307) ([kgroschoff](https://github.com/kgroschoff))
-- Redesigned notifications. [#1315](https://github.com/kubermatic/dashboard-v2/issues/1315) ([maciaszczykm](https://github.com/maciaszczykm))
-- The Instance Profile Name for AWS could be specified in UI. [#1317](https://github.com/kubermatic/dashboard-v2/issues/1317) ([kgroschoff](https://github.com/kgroschoff))
-- Redesigned node deployment view. [#1320](https://github.com/kubermatic/dashboard-v2/issues/1320) ([maciaszczykm](https://github.com/maciaszczykm))
-- Redesigned cluster details page. [#1345](https://github.com/kubermatic/dashboard-v2/issues/1345) ([kubermatic-bot](https://github.com/kubermatic-bot))
+- The project menu has been redesigned. [#1195](https://github.com/kubermatic/dashboard/issues/1195) ([maciaszczykm](https://github.com/maciaszczykm))
+- Fixed changing default OpenStack image on operating system change [#1215](https://github.com/kubermatic/dashboard/issues/1215) ([bashofmann](https://github.com/bashofmann))
+- `containerRuntimeVersion` and `kernelVersion` are now displayed on NodeDeployment detail page [#1216](https://github.com/kubermatic/dashboard/issues/1216) ([bashofmann](https://github.com/bashofmann))
+- Custom links can now be added to the footer. [#1220](https://github.com/kubermatic/dashboard/issues/1220) ([maciaszczykm](https://github.com/maciaszczykm))
+- The OIDC provider URL is now configurable via &#34;oidc_provider_url&#34; variable. [#1222](https://github.com/kubermatic/dashboard/issues/1222) ([maciaszczykm](https://github.com/maciaszczykm))
+- The application logo has been changed. [#1232](https://github.com/kubermatic/dashboard/issues/1232) ([maciaszczykm](https://github.com/maciaszczykm))
+- The breadcrumbs component has been removed. The dialogs and buttons have been redesigned. [#1233](https://github.com/kubermatic/dashboard/issues/1233) ([maciaszczykm](https://github.com/maciaszczykm))
+- Packet cloud provider is now supported. [#1238](https://github.com/kubermatic/dashboard/issues/1238) ([maciaszczykm](https://github.com/maciaszczykm))
+- Tables have been redesigned. [#1240](https://github.com/kubermatic/dashboard/issues/1240) ([kgroschoff](https://github.com/kgroschoff))
+- Added option to specify taints when creating/updating NodeDeployments [#1244](https://github.com/kubermatic/dashboard/issues/1244) ([bashofmann](https://github.com/bashofmann))
+- Styling of the cluster details view has been improved. [#1270](https://github.com/kubermatic/dashboard/issues/1270) ([maciaszczykm](https://github.com/maciaszczykm))
+- Missing parameters for OIDC providers have been added. [#1273](https://github.com/kubermatic/dashboard/issues/1273) ([maciaszczykm](https://github.com/maciaszczykm))
+- Dates are now displayed using relative format, i.e. 3 days ago. [#1303](https://github.com/kubermatic/dashboard/issues/1303) ([maciaszczykm](https://github.com/maciaszczykm))
+- Redesigned dialogs and cluster details page. [#1305](https://github.com/kubermatic/dashboard/issues/1305) ([maciaszczykm](https://github.com/maciaszczykm))
+- Add provider GCP to UI [#1307](https://github.com/kubermatic/dashboard/issues/1307) ([kgroschoff](https://github.com/kgroschoff))
+- Redesigned notifications. [#1315](https://github.com/kubermatic/dashboard/issues/1315) ([maciaszczykm](https://github.com/maciaszczykm))
+- The Instance Profile Name for AWS could be specified in UI. [#1317](https://github.com/kubermatic/dashboard/issues/1317) ([kgroschoff](https://github.com/kgroschoff))
+- Redesigned node deployment view. [#1320](https://github.com/kubermatic/dashboard/issues/1320) ([maciaszczykm](https://github.com/maciaszczykm))
+- Redesigned cluster details page. [#1345](https://github.com/kubermatic/dashboard/issues/1345) ([kubermatic-bot](https://github.com/kubermatic-bot))
 
 
 
@@ -509,10 +509,10 @@ Supported Kubernetes versions:
 **Misc:**
 
 - Updated Dashboard to `v1.2.2` [#3553](https://github.com/kubermatic/kubermatic/issues/3553) ([kubermatic-bot](https://github.com/kubermatic-bot))
-    - Missing parameters for OIDC providers have been added. [#1273](https://github.com/kubermatic/dashboard-v2/issues/1273) ([maciaszczykm](https://github.com/maciaszczykm))
-    - `containerRuntimeVersion` and `kernelVersion` are now displayed on NodeDeployment detail page [#1217](https://github.com/kubermatic/dashboard-v2/issues/1217) ([kubermatic-bot](https://github.com/kubermatic-bot))
-    - Fixed changing default OpenStack image on Operating System change [#1218](https://github.com/kubermatic/dashboard-v2/issues/1218) ([kubermatic-bot](https://github.com/kubermatic-bot))
-    - The OIDC provider URL is now configurable via &#34;oidc_provider_url&#34; variable. [#1224](https://github.com/kubermatic/dashboard-v2/issues/1224) ([kubermatic-bot](https://github.com/kubermatic-bot))
+    - Missing parameters for OIDC providers have been added. [#1273](https://github.com/kubermatic/dashboard/issues/1273) ([maciaszczykm](https://github.com/maciaszczykm))
+    - `containerRuntimeVersion` and `kernelVersion` are now displayed on NodeDeployment detail page [#1217](https://github.com/kubermatic/dashboard/issues/1217) ([kubermatic-bot](https://github.com/kubermatic-bot))
+    - Fixed changing default OpenStack image on Operating System change [#1218](https://github.com/kubermatic/dashboard/issues/1218) ([kubermatic-bot](https://github.com/kubermatic-bot))
+    - The OIDC provider URL is now configurable via &#34;oidc_provider_url&#34; variable. [#1224](https://github.com/kubermatic/dashboard/issues/1224) ([kubermatic-bot](https://github.com/kubermatic-bot))
 - Insecure Kubernetes versions v1.13.6 and v1.14.2 have been disabled. [#3554](https://github.com/kubermatic/kubermatic/issues/3554) ([mrIncompetent](https://github.com/mrIncompetent))
 
 
@@ -577,25 +577,25 @@ Supported Kubernetes versions:
 ## Dashboard
 
 * The color scheme of the Dashboard was changed
-* It is now possible to edit the project name in UI [#1003](https://github.com/kubermatic/dashboard-v2/pull/1003) ([@kgroschoff](https://github.com/kgroschoff))
-* Made Nodes and Node Deployments statuses more accurate [#1016](https://github.com/kubermatic/dashboard-v2/pull/1016) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Redesign DigitalOcean sizes and OpenStack flavors option pickers [#1021](https://github.com/kubermatic/dashboard-v2/pull/1021) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Smoother operation on bad network connection thanks to changes in asset caching. [#1030](https://github.com/kubermatic/dashboard-v2/pull/1030) ([@kdomanski](https://github.com/kdomanski))
-* Added a flag allowing to change the default number of nodes created with clusters. [#1032](https://github.com/kubermatic/dashboard-v2/pull/1032) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Setting openstack tags for instances is possible via UI now. [#1038](https://github.com/kubermatic/dashboard-v2/pull/1038) ([@kgroschoff](https://github.com/kgroschoff))
-* Allowed Node Deployment naming. [#1039](https://github.com/kubermatic/dashboard-v2/pull/1039) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Adding multiple owners to a project is possible via UI now. [#1042](https://github.com/kubermatic/dashboard-v2/pull/1042) ([@kgroschoff](https://github.com/kgroschoff))
-* Allowed specifying kubelet version for Node Deployments. [#1047](https://github.com/kubermatic/dashboard-v2/pull/1047) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Events related to the Nodes are now displayed in the Node Deployment details view. [#1054](https://github.com/kubermatic/dashboard-v2/pull/1054) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Fixed reload behaviour of openstack setting fields. [#1056](https://github.com/kubermatic/dashboard-v2/pull/1056) ([@kgroschoff](https://github.com/kgroschoff))
-* Fixed a bug with the missing version in the footer. [#1067](https://github.com/kubermatic/dashboard-v2/pull/1067) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Project owners are now visible in project list view . [#1082](https://github.com/kubermatic/dashboard-v2/pull/1082) ([@kgroschoff](https://github.com/kgroschoff))
-* Added possibility to assign labels to nodes. [#1101](https://github.com/kubermatic/dashboard-v2/pull/1101) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Updated AWS instance types. [#1122](https://github.com/kubermatic/dashboard-v2/pull/1122) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Fixed display number of replicas if the field is empty (0 replicas). [#1126](https://github.com/kubermatic/dashboard-v2/pull/1126) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Added an option to include custom links into the application. [#1131](https://github.com/kubermatic/dashboard-v2/pull/1131) ([@maciaszczykm](https://github.com/maciaszczykm))
-* Remove AWS instance types t3.nano & t3.micro as they are too small to schedule any workload on them [#1138](https://github.com/kubermatic/dashboard-v2/pull/1138) ([@mrIncompetent](https://github.com/mrIncompetent))
-* Redesigned the application sidebar. [#1173](https://github.com/kubermatic/dashboard-v2/pull/1173) ([@maciaszczykm](https://github.com/maciaszczykm))
+* It is now possible to edit the project name in UI [#1003](https://github.com/kubermatic/dashboard/pull/1003) ([@kgroschoff](https://github.com/kgroschoff))
+* Made Nodes and Node Deployments statuses more accurate [#1016](https://github.com/kubermatic/dashboard/pull/1016) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Redesign DigitalOcean sizes and OpenStack flavors option pickers [#1021](https://github.com/kubermatic/dashboard/pull/1021) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Smoother operation on bad network connection thanks to changes in asset caching. [#1030](https://github.com/kubermatic/dashboard/pull/1030) ([@kdomanski](https://github.com/kdomanski))
+* Added a flag allowing to change the default number of nodes created with clusters. [#1032](https://github.com/kubermatic/dashboard/pull/1032) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Setting openstack tags for instances is possible via UI now. [#1038](https://github.com/kubermatic/dashboard/pull/1038) ([@kgroschoff](https://github.com/kgroschoff))
+* Allowed Node Deployment naming. [#1039](https://github.com/kubermatic/dashboard/pull/1039) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Adding multiple owners to a project is possible via UI now. [#1042](https://github.com/kubermatic/dashboard/pull/1042) ([@kgroschoff](https://github.com/kgroschoff))
+* Allowed specifying kubelet version for Node Deployments. [#1047](https://github.com/kubermatic/dashboard/pull/1047) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Events related to the Nodes are now displayed in the Node Deployment details view. [#1054](https://github.com/kubermatic/dashboard/pull/1054) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Fixed reload behaviour of openstack setting fields. [#1056](https://github.com/kubermatic/dashboard/pull/1056) ([@kgroschoff](https://github.com/kgroschoff))
+* Fixed a bug with the missing version in the footer. [#1067](https://github.com/kubermatic/dashboard/pull/1067) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Project owners are now visible in project list view . [#1082](https://github.com/kubermatic/dashboard/pull/1082) ([@kgroschoff](https://github.com/kgroschoff))
+* Added possibility to assign labels to nodes. [#1101](https://github.com/kubermatic/dashboard/pull/1101) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Updated AWS instance types. [#1122](https://github.com/kubermatic/dashboard/pull/1122) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Fixed display number of replicas if the field is empty (0 replicas). [#1126](https://github.com/kubermatic/dashboard/pull/1126) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Added an option to include custom links into the application. [#1131](https://github.com/kubermatic/dashboard/pull/1131) ([@maciaszczykm](https://github.com/maciaszczykm))
+* Remove AWS instance types t3.nano & t3.micro as they are too small to schedule any workload on them [#1138](https://github.com/kubermatic/dashboard/pull/1138) ([@mrIncompetent](https://github.com/mrIncompetent))
+* Redesigned the application sidebar. [#1173](https://github.com/kubermatic/dashboard/pull/1173) ([@maciaszczykm](https://github.com/maciaszczykm))
 
 ### Logging & Monitoring stack
 
@@ -651,11 +651,11 @@ Supported Kubernetes versions:
 * The Kubernetes Dashboard addon was updated to 1.10.1 [#2848](https://github.com/kubermatic/kubermatic/pull/2848)
 * Joining of nodes via the BYO functionality was fixed [#2835](https://github.com/kubermatic/kubermatic/pull/2835)
 * [It is now possible to configure whether Openstack security groups for LoadBalancers should be managed by Kubernetes, check the sample `datacenters.yaml` in the docs for details](https://docs.kubermatic.io/installation/install_kubermatic/_manual/#defining-the-datacenters) [#2878](https://github.com/kubermatic/kubermatic/pull/2878)
-* A bug that resulted in clusters being twice in the UI overview got resolved [#1088](https://github.com/kubermatic/dashboard-v2/pull/1088)
-* A bug that could cause the image of a NodeDeployment to be set to the default when the NodeDeployment gets edited got resolved [#1076](https://github.com/kubermatic/dashboard-v2/pull/1076)
-* A bug that caused the version of the UI to not be shown in the footer got resolved [#1096](https://github.com/kubermatic/dashboard-v2/pull/1096)
-* A bug that caused updating and deleting of NodeDeployments in the NodeDeployment details page not to work got resolved [#1076](https://github.com/kubermatic/dashboard-v2/pull/1076)
-* The NodeDeployment detail view now correctly displays the node datacenter instead of the seed datacenter [#1094](https://github.com/kubermatic/dashboard-v2/pull/1094)
+* A bug that resulted in clusters being twice in the UI overview got resolved [#1088](https://github.com/kubermatic/dashboard/pull/1088)
+* A bug that could cause the image of a NodeDeployment to be set to the default when the NodeDeployment gets edited got resolved [#1076](https://github.com/kubermatic/dashboard/pull/1076)
+* A bug that caused the version of the UI to not be shown in the footer got resolved [#1096](https://github.com/kubermatic/dashboard/pull/1096)
+* A bug that caused updating and deleting of NodeDeployments in the NodeDeployment details page not to work got resolved [#1076](https://github.com/kubermatic/dashboard/pull/1076)
+* The NodeDeployment detail view now correctly displays the node datacenter instead of the seed datacenter [#1094](https://github.com/kubermatic/dashboard/pull/1094)
 * Support for Kubernetes 1.11.8, 1.12.6, 1.13.3 and 1.13.4 was added [#2894](https://github.com/kubermatic/kubermatic/pull/2894)
 
 
@@ -737,24 +737,24 @@ github.com/zreigz))
 
 
 **Dashboard**:
-- It is now possible to edit the project name in UI. [#1003](https://github.com/kubermatic/dashboard-v2/issues/1003) ([kgroschoff](https://github.com/kgroschoff))
-- Machine Networks for VSphere can now be set in the UI [#829](https://github.com/kubermatic/dashboard-v2/issues/829) ([kgroschoff](https://github.com/kgroschoff))
-- VSphere: Setting a dedicated VSphere user for cloud provider functionalities is now possible. [#834](https://github.com/kubermatic/dashboard-v2/issues/834) ([kgroschoff](https://github.com/kgroschoff))
-- Fixed that the cluster upgrade link did not appear directly when the details page is loaded [#836](https://github.com/kubermatic/dashboard-v2/issues/836) ([bashofmann](https://github.com/bashofmann))
-- Kubeconfig can now be shared via a generated link from the UI [#857](https://github.com/kubermatic/dashboard-v2/issues/857) ([kgroschoff](https://github.com/kgroschoff))
+- It is now possible to edit the project name in UI. [#1003](https://github.com/kubermatic/dashboard/issues/1003) ([kgroschoff](https://github.com/kgroschoff))
+- Machine Networks for VSphere can now be set in the UI [#829](https://github.com/kubermatic/dashboard/issues/829) ([kgroschoff](https://github.com/kgroschoff))
+- VSphere: Setting a dedicated VSphere user for cloud provider functionalities is now possible. [#834](https://github.com/kubermatic/dashboard/issues/834) ([kgroschoff](https://github.com/kgroschoff))
+- Fixed that the cluster upgrade link did not appear directly when the details page is loaded [#836](https://github.com/kubermatic/dashboard/issues/836) ([bashofmann](https://github.com/bashofmann))
+- Kubeconfig can now be shared via a generated link from the UI [#857](https://github.com/kubermatic/dashboard/issues/857) ([kgroschoff](https://github.com/kgroschoff))
     - See https://docs.kubermatic.io/advanced/oidc_auth/ for more information.
-- Fixed duplicated SSH keys in summary view during cluster creation. [#879](https://github.com/kubermatic/dashboard-v2/issues/879) ([kgroschoff](https://github.com/kgroschoff))
-- On project change, the user will stay on the same page, if he has the corresponding rights. [#889](https://github.com/kubermatic/dashboard-v2/issues/889) ([kgroschoff](https://github.com/kgroschoff))
-- Fixed issues with caching the main page. [#893](https://github.com/kubermatic/dashboard-v2/issues/893) ([maciaszczykm](https://github.com/maciaszczykm))
-- Nodes are now being managed as NodeDeployments, this allows to easily change settings for a group of Nodes. [#949](https://github.com/kubermatic/dashboard-v2/issues/949) ([maciaszczykm](https://github.com/maciaszczykm))
-- Removed Container Runtime selection, which is no longer supported. [#828](https://github.com/kubermatic/dashboard-v2/issues/828) ([bashofmann](https://github.com/bashofmann))
+- Fixed duplicated SSH keys in summary view during cluster creation. [#879](https://github.com/kubermatic/dashboard/issues/879) ([kgroschoff](https://github.com/kgroschoff))
+- On project change, the user will stay on the same page, if he has the corresponding rights. [#889](https://github.com/kubermatic/dashboard/issues/889) ([kgroschoff](https://github.com/kgroschoff))
+- Fixed issues with caching the main page. [#893](https://github.com/kubermatic/dashboard/issues/893) ([maciaszczykm](https://github.com/maciaszczykm))
+- Nodes are now being managed as NodeDeployments, this allows to easily change settings for a group of Nodes. [#949](https://github.com/kubermatic/dashboard/issues/949) ([maciaszczykm](https://github.com/maciaszczykm))
+- Removed Container Runtime selection, which is no longer supported. [#828](https://github.com/kubermatic/dashboard/issues/828) ([bashofmann](https://github.com/bashofmann))
 - Menu entries will be disabled as long as selected project is not in active state.
 - Selected project state icon was added in the project selector and in the list view.
 - Input field inside add project dialog will be automatically focused after opening dialog.
-- After adding new project user will be redirected to project list [#808](https://github.com/kubermatic/dashboard-v2/issues/808) ([maciaszczykm](https://github.com/maciaszczykm))
+- After adding new project user will be redirected to project list [#808](https://github.com/kubermatic/dashboard/issues/808) ([maciaszczykm](https://github.com/maciaszczykm))
 - Notifications timeout is now 10s.
-- Close and copy to clipboard actions are available on notifications. [#798](https://github.com/kubermatic/dashboard-v2/issues/798) ([maciaszczykm](https://github.com/maciaszczykm))
-- Provider-specific data will now be fetched without re-sending credentials. [#814](https://github.com/kubermatic/dashboard-v2/issues/814) ([maciaszczykm](https://github.com/maciaszczykm))
+- Close and copy to clipboard actions are available on notifications. [#798](https://github.com/kubermatic/dashboard/issues/798) ([maciaszczykm](https://github.com/maciaszczykm))
+- Provider-specific data will now be fetched without re-sending credentials. [#814](https://github.com/kubermatic/dashboard/issues/814) ([maciaszczykm](https://github.com/maciaszczykm))
 - Various minor visual improvements
 
 
@@ -860,7 +860,7 @@ Supported Kubernetes versions:
 
 - Communicating with cloud providers APIs no longer requires providing additional credentials. [#2151](https://github.com/kubermatic/kubermatic/issues/2151) ([p0lyn0mial](https://github.com/p0lyn0mial))
 - Updated the kubermatic dashboard to `v0.38.0` [#2165](https://github.com/kubermatic/kubermatic/issues/2165) ([mrIncompetent](https://github.com/mrIncompetent))
-  - Provider-specific data will now be fetched without re-sending credentials. [#806](https://github.com/kubermatic/dashboard-v2/issues/806) ([maciaszczykm](https://github.com/maciaszczykm))
+  - Provider-specific data will now be fetched without re-sending credentials. [#806](https://github.com/kubermatic/dashboard/issues/806) ([maciaszczykm](https://github.com/maciaszczykm))
 - Kubernetes will be automatically updated to versions that contain a fix for CVE-2018-1002105 and `v1.8`, `v1.9` cluster creation is now dropped [#2487](https://github.com/kubermatic/kubermatic/issues/2487) ([kdomanski](https://github.com/kdomanski))
 
 
@@ -908,7 +908,7 @@ Supported Kubernetes versions:
 
 **Dashboard:**
 
-- Removed Container Runtime selection, which is no longer supported. [#828](https://github.com/kubermatic/dashboard-v2/issues/828) ([bashofmann](https://github.com/bashofmann))
+- Removed Container Runtime selection, which is no longer supported. [#828](https://github.com/kubermatic/dashboard/issues/828) ([bashofmann](https://github.com/bashofmann))
 - Various minor visual improvements
 
 
@@ -934,27 +934,27 @@ Supported Kubernetes versions:
 **Dashboard:**
 
 - The UI has been reworked for the new user/project management
-- Fixed error appearing when trying to change selected OS [#699](https://github.com/kubermatic/dashboard-v2/issues/699) ([kgroschoff](https://github.com/kgroschoff))
-- Openstack: fixed an issue, where list of tenants wouldn&#39;t get loaded when returning from summary page [#705](https://github.com/kubermatic/dashboard-v2/issues/705) ([kgroschoff](https://github.com/kgroschoff))
-- Fixed confirmation of cluster deletion [#718](https://github.com/kubermatic/dashboard-v2/issues/718) ([kgroschoff](https://github.com/kgroschoff))
-- Fixed the link to Kubernetes dashboard [#740](https://github.com/kubermatic/dashboard-v2/issues/740) ([guusvw](https://github.com/guusvw))
-- Openstack: show selected image in cluster creation summary [#698](https://github.com/kubermatic/dashboard-v2/issues/698) ([bashofmann](https://github.com/bashofmann))
-- vSphere: custom cluster vnet can now be selected [#708](https://github.com/kubermatic/dashboard-v2/issues/708) ([kgroschoff](https://github.com/kgroschoff))
-- Openstack: the list of available networks and floating IP pools will be loaded from the API [#737](https://github.com/kubermatic/dashboard-v2/issues/737) ([j3ank](https://github.com/j3ank))
-- Dashboard metrics can now be collected by Prometheus [#678](https://github.com/kubermatic/dashboard-v2/issues/678) ([pkavajin](https://github.com/pkavajin))
-- Redesigned cluster creation summary page [#688](https://github.com/kubermatic/dashboard-v2/issues/688) ([kgroschoff](https://github.com/kgroschoff))
-- Default template images for Openstack and vSphere are now taken from datacenter configuration [#689](https://github.com/kubermatic/dashboard-v2/issues/689) ([kgroschoff](https://github.com/kgroschoff))
-- Fixed cluster settings view for Openstack [#746](https://github.com/kubermatic/dashboard-v2/issues/746) ([kgroschoff](https://github.com/kgroschoff))
-- &#34;Upgrade Cluster&#34; link is no longer available for clusters that have no updates available or are not ready [#750](https://github.com/kubermatic/dashboard-v2/issues/750) ([bashofmann](https://github.com/bashofmann))
-- Fixed initial nodes data being lost when the browser tab was closed right after cluster creation [#796](https://github.com/kubermatic/dashboard-v2/issues/796) ([kgroschoff](https://github.com/kgroschoff))
-- Google Analytics code can now be optionally added by the administrator [#742](https://github.com/kubermatic/dashboard-v2/issues/742) ([bashofmann](https://github.com/bashofmann))
-- OpenStack tenant can now be either chosen from dropdown or typed in by hand [#759](https://github.com/kubermatic/dashboard-v2/issues/759) ([kgroschoff](https://github.com/kgroschoff))
-- vSphere: Network can now be selected from a list [#771](https://github.com/kubermatic/dashboard-v2/issues/771) ([kgroschoff](https://github.com/kgroschoff))
-- Login token is now removed from URL for security reasons [#790](https://github.com/kubermatic/dashboard-v2/issues/790) ([bashofmann](https://github.com/bashofmann))
-- `Admin` button has been removed from `Certificates and Keys` panel as it allowed to copy the admin token into the clipboard. Since this is a security concern we decided to remove this functionality. [#800](https://github.com/kubermatic/dashboard-v2/issues/800) ([p0lyn0mial](https://github.com/p0lyn0mial))
+- Fixed error appearing when trying to change selected OS [#699](https://github.com/kubermatic/dashboard/issues/699) ([kgroschoff](https://github.com/kgroschoff))
+- Openstack: fixed an issue, where list of tenants wouldn&#39;t get loaded when returning from summary page [#705](https://github.com/kubermatic/dashboard/issues/705) ([kgroschoff](https://github.com/kgroschoff))
+- Fixed confirmation of cluster deletion [#718](https://github.com/kubermatic/dashboard/issues/718) ([kgroschoff](https://github.com/kgroschoff))
+- Fixed the link to Kubernetes dashboard [#740](https://github.com/kubermatic/dashboard/issues/740) ([guusvw](https://github.com/guusvw))
+- Openstack: show selected image in cluster creation summary [#698](https://github.com/kubermatic/dashboard/issues/698) ([bashofmann](https://github.com/bashofmann))
+- vSphere: custom cluster vnet can now be selected [#708](https://github.com/kubermatic/dashboard/issues/708) ([kgroschoff](https://github.com/kgroschoff))
+- Openstack: the list of available networks and floating IP pools will be loaded from the API [#737](https://github.com/kubermatic/dashboard/issues/737) ([j3ank](https://github.com/j3ank))
+- Dashboard metrics can now be collected by Prometheus [#678](https://github.com/kubermatic/dashboard/issues/678) ([pkavajin](https://github.com/pkavajin))
+- Redesigned cluster creation summary page [#688](https://github.com/kubermatic/dashboard/issues/688) ([kgroschoff](https://github.com/kgroschoff))
+- Default template images for Openstack and vSphere are now taken from datacenter configuration [#689](https://github.com/kubermatic/dashboard/issues/689) ([kgroschoff](https://github.com/kgroschoff))
+- Fixed cluster settings view for Openstack [#746](https://github.com/kubermatic/dashboard/issues/746) ([kgroschoff](https://github.com/kgroschoff))
+- &#34;Upgrade Cluster&#34; link is no longer available for clusters that have no updates available or are not ready [#750](https://github.com/kubermatic/dashboard/issues/750) ([bashofmann](https://github.com/bashofmann))
+- Fixed initial nodes data being lost when the browser tab was closed right after cluster creation [#796](https://github.com/kubermatic/dashboard/issues/796) ([kgroschoff](https://github.com/kgroschoff))
+- Google Analytics code can now be optionally added by the administrator [#742](https://github.com/kubermatic/dashboard/issues/742) ([bashofmann](https://github.com/bashofmann))
+- OpenStack tenant can now be either chosen from dropdown or typed in by hand [#759](https://github.com/kubermatic/dashboard/issues/759) ([kgroschoff](https://github.com/kgroschoff))
+- vSphere: Network can now be selected from a list [#771](https://github.com/kubermatic/dashboard/issues/771) ([kgroschoff](https://github.com/kgroschoff))
+- Login token is now removed from URL for security reasons [#790](https://github.com/kubermatic/dashboard/issues/790) ([bashofmann](https://github.com/bashofmann))
+- `Admin` button has been removed from `Certificates and Keys` panel as it allowed to copy the admin token into the clipboard. Since this is a security concern we decided to remove this functionality. [#800](https://github.com/kubermatic/dashboard/issues/800) ([p0lyn0mial](https://github.com/p0lyn0mial))
 - Notifications timeout is now 10s
-- Close and copy to clipboard actions are available on notifications. [#798](https://github.com/kubermatic/dashboard-v2/issues/798) ([maciaszczykm](https://github.com/maciaszczykm))
-- Provider-specific data will now be fetched without re-sending credentials. [#814](https://github.com/kubermatic/dashboard-v2/issues/814) ([maciaszczykm](https://github.com/maciaszczykm))
+- Close and copy to clipboard actions are available on notifications. [#798](https://github.com/kubermatic/dashboard/issues/798) ([maciaszczykm](https://github.com/maciaszczykm))
+- Provider-specific data will now be fetched without re-sending credentials. [#814](https://github.com/kubermatic/dashboard/issues/814) ([maciaszczykm](https://github.com/maciaszczykm))
 - Various minor fixes and improvements
 
 
@@ -1195,16 +1195,16 @@ com/cbeneke))
 
 **Dashboard:**
 
-- Fixed cluster settings view for Openstack [#746](https://github.com/kubermatic/dashboard-v2/issues/746) ([kgroschoff](https://github.com/kgroschoff))
-- Fixed error appearing when trying to change selected OS [#699](https://github.com/kubermatic/dashboard-v2/issues/699) ([kgroschoff](https://github.com/kgroschoff))
-- Openstack: fixed an issue, where list of tenants wouldn&#39;t get loaded when returning from summary page [#705](https://github.com/kubermatic/dashboard-v2/issues/705) ([kgroschoff](https://github.com/kgroschoff))
-- Fixed confirmation of cluster deletion [#718](https://github.com/kubermatic/dashboard-v2/issues/718) ([kgroschoff](https://github.com/kgroschoff))
-- Fixed the link to Kubernetes dashboard [#740](https://github.com/kubermatic/dashboard-v2/issues/740) ([guusvw](https://github.com/guusvw))
-- vSphere: custom cluster vnet can now be selected [#708](https://github.com/kubermatic/dashboard-v2/issues/708) ([kgroschoff](https://github.com/kgroschoff))
-- Openstack: the list of available networks and floating IP pools will be loaded from the API [#737](https://github.com/kubermatic/dashboard-v2/issues/737) ([j3ank](https://github.com/j3ank))
-- Dashboard metrics can now be collected by Prometheus [#678](https://github.com/kubermatic/dashboard-v2/issues/678) ([pkavajin](https://github.com/pkavajin))
-- Redesigned cluster creation summary page [#688](https://github.com/kubermatic/dashboard-v2/issues/688) ([kgroschoff](https://github.com/kgroschoff))
-- Default template images for Openstack and vSphere are now taken from datacenter configuration [#689](https://github.com/kubermatic/dashboard-v2/issues/689) ([kgroschoff](https://github.com/kgroschoff))
+- Fixed cluster settings view for Openstack [#746](https://github.com/kubermatic/dashboard/issues/746) ([kgroschoff](https://github.com/kgroschoff))
+- Fixed error appearing when trying to change selected OS [#699](https://github.com/kubermatic/dashboard/issues/699) ([kgroschoff](https://github.com/kgroschoff))
+- Openstack: fixed an issue, where list of tenants wouldn&#39;t get loaded when returning from summary page [#705](https://github.com/kubermatic/dashboard/issues/705) ([kgroschoff](https://github.com/kgroschoff))
+- Fixed confirmation of cluster deletion [#718](https://github.com/kubermatic/dashboard/issues/718) ([kgroschoff](https://github.com/kgroschoff))
+- Fixed the link to Kubernetes dashboard [#740](https://github.com/kubermatic/dashboard/issues/740) ([guusvw](https://github.com/guusvw))
+- vSphere: custom cluster vnet can now be selected [#708](https://github.com/kubermatic/dashboard/issues/708) ([kgroschoff](https://github.com/kgroschoff))
+- Openstack: the list of available networks and floating IP pools will be loaded from the API [#737](https://github.com/kubermatic/dashboard/issues/737) ([j3ank](https://github.com/j3ank))
+- Dashboard metrics can now be collected by Prometheus [#678](https://github.com/kubermatic/dashboard/issues/678) ([pkavajin](https://github.com/pkavajin))
+- Redesigned cluster creation summary page [#688](https://github.com/kubermatic/dashboard/issues/688) ([kgroschoff](https://github.com/kgroschoff))
+- Default template images for Openstack and vSphere are now taken from datacenter configuration [#689](https://github.com/kubermatic/dashboard/issues/689) ([kgroschoff](https://github.com/kgroschoff))
 - Various minor fixes and improvements
 
 
@@ -1333,14 +1333,14 @@ com/cbeneke))
 
 **Dashboard:**
 
-- Minor visual improvements [#684](https://github.com/kubermatic/dashboard-v2/issues/684) ([kgroschoff](https://github.com/kgroschoff))
-- The node list will no longer be expanded when clicking on an IP [#676](https://github.com/kubermatic/dashboard-v2/issues/676) ([kgroschoff](https://github.com/kgroschoff))
-- Openstack: the tenant can now be picked from a list loaded from the API [#679](https://github.com/kubermatic/dashboard-v2/issues/679) ([kgroschoff](https://github.com/kgroschoff))
-- Added a button to easily duplicate an existing node [#675](https://github.com/kubermatic/dashboard-v2/issues/675) ([kgroschoff](https://github.com/kgroschoff))
-- A note has been added to the footer identifying whether the dashboard is a part of a demo system [#682](https://github.com/kubermatic/dashboard-v2/issues/682) ([kgroschoff](https://github.com/kgroschoff))
-- Enabled CoreOS on Openstack [#673](https://github.com/kubermatic/dashboard-v2/issues/673) ([kgroschoff](https://github.com/kgroschoff))
-- cri-o has been disabled [#670](https://github.com/kubermatic/dashboard-v2/issues/670) ([kgroschoff](https://github.com/kgroschoff))
-- Node deletion can now be confirmed by pressing enter [#672](https://github.com/kubermatic/dashboard-v2/issues/672) ([kgroschoff](https://github.com/kgroschoff))
+- Minor visual improvements [#684](https://github.com/kubermatic/dashboard/issues/684) ([kgroschoff](https://github.com/kgroschoff))
+- The node list will no longer be expanded when clicking on an IP [#676](https://github.com/kubermatic/dashboard/issues/676) ([kgroschoff](https://github.com/kgroschoff))
+- Openstack: the tenant can now be picked from a list loaded from the API [#679](https://github.com/kubermatic/dashboard/issues/679) ([kgroschoff](https://github.com/kgroschoff))
+- Added a button to easily duplicate an existing node [#675](https://github.com/kubermatic/dashboard/issues/675) ([kgroschoff](https://github.com/kgroschoff))
+- A note has been added to the footer identifying whether the dashboard is a part of a demo system [#682](https://github.com/kubermatic/dashboard/issues/682) ([kgroschoff](https://github.com/kgroschoff))
+- Enabled CoreOS on Openstack [#673](https://github.com/kubermatic/dashboard/issues/673) ([kgroschoff](https://github.com/kgroschoff))
+- cri-o has been disabled [#670](https://github.com/kubermatic/dashboard/issues/670) ([kgroschoff](https://github.com/kgroschoff))
+- Node deletion can now be confirmed by pressing enter [#672](https://github.com/kubermatic/dashboard/issues/672) ([kgroschoff](https://github.com/kgroschoff))
 
 
 
