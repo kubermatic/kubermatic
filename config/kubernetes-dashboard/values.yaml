@@ -27,7 +27,7 @@ dashboard:
   images:
     dashboard:
       repository: "docker.io/kubernetesui/dashboard"
-      tag: "v2.0.0-rc3"
+      tag: "v2.0.0"
       pullPolicy: "IfNotPresent"
     proxy:
       repository: "quay.io/pusher/oauth2_proxy"
@@ -35,7 +35,7 @@ dashboard:
       pullPolicy: "IfNotPresent"
     scraper:
       repository: "docker.io/kubernetesui/metrics-scraper"
-      tag: "v1.0.3"
+      tag: "v1.0.4"
       pullPolicy: "IfNotPresent"
 
   deployment:

@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: kubermatic-ui
+  name: kubermatic-dashboard
 spec:
   type: NodePort
   ports:
@@ -10,5 +10,5 @@ spec:
     targetPort: 8080
     protocol: TCP
   selector:
-    role: kubermatic-ui
+    role: kubermatic-dashboard
 {{ end }}
