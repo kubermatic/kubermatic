@@ -125,12 +125,12 @@ func (v *vSphereMock) buildVSphereDatacenter() provider.SeedsGetter {
 							Country:  "Moon States",
 							Spec: kubermaticv1.DatacenterSpec{
 								VSphere: &kubermaticv1.DatacenterSpecVSphere{
-									Endpoint:      v.server.Server.URL,
-									AllowInsecure: true,
-									Datastore:     "LocalDS_0",
-									Datacenter:    "ha-datacenter",
-									Cluster:       "localhost.localdomain",
-									RootPath:      "/ha-datacenter/vm/",
+									Endpoint:         v.server.Server.URL,
+									AllowInsecure:    true,
+									DefaultDatastore: "LocalDS_0",
+									Datacenter:       "ha-datacenter",
+									Cluster:          "localhost.localdomain",
+									RootPath:         "/ha-datacenter/vm/",
 								},
 							},
 						},

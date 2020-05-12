@@ -249,7 +249,7 @@ func getVsphereCloudConfig(
 			VCenterPort:      port,
 			InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
 			Datacenter:       dc.Spec.VSphere.Datacenter,
-			DefaultDatastore: dc.Spec.VSphere.Datastore,
+			DefaultDatastore: dc.Spec.VSphere.DefaultDatastore,
 			WorkingDir:       cluster.Name,
 		},
 		Workspace: vsphere.WorkspaceOpts{
@@ -262,7 +262,7 @@ func getVsphereCloudConfig(
 			VCenterIP:        vspherURL.Hostname(),
 			Datacenter:       dc.Spec.VSphere.Datacenter,
 			Folder:           cluster.Spec.Cloud.VSphere.Folder,
-			DefaultDatastore: dc.Spec.VSphere.Datastore,
+			DefaultDatastore: dc.Spec.VSphere.DefaultDatastore,
 		},
 		Disk: vsphere.DiskOpts{
 			SCSIControllerType: "pvscsi",
