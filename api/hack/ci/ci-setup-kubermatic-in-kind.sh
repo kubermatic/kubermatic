@@ -533,6 +533,7 @@ spec:
           endpoint: "https://vcenter.loodse.io"
           datacenter: "dc-1"
           datastore: ""
+          default_datastore: "exsi-nas"
           datastore_cluster: "dsc-1"
           cluster: "cl-1"
           root_path: "/dc-1/vm/e2e-tests"

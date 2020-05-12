@@ -213,6 +213,8 @@ type DatacenterSpecVSphere struct {
 	Endpoint string `json:"endpoint"`
 	// If set to true, disables the TLS certificate check against the endpoint.
 	AllowInsecure bool `json:"allow_insecure"`
+	// The name of the default datastore which used for creating pvc
+	DefaultDatastore string `json:"default_datastore"`
 	// The name of the datastore to use.
 	Datastore string `json:"datastore"`
 	// The name of the datastore cluster.

@@ -8,7 +8,7 @@ import (
 	"net/url"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	gcp "github.com/kubermatic/kubermatic/api/pkg/provider/cloud/gcp"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/gcp"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
@@ -233,7 +233,7 @@ func getVsphereCloudConfig(
 			VCenterPort:      port,
 			InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
 			Datacenter:       dc.Spec.VSphere.Datacenter,
-			DefaultDatastore: dc.Spec.VSphere.Datastore,
+			DefaultDatastore: dc.Spec.VSphere.DefaultDatastore,
 			WorkingDir:       cluster.Name,
 		},
 		Workspace: vsphere.WorkspaceOpts{
@@ -246,7 +246,7 @@ func getVsphereCloudConfig(
 			VCenterIP:        vspherURL.Hostname(),
 			Datacenter:       dc.Spec.VSphere.Datacenter,
 			Folder:           cluster.Spec.Cloud.VSphere.Folder,
-			DefaultDatastore: dc.Spec.VSphere.Datastore,
+			DefaultDatastore: dc.Spec.VSphere.DefaultDatastore,
 		},
 		Disk: vsphere.DiskOpts{
 			SCSIControllerType: "pvscsi",
