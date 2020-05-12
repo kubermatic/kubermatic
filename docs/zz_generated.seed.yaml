@@ -150,6 +150,8 @@ spec:
           datastore: ""
           # The name of the datastore cluster.
           datastore_cluster: ""
+          # The name of the default datastore which used for creating pvc
+          default_datastore: ""
           # Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
           endpoint: ""
           # Optional: Infra management user is the user that will be used for everything

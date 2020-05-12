@@ -31,6 +31,9 @@ type DatacenterSpecVSphere struct {
 	// The name of the datastore cluster.
 	DatastoreCluster string `json:"datastore_cluster,omitempty"`
 
+	// The name of the default datastore which used for creating pvc
+	DefaultDatastore string `json:"default_datastore,omitempty"`
+
 	// Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
 	Endpoint string `json:"endpoint,omitempty"`
 
