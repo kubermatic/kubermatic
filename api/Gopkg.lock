@@ -517,7 +517,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f40081edc2e6be56b15f9e6d43875eb6eae1a387d999db7c783bcbc5401d2bec"
+  digest = "1:1bd481b9138c808c73d97bb30fcbc96b3c3eefa6d433acded916aa21b73f2cdf"
   name = "github.com/go-swagger/go-swagger"
   packages = [
     "cmd/swagger",
@@ -530,7 +530,7 @@
     "scan",
   ]
   pruneopts = "NUT"
-  revision = "3596b40bedd4f06cc918767098568456d2ec2370"
+  revision = "e7ff1d8910e27be280abe69ac38cca4b350eb4a3"
 
 [[projects]]
   digest = "1:3c04690dd1d3fad9a36c492c32863fad91bcf822fd95d5c4cae97be1e9abc361"

@@ -632,6 +632,7 @@ func (b *codeGenOpBuilder) MakeHeaderItem(receiver, paramName, indexVar, path, v
 	res.Formatter = stringFormatters[res.GoType]
 	res.IndexVar = indexVar
 	res.HasValidations, res.HasSliceValidations = b.HasValidations(items.CommonValidations, res.resolvedType)
+	res.IsEnumCI = b.GenOpts.AllowEnumCI || hasEnumCI(&items.VendorExtensible)
 
 	if items.Items != nil {
 		// Recursively follows nested arrays
@@ -673,6 +674,7 @@ func (b *codeGenOpBuilder) MakeParameterItem(receiver, paramName, indexVar, path
 	res.IndexVar = indexVar
 
 	res.HasValidations, res.HasSliceValidations = b.HasValidations(items.CommonValidations, res.resolvedType)
+	res.IsEnumCI = b.GenOpts.AllowEnumCI || hasEnumCI(&items.VendorExtensible)
 	res.NeedsIndex = res.HasValidations || res.Converter != "" || (res.IsCustomFormatter && !res.SkipParse)
 
 	if items.Items != nil {
@@ -754,6 +756,7 @@ func (b *codeGenOpBuilder) MakeParameter(receiver string, resolver *typeResolver
 		res.IsNullable = !param.Required && !param.AllowEmptyValue
 		res.HasValidations, res.HasSliceValidations = b.HasValidations(param.CommonValidations, res.resolvedType)
 		res.HasValidations = res.HasValidations || hasChildValidations
+		res.IsEnumCI = b.GenOpts.AllowEnumCI || hasEnumCI(&param.VendorExtensible)
 	}
 
 	// Select codegen strategy for body param validation
@@ -1066,6 +1069,7 @@ func (b *codeGenOpBuilder) buildOperationSchema(schemaPath, containerName, schem
 		IncludeValidator:           true,
 		StrictAdditionalProperties: b.GenOpts.StrictAdditionalProperties,
 		ExtraSchemas:               make(map[string]GenSchema),
+		StructTags:                 b.GenOpts.StructTags,
 	}
 
 	var (
