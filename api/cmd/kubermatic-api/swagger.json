@@ -7176,6 +7176,50 @@
         }
       }
     },
+    "/api/v1/providers/{provider_name}/dc": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "datacenter"
+        ],
+        "summary": "Returns all datacenters for a specified provider.",
+        "operationId": "listDCForProvider",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Provider",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datacenter",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Datacenter"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/{provider_name}/presets/credentials": {
       "get": {
         "description": "Lists credential names for the provider",
