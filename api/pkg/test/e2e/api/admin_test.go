@@ -37,7 +37,7 @@ func TestGetProjectByAdmin(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create project due error: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 1)
+			teardown := cleanUpProject(project.ID, 3)
 			defer teardown(t)
 
 			// change for admin user
@@ -95,7 +95,7 @@ func TestUpdateProjectByAdmin(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create project due error: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 1)
+			teardown := cleanUpProject(project.ID, 3)
 			defer teardown(t)
 
 			// change for admin user
@@ -183,7 +183,7 @@ func TestCreateAndDeleteServiceAccountByAdmin(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create project due error: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 1)
+			teardown := cleanUpProject(project.ID, 3)
 			defer teardown(t)
 
 			// change for admin user
@@ -235,7 +235,7 @@ func TestManageProjectMembersByAdmin(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create project due error: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 1)
+			teardown := cleanUpProject(project.ID, 3)
 			defer teardown(t)
 
 			// change for admin user

@@ -54,6 +54,7 @@ func Add(
 	registerReconciledCheck func(name string, check healthcheck.Check),
 	cloudCredentialSecretTemplate *corev1.Secret,
 	openshiftConsoleCallbackURI string,
+	dnsClusterIP string,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
 		openshift:                     openshift,
@@ -66,6 +67,7 @@ func Add(
 		log:                           log,
 		platform:                      cloudProviderName,
 		openshiftConsoleCallbackURI:   openshiftConsoleCallbackURI,
+		dnsClusterIP:                  dnsClusterIP,
 	}
 
 	if r.openshift {
@@ -204,6 +206,7 @@ type reconciler struct {
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
 	openshiftConsoleCallbackURI   string
+	dnsClusterIP                  string
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

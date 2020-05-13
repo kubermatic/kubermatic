@@ -327,7 +327,6 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 	}
 
 	manifestPath := path.Join(addonDir, addon.Spec.Name)
-
 	allManifests, err := addonutils.ParseFromFolder(log, r.overwriteRegistry, manifestPath, data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse addon templates in %s: %v", manifestPath, err)
@@ -521,6 +520,11 @@ func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, a
 func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
 	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(log, addon, cluster)
 	if err != nil {
+		// FIXME: use a dedicated error type and proper error unwrapping when we have the technology to do it
+		if strings.Contains(err.Error(), "no such file or directory") { // if the manifest is already deleted, that's ok
+			log.Debugf("cleanupManifests failed for addon %s/%s: %v", addon.Namespace, addon.Name, err)
+			return nil
+		}
 		return err
 	}
 	defer done()
