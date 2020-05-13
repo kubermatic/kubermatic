@@ -249,14 +249,12 @@ type GenOpts struct {
 	DefaultScheme          string
 	DefaultProduces        string
 	DefaultConsumes        string
-	WithXML                bool
 	TemplateDir            string
 	Template               string
 	RegenerateConfigureAPI bool
 	Operations             []string
 	Models                 []string
 	Tags                   []string
-	StructTags             []string
 	Name                   string
 	FlagStrategy           string
 	CompatibilityMode      string
@@ -265,7 +263,6 @@ type GenOpts struct {
 	SkipTagPackages        bool
 	MainPackage            string
 	IgnoreOperations       bool
-	AllowEnumCI            bool
 }
 
 // CheckOpts carries out some global consistency checks on options.

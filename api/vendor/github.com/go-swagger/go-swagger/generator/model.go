@@ -227,8 +227,6 @@ func makeGenDefinitionHierarchy(name, pkg, container string, schema spec.Schema,
 		IncludeValidator:           opts.IncludeValidator,
 		IncludeModel:               opts.IncludeModel,
 		StrictAdditionalProperties: opts.StrictAdditionalProperties,
-		WithXML:                    opts.WithXML,
-		StructTags:                 opts.StructTags,
 	}
 	if err := pg.makeGenSchema(); err != nil {
 		return nil, fmt.Errorf("could not generate schema for %s: %v", name, err)
@@ -406,7 +404,6 @@ type schemaGenContext struct {
 	IncludeValidator           bool
 	IncludeModel               bool
 	StrictAdditionalProperties bool
-	WithXML                    bool
 	Index                      int
 
 	Path         string
@@ -420,7 +417,6 @@ type schemaGenContext struct {
 	Container    string
 	Schema       spec.Schema
 	TypeResolver *typeResolver
-	StructTags   []string
 
 	GenSchema      GenSchema
 	Dependencies   []string // NOTE: Dependencies is actually set nowhere
@@ -538,7 +534,7 @@ func (sg *schemaGenContext) shallowClone() *schemaGenContext {
 	if pg.Container == "" {
 		pg.Container = sg.Name
 	}
-	pg.GenSchema = GenSchema{StructTags: sg.StructTags}
+	pg.GenSchema = GenSchema{}
 	pg.Dependencies = nil
 	pg.Named = false
 	pg.Index = 0
@@ -1311,7 +1307,7 @@ func (sg *schemaGenContext) buildAdditionalProperties() error {
 		}
 
 		hasMapNullOverride := sg.GenSchema.IsMapNullOverride
-		sg.GenSchema = GenSchema{StructTags: sg.StructTags}
+		sg.GenSchema = GenSchema{}
 		sg.Schema = *spec.RefProperty("#/definitions/" + newObj.Name)
 		if err := sg.makeGenSchema(); err != nil {
 			return err
@@ -1356,7 +1352,6 @@ func (sg *schemaGenContext) makeNewStruct(name string, schema spec.Schema) *sche
 		IncludeValidator:           sg.IncludeValidator,
 		IncludeModel:               sg.IncludeModel,
 		StrictAdditionalProperties: sg.StrictAdditionalProperties,
-		StructTags:                 sg.StructTags,
 	}
 	if schema.Ref.String() == "" {
 		pg.TypeResolver = sg.TypeResolver.NewWithModelName(name)
@@ -1580,21 +1575,16 @@ func (sg *schemaGenContext) buildAdditionalItems() error {
 	return nil
 }
 
-func (sg *schemaGenContext) buildXMLNameWithTags() error {
-	if sg.WithXML || sg.Schema.XML != nil {
-		sg.GenSchema.XMLName = sg.Name
+func (sg *schemaGenContext) buildXMLName() error {
+	if sg.Schema.XML == nil {
+		return nil
+	}
+	sg.GenSchema.XMLName = sg.Name
 
-		if sg.Schema.XML != nil {
-			if sg.Schema.XML.Name != "" {
-				sg.GenSchema.XMLName = sg.Schema.XML.Name
-			}
-			if sg.Schema.XML.Attribute {
-				sg.GenSchema.XMLName += ",attr"
-			}
-		}
-
-		if !sg.GenSchema.Required && sg.GenSchema.IsEmptyOmitted {
-			sg.GenSchema.XMLName += ",omitempty"
+	if sg.Schema.XML.Name != "" {
+		sg.GenSchema.XMLName = sg.Schema.XML.Name
+		if sg.Schema.XML.Attribute {
+			sg.GenSchema.XMLName += ",attr"
 		}
 	}
 	return nil
@@ -1856,7 +1846,6 @@ func (sg *schemaGenContext) makeGenSchema() error {
 	sg.GenSchema.IncludeModel = sg.IncludeModel
 	sg.GenSchema.StrictAdditionalProperties = sg.StrictAdditionalProperties
 	sg.GenSchema.Default = sg.Schema.Default
-	sg.GenSchema.StructTags = sg.StructTags
 
 	var err error
 	returns, err := sg.shortCircuitNamedRef()
@@ -1945,7 +1934,7 @@ func (sg *schemaGenContext) makeGenSchema() error {
 		return err
 	}
 
-	if err := sg.buildXMLNameWithTags(); err != nil {
+	if err := sg.buildXMLName(); err != nil {
 		return err
 	}
 
