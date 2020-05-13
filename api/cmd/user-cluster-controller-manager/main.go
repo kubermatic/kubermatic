@@ -65,6 +65,7 @@ type controllerRunOptions struct {
 	ownerEmail                    string
 	updateWindowStart             string
 	updateWindowLength            string
+	dnsClusterIP                  string
 }
 
 func main() {
@@ -82,6 +83,7 @@ func main() {
 	flag.Var(&runOp.networks, "ipam-controller-network", "The networks from which the ipam controller should allocate IPs for machines (e.g.: .--ipam-controller-network=10.0.0.0/16,10.0.0.1,8.8.8.8 --ipam-controller-network=192.168.5.0/24,192.168.5.1,1.1.1.1,8.8.4.4)")
 	flag.StringVar(&runOp.namespace, "namespace", "", "Namespace in which the cluster is running in")
 	flag.StringVar(&runOp.clusterURL, "cluster-url", "", "Cluster URL")
+	flag.StringVar(&runOp.dnsClusterIP, "dns-cluster-ip", "", "KubeDNS service IP for the cluster")
 	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&runOp.cloudProviderName, "cloud-provider-name", "", "Name of the cloudprovider")
@@ -105,6 +107,9 @@ func main() {
 	}
 	if runOp.clusterURL == "" {
 		log.Fatal("-cluster-url must be set")
+	}
+	if runOp.dnsClusterIP == "" {
+		log.Fatal("-dns-cluster-ip must be set")
 	}
 	clusterURL, err := url.Parse(runOp.clusterURL)
 	if err != nil {
@@ -202,6 +207,7 @@ func main() {
 		healthHandler.AddReadinessCheck,
 		cloudCredentialSecretTemplate,
 		runOp.openshiftConsoleCallbackURI,
+		runOp.dnsClusterIP,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))

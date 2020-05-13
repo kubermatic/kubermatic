@@ -474,6 +474,16 @@ const (
 	UserSSHKeys = "usersshkeys"
 )
 
+const (
+	CoreDNSClusterRoleName         = "system:coredns"
+	CoreDNSClusterRoleBindingName  = "system:coredns"
+	CoreDNSServiceAccountName      = "coredns"
+	CoreDNSServiceName             = "kube-dns"
+	CoreDNSConfigMapName           = "coredns"
+	CoreDNSDeploymentName          = "coredns"
+	CoreDNSPodDisruptionBudgetName = "coredns"
+)
+
 // ECDSAKeyPair is a ECDSA x509 certifcate and private key
 type ECDSAKeyPair struct {
 	Key  *ecdsa.PrivateKey

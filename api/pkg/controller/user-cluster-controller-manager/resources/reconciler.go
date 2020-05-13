@@ -8,6 +8,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	controllermanager "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
+	coredns "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
 	dnatcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
 	kubestatemetrics "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
 	kubernetesdashboard "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
@@ -65,7 +66,15 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
+	if err := r.reconcileServiceAcconts(ctx); err != nil {
+		return err
+	}
+
 	if err := r.reconcileUnstructured(ctx); err != nil {
+		return err
+	}
+
+	if err := r.reconcilePodDisruptionBudgets(ctx); err != nil {
 		return err
 	}
 
@@ -74,10 +83,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	if err := r.reconcileServices(ctx); err != nil {
-		return err
-	}
-
-	if err := r.reconcileServiceAcconts(ctx); err != nil {
 		return err
 	}
 
@@ -161,6 +166,10 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 		}
 		if err := reconciling.ReconcileServiceAccounts(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", kubernetesdashboard.Namespace, err)
+		}
+		creators = []reconciling.NamedServiceAccountCreatorGetter{coredns.ServiceAccountCreator()}
+		if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", metav1.NamespaceSystem, err)
 		}
 	}
 
@@ -306,7 +315,11 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context) error {
 	}
 
 	if !r.openshift {
-		creators = append(creators, kubernetesdashboard.ClusterRoleCreator())
+		creators = append(creators,
+			[]reconciling.NamedClusterRoleCreatorGetter{
+				kubernetesdashboard.ClusterRoleCreator(),
+				coredns.ClusterRoleCreator(),
+			}...)
 	}
 
 	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
@@ -336,7 +349,11 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 	if r.openshift {
 		creators = append(creators, openshift.TokenOwnerServiceAccountClusterRoleBinding)
 	} else {
-		creators = append(creators, kubernetesdashboard.ClusterRoleBindingCreator())
+		creators = append(creators,
+			[]reconciling.NamedClusterRoleBindingCreatorGetter{
+				kubernetesdashboard.ClusterRoleBindingCreator(),
+				coredns.ClusterRoleBindingCreator(),
+			}...)
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
@@ -387,9 +404,14 @@ func (r *reconciler) reconcileServices(ctx context.Context) error {
 		creators := []reconciling.NamedServiceCreatorGetter{
 			kubernetesdashboard.ServiceCreator(),
 		}
-
 		if err := reconciling.ReconcileServices(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Services in namespace %s: %v", kubernetesdashboard.Namespace, err)
+		}
+		creatorsKubeSystem = []reconciling.NamedServiceCreatorGetter{
+			coredns.ServiceCreator(r.dnsClusterIP),
+		}
+		if err := reconciling.ReconcileServices(ctx, creatorsKubeSystem, metav1.NamespaceSystem, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Services in kube-system namespace: %v", err)
 		}
 	}
 
@@ -415,6 +437,8 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 	}
 	if r.openshift {
 		creators = append(creators, openshift.ControlplaneConfigCreator(r.platform))
+	} else {
+		creators = append(creators, coredns.ConfigMapCreator())
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -542,17 +566,32 @@ type ctrlruntimeclientClient struct {
 }
 
 func (r *reconciler) reconcileDeployments(ctx context.Context) error {
-	if !r.openshift {
-		// Kubernetes Dashboard and related resources
-		creators := []reconciling.NamedDeploymentCreatorGetter{
-			kubernetesdashboard.DeploymentCreator(),
-		}
-
-		if err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", kubernetesdashboard.Namespace, err)
-		}
+	if r.openshift {
+		return nil
+	}
+	// Kubernetes Dashboard and related resources
+	creators := []reconciling.NamedDeploymentCreatorGetter{
+		kubernetesdashboard.DeploymentCreator(),
+	}
+	if err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
+	kubeSystemCreators := []reconciling.NamedDeploymentCreatorGetter{coredns.DeploymentCreator()}
+	if err := reconciling.ReconcileDeployments(ctx, kubeSystemCreators, metav1.NamespaceSystem, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", metav1.NamespaceSystem, err)
+	}
+
+	return nil
+}
+
+func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
+	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
+		coredns.PodDisruptionBudgetCreator(),
+	}
+	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
+	}
 	return nil
 }
 
