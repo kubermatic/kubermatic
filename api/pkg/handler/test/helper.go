@@ -482,9 +482,10 @@ func APIUserToKubermaticUser(user apiv1.User) *kubermaticv1.User {
 			DeletionTimestamp: deletionTimestamp,
 		},
 		Spec: kubermaticv1.UserSpec{
-			Name:  user.Name,
-			Email: user.Email,
-			ID:    user.ID,
+			Name:    user.Name,
+			Email:   user.Email,
+			ID:      user.ID,
+			IsAdmin: user.IsAdmin,
 		},
 	}
 }
@@ -587,6 +588,13 @@ func GenDefaultAPIUser() *apiv1.User {
 		},
 		Email: GenDefaultUser().Spec.Email,
 	}
+}
+
+// GenDefaultAdminAPIUser generates a default admin API user
+func GenDefaultAdminAPIUser() *apiv1.User {
+	user := GenDefaultAPIUser()
+	user.IsAdmin = true
+	return user
 }
 
 // GenDefaultUser generates a default user

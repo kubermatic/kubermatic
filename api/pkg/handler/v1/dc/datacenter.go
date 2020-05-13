@@ -31,11 +31,16 @@ func ListEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.User
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		// Get the DCs and immediately filter out the ones restricted by e-mail domain.
-		dcs, err := filterDCsByEmail(userInfo, getAPIDCsFromSeedMap(seeds))
-		if err != nil {
-			return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list datacenters: %v", err))
+		// Get the DCs and immediately filter out the ones restricted by e-mail domain if user is not admin
+		dcs := getAPIDCsFromSeedMap(seeds)
+		if !userInfo.IsAdmin {
+			dcs, err = filterDCsByEmail(userInfo, dcs)
+			if err != nil {
+				return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+					fmt.Sprintf("failed to filter datacenters by email: %v", err))
+			}
 		}
+
 		// Maintain a stable order. We do not check for duplicate names here
 		sort.SliceStable(dcs, func(i, j int) bool {
 			return dcs[i].Metadata.Name < dcs[j].Metadata.Name
@@ -43,6 +48,56 @@ func ListEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.User
 
 		return dcs, nil
 	}
+}
+
+// ListEndpoint an HTTP endpoint that returns a list of apiv1.Datacenter for a specified provider
+func ListEndpointForProvider(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(forProviderDCListReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// Get the DCs and immediately filter them out for the provider.
+		dcs := filterDCsByProvider(req.Provider, getAPIDCsFromSeedMap(seeds))
+
+		// Filter out dc restricted by email if user is not admin
+		if !userInfo.IsAdmin {
+			dcs, err = filterDCsByEmail(userInfo, dcs)
+			if err != nil {
+				return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+					fmt.Sprintf("failed to filter datacenters by email: %v", err))
+			}
+		}
+
+		// Maintain a stable order. We do not check for duplicate names here
+		sort.SliceStable(dcs, func(i, j int) bool {
+			return dcs[i].Metadata.Name < dcs[j].Metadata.Name
+		})
+
+		return dcs, nil
+	}
+}
+
+func filterDCsByProvider(providerName string, list []apiv1.Datacenter) []apiv1.Datacenter {
+	var dcList []apiv1.Datacenter
+
+	for _, dc := range list {
+		if dc.Spec.Provider == providerName {
+			dcList = append(dcList, dc)
+		}
+	}
+	return dcList
 }
 
 // GetEndpoint an HTTP endpoint that returns a single apiv1.Datacenter object
@@ -66,10 +121,14 @@ func GetDatacenter(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter
 		return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
 	}
 
-	// Get the DCs and immediately filter out the ones restricted by e-mail domain.
-	dcs, err := filterDCsByEmail(userInfo, getAPIDCsFromSeedMap(seeds))
-	if err != nil {
-		return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list datacenters: %v", err))
+	// Get the DCs and immediately filter out the ones restricted by e-mail domain if user is not admin
+	dcs := getAPIDCsFromSeedMap(seeds)
+	if !userInfo.IsAdmin {
+		dcs, err = filterDCsByEmail(userInfo, dcs)
+		if err != nil {
+			return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+				fmt.Sprintf("failed to filter datacenters by email: %v", err))
+		}
 	}
 
 	// The datacenter endpoints return both node and seed dcs, so we have to iterate through
@@ -92,9 +151,6 @@ func GetDatacenter(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter
 }
 
 func filterDCsByEmail(userInfo *provider.UserInfo, list []apiv1.Datacenter) ([]apiv1.Datacenter, error) {
-	if list == nil {
-		return nil, fmt.Errorf("filterDCsByEmail: the datacenter list can not be nil")
-	}
 	var dcList []apiv1.Datacenter
 
 iterateOverDCs:
@@ -215,5 +271,24 @@ func DecodeLegacyDcReq(c context.Context, r *http.Request) (interface{}, error) 
 	var req LegacyDCReq
 
 	req.DC = mux.Vars(r)["dc"]
+	return req, nil
+}
+
+// forProviderDCListReq defines HTTP request for ListDCForProvider
+// swagger:parameters listDCForProvider
+type forProviderDCListReq struct {
+	// in: path
+	// required: true
+	Provider string `json:"provider_name"`
+}
+
+// DecodeForProviderDCListReq decodes http request into ForProviderDCListReq
+func DecodeForProviderDCListReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req forProviderDCListReq
+
+	req.Provider = mux.Vars(r)["provider_name"]
+	if req.Provider == "" {
+		return nil, fmt.Errorf("'provider_name' parameter is required but was not provided")
+	}
 	return req, nil
 }
