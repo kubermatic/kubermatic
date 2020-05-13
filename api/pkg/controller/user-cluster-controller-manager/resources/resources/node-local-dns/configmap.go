@@ -10,6 +10,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	addonManagerModeKey = "addonmanager.kubernetes.io/mode"
+	reconcilModeValue   = "Reconcile"
+)
+
 // ConfigMapCreator returns a ConfigMap containing the config for Node Local DNS cache
 func ConfigMapCreator(dnsClusterIP string) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
@@ -17,7 +22,7 @@ func ConfigMapCreator(dnsClusterIP string) reconciling.NamedConfigMapCreatorGett
 			if cm.Labels == nil {
 				cm.Labels = map[string]string{}
 			}
-			cm.Labels["addonmanager.kubernetes.io/mode"] = "Reconcile"
+			cm.Labels[addonManagerModeKey] = reconcilModeValue
 
 			t, err := template.New("config").Parse(configTemplate)
 			if err != nil {
