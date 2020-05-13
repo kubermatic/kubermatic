@@ -27,6 +27,8 @@ type Client struct {
 type ClientService interface {
 	GetDatacenter(params *GetDatacenterParams, authInfo runtime.ClientAuthInfoWriter) (*GetDatacenterOK, error)
 
+	ListDCForProvider(params *ListDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*ListDCForProviderOK, error)
+
 	ListDatacenters(params *ListDatacentersParams, authInfo runtime.ClientAuthInfoWriter) (*ListDatacentersOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
@@ -63,6 +65,40 @@ func (a *Client) GetDatacenter(params *GetDatacenterParams, authInfo runtime.Cli
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetDatacenterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListDCForProvider returns all datacenters for a specified provider
+*/
+func (a *Client) ListDCForProvider(params *ListDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*ListDCForProviderOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListDCForProviderParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listDCForProvider",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/{provider_name}/dc",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListDCForProviderReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListDCForProviderOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListDCForProviderDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
