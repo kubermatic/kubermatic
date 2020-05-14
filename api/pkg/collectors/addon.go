@@ -51,36 +51,31 @@ func (cc AddonCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect gets called by prometheus to collect the metrics
 func (cc AddonCollector) Collect(ch chan<- prometheus.Metric) {
-	clusters := &kubermaticv1.ClusterList{}
-	if err := cc.client.List(context.Background(), clusters); err != nil {
-		utilruntime.HandleError(fmt.Errorf("failed to list clusters from clusterLister in AddonCollector: %v", err))
+	addons := &kubermaticv1.AddonList{}
+	if err := cc.client.List(
+		context.Background(),
+		addons,
+		&ctrlruntimeclient.ListOptions{}); err != nil {
+		utilruntime.HandleError(fmt.Errorf("failed to list addons in AddonCollector: %v", err))
 		return
 	}
-
-	for _, cluster := range clusters.Items {
-		addons := &kubermaticv1.AddonList{}
-		// todo filter by cluster namespace
-		if err := cc.client.List(
-			context.Background(),
-			addons,
-			&ctrlruntimeclient.ListOptions{
-				Namespace: fmt.Sprintf("cluster-%s", cluster.Name),
-			}); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list addons for cluster %s from addonLister in AddonCollector: %v", cluster.Name, err))
-			return
-		}
-		for _, addon := range addons.Items {
-			cc.collectAddon(ch, &cluster, &addon)
-		}
+	for _, addon := range addons.Items {
+		cc.collectAddon(ch, &addon)
 	}
 }
 
-func (cc *AddonCollector) collectAddon(ch chan<- prometheus.Metric, c *kubermaticv1.Cluster, addon *kubermaticv1.Addon) {
+func (cc *AddonCollector) collectAddon(ch chan<- prometheus.Metric, addon *kubermaticv1.Addon) {
+	if len(addon.OwnerReferences) < 1 || addon.OwnerReferences[0].Kind != kubermaticv1.ClusterKindName {
+		utilruntime.HandleError(fmt.Errorf("No owning cluster for addon %v/%v", addon.Namespace, addon.Name))
+	}
+
+	clusterName := addon.OwnerReferences[0].Name
+
 	ch <- prometheus.MustNewConstMetric(
 		cc.addonCreated,
 		prometheus.GaugeValue,
 		float64(addon.CreationTimestamp.Unix()),
-		c.Name,
+		clusterName,
 		addon.Name,
 	)
 
@@ -89,7 +84,7 @@ func (cc *AddonCollector) collectAddon(ch chan<- prometheus.Metric, c *kubermati
 			cc.addonDeleted,
 			prometheus.GaugeValue,
 			float64(addon.DeletionTimestamp.Unix()),
-			c.Name,
+			clusterName,
 			addon.Name,
 		)
 	}
