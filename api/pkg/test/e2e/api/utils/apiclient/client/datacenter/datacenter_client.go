@@ -25,6 +25,8 @@ type Client struct {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	GetDCForProvider(params *GetDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*GetDCForProviderOK, error)
+
 	GetDatacenter(params *GetDatacenterParams, authInfo runtime.ClientAuthInfoWriter) (*GetDatacenterOK, error)
 
 	ListDCForProvider(params *ListDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*ListDCForProviderOK, error)
@@ -32,6 +34,40 @@ type ClientService interface {
 	ListDatacenters(params *ListDatacentersParams, authInfo runtime.ClientAuthInfoWriter) (*ListDatacentersOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  GetDCForProvider gets a datacenter for a specified provider
+*/
+func (a *Client) GetDCForProvider(params *GetDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*GetDCForProviderOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetDCForProviderParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getDCForProvider",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/{provider_name}/dc/{dc}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetDCForProviderReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetDCForProviderOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetDCForProviderDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*

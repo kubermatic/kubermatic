@@ -49,6 +49,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/{provider_name}/dc").
 		Handler(r.listDCForProvider())
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/{provider_name}/dc/{dc}").
+		Handler(r.getDCForProvider())
+
 	//
 	// Defines a set of HTTP endpoint for interacting with
 	// various cloud providers
@@ -1263,6 +1267,30 @@ func (r Routing) listDCForProvider() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.ListEndpointForProvider(r.seedsGetter, r.userInfoGetter)),
 		dc.DecodeForProviderDCListReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/{provider_name}/dc/{dc} datacenter getDCForProvider
+//
+//     Get a datacenter for a specified provider.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Datacenter
+//       401: empty
+//       403: empty
+func (r Routing) getDCForProvider() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(dc.GetEndpointForProvider(r.seedsGetter, r.userInfoGetter)),
+		dc.DecodeForProviderDCGetReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
