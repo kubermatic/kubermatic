@@ -50,10 +50,12 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			}
 
 			iptr := intstr.FromInt(1)
+			sptr := intstr.FromString("25%")
 			dep.Spec.Strategy = appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDeployment{
 					MaxUnavailable: &iptr,
+					MaxSurge:       &sptr,
 				},
 			}
 			// has to be the same as the selector
@@ -143,6 +145,7 @@ func getContainers() []corev1.Container {
 					},
 				},
 				InitialDelaySeconds: 60,
+				PeriodSeconds:       10,
 				TimeoutSeconds:      5,
 				SuccessThreshold:    1,
 				FailureThreshold:    5,
@@ -156,6 +159,10 @@ func getContainers() []corev1.Container {
 						Scheme: corev1.URISchemeHTTP,
 					},
 				},
+				TimeoutSeconds:   1,
+				PeriodSeconds:    10,
+				SuccessThreshold: 1,
+				FailureThreshold: 3,
 			},
 			SecurityContext: &corev1.SecurityContext{
 				ReadOnlyRootFilesystem:   pointer.BoolPtr(true),
