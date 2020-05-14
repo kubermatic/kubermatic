@@ -1154,6 +1154,9 @@ func (r *testRunner) getGinkgoRuns(
 		case osSpec.ContainerLinux != nil:
 			args = append(args, "--node-os-distro=coreos")
 			env = append(env, "KUBE_SSH_USER=core")
+		case osSpec.Flatcar != nil:
+			args = append(args, "--node-os-distro=flatcar")
+			env = append(env, "KUBE_SSH_USER=core")
 		}
 
 		cmd := exec.Command(path.Join(binRoot, "ginkgo"), args...)

@@ -18,6 +18,9 @@ const (
 
 	// RHELLabelValue is the value of the label for RHEL
 	RHELLabelValue = "rhel"
+
+	// FlatcarLabelValue is the value of the label for Flatcar Linux
+	FlatcarLabelValue = "flatcar"
 )
 
 // OSLabelMatchValues is a mapping between OS labels and the strings to match on in OSImage.
@@ -28,4 +31,5 @@ var OSLabelMatchValues = map[string]string{
 	ContainerLinuxLabelValue: "container linux",
 	SLESLabelValue:           "sles",
 	RHELLabelValue:           "rhel",
+	FlatcarLabelValue:        "flatcar container linux",
 }

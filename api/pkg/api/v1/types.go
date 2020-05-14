@@ -928,6 +928,13 @@ type ContainerLinuxSpec struct {
 	DisableAutoUpdate bool `json:"disableAutoUpdate"`
 }
 
+// FlatcarSpec contains Flatcar Linux specific settings
+// swagger:model FlatcarSpec
+type FlatcarSpec struct {
+	// disable flatcar linux auto-update feature
+	DisableAutoUpdate bool `json:"disableAutoUpdate"`
+}
+
 // SLESSpec contains SLES specific settings
 // swagger:model SLESSpec
 type SLESSpec struct {
@@ -953,6 +960,7 @@ type OperatingSystemSpec struct {
 	CentOS         *CentOSSpec         `json:"centos,omitempty"`
 	SLES           *SLESSpec           `json:"sles,omitempty"`
 	RHEL           *RHELSpec           `json:"rhel,omitempty"`
+	Flatcar        *FlatcarSpec        `json:"flatcar,omitempty"`
 }
 
 // NodeVersionInfo node version information
