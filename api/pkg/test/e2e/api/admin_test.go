@@ -416,7 +416,7 @@ func TestManageSSHKeyByAdmin(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("can not get master token due to error: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)

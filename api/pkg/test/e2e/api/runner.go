@@ -1073,9 +1073,19 @@ func (r *runner) DeleteUserSSHKey(projectID, keyID string) error {
 		SSHKeyID:  keyID,
 	}
 	params.WithTimeout(timeout)
-	if _, err := r.client.Project.DeleteSSHKey(params, r.bearerToken); err != nil {
-		return err
+
+	var deleteError error
+	if err := wait.PollImmediate(time.Second, maxAttempts*time.Second, func() (bool, error) {
+		_, deleteError := r.client.Project.DeleteSSHKey(params, r.bearerToken)
+		if deleteError != nil {
+			return false, nil
+		}
+		return true, nil
+
+	}); err != nil {
+		return fmt.Errorf("the user SSH key can not be deleted after %d attempts %v", maxAttempts, deleteError)
 	}
+
 	return nil
 }
 

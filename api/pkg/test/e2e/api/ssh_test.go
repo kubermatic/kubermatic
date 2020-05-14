@@ -5,7 +5,6 @@ package api
 import (
 	"reflect"
 	"testing"
-	"time"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 )
@@ -92,8 +91,6 @@ func TestDeleteSSHKey(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not get create SSH key due error: %v", err)
 			}
-			// wait for the controller to setup RBACs
-			time.Sleep(15 * time.Second)
 
 			if err := apiRunner.DeleteUserSSHKey(project.ID, sshKey.ID); err != nil {
 				t.Fatalf("can not delete SSH key due error: %v", err)
