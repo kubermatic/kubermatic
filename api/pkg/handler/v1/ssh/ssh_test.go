@@ -28,6 +28,7 @@ func TestDeleteSSHKey(t *testing.T) {
 		ExistingKubermaticObjs []runtime.Object
 		ExistingAPIUser        *apiv1.User
 		ExistingSSHKeys        []*kubermaticv1.UserSSHKey
+		privilegedOperation    bool
 	}{
 		// scenario 1
 		{
@@ -68,7 +69,8 @@ func TestDeleteSSHKey(t *testing.T) {
 				genSSHKey(test.DefaultCreationTimestamp(), "c08aa5c7abf34504f18552846485267d", "first-key", "my-first-project-ID", test.GenDefaultCluster().Name),
 				genSSHKey(test.DefaultCreationTimestamp(), "abc", "second-key", "my-first-project-ID", "abcd-ID"),
 			},
-			ExistingAPIUser: test.GenAPIUser("admin", "admin@acme.com"),
+			ExistingAPIUser:     test.GenAPIUser("admin", "admin@acme.com"),
+			privilegedOperation: true,
 		},
 		// scenario 3
 		{
@@ -112,7 +114,8 @@ func TestDeleteSSHKey(t *testing.T) {
 			}
 
 			kubermaticFakeClient := clients.FakeKubermaticClient
-			{
+			// only when impersonated client is used
+			if !tc.privilegedOperation {
 				// check only if ssh key was delteted
 				if tc.HTTPStatus == http.StatusOK {
 					actionWasValidated := false
