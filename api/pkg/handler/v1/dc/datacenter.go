@@ -147,20 +147,56 @@ func GetDatacenter(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter
 		}
 	}
 
-	// The datacenter endpoints return both node and seed dcs, so we have to iterate through
-	// everything
+	return filterDCsByName(dcs, datacenterToGet)
+}
+
+// GetEndpointForProvider an HTTP endpoint that returns a specified apiv1.Datacenter for a specified provider
+func GetEndpointForProvider(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(forProviderDCGetReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// Get the DCs and immediately filter them out for the provider.
+		dcs := filterDCsByProvider(req.Provider, getAPIDCsFromSeedMap(seeds))
+
+		// Filter out dc restricted by email if user is not admin
+		if !userInfo.IsAdmin {
+			dcs, err = filterDCsByEmail(userInfo, dcs)
+			if err != nil {
+				return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+					fmt.Sprintf("failed to filter datacenters by email: %v", err))
+			}
+		}
+
+		return filterDCsByName(dcs, req.Datacenter)
+	}
+}
+
+func filterDCsByName(dcs []apiv1.Datacenter, dcName string) (apiv1.Datacenter, error) {
 	var foundDCs []apiv1.Datacenter
 	for _, unfilteredDC := range dcs {
-		if unfilteredDC.Metadata.Name == datacenterToGet {
+		if unfilteredDC.Metadata.Name == dcName {
 			foundDCs = append(foundDCs, unfilteredDC)
 		}
 	}
 
 	if n := len(foundDCs); n > 1 {
-		return apiv1.Datacenter{}, fmt.Errorf("did not find one but %d datacenters for name %q", n, datacenterToGet)
+		return apiv1.Datacenter{}, fmt.Errorf("did not find one but %d datacenters for name %q", n, dcName)
 	}
 	if len(foundDCs) == 0 {
-		return apiv1.Datacenter{}, errors.NewNotFound("datacenter", datacenterToGet)
+		return apiv1.Datacenter{}, errors.NewNotFound("datacenter", dcName)
 	}
 
 	return foundDCs[0], nil
@@ -297,13 +333,40 @@ type forProviderDCListReq struct {
 	Provider string `json:"provider_name"`
 }
 
-// DecodeForProviderDCListReq decodes http request into ForProviderDCListReq
+// DecodeForProviderDCListReq decodes http request into forProviderDCListReq
 func DecodeForProviderDCListReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req forProviderDCListReq
 
 	req.Provider = mux.Vars(r)["provider_name"]
 	if req.Provider == "" {
 		return nil, fmt.Errorf("'provider_name' parameter is required but was not provided")
+	}
+	return req, nil
+}
+
+// forProviderDCGetReq defines HTTP request for GetDCForProvider
+// swagger:parameters getDCForProvider
+type forProviderDCGetReq struct {
+	// in: path
+	// required: true
+	Provider string `json:"provider_name"`
+	// in: path
+	// required: true
+	Datacenter string `json:"dc"`
+}
+
+// DecodeForProviderDCGetReq decodes http request into forProviderDCGetReq
+func DecodeForProviderDCGetReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req forProviderDCGetReq
+
+	req.Provider = mux.Vars(r)["provider_name"]
+	if req.Provider == "" {
+		return nil, fmt.Errorf("'provider_name' parameter is required but was not provided")
+	}
+
+	req.Datacenter = mux.Vars(r)["dc"]
+	if req.Datacenter == "" {
+		return nil, fmt.Errorf("'dc' parameter is required but was not provided")
 	}
 	return req, nil
 }

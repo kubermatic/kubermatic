@@ -31,11 +31,10 @@ import (
 func TestDatacentersListEndpoint(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
-		name                   string
-		expectedResponse       string
-		httpStatus             int
-		existingAPIUser        *apiv1.User
-		existingKubermaticObjs []runtime.Object
+		name             string
+		expectedResponse string
+		httpStatus       int
+		existingAPIUser  *apiv1.User
 	}{
 		{
 			name:             "admin should be able to list dc without email filtering",
@@ -73,12 +72,11 @@ func TestDatacentersListEndpoint(t *testing.T) {
 func TestDatacenterGetEndpoint(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
-		name                   string
-		dc                     string
-		expectedResponse       string
-		httpStatus             int
-		existingAPIUser        *apiv1.User
-		existingKubermaticObjs []runtime.Object
+		name             string
+		dc               string
+		expectedResponse string
+		httpStatus       int
+		existingAPIUser  *apiv1.User
 	}{
 		{
 			name:             "admin should be able to get email restricted dc",
@@ -139,12 +137,11 @@ func TestDatacenterGetEndpoint(t *testing.T) {
 func TestDatacenterListForProviderEndpoint(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
-		name                   string
-		provider               string
-		expectedResponse       string
-		httpStatus             int
-		existingAPIUser        *apiv1.User
-		existingKubermaticObjs []runtime.Object
+		name             string
+		provider         string
+		expectedResponse string
+		httpStatus       int
+		existingAPIUser  *apiv1.User
 	}{
 		{
 			name:             "admin should be able to list dc per provider without email filtering",
@@ -171,6 +168,85 @@ func TestDatacenterListForProviderEndpoint(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/providers/%s/dc", tc.provider), nil)
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []runtime.Object{},
+				[]runtime.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser)}, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected route to return code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
+	}
+}
+
+func TestDatacenterGetForProviderEndpoint(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		name             string
+		provider         string
+		dc               string
+		expectedResponse string
+		httpStatus       int
+		existingAPIUser  *apiv1.User
+	}{
+		{
+			name:             "admin should be able to get email restricted dc",
+			provider:         "fake",
+			dc:               "restricted-fake-dc",
+			expectedResponse: `{"metadata":{"name":"restricted-fake-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
+			httpStatus:       200,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			name:             "regular user should not be able to get restricted dc if his email domain is restricted",
+			provider:         "fake",
+			dc:               "restricted-fake-dc",
+			expectedResponse: `{"error":{"code":404,"message":"datacenter \"restricted-fake-dc\" not found"}}`,
+			httpStatus:       404,
+			existingAPIUser:  test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "regular user should be able to get restricted dc if his email domain is allowed",
+			provider:         "fake",
+			dc:               "restricted-fake-dc",
+			expectedResponse: `{"metadata":{"name":"restricted-fake-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
+			httpStatus:       200,
+			existingAPIUser:  test.GenAPIUser(test.UserName2, test.UserEmail2),
+		},
+		{
+			name:             "should get 404 for non-existent dc",
+			provider:         "fake",
+			dc:               "idontexist",
+			expectedResponse: `{"error":{"code":404,"message":"datacenter \"idontexist\" not found"}}`,
+			httpStatus:       404,
+			existingAPIUser:  test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "should get 404 for non-existent provider",
+			provider:         "idontexist",
+			dc:               "regular-do1",
+			expectedResponse: `{"error":{"code":404,"message":"datacenter \"regular-do1\" not found"}}`,
+			httpStatus:       404,
+			existingAPIUser:  test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "should find dc",
+			provider:         "digitalocean",
+			dc:               "regular-do1",
+			expectedResponse: `{"metadata":{"name":"regular-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
+			httpStatus:       200,
+			existingAPIUser:  test.GenDefaultAPIUser(),
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/providers/%s/dc/%s", tc.provider, tc.dc), nil)
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []runtime.Object{},
 				[]runtime.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser)}, nil, nil, hack.NewTestRouting)
