@@ -4,13 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-)
-
-const (
-	KubeconfigFieldPath = "kubeconfig"
 )
 
 // SingleSeedKubeconfig takes a kubeconfig and returns a new kubeconfig that only has the
@@ -47,18 +45,20 @@ func SingleSeedKubeconfig(kubeconfig *clientcmdapi.Config, seedName string) (*cl
 	return config, nil
 }
 
-func CreateKubeconfigSecret(kubeconfig *clientcmdapi.Config, name string, namespace string) (*corev1.Secret, error) {
+func CreateKubeconfigSecret(kubeconfig *clientcmdapi.Config, name string, namespace string) (*corev1.Secret, string, error) {
 	encoded, err := clientcmd.Write(*kubeconfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serialize kubeconfig: %v", err)
+		return nil, "", fmt.Errorf("failed to serialize kubeconfig: %v", err)
 	}
+
+	fieldPath := provider.DefaultKubeconfigFieldPath
 
 	secret := &corev1.Secret{}
 	secret.Name = name
 	secret.Namespace = namespace
 	secret.Data = map[string][]byte{
-		KubeconfigFieldPath: encoded,
+		fieldPath: encoded,
 	}
 
-	return secret, nil
+	return secret, fieldPath, nil
 }

@@ -279,7 +279,7 @@ func convertSeeds(values *helmValues, targetNamespace string) ([]runtime.Object,
 
 			secretName := fmt.Sprintf("kubeconfig-%s", seed.Name)
 
-			secret, err := util.CreateKubeconfigSecret(seedKubeconfig, secretName, targetNamespace)
+			secret, fieldPath, err := util.CreateKubeconfigSecret(seedKubeconfig, secretName, targetNamespace)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create kubeconfig Secret for seed %s: %v", seed.Name, err)
 			}
@@ -288,6 +288,7 @@ func convertSeeds(values *helmValues, targetNamespace string) ([]runtime.Object,
 
 			seed.Spec.Kubeconfig.Name = secretName
 			seed.Spec.Kubeconfig.Namespace = targetNamespace
+			seed.Spec.Kubeconfig.FieldPath = fieldPath
 
 			result = append(result, secret)
 		}
