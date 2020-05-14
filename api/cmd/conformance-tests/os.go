@@ -20,6 +20,9 @@ func getOSNameFromSpec(spec apimodels.OperatingSystemSpec) string {
 	if spec.Rhel != nil {
 		return "rhel"
 	}
+	if spec.Flatcar != nil {
+		return "flatcar"
+	}
 
 	return ""
 }

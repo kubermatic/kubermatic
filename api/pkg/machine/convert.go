@@ -18,6 +18,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
+	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
 	"github.com/kubermatic/machine-controller/pkg/userdata/sles"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
@@ -41,6 +42,15 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 			return nil, fmt.Errorf("failed to parse coreos config: %v", err)
 		}
 		operatingSystemSpec.ContainerLinux = &apiv1.ContainerLinuxSpec{
+			DisableAutoUpdate: config.DisableAutoUpdate,
+		}
+
+	case providerconfig.OperatingSystemFlatcar:
+		config := &flatcar.Config{}
+		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse flatcar config: %v", err)
+		}
+		operatingSystemSpec.Flatcar = &apiv1.FlatcarSpec{
 			DisableAutoUpdate: config.DisableAutoUpdate,
 		}
 
