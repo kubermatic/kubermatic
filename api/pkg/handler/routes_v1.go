@@ -638,7 +638,7 @@ func (r Routing) listSSHKeys() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: SSHKey
+//       201: SSHKey
 //       401: empty
 //       403: empty
 func (r Routing) createSSHKey() http.Handler {
