@@ -877,7 +877,7 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:15a1c33d6f3e76a99247fcb3cf160bbf9fcf0b12673d849366ae63e1983f75de"
+  digest = "1:c84d106f450ff6e76671e0f247edbf137fdc476cb406a79e2a4d780450e1635e"
   name = "github.com/kubermatic/machine-controller"
   packages = [
     "pkg/apis/cluster/common",
@@ -898,6 +898,7 @@
     "pkg/providerconfig/types",
     "pkg/userdata/centos",
     "pkg/userdata/coreos",
+    "pkg/userdata/flatcar",
     "pkg/userdata/helper",
     "pkg/userdata/plugin",
     "pkg/userdata/rhel",
@@ -2255,6 +2256,7 @@
     "github.com/kubermatic/machine-controller/pkg/providerconfig/types",
     "github.com/kubermatic/machine-controller/pkg/userdata/centos",
     "github.com/kubermatic/machine-controller/pkg/userdata/coreos",
+    "github.com/kubermatic/machine-controller/pkg/userdata/flatcar",
     "github.com/kubermatic/machine-controller/pkg/userdata/helper",
     "github.com/kubermatic/machine-controller/pkg/userdata/plugin",
     "github.com/kubermatic/machine-controller/pkg/userdata/rhel",
