@@ -23,8 +23,8 @@ type CreateSSHKeyReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *CreateSSHKeyReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-	case 200:
-		result := NewCreateSSHKeyOK()
+	case 201:
+		result := NewCreateSSHKeyCreated()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -53,28 +53,28 @@ func (o *CreateSSHKeyReader) ReadResponse(response runtime.ClientResponse, consu
 	}
 }
 
-// NewCreateSSHKeyOK creates a CreateSSHKeyOK with default headers values
-func NewCreateSSHKeyOK() *CreateSSHKeyOK {
-	return &CreateSSHKeyOK{}
+// NewCreateSSHKeyCreated creates a CreateSSHKeyCreated with default headers values
+func NewCreateSSHKeyCreated() *CreateSSHKeyCreated {
+	return &CreateSSHKeyCreated{}
 }
 
-/*CreateSSHKeyOK handles this case with default header values.
+/*CreateSSHKeyCreated handles this case with default header values.
 
 SSHKey
 */
-type CreateSSHKeyOK struct {
+type CreateSSHKeyCreated struct {
 	Payload *models.SSHKey
 }
 
-func (o *CreateSSHKeyOK) Error() string {
-	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/sshkeys][%d] createSshKeyOK  %+v", 200, o.Payload)
+func (o *CreateSSHKeyCreated) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/sshkeys][%d] createSshKeyCreated  %+v", 201, o.Payload)
 }
 
-func (o *CreateSSHKeyOK) GetPayload() *models.SSHKey {
+func (o *CreateSSHKeyCreated) GetPayload() *models.SSHKey {
 	return o.Payload
 }
 
-func (o *CreateSSHKeyOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+func (o *CreateSSHKeyCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.SSHKey)
 

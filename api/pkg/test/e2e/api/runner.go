@@ -1016,3 +1016,108 @@ type PatchCluster struct {
 	Name   string            `json:"name"`
 	Labels map[string]string `json:"labels,omitempty"`
 }
+
+// CreateUserSSHKey creates a new user SSH key
+func (r *runner) CreateUserSSHKey(projectID, keyName, publicKey string) (*apiv1.SSHKey, error) {
+	params := &project.CreateSSHKeyParams{
+		Key: &models.SSHKey{
+			Name: keyName,
+			Spec: &models.SSHKeySpec{
+				PublicKey: publicKey,
+			},
+		},
+		ProjectID: projectID,
+	}
+	params.WithTimeout(timeout)
+	key, err := r.client.Project.CreateSSHKey(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertSSHKey(key.Payload), nil
+}
+
+// ListUserSSHKey list user SSH keys
+func (r *runner) ListUserSSHKey(projectID string) ([]*apiv1.SSHKey, error) {
+	params := &project.ListSSHKeysParams{
+		ProjectID: projectID,
+	}
+	params.WithTimeout(timeout)
+	keyList, err := r.client.Project.ListSSHKeys(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	resultList := make([]*apiv1.SSHKey, 0)
+	for _, key := range keyList.Payload {
+		resultList = append(resultList, convertSSHKey(key))
+	}
+
+	return resultList, nil
+}
+
+// DeleteUserSSHKey deletes user SSH keys
+func (r *runner) DeleteUserSSHKey(projectID, keyID string) error {
+	params := &project.DeleteSSHKeyParams{
+		ProjectID: projectID,
+		SSHKeyID:  keyID,
+	}
+	params.WithTimeout(timeout)
+
+	var deleteError error
+	if err := wait.PollImmediate(time.Second, maxAttempts*time.Second, func() (bool, error) {
+		_, deleteError := r.client.Project.DeleteSSHKey(params, r.bearerToken)
+		if deleteError != nil {
+			return false, nil
+		}
+		return true, nil
+
+	}); err != nil {
+		return fmt.Errorf("the user SSH key can not be deleted after %d attempts %v", maxAttempts, deleteError)
+	}
+
+	return nil
+}
+
+// AssignSSHKeyToCluster adds user SSH key to the cluster
+func (r *runner) AssignSSHKeyToCluster(projectID, clusterID, dc, keyID string) error {
+	params := &project.AssignSSHKeyToClusterParams{
+		ClusterID: clusterID,
+		DC:        dc,
+		KeyID:     keyID,
+		ProjectID: projectID,
+	}
+	params.WithTimeout(timeout)
+	if _, err := r.client.Project.AssignSSHKeyToCluster(params, r.bearerToken); err != nil {
+		return err
+	}
+	return nil
+}
+
+// DetachSSHKeyFromClusterParams detaches user SSH key from the cluster
+func (r *runner) DetachSSHKeyFromClusterParams(projectID, clusterID, dc, keyID string) error {
+	params := &project.DetachSSHKeyFromClusterParams{
+		ClusterID: clusterID,
+		DC:        dc,
+		KeyID:     keyID,
+		ProjectID: projectID,
+	}
+	params.WithTimeout(timeout)
+	if _, err := r.client.Project.DetachSSHKeyFromCluster(params, r.bearerToken); err != nil {
+		return err
+	}
+	return nil
+}
+
+func convertSSHKey(key *models.SSHKey) *apiv1.SSHKey {
+	return &apiv1.SSHKey{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:   key.ID,
+			Name: key.Name,
+		},
+		Spec: apiv1.SSHKeySpec{
+			Fingerprint: key.Spec.Fingerprint,
+			PublicKey:   key.Spec.PublicKey,
+		},
+	}
+}

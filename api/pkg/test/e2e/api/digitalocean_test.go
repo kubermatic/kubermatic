@@ -46,6 +46,8 @@ func TestCreateUpdateDOCluster(t *testing.T) {
 		patch          PatchCluster
 		expectedName   string
 		expectedLabels map[string]string
+		sshKeyName     string
+		publicKey      string
 	}{
 		{
 			name:       "create cluster on DigitalOcean",
@@ -60,6 +62,8 @@ func TestCreateUpdateDOCluster(t *testing.T) {
 			},
 			expectedName:   "newName",
 			expectedLabels: map[string]string{"a": "b"},
+			sshKeyName:     "test",
+			publicKey:      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== lukasz@loodse.com ",
 		},
 	}
 	for _, tc := range tests {
@@ -77,6 +81,10 @@ func TestCreateUpdateDOCluster(t *testing.T) {
 			teardown := cleanUpProject(project.ID, getDOMaxAttempts)
 			defer teardown(t)
 
+			sshKey, err := apiRunner.CreateUserSSHKey(project.ID, tc.sshKeyName, tc.publicKey)
+			if err != nil {
+				t.Fatalf("can not get create SSH key due error: %v", err)
+			}
 			cluster, err := apiRunner.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
 			if err != nil {
 				t.Fatalf("can not create cluster due to error: %v", err)
@@ -117,6 +125,10 @@ func TestCreateUpdateDOCluster(t *testing.T) {
 				t.Fatalf("node deployment is not redy after %d attempts", getDOMaxAttempts)
 			}
 
+			if err := apiRunner.AssignSSHKeyToCluster(project.ID, cluster.ID, tc.dc, sshKey.ID); err != nil {
+				t.Fatalf("can not assign SSH key to the cluster due error: %v", err)
+			}
+
 			var replicasReady bool
 			var ndList []apiv1.NodeDeployment
 			for attempt := 1; attempt <= getDOMaxAttempts; attempt++ {
@@ -151,6 +163,9 @@ func TestCreateUpdateDOCluster(t *testing.T) {
 
 			if !equality.Semantic.DeepEqual(updatedCluster.Labels, tc.expectedLabels) {
 				t.Fatalf("expected labels %v got %v", tc.expectedLabels, updatedCluster.Labels)
+			}
+			if err := apiRunner.DetachSSHKeyFromClusterParams(project.ID, cluster.ID, tc.dc, sshKey.ID); err != nil {
+				t.Fatalf("can not detach SSH key to the cluster due error: %v", err)
 			}
 
 			cleanUpCluster(t, apiRunner, project.ID, tc.dc, cluster.ID)
