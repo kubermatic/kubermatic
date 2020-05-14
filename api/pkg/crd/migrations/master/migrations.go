@@ -173,7 +173,7 @@ func createSeedKubeconfig(ctx context.Context, log *zap.SugaredLogger, client ct
 		return nil, fmt.Errorf("failed to create kubeconfig: %v", err)
 	}
 
-	secret, err := util.CreateKubeconfigSecret(kubeconfig, "kubeconfig-"+seed.Name, seed.Namespace)
+	secret, fieldPath, err := util.CreateKubeconfigSecret(kubeconfig, "kubeconfig-"+seed.Name, seed.Namespace)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create kubeconfig Secret: %v", err)
 	}
@@ -202,6 +202,6 @@ func createSeedKubeconfig(ctx context.Context, log *zap.SugaredLogger, client ct
 		Kind:       "Secret",
 		Name:       secret.Name,
 		Namespace:  secret.Namespace,
-		FieldPath:  util.KubeconfigFieldPath,
+		FieldPath:  fieldPath,
 	}, nil
 }

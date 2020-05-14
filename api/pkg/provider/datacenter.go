@@ -268,17 +268,23 @@ func SeedKubeconfigGetterFactory(
 			if err := client.Get(ctx, name, secret); err != nil {
 				return nil, fmt.Errorf("failed to get kubeconfig secret %q: %v", name.String(), err)
 			}
-			if _, exists := secret.Data[seed.Spec.Kubeconfig.FieldPath]; !exists {
-				return nil, fmt.Errorf("secret %q has no key %q", name.String(), seed.Spec.Kubeconfig.FieldPath)
+
+			fieldPath := seed.Spec.Kubeconfig.FieldPath
+			if len(fieldPath) == 0 {
+				fieldPath = DefaultKubeconfigFieldPath
 			}
-			cfg, err := clientcmd.RESTConfigFromKubeConfig(secret.Data[seed.Spec.Kubeconfig.FieldPath])
+			if _, exists := secret.Data[fieldPath]; !exists {
+				return nil, fmt.Errorf("secret %q has no key %q", name.String(), fieldPath)
+			}
+
+			cfg, err := clientcmd.RESTConfigFromKubeConfig(secret.Data[fieldPath])
 			if err != nil {
 				return nil, fmt.Errorf("failed to load kubeconfig: %v", err)
 			}
+
 			kubermaticlog.Logger.With("seed", seed.Name).Debug("Successfully got kubeconfig")
 			return cfg, nil
 		}, nil
-
 	}
 
 	if kubeconfigFilePath == "" {
