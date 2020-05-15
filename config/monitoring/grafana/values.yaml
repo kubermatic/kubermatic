@@ -95,6 +95,13 @@ grafana:
       # credentials defined above.
       disable_login_form: true
 
+      # Set this to true to allow Viewers to
+      # edit existing dashboards and explore datasources.
+      # Viewers will still not be able to save these changes back
+      # but they will be able to see other metrics than exposed by
+      # the dashboards.
+      viewers_can_edit: false
+
   # If you manage your dashboards via your own configmaps,
   # you can add them here to have them automatically be
   # mounted in Grafana. For each volume, specify either a
