@@ -144,9 +144,14 @@ func DecodeHetznerSizesNoCredentialsReq(c context.Context, r *http.Request) (int
 }
 
 // HetznerSizesReq represent a request for hetzner sizes
+// swagger:parameters listHetznerSizes
 type HetznerSizesReq struct {
+	// in: header
+	// HetznerToken Hetzner token
 	HetznerToken string
-	Credential   string
+	// in: header
+	// Credential predefined Kubermatic credential name from the presets
+	Credential string
 }
 
 func DecodeHetznerSizesReq(c context.Context, r *http.Request) (interface{}, error) {

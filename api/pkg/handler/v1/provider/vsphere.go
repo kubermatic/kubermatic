@@ -208,11 +208,17 @@ func getVsphereFolders(userInfo *provider.UserInfo, seedsGetter provider.SeedsGe
 }
 
 // VSphereNetworksReq represent a request for vsphere networks
+// swagger:parameters listVSphereNetworks
 type VSphereNetworksReq struct {
-	Username       string
-	Password       string
+	// in: header
+	Username string
+	// in: header
+	Password string
+	// in: header
 	DatacenterName string
-	Credential     string
+	// in: header
+	// Credential predefined Kubermatic credential name from the presets
+	Credential string
 }
 
 func DecodeVSphereNetworksReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -243,11 +249,17 @@ func DecodeVSphereNetworksNoCredentialsReq(c context.Context, r *http.Request) (
 }
 
 // VSphereFoldersReq represent a request for vsphere folders
+// swagger:parameters listVSphereFolders
 type VSphereFoldersReq struct {
-	Username       string
-	Password       string
+	// in: header
+	Username string
+	// in: header
+	Password string
+	// in: header
 	DatacenterName string
-	Credential     string
+	// in: header
+	// Credential predefined Kubermatic credential name from the presets
+	Credential string
 }
 
 func DecodeVSphereFoldersReq(c context.Context, r *http.Request) (interface{}, error) {

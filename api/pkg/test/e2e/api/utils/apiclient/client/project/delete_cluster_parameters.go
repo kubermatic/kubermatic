@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // NewDeleteClusterParams creates a new DeleteClusterParams object
@@ -60,6 +61,10 @@ for the delete cluster operation typically these are written to a http.Request
 */
 type DeleteClusterParams struct {
 
+	/*DeleteLoadBalancers*/
+	DeleteLoadBalancers *bool
+	/*DeleteVolumes*/
+	DeleteVolumes *bool
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
@@ -105,6 +110,28 @@ func (o *DeleteClusterParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithDeleteLoadBalancers adds the deleteLoadBalancers to the delete cluster params
+func (o *DeleteClusterParams) WithDeleteLoadBalancers(deleteLoadBalancers *bool) *DeleteClusterParams {
+	o.SetDeleteLoadBalancers(deleteLoadBalancers)
+	return o
+}
+
+// SetDeleteLoadBalancers adds the deleteLoadBalancers to the delete cluster params
+func (o *DeleteClusterParams) SetDeleteLoadBalancers(deleteLoadBalancers *bool) {
+	o.DeleteLoadBalancers = deleteLoadBalancers
+}
+
+// WithDeleteVolumes adds the deleteVolumes to the delete cluster params
+func (o *DeleteClusterParams) WithDeleteVolumes(deleteVolumes *bool) *DeleteClusterParams {
+	o.SetDeleteVolumes(deleteVolumes)
+	return o
+}
+
+// SetDeleteVolumes adds the deleteVolumes to the delete cluster params
+func (o *DeleteClusterParams) SetDeleteVolumes(deleteVolumes *bool) {
+	o.DeleteVolumes = deleteVolumes
+}
+
 // WithClusterID adds the clusterID to the delete cluster params
 func (o *DeleteClusterParams) WithClusterID(clusterID string) *DeleteClusterParams {
 	o.SetClusterID(clusterID)
@@ -145,6 +172,24 @@ func (o *DeleteClusterParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 		return err
 	}
 	var res []error
+
+	if o.DeleteLoadBalancers != nil {
+
+		// header param DeleteLoadBalancers
+		if err := r.SetHeaderParam("DeleteLoadBalancers", swag.FormatBool(*o.DeleteLoadBalancers)); err != nil {
+			return err
+		}
+
+	}
+
+	if o.DeleteVolumes != nil {
+
+		// header param DeleteVolumes
+		if err := r.SetHeaderParam("DeleteVolumes", swag.FormatBool(*o.DeleteVolumes)); err != nil {
+			return err
+		}
+
+	}
 
 	// path param cluster_id
 	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {

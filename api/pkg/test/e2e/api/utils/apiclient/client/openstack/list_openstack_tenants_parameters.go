@@ -19,7 +19,7 @@ import (
 // NewListOpenstackTenantsParams creates a new ListOpenstackTenantsParams object
 // with the default values initialized.
 func NewListOpenstackTenantsParams() *ListOpenstackTenantsParams {
-
+	var ()
 	return &ListOpenstackTenantsParams{
 
 		timeout: cr.DefaultTimeout,
@@ -29,7 +29,7 @@ func NewListOpenstackTenantsParams() *ListOpenstackTenantsParams {
 // NewListOpenstackTenantsParamsWithTimeout creates a new ListOpenstackTenantsParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListOpenstackTenantsParamsWithTimeout(timeout time.Duration) *ListOpenstackTenantsParams {
-
+	var ()
 	return &ListOpenstackTenantsParams{
 
 		timeout: timeout,
@@ -39,7 +39,7 @@ func NewListOpenstackTenantsParamsWithTimeout(timeout time.Duration) *ListOpenst
 // NewListOpenstackTenantsParamsWithContext creates a new ListOpenstackTenantsParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListOpenstackTenantsParamsWithContext(ctx context.Context) *ListOpenstackTenantsParams {
-
+	var ()
 	return &ListOpenstackTenantsParams{
 
 		Context: ctx,
@@ -49,7 +49,7 @@ func NewListOpenstackTenantsParamsWithContext(ctx context.Context) *ListOpenstac
 // NewListOpenstackTenantsParamsWithHTTPClient creates a new ListOpenstackTenantsParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListOpenstackTenantsParamsWithHTTPClient(client *http.Client) *ListOpenstackTenantsParams {
-
+	var ()
 	return &ListOpenstackTenantsParams{
 		HTTPClient: client,
 	}
@@ -59,6 +59,18 @@ func NewListOpenstackTenantsParamsWithHTTPClient(client *http.Client) *ListOpens
 for the list openstack tenants operation typically these are written to a http.Request
 */
 type ListOpenstackTenantsParams struct {
+
+	/*Credential*/
+	Credential *string
+	/*DatacenterName*/
+	DatacenterName *string
+	/*Domain*/
+	Domain *string
+	/*Password*/
+	Password *string
+	/*Username*/
+	Username *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -97,6 +109,61 @@ func (o *ListOpenstackTenantsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list openstack tenants params
+func (o *ListOpenstackTenantsParams) WithCredential(credential *string) *ListOpenstackTenantsParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list openstack tenants params
+func (o *ListOpenstackTenantsParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithDatacenterName adds the datacenterName to the list openstack tenants params
+func (o *ListOpenstackTenantsParams) WithDatacenterName(datacenterName *string) *ListOpenstackTenantsParams {
+	o.SetDatacenterName(datacenterName)
+	return o
+}
+
+// SetDatacenterName adds the datacenterName to the list openstack tenants params
+func (o *ListOpenstackTenantsParams) SetDatacenterName(datacenterName *string) {
+	o.DatacenterName = datacenterName
+}
+
+// WithDomain adds the domain to the list openstack tenants params
+func (o *ListOpenstackTenantsParams) WithDomain(domain *string) *ListOpenstackTenantsParams {
+	o.SetDomain(domain)
+	return o
+}
+
+// SetDomain adds the domain to the list openstack tenants params
+func (o *ListOpenstackTenantsParams) SetDomain(domain *string) {
+	o.Domain = domain
+}
+
+// WithPassword adds the password to the list openstack tenants params
+func (o *ListOpenstackTenantsParams) WithPassword(password *string) *ListOpenstackTenantsParams {
+	o.SetPassword(password)
+	return o
+}
+
+// SetPassword adds the password to the list openstack tenants params
+func (o *ListOpenstackTenantsParams) SetPassword(password *string) {
+	o.Password = password
+}
+
+// WithUsername adds the username to the list openstack tenants params
+func (o *ListOpenstackTenantsParams) WithUsername(username *string) *ListOpenstackTenantsParams {
+	o.SetUsername(username)
+	return o
+}
+
+// SetUsername adds the username to the list openstack tenants params
+func (o *ListOpenstackTenantsParams) SetUsername(username *string) {
+	o.Username = username
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListOpenstackTenantsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -104,6 +171,51 @@ func (o *ListOpenstackTenantsParams) WriteToRequest(r runtime.ClientRequest, reg
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+
+	}
+
+	if o.DatacenterName != nil {
+
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Domain != nil {
+
+		// header param Domain
+		if err := r.SetHeaderParam("Domain", *o.Domain); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Password != nil {
+
+		// header param Password
+		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Username != nil {
+
+		// header param Username
+		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
+			return err
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

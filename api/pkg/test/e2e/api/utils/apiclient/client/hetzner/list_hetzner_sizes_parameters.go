@@ -19,7 +19,7 @@ import (
 // NewListHetznerSizesParams creates a new ListHetznerSizesParams object
 // with the default values initialized.
 func NewListHetznerSizesParams() *ListHetznerSizesParams {
-
+	var ()
 	return &ListHetznerSizesParams{
 
 		timeout: cr.DefaultTimeout,
@@ -29,7 +29,7 @@ func NewListHetznerSizesParams() *ListHetznerSizesParams {
 // NewListHetznerSizesParamsWithTimeout creates a new ListHetznerSizesParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListHetznerSizesParamsWithTimeout(timeout time.Duration) *ListHetznerSizesParams {
-
+	var ()
 	return &ListHetznerSizesParams{
 
 		timeout: timeout,
@@ -39,7 +39,7 @@ func NewListHetznerSizesParamsWithTimeout(timeout time.Duration) *ListHetznerSiz
 // NewListHetznerSizesParamsWithContext creates a new ListHetznerSizesParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListHetznerSizesParamsWithContext(ctx context.Context) *ListHetznerSizesParams {
-
+	var ()
 	return &ListHetznerSizesParams{
 
 		Context: ctx,
@@ -49,7 +49,7 @@ func NewListHetznerSizesParamsWithContext(ctx context.Context) *ListHetznerSizes
 // NewListHetznerSizesParamsWithHTTPClient creates a new ListHetznerSizesParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListHetznerSizesParamsWithHTTPClient(client *http.Client) *ListHetznerSizesParams {
-
+	var ()
 	return &ListHetznerSizesParams{
 		HTTPClient: client,
 	}
@@ -59,6 +59,12 @@ func NewListHetznerSizesParamsWithHTTPClient(client *http.Client) *ListHetznerSi
 for the list hetzner sizes operation typically these are written to a http.Request
 */
 type ListHetznerSizesParams struct {
+
+	/*Credential*/
+	Credential *string
+	/*HetznerToken*/
+	HetznerToken *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -97,6 +103,28 @@ func (o *ListHetznerSizesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list hetzner sizes params
+func (o *ListHetznerSizesParams) WithCredential(credential *string) *ListHetznerSizesParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list hetzner sizes params
+func (o *ListHetznerSizesParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithHetznerToken adds the hetznerToken to the list hetzner sizes params
+func (o *ListHetznerSizesParams) WithHetznerToken(hetznerToken *string) *ListHetznerSizesParams {
+	o.SetHetznerToken(hetznerToken)
+	return o
+}
+
+// SetHetznerToken adds the hetznerToken to the list hetzner sizes params
+func (o *ListHetznerSizesParams) SetHetznerToken(hetznerToken *string) {
+	o.HetznerToken = hetznerToken
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListHetznerSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -104,6 +132,24 @@ func (o *ListHetznerSizesParams) WriteToRequest(r runtime.ClientRequest, reg str
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+
+	}
+
+	if o.HetznerToken != nil {
+
+		// header param HetznerToken
+		if err := r.SetHeaderParam("HetznerToken", *o.HetznerToken); err != nil {
+			return err
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

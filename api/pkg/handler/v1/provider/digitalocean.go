@@ -151,8 +151,13 @@ func DecodeDoSizesNoCredentialsReq(c context.Context, r *http.Request) (interfac
 }
 
 // DoSizesReq represent a request for digitalocean sizes
+// swagger:parameters listDigitaloceanSizes
 type DoSizesReq struct {
-	DoToken    string
+	// in: header
+	// DoToken Digital Ocean token
+	DoToken string
+	// in: header
+	// Credential predefined Kubermatic credential name from the presets
 	Credential string
 }
 

@@ -334,14 +334,23 @@ func AzureAvailabilityZonesEndpoint(presetsProvider provider.PresetProvider, use
 }
 
 // AvailabilityZonesReq represent a request for Azure VM Multi-AvailabilityZones support
+// swagger:parameters listAzureSKUAvailabilityZones
 type AvailabilityZonesReq struct {
+	// in: header
 	SubscriptionID string
-	TenantID       string
-	ClientID       string
-	ClientSecret   string
-	Location       string
-	SKUName        string
-	Credential     string
+	// in: header
+	TenantID string
+	// in: header
+	ClientID string
+	// in: header
+	ClientSecret string
+	// in: header
+	Location string
+	// in: header
+	SKUName string
+	// in: header
+	// Credential predefined Kubermatic credential name from the presets
+	Credential string
 }
 
 func azureSKUAvailabilityZones(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, skuName string) (*apiv1.AzureAvailabilityZonesList, error) {
@@ -391,13 +400,21 @@ func DecodeAzureSizesNoCredentialsReq(c context.Context, r *http.Request) (inter
 }
 
 // AzureSizeReq represent a request for Azure VM sizes
+// swagger:parameters listAzureSizes
 type AzureSizeReq struct {
+	// in: header
 	SubscriptionID string
-	TenantID       string
-	ClientID       string
-	ClientSecret   string
-	Location       string
-	Credential     string
+	// in: header
+	TenantID string
+	// in: header
+	ClientID string
+	// in: header
+	ClientSecret string
+	// in: header
+	Location string
+	// in: header
+	// Credential predefined Kubermatic credential name from the presets
+	Credential string
 }
 
 func DecodeAzureSizesReq(c context.Context, r *http.Request) (interface{}, error) {
