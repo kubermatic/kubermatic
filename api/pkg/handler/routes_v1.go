@@ -1221,7 +1221,7 @@ func (r Routing) datacentersHandler() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers),
 			middleware.UserSaver(r.userProvider),
 		)(dc.ListEndpoint(r.seedsGetter, r.userInfoGetter)),
-		dc.DecodeDatacentersReq,
+		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

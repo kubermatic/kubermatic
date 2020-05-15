@@ -1284,10 +1284,14 @@ func RevokeViewerTokenEndpoint(projectProvider provider.ProjectProvider, privile
 	}
 }
 
+// DeleteReq defines HTTP request for deleteCluster endpoints
+// swagger:parameters deleteCluster
 type DeleteReq struct {
 	common.GetClusterReq
+	// in: header
 	// DeleteVolumes if true all cluster PV's and PVC's will be deleted from cluster
 	DeleteVolumes bool
+	// in: header
 	// DeleteLoadBalancers if true all load balancers will be deleted from cluster
 	DeleteLoadBalancers bool
 }

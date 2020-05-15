@@ -71,7 +71,7 @@ func DecodeDcReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // GetClusterReq defines HTTP request for deleteCluster and getClusterKubeconfig endpoints
-// swagger:parameters getCluster deleteCluster getClusterKubeconfig getOidcClusterKubeconfig listAWSSizesNoCredentials getClusterHealth getClusterUpgrades getClusterMetrics getClusterNodeUpgrades listGCPZonesNoCredentials listGCPNetworksNoCredentials listAWSZonesNoCredentials listAWSSubnetsNoCredentials listAlibabaInstanceTypesNoCredentials listNamespace
+// swagger:parameters getCluster getClusterKubeconfig getOidcClusterKubeconfig listAWSSizesNoCredentials getClusterHealth getClusterUpgrades getClusterMetrics getClusterNodeUpgrades listGCPZonesNoCredentials listGCPNetworksNoCredentials listAWSZonesNoCredentials listAWSSubnetsNoCredentials listAlibabaInstanceTypesNoCredentials listNamespace
 type GetClusterReq struct {
 	DCReq
 	// in: path
