@@ -19,7 +19,7 @@ import (
 // NewListOpenstackSecurityGroupsParams creates a new ListOpenstackSecurityGroupsParams object
 // with the default values initialized.
 func NewListOpenstackSecurityGroupsParams() *ListOpenstackSecurityGroupsParams {
-
+	var ()
 	return &ListOpenstackSecurityGroupsParams{
 
 		timeout: cr.DefaultTimeout,
@@ -29,7 +29,7 @@ func NewListOpenstackSecurityGroupsParams() *ListOpenstackSecurityGroupsParams {
 // NewListOpenstackSecurityGroupsParamsWithTimeout creates a new ListOpenstackSecurityGroupsParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListOpenstackSecurityGroupsParamsWithTimeout(timeout time.Duration) *ListOpenstackSecurityGroupsParams {
-
+	var ()
 	return &ListOpenstackSecurityGroupsParams{
 
 		timeout: timeout,
@@ -39,7 +39,7 @@ func NewListOpenstackSecurityGroupsParamsWithTimeout(timeout time.Duration) *Lis
 // NewListOpenstackSecurityGroupsParamsWithContext creates a new ListOpenstackSecurityGroupsParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListOpenstackSecurityGroupsParamsWithContext(ctx context.Context) *ListOpenstackSecurityGroupsParams {
-
+	var ()
 	return &ListOpenstackSecurityGroupsParams{
 
 		Context: ctx,
@@ -49,7 +49,7 @@ func NewListOpenstackSecurityGroupsParamsWithContext(ctx context.Context) *ListO
 // NewListOpenstackSecurityGroupsParamsWithHTTPClient creates a new ListOpenstackSecurityGroupsParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListOpenstackSecurityGroupsParamsWithHTTPClient(client *http.Client) *ListOpenstackSecurityGroupsParams {
-
+	var ()
 	return &ListOpenstackSecurityGroupsParams{
 		HTTPClient: client,
 	}
@@ -59,6 +59,22 @@ func NewListOpenstackSecurityGroupsParamsWithHTTPClient(client *http.Client) *Li
 for the list openstack security groups operation typically these are written to a http.Request
 */
 type ListOpenstackSecurityGroupsParams struct {
+
+	/*Credential*/
+	Credential *string
+	/*DatacenterName*/
+	DatacenterName *string
+	/*Domain*/
+	Domain *string
+	/*Password*/
+	Password *string
+	/*Tenant*/
+	Tenant *string
+	/*TenantID*/
+	TenantID *string
+	/*Username*/
+	Username *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -97,6 +113,83 @@ func (o *ListOpenstackSecurityGroupsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) WithCredential(credential *string) *ListOpenstackSecurityGroupsParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithDatacenterName adds the datacenterName to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) WithDatacenterName(datacenterName *string) *ListOpenstackSecurityGroupsParams {
+	o.SetDatacenterName(datacenterName)
+	return o
+}
+
+// SetDatacenterName adds the datacenterName to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) SetDatacenterName(datacenterName *string) {
+	o.DatacenterName = datacenterName
+}
+
+// WithDomain adds the domain to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) WithDomain(domain *string) *ListOpenstackSecurityGroupsParams {
+	o.SetDomain(domain)
+	return o
+}
+
+// SetDomain adds the domain to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) SetDomain(domain *string) {
+	o.Domain = domain
+}
+
+// WithPassword adds the password to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) WithPassword(password *string) *ListOpenstackSecurityGroupsParams {
+	o.SetPassword(password)
+	return o
+}
+
+// SetPassword adds the password to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) SetPassword(password *string) {
+	o.Password = password
+}
+
+// WithTenant adds the tenant to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) WithTenant(tenant *string) *ListOpenstackSecurityGroupsParams {
+	o.SetTenant(tenant)
+	return o
+}
+
+// SetTenant adds the tenant to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) SetTenant(tenant *string) {
+	o.Tenant = tenant
+}
+
+// WithTenantID adds the tenantID to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) WithTenantID(tenantID *string) *ListOpenstackSecurityGroupsParams {
+	o.SetTenantID(tenantID)
+	return o
+}
+
+// SetTenantID adds the tenantId to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) SetTenantID(tenantID *string) {
+	o.TenantID = tenantID
+}
+
+// WithUsername adds the username to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) WithUsername(username *string) *ListOpenstackSecurityGroupsParams {
+	o.SetUsername(username)
+	return o
+}
+
+// SetUsername adds the username to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) SetUsername(username *string) {
+	o.Username = username
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListOpenstackSecurityGroupsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -104,6 +197,69 @@ func (o *ListOpenstackSecurityGroupsParams) WriteToRequest(r runtime.ClientReque
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+
+	}
+
+	if o.DatacenterName != nil {
+
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Domain != nil {
+
+		// header param Domain
+		if err := r.SetHeaderParam("Domain", *o.Domain); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Password != nil {
+
+		// header param Password
+		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Tenant != nil {
+
+		// header param Tenant
+		if err := r.SetHeaderParam("Tenant", *o.Tenant); err != nil {
+			return err
+		}
+
+	}
+
+	if o.TenantID != nil {
+
+		// header param TenantID
+		if err := r.SetHeaderParam("TenantID", *o.TenantID); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Username != nil {
+
+		// header param Username
+		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
+			return err
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

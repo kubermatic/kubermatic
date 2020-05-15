@@ -19,7 +19,7 @@ import (
 // NewListVSphereFoldersParams creates a new ListVSphereFoldersParams object
 // with the default values initialized.
 func NewListVSphereFoldersParams() *ListVSphereFoldersParams {
-
+	var ()
 	return &ListVSphereFoldersParams{
 
 		timeout: cr.DefaultTimeout,
@@ -29,7 +29,7 @@ func NewListVSphereFoldersParams() *ListVSphereFoldersParams {
 // NewListVSphereFoldersParamsWithTimeout creates a new ListVSphereFoldersParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListVSphereFoldersParamsWithTimeout(timeout time.Duration) *ListVSphereFoldersParams {
-
+	var ()
 	return &ListVSphereFoldersParams{
 
 		timeout: timeout,
@@ -39,7 +39,7 @@ func NewListVSphereFoldersParamsWithTimeout(timeout time.Duration) *ListVSphereF
 // NewListVSphereFoldersParamsWithContext creates a new ListVSphereFoldersParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListVSphereFoldersParamsWithContext(ctx context.Context) *ListVSphereFoldersParams {
-
+	var ()
 	return &ListVSphereFoldersParams{
 
 		Context: ctx,
@@ -49,7 +49,7 @@ func NewListVSphereFoldersParamsWithContext(ctx context.Context) *ListVSphereFol
 // NewListVSphereFoldersParamsWithHTTPClient creates a new ListVSphereFoldersParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListVSphereFoldersParamsWithHTTPClient(client *http.Client) *ListVSphereFoldersParams {
-
+	var ()
 	return &ListVSphereFoldersParams{
 		HTTPClient: client,
 	}
@@ -59,6 +59,16 @@ func NewListVSphereFoldersParamsWithHTTPClient(client *http.Client) *ListVSphere
 for the list v sphere folders operation typically these are written to a http.Request
 */
 type ListVSphereFoldersParams struct {
+
+	/*Credential*/
+	Credential *string
+	/*DatacenterName*/
+	DatacenterName *string
+	/*Password*/
+	Password *string
+	/*Username*/
+	Username *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -97,6 +107,50 @@ func (o *ListVSphereFoldersParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list v sphere folders params
+func (o *ListVSphereFoldersParams) WithCredential(credential *string) *ListVSphereFoldersParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list v sphere folders params
+func (o *ListVSphereFoldersParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithDatacenterName adds the datacenterName to the list v sphere folders params
+func (o *ListVSphereFoldersParams) WithDatacenterName(datacenterName *string) *ListVSphereFoldersParams {
+	o.SetDatacenterName(datacenterName)
+	return o
+}
+
+// SetDatacenterName adds the datacenterName to the list v sphere folders params
+func (o *ListVSphereFoldersParams) SetDatacenterName(datacenterName *string) {
+	o.DatacenterName = datacenterName
+}
+
+// WithPassword adds the password to the list v sphere folders params
+func (o *ListVSphereFoldersParams) WithPassword(password *string) *ListVSphereFoldersParams {
+	o.SetPassword(password)
+	return o
+}
+
+// SetPassword adds the password to the list v sphere folders params
+func (o *ListVSphereFoldersParams) SetPassword(password *string) {
+	o.Password = password
+}
+
+// WithUsername adds the username to the list v sphere folders params
+func (o *ListVSphereFoldersParams) WithUsername(username *string) *ListVSphereFoldersParams {
+	o.SetUsername(username)
+	return o
+}
+
+// SetUsername adds the username to the list v sphere folders params
+func (o *ListVSphereFoldersParams) SetUsername(username *string) {
+	o.Username = username
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListVSphereFoldersParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -104,6 +158,42 @@ func (o *ListVSphereFoldersParams) WriteToRequest(r runtime.ClientRequest, reg s
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+
+	}
+
+	if o.DatacenterName != nil {
+
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Password != nil {
+
+		// header param Password
+		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Username != nil {
+
+		// header param Username
+		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
+			return err
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

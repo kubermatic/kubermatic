@@ -122,16 +122,9 @@ func (o *ListAWSSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 
 	if o.Region != nil {
 
-		// query param Region
-		var qrRegion string
-		if o.Region != nil {
-			qrRegion = *o.Region
-		}
-		qRegion := qrRegion
-		if qRegion != "" {
-			if err := r.SetQueryParam("Region", qRegion); err != nil {
-				return err
-			}
+		// header param Region
+		if err := r.SetHeaderParam("Region", *o.Region); err != nil {
+			return err
 		}
 
 	}

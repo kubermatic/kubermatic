@@ -19,7 +19,7 @@ import (
 // NewListDigitaloceanSizesParams creates a new ListDigitaloceanSizesParams object
 // with the default values initialized.
 func NewListDigitaloceanSizesParams() *ListDigitaloceanSizesParams {
-
+	var ()
 	return &ListDigitaloceanSizesParams{
 
 		timeout: cr.DefaultTimeout,
@@ -29,7 +29,7 @@ func NewListDigitaloceanSizesParams() *ListDigitaloceanSizesParams {
 // NewListDigitaloceanSizesParamsWithTimeout creates a new ListDigitaloceanSizesParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListDigitaloceanSizesParamsWithTimeout(timeout time.Duration) *ListDigitaloceanSizesParams {
-
+	var ()
 	return &ListDigitaloceanSizesParams{
 
 		timeout: timeout,
@@ -39,7 +39,7 @@ func NewListDigitaloceanSizesParamsWithTimeout(timeout time.Duration) *ListDigit
 // NewListDigitaloceanSizesParamsWithContext creates a new ListDigitaloceanSizesParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListDigitaloceanSizesParamsWithContext(ctx context.Context) *ListDigitaloceanSizesParams {
-
+	var ()
 	return &ListDigitaloceanSizesParams{
 
 		Context: ctx,
@@ -49,7 +49,7 @@ func NewListDigitaloceanSizesParamsWithContext(ctx context.Context) *ListDigital
 // NewListDigitaloceanSizesParamsWithHTTPClient creates a new ListDigitaloceanSizesParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListDigitaloceanSizesParamsWithHTTPClient(client *http.Client) *ListDigitaloceanSizesParams {
-
+	var ()
 	return &ListDigitaloceanSizesParams{
 		HTTPClient: client,
 	}
@@ -59,6 +59,12 @@ func NewListDigitaloceanSizesParamsWithHTTPClient(client *http.Client) *ListDigi
 for the list digitalocean sizes operation typically these are written to a http.Request
 */
 type ListDigitaloceanSizesParams struct {
+
+	/*Credential*/
+	Credential *string
+	/*DoToken*/
+	DoToken *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -97,6 +103,28 @@ func (o *ListDigitaloceanSizesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list digitalocean sizes params
+func (o *ListDigitaloceanSizesParams) WithCredential(credential *string) *ListDigitaloceanSizesParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list digitalocean sizes params
+func (o *ListDigitaloceanSizesParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithDoToken adds the doToken to the list digitalocean sizes params
+func (o *ListDigitaloceanSizesParams) WithDoToken(doToken *string) *ListDigitaloceanSizesParams {
+	o.SetDoToken(doToken)
+	return o
+}
+
+// SetDoToken adds the doToken to the list digitalocean sizes params
+func (o *ListDigitaloceanSizesParams) SetDoToken(doToken *string) {
+	o.DoToken = doToken
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListDigitaloceanSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -104,6 +132,24 @@ func (o *ListDigitaloceanSizesParams) WriteToRequest(r runtime.ClientRequest, re
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+
+	}
+
+	if o.DoToken != nil {
+
+		// header param DoToken
+		if err := r.SetHeaderParam("DoToken", *o.DoToken); err != nil {
+			return err
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
