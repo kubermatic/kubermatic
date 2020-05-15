@@ -78,7 +78,7 @@ func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 		req := request.(createNodeDeploymentReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -622,7 +622,7 @@ func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

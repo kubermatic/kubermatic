@@ -32,7 +32,7 @@ func CreateTokenEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -129,7 +129,7 @@ func ListTokenEndpoint(projectProvider provider.ProjectProvider, privilegedProje
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -226,7 +226,7 @@ func DeleteTokenEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 			return nil, errors.NewBadRequest(err.Error())
 		}
 
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID)
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -279,7 +279,7 @@ func updateEndpoint(ctx context.Context, projectProvider provider.ProjectProvide
 	privilegedServiceAccount provider.PrivilegedServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, userInfoGetter provider.UserInfoGetter, tokenGenerator serviceaccount.TokenGenerator,
 	projectID, saID, tokenID, newName string, regenerateToken bool) (*v1.Secret, error) {
 
-	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID)
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
 	if err != nil {
 		return nil, err
 	}
