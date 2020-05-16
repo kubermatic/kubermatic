@@ -7,13 +7,9 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 
-	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -50,30 +46,6 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 	}, nil
 }
 
-func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, kubeconfigFilePath, namespace string, dynamicDatacenters bool) (SeedKubeconfigGetter, error) {
-	return func(seed *kubermaticv1.Seed) (*rest.Config, error) {
-		secret := &corev1.Secret{}
-		name := types.NamespacedName{
-			Namespace: seed.Spec.Kubeconfig.Namespace,
-			Name:      seed.Spec.Kubeconfig.Name,
-		}
-		if err := client.Get(ctx, name, secret); err != nil {
-			return nil, fmt.Errorf("failed to get kubeconfig secret %q: %v", name.String(), err)
-		}
-
-		fieldPath := seed.Spec.Kubeconfig.FieldPath
-		if len(fieldPath) == 0 {
-			fieldPath = DefaultKubeconfigFieldPath
-		}
-		if _, exists := secret.Data[fieldPath]; !exists {
-			return nil, fmt.Errorf("secret %q has no key %q", name.String(), fieldPath)
-		}
-
-		cfg, err := clientcmd.RESTConfigFromKubeConfig(secret.Data[fieldPath])
-		if err != nil {
-			return nil, fmt.Errorf("failed to load kubeconfig: %v", err)
-		}
-		kubermaticlog.Logger.With("seed", seed.Name).Debug("Successfully got kubeconfig")
-		return cfg, nil
-	}, nil
+func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, kubeconfigFilePath string, dynamicDatacenters bool) (SeedKubeconfigGetter, error) {
+	return secretBasedSeedKubeconfigGetterFactory(ctx, client)
 }

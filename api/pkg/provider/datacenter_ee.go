@@ -18,6 +18,10 @@ func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 	return eeprovider.SeedGetterFactory(ctx, client, seedName, dcFile, namespace, dynamicDatacenters)
 }
 
-func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, kubeconfigFilePath, namespace string, dynamicDatacenters bool) (SeedKubeconfigGetter, error) {
-	return eeprovider.SeedKubeconfigGetterFactory(ctx, client, kubeconfigFilePath, namespace, dynamicDatacenters)
+func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, kubeconfigFilePath string, dynamicDatacenters bool) (SeedKubeconfigGetter, error) {
+	if dynamicDatacenters {
+		return secretBasedSeedKubeconfigGetterFactory(ctx, client)
+	}
+
+	return eeprovider.KubeconfigBasedSeedKubeconfigGetterFactory(ctx, client, kubeconfigFilePath, dynamicDatacenters)
 }

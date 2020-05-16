@@ -194,7 +194,7 @@ func main() {
 		log.Fatalw("failed to construct seedsGetter", zap.Error(err))
 	}
 	ctrlCtx.seedKubeconfigGetter, err = provider.SeedKubeconfigGetterFactory(
-		ctx, mgr.GetClient(), runOpts.kubeconfig, ctrlCtx.namespace, runOpts.dynamicDatacenters)
+		ctx, mgr.GetClient(), runOpts.kubeconfig, runOpts.dynamicDatacenters)
 	if err != nil {
 		log.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
 	}

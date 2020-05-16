@@ -2,11 +2,16 @@ package provider
 
 import (
 	"context"
+	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -67,8 +72,39 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 	}, nil
 }
 
-func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, kubeconfigFilePath, namespace string, dynamicDatacenters bool) (SeedKubeconfigGetter, error) {
-	return seedKubeconfigGetterFactory(ctx, client, kubeconfigFilePath, namespace, dynamicDatacenters)
+func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, kubeconfigFilePath string, dynamicDatacenters bool) (SeedKubeconfigGetter, error) {
+	return seedKubeconfigGetterFactory(ctx, client, kubeconfigFilePath, dynamicDatacenters)
+}
+
+func secretBasedSeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (SeedKubeconfigGetter, error) {
+	return func(seed *kubermaticv1.Seed) (*rest.Config, error) {
+		secret := &corev1.Secret{}
+		name := types.NamespacedName{
+			Namespace: seed.Spec.Kubeconfig.Namespace,
+			Name:      seed.Spec.Kubeconfig.Name,
+		}
+		if name.Namespace == "" {
+			name.Namespace = seed.Namespace
+		}
+		if err := client.Get(ctx, name, secret); err != nil {
+			return nil, fmt.Errorf("failed to get kubeconfig secret %q: %v", name.String(), err)
+		}
+
+		fieldPath := seed.Spec.Kubeconfig.FieldPath
+		if len(fieldPath) == 0 {
+			fieldPath = DefaultKubeconfigFieldPath
+		}
+		if _, exists := secret.Data[fieldPath]; !exists {
+			return nil, fmt.Errorf("secret %q has no key %q", name.String(), fieldPath)
+		}
+
+		cfg, err := clientcmd.RESTConfigFromKubeConfig(secret.Data[fieldPath])
+		if err != nil {
+			return nil, fmt.Errorf("failed to load kubeconfig: %v", err)
+		}
+		kubermaticlog.Logger.With("seed", seed.Name).Debug("Successfully got kubeconfig")
+		return cfg, nil
+	}, nil
 }
 
 // SeedClientGetterFactory returns a SeedClientGetter. It uses a RestMapperCache to cache
