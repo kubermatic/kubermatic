@@ -20,6 +20,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 
+	cmdutil "github.com/kubermatic/kubermatic/api/cmd/util"
 	clusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
@@ -166,6 +167,8 @@ func main() {
 			fmt.Println(err)
 		}
 	}()
+
+	cmdutil.Hello(log, "Conformance Tests", true)
 
 	// user.Current does not work in Alpine
 	pubkeyPath := path.Join(os.Getenv("HOME"), ".ssh/id_rsa.pub")
@@ -409,7 +412,7 @@ func main() {
 		log.Warn("Environment variable `NAMESPACE` was unset, defaulting to `kubermatic`")
 		namespaceName = "kubermatic"
 	}
-	seedGetter, err := provider.SeedGetterFactory(context.Background(), seedClusterClient, seedName, "", namespaceName, true)
+	seedGetter, err := provider.SeedGetterFactory(context.Background(), seedClusterClient, seedName, namespaceName)
 	if err != nil {
 		log.Fatalw("Failed to consturct seedGetter", zap.Error(err))
 	}

@@ -27,7 +27,7 @@ func TestSeedGetterFactorySetsDefaults(t *testing.T) {
 	}
 	client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, initSeed)
 
-	seedGetter, err := SeedGetterFactory(context.Background(), client, defaultSeedName, "", "my-ns", true)
+	seedGetter, err := SeedGetterFactory(context.Background(), client, defaultSeedName, "my-ns")
 	if err != nil {
 		t.Fatalf("failed getting seedGetter: %v", err)
 	}
@@ -57,7 +57,7 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 	}
 	client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, initSeed)
 
-	seedsGetter, err := SeedsGetterFactory(context.Background(), client, "", "my-ns", true)
+	seedsGetter, err := SeedsGetterFactory(context.Background(), client, "my-ns")
 	if err != nil {
 		t.Fatalf("failed getting seedsGetter: %v", err)
 	}
