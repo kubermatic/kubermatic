@@ -37,7 +37,6 @@ const (
 	DefaultVPARecommenderDockerRepository         = "gcr.io/google_containers/vpa-recommender"
 	DefaultVPAUpdaterDockerRepository             = "gcr.io/google_containers/vpa-updater"
 	DefaultVPAAdmissionControllerDockerRepository = "gcr.io/google_containers/vpa-admission-controller"
-	DefaultNodeportProxyDockerRepository          = "quay.io/kubermatic/nodeport-proxy"
 	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy-alpine"
 
 	// DefaultNoProxy is a set of domains/networks that should never be
