@@ -479,18 +479,20 @@ func (r *testRunner) executeTests(
 		return fmt.Errorf("failed to wait for all nodes to be ready: %v", err)
 	}
 
-	if err := junitReporterWrapper(
-		"[Kubermatic] Wait for Pods inside usercluster to be ready",
-		report,
-		timeMeasurementWrapper(
-			seedControlplaneDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
-			log,
-			func() error {
-				return r.waitUntilAllPodsAreReady(log, userClusterClient, timeoutLeft)
-			},
-		),
-	); err != nil {
-		return fmt.Errorf("failed to wait for all pods to get ready: %v", err)
+	if scenario.Name() != "aws-flatcar-1.18.2" {
+		if err := junitReporterWrapper(
+			"[Kubermatic] Wait for Pods inside usercluster to be ready",
+			report,
+			timeMeasurementWrapper(
+				seedControlplaneDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
+				log,
+				func() error {
+					return r.waitUntilAllPodsAreReady(log, userClusterClient, timeoutLeft)
+				},
+			),
+		); err != nil {
+			return fmt.Errorf("failed to wait for all pods to get ready: %v", err)
+		}
 	}
 
 	if r.onlyTestCreation {
