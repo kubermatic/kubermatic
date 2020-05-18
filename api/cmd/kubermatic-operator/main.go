@@ -100,7 +100,7 @@ func main() {
 		log.Fatalw("Failed to construct seedsGetter", zap.Error(err))
 	}
 
-	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, mgr.GetClient(), "", opt.namespace, true)
+	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, mgr.GetClient(), "", true)
 	if err != nil {
 		log.Fatalw("Failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
