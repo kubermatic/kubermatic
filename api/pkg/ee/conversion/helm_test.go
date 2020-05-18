@@ -1,3 +1,5 @@
+// +build ee
+
 package conversion
 
 import (

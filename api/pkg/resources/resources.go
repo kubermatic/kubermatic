@@ -20,6 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
@@ -973,4 +974,26 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	}
 
 	return r
+}
+
+// SupportsFailureDomainZoneAntiAffinity checks if there are any nodes with the
+// TopologyKeyFailureDomainZone label.
+func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlruntimeclient.Client) (bool, error) {
+	selector, err := labels.Parse(TopologyKeyFailureDomainZone)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse selector: %v", err)
+	}
+	opts := &ctrlruntimeclient.ListOptions{
+		LabelSelector: selector,
+		Raw: &metav1.ListOptions{
+			Limit: 1,
+		},
+	}
+
+	nodeList := &corev1.NodeList{}
+	if err := client.List(ctx, nodeList, opts); err != nil {
+		return false, fmt.Errorf("failed to list nodes having the %s label: %v", TopologyKeyFailureDomainZone, err)
+	}
+
+	return len(nodeList.Items) != 0, nil
 }
