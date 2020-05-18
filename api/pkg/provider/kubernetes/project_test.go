@@ -21,7 +21,6 @@ import (
 
 	"github.com/go-test/deep"
 
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
@@ -30,6 +29,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestListProjects(t *testing.T) {
@@ -139,14 +140,14 @@ func TestListProjects(t *testing.T) {
 				kubermaticObjects = append(kubermaticObjects, binding)
 			}
 
-			impersonationClient, _, indexer, err := createFakeKubermaticClients(kubermaticObjects)
+			impersonationClient, _, _, err := createFakeKubermaticClients(kubermaticObjects)
 			if err != nil {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
-			projectLister := kubermaticv1lister.NewProjectLister(indexer)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubermaticObjects...)
 
 			// act
-			target, err := kubernetes.NewProjectProvider(impersonationClient.CreateFakeImpersonatedClientSet, projectLister)
+			target, err := kubernetes.NewProjectProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -219,13 +220,10 @@ func TestGetUnsecuredProjects(t *testing.T) {
 				kubermaticObjects = append(kubermaticObjects, binding)
 			}
 
-			impersonationClient, _, _, err := createFakeKubermaticClients(kubermaticObjects)
-			if err != nil {
-				t.Fatalf("unable to create fake clients, err = %v", err)
-			}
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubermaticObjects...)
 
 			// act
-			target, err := kubernetes.NewPrivilegedProjectProvider(impersonationClient.CreateFakeImpersonatedClientSet)
+			target, err := kubernetes.NewPrivilegedProjectProvider(fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}

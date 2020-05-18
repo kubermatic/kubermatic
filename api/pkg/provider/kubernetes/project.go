@@ -17,23 +17,23 @@ limitations under the License.
 package kubernetes
 
 import (
+	"context"
 	"errors"
 
 	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/rand"
 	restclient "k8s.io/client-go/rest"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NewProjectProvider returns a project provider
-func NewProjectProvider(createMasterImpersonatedClient kubermaticImpersonationClient, projectLister kubermaticv1lister.ProjectLister) (*ProjectProvider, error) {
+func NewProjectProvider(createMasterImpersonatedClient kubermaticImpersonationClient, client ctrlruntimeclient.Client) (*ProjectProvider, error) {
 	kubermaticClient, err := createMasterImpersonatedClient(restclient.ImpersonationConfig{})
 	if err != nil {
 		return nil, err
@@ -42,19 +42,14 @@ func NewProjectProvider(createMasterImpersonatedClient kubermaticImpersonationCl
 	return &ProjectProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		clientPrivileged:               kubermaticClient.Projects(),
-		projectLister:                  projectLister,
+		runtimeClient:                  client,
 	}, nil
 }
 
 // NewPrivilegedProjectProvider returns a privileged project provider
-func NewPrivilegedProjectProvider(createMasterImpersonatedClient kubermaticImpersonationClient) (*PrivilegedProjectProvider, error) {
-	kubermaticClient, err := createMasterImpersonatedClient(restclient.ImpersonationConfig{})
-	if err != nil {
-		return nil, err
-	}
-
+func NewPrivilegedProjectProvider(client ctrlruntimeclient.Client) (*PrivilegedProjectProvider, error) {
 	return &PrivilegedProjectProvider{
-		clientPrivileged: kubermaticClient.Projects(),
+		clientPrivileged: client,
 	}, nil
 }
 
@@ -66,14 +61,14 @@ type ProjectProvider struct {
 	// treat clientPrivileged as a privileged user and use wisely
 	clientPrivileged kubermaticclientv1.ProjectInterface
 
-	// projectLister local cache that stores projects objects
-	projectLister kubermaticv1lister.ProjectLister
+	// runtimeClient privileged client
+	runtimeClient ctrlruntimeclient.Client
 }
 
 // PrivilegedProjectProvider represents a data structure that knows how to manage projects in a privileged way
 type PrivilegedProjectProvider struct {
 	// treat clientPrivileged as a privileged user and use wisely
-	clientPrivileged kubermaticclientv1.ProjectInterface
+	clientPrivileged ctrlruntimeclient.Client
 }
 
 // New creates a brand new project in the system with the given name
@@ -178,8 +173,8 @@ func (p *PrivilegedProjectProvider) GetUnsecured(projectInternalName string, opt
 	if options == nil {
 		options = &provider.ProjectGetOptions{IncludeUninitialized: true}
 	}
-	project, err := p.clientPrivileged.Get(projectInternalName, metav1.GetOptions{})
-	if err != nil {
+	project := &kubermaticapiv1.Project{}
+	if err := p.clientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: projectInternalName}, project); err != nil {
 		return nil, err
 	}
 	if !options.IncludeUninitialized && project.Status.Phase != kubermaticapiv1.ProjectActive {
@@ -194,22 +189,25 @@ func (p *PrivilegedProjectProvider) GetUnsecured(projectInternalName string, opt
 // Note:
 // Before deletion project's status.phase is set to ProjectTerminating
 func (p *PrivilegedProjectProvider) DeleteUnsecured(projectInternalName string) error {
-	existingProject, err := p.clientPrivileged.Get(projectInternalName, metav1.GetOptions{})
-	if err != nil {
+	existingProject := &kubermaticapiv1.Project{}
+	if err := p.clientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: projectInternalName}, existingProject); err != nil {
 		return err
 	}
 	existingProject.Status.Phase = kubermaticapiv1.ProjectTerminating
-	if _, err := p.clientPrivileged.Update(existingProject); err != nil {
+	if err := p.clientPrivileged.Update(context.Background(), existingProject); err != nil {
 		return err
 	}
 
-	return p.clientPrivileged.Delete(projectInternalName, &metav1.DeleteOptions{})
+	return p.clientPrivileged.Delete(context.Background(), existingProject)
 }
 
 // UpdateUnsecured update a specific project and returns the updated project
 // This function is unsafe in a sense that it uses privileged account to update the project
 func (p *PrivilegedProjectProvider) UpdateUnsecured(project *kubermaticapiv1.Project) (*kubermaticapiv1.Project, error) {
-	return p.clientPrivileged.Update(project)
+	if err := p.clientPrivileged.Update(context.Background(), project); err != nil {
+		return nil, err
+	}
+	return project, nil
 }
 
 // List gets a list of projects, by default it returns all resources.
@@ -220,13 +218,13 @@ func (p *ProjectProvider) List(options *provider.ProjectListOptions) ([]*kuberma
 	if options == nil {
 		options = &provider.ProjectListOptions{}
 	}
-	projects, err := p.projectLister.List(labels.Everything())
-	if err != nil {
+	projects := &kubermaticapiv1.ProjectList{}
+	if err := p.runtimeClient.List(context.Background(), projects); err != nil {
 		return nil, err
 	}
 
-	ret := []*kubermaticapiv1.Project{}
-	for _, project := range projects {
+	var ret []*kubermaticapiv1.Project
+	for _, project := range projects.Items {
 		if len(options.ProjectName) > 0 && project.Spec.Name != options.ProjectName {
 			continue
 		}

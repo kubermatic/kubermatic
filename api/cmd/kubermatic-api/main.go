@@ -225,12 +225,12 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	}
 	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, userMasterLister, options.domain)
 	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userMasterLister, kubernetesprovider.IsServiceAccount)
-	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, kubermaticMasterInformerFactory.Kubermatic().V1().Projects().Lister())
+	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, mgr.GetClient())
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create project provider due to %v", err)
 	}
 
-	privilegedProjectProvider, err := kubernetesprovider.NewPrivilegedProjectProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet)
+	privilegedProjectProvider, err := kubernetesprovider.NewPrivilegedProjectProvider(mgr.GetClient())
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create privileged project provider due to %v", err)
 	}
