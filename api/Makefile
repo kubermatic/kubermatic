@@ -18,6 +18,7 @@ HAS_DEP:= $(shell command -v dep 2> /dev/null)
 HAS_GIT:= $(shell command -v git 2> /dev/null)
 BUILD_DEST?=_build
 GOTOOLFLAGS?=$(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)'
+KUBERMATIC_EDITION?=ce
 
 default: all
 
@@ -27,7 +28,7 @@ all: check vendor build test
 build: $(CMD)
 
 $(CMD): download-gocache
-	go build $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/$@
+	go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/$@
 
 install:
 	go install $(GOTOOLFLAGS) ./cmd/...
@@ -43,15 +44,15 @@ download-gocache:
 	@touch download-gocache
 
 test: download-gocache
-	CGO_ENABLED=1 go test -tags=unit -race ./...
+	CGO_ENABLED=1 go test -tags "unit $(KUBERMATIC_EDITION)" -race ./...
 	@# Make sure all e2e tests compile with their individual build tag
 	@# without actually running them by using `-run` with a non-existing test.
 	@# **Imortant:** Do not replace this with one `go test` with multiple tags,
 	@# as that doesn't properly reflect if each individual tag still builds
-	go test -tags cloud -run nope ./pkg/test/e2e/api/...
-	go test -tags create -run nope ./pkg/test/e2e/api/...
-	go test -tags e2e -run nope ./pkg/test/e2e/api/...
-	go test -tags integration -run nope ./...
+	go test -tags "cloud $(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
+	go test -tags "create $(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
+	go test -tags "e2e $(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
+	go test -tags "integration $(KUBERMATIC_EDITION)" -run nope ./...
 
 test-integration : CGO_ENABLED = 1
 test-integration: download-gocache
@@ -61,7 +62,7 @@ test-integration: download-gocache
 	@# * Prefixing them with `./` as thats needed by `go test` as well
 	@grep --files-with-matches --recursive --extended-regexp '\+build.+integration' cmd/ pkg/ \
 		|xargs dirname \
-		|xargs --max-args=1 -I ^ go test -tags integration  -race ./^
+		|xargs --max-args=1 -I ^ go test -tags "integration $(KUBERMATIC_EDITION)"  -race ./^
 
 test-update:
 	-go test ./... -update

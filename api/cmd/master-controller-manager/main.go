@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	mastermigrations "github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master"
+	"github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master/options"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
@@ -110,7 +111,7 @@ func main() {
 	ctrlCtx.ctx = ctx
 
 	// prepare migration options
-	migrationOptions := mastermigrations.MigrationOptions{
+	migrationOptions := options.MigrationOptions{
 		DatacentersFile:    runOpts.dcFile,
 		DynamicDatacenters: runOpts.dynamicDatacenters,
 	}
@@ -188,7 +189,7 @@ func main() {
 		log.Fatalw("failed to construct seedsGetter", zap.Error(err))
 	}
 	ctrlCtx.seedKubeconfigGetter, err = provider.SeedKubeconfigGetterFactory(
-		ctx, mgr.GetClient(), runOpts.kubeconfig, ctrlCtx.namespace, runOpts.dynamicDatacenters)
+		ctx, mgr.GetClient(), runOpts.kubeconfig, runOpts.dynamicDatacenters)
 	if err != nil {
 		log.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
