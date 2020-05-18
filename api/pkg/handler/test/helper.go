@@ -221,11 +221,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	tokenExtractors := auth.NewTokenExtractorPlugins(extractors)
 	fakeOIDCClient := NewFakeOIDCClient(user)
 
-	projectProvider, err := kubernetes.NewProjectProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
+	projectProvider, err := kubernetes.NewProjectProvider(fakeKubermaticImpersonationClient, fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
-	privilegedProjectProvider, err := kubernetes.NewPrivilegedProjectProvider(fakeKubermaticImpersonationClient)
+	privilegedProjectProvider, err := kubernetes.NewPrivilegedProjectProvider(fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
