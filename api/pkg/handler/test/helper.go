@@ -175,7 +175,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	if err != nil {
 		return nil, nil, err
 	}
-	userProvider := kubernetes.NewUserProvider(kubermaticClient, userLister, kubernetes.IsServiceAccount)
+	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount)
 	adminProvider := kubernetes.NewAdminProvider(kubermaticClient, userLister)
 	settingsProvider := kubernetes.NewSettingsProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().KubermaticSettings().Lister())
 	addonConfigProvider := kubernetes.NewAddonConfigProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().AddonConfigs().Lister())

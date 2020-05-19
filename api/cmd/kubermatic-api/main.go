@@ -195,7 +195,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create privileged SSH key provider due to %v", err)
 	}
-	userProvider := kubernetesprovider.NewUserProvider(kubermaticMasterClient, userMasterLister, kubernetesprovider.IsServiceAccount)
+	userProvider := kubernetesprovider.NewUserProvider(mgr.GetClient(), kubernetesprovider.IsServiceAccount)
 	settingsProvider := kubernetesprovider.NewSettingsProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().KubermaticSettings().Lister())
 	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().AddonConfigs().Lister())
 	adminProvider := kubernetesprovider.NewAdminProvider(kubermaticMasterClient, userMasterLister)
