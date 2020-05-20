@@ -1,32 +1,29 @@
 package kubernetes
 
 import (
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"strings"
 
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NewUserProvider returns a user provider
-func NewUserProvider(client kubermaticclientset.Interface, userLister kubermaticv1lister.UserLister, isServiceAccountFunc func(email string) bool) *UserProvider {
+func NewUserProvider(client ctrlruntimeclient.Client, isServiceAccountFunc func(email string) bool) *UserProvider {
 	return &UserProvider{
 		client:               client,
-		userLister:           userLister,
 		isServiceAccountFunc: isServiceAccountFunc,
 	}
 }
 
 // UserProvider manages user resources
 type UserProvider struct {
-	client     kubermaticclientset.Interface
-	userLister kubermaticv1lister.UserLister
+	client ctrlruntimeclient.Client
 	// since service account are special type of user this functions
 	// helps to determine if the given email address belongs to a service account
 	isServiceAccountFunc func(email string) bool
@@ -34,30 +31,21 @@ type UserProvider struct {
 
 // UserByID returns a user by the given ID
 func (p *UserProvider) UserByID(id string) (*kubermaticv1.User, error) {
-	return p.client.KubermaticV1().Users().Get(id, v1.GetOptions{})
+	user := &kubermaticv1.User{}
+	if err := p.client.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: id}, user); err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 // UserByEmail returns a user by the given email
 func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
-	users, err := p.userLister.List(labels.Everything())
-	if err != nil {
+	users := &kubermaticv1.UserList{}
+	if err := p.client.List(context.Background(), users); err != nil {
 		return nil, err
 	}
 
-	for _, user := range users {
-		if strings.EqualFold(user.Spec.Email, email) {
-			return user.DeepCopy(), nil
-		}
-	}
-
-	// In case we could not find the user from the lister, we get all users from the API
-	// This ensures we don't run into issues with an outdated cache & create the same user twice
-	// This part will be called when a new user does the first request & the user does not exist yet as resource.
-	userList, err := p.client.KubermaticV1().Users().List(v1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, user := range userList.Items {
+	for _, user := range users.Items {
 		if strings.EqualFold(user.Spec.Email, email) {
 			return user.DeepCopy(), nil
 		}
@@ -84,7 +72,7 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add a user with the given email %s as the name is reserved, please try a different email address", email))
 	}
 
-	user := kubermaticv1.User{
+	user := &kubermaticv1.User{
 		ObjectMeta: v1.ObjectMeta{
 			Name: fmt.Sprintf("%x", sha256.Sum256([]byte(email))),
 		},
@@ -95,10 +83,16 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 		},
 	}
 
-	return p.client.KubermaticV1().Users().Create(&user)
+	if err := p.client.Create(context.Background(), user); err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 // UpdateUser updates user.
-func (p *UserProvider) UpdateUser(user kubermaticv1.User) (*kubermaticv1.User, error) {
-	return p.client.KubermaticV1().Users().Update(&user)
+func (p *UserProvider) UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, error) {
+	if err := p.client.Update(context.Background(), user); err != nil {
+		return nil, err
+	}
+	return user, nil
 }
