@@ -184,11 +184,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, nil, err
 	}
 	tokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey))
-	serviceAccountTokenProvider, err := kubernetes.NewServiceAccountTokenProvider(fakeKubernetesImpersonationClient, kubernetesInformerFactory.Core().V1().Secrets().Lister())
+	serviceAccountTokenProvider, err := kubernetes.NewServiceAccountTokenProvider(fakeKubernetesImpersonationClient, fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
-	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeKubermaticImpersonationClient, userLister, "localhost")
+	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeKubermaticImpersonationClient, fakeClient, "localhost")
 	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeKubermaticImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
 	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
 	if err != nil {
