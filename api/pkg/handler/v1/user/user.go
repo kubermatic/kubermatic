@@ -347,7 +347,7 @@ func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint
 		}
 
 		existingUser.Spec.Settings = patchedSettings
-		updatedUser, err := userProvider.UpdateUser(*existingUser)
+		updatedUser, err := userProvider.UpdateUser(existingUser)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
