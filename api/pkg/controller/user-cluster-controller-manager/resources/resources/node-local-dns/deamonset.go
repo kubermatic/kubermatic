@@ -28,7 +28,7 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 			if ds.Labels == nil {
 				ds.Labels = labels
 			}
-			ds.Labels[addonManagerModeKey] = reconcilModeValue
+			ds.Labels[addonManagerModeKey] = reconcileModeValue
 			ds.Labels["kubernetes.io/cluster-service"] = "true"
 
 			if ds.Spec.Selector == nil {

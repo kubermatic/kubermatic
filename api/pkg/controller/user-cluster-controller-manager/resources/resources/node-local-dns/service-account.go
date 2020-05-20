@@ -15,7 +15,7 @@ func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 				sa.Labels = map[string]string{}
 			}
 			sa.Labels["kubernetes.io/cluster-service"] = "true"
-			sa.Labels[addonManagerModeKey] = reconcilModeValue
+			sa.Labels[addonManagerModeKey] = reconcileModeValue
 
 			return sa, nil
 		}

@@ -12,7 +12,7 @@ import (
 
 const (
 	addonManagerModeKey = "addonmanager.kubernetes.io/mode"
-	reconcilModeValue   = "Reconcile"
+	reconcileModeValue  = "Reconcile"
 )
 
 // ConfigMapCreator returns a ConfigMap containing the config for Node Local DNS cache
@@ -22,7 +22,7 @@ func ConfigMapCreator(dnsClusterIP string) reconciling.NamedConfigMapCreatorGett
 			if cm.Labels == nil {
 				cm.Labels = map[string]string{}
 			}
-			cm.Labels[addonManagerModeKey] = reconcilModeValue
+			cm.Labels[addonManagerModeKey] = reconcileModeValue
 
 			t, err := template.New("config").Parse(configTemplate)
 			if err != nil {
