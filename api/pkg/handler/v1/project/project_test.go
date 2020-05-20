@@ -461,10 +461,7 @@ func TestListProjectMethod(t *testing.T) {
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
 				return kubermaticClient.KubermaticV1(), nil
 			}
-
-			userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
-			projectBindingLister := kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister()
-			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, projectBindingLister, userLister, kubernetes.IsServiceAccount)
+			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
 			userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount)
 
 			userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
