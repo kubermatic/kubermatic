@@ -296,7 +296,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			},
 			dcName:           "private-do1",
 			seedName:         "us-central1",
-			expectedResponse: `{"error":{"code":400,"message":"Bad request: datacenter \"us-central1\" already exists"}}`,
+			expectedResponse: `{"error":{"code":400,"message":"Bad request: datacenter \"private-do1\" already exists"}}`,
 			httpStatus:       400,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
@@ -363,6 +363,201 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 				t.Fatalf("error marshalling body into json: %v", err)
 			}
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/seed/%s/dc", tc.seedName), bytes.NewBuffer(body))
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []runtime.Object{},
+				[]runtime.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected route to return code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
+	}
+}
+
+func TestDatacenterUpdateEndpoint(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		name             string
+		dcSpec           apiv1.DatacenterSpec
+		dcName           string
+		dcPathName       string
+		seedName         string
+		expectedResponse string
+		httpStatus       int
+		existingAPIUser  *apiv1.User
+	}{
+		{
+			name: "admin should be able to update dc",
+			dcSpec: apiv1.DatacenterSpec{
+				Seed:     "us-central1",
+				Country:  "NL",
+				Location: "Amsterdam",
+				Digitalocean: &v1.DatacenterSpecDigitalocean{
+					Region: "EU",
+				},
+				Node: v1.NodeSettings{
+					PauseImage: "pause-image",
+				},
+				EnforceAuditLogging:      true,
+				EnforcePodSecurityPolicy: false,
+				RequiredEmailDomains:     []string{"example.com", "pleaseno.org"},
+			},
+			dcName:           "private-do1",
+			dcPathName:       "private-do1",
+			seedName:         "us-central1",
+			expectedResponse: `{"metadata":{"name":"private-do1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","digitalocean":{"region":"EU"},"node":{"pause_image":"pause-image"},"requiredEmailDomains":["example.com","pleaseno.org"],"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}}`,
+			httpStatus:       200,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			name: "admin should be able to update dc name",
+			dcSpec: apiv1.DatacenterSpec{
+				Seed:     "us-central1",
+				Country:  "NL",
+				Location: "Amsterdam",
+				Digitalocean: &v1.DatacenterSpecDigitalocean{
+					Region: "EU",
+				},
+				Node: v1.NodeSettings{
+					PauseImage: "pause-image",
+				},
+				EnforceAuditLogging:      true,
+				EnforcePodSecurityPolicy: false,
+				RequiredEmailDomains:     []string{"example.com", "pleaseno.org"},
+			},
+			dcName:           "private-do1-updated",
+			dcPathName:       "private-do1",
+			seedName:         "us-central1",
+			expectedResponse: `{"metadata":{"name":"private-do1-updated"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","digitalocean":{"region":"EU"},"node":{"pause_image":"pause-image"},"requiredEmailDomains":["example.com","pleaseno.org"],"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}}`,
+			httpStatus:       200,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			name: "non-admin should not be able to update dc",
+			dcSpec: apiv1.DatacenterSpec{
+				Seed: "us-central1",
+				Digitalocean: &v1.DatacenterSpecDigitalocean{
+					Region: "EU",
+				},
+			},
+			dcName:           "do-correct",
+			dcPathName:       "do-correct",
+			seedName:         "us-central1",
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
+			httpStatus:       403,
+			existingAPIUser:  test.GenDefaultAPIUser(),
+		},
+		{
+			name: "should not be able to update non existing dc",
+			dcSpec: apiv1.DatacenterSpec{
+				Seed: "us-central1",
+				Digitalocean: &v1.DatacenterSpecDigitalocean{
+					Region: "EU",
+				},
+			},
+			dcName:           "idontexist",
+			dcPathName:       "idontexist",
+			seedName:         "us-central1",
+			expectedResponse: `{"error":{"code":400,"message":"Bad request: datacenter \"idontexist\" does not exists"}}`,
+			httpStatus:       400,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			name: "should not be able to update dc name to existing dc",
+			dcSpec: apiv1.DatacenterSpec{
+				Seed: "us-central1",
+				Digitalocean: &v1.DatacenterSpecDigitalocean{
+					Region: "EU",
+				},
+			},
+			dcName:           "private-do1",
+			dcPathName:       "regular-do1",
+			seedName:         "us-central1",
+			expectedResponse: `{"error":{"code":400,"message":"Bad request: cannot change \"regular-do1\" datacenter name to \"private-do1\" as it already exists"}}`,
+			httpStatus:       400,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			name: "should not be able to update a dc in non existing seed",
+			dcSpec: apiv1.DatacenterSpec{
+				Seed: "idontexist",
+				Digitalocean: &v1.DatacenterSpecDigitalocean{
+					Region: "EU",
+				},
+			},
+			dcName:           "private-do1",
+			dcPathName:       "private-do1",
+			seedName:         "idontexist",
+			expectedResponse: `{"error":{"code":400,"message":"Bad request: seed \"idontexist\" does not exist"}}`,
+			httpStatus:       400,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			name: "should not be able to update a dc with no specified provider",
+			dcSpec: apiv1.DatacenterSpec{
+				Seed: "us-central1",
+			},
+			dcName:           "private-do1",
+			dcPathName:       "private-do1",
+			seedName:         "us-central1",
+			expectedResponse: `{"error":{"code":400,"message":"Validation error: one DC provider should be specified, got: []"}}`,
+			httpStatus:       400,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			name: "should not be able to update a dc with multiple specified providers",
+			dcSpec: apiv1.DatacenterSpec{
+				Seed: "us-central1",
+				Digitalocean: &v1.DatacenterSpecDigitalocean{
+					Region: "EU",
+				},
+				AWS: &v1.DatacenterSpecAWS{
+					Region: "EU",
+				},
+			},
+			dcName:           "private-do1",
+			dcPathName:       "private-do1",
+			seedName:         "us-central1",
+			expectedResponse: `{"error":{"code":400,"message":"Validation error: one DC provider should be specified, got: [digitalocean aws]"}}`,
+			httpStatus:       400,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			name: "should receive a validation error when providing different seed name in path and request",
+			dcSpec: apiv1.DatacenterSpec{
+				Seed: "us-central1",
+				Digitalocean: &v1.DatacenterSpecDigitalocean{
+					Region: "EU",
+				},
+			},
+			dcName:           "private-do1",
+			dcPathName:       "private-do1",
+			seedName:         "different",
+			expectedResponse: `{"error":{"code":400,"message":"Validation error: path seed \"different\" and request seed \"us-central1\" not equal"}}`,
+			httpStatus:       400,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			var reqBody struct {
+				Name string               `json:"name"`
+				Spec apiv1.DatacenterSpec `json:"spec"`
+			}
+			reqBody.Spec = tc.dcSpec
+			reqBody.Name = tc.dcName
+			body, err := json.Marshal(reqBody)
+			if err != nil {
+				t.Fatalf("error marshalling body into json: %v", err)
+			}
+			req := httptest.NewRequest("PUT",
+				fmt.Sprintf("/api/v1/seed/%s/dc/%s", tc.seedName, tc.dcPathName), bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []runtime.Object{},
 				[]runtime.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)

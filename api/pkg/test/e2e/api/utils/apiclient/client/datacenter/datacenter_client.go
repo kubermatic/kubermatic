@@ -35,6 +35,8 @@ type ClientService interface {
 
 	ListDatacenters(params *ListDatacentersParams, authInfo runtime.ClientAuthInfoWriter) (*ListDatacentersOK, error)
 
+	UpdateDC(params *UpdateDCParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateDCOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -205,6 +207,40 @@ func (a *Client) ListDatacenters(params *ListDatacentersParams, authInfo runtime
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListDatacentersDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  UpdateDC updates a datacenter
+*/
+func (a *Client) UpdateDC(params *UpdateDCParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateDCOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdateDCParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "updateDC",
+		Method:             "PUT",
+		PathPattern:        "/api/v1/seed/{seed_name}/dc/{dc}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateDCReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*UpdateDCOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpdateDCDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

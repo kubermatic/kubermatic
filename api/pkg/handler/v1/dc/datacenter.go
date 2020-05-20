@@ -266,14 +266,8 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("Validation error: %v", err))
 		}
 
-		userInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		if !userInfo.IsAdmin {
-			return nil, errors.New(http.StatusForbidden,
-				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", userInfo.Email))
+		if err := validateUser(ctx, userInfoGetter); err != nil {
+			return nil, err
 		}
 
 		// Get the seed in which the dc should be created
@@ -290,7 +284,7 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		// Check if dc already exists
 		if _, ok = seed.Spec.Datacenters[req.Body.Name]; ok {
 			return nil, errors.New(http.StatusBadRequest,
-				fmt.Sprintf("Bad request: datacenter %q already exists", req.Body.Spec.Seed))
+				fmt.Sprintf("Bad request: datacenter %q already exists", req.Body.Name))
 		}
 
 		// Add DC, update seed
@@ -313,6 +307,84 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 			Spec: req.Body.Spec,
 		}, nil
 	}
+}
+
+// UpdateEndpoint an HTTP endpoint that updates a specified apiv1.Datacenter
+func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
+	seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(updateDCReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		err := req.validate()
+		if err != nil {
+			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("Validation error: %v", err))
+		}
+
+		if err := validateUser(ctx, userInfoGetter); err != nil {
+			return nil, err
+		}
+
+		// Get the seed in which the dc should be updated
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		}
+		seed, ok := seeds[req.Body.Spec.Seed]
+		if !ok {
+			return nil, errors.New(http.StatusBadRequest,
+				fmt.Sprintf("Bad request: seed %q does not exist", req.Body.Spec.Seed))
+		}
+
+		// get the dc to update
+		if _, ok := seed.Spec.Datacenters[req.DCToUpdate]; !ok {
+			return nil, errors.New(http.StatusBadRequest,
+				fmt.Sprintf("Bad request: datacenter %q does not exists", req.DCToUpdate))
+		}
+
+		// Do an extra check if name changed and remove old dc
+		if !strings.EqualFold(req.DCToUpdate, req.Body.Name) {
+			if _, ok := seed.Spec.Datacenters[req.Body.Name]; ok {
+				return nil, errors.New(http.StatusBadRequest,
+					fmt.Sprintf("Bad request: cannot change %q datacenter name to %q as it already exists",
+						req.DCToUpdate, req.Body.Name))
+			}
+			delete(seed.Spec.Datacenters, req.DCToUpdate)
+		}
+		seed.Spec.Datacenters[req.Body.Name] = apiToKubermatic(&req.Body.Spec)
+
+		seedClient, err := seedsClientGetter(seed)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get seed client: %v", err))
+		}
+
+		if err = seedClient.Update(ctx, seed); err != nil {
+			return nil, errors.New(http.StatusInternalServerError,
+				fmt.Sprintf("failed to update seed %q datacenter %q: %v", seed.Name, req.DCToUpdate, err))
+		}
+
+		return &apiv1.Datacenter{
+			Metadata: apiv1.LegacyObjectMeta{
+				Name: req.Body.Name,
+			},
+			Spec: req.Body.Spec,
+		}, nil
+	}
+}
+
+func validateUser(ctx context.Context, userInfoGetter provider.UserInfoGetter) error {
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+
+	if !userInfo.IsAdmin {
+		return errors.New(http.StatusForbidden,
+			fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", userInfo.Email))
+	}
+	return nil
 }
 
 func apiSpec(dc *kubermaticv1.Datacenter) (*apiv1.DatacenterSpec, error) {
@@ -449,44 +521,8 @@ type createDCReq struct {
 }
 
 func (req createDCReq) validate() error {
-	var providerNames []string
-
-	if req.Body.Spec.Alibaba != nil {
-		providerNames = append(providerNames, provider.AlibabaCloudProvider)
-	}
-	if req.Body.Spec.BringYourOwn != nil {
-		providerNames = append(providerNames, provider.BringYourOwnCloudProvider)
-	}
-	if req.Body.Spec.Digitalocean != nil {
-		providerNames = append(providerNames, provider.DigitaloceanCloudProvider)
-	}
-	if req.Body.Spec.AWS != nil {
-		providerNames = append(providerNames, provider.AWSCloudProvider)
-	}
-	if req.Body.Spec.Openstack != nil {
-		providerNames = append(providerNames, provider.OpenstackCloudProvider)
-	}
-	if req.Body.Spec.Packet != nil {
-		providerNames = append(providerNames, provider.PacketCloudProvider)
-	}
-	if req.Body.Spec.Hetzner != nil {
-		providerNames = append(providerNames, provider.HetznerCloudProvider)
-	}
-	if req.Body.Spec.VSphere != nil {
-		providerNames = append(providerNames, provider.VSphereCloudProvider)
-	}
-	if req.Body.Spec.Azure != nil {
-		providerNames = append(providerNames, provider.AzureCloudProvider)
-	}
-	if req.Body.Spec.GCP != nil {
-		providerNames = append(providerNames, provider.GCPCloudProvider)
-	}
-	if req.Body.Spec.Kubevirt != nil {
-		providerNames = append(providerNames, provider.KubevirtCloudProvider)
-	}
-
-	if len(providerNames) != 1 {
-		return fmt.Errorf("one DC provider should be specified, got: %v", providerNames)
+	if err := validateProvider(&req.Body.Spec); err != nil {
+		return err
 	}
 
 	if !strings.EqualFold(req.Seed, req.Body.Spec.Seed) {
@@ -509,4 +545,74 @@ func DecodeCreateDCReq(c context.Context, r *http.Request) (interface{}, error) 
 		return nil, err
 	}
 	return req, nil
+}
+
+// updateDCReq defines HTTP request for UpdateDC
+// swagger:parameters updateDC
+type updateDCReq struct {
+	createDCReq
+	// in: path
+	// required: true
+	DCToUpdate string `json:"dc"`
+}
+
+// DecodeUpdateDCReq decodes http request into updateDCReq
+func DecodeUpdateDCReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req updateDCReq
+
+	createReq, err := DecodeCreateDCReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.createDCReq = createReq.(createDCReq)
+
+	req.DCToUpdate = mux.Vars(r)["dc"]
+	if req.Seed == "" {
+		return nil, fmt.Errorf("'dc' parameter is required but was not provided")
+	}
+
+	return req, nil
+}
+
+func validateProvider(dcSpec *apiv1.DatacenterSpec) error {
+	var providerNames []string
+
+	if dcSpec.Alibaba != nil {
+		providerNames = append(providerNames, provider.AlibabaCloudProvider)
+	}
+	if dcSpec.BringYourOwn != nil {
+		providerNames = append(providerNames, provider.BringYourOwnCloudProvider)
+	}
+	if dcSpec.Digitalocean != nil {
+		providerNames = append(providerNames, provider.DigitaloceanCloudProvider)
+	}
+	if dcSpec.AWS != nil {
+		providerNames = append(providerNames, provider.AWSCloudProvider)
+	}
+	if dcSpec.Openstack != nil {
+		providerNames = append(providerNames, provider.OpenstackCloudProvider)
+	}
+	if dcSpec.Packet != nil {
+		providerNames = append(providerNames, provider.PacketCloudProvider)
+	}
+	if dcSpec.Hetzner != nil {
+		providerNames = append(providerNames, provider.HetznerCloudProvider)
+	}
+	if dcSpec.VSphere != nil {
+		providerNames = append(providerNames, provider.VSphereCloudProvider)
+	}
+	if dcSpec.Azure != nil {
+		providerNames = append(providerNames, provider.AzureCloudProvider)
+	}
+	if dcSpec.GCP != nil {
+		providerNames = append(providerNames, provider.GCPCloudProvider)
+	}
+	if dcSpec.Kubevirt != nil {
+		providerNames = append(providerNames, provider.KubevirtCloudProvider)
+	}
+
+	if len(providerNames) != 1 {
+		return fmt.Errorf("one DC provider should be specified, got: %v", providerNames)
+	}
+	return nil
 }
