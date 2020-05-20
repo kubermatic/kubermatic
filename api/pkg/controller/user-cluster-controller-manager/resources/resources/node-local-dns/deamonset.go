@@ -77,16 +77,19 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 					Ports: []corev1.ContainerPort{
 						{
 							ContainerPort: 53,
+							HostPort:      53,
 							Name:          "dns-tcp",
 							Protocol:      corev1.ProtocolTCP,
 						},
 						{
 							ContainerPort: 53,
+							HostPort:      53,
 							Name:          "dns",
 							Protocol:      corev1.ProtocolUDP,
 						},
 						{
 							ContainerPort: 9153,
+							HostPort:      9153,
 							Name:          "metrics",
 							Protocol:      corev1.ProtocolTCP,
 						},
@@ -95,13 +98,17 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 					LivenessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Host: "169.254.20.10",
-								Path: "/health",
-								Port: intstr.FromInt(8080),
+								Host:   "169.254.20.10",
+								Scheme: corev1.URISchemeHTTP,
+								Path:   "/health",
+								Port:   intstr.FromInt(8080),
 							},
 						},
 						InitialDelaySeconds: 60,
 						TimeoutSeconds:      5,
+						PeriodSeconds:       10,
+						SuccessThreshold:    1,
+						FailureThreshold:    3,
 					},
 
 					SecurityContext: &corev1.SecurityContext{
