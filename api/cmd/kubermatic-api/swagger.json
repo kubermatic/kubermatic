@@ -7309,6 +7309,66 @@
         }
       }
     },
+    "/api/v1/seed/{seed_name}/dc": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "datacenter"
+        ],
+        "summary": "Create a datacenter for a specified seed.",
+        "operationId": "createDC",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Seed",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "x-go-name": "Name"
+                },
+                "spec": {
+                  "$ref": "#/definitions/DatacenterSpec"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Datacenter",
+            "schema": {
+              "$ref": "#/definitions/Datacenter"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/upgrades/cluster": {
       "get": {
         "description": "Lists all versions which don't result in automatic updates",
